@@ -186,16 +186,16 @@ mod tests {
         
         let mut client = OpenIMClient::new(user_id.clone(), im_token, 5);
 
-        // 连接到服务器
-        let read = match client.connect().await {
-            Ok(r) => r,
+        // 连接到服务器（内部会自动启动消息处理）
+        match client.connect().await {
+            Ok(_) => {
+                println!("✅ WebSocket 连接成功！\n");
+            }
             Err(e) => {
                 println!("连接失败: {}", e);
                 return;
             }
-        };
-
-        println!("✅ WebSocket 连接成功！\n");
+        }
 
         // 克隆 client 和 user_id 用于发送消息
         let client_for_send = client.clone();
@@ -237,10 +237,8 @@ mod tests {
             }
         });
 
-        // 持续监听消息
+        // 保持主任务运行，让消息处理任务继续执行
         println!("📥 客户端运行中，等待消息推送...\n");
-        if let Err(e) = client.handle_messages(read).await {
-            println!("错误: {}", e);
-        }
+        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
     }
 }

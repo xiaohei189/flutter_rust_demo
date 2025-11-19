@@ -10,6 +10,7 @@ use flate2::Compression;
 use std::io::{Read, Write};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use anyhow::Result;
 
 /// 消息类型标识符
 mod msg_type {
@@ -118,8 +119,8 @@ impl OpenIMClient {
         !set.insert(msg_id.to_string())
     }
 
-    /// 连接到服务器并返回读写端
-    pub async fn connect(&mut self) -> Result<WsReader, Box<dyn std::error::Error>> {
+    /// 连接到服务器并在内部启动消息处理
+    pub async fn connect(&mut self) -> Result<()> {
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
         let url = self.build_url(&operation_id);
 
@@ -139,7 +140,7 @@ impl OpenIMClient {
                 if resp.err_code == 0 {
                     println!("✅ 服务器响应成功\n");
                 } else {
-                    return Err(format!("服务器错误: {}", resp.err_msg).into());
+                    return Err(anyhow::anyhow!("服务器错误: {}", resp.err_msg));
                 }
             }
         }
@@ -161,7 +162,15 @@ impl OpenIMClient {
             });
         }
 
-        Ok(read)
+        // 在内部启动消息处理任务
+        let client = self.clone();
+        tokio::spawn(async move {
+            if let Err(e) = client.handle_messages_internal(read).await {
+                println!("消息处理错误: {}", e);
+            }
+        });
+
+        Ok(())
     }
 
     /// 发送文本消息（参考 Go SDK 实现）
@@ -170,7 +179,7 @@ impl OpenIMClient {
         recv_id: String,
         text: String,
         session_type: i32, // 1=单聊, 2=群聊
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<()> {
         use openim_protocol::sdkws;
         use std::collections::HashMap;
 
@@ -251,9 +260,9 @@ impl OpenIMClient {
         &self,
         req_identifier: i32,
         data: Vec<u8>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<()> {
         let writer = self.writer.as_ref()
-            .ok_or("未连接")?;
+            .ok_or_else(|| anyhow::anyhow!("未连接"))?;
 
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
         
@@ -288,8 +297,8 @@ impl OpenIMClient {
         Ok(())
     }
 
-    /// 处理接收消息（事件循环）
-    pub async fn handle_messages(&self, mut read: WsReader) -> Result<(), Box<dyn std::error::Error>> {
+    /// 内部消息处理（事件循环）
+    async fn handle_messages_internal(&self, mut read: WsReader) -> Result<()> {
         while let Some(msg_result) = read.next().await {
             match msg_result {
                 Ok(WsMessage::Text(text)) => {

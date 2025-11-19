@@ -6,5 +6,42 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `LoginData`, `LoginRequest`, `LoginResponse`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `fmt`
+
+/// 登录并获取 token
+///
+/// # 参数
+/// - `area_code`: 区号，例如 "+86"
+/// - `phone_number`: 手机号
+/// - `password`: 密码（MD5 加密后的字符串）
+/// - `platform`: 平台 ID，例如 5
+///
+/// # 返回
+/// 返回包含 imToken、chatToken 和 userID 的 JSON 字符串
+String login({
+  required String areaCode,
+  required String phoneNumber,
+  required String password,
+  required int platform,
+}) => RustLib.instance.api.crateApiSimpleLogin(
+  areaCode: areaCode,
+  phoneNumber: phoneNumber,
+  password: password,
+  platform: platform,
+);
+
+Future<String> loginAsync({
+  required String areaCode,
+  required String phoneNumber,
+  required String password,
+  required int platform,
+}) => RustLib.instance.api.crateApiSimpleLoginAsync(
+  areaCode: areaCode,
+  phoneNumber: phoneNumber,
+  password: password,
+  platform: platform,
+);
+
 String greet({required String name}) =>
     RustLib.instance.api.crateApiSimpleGreet(name: name);
