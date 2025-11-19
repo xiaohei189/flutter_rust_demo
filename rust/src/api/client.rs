@@ -1,122 +1,103 @@
+use crate::api::types::{ServerResponse, OpenIMResp, msg_type};
+use crate::api::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
 use tokio_tungstenite::{connect_async, tungstenite::Message as WsMessage};
-use futures_util::{StreamExt, SinkExt, stream::{SplitSink, SplitStream}};
-use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use futures_util::{StreamExt, SinkExt};
 use tokio::time::interval;
-use openim_protocol::Message as ProtobufMessage;
-use flate2::read::GzDecoder;
-use flate2::write::GzEncoder;
-use flate2::Compression;
-use std::io::{Read, Write};
+use std::time::Duration;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use anyhow::Result;
-
-/// 消息类型标识符
-mod msg_type {
-    pub const WS_GET_NEWEST_SEQ: i32 = 1001;
-    pub const WS_SEND_MSG: i32 = 1003;
-    pub const WS_PUSH_MSG: i32 = 2001;
-    pub const WS_KICK_ONLINE_MSG: i32 = 2002;
-    pub const WS_LOGOUT_MSG: i32 = 2003;
-}
-
-type WsWriter = SplitSink<
-    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
+use openim_protocol::Message as ProtobufMessage;
+use futures_util::stream::{SplitSink, SplitStream};
+use tokio_tungstenite::WebSocketStream;
+use tokio_tungstenite::MaybeTlsStream;
+use tokio::net::TcpStream;
+/// WebSocket 写入端类型别名
+pub type WsWriter = SplitSink<
+    WebSocketStream<MaybeTlsStream<TcpStream>>,
     WsMessage,
 >;
-type WsReader = SplitStream<
-    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>
+
+/// WebSocket 读取端类型别名
+pub type WsReader = SplitStream<
+    WebSocketStream<MaybeTlsStream<TcpStream>>
 >;
 
-/// OpenIM 客户端
-#[derive(Clone)]
-pub struct OpenIMClient {
+/// 客户端配置
+#[derive(Clone, Debug)]
+pub struct ClientConfig {
+    /// 用户 ID
     pub user_id: String,
+    /// 认证 token
     pub token: String,
+    /// 平台 ID
     pub platform_id: i32,
+    /// WebSocket 服务器 URL
     pub ws_url: String,
-    received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
-    writer: Option<Arc<Mutex<WsWriter>>>,
+    /// 压缩方式，例如 "gzip" 或空字符串表示不压缩
+    pub compression: String,
+    /// 是否为后台模式
+    pub is_background: bool,
+    /// 是否需要消息响应
+    pub is_msg_resp: bool,
+    /// SDK 类型，例如 "js" 或 "go"
+    pub sdk_type: String,
 }
 
-/// OpenIM 请求结构
-#[derive(Debug, Serialize, Deserialize)]
-struct OpenIMReq {
-    #[serde(rename = "reqIdentifier")]
-    req_identifier: i32,
-    token: String,
-    #[serde(rename = "sendID")]
-    send_id: String,
-    #[serde(rename = "operationID")]
-    operation_id: String,
-    #[serde(rename = "msgIncr")]
-    msg_incr: String,
-    #[serde(default)]
-    data: Vec<u8>,
-}
-
-/// OpenIM 响应结构
-#[derive(Debug, Deserialize, Serialize)]
-struct OpenIMResp {
-    #[serde(rename = "reqIdentifier")]
-    req_identifier: i32,
-    #[serde(rename = "msgIncr")]
-    msg_incr: String,
-    #[serde(rename = "operationID")]
-    operation_id: String,
-    #[serde(rename = "errCode")]
-    err_code: i32,
-    #[serde(rename = "errMsg")]
-    err_msg: String,
-    #[serde(default, deserialize_with = "deserialize_base64")]
-    data: Vec<u8>,
-}
-
-fn deserialize_base64<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use base64::Engine;
-    let s: String = Deserialize::deserialize(deserializer)?;
-    if s.is_empty() {
-        return Ok(Vec::new());
-    }
-    base64::engine::general_purpose::STANDARD
-        .decode(s)
-        .map_err(serde::de::Error::custom)
-}
-
-#[derive(Debug, Deserialize)]
-struct ServerResponse {
-    #[serde(rename = "errCode")]
-    err_code: i32,
-    #[serde(rename = "errMsg")]
-    err_msg: String,
-}
-
-impl OpenIMClient {
+impl ClientConfig {
+    /// 创建默认配置
     pub fn new(user_id: String, token: String, platform_id: i32) -> Self {
         Self {
             user_id,
             token,
             platform_id,
             ws_url: "ws://localhost:10001".to_string(),
-            received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
-            writer: None,
+            compression: "gzip".to_string(),
+            is_background: false,
+            is_msg_resp: true,
+            sdk_type: "js".to_string(),
         }
     }
+}
 
-    fn build_url(&self, operation_id: &str) -> String {
-        format!(
-            "{}/?token={}&sendID={}&platformID={}&operationID={}&compression=gzip&isBackground=false&isMsgResp=true&sdkType=js",
-            self.ws_url, self.token, self.user_id, self.platform_id, operation_id
-        )
+/// OpenIM 客户端
+#[derive(Clone)]
+pub struct OpenIMClient {
+    config: ClientConfig,
+    writer: Option<Arc<Mutex<WsWriter>>>,
+    received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
+}
+
+impl OpenIMClient {
+    /// 创建新的客户端
+    /// - `config`: 客户端配置
+    pub fn new(config: ClientConfig) -> Self {
+        Self {
+            config,
+            writer: None,
+            received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
+        }
     }
-
-    fn is_duplicate_message(&self, msg_id: &str) -> bool {
-        let mut set = self.received_msg_ids.lock().unwrap();
-        !set.insert(msg_id.to_string())
+    /// 构建 WebSocket 连接 URL
+    fn build_url(&self, operation_id: &str) -> String {
+        let compression_param = if self.config.compression.is_empty() {
+            String::new()
+        } else {
+            format!("&compression={}", self.config.compression)
+        };
+        
+        format!(
+            "{}/?token={}&sendID={}&platformID={}&operationID={}{}&isBackground={}&isMsgResp={}&sdkType={}",
+            self.config.ws_url,
+            self.config.token,
+            self.config.user_id,
+            self.config.platform_id,
+            operation_id,
+            compression_param,
+            self.config.is_background,
+            self.config.is_msg_resp,
+            self.config.sdk_type
+        )
     }
 
     /// 连接到服务器并在内部启动消息处理
@@ -125,14 +106,15 @@ impl OpenIMClient {
         let url = self.build_url(&operation_id);
 
         println!("🔗 连接到 OpenIM Server...");
-        println!("   用户: {}", self.user_id);
-        println!("   平台: {}", self.platform_id);
+        println!("   用户: {}", self.config.user_id);
+        println!("   平台: {}", self.config.platform_id);
 
         let (ws_stream, response) = connect_async(&url).await?;
         println!("✅ WebSocket 连接成功! 状态: {}", response.status());
 
         let (write, mut read) = ws_stream.split();
-        self.writer = Some(Arc::new(Mutex::new(write)));
+        let writer = Arc::new(Mutex::new(write));
+        self.writer = Some(writer.clone());
 
         // 等待连接成功响应
         if let Some(Ok(WsMessage::Text(text))) = read.next().await {
@@ -149,23 +131,22 @@ impl OpenIMClient {
         println!("📥 开始监听...\n");
 
         // 启动心跳
-        if let Some(writer) = self.writer.clone() {
-            tokio::spawn(async move {
-                let mut ticker = interval(Duration::from_secs(25));
-                loop {
-                    ticker.tick().await;
-                    let mut w = writer.lock().await;
-                    if w.send(WsMessage::Ping(vec![])).await.is_err() {
-                        break;
-                    }
+        let writer_for_heartbeat = writer.clone();
+        tokio::spawn(async move {
+            let mut ticker = interval(Duration::from_secs(25));
+            loop {
+                ticker.tick().await;
+                let mut w = writer_for_heartbeat.lock().await;
+                if w.send(WsMessage::Ping(vec![])).await.is_err() {
+                    break;
                 }
-            });
-        }
+            }
+        });
 
         // 在内部启动消息处理任务
         let client = self.clone();
         tokio::spawn(async move {
-            if let Err(e) = client.handle_messages_internal(read).await {
+            if let Err(e) = client.handle_messages(read).await {
                 println!("消息处理错误: {}", e);
             }
         });
@@ -173,7 +154,7 @@ impl OpenIMClient {
         Ok(())
     }
 
-    /// 发送文本消息（参考 Go SDK 实现）
+    /// 发送文本消息
     pub async fn send_text_message(
         &self,
         recv_id: String,
@@ -186,9 +167,9 @@ impl OpenIMClient {
         println!("🔧 构造消息...");
         
         let now = chrono::Utc::now().timestamp_millis();
-        let client_msg_id = self.generate_msg_id();
+        let client_msg_id = generate_msg_id(&self.config.user_id);
 
-        // 构造消息内容（参考接收到的消息，使用 JSON 格式）
+        // 构造消息内容
         let content_json = serde_json::json!({
             "content": text.clone()
         });
@@ -197,7 +178,7 @@ impl OpenIMClient {
         println!("   消息 ID: {}", client_msg_id);
         println!("   Content: {}", content_str);
 
-        // 构造 options（参考 Go SDK 的默认值）
+        // 构造 options
         let mut options = HashMap::new();
         options.insert("history".to_string(), true);
         options.insert("persistent".to_string(), true);
@@ -207,14 +188,14 @@ impl OpenIMClient {
         options.insert("unreadCount".to_string(), true);
         options.insert("offlinePush".to_string(), true);
 
-        // 构造 MsgData（参考 Go SDK）
+        // 构造 MsgData
         let msg_data = sdkws::MsgData {
-            send_id: self.user_id.clone(),
+            send_id: self.config.user_id.clone(),
             recv_id: recv_id.clone(),
             group_id: if session_type == 2 { recv_id.clone() } else { String::new() },
             client_msg_id: client_msg_id.clone(),
             server_msg_id: String::new(),
-            sender_platform_id: self.platform_id,
+            sender_platform_id: self.config.platform_id,
             sender_nickname: String::new(),
             sender_face_url: String::new(),
             session_type,
@@ -222,7 +203,7 @@ impl OpenIMClient {
             content_type: 101, // Text
             content: content_str.into_bytes(),
             seq: 0,
-            send_time: 0, // 发送时由服务器设置
+            send_time: 0,
             create_time: now,
             status: 1,
             is_read: false,
@@ -245,16 +226,6 @@ impl OpenIMClient {
         Ok(())
     }
 
-    /// 生成消息 ID（参考 Go SDK 的 GetMsgID）
-    fn generate_msg_id(&self) -> String {
-        use std::time::SystemTime;
-        let nanos = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        format!("{}{}", self.user_id, nanos)
-    }
-
     /// 发送请求
     async fn send_request(
         &self,
@@ -266,12 +237,12 @@ impl OpenIMClient {
 
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
         
-        let req = OpenIMReq {
+        let req = crate::api::types::OpenIMReq {
             req_identifier,
-            token: self.token.clone(),
-            send_id: self.user_id.clone(),
+            token: self.config.token.clone(),
+            send_id: self.config.user_id.clone(),
             operation_id: operation_id.clone(),
-            msg_incr: String::new(), // 留空，让服务器处理
+            msg_incr: String::new(),
             data,
         };
 
@@ -284,8 +255,8 @@ impl OpenIMClient {
         let json = serde_json::to_vec(&req)?;
         println!("   JSON 大小: {} bytes", json.len());
         
-        // 压缩 JSON（因为连接时指定了 compression=gzip）
-        let compressed = Self::compress_gzip(&json)?;
+        // 压缩 JSON
+        let compressed = compress_gzip(&json)?;
         println!("   压缩后大小: {} bytes (压缩率: {:.1}%)", 
                  compressed.len(), 
                  (compressed.len() as f64 / json.len() as f64) * 100.0);
@@ -297,8 +268,8 @@ impl OpenIMClient {
         Ok(())
     }
 
-    /// 内部消息处理（事件循环）
-    async fn handle_messages_internal(&self, mut read: WsReader) -> Result<()> {
+    /// 处理接收消息（事件循环）
+    async fn handle_messages(&self, mut read: WsReader) -> Result<()> {
         while let Some(msg_result) = read.next().await {
             match msg_result {
                 Ok(WsMessage::Text(text)) => {
@@ -329,7 +300,7 @@ impl OpenIMClient {
     async fn handle_binary_message(&self, data: Vec<u8>) {
         // 解压
         let decompressed = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
-            match Self::decompress_gzip(&data) {
+            match decompress_gzip(&data) {
                 Ok(d) => d,
                 Err(e) => {
                     println!("\n❌ 解压失败: {}", e);
@@ -355,11 +326,9 @@ impl OpenIMClient {
                 self.handle_push_message(&resp.data);
             }
             msg_type::WS_SEND_MSG => {
-                // 发送消息的响应
                 println!("\n✅ 消息发送响应:");
                 if resp.err_code == 0 {
                     println!("   发送成功");
-                    // 解析 SendMsgResp
                     if let Ok(send_resp) = openim_protocol::msg::SendMsgResp::decode(&resp.data[..]) {
                         println!("   服务器消息ID: {}", send_resp.server_msg_id);
                         println!("   客户端消息ID: {}", send_resp.client_msg_id);
@@ -398,7 +367,7 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                self.print_msg_data(conv_id, msg, false);
+                Self::print_msg_data(conv_id, msg, false);
             }
         }
 
@@ -408,12 +377,17 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                self.print_msg_data(conv_id, msg, true);
+                Self::print_msg_data(conv_id, msg, true);
             }
         }
     }
 
-    fn print_msg_data(&self, conv_id: &str, msg: &openim_protocol::sdkws::MsgData, is_notification: bool) {
+    fn is_duplicate_message(&self, msg_id: &str) -> bool {
+        let mut set = self.received_msg_ids.lock().unwrap();
+        !set.insert(msg_id.to_string())
+    }
+
+    fn print_msg_data(conv_id: &str, msg: &openim_protocol::sdkws::MsgData, is_notification: bool) {
         let time_str = chrono::DateTime::from_timestamp_millis(msg.send_time)
             .map(|dt| dt.format("%H:%M:%S").to_string())
             .unwrap_or_else(|| "??:??:??".to_string());
@@ -427,7 +401,7 @@ impl OpenIMClient {
         println!("类型: {} ({})", Self::get_content_type_name(msg.content_type), msg.content_type);
 
         println!("\n【消息内容】:");
-        self.parse_content(msg);
+        Self::parse_content(msg);
         println!("═══════════════════════════════════════\n");
     }
 
@@ -441,7 +415,7 @@ impl OpenIMClient {
         }
     }
 
-    fn parse_content(&self, msg: &openim_protocol::sdkws::MsgData) {
+    fn parse_content(msg: &openim_protocol::sdkws::MsgData) {
         if msg.content.is_empty() {
             println!("  (空)");
             return;
@@ -489,19 +463,5 @@ impl OpenIMClient {
                 println!("  {}", content_str);
             }
         }
-    }
-
-    fn decompress_gzip(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
-        let mut decoder = GzDecoder::new(data);
-        let mut decompressed = Vec::new();
-        decoder.read_to_end(&mut decompressed)?;
-        Ok(decompressed)
-    }
-
-    /// 压缩数据为 gzip 格式
-    fn compress_gzip(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
-        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-        encoder.write_all(data)?;
-        encoder.finish()
     }
 }
