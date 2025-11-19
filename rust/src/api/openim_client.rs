@@ -5,7 +5,9 @@ use std::time::Duration;
 use tokio::time::interval;
 use openim_protocol::Message as ProtobufMessage;
 use flate2::read::GzDecoder;
-use std::io::Read;
+use flate2::write::GzEncoder;
+use flate2::Compression;
+use std::io::{Read, Write};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -273,8 +275,14 @@ impl OpenIMClient {
         let json = serde_json::to_vec(&req)?;
         println!("   JSON 大小: {} bytes", json.len());
         
+        // 压缩 JSON（因为连接时指定了 compression=gzip）
+        let compressed = Self::compress_gzip(&json)?;
+        println!("   压缩后大小: {} bytes (压缩率: {:.1}%)", 
+                 compressed.len(), 
+                 (compressed.len() as f64 / json.len() as f64) * 100.0);
+        
         let mut w = writer.lock().await;
-        w.send(WsMessage::Binary(json)).await?;
+        w.send(WsMessage::Binary(compressed)).await?;
         
         println!("   ✅ WebSocket 发送成功");
         Ok(())
@@ -479,5 +487,12 @@ impl OpenIMClient {
         let mut decompressed = Vec::new();
         decoder.read_to_end(&mut decompressed)?;
         Ok(decompressed)
+    }
+
+    /// 压缩数据为 gzip 格式
+    fn compress_gzip(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(data)?;
+        encoder.finish()
     }
 }
