@@ -1,29 +1,34 @@
-use crate::api::types::{ServerResponse, OpenIMResp, msg_type};
-use crate::api::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
-use tokio_tungstenite::{connect_async, tungstenite::Message as WsMessage};
-use futures_util::{StreamExt, SinkExt};
-use tokio::time::interval;
-use std::time::Duration;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+//! OpenIM 客户端核心实现模块（内部使用）
+//!
+//! 此模块包含 OpenIM 客户端的核心逻辑实现。
+//! **重要：此模块中的所有类型和方法都不会被 flutter_rust_bridge 识别，不会生成 Dart 桥接代码。**
+//!
+//! 对外暴露的接口请使用 `bridge_client.rs` 中的 `OpenIMBridgeClient`。
+
+use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
+use crate::im::types::{msg_type, MessageEvent, OpenIMResp, ServerResponse};
 use anyhow::Result;
-use openim_protocol::Message as ProtobufMessage;
 use futures_util::stream::{SplitSink, SplitStream};
-use tokio_tungstenite::WebSocketStream;
-use tokio_tungstenite::MaybeTlsStream;
+use futures_util::{SinkExt, StreamExt};
+use openim_protocol::Message as ProtobufMessage;
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpStream;
+use tokio::sync::{mpsc, Mutex};
+use tokio::time::interval;
+use tokio_tungstenite::MaybeTlsStream;
+use tokio_tungstenite::WebSocketStream;
+use tokio_tungstenite::{connect_async, tungstenite::Message as WsMessage};
+
 /// WebSocket 写入端类型别名
-pub type WsWriter = SplitSink<
-    WebSocketStream<MaybeTlsStream<TcpStream>>,
-    WsMessage,
->;
+pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
 /// WebSocket 读取端类型别名
-pub type WsReader = SplitStream<
-    WebSocketStream<MaybeTlsStream<TcpStream>>
->;
+pub type WsReader = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
 
-/// 客户端配置
+/// 客户端配置（内部使用，不对外暴露）
+///
+/// 此类型不会被 flutter_rust_bridge 识别，不会生成 Dart 桥接代码
 #[derive(Clone, Debug)]
 pub struct ClientConfig {
     /// 用户 ID
@@ -60,12 +65,17 @@ impl ClientConfig {
     }
 }
 
-/// OpenIM 客户端
+/// OpenIM 客户端（内部使用，不对外暴露）
+///
+/// 核心 IM 逻辑实现，通过 OpenIMBridgeClient 对外暴露。
+/// 此类型及其所有方法都不会被 flutter_rust_bridge 识别，不会生成 Dart 桥接代码。
 #[derive(Clone)]
 pub struct OpenIMClient {
     config: ClientConfig,
     writer: Option<Arc<Mutex<WsWriter>>>,
     received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
+    // Rust 端订阅（通过 mpsc channel）
+    rust_subscribers: Arc<std::sync::Mutex<Vec<mpsc::UnboundedSender<MessageEvent>>>>,
 }
 
 impl OpenIMClient {
@@ -76,7 +86,43 @@ impl OpenIMClient {
             config,
             writer: None,
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
+            rust_subscribers: Arc::new(std::sync::Mutex::new(Vec::new())),
         }
+    }
+
+    /// 订阅消息事件（Rust 端使用）
+    ///
+    /// 使用 Rust 原生的 channel 方式订阅消息事件。
+    /// 返回一个 `mpsc::UnboundedReceiver<MessageEvent>`，可以在 Rust 代码中接收事件。
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// let mut receiver = client.subscribe_messages_rust();
+    /// tokio::spawn(async move {
+    ///     while let Some(event) = receiver.recv().await {
+    ///         match event {
+    ///             MessageEvent::NewMessage { conversation_id, message, .. } => {
+    ///                 println!("收到消息: {} -> {}", message.send_id, message.recv_id);
+    ///             }
+    ///             _ => {}
+    ///         }
+    ///     }
+    /// });
+    /// ```
+    pub fn subscribe_messages(&self) -> mpsc::UnboundedReceiver<MessageEvent> {
+        let (tx, rx) = mpsc::unbounded_channel();
+        let mut subscribers = self.rust_subscribers.lock().unwrap();
+        subscribers.push(tx);
+        println!("📡 消息事件订阅已激活 (Rust)");
+        rx
+    }
+
+    /// 发送事件到所有订阅者（仅 Rust 端）
+    fn emit_event(&self, event: MessageEvent) {
+        // 发送到 Rust 端订阅者（mpsc channel）
+        let mut subscribers = self.rust_subscribers.lock().unwrap();
+        subscribers.retain(|sender| sender.send(event.clone()).is_ok());
     }
     /// 构建 WebSocket 连接 URL
     fn build_url(&self, operation_id: &str) -> String {
@@ -85,7 +131,7 @@ impl OpenIMClient {
         } else {
             format!("&compression={}", self.config.compression)
         };
-        
+
         format!(
             "{}/?token={}&sendID={}&platformID={}&operationID={}{}&isBackground={}&isMsgResp={}&sdkType={}",
             self.config.ws_url,
@@ -121,6 +167,10 @@ impl OpenIMClient {
             if let Ok(resp) = serde_json::from_str::<ServerResponse>(&text) {
                 if resp.err_code == 0 {
                     println!("✅ 服务器响应成功\n");
+                    self.emit_event(MessageEvent::ConnectionStatus {
+                        connected: true,
+                        message: "连接成功".to_string(),
+                    });
                 } else {
                     return Err(anyhow::anyhow!("服务器错误: {}", resp.err_msg));
                 }
@@ -165,7 +215,7 @@ impl OpenIMClient {
         use std::collections::HashMap;
 
         println!("🔧 构造消息...");
-        
+
         let now = chrono::Utc::now().timestamp_millis();
         let client_msg_id = generate_msg_id(&self.config.user_id);
 
@@ -192,14 +242,18 @@ impl OpenIMClient {
         let msg_data = sdkws::MsgData {
             send_id: self.config.user_id.clone(),
             recv_id: recv_id.clone(),
-            group_id: if session_type == 2 { recv_id.clone() } else { String::new() },
+            group_id: if session_type == 2 {
+                recv_id.clone()
+            } else {
+                String::new()
+            },
             client_msg_id: client_msg_id.clone(),
             server_msg_id: String::new(),
             sender_platform_id: self.config.platform_id,
             sender_nickname: String::new(),
             sender_face_url: String::new(),
             session_type,
-            msg_from: 100, // UserMsgType
+            msg_from: 100,     // UserMsgType
             content_type: 101, // Text
             content: content_str.into_bytes(),
             seq: 0,
@@ -221,23 +275,21 @@ impl OpenIMClient {
 
         // 发送请求
         self.send_request(msg_type::WS_SEND_MSG, pb_data).await?;
-        
+
         println!("✅ 消息已发送，等待响应...");
         Ok(())
     }
 
     /// 发送请求
-    async fn send_request(
-        &self,
-        req_identifier: i32,
-        data: Vec<u8>,
-    ) -> Result<()> {
-        let writer = self.writer.as_ref()
+    async fn send_request(&self, req_identifier: i32, data: Vec<u8>) -> Result<()> {
+        let writer = self
+            .writer
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("未连接"))?;
 
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
-        
-        let req = crate::api::types::OpenIMReq {
+
+        let req = crate::im::types::OpenIMReq {
             req_identifier,
             token: self.config.token.clone(),
             send_id: self.config.user_id.clone(),
@@ -254,16 +306,18 @@ impl OpenIMClient {
 
         let json = serde_json::to_vec(&req)?;
         println!("   JSON 大小: {} bytes", json.len());
-        
+
         // 压缩 JSON
         let compressed = compress_gzip(&json)?;
-        println!("   压缩后大小: {} bytes (压缩率: {:.1}%)", 
-                 compressed.len(), 
-                 (compressed.len() as f64 / json.len() as f64) * 100.0);
-        
+        println!(
+            "   压缩后大小: {} bytes (压缩率: {:.1}%)",
+            compressed.len(),
+            (compressed.len() as f64 / json.len() as f64) * 100.0
+        );
+
         let mut w = writer.lock().await;
         w.send(WsMessage::Binary(compressed)).await?;
-        
+
         println!("   ✅ WebSocket 发送成功");
         Ok(())
     }
@@ -327,21 +381,38 @@ impl OpenIMClient {
             }
             msg_type::WS_SEND_MSG => {
                 println!("\n✅ 消息发送响应:");
-                if resp.err_code == 0 {
+                let (success, server_msg_id, client_msg_id) = if resp.err_code == 0 {
                     println!("   发送成功");
-                    if let Ok(send_resp) = openim_protocol::msg::SendMsgResp::decode(&resp.data[..]) {
+                    if let Ok(send_resp) = openim_protocol::msg::SendMsgResp::decode(&resp.data[..])
+                    {
                         println!("   服务器消息ID: {}", send_resp.server_msg_id);
                         println!("   客户端消息ID: {}", send_resp.client_msg_id);
+                        (true, send_resp.server_msg_id, send_resp.client_msg_id)
+                    } else {
+                        (true, String::new(), String::new())
                     }
                 } else {
                     println!("   发送失败: {}", resp.err_msg);
-                }
+                    (false, String::new(), String::new())
+                };
+
+                self.emit_event(MessageEvent::SendMessageResponse {
+                    success,
+                    err_msg: resp.err_msg,
+                    server_msg_id,
+                    client_msg_id,
+                });
             }
             msg_type::WS_KICK_ONLINE_MSG => {
                 println!("\n⚠️ 被踢下线");
+                self.emit_event(MessageEvent::KickedOffline);
             }
             _ => {
                 println!("\n📨 消息类型: {}", resp.req_identifier);
+                self.emit_event(MessageEvent::Other {
+                    req_identifier: resp.req_identifier,
+                    message: format!("未知消息类型: {}", resp.req_identifier),
+                });
             }
         }
     }
@@ -367,7 +438,12 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                Self::print_msg_data(conv_id, msg, false);
+                // 直接使用 MsgData 发送事件
+                self.emit_event(MessageEvent::NewMessage {
+                    conversation_id: conv_id.clone(),
+                    message: msg.clone(),
+                    is_notification: false,
+                });
             }
         }
 
@@ -377,7 +453,12 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                Self::print_msg_data(conv_id, msg, true);
+                // 直接使用 MsgData 发送事件
+                self.emit_event(MessageEvent::NewMessage {
+                    conversation_id: conv_id.clone(),
+                    message: msg.clone(),
+                    is_notification: true,
+                });
             }
         }
     }
@@ -386,30 +467,20 @@ impl OpenIMClient {
         let mut set = self.received_msg_ids.lock().unwrap();
         !set.insert(msg_id.to_string())
     }
-
-    fn print_msg_data(conv_id: &str, msg: &openim_protocol::sdkws::MsgData, is_notification: bool) {
-        let time_str = chrono::DateTime::from_timestamp_millis(msg.send_time)
-            .map(|dt| dt.format("%H:%M:%S").to_string())
-            .unwrap_or_else(|| "??:??:??".to_string());
-
-        let icon = if is_notification { "🔔" } else { "💬" };
-
-        println!("\n{} ═══════════════════════════════════", icon);
-        println!("时间: {}", time_str);
-        println!("会话: {}", conv_id);
-        println!("发送者: {}", msg.send_id);
-        println!("类型: {} ({})", Self::get_content_type_name(msg.content_type), msg.content_type);
-
-        println!("\n【消息内容】:");
-        Self::parse_content(msg);
-        println!("═══════════════════════════════════════\n");
-    }
+ 
 
     fn get_content_type_name(content_type: i32) -> &'static str {
         match content_type {
-            101 => "文本", 102 => "图片", 103 => "语音", 104 => "视频",
-            1201 => "好友申请通过", 1203 => "好友申请", 1204 => "好友添加",
-            1501 => "群创建", 1504 => "成员退出", 1508 => "成员被踢",
+            101 => "文本",
+            102 => "图片",
+            103 => "语音",
+            104 => "视频",
+            1201 => "好友申请通过",
+            1203 => "好友申请",
+            1204 => "好友添加",
+            1501 => "群创建",
+            1504 => "成员退出",
+            1508 => "成员被踢",
             2200 => "已读回执",
             _ => "其他",
         }
@@ -461,6 +532,144 @@ impl OpenIMClient {
                 }
             } else {
                 println!("  {}", content_str);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ClientConfig, OpenIMClient};
+    use crate::im::auth::login_async;
+
+    #[tokio::test]
+    #[ignore]
+    async fn run_openim_client() {
+        // 先登录获取 token
+        println!("🔐 正在登录获取 token...\n");
+        let token_info = match login_async(
+            "+86".to_string(),
+            "17764008284".to_string(),
+            "284f3d09ea0695538e4ded1c1766d73a".to_string(),
+            5,
+        )
+        .await
+        {
+            Ok(info) => {
+                println!("✅ 登录成功！\n");
+                info
+            }
+            Err(e) => {
+                println!("❌ 登录失败: {}\n", e);
+                return;
+            }
+        };
+
+        // 解析 token（如果登录成功）
+        let (user_id, im_token) = if !token_info.is_empty() {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&token_info) {
+                let user_id = json["userID"].as_str().unwrap_or("").to_string();
+                let im_token = json["imToken"].as_str().unwrap_or("").to_string();
+                (user_id, im_token)
+            } else {
+                ("".to_string(), "".to_string())
+            }
+        } else {
+            ("".to_string(), "".to_string())
+        };
+
+        let config = ClientConfig::new(user_id.clone(), im_token, 5);
+        let mut client = OpenIMClient::new(config);
+
+        // 连接到服务器（内部会自动启动消息处理）
+        match client.connect().await {
+            Ok(_) => {
+                println!("✅ WebSocket 连接成功！\n");
+            }
+            Err(e) => {
+                println!("连接失败: {}", e);
+                return;
+            }
+        }
+
+        // 克隆 client 和 user_id 用于发送消息
+        let client_for_send = client.clone();
+        let recv_id = "4937393320".to_string();
+
+        // 启动发送消息任务（延迟 3 秒后发送，确保连接稳定）
+        tokio::spawn(async move {
+            // 发送测试消息（单聊，发送给自己）
+            println!("\n📤 准备发送测试消息...");
+            match client_for_send
+                .send_text_message(
+                    recv_id.clone(), // 接收者 ID（发送给自己）
+                    "Hello from Rust client!".to_string(),
+                    1, // 单聊
+                )
+                .await
+            {
+                Ok(_) => {
+                    println!("✅ 消息发送成功！");
+                }
+                Err(e) => {
+                    println!("❌ 消息发送失败: {}", e);
+                }
+            }
+
+            match client_for_send
+                .send_text_message(
+                    recv_id,
+                    "这是第二条测试消息".to_string(),
+                    1, // 单聊
+                )
+                .await
+            {
+                Ok(_) => {
+                    println!("✅ 第二条消息发送成功！");
+                }
+                Err(e) => {
+                    println!("❌ 第二条消息发送失败: {}", e);
+                }
+            }
+        });
+
+        // 保持主任务运行，让消息处理任务继续执行
+        println!("📥 客户端运行中，等待消息推送...\n");
+
+        // 订阅消息事件（Rust 端）
+        let mut receiver = client.subscribe_messages();
+        while let Some(event) = receiver.recv().await {
+            match event {
+                crate::im::types::MessageEvent::NewMessage {
+                    conversation_id,
+                    message,
+                    ..
+                } => {
+                    println!("📨 收到消息:------------");
+                    println!("   会话ID: {}", conversation_id);
+                    println!(
+                        "   发送者: {} -> 接收者: {}",
+                        message.send_id, message.recv_id
+                    );
+                    println!("   内容类型: {}", message.content_type);
+
+                    use openim_protocol::constant;
+                    if message.content_type == constant::TEXT {
+                      let text_elem: crate::im::msg::TextElem = match serde_json::from_slice(&message.content) {
+                            Ok(elem) => {
+                                elem
+                            },
+                            Err(e) => {
+                                println!("   解析 TextElem 失败: {}", e);
+                                // 可以根据需要选择 continue 或 default
+                                crate::im::msg::TextElem { content: String::new() }
+                            }
+                        };
+                        println!("   内容: {}", text_elem.content);
+
+                    }
+                }
+                _ => {}
             }
         }
     }

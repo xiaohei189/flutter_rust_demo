@@ -43,4 +43,3 @@ pub fn generate_msg_id(user_id: &str) -> String {
         .as_nanos();
     format!("{}{}", user_id, nanos)
 }
-

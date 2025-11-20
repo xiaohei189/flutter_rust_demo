@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../models/chat.dart';
-import '../models/message.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/user_avatar.dart';
+import '../main.dart';
 
 /// 聊天详情页面
 class ChatDetailScreen extends StatefulWidget {
@@ -19,102 +19,96 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<Message> _messages = [];
 
   @override
   void initState() {
     super.initState();
-    _loadMockMessages();
+    // 监听消息服务的变化
+    messageService.addListener(_onMessageServiceChanged);
+    // 加载历史消息
+    _loadMessages();
   }
 
-  void _loadMockMessages() {
-    // 模拟历史消息
-    _messages.addAll([
-      Message(
-        id: '1',
-        senderId: widget.chat.user.id,
-        content: '你好！',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      Message(
-        id: '2',
-        senderId: '1',
-        content: '你好，有什么可以帮你的吗？',
-        timestamp: DateTime.now().subtract(
-          const Duration(hours: 1, minutes: 59),
-        ),
-      ),
-      Message(
-        id: '3',
-        senderId: widget.chat.user.id,
-        content: '我想了解一下你们的产品',
-        timestamp: DateTime.now().subtract(
-          const Duration(hours: 1, minutes: 58),
-        ),
-      ),
-      Message(
-        id: '4',
-        senderId: '1',
-        content: '好的，我可以给你详细介绍一下',
-        timestamp: DateTime.now().subtract(
-          const Duration(hours: 1, minutes: 57),
-        ),
-      ),
-    ]);
+  @override
+  void dispose() {
+    messageService.removeListener(_onMessageServiceChanged);
+    _textController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  void _sendMessage(String text) {
-    if (text.trim().isEmpty) return;
+  void _onMessageServiceChanged() {
+    if (mounted) {
+      setState(() {});
+      // 自动滚动到底部
+      _scrollToBottom();
+    }
+  }
 
-    final message = Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: '1',
-      content: text,
-      timestamp: DateTime.now(),
-    );
-
-    setState(() {
-      _messages.add(message);
+  void _loadMessages() {
+    // 从消息服务获取该会话的消息
+    final messages = messageService.getMessages(widget.chat.id);
+    if (messages.isEmpty) {
+      // 如果没有消息，加载一些模拟数据（可选）
+      // _loadMockMessages();
+    }
+    // 延迟滚动到底部，确保列表已渲染
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
     });
+  }
 
-    _textController.clear();
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
 
-    // 滚动到底部
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+    if (!messageService.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('WebSocket 未连接，无法发送消息'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // 确定接收者ID和会话类型
+      // 从会话ID中提取接收者ID，或者使用聊天对象的用户ID
+      final recvId = widget.chat.user.id;
+      final sessionType = 1; // 单聊，如果是群聊则为 2
+
+      // 发送消息
+      await messageService.sendTextMessage(
+        recvId: recvId,
+        text: text,
+        sessionType: sessionType,
+      );
+
+      _textController.clear();
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('发送消息失败: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
-    });
-
-    // 模拟对方回复
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _messages.add(
-            Message(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              senderId: widget.chat.user.id,
-              content: '收到，谢谢！',
-              timestamp: DateTime.now(),
-            ),
-          );
-        });
-
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
-      }
-    });
+    }
   }
 
   @override
@@ -153,15 +147,44 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         children: [
           // 消息列表
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return MessageBubble(
-                  message: message,
-                  otherUser: widget.chat.user,
+            child: Builder(
+              builder: (context) {
+                final messages = messageService.getMessages(widget.chat.id);
+                
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '暂无消息',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    return MessageBubble(
+                      message: message,
+                      otherUser: widget.chat.user,
+                    );
+                  },
                 );
               },
             ),
@@ -174,10 +197,4 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _textController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
 }

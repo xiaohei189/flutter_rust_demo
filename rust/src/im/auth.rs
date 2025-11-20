@@ -29,25 +29,7 @@ pub struct LoginData {
     pub user_id: String,
 }
 
-/// 登录并获取 token
-/// 
-/// # 参数
-/// - `area_code`: 区号，例如 "+86"
-/// - `phone_number`: 手机号
-/// - `password`: 密码（MD5 加密后的字符串）
-/// - `platform`: 平台 ID，例如 5
-/// 
-/// # 返回
-/// 返回包含 imToken、chatToken 和 userID 的 JSON 字符串
-#[flutter_rust_bridge::frb(sync)]
-pub fn login(area_code: String, phone_number: String, password: String, platform: i32) -> Result<String, String> {
-    let rt = tokio::runtime::Runtime::new().map_err(|e| format!("创建运行时失败: {}", e))?;
-    rt.block_on(async {
-        login_async(area_code, phone_number, password, platform).await
-    })
-}
-
-pub async fn login_async(area_code: String, phone_number: String, password: String, platform: i32) -> Result<String, String> {
+pub async fn login_async(area_code: String, phone_number: String, password: String, platform: i32) -> Result<LoginResponse, String> {
     use uuid::Uuid;
     
     let client = reqwest::Client::new();
@@ -102,20 +84,7 @@ pub async fn login_async(area_code: String, phone_number: String, password: Stri
     let login_resp: LoginResponse = serde_json::from_str(&text)
         .map_err(|e| format!("解析响应失败: {}，原始响应: {}", e, text))?;
     
-    if login_resp.err_code != 0 {
-        return Err(format!("登录失败: {} (错误码: {})", login_resp.err_msg, login_resp.err_code));
-    }
-    
-    match login_resp.data {
-        Some(data) => {
-            let result = serde_json::json!({
-                "imToken": data.im_token,
-                "chatToken": data.chat_token,
-                "userID": data.user_id,
-            });
-            Ok(serde_json::to_string_pretty(&result).unwrap_or_else(|_| result.to_string()))
-        }
-        None => Err("响应中没有数据".to_string()),
-    }
+    return Ok(login_resp);
+
 }
 
