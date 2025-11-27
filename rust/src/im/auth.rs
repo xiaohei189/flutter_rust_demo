@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tracing::{debug, info};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
@@ -44,10 +45,10 @@ pub async fn login_async(area_code: String, phone_number: String, password: Stri
     
     let url = "http://localhost:10008/account/login";
     
-    println!("🔐 正在登录...");
-    println!("   URL: {}", url);
-    println!("   手机号: {}", login_req.phone_number);
-    println!("   OperationID: {}", operation_id);
+    info!("🔐 正在登录...");
+    debug!("   URL: {}", url);
+    debug!("   手机号: {}", login_req.phone_number);
+    debug!("   OperationID: {}", operation_id);
     
     let response = client
         .post(url)
@@ -79,7 +80,7 @@ pub async fn login_async(area_code: String, phone_number: String, password: Stri
         return Err(format!("HTTP 错误 {}: {}", status, text));
     }
     
-    println!("✅ 登录响应: {}", text);
+    debug!("✅ 登录响应: {}", text);
     
     let login_resp: LoginResponse = serde_json::from_str(&text)
         .map_err(|e| format!("解析响应失败: {}，原始响应: {}", e, text))?;

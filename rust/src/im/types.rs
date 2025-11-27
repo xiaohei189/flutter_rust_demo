@@ -112,7 +112,13 @@ impl MessageEvent {
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_send_id(&self) -> Option<String> {
         match self {
-            MessageEvent::NewMessage { message, .. } => message.send_id.clone(),
+            MessageEvent::NewMessage { message, .. } => {
+                if message.send_id.is_empty() {
+                    None
+                } else {
+                    Some(message.send_id.clone())
+                }
+            },
             _ => None,
         }
     }
@@ -121,7 +127,13 @@ impl MessageEvent {
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_recv_id(&self) -> Option<String> {
         match self {
-            MessageEvent::NewMessage { message, .. } => message.recv_id.clone(),
+            MessageEvent::NewMessage { message, .. } => {
+                if message.recv_id.is_empty() {
+                    None
+                } else {
+                    Some(message.recv_id.clone())
+                }
+            },
             _ => None,
         }
     }

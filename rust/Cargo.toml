@@ -20,6 +20,13 @@ base64 = "0.22"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 uuid = { version = "1.10", features = ["v4"] }
 anyhow = "1.0"
+log = "0.4"
+sea-orm = { version = "2.0.0-rc", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros","debug-print"] }
+async-trait = "0.1"
+tracing = "0.1.41"
+tracing-subscriber ={ version = "0.3.20", features = ["env-filter"] }
+
+[dev-dependencies]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
