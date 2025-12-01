@@ -86,6 +86,8 @@ pub struct OpenIMClient {
     received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
     // Rust 端订阅（通过 mpsc channel）
     rust_subscribers: Arc<std::sync::Mutex<Vec<mpsc::UnboundedSender<MessageEvent>>>>,
+    // 会话同步器（用于基于消息通知实时更新会话）
+    conversation_syncer: Option<Arc<ConversationSyncer>>,
 }
 
 impl OpenIMClient {
@@ -97,6 +99,7 @@ impl OpenIMClient {
             writer: None,
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
             rust_subscribers: Arc::new(std::sync::Mutex::new(Vec::new())),
+            conversation_syncer: None,
         }
     }
 
@@ -161,12 +164,16 @@ impl OpenIMClient {
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
         let url = self.build_url(&operation_id);
 
-        info!("🔗 连接到 OpenIM Server");
-        debug!("   用户: {}", self.config.user_id);
-        debug!("   平台: {}", self.config.platform_id);
+        info!(
+            "[Client/WS] 🔗 连接到 OpenIM Server (user={}, platform={})",
+            self.config.user_id, self.config.platform_id
+        );
 
         let (ws_stream, response) = connect_async(&url).await?;
-        info!("✅ WebSocket 连接成功! 状态: {}", response.status());
+        info!(
+            "[Client/WS] ✅ WebSocket 连接成功, 状态: {}",
+            response.status()
+        );
 
         let (write, mut read) = ws_stream.split();
         let writer = Arc::new(Mutex::new(write));
@@ -176,7 +183,7 @@ impl OpenIMClient {
         if let Some(Ok(WsMessage::Text(text))) = read.next().await {
             if let Ok(resp) = serde_json::from_str::<ServerResponse>(&text) {
                 if resp.err_code == 0 {
-                    info!("✅ 服务器响应成功");
+                    info!("[Client/WS] ✅ 服务器连接鉴权成功");
                     self.emit_event(MessageEvent::ConnectionStatus {
                         connected: true,
                         message: "连接成功".to_string(),
@@ -187,31 +194,27 @@ impl OpenIMClient {
             }
         }
 
-        info!("💓 启动心跳");
-        info!("📥 开始监听");
+        info!("[Client/WS] 💓 启动心跳");
+        info!("[Client/WS] 📥 开始监听服务器消息");
 
-        // 启动会话同步（HTTP + 本地 SQLite）
-        let sync_user_id = self.config.user_id.clone();
-        let sync_token = self.config.token.clone();
-        let sync_api_base_url = self.config.api_base_url.clone();
-        let sync_db_url = self.config.conversation_db_url.clone();
+        // 启动会话同步（HTTP + 本地 SQLite），并保存同步器用于后续基于消息通知的实时更新
+        let cfg = ConversationSyncerConfig {
+            user_id: self.config.user_id.clone(),
+            api_base_url: self.config.api_base_url.clone(),
+            token: self.config.token.clone(),
+            db_path: self.config.conversation_db_url.clone(),
+        };
+        let syncer = Arc::new(
+            ConversationSyncer::with_listener(cfg, Arc::new(EmptyConversationListener)).await?
+        );
+        self.conversation_syncer = Some(syncer.clone());
+
         tokio::spawn(async move {
-            use std::sync::Arc;
-            info!("🔄 启动会话增量同步任务");
-            let result: anyhow::Result<()> = async {
-                let cfg = ConversationSyncerConfig {
-                    user_id: sync_user_id,
-                    api_base_url: sync_api_base_url,
-                    token: sync_token,
-                    db_path: sync_db_url,
-                };
-                let syncer = ConversationSyncer::with_listener(cfg, Arc::new(EmptyConversationListener)).await?;
-                syncer.incr_sync_conversations().await
-            }.await;
-
+            info!("[Client/Conv] 🔄 启动会话增量同步任务");
+            let result = syncer.incr_sync_conversations().await;
             match result {
-                Ok(_) => info!("✅ 会话同步完成"),
-                Err(e) => error!("❌ 会话同步失败: {e}"),
+                Ok(_) => info!("[Client/Conv] ✅ 会话同步完成"),
+                Err(e) => error!("[Client/Conv] ❌ 会话同步失败: {e}"),
             }
         });
 
@@ -249,7 +252,7 @@ impl OpenIMClient {
         use openim_protocol::sdkws;
         use std::collections::HashMap;
 
-        debug!("🔧 构造消息");
+        debug!("[Client/Msg] 🔧 构造文本消息");
 
         let now = chrono::Utc::now().timestamp_millis();
         let client_msg_id = generate_msg_id(&self.config.user_id);
@@ -260,8 +263,8 @@ impl OpenIMClient {
         });
         let content_str = serde_json::to_string(&content_json)?;
 
-        debug!("   消息 ID: {}", client_msg_id);
-        debug!("   Content: {}", content_str);
+        debug!("[Client/Msg]   消息 ID: {}", client_msg_id);
+        debug!("[Client/Msg]   Content: {}", content_str);
 
         // 构造 options
         let mut options = HashMap::new();
@@ -306,7 +309,7 @@ impl OpenIMClient {
         // 序列化为 protobuf
         let mut pb_data = Vec::new();
         msg_data.encode(&mut pb_data)?;
-        debug!("   Protobuf: {} bytes", pb_data.len());
+        debug!("[Client/Msg]   Protobuf 大小: {} bytes", pb_data.len());
 
         // 发送请求
         self.send_request(msg_type::WS_SEND_MSG, pb_data).await?;
@@ -333,19 +336,22 @@ impl OpenIMClient {
             data,
         };
 
-        debug!("   请求结构:");
-        debug!("     reqIdentifier: {}", req.req_identifier);
-        debug!("     sendID: {}", req.send_id);
-        debug!("     operationID: {}", operation_id);
-        debug!("     data 长度: {} bytes", req.data.len());
+        debug!("[Client/WS]   请求结构:");
+        debug!("[Client/WS]     reqIdentifier: {}", req.req_identifier);
+        debug!("[Client/WS]     sendID: {}", req.send_id);
+        debug!("[Client/WS]     operationID: {}", operation_id);
+        debug!(
+            "[Client/WS]     data 长度: {} bytes",
+            req.data.len()
+        );
 
         let json = serde_json::to_vec(&req)?;
-        debug!("   JSON 大小: {} bytes", json.len());
+        debug!("[Client/WS]   JSON 大小: {} bytes", json.len());
 
         // 压缩 JSON
         let compressed = compress_gzip(&json)?;
         debug!(
-            "   压缩后大小: {} bytes (压缩率: {:.1}%)",
+            "[Client/WS]   压缩后大小: {} bytes (压缩率: {:.1}%)",
             compressed.len(),
             (compressed.len() as f64 / json.len() as f64) * 100.0
         );
@@ -353,7 +359,7 @@ impl OpenIMClient {
         let mut w = writer.lock().await;
         w.send(WsMessage::Binary(compressed)).await?;
 
-        debug!("   ✅ WebSocket 发送成功");
+        debug!("[Client/WS]   ✅ WebSocket 发送成功");
         Ok(())
     }
 
@@ -364,7 +370,7 @@ impl OpenIMClient {
                 Ok(WsMessage::Text(text)) => {
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
                         if let Some(req_id) = json.get("reqIdentifier") {
-                            info!("📨 文本响应: reqId={}", req_id);
+                            info!("[Client/WS] 📨 文本响应: reqId={}", req_id);
                         }
                     }
                 }
@@ -373,11 +379,11 @@ impl OpenIMClient {
                 }
                 Ok(WsMessage::Ping(_)) | Ok(WsMessage::Pong(_)) => {}
                 Ok(WsMessage::Close(frame)) => {
-                    warn!("👋 连接关闭: {:?}", frame);
+                    warn!("[Client/WS] 👋 连接关闭: {:?}", frame);
                     break;
                 }
                 Err(e) => {
-                    error!("WebSocket 错误: {}", e);
+                    error!("[Client/WS] WebSocket 错误: {}", e);
                     break;
                 }
                 _ => {}
@@ -392,7 +398,7 @@ impl OpenIMClient {
             match decompress_gzip(&data) {
                 Ok(d) => d,
                 Err(e) => {
-                    error!("解压失败: {}", e);
+                    error!("[Client/WS] 解压失败: {}", e);
                     return;
                 }
             }
@@ -404,7 +410,7 @@ impl OpenIMClient {
         let resp = match serde_json::from_slice::<OpenIMResp>(&decompressed) {
             Ok(r) => r,
             Err(e) => {
-                error!("JSON 解析失败: {}", e);
+                error!("[Client/WS] JSON 解析失败: {}", e);
                 return;
             }
         };
@@ -412,22 +418,28 @@ impl OpenIMClient {
         // 处理不同类型
         match resp.req_identifier {
             msg_type::WS_PUSH_MSG => {
-                self.handle_push_message(&resp.data);
+                self.handle_push_message(&resp.data).await;
             }
             msg_type::WS_SEND_MSG => {
-                info!("✅ 消息发送响应:");
+                info!("[Client/Msg] ✅ 收到消息发送响应");
                 let (success, server_msg_id, client_msg_id) = if resp.err_code == 0 {
-                    info!("   发送成功");
+                    info!("[Client/Msg]   发送成功");
                     if let Ok(send_resp) = openim_protocol::msg::SendMsgResp::decode(&resp.data[..])
                     {
-                        info!("   服务器消息ID: {}", send_resp.server_msg_id);
-                        info!("   客户端消息ID: {}", send_resp.client_msg_id);
+                        info!(
+                            "[Client/Msg]   服务器消息ID: {}",
+                            send_resp.server_msg_id
+                        );
+                        info!(
+                            "[Client/Msg]   客户端消息ID: {}",
+                            send_resp.client_msg_id
+                        );
                         (true, send_resp.server_msg_id, send_resp.client_msg_id)
                     } else {
                         (true, String::new(), String::new())
                     }
                 } else {
-                    error!("   发送失败: {}", resp.err_msg);
+                    error!("[Client/Msg]   发送失败: {}", resp.err_msg);
                     (false, String::new(), String::new())
                 };
 
@@ -439,11 +451,14 @@ impl OpenIMClient {
                 });
             }
             msg_type::WS_KICK_ONLINE_MSG => {
-                warn!("⚠️ 被踢下线");
+                warn!("[Client/WS] ⚠️ 被踢下线");
                 self.emit_event(MessageEvent::KickedOffline);
             }
             _ => {
-                debug!("📨 未知消息类型: {}", resp.req_identifier);
+                debug!(
+                    "[Client/WS] 📨 未知消息类型: {}",
+                    resp.req_identifier
+                );
                 self.emit_event(MessageEvent::Other {
                     req_identifier: resp.req_identifier,
                     message: format!("未知消息类型: {}", resp.req_identifier),
@@ -452,7 +467,7 @@ impl OpenIMClient {
         }
     }
 
-    fn handle_push_message(&self, data: &[u8]) {
+    async fn handle_push_message(&self, data: &[u8]) {
         use openim_protocol::sdkws;
 
         if data.is_empty() {
@@ -462,7 +477,7 @@ impl OpenIMClient {
         let push_msg = match sdkws::PushMessages::decode(data) {
             Ok(pm) => pm,
             Err(e) => {
-                error!("Protobuf 解析失败: {}", e);
+                error!("[Client/WS] Protobuf 解析失败: {}", e);
                 return;
             }
         };
@@ -479,6 +494,16 @@ impl OpenIMClient {
                     message: msg.clone(),
                     is_notification: false,
                 });
+
+                // 基于消息通知实时更新会话（未读数、最新消息等）
+                if let Some(syncer) = &self.conversation_syncer {
+                    if let Err(e) = syncer
+                        .on_new_message(conv_id, msg, false)
+                        .await
+                    {
+                        error!("[Client/Conv] on_new_message 更新会话失败: {}", e);
+                    }
+                }
             }
         }
 
@@ -494,6 +519,18 @@ impl OpenIMClient {
                     message: msg.clone(),
                     is_notification: true,
                 });
+
+                if let Some(syncer) = &self.conversation_syncer {
+                    if let Err(e) = syncer
+                        .on_new_message(conv_id, msg, true)
+                        .await
+                    {
+                        error!(
+                            "[Client/Conv] on_new_message 更新通知会话失败: {}",
+                            e
+                        );
+                    }
+                }
             }
         }
     }
@@ -505,32 +542,97 @@ impl OpenIMClient {
  
 
     fn get_content_type_name(content_type: i32) -> &'static str {
+        use openim_protocol::constant;
+
         match content_type {
-            101 => "文本",
-            102 => "图片",
-            103 => "语音",
-            104 => "视频",
-            1201 => "好友申请通过",
-            1203 => "好友申请",
-            1204 => "好友添加",
-            1501 => "群创建",
-            1504 => "成员退出",
-            1508 => "成员被踢",
-            2200 => "已读回执",
-            _ => "其他",
+            // 普通消息
+            constant::TEXT => "[TEXT]",
+            constant::PICTURE => "[PICTURE]",
+            constant::VOICE => "[VOICE]",
+            constant::VIDEO => "[VIDEO]",
+            constant::FILE => "[FILE]",
+            constant::AT_TEXT => "[@TEXT]",
+            constant::MERGER => "[MERGER]",
+            constant::CARD => "[CARD]",
+            constant::LOCATION => "[LOCATION]",
+            constant::CUSTOM => "[CUSTOM]",
+            constant::REVOKE => "[REVOKE]",
+            constant::TYPING => "[TYPING]",
+            constant::QUOTE => "[QUOTE]",
+            constant::ADVANCED_TEXT => "[ADVANCED_TEXT]",
+            constant::MARKDOWN_TEXT => "[MARKDOWN_TEXT]",
+            constant::CUSTOM_NOT_TRIGGER_CONVERSATION => "[CUSTOM_NOT_TRIGGER_CONVERSATION]",
+            constant::CUSTOM_ONLINE_ONLY => "[CUSTOM_ONLINE_ONLY]",
+            constant::REACTION_MESSAGE_MODIFIER => "[REACTION_MODIFIER]",
+            constant::REACTION_MESSAGE_DELETER => "[REACTION_DELETER]",
+
+            // 通用消息类型
+            constant::COMMON => "[COMMON]",
+            constant::GROUP_MSG => "[GROUP_MSG]",
+            constant::SIGNAL_MSG => "[SIGNAL_MSG]",
+            constant::CUSTOM_NOTIFICATION => "[CUSTOM_NOTIFICATION]",
+
+            // 好友相关通知
+            constant::FRIEND_APPLICATION_APPROVED_NOTIFICATION => "[FRIEND_APPLICATION_APPROVED]",
+            constant::FRIEND_APPLICATION_REJECTED_NOTIFICATION => "[FRIEND_APPLICATION_REJECTED]",
+            constant::FRIEND_APPLICATION_NOTIFICATION => "[FRIEND_APPLICATION]",
+            constant::FRIEND_ADDED_NOTIFICATION => "[FRIEND_ADDED]",
+            constant::FRIEND_DELETED_NOTIFICATION => "[FRIEND_DELETED]",
+            constant::FRIEND_REMARK_SET_NOTIFICATION => "[FRIEND_REMARK_SET]",
+            constant::BLACK_ADDED_NOTIFICATION => "[BLACK_ADDED]",
+            constant::BLACK_DELETED_NOTIFICATION => "[BLACK_DELETED]",
+            constant::FRIEND_INFO_UPDATED_NOTIFICATION => "[FRIEND_INFO_UPDATED]",
+            constant::FRIENDS_INFO_UPDATE_NOTIFICATION => "[FRIENDS_INFO_UPDATE]",
+
+            // 会话 & 用户通知
+            constant::CONVERSATION_CHANGE_NOTIFICATION => "[CONVERSATION_CHANGE]",
+            constant::USER_INFO_UPDATED_NOTIFICATION => "[USER_INFO_UPDATED]",
+            constant::USER_STATUS_CHANGE_NOTIFICATION => "[USER_STATUS_CHANGE]",
+
+            // 群相关通知（只列常见的几种）
+            constant::GROUP_CREATED_NOTIFICATION => "[GROUP_CREATED]",
+            constant::GROUP_INFO_SET_NOTIFICATION => "[GROUP_INFO_SET]",
+            constant::JOIN_GROUP_APPLICATION_NOTIFICATION => "[JOIN_GROUP_APPLICATION]",
+            constant::MEMBER_QUIT_NOTIFICATION => "[MEMBER_QUIT]",
+            constant::GROUP_APPLICATION_ACCEPTED_NOTIFICATION => "[GROUP_APPLICATION_ACCEPTED]",
+            constant::GROUP_APPLICATION_REJECTED_NOTIFICATION => "[GROUP_APPLICATION_REJECTED]",
+            constant::GROUP_OWNER_TRANSFERRED_NOTIFICATION => "[GROUP_OWNER_TRANSFERRED]",
+            constant::MEMBER_KICKED_NOTIFICATION => "[MEMBER_KICKED]",
+            constant::MEMBER_INVITED_NOTIFICATION => "[MEMBER_INVITED]",
+            constant::MEMBER_ENTER_NOTIFICATION => "[MEMBER_ENTER]",
+            constant::GROUP_DISMISSED_NOTIFICATION => "[GROUP_DISMISSED]",
+
+            // 已读回执
+            constant::HAS_READ_RECEIPT => "[HAS_READ_RECEIPT]",
+
+            // 大类兜底：通知 / 普通消息
+            _ if content_type >= constant::NOTIFICATION_BEGIN
+                && content_type <= constant::NOTIFICATION_END =>
+            {
+                "[NOTIFICATION]"
+            }
+            _ if content_type >= constant::CONTENT_TYPE_BEGIN
+                && content_type < constant::NOTIFICATION_BEGIN =>
+            {
+                "[MESSAGE]"
+            }
+            _ => "[UNKNOWN]",
         }
     }
 
     fn parse_content(msg: &openim_protocol::sdkws::MsgData) {
         if msg.content.is_empty() {
-            debug!("  (空)");
+            debug!("[Client/Msg]  内容为空");
             return;
         }
 
         let content_str = match String::from_utf8(msg.content.clone()) {
             Ok(s) => s,
             Err(_) => {
-                debug!("  [二进制 {} bytes]", msg.content.len());
+                debug!(
+                    "[Client/Msg]  [二进制 {} bytes]",
+                    msg.content.len()
+                );
                 return;
             }
         };
@@ -541,18 +643,24 @@ impl OpenIMClient {
                 if let Some(detail_str) = json.get("detail").and_then(|v| v.as_str()) {
                     if msg.content_type == 2200 {
                         // 已读回执
-                        if let Ok(detail) = serde_json::from_str::<serde_json::Value>(detail_str) {
-                            info!("  📖 已读回执:");
-                            if let Some(seq) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
-                                info!("     已读到: seq {}", seq);
+                        if let Ok(detail) =
+                            serde_json::from_str::<serde_json::Value>(detail_str)
+                        {
+                            info!("[Client/Msg]  📖 已读回执:");
+                            if let Some(seq) =
+                                detail.get("hasReadSeq").and_then(|v| v.as_i64())
+                            {
+                                info!("[Client/Msg]     已读到: seq {}", seq);
                             }
                         }
                     } else {
                         // 其他通知
-                        if let Ok(detail) = serde_json::from_str::<serde_json::Value>(detail_str) {
+                        if let Ok(detail) =
+                            serde_json::from_str::<serde_json::Value>(detail_str)
+                        {
                             if let Ok(pretty) = serde_json::to_string_pretty(&detail) {
                                 for line in pretty.lines() {
-                                    info!("    {}", line);
+                                    info!("[Client/Msg]    {}", line);
                                 }
                             }
                         }
@@ -563,10 +671,10 @@ impl OpenIMClient {
             // 普通消息
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content_str) {
                 if let Some(text) = json.get("content").and_then(|v| v.as_str()) {
-                    info!("  💬 \"{}\"", text);
+                    info!("[Client/Msg]  💬 \"{}\"", text);
                 }
             } else {
-                info!("  {}", content_str);
+                info!("[Client/Msg]  {}", content_str);
             }
         }
     }
@@ -651,7 +759,7 @@ mod tests {
 
         // 克隆 client 和 user_id 用于发送消息
         let client_for_send = client.clone();
-        let recv_id = "4937393320".to_string();
+        let recv_id = "7226915075".to_string();
 
         // 启动发送消息任务（延迟 3 秒后发送，确保连接稳定）
         tokio::spawn(async move {
@@ -708,7 +816,10 @@ mod tests {
                         "   发送者: {} -> 接收者: {}",
                         message.send_id, message.recv_id
                     );
-                    info!("   内容类型: {}", message.content_type);
+                    info!(
+                        "   内容类型: {}",
+                        super::OpenIMClient::get_content_type_name(message.content_type)
+                    );
 
                     use openim_protocol::constant;
                     if message.content_type == constant::TEXT {
