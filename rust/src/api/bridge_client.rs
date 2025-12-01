@@ -43,6 +43,7 @@ impl OpenIMBridgeClient {
             inner: OpenIMClient::new(config),
         }
     }
+    // login
     pub async fn login_async(area_code: String, phone_number: String, password: String, platform: i32) -> Result<LoginResponse, String> {
         crate::im::auth::login_async(area_code, phone_number, password, platform).await
     }
@@ -189,6 +190,96 @@ impl OpenIMBridgeClient {
     /// 获取所有好友列表
     pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
         self.inner.get_all_friends().await
+    }
+
+    // ===================== 消息发送（多媒体） =====================
+
+    /// 发送图片消息
+    pub async fn send_picture_message(
+        &self,
+        recv_id: String,
+        picture: crate::im::msg::PictureElem,
+        session_type: i32,
+    ) -> Result<()> {
+        self.inner
+            .send_picture_message(recv_id, picture, session_type)
+            .await
+    }
+
+    /// 发送语音消息
+    pub async fn send_sound_message(
+        &self,
+        recv_id: String,
+        sound: crate::im::msg::SoundElem,
+        session_type: i32,
+    ) -> Result<()> {
+        self.inner
+            .send_sound_message(recv_id, sound, session_type)
+            .await
+    }
+
+    /// 发送视频消息
+    pub async fn send_video_message(
+        &self,
+        recv_id: String,
+        video: crate::im::msg::VideoElem,
+        session_type: i32,
+    ) -> Result<()> {
+        self.inner
+            .send_video_message(recv_id, video, session_type)
+            .await
+    }
+
+    /// 发送文件消息
+    pub async fn send_file_message(
+        &self,
+        recv_id: String,
+        file: crate::im::msg::FileElem,
+        session_type: i32,
+    ) -> Result<()> {
+        self.inner
+            .send_file_message(recv_id, file, session_type)
+            .await
+    }
+
+    // ===================== 消息管理（HTTP） =====================
+
+    /// 撤回消息
+    pub async fn revoke_message(
+        &self,
+        conversation_id: String,
+        seq: i64,
+    ) -> Result<()> {
+        self.inner.revoke_message(conversation_id, seq).await
+    }
+
+    /// 删除消息
+    pub async fn delete_messages(
+        &self,
+        conversation_id: String,
+        seqs: Vec<i64>,
+    ) -> Result<()> {
+        self.inner.delete_messages(conversation_id, seqs).await
+    }
+
+    /// 清空会话消息
+    pub async fn clear_conversation_msgs(
+        &self,
+        conversation_ids: Vec<String>,
+    ) -> Result<()> {
+        self.inner.clear_conversation_msgs(conversation_ids).await
+    }
+
+    /// 标记会话为已读
+    pub async fn mark_conversation_as_read(
+        &self,
+        conversation_id: String,
+        has_read_seq: i64,
+        seqs: Vec<i64>,
+    ) -> Result<()> {
+        self.inner
+            .mark_conversation_as_read(conversation_id, has_read_seq, seqs)
+            .await
     }
 }
 

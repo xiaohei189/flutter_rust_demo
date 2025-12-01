@@ -11,6 +11,7 @@ use crate::im::conversation::{
     ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener, LocalConversation,
 };
 use crate::im::friend::{FriendSyncer, FriendSyncerConfig, LocalFriend};
+use crate::im::msg::{PictureElem, SoundElem, VideoElem, FileElem};
 use openim_protocol::constant;
 use tracing::{debug, error, info, warn};
 use anyhow::Result;
@@ -275,22 +276,108 @@ impl OpenIMClient {
         text: String,
         session_type: i32, // 1=单聊, 2=群聊
     ) -> Result<()> {
+        debug!("[Client/Msg] 🔧 构造文本消息");
+
+        let content_json = serde_json::json!({ "content": text });
+        let content_str = serde_json::to_string(&content_json)?;
+
+        self.send_rich_message(
+            recv_id,
+            session_type,
+            openim_protocol::constant::TEXT,
+            content_str.into_bytes(),
+        )
+        .await
+    }
+
+    /// 发送图片消息
+    pub async fn send_picture_message(
+        &self,
+        recv_id: String,
+        picture: PictureElem,
+        session_type: i32,
+    ) -> Result<()> {
+        debug!("[Client/Msg] 🔧 构造图片消息");
+        let content_str = serde_json::to_string(&picture)?;
+        self.send_rich_message(
+            recv_id,
+            session_type,
+            openim_protocol::constant::PICTURE,
+            content_str.into_bytes(),
+        )
+        .await
+    }
+
+    /// 发送语音消息
+    pub async fn send_sound_message(
+        &self,
+        recv_id: String,
+        sound: SoundElem,
+        session_type: i32,
+    ) -> Result<()> {
+        debug!("[Client/Msg] 🔧 构造语音消息");
+        let content_str = serde_json::to_string(&sound)?;
+        self.send_rich_message(
+            recv_id,
+            session_type,
+            openim_protocol::constant::VOICE,
+            content_str.into_bytes(),
+        )
+        .await
+    }
+
+    /// 发送视频消息
+    pub async fn send_video_message(
+        &self,
+        recv_id: String,
+        video: VideoElem,
+        session_type: i32,
+    ) -> Result<()> {
+        debug!("[Client/Msg] 🔧 构造视频消息");
+        let content_str = serde_json::to_string(&video)?;
+        self.send_rich_message(
+            recv_id,
+            session_type,
+            openim_protocol::constant::VIDEO,
+            content_str.into_bytes(),
+        )
+        .await
+    }
+
+    /// 发送文件消息
+    pub async fn send_file_message(
+        &self,
+        recv_id: String,
+        file: FileElem,
+        session_type: i32,
+    ) -> Result<()> {
+        debug!("[Client/Msg] 🔧 构造文件消息");
+        let content_str = serde_json::to_string(&file)?;
+        self.send_rich_message(
+            recv_id,
+            session_type,
+            openim_protocol::constant::FILE,
+            content_str.into_bytes(),
+        )
+        .await
+    }
+
+    /// 通用发送富媒体消息（按 content_type + content bytes）
+    async fn send_rich_message(
+        &self,
+        recv_id: String,
+        session_type: i32,
+        content_type: i32,
+        content: Vec<u8>,
+    ) -> Result<()> {
         use openim_protocol::sdkws;
         use std::collections::HashMap;
-
-        debug!("[Client/Msg] 🔧 构造文本消息");
 
         let now = chrono::Utc::now().timestamp_millis();
         let client_msg_id = generate_msg_id(&self.config.user_id);
 
-        // 构造消息内容
-        let content_json = serde_json::json!({
-            "content": text.clone()
-        });
-        let content_str = serde_json::to_string(&content_json)?;
-
         debug!("[Client/Msg]   消息 ID: {}", client_msg_id);
-        debug!("[Client/Msg]   Content: {}", content_str);
+        debug!("[Client/Msg]   ContentType: {}", content_type);
 
         // 构造 options
         let mut options = HashMap::new();
@@ -318,8 +405,8 @@ impl OpenIMClient {
             sender_face_url: String::new(),
             session_type,
             msg_from: 100,     // UserMsgType
-            content_type: 101, // Text
-            content: content_str.into_bytes(),
+            content_type,
+            content,
             seq: 0,
             send_time: 0,
             create_time: now,
@@ -614,6 +701,220 @@ impl OpenIMClient {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("好友同步器未初始化"))?;
         syncer.get_all_friends().await
+    }
+
+    // ===================== 消息管理相关 HTTP 能力 =====================
+
+    /// 撤回消息（按会话 ID + seq）
+    pub async fn revoke_message(&self, conversation_id: String, seq: i64) -> Result<()> {
+        let url = format!("{}/msg/revoke_msg", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "seq": seq,
+            "userID": self.config.user_id,
+        });
+
+        info!("[Client/Msg] 📡 撤回消息: conversationID={}, seq={}", conversation_id, seq);
+
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            error!(
+                "[Client/Msg] 撤回消息请求失败，HTTP状态: {}, 响应: {}",
+                status, text
+            );
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+
+        let json_value: serde_json::Value = serde_json::from_str(&text)?;
+        if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                let err_msg = json_value
+                    .get("errMsg")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("未知错误");
+                error!(
+                    "[Client/Msg] 撤回消息服务器错误，错误码: {}, 错误信息: {}",
+                    err_code, err_msg
+                );
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+
+        info!("[Client/Msg] ✅ 撤回消息成功");
+        Ok(())
+    }
+
+    /// 删除消息（按会话 ID + 多个 seq）
+    pub async fn delete_messages(&self, conversation_id: String, seqs: Vec<i64>) -> Result<()> {
+        let url = format!("{}/msg/delete_msgs", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "seqs": seqs,
+            "userID": self.config.user_id,
+        });
+
+        info!("[Client/Msg] 📡 删除消息: conversationID={}", conversation_id);
+
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            error!(
+                "[Client/Msg] 删除消息请求失败，HTTP状态: {}, 响应: {}",
+                status, text
+            );
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+
+        let json_value: serde_json::Value = serde_json::from_str(&text)?;
+        if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                let err_msg = json_value
+                    .get("errMsg")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("未知错误");
+                error!(
+                    "[Client/Msg] 删除消息服务器错误，错误码: {}, 错误信息: {}",
+                    err_code, err_msg
+                );
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+
+        info!("[Client/Msg] ✅ 删除消息成功");
+        Ok(())
+    }
+
+    /// 清空指定会话的所有消息
+    pub async fn clear_conversation_msgs(&self, conversation_ids: Vec<String>) -> Result<()> {
+        let url = format!("{}/msg/clear_conversation_msg", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+
+        let req_json = serde_json::json!({
+            "conversationIDs": conversation_ids,
+            "userID": self.config.user_id,
+        });
+
+        info!("[Client/Msg] 📡 清空会话消息");
+
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            error!(
+                "[Client/Msg] 清空会话消息请求失败，HTTP状态: {}, 响应: {}",
+                status, text
+            );
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+
+        let json_value: serde_json::Value = serde_json::from_str(&text)?;
+        if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                let err_msg = json_value
+                    .get("errMsg")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("未知错误");
+                error!(
+                    "[Client/Msg] 清空会话消息服务器错误，错误码: {}, 错误信息: {}",
+                    err_code, err_msg
+                );
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+
+        info!("[Client/Msg] ✅ 清空会话消息成功");
+        Ok(())
+    }
+
+    /// 标记会话为已读（设置 hasReadSeq，并可附带指定 seqs）
+    pub async fn mark_conversation_as_read(
+        &self,
+        conversation_id: String,
+        has_read_seq: i64,
+        seqs: Vec<i64>,
+    ) -> Result<()> {
+        let url = format!("{}/msg/mark_conversation_as_read", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "userID": self.config.user_id,
+            "hasReadSeq": has_read_seq,
+            "seqs": seqs,
+        });
+
+        info!(
+            "[Client/Msg] 📡 标记会话已读: conversationID={}, hasReadSeq={}",
+            conversation_id, has_read_seq
+        );
+
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            error!(
+                "[Client/Msg] 标记会话已读请求失败，HTTP状态: {}, 响应: {}",
+                status, text
+            );
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+
+        let json_value: serde_json::Value = serde_json::from_str(&text)?;
+        if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                let err_msg = json_value
+                    .get("errMsg")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("未知错误");
+                error!(
+                    "[Client/Msg] 标记会话已读服务器错误，错误码: {}, 错误信息: {}",
+                    err_code, err_msg
+                );
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+
+        info!("[Client/Msg] ✅ 标记会话已读成功");
+        Ok(())
     }
 
     fn get_content_type_name(content_type: i32) -> &'static str {
