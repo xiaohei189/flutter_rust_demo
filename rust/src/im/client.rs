@@ -7,7 +7,11 @@
 
 use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
 use crate::im::types::{msg_type, MessageEvent, OpenIMResp, ServerResponse};
-use crate::im::conversation::{ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener};
+use crate::im::conversation::{
+    ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener,
+};
+use crate::im::friend::{FriendSyncer, FriendSyncerConfig};
+use openim_protocol::constant;
 use tracing::{debug, error, info, warn};
 use anyhow::Result;
 use futures_util::stream::{SplitSink, SplitStream};
@@ -88,6 +92,8 @@ pub struct OpenIMClient {
     rust_subscribers: Arc<std::sync::Mutex<Vec<mpsc::UnboundedSender<MessageEvent>>>>,
     // 会话同步器（用于基于消息通知实时更新会话）
     conversation_syncer: Option<Arc<ConversationSyncer>>,
+    // 好友同步器（用于联系人列表增量同步）
+    friend_syncer: Option<Arc<FriendSyncer>>,
 }
 
 impl OpenIMClient {
@@ -100,6 +106,7 @@ impl OpenIMClient {
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
             rust_subscribers: Arc::new(std::sync::Mutex::new(Vec::new())),
             conversation_syncer: None,
+            friend_syncer: None,
         }
     }
 
@@ -215,6 +222,25 @@ impl OpenIMClient {
             match result {
                 Ok(_) => info!("[Client/Conv] ✅ 会话同步完成"),
                 Err(e) => error!("[Client/Conv] ❌ 会话同步失败: {e}"),
+            }
+        });
+
+        // 启动好友同步（HTTP + 本地 SQLite）
+        let friend_cfg = FriendSyncerConfig {
+            user_id: self.config.user_id.clone(),
+            api_base_url: self.config.api_base_url.clone(),
+            token: self.config.token.clone(),
+            db_path: self.config.conversation_db_url.clone(),
+        };
+        let friend_syncer = Arc::new(FriendSyncer::new(friend_cfg).await?);
+        self.friend_syncer = Some(friend_syncer.clone());
+
+        tokio::spawn(async move {
+            info!("[Client/Friend] 🔄 启动好友增量同步任务");
+            let result = friend_syncer.incr_sync_friends().await;
+            match result {
+                Ok(_) => info!("[Client/Friend] ✅ 好友同步完成"),
+                Err(e) => error!("[Client/Friend] ❌ 好友同步失败: {e}"),
             }
         });
 
@@ -507,7 +533,7 @@ impl OpenIMClient {
             }
         }
 
-        // 处理通知
+        // 处理通知（会话 / 好友 / 其他系统通知）
         for (conv_id, pull_msgs) in &push_msg.notification_msgs {
             for msg in &pull_msgs.msgs {
                 if self.is_duplicate_message(&msg.client_msg_id) {
@@ -519,6 +545,25 @@ impl OpenIMClient {
                     message: msg.clone(),
                     is_notification: true,
                 });
+
+                // 好友 / 关系相关通知：触发好友同步
+                if let Some(friend_syncer) = &self.friend_syncer {
+                    // 好友相关通知（1201~1210），包括好友申请、添加/删除、备注修改、黑名单变更、好友信息更新等
+                    if msg.content_type >= constant::FRIEND_APPLICATION_APPROVED_NOTIFICATION
+                        && msg.content_type <= constant::FRIENDS_INFO_UPDATE_NOTIFICATION
+                    {
+                        info!(
+                            "[Client/Friend] 收到好友相关通知 contentType={}，触发好友增量同步",
+                            msg.content_type
+                        );
+                        let syncer = friend_syncer.clone();
+                        tokio::spawn(async move {
+                            if let Err(e) = syncer.incr_sync_friends().await {
+                                error!("[Client/Friend] 好友通知触发同步失败: {}", e);
+                            }
+                        });
+                    }
+                }
 
                 if let Some(syncer) = &self.conversation_syncer {
                     if let Err(e) = syncer

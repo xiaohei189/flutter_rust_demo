@@ -5,6 +5,7 @@ pub mod client;
 pub mod msg;
 pub mod conversation;
 pub mod entities;
+pub mod friend;
 
 // 重新导出认证相关函数（供 api 模块使用）
 pub use auth::login_async;
