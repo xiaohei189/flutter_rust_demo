@@ -1,4 +1,5 @@
 pub mod bridge_client;
+pub mod listeners;
 pub mod simple;
 
 // 重新导出主要类型（桥接客户端对外暴露）

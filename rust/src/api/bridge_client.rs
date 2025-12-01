@@ -1,6 +1,9 @@
 use crate::im::auth::LoginResponse;
 use crate::im::types::MessageEvent;
 use crate::im::client::{OpenIMClient, ClientConfig};
+use crate::im::conversation::LocalConversation;
+use crate::im::friend::LocalFriend;
+use crate::api::listeners::{BridgeConversationListener, BridgeFriendListener};
 use crate::frb_generated::StreamSink;
 use anyhow::Result;
 
@@ -102,6 +105,90 @@ impl OpenIMBridgeClient {
             }
         });
 
+    }
+
+    /// 注册会话监听（回调流）
+    ///
+    /// - `conv_sink`: 会话相关事件（JSON 字符串），包括同步进度、新会话、会话变更、输入状态等
+    /// - `unread_sink`: 总未读数变化（整型）
+    pub fn register_conversation_listener(
+        &mut self,
+        conv_sink: Option<StreamSink<String>>,
+        unread_sink: Option<StreamSink<i32>>,
+    ) {
+        use crate::im::conversation::ConversationSyncerConfig;
+        use crate::im::conversation::ConversationSyncer;
+        use std::sync::Arc;
+
+        let cfg = ConversationSyncerConfig {
+            user_id: self.inner.config.user_id.clone(),
+            api_base_url: self.inner.config.api_base_url.clone(),
+            token: self.inner.config.token.clone(),
+            db_path: self.inner.config.conversation_db_url.clone(),
+        };
+        let listener = Arc::new(BridgeConversationListener::new(conv_sink, unread_sink));
+
+        // 重建会话同步器并替换监听器
+        let rt = tokio::runtime::Handle::current();
+        let client = &mut self.inner;
+        rt.block_on(async {
+            if let Ok(syncer) = ConversationSyncer::with_listener(cfg, listener).await {
+                client.conversation_syncer = Some(Arc::new(syncer));
+            }
+        });
+    }
+
+    /// 注册好友监听（回调流）
+    ///
+    /// - `friend_sink`: 好友列表变化（JSON 数组）
+    /// - `black_sink`: 黑名单列表变化（JSON 数组）
+    /// - `request_sink`: 好友申请列表变化（JSON 数组）
+    pub fn register_friend_listener(
+        &mut self,
+        friend_sink: Option<StreamSink<String>>,
+        black_sink: Option<StreamSink<String>>,
+        request_sink: Option<StreamSink<String>>,
+    ) {
+        use crate::im::friend::{FriendSyncer, FriendSyncerConfig};
+        use std::sync::Arc;
+
+        let cfg = FriendSyncerConfig {
+            user_id: self.inner.config.user_id.clone(),
+            api_base_url: self.inner.config.api_base_url.clone(),
+            token: self.inner.config.token.clone(),
+            db_path: self.inner.config.conversation_db_url.clone(),
+        };
+        let listener =
+            Arc::new(BridgeFriendListener::new(friend_sink, black_sink, request_sink));
+
+        let rt = tokio::runtime::Handle::current();
+        let client = &mut self.inner;
+        rt.block_on(async {
+            if let Ok(syncer) = FriendSyncer::with_listener(cfg, listener).await {
+                client.friend_syncer = Some(Arc::new(syncer));
+            }
+        });
+    }
+
+    /// 获取会话列表（分页）
+    pub async fn get_conversation_list(
+        &self,
+        offset: i64,
+        count: i64,
+    ) -> Result<Vec<LocalConversation>> {
+        self.inner
+            .get_conversation_list(offset as usize, count as usize)
+            .await
+    }
+
+    /// 获取所有会话列表
+    pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
+        self.inner.get_all_conversations().await
+    }
+
+    /// 获取所有好友列表
+    pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
+        self.inner.get_all_friends().await
     }
 }
 

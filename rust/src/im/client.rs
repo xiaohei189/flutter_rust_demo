@@ -8,9 +8,9 @@
 use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
 use crate::im::types::{msg_type, MessageEvent, OpenIMResp, ServerResponse};
 use crate::im::conversation::{
-    ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener,
+    ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener, LocalConversation,
 };
-use crate::im::friend::{FriendSyncer, FriendSyncerConfig};
+use crate::im::friend::{FriendSyncer, FriendSyncerConfig, LocalFriend};
 use openim_protocol::constant;
 use tracing::{debug, error, info, warn};
 use anyhow::Result;
@@ -85,15 +85,15 @@ impl ClientConfig {
 /// 此类型及其所有方法都不会被 flutter_rust_bridge 识别，不会生成 Dart 桥接代码。
 #[derive(Clone)]
 pub struct OpenIMClient {
-    config: ClientConfig,
+    pub(crate) config: ClientConfig,
     writer: Option<Arc<Mutex<WsWriter>>>,
     received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
     // Rust 端订阅（通过 mpsc channel）
     rust_subscribers: Arc<std::sync::Mutex<Vec<mpsc::UnboundedSender<MessageEvent>>>>,
     // 会话同步器（用于基于消息通知实时更新会话）
-    conversation_syncer: Option<Arc<ConversationSyncer>>,
+    pub(crate) conversation_syncer: Option<Arc<ConversationSyncer>>,
     // 好友同步器（用于联系人列表增量同步）
-    friend_syncer: Option<Arc<FriendSyncer>>,
+    pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
 }
 
 impl OpenIMClient {
@@ -584,7 +584,37 @@ impl OpenIMClient {
         let mut set = self.received_msg_ids.lock().unwrap();
         !set.insert(msg_id.to_string())
     }
- 
+
+    /// 获取会话列表（分页）
+    pub async fn get_conversation_list(
+        &self,
+        offset: usize,
+        count: usize,
+    ) -> Result<Vec<LocalConversation>> {
+        let syncer = self
+            .conversation_syncer
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("会话同步器未初始化"))?;
+        syncer.get_conversation_list_split(offset, count).await
+    }
+
+    /// 获取所有会话列表
+    pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
+        let syncer = self
+            .conversation_syncer
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("会话同步器未初始化"))?;
+        syncer.get_all_conversation_list().await
+    }
+
+    /// 获取所有好友列表
+    pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
+        let syncer = self
+            .friend_syncer
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("好友同步器未初始化"))?;
+        syncer.get_all_friends().await
+    }
 
     fn get_content_type_name(content_type: i32) -> &'static str {
         use openim_protocol::constant;

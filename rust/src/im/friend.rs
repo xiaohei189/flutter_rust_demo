@@ -175,7 +175,7 @@ impl FriendSyncer {
     }
 
     /// 从数据库获取所有好友
-    async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
+    pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
         let models = local_friends::Entity::find()
             .filter(local_friends::Column::OwnerUserId.eq(self.config.user_id.clone()))
             .all(&self.db)
