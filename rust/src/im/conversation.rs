@@ -1,19 +1,21 @@
 //! 会话同步模块
-//! 
+//!
 //! 实现 OpenIM SDK 的会话增量同步逻辑，参考 Go 版本的实现
 
+use crate::im::entities::local_conversations;
 use anyhow::{Context, Result};
-use openim_protocol::conversation;
+use async_trait::async_trait;
 use openim_protocol::constant;
+use openim_protocol::conversation;
+use openim_protocol::sdkws;
+use sea_orm::{
+    ColumnTrait, ConnectOptions, Database, DatabaseConnection, EntityTrait, QueryFilter, Set,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use uuid::Uuid;
-use tracing::{debug, error, info, warn};
-use sea_orm::{ColumnTrait, ConnectOptions, Database, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use std::sync::Arc;
-use async_trait::async_trait;
-use crate::im::entities::local_conversations;
-use openim_protocol::sdkws;
+use tracing::{debug, error, info, warn};
+use uuid::Uuid;
 
 /// 本地会话数据结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,25 +115,25 @@ pub struct LocalVersionSync {
 pub trait ConversationListener: Send + Sync {
     /// 同步服务器开始
     async fn on_sync_server_start(&self, reinstalled: bool);
-    
+
     /// 同步服务器完成
     async fn on_sync_server_finish(&self, reinstalled: bool);
-    
+
     /// 同步服务器进度
     async fn on_sync_server_progress(&self, progress: i32);
-    
+
     /// 同步服务器失败
     async fn on_sync_server_failed(&self, reinstalled: bool);
-    
+
     /// 新会话
     async fn on_new_conversation(&self, conversation_list: String);
-    
+
     /// 会话变更
     async fn on_conversation_changed(&self, conversation_list: String);
-    
+
     /// 总未读消息数变更
     async fn on_total_unread_message_count_changed(&self, total_unread_count: i32);
-    
+
     /// 会话用户输入状态变更
     async fn on_conversation_user_input_status_changed(&self, change: String);
 }
@@ -166,9 +168,7 @@ pub struct ConversationSyncerConfig {
     pub db_path: String,
 }
 
-impl ConversationSyncerConfig {
-   
-}
+impl ConversationSyncerConfig {}
 
 /// 会话同步器
 pub struct ConversationSyncer {
@@ -186,7 +186,7 @@ impl ConversationSyncer {
     pub async fn new(config: ConversationSyncerConfig) -> Result<Self> {
         Self::with_listener(config, Arc::new(EmptyConversationListener)).await
     }
-    
+
     /// 创建新的会话同步器（带自定义监听器）
     pub async fn with_listener(
         config: ConversationSyncerConfig,
@@ -198,12 +198,13 @@ impl ConversationSyncer {
             "[ConvSync/DB] 创建会话同步器，用户ID: {}, SQLite数据库: {}",
             config.user_id, db_url
         );
-        let mut opt=ConnectOptions::new(db_url.clone());
+        let mut opt = ConnectOptions::new(db_url.clone());
         opt.sqlx_logging(false);
         // 创建SQLite数据库连接
-        let db = Database::connect(opt).await
+        let db = Database::connect(opt)
+            .await
             .context(format!("连接SQLite数据库失败: {}", db_url))?;
-        
+
         // 初始化数据库表
         let syncer = Self {
             client: reqwest::Client::new(),
@@ -211,18 +212,18 @@ impl ConversationSyncer {
             listener,
             config,
         };
-        
+
         syncer.init_db().await?;
         Ok(syncer)
     }
-    
+
     /// 初始化数据库表结构
     async fn init_db(&self) -> Result<()> {
         info!("[ConvSync/DB] 初始化数据库表结构");
-        
+
         // 使用Sea-ORM的Schema创建表
         use sea_orm::ConnectionTrait;
-        
+
         let sql1 = r#"
             CREATE TABLE IF NOT EXISTS local_conversations (
                 conversation_id TEXT PRIMARY KEY,
@@ -255,7 +256,7 @@ impl ConversationSyncer {
             .execute_unprepared(sql1)
             .await
             .context("创建会话表失败")?;
-        
+
         let sql2 = r#"
             CREATE TABLE IF NOT EXISTS local_version_sync (
                 table_name TEXT NOT NULL,
@@ -269,7 +270,7 @@ impl ConversationSyncer {
             .execute_unprepared(sql2)
             .await
             .context("创建版本同步表失败")?;
-        
+
         info!("[ConvSync/DB] 数据库表初始化完成");
         Ok(())
     }
@@ -280,9 +281,10 @@ impl ConversationSyncer {
             .all(&self.db)
             .await
             .context("查询会话列表失败")?;
-        
-        let conversations: Vec<LocalConversation> = models.into_iter().map(|model| {
-            LocalConversation {
+
+        let conversations: Vec<LocalConversation> = models
+            .into_iter()
+            .map(|model| LocalConversation {
                 conversation_id: model.conversation_id,
                 conversation_type: model.conversation_type,
                 user_id: model.user_id,
@@ -307,9 +309,9 @@ impl ConversationSyncer {
                 min_seq: model.min_seq,
                 is_msg_destruct: model.is_msg_destruct != 0,
                 msg_destruct_time: model.msg_destruct_time,
-            }
-        }).collect();
-        
+            })
+            .collect();
+
         debug!(
             "[ConvSync/DB] 获取本地会话列表，共 {} 个会话",
             conversations.len()
@@ -323,29 +325,27 @@ impl ConversationSyncer {
             .all(&self.db)
             .await
             .context("查询会话ID列表失败")?;
-        
-        let ids: Vec<String> = models.into_iter()
+
+        let ids: Vec<String> = models
+            .into_iter()
             .map(|model| model.conversation_id)
             .collect();
-        
-        debug!(
-            "[ConvSync/DB] 获取本地会话ID列表，共 {} 个",
-            ids.len()
-        );
+
+        debug!("[ConvSync/DB] 获取本地会话ID列表，共 {} 个", ids.len());
         Ok(ids)
     }
-    
+
     /// 从数据库获取版本同步信息
     async fn get_version_sync(&self) -> Result<Option<LocalVersionSync>> {
         use crate::im::entities::local_version_sync::{Column, Entity};
-        
+
         let model = Entity::find()
             .filter(Column::TableName.eq("local_conversations"))
             .filter(Column::EntityId.eq(&self.config.user_id))
             .one(&self.db)
             .await
             .context("查询版本同步信息失败")?;
-        
+
         if let Some(model) = model {
             Ok(Some(LocalVersionSync {
                 table_name: model.table_name,
@@ -357,40 +357,34 @@ impl ConversationSyncer {
             Ok(None)
         }
     }
-    
+
     /// 保存版本同步信息到数据库
     async fn save_version_sync(&self, version_sync: &LocalVersionSync) -> Result<()> {
-        use crate::im::entities::local_version_sync::{ActiveModel, Entity, Column};
-        
+        use crate::im::entities::local_version_sync::{ActiveModel, Column, Entity};
+
         let active_model = ActiveModel {
             table_name: Set(version_sync.table_name.clone()),
             entity_id: Set(version_sync.entity_id.clone()),
             version: Set(version_sync.version as i64),
             version_id: Set(version_sync.version_id.clone()),
         };
-        
+
         Entity::insert(active_model)
             .on_conflict(
-                sea_orm::sea_query::OnConflict::columns([
-                    Column::TableName,
-                    Column::EntityId,
-                ])
-                .update_columns([
-                    Column::Version,
-                    Column::VersionId,
-                ])
-                .to_owned(),
+                sea_orm::sea_query::OnConflict::columns([Column::TableName, Column::EntityId])
+                    .update_columns([Column::Version, Column::VersionId])
+                    .to_owned(),
             )
             .exec(&self.db)
             .await
             .context("保存版本同步信息失败")?;
         Ok(())
     }
-    
+
     /// 插入或更新会话到数据库
     async fn upsert_conversation(&self, conv: &LocalConversation) -> Result<()> {
         use crate::im::entities::local_conversations::ActiveModel;
-        
+
         let active_model = ActiveModel {
             conversation_id: Set(conv.conversation_id.clone()),
             conversation_type: Set(conv.conversation_type),
@@ -417,7 +411,7 @@ impl ConversationSyncer {
             is_msg_destruct: Set(if conv.is_msg_destruct { 1 } else { 0 }),
             msg_destruct_time: Set(conv.msg_destruct_time),
         };
-        
+
         local_conversations::Entity::insert(active_model)
             .on_conflict(
                 sea_orm::sea_query::OnConflict::column(local_conversations::Column::ConversationId)
@@ -503,7 +497,7 @@ impl ConversationSyncer {
         msg: &sdkws::MsgData,
         is_notification: bool,
     ) -> Result<()> {
-        use crate::im::entities::local_conversations::{Entity as local_conv, Column};
+        use crate::im::entities::local_conversations::{Column, Entity as local_conv};
         use sea_orm::QueryFilter;
 
         // 对部分会话相关通知，优先走“通知路由”：触发一次增量会话同步，而不是直接改本地结构，
@@ -610,7 +604,11 @@ impl ConversationSyncer {
         let latest = Self::build_latest_msg_summary(msg);
 
         // 更新时间与未读数（简单策略：非自己发送的消息 + 非通知 => 未读数+1）
-        let send_time = if msg.send_time > 0 { msg.send_time } else { msg.create_time };
+        let send_time = if msg.send_time > 0 {
+            msg.send_time
+        } else {
+            msg.create_time
+        };
         conv.latest_msg = latest;
         conv.latest_msg_send_time = send_time;
         conv.max_seq = conv.max_seq.max(msg.seq);
@@ -622,8 +620,7 @@ impl ConversationSyncer {
         self.upsert_conversation(&conv).await?;
 
         // 触发会话变更/新会话回调
-        let json = serde_json::to_string(&vec![conv.clone()])
-            .unwrap_or_else(|_| "[]".to_string());
+        let json = serde_json::to_string(&vec![conv.clone()]).unwrap_or_else(|_| "[]".to_string());
         if is_new {
             self.listener.on_new_conversation(json).await;
         } else {
@@ -639,11 +636,11 @@ impl ConversationSyncer {
 
         Ok(())
     }
-    
+
     /// 从数据库删除会话
     async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
         use sea_orm::QueryFilter;
-        
+
         local_conversations::Entity::delete_many()
             .filter(local_conversations::Column::ConversationId.eq(conversation_id))
             .exec(&self.db)
@@ -651,30 +648,28 @@ impl ConversationSyncer {
             .context("删除会话失败")?;
         Ok(())
     }
-    
-    /// 获取总未读消息数
-    async fn get_total_unread_count(&self) -> Result<i32> {
-        use sea_orm::QuerySelect;
+
+    /// 获取总未读消息数（公开给上层调用）
+    pub async fn get_total_unread_count(&self) -> Result<i32> {
         use sea_orm::sea_query::Expr;
-        
+        use sea_orm::QuerySelect;
+
         let result: Option<i64> = local_conversations::Entity::find()
             .select_only()
             .column_as(
                 Expr::col(local_conversations::Column::UnreadCount).sum(),
-                "total"
+                "total",
             )
             .into_tuple()
             .one(&self.db)
             .await
             .context("查询总未读数失败")?;
-        
+
         Ok(result.unwrap_or(0) as i32)
     }
 
     /// 从服务器获取每个会话的 MaxSeq 和 HasReadSeq
-    async fn get_has_read_and_max_seqs_from_server(
-        &self,
-    ) -> Result<HashMap<String, (i64, i64)>> {
+    async fn get_has_read_and_max_seqs_from_server(&self) -> Result<HashMap<String, (i64, i64)>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!(
             "{}/msg/get_conversations_has_read_and_max_seq",
@@ -748,14 +743,8 @@ impl ConversationSyncer {
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string())
                 {
-                    let max_seq = item
-                        .get("maxSeq")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(0);
-                    let has_read_seq = item
-                        .get("hasReadSeq")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(0);
+                    let max_seq = item.get("maxSeq").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let has_read_seq = item.get("hasReadSeq").and_then(|v| v.as_i64()).unwrap_or(0);
                     result.insert(conv_id, (max_seq, has_read_seq));
                 }
             }
@@ -862,14 +851,14 @@ impl ConversationSyncer {
 
         // 4. 触发回调
         if !new_conversations.is_empty() {
-            let json = serde_json::to_string(&new_conversations)
-                .unwrap_or_else(|_| "[]".to_string());
+            let json =
+                serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
             self.listener.on_new_conversation(json).await;
         }
 
         if !changed_conversations.is_empty() {
-            let json = serde_json::to_string(&changed_conversations)
-                .unwrap_or_else(|_| "[]".to_string());
+            let json =
+                serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
             self.listener.on_conversation_changed(json).await;
         }
 
@@ -892,7 +881,10 @@ impl ConversationSyncer {
         version_id: &str,
     ) -> Result<conversation::GetIncrementalConversationResp> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!("{}/conversation/get_incremental_conversations", self.config.api_base_url);
+        let url = format!(
+            "{}/conversation/get_incremental_conversations",
+            self.config.api_base_url
+        );
 
         // 手动构建 JSON 请求体
         let req_json = serde_json::json!({
@@ -929,15 +921,12 @@ impl ConversationSyncer {
             );
             return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
         }
-        debug!(
-            "[ConvSync/HTTP] 增量会话同步请求成功，HTTP状态: {}",
-            status
-        );
+        debug!("[ConvSync/HTTP] 增量会话同步请求成功，HTTP状态: {}", status);
 
         // 解析 JSON 响应
         let text = response.text().await.context("读取响应失败")?;
-        let json_value: serde_json::Value = serde_json::from_str(&text)
-            .context("解析 JSON 失败")?;
+        let json_value: serde_json::Value =
+            serde_json::from_str(&text).context("解析 JSON 失败")?;
 
         // 检查错误码
         if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
@@ -955,11 +944,13 @@ impl ConversationSyncer {
         }
 
         // 从 data 字段解析响应
-        let data = json_value.get("data")
+        let data = json_value
+            .get("data")
             .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
 
         // 手动构建 protobuf 响应，直接从 JSON 解析
-        let version_id_str = data.get("versionID")
+        let version_id_str = data
+            .get("versionID")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
@@ -993,11 +984,14 @@ impl ConversationSyncer {
             version: version_value,
             insert: inserts,
             update: updates,
-            delete: data.get("delete")
+            delete: data
+                .get("delete")
                 .and_then(|v| v.as_array())
-                .map(|arr| arr.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default(),
         };
 
@@ -1021,7 +1015,10 @@ impl ConversationSyncer {
         &self,
     ) -> Result<conversation::GetAllConversationsResp> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!("{}/conversation/get_all_conversations", self.config.api_base_url);
+        let url = format!(
+            "{}/conversation/get_all_conversations",
+            self.config.api_base_url
+        );
 
         let req_json = serde_json::json!({
             "ownerUserID": self.config.user_id
@@ -1052,14 +1049,11 @@ impl ConversationSyncer {
             );
             return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
         }
-        debug!(
-            "[ConvSync/HTTP] 全量会话同步请求成功，HTTP状态: {}",
-            status
-        );
+        debug!("[ConvSync/HTTP] 全量会话同步请求成功，HTTP状态: {}", status);
 
         let text = response.text().await.context("读取响应失败")?;
-        let json_value: serde_json::Value = serde_json::from_str(&text)
-            .context("解析 JSON 失败")?;
+        let json_value: serde_json::Value =
+            serde_json::from_str(&text).context("解析 JSON 失败")?;
 
         // 检查错误码
         if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
@@ -1076,7 +1070,8 @@ impl ConversationSyncer {
             }
         }
 
-        let data = json_value.get("data")
+        let data = json_value
+            .get("data")
             .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
 
         let conversations = data
@@ -1089,15 +1084,10 @@ impl ConversationSyncer {
             })
             .unwrap_or_default();
 
-        let resp = conversation::GetAllConversationsResp {
-            conversations,
-        };
+        let resp = conversation::GetAllConversationsResp { conversations };
 
         info!("[ConvSync/HTTP] ✅ 全量会话同步响应");
-        info!(
-            "[ConvSync/HTTP]   会话数: {}",
-            resp.conversations.len()
-        );
+        info!("[ConvSync/HTTP]   会话数: {}", resp.conversations.len());
         debug!(
             "[ConvSync/HTTP]   会话详情: {:?}",
             resp.conversations
@@ -1110,11 +1100,12 @@ impl ConversationSyncer {
     }
 
     /// 从服务器获取所有会话 ID
-    async fn get_all_conversation_ids_from_server(
-        &self,
-    ) -> Result<Vec<String>> {
+    async fn get_all_conversation_ids_from_server(&self) -> Result<Vec<String>> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!("{}/conversation/get_full_conversation_ids", self.config.api_base_url);
+        let url = format!(
+            "{}/conversation/get_full_conversation_ids",
+            self.config.api_base_url
+        );
 
         let req_json = serde_json::json!({
             "userID": self.config.user_id
@@ -1144,14 +1135,11 @@ impl ConversationSyncer {
             );
             return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
         }
-        debug!(
-            "[ConvSync/HTTP] 会话ID列表请求成功，HTTP状态: {}",
-            status
-        );
+        debug!("[ConvSync/HTTP] 会话ID列表请求成功，HTTP状态: {}", status);
 
         let text = response.text().await.context("读取响应失败")?;
-        let json_value: serde_json::Value = serde_json::from_str(&text)
-            .context("解析 JSON 失败")?;
+        let json_value: serde_json::Value =
+            serde_json::from_str(&text).context("解析 JSON 失败")?;
 
         // 检查错误码
         if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
@@ -1183,38 +1171,30 @@ impl ConversationSyncer {
             .unwrap_or_default();
 
         info!("[ConvSync/HTTP] ✅ 会话 ID 列表响应");
-        info!(
-            "[ConvSync/HTTP]   会话ID数: {}",
-            conversation_ids.len()
-        );
-        debug!(
-            "[ConvSync/HTTP]   会话ID列表: {:?}",
-            conversation_ids
-        );
+        info!("[ConvSync/HTTP]   会话ID数: {}", conversation_ids.len());
+        debug!("[ConvSync/HTTP]   会话ID列表: {:?}", conversation_ids);
 
         Ok(conversation_ids)
     }
 
     /// 将服务器会话转换为本地会话
-    fn server_conversation_to_local(
-        server_conv: &conversation::Conversation,
-    ) -> LocalConversation {
+    fn server_conversation_to_local(server_conv: &conversation::Conversation) -> LocalConversation {
         LocalConversation {
             conversation_id: server_conv.conversation_id.clone(),
             conversation_type: server_conv.conversation_type,
             user_id: server_conv.user_id.clone(),
             group_id: server_conv.group_id.clone(),
-            show_name: String::new(), // 需要从用户/群组信息获取
-            face_url: String::new(), // 需要从用户/群组信息获取
+            show_name: String::new(),  // 需要从用户/群组信息获取
+            face_url: String::new(),   // 需要从用户/群组信息获取
             latest_msg: String::new(), // 需要从消息获取
             latest_msg_send_time: 0,   // 需要从消息获取
-            unread_count: 0, // 字段不存在，使用默认值
+            unread_count: 0,           // 字段不存在，使用默认值
             recv_msg_opt: server_conv.recv_msg_opt,
             is_pinned: server_conv.is_pinned,
             is_private_chat: server_conv.is_private_chat,
             burn_duration: server_conv.burn_duration,
             group_at_type: server_conv.group_at_type,
-            is_not_in_group: false, // 字段不存在，使用默认值
+            is_not_in_group: false,      // 字段不存在，使用默认值
             update_unread_count_time: 0, // 字段不存在，使用默认值
             attached_info: server_conv.attached_info.clone(),
             ex: server_conv.ex.clone(),
@@ -1259,10 +1239,7 @@ impl ConversationSyncer {
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32)
                 .unwrap_or(0),
-            is_pinned: v
-                .get("isPinned")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false),
+            is_pinned: v.get("isPinned").and_then(|v| v.as_bool()).unwrap_or(false),
             is_private_chat: v
                 .get("isPrivateChat")
                 .and_then(|v| v.as_bool())
@@ -1287,14 +1264,8 @@ impl ConversationSyncer {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string(),
-            max_seq: v
-                .get("maxSeq")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0),
-            min_seq: v
-                .get("minSeq")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0),
+            max_seq: v.get("maxSeq").and_then(|v| v.as_i64()).unwrap_or(0),
+            min_seq: v.get("minSeq").and_then(|v| v.as_i64()).unwrap_or(0),
             is_msg_destruct: v
                 .get("isMsgDestruct")
                 .and_then(|v| v.as_bool())
@@ -1321,7 +1292,7 @@ impl ConversationSyncer {
             server_conversations.len(),
             local_conversations.len()
         );
-        
+
         let local_map: HashMap<String, LocalConversation> = local_conversations
             .into_iter()
             .map(|c| (c.conversation_id.clone(), c))
@@ -1331,7 +1302,7 @@ impl ConversationSyncer {
             .into_iter()
             .map(|c| (c.conversation_id.clone(), c))
             .collect();
-        
+
         let mut new_conversations = Vec::new();
         let mut changed_conversations = Vec::new();
         let mut insert_count = 0;
@@ -1367,9 +1338,7 @@ impl ConversationSyncer {
                 );
                 debug!(
                     "[ConvSync]   会话详情 - 置顶: {}, 私聊: {}, 未读数: {}",
-                    server_conv.is_pinned,
-                    server_conv.is_private_chat,
-                    server_conv.unread_count
+                    server_conv.is_pinned, server_conv.is_private_chat, server_conv.unread_count
                 );
                 self.upsert_conversation(server_conv).await?;
                 new_conversations.push(server_conv.clone());
@@ -1388,17 +1357,17 @@ impl ConversationSyncer {
 
         // 触发回调
         if !new_conversations.is_empty() {
-            let json = serde_json::to_string(&new_conversations)
-                .unwrap_or_else(|_| "[]".to_string());
+            let json =
+                serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
             self.listener.on_new_conversation(json).await;
         }
-        
+
         if !changed_conversations.is_empty() {
-            let json = serde_json::to_string(&changed_conversations)
-                .unwrap_or_else(|_| "[]".to_string());
+            let json =
+                serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
             self.listener.on_conversation_changed(json).await;
         }
-        
+
         // 更新总未读数回调
         if insert_count > 0 || update_count > 0 || delete_count > 0 {
             if let Ok(total_unread) = self.get_total_unread_count().await {
@@ -1438,7 +1407,7 @@ impl ConversationSyncer {
 
         // 1. 获取本地版本信息
         let version_sync = self.get_version_sync().await?;
-        
+
         if let Some(ref vs) = version_sync {
             debug!(
                 "[ConvSync] 本地版本信息 - 版本: {}, 版本ID: {}",
@@ -1500,7 +1469,8 @@ impl ConversationSyncer {
                 .collect();
 
             // 同步数据
-            self.sync_conversations(server_convs.clone(), local_conversations.clone()).await?;
+            self.sync_conversations(server_convs.clone(), local_conversations.clone())
+                .await?;
 
             // 更新版本信息（这里简化处理，实际应该从响应中获取）
             let new_version = LocalVersionSync {
@@ -1522,13 +1492,16 @@ impl ConversationSyncer {
             "[ConvSync] 使用增量同步，版本: {}, 版本ID: {}",
             version, version_id
         );
-        
+
         // 触发同步开始回调（非重新安装）
         self.listener.on_sync_server_start(false).await;
         self.listener.on_sync_server_progress(10).await;
 
         // 5. 调用增量同步接口
-        let resp = match self.get_incremental_conversation_from_server(version, &version_id).await {
+        let resp = match self
+            .get_incremental_conversation_from_server(version, &version_id)
+            .await
+        {
             Ok(resp) => resp,
             Err(e) => {
                 error!("[ConvSync] 增量同步失败: {}", e);
@@ -1536,7 +1509,7 @@ impl ConversationSyncer {
                 return Err(e);
             }
         };
-        
+
         self.listener.on_sync_server_progress(50).await;
 
         // 6. 检查是否全量同步
@@ -1549,43 +1522,28 @@ impl ConversationSyncer {
         let mut server_conversations = Vec::new();
 
         // 处理插入
-        info!(
-            "[ConvSync] 处理新增会话，数量: {}",
-            resp.insert.len()
-        );
+        info!("[ConvSync] 处理新增会话，数量: {}", resp.insert.len());
         for server_conv in resp.insert.iter() {
-            debug!(
-                "[ConvSync]   新增会话ID: {}",
-                server_conv.conversation_id
-            );
+            debug!("[ConvSync]   新增会话ID: {}", server_conv.conversation_id);
             server_conversations.push(Self::server_conversation_to_local(server_conv));
         }
 
         // 处理更新
-        info!(
-            "[ConvSync] 处理更新会话，数量: {}",
-            resp.update.len()
-        );
+        info!("[ConvSync] 处理更新会话，数量: {}", resp.update.len());
         for server_conv in resp.update.iter() {
-            debug!(
-                "[ConvSync]   更新会话ID: {}",
-                server_conv.conversation_id
-            );
+            debug!("[ConvSync]   更新会话ID: {}", server_conv.conversation_id);
             server_conversations.push(Self::server_conversation_to_local(server_conv));
         }
 
         // 8. 同步数据
         self.sync_conversations(server_conversations, local_conversations)
             .await?;
-        
+
         self.listener.on_sync_server_progress(80).await;
 
         // 9. 处理删除
         if !resp.delete.is_empty() {
-            info!(
-                "[ConvSync] 处理删除会话，数量: {}",
-                resp.delete.len()
-            );
+            info!("[ConvSync] 处理删除会话，数量: {}", resp.delete.len());
             for id in resp.delete.iter() {
                 warn!("[ConvSync]   删除会话: {}", id);
                 self.delete_conversation(id).await?;
@@ -1594,7 +1552,11 @@ impl ConversationSyncer {
 
         // 10. 更新版本信息
         if !resp.version_id.is_empty() {
-            let new_version = if resp.version > 0 { resp.version } else { version + 1 };
+            let new_version = if resp.version > 0 {
+                resp.version
+            } else {
+                version + 1
+            };
             let new_version_sync = LocalVersionSync {
                 table_name: "local_conversations".to_string(),
                 entity_id: self.config.user_id.clone(),
@@ -1607,16 +1569,13 @@ impl ConversationSyncer {
                 version, new_version_sync.version, new_version_sync.version_id
             );
         }
-        
+
         self.listener.on_sync_server_progress(100).await;
         self.listener.on_sync_server_finish(false).await;
 
         // 11. 增量同步后按 Seq 校正未读数（错误不影响整体结果）
         if let Err(e) = self.sync_unread_by_seq().await {
-            warn!(
-                "[ConvSync/Seq] 增量同步后按 Seq 校正未读数失败: {}",
-                e
-            );
+            warn!("[ConvSync/Seq] 增量同步后按 Seq 校正未读数失败: {}", e);
         }
 
         info!("[ConvSync] ✅ 增量同步完成\n");
@@ -1626,7 +1585,7 @@ impl ConversationSyncer {
     /// 全量同步会话
     async fn full_sync(&self) -> Result<()> {
         info!("[ConvSync] 🔄 开始全量同步会话...");
-        
+
         let reinstalled = self.get_all_conversation_ids().await?.is_empty();
         debug!(
             "[ConvSync] full_sync -> on_sync_server_start(reinstalled={})",
@@ -1670,10 +1629,7 @@ impl ConversationSyncer {
 
         // 3. 获取本地会话
         let local_conversations = self.get_all_conversations().await?;
-        info!(
-            "[ConvSync] 本地已有 {} 个会话",
-            local_conversations.len()
-        );
+        info!("[ConvSync] 本地已有 {} 个会话", local_conversations.len());
 
         // 4. 同步数据
         self.sync_conversations(server_conversations, local_conversations)
@@ -1693,7 +1649,7 @@ impl ConversationSyncer {
             "[ConvSync] 已更新版本信息 - 版本: {}, 版本ID: {}",
             new_version.version, new_version.version_id
         );
-        
+
         debug!("[ConvSync] full_sync -> on_sync_server_progress(100)");
         self.listener.on_sync_server_progress(100).await;
         debug!(
@@ -1704,10 +1660,7 @@ impl ConversationSyncer {
 
         // 6. 全量同步后按 Seq 校正未读数（错误不影响整体结果）
         if let Err(e) = self.sync_unread_by_seq().await {
-            warn!(
-                "[ConvSync/Seq] 全量同步后按 Seq 校正未读数失败: {}",
-                e
-            );
+            warn!("[ConvSync/Seq] 全量同步后按 Seq 校正未读数失败: {}", e);
         }
 
         info!("[ConvSync] ✅ 全量同步完成\n");
@@ -1720,14 +1673,11 @@ impl ConversationSyncer {
         offset: usize,
         count: usize,
     ) -> Result<Vec<LocalConversation>> {
-        debug!(
-            "[ConvSync] 获取会话列表，偏移: {}, 数量: {}",
-            offset, count
-        );
-        
+        debug!("[ConvSync] 获取会话列表，偏移: {}, 数量: {}", offset, count);
+
         // 从数据库查询所有会话
         let mut list = self.get_all_conversations().await?;
-        
+
         // 过滤掉无消息时间的会话
         list.retain(|c| c.latest_msg_send_time > 0);
         debug!(
@@ -1772,8 +1722,8 @@ impl ConversationSyncer {
 
 #[cfg(test)]
 mod tests {
-    use crate::im::login_async;
     use super::*;
+    use crate::im::login_async;
     use std::sync::Once;
     static INIT_LOGGER: Once = Once::new();
 
@@ -1835,7 +1785,8 @@ mod tests {
             db_path: "sqlite://test_conversation.db?mode=rwc".to_string(),
         };
 
-        let syncer = ConversationSyncer::with_listener(config, Arc::new(TestConversationListener)).await?;
+        let syncer =
+            ConversationSyncer::with_listener(config, Arc::new(TestConversationListener)).await?;
         syncer.incr_sync_conversations().await?;
 
         // tokio::time::sleep(std::time::Duration::from_secs(100)).await;
@@ -1865,11 +1816,13 @@ mod tests {
             info!("会话变更: conversation_list={}", conversation_list);
         }
         async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-            info!("总未读消息数变更: total_unread_count={}", total_unread_count);
+            info!(
+                "总未读消息数变更: total_unread_count={}",
+                total_unread_count
+            );
         }
         async fn on_conversation_user_input_status_changed(&self, change: String) {
             info!("会话用户输入状态变更: change={}", change);
         }
     }
 }
-

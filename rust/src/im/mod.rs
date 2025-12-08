@@ -1,11 +1,12 @@
-pub mod types;
-pub mod serialization;
 pub mod auth;
 pub mod client;
-pub mod msg;
 pub mod conversation;
 pub mod entities;
 pub mod friend;
+pub mod message_store;
+pub mod msg;
+pub mod serialization;
+pub mod types;
 
 // 重新导出认证相关函数（供 api 模块使用）
 pub use auth::login_async;
@@ -14,4 +15,3 @@ pub use auth::login_async;
 pub use conversation::{
     ConversationSyncer, ConversationSyncerConfig, LocalConversation, LocalVersionSync,
 };
-

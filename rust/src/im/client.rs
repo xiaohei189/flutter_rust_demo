@@ -5,19 +5,24 @@
 //!
 //! 对外暴露的接口请使用 `bridge_client.rs` 中的 `OpenIMBridgeClient`。
 
+use crate::im::conversation::{
+    ConversationListener, ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener,
+    LocalConversation,
+};
+use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig, LocalFriend};
+use crate::im::message_store::MessageStore;
+use crate::im::msg::{
+    AtElem, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem,
+    QuoteElem, SoundElem, VideoElem,
+};
 use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
 use crate::im::types::{msg_type, MessageEvent, OpenIMResp, ServerResponse};
-use crate::im::conversation::{
-    ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener, LocalConversation,
-};
-use crate::im::friend::{FriendSyncer, FriendSyncerConfig, LocalFriend};
-use crate::im::msg::{PictureElem, SoundElem, VideoElem, FileElem};
-use openim_protocol::constant;
-use tracing::{debug, error, info, warn};
 use anyhow::Result;
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::{SinkExt, StreamExt};
+use openim_protocol::constant;
 use openim_protocol::Message as ProtobufMessage;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
@@ -26,6 +31,7 @@ use tokio::time::interval;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::{connect_async, tungstenite::Message as WsMessage};
+use tracing::{debug, error, info, warn};
 
 /// WebSocket 写入端类型别名
 pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
@@ -95,9 +101,70 @@ pub struct OpenIMClient {
     pub(crate) conversation_syncer: Option<Arc<ConversationSyncer>>,
     // 好友同步器（用于联系人列表增量同步）
     pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
+    // 会话监听器（可由调用方注册）
+    conversation_listener: Arc<dyn ConversationListener>,
+    // 好友监听器（可由调用方注册）
+    friend_listener: Arc<dyn FriendListener>,
+    // 消息存储（本地 SQLite，sqlx 驱动）
+    pub(crate) message_store: Option<Arc<MessageStore>>,
 }
 
 impl OpenIMClient {
+    /// 注册会话监听器
+    pub fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
+        self.conversation_listener = listener.clone();
+
+        // 若同步器已存在，则用新的监听器重建同步器，保持回调一致
+        if self.conversation_syncer.is_some() {
+            if let Ok(handle) = tokio::runtime::Handle::try_current() {
+                let cfg = ConversationSyncerConfig {
+                    user_id: self.config.user_id.clone(),
+                    api_base_url: self.config.api_base_url.clone(),
+                    token: self.config.token.clone(),
+                    db_path: self.config.conversation_db_url.clone(),
+                };
+                let listener = listener.clone();
+                let syncer_slot = &mut self.conversation_syncer;
+                handle.block_on(async {
+                    if let Ok(syncer) =
+                        ConversationSyncer::with_listener(cfg, listener.clone()).await
+                    {
+                        *syncer_slot = Some(Arc::new(syncer));
+                    } else {
+                        // 保持原同步器，出现错误仅记录日志
+                        tracing::error!("[Client/Conv] 重建会话同步器失败，保持原同步器");
+                    }
+                });
+            }
+        }
+    }
+
+    /// 注册好友监听器
+    pub fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
+        self.friend_listener = listener.clone();
+
+        // 若同步器已存在，则用新的监听器重建同步器，保持回调一致
+        if self.friend_syncer.is_some() {
+            if let Ok(handle) = tokio::runtime::Handle::try_current() {
+                let cfg = FriendSyncerConfig {
+                    user_id: self.config.user_id.clone(),
+                    api_base_url: self.config.api_base_url.clone(),
+                    token: self.config.token.clone(),
+                    db_path: self.config.conversation_db_url.clone(),
+                };
+                let listener = listener.clone();
+                let syncer_slot = &mut self.friend_syncer;
+                handle.block_on(async {
+                    if let Ok(syncer) = FriendSyncer::with_listener(cfg, listener.clone()).await {
+                        *syncer_slot = Some(Arc::new(syncer));
+                    } else {
+                        tracing::error!("[Client/Friend] 重建好友同步器失败，保持原同步器");
+                    }
+                });
+            }
+        }
+    }
+
     /// 创建新的客户端
     /// - `config`: 客户端配置
     pub fn new(config: ClientConfig) -> Self {
@@ -108,6 +175,9 @@ impl OpenIMClient {
             rust_subscribers: Arc::new(std::sync::Mutex::new(Vec::new())),
             conversation_syncer: None,
             friend_syncer: None,
+            conversation_listener: Arc::new(EmptyConversationListener),
+            friend_listener: Arc::new(crate::im::friend::EmptyFriendListener),
+            message_store: None,
         }
     }
 
@@ -213,7 +283,7 @@ impl OpenIMClient {
             db_path: self.config.conversation_db_url.clone(),
         };
         let syncer = Arc::new(
-            ConversationSyncer::with_listener(cfg, Arc::new(EmptyConversationListener)).await?
+            ConversationSyncer::with_listener(cfg, self.conversation_listener.clone()).await?,
         );
         self.conversation_syncer = Some(syncer.clone());
 
@@ -233,7 +303,8 @@ impl OpenIMClient {
             token: self.config.token.clone(),
             db_path: self.config.conversation_db_url.clone(),
         };
-        let friend_syncer = Arc::new(FriendSyncer::new(friend_cfg).await?);
+        let friend_syncer =
+            Arc::new(FriendSyncer::with_listener(friend_cfg, self.friend_listener.clone()).await?);
         self.friend_syncer = Some(friend_syncer.clone());
 
         tokio::spawn(async move {
@@ -244,6 +315,16 @@ impl OpenIMClient {
                 Err(e) => error!("[Client/Friend] ❌ 好友同步失败: {e}"),
             }
         });
+
+        // 初始化消息存储（单表，使用 sqlx）
+        let store = Arc::new(
+            MessageStore::new(
+                &self.config.conversation_db_url,
+                self.config.user_id.clone(),
+            )
+            .await?,
+        );
+        self.message_store = Some(store);
 
         // 启动心跳
         let writer_for_heartbeat = writer.clone();
@@ -286,6 +367,9 @@ impl OpenIMClient {
             session_type,
             openim_protocol::constant::TEXT,
             content_str.into_bytes(),
+            None,
+            false,
+            None,
         )
         .await
     }
@@ -304,6 +388,9 @@ impl OpenIMClient {
             session_type,
             openim_protocol::constant::PICTURE,
             content_str.into_bytes(),
+            None,
+            false,
+            None,
         )
         .await
     }
@@ -322,6 +409,9 @@ impl OpenIMClient {
             session_type,
             openim_protocol::constant::VOICE,
             content_str.into_bytes(),
+            None,
+            false,
+            None,
         )
         .await
     }
@@ -340,6 +430,9 @@ impl OpenIMClient {
             session_type,
             openim_protocol::constant::VIDEO,
             content_str.into_bytes(),
+            None,
+            false,
+            None,
         )
         .await
     }
@@ -358,20 +451,90 @@ impl OpenIMClient {
             session_type,
             openim_protocol::constant::FILE,
             content_str.into_bytes(),
+            None,
+            false,
+            None,
         )
         .await
     }
 
-    /// 通用发送富媒体消息（按 content_type + content bytes）
+    /// SendMessage NotOss
+    pub async fn send_message_not_oss(
+        &self,
+        recv_id: String,
+        group_id: String,
+        message: MsgStruct,
+        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
+        is_online_only: bool,
+    ) -> Result<()> {
+        self.send_message_internal(
+            recv_id,
+            group_id,
+            message,
+            offline_push_info,
+            is_online_only,
+            true,
+            None,
+        )
+        .await
+    }
+
+    /// SendMessage（默认支持 oss）
+    pub async fn send_message(
+        &self,
+        recv_id: String,
+        group_id: String,
+        message: MsgStruct,
+        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
+        is_online_only: bool,
+    ) -> Result<()> {
+        self.send_message_internal(
+            recv_id,
+            group_id,
+            message,
+            offline_push_info,
+            is_online_only,
+            false,
+            None,
+        )
+        .await
+    }
+
+    /// SendMessage（允许自定义 options 覆盖）
+    pub async fn send_message_with_options(
+        &self,
+        recv_id: String,
+        group_id: String,
+        message: MsgStruct,
+        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
+        is_online_only: bool,
+        options_override: Option<HashMap<String, bool>>,
+    ) -> Result<()> {
+        self.send_message_internal(
+            recv_id,
+            group_id,
+            message,
+            offline_push_info,
+            is_online_only,
+            false,
+            options_override,
+        )
+        .await
+    }
+
+    /// 通用发送（content_type + content bytes + offlinePush/options）
+    #[allow(clippy::too_many_arguments)]
     async fn send_rich_message(
         &self,
         recv_id: String,
         session_type: i32,
         content_type: i32,
         content: Vec<u8>,
+        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
+        is_online_only: bool,
+        options_override: Option<HashMap<String, bool>>,
     ) -> Result<()> {
         use openim_protocol::sdkws;
-        use std::collections::HashMap;
 
         let now = chrono::Utc::now().timestamp_millis();
         let client_msg_id = generate_msg_id(&self.config.user_id);
@@ -380,14 +543,7 @@ impl OpenIMClient {
         debug!("[Client/Msg]   ContentType: {}", content_type);
 
         // 构造 options
-        let mut options = HashMap::new();
-        options.insert("history".to_string(), true);
-        options.insert("persistent".to_string(), true);
-        options.insert("senderSync".to_string(), true);
-        options.insert("conversationUpdate".to_string(), true);
-        options.insert("senderConversationUpdate".to_string(), true);
-        options.insert("unreadCount".to_string(), true);
-        options.insert("offlinePush".to_string(), true);
+        let options = self.build_options(is_online_only, options_override);
 
         // 构造 MsgData
         let msg_data = sdkws::MsgData {
@@ -404,7 +560,7 @@ impl OpenIMClient {
             sender_nickname: String::new(),
             sender_face_url: String::new(),
             session_type,
-            msg_from: 100,     // UserMsgType
+            msg_from: 100, // UserMsgType
             content_type,
             content,
             seq: 0,
@@ -413,7 +569,7 @@ impl OpenIMClient {
             status: 1,
             is_read: false,
             options,
-            offline_push_info: None,
+            offline_push_info,
             at_user_id_list: vec![],
             attached_info: String::new(),
             ex: String::new(),
@@ -425,9 +581,91 @@ impl OpenIMClient {
         debug!("[Client/Msg]   Protobuf 大小: {} bytes", pb_data.len());
 
         // 发送请求
-        self.send_request(msg_type::WS_SEND_MSG, pb_data).await?;
+        self.send_request(
+            if is_online_only {
+                msg_type::WS_SEND_MSG_NOT_OSS
+            } else {
+                msg_type::WS_SEND_MSG
+            },
+            pb_data,
+        )
+        .await?;
 
         info!("✅ 消息已发送，等待响应");
+        Ok(())
+    }
+
+    /// 高级发送封装：MsgStruct -> protobuf MsgData
+    #[allow(clippy::too_many_arguments)]
+    async fn send_message_internal(
+        &self,
+        recv_id: String,
+        group_id: String,
+        message: MsgStruct,
+        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
+        is_online_only: bool,
+        not_oss: bool,
+        options_override: Option<HashMap<String, bool>>,
+    ) -> Result<()> {
+        let content = message
+            .content
+            .clone()
+            .map(|s| s.into_bytes())
+            .unwrap_or_default();
+        let session_type = if !group_id.is_empty() { 2 } else { 1 };
+
+        // options（按 openim-core 默认，结合 onlineOnly，可覆盖）
+        let options = self.build_options(is_online_only, options_override);
+
+        let now = chrono::Utc::now().timestamp_millis();
+        let msg_data = openim_protocol::sdkws::MsgData {
+            send_id: self.config.user_id.clone(),
+            recv_id: recv_id.clone(),
+            group_id: group_id.clone(),
+            client_msg_id: message
+                .client_msg_id
+                .clone()
+                .unwrap_or_else(|| generate_msg_id(&self.config.user_id)),
+            server_msg_id: message.server_msg_id.clone().unwrap_or_default(),
+            sender_platform_id: self.config.platform_id,
+            sender_nickname: message.sender_nickname.clone().unwrap_or_default(),
+            sender_face_url: message.sender_face_url.clone().unwrap_or_default(),
+            session_type,
+            msg_from: message.msg_from,
+            content_type: message.content_type,
+            content,
+            seq: message.seq,
+            send_time: if message.send_time > 0 {
+                message.send_time
+            } else {
+                now
+            },
+            create_time: if message.create_time > 0 {
+                message.create_time
+            } else {
+                now
+            },
+            status: message.status,
+            is_read: message.is_read,
+            options,
+            offline_push_info,
+            at_user_id_list: vec![],
+            attached_info: message.attached_info.clone().unwrap_or_default(),
+            ex: message.ex.clone().unwrap_or_default(),
+        };
+
+        let mut pb_data = Vec::new();
+        msg_data.encode(&mut pb_data)?;
+
+        self.send_request(
+            if not_oss {
+                msg_type::WS_SEND_MSG_NOT_OSS
+            } else {
+                msg_type::WS_SEND_MSG
+            },
+            pb_data,
+        )
+        .await?;
         Ok(())
     }
 
@@ -453,10 +691,7 @@ impl OpenIMClient {
         debug!("[Client/WS]     reqIdentifier: {}", req.req_identifier);
         debug!("[Client/WS]     sendID: {}", req.send_id);
         debug!("[Client/WS]     operationID: {}", operation_id);
-        debug!(
-            "[Client/WS]     data 长度: {} bytes",
-            req.data.len()
-        );
+        debug!("[Client/WS]     data 长度: {} bytes", req.data.len());
 
         let json = serde_json::to_vec(&req)?;
         debug!("[Client/WS]   JSON 大小: {} bytes", json.len());
@@ -474,6 +709,28 @@ impl OpenIMClient {
 
         debug!("[Client/WS]   ✅ WebSocket 发送成功");
         Ok(())
+    }
+
+    /// 构造默认 options，并允许外部覆盖
+    fn build_options(
+        &self,
+        is_online_only: bool,
+        override_map: Option<HashMap<String, bool>>,
+    ) -> HashMap<String, bool> {
+        let mut options = HashMap::new();
+        options.insert("history".to_string(), true);
+        options.insert("persistent".to_string(), true);
+        options.insert("senderSync".to_string(), true);
+        options.insert("conversationUpdate".to_string(), true);
+        options.insert("senderConversationUpdate".to_string(), true);
+        options.insert("unreadCount".to_string(), !is_online_only);
+        options.insert("offlinePush".to_string(), !is_online_only);
+        if let Some(extra) = override_map {
+            for (k, v) in extra {
+                options.insert(k, v);
+            }
+        }
+        options
     }
 
     /// 处理接收消息（事件循环）
@@ -539,14 +796,8 @@ impl OpenIMClient {
                     info!("[Client/Msg]   发送成功");
                     if let Ok(send_resp) = openim_protocol::msg::SendMsgResp::decode(&resp.data[..])
                     {
-                        info!(
-                            "[Client/Msg]   服务器消息ID: {}",
-                            send_resp.server_msg_id
-                        );
-                        info!(
-                            "[Client/Msg]   客户端消息ID: {}",
-                            send_resp.client_msg_id
-                        );
+                        info!("[Client/Msg]   服务器消息ID: {}", send_resp.server_msg_id);
+                        info!("[Client/Msg]   客户端消息ID: {}", send_resp.client_msg_id);
                         (true, send_resp.server_msg_id, send_resp.client_msg_id)
                     } else {
                         (true, String::new(), String::new())
@@ -568,10 +819,7 @@ impl OpenIMClient {
                 self.emit_event(MessageEvent::KickedOffline);
             }
             _ => {
-                debug!(
-                    "[Client/WS] 📨 未知消息类型: {}",
-                    resp.req_identifier
-                );
+                debug!("[Client/WS] 📨 未知消息类型: {}", resp.req_identifier);
                 self.emit_event(MessageEvent::Other {
                     req_identifier: resp.req_identifier,
                     message: format!("未知消息类型: {}", resp.req_identifier),
@@ -601,19 +849,80 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                // 直接使用 MsgData 发送事件
-                self.emit_event(MessageEvent::NewMessage {
-                    conversation_id: conv_id.clone(),
-                    message: msg.clone(),
-                    is_notification: false,
-                });
+                // 撤回 / 已读回执 / reaction / typing 等特殊事件
+                if msg.content_type == constant::REVOKE {
+                    self.emit_event(MessageEvent::MessageRevoked {
+                        conversation_id: conv_id.clone(),
+                        client_msg_id: msg.client_msg_id.clone(),
+                        revoker_id: msg.send_id.clone(),
+                        seq: msg.seq,
+                    });
+                    continue;
+                } else if msg.content_type == constant::HAS_READ_RECEIPT {
+                    // 尝试解析已读回执 detail
+                    let mut has_read_seq: i64 = 0;
+                    let mut seqs: Vec<i64> = Vec::new();
+                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                        if let Some(detail) = json.get("detail") {
+                            if let Some(v) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
+                                has_read_seq = v;
+                            }
+                            if let Some(list) = detail.get("seqList").and_then(|v| v.as_array()) {
+                                seqs = list.iter().filter_map(|x| x.as_i64()).collect();
+                            }
+                        }
+                    }
+                    self.emit_event(MessageEvent::MessageReadReceipt {
+                        conversation_id: conv_id.clone(),
+                        has_read_seq,
+                        seqs,
+                    });
+                    continue;
+                } else if msg.content_type == constant::REACTION_MESSAGE_MODIFIER
+                    || msg.content_type == constant::REACTION_MESSAGE_DELETER
+                {
+                    let mut client_msg_id = String::new();
+                    let mut reaction_type = String::new();
+                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                        if let Some(v) = json.get("clientMsgID").and_then(|v| v.as_str()) {
+                            client_msg_id = v.to_string();
+                        }
+                        if let Some(v) = json.get("reactionType").and_then(|v| v.as_str()) {
+                            reaction_type = v.to_string();
+                        }
+                    }
+                    self.emit_event(MessageEvent::ReactionEvent {
+                        conversation_id: conv_id.clone(),
+                        client_msg_id,
+                        reaction_type,
+                        is_delete: msg.content_type == constant::REACTION_MESSAGE_DELETER,
+                    });
+                    continue;
+                } else if msg.content_type == constant::TYPING {
+                    let mut msg_tip = String::new();
+                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                        if let Some(v) = json.get("msgTip").and_then(|v| v.as_str()) {
+                            msg_tip = v.to_string();
+                        }
+                    }
+                    self.emit_event(MessageEvent::TypingStatus {
+                        conversation_id: conv_id.clone(),
+                        send_id: msg.send_id.clone(),
+                        msg_tip,
+                    });
+                    continue;
+                } else {
+                    // 普通消息
+                    self.emit_event(MessageEvent::NewMessage {
+                        conversation_id: conv_id.clone(),
+                        message: msg.clone(),
+                        is_notification: false,
+                    });
+                }
 
                 // 基于消息通知实时更新会话（未读数、最新消息等）
                 if let Some(syncer) = &self.conversation_syncer {
-                    if let Err(e) = syncer
-                        .on_new_message(conv_id, msg, false)
-                        .await
-                    {
+                    if let Err(e) = syncer.on_new_message(conv_id, msg, false).await {
                         error!("[Client/Conv] on_new_message 更新会话失败: {}", e);
                     }
                 }
@@ -626,12 +935,73 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                // 直接使用 MsgData 发送事件
-                self.emit_event(MessageEvent::NewMessage {
-                    conversation_id: conv_id.clone(),
-                    message: msg.clone(),
-                    is_notification: true,
-                });
+                if msg.content_type == constant::REVOKE {
+                    self.emit_event(MessageEvent::MessageRevoked {
+                        conversation_id: conv_id.clone(),
+                        client_msg_id: msg.client_msg_id.clone(),
+                        revoker_id: msg.send_id.clone(),
+                        seq: msg.seq,
+                    });
+                    continue;
+                } else if msg.content_type == constant::HAS_READ_RECEIPT {
+                    let mut has_read_seq: i64 = 0;
+                    let mut seqs: Vec<i64> = Vec::new();
+                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                        if let Some(detail) = json.get("detail") {
+                            if let Some(v) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
+                                has_read_seq = v;
+                            }
+                            if let Some(list) = detail.get("seqList").and_then(|v| v.as_array()) {
+                                seqs = list.iter().filter_map(|x| x.as_i64()).collect();
+                            }
+                        }
+                    }
+                    self.emit_event(MessageEvent::MessageReadReceipt {
+                        conversation_id: conv_id.clone(),
+                        has_read_seq,
+                        seqs,
+                    });
+                    continue;
+                } else if msg.content_type == constant::REACTION_MESSAGE_MODIFIER
+                    || msg.content_type == constant::REACTION_MESSAGE_DELETER
+                {
+                    let mut client_msg_id = String::new();
+                    let mut reaction_type = String::new();
+                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                        if let Some(v) = json.get("clientMsgID").and_then(|v| v.as_str()) {
+                            client_msg_id = v.to_string();
+                        }
+                        if let Some(v) = json.get("reactionType").and_then(|v| v.as_str()) {
+                            reaction_type = v.to_string();
+                        }
+                    }
+                    self.emit_event(MessageEvent::ReactionEvent {
+                        conversation_id: conv_id.clone(),
+                        client_msg_id,
+                        reaction_type,
+                        is_delete: msg.content_type == constant::REACTION_MESSAGE_DELETER,
+                    });
+                    continue;
+                } else if msg.content_type == constant::TYPING {
+                    let mut msg_tip = String::new();
+                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                        if let Some(v) = json.get("msgTip").and_then(|v| v.as_str()) {
+                            msg_tip = v.to_string();
+                        }
+                    }
+                    self.emit_event(MessageEvent::TypingStatus {
+                        conversation_id: conv_id.clone(),
+                        send_id: msg.send_id.clone(),
+                        msg_tip,
+                    });
+                    continue;
+                } else {
+                    self.emit_event(MessageEvent::NewMessage {
+                        conversation_id: conv_id.clone(),
+                        message: msg.clone(),
+                        is_notification: true,
+                    });
+                }
 
                 // 好友 / 关系相关通知：触发好友同步
                 if let Some(friend_syncer) = &self.friend_syncer {
@@ -653,14 +1023,8 @@ impl OpenIMClient {
                 }
 
                 if let Some(syncer) = &self.conversation_syncer {
-                    if let Err(e) = syncer
-                        .on_new_message(conv_id, msg, true)
-                        .await
-                    {
-                        error!(
-                            "[Client/Conv] on_new_message 更新通知会话失败: {}",
-                            e
-                        );
+                    if let Err(e) = syncer.on_new_message(conv_id, msg, true).await {
+                        error!("[Client/Conv] on_new_message 更新通知会话失败: {}", e);
                     }
                 }
             }
@@ -703,6 +1067,65 @@ impl OpenIMClient {
         syncer.get_all_friends().await
     }
 
+    /// 获取总未读消息数（来自会话同步器的本地聚合）
+    pub async fn get_total_unread_count(&self) -> Result<i32> {
+        let syncer = self
+            .conversation_syncer
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("会话同步器未初始化"))?;
+        syncer.get_total_unread_count().await
+    }
+
+    /// 标记所有会话为已读
+    pub async fn mark_all_conversation_message_as_read(&self) -> Result<()> {
+        let url = format!(
+            "{}/msg/mark_all_conversation_as_read",
+            self.config.api_base_url
+        );
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+
+        info!("[Client/Msg] 📡 标记所有会话已读");
+
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&serde_json::json!({
+                "userID": self.config.user_id,
+            }))
+            .send()
+            .await?;
+
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            error!(
+                "[Client/Msg] 标记所有会话已读请求失败，HTTP状态: {}, 响应: {}",
+                status, text
+            );
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+
+        let json_value: serde_json::Value = serde_json::from_str(&text)?;
+        if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                let err_msg = json_value
+                    .get("errMsg")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("未知错误");
+                error!(
+                    "[Client/Msg] 标记所有会话已读服务器错误，错误码: {}, 错误信息: {}",
+                    err_code, err_msg
+                );
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+
+        info!("[Client/Msg] ✅ 标记所有会话已读成功");
+        Ok(())
+    }
+
     // ===================== 消息管理相关 HTTP 能力 =====================
 
     /// 撤回消息（按会话 ID + seq）
@@ -716,7 +1139,10 @@ impl OpenIMClient {
             "userID": self.config.user_id,
         });
 
-        info!("[Client/Msg] 📡 撤回消息: conversationID={}, seq={}", conversation_id, seq);
+        info!(
+            "[Client/Msg] 📡 撤回消息: conversationID={}, seq={}",
+            conversation_id, seq
+        );
 
         let resp = reqwest::Client::new()
             .post(&url)
@@ -767,7 +1193,10 @@ impl OpenIMClient {
             "userID": self.config.user_id,
         });
 
-        info!("[Client/Msg] 📡 删除消息: conversationID={}", conversation_id);
+        info!(
+            "[Client/Msg] 📡 删除消息: conversationID={}",
+            conversation_id
+        );
 
         let resp = reqwest::Client::new()
             .post(&url)
@@ -805,6 +1234,703 @@ impl OpenIMClient {
 
         info!("[Client/Msg] ✅ 删除消息成功");
         Ok(())
+    }
+
+    /// 删除本地消息（按 clientMsgID）
+    pub async fn delete_message_from_local_storage(
+        &self,
+        conversation_id: String,
+        client_msg_id: String,
+    ) -> Result<()> {
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+        store
+            .delete_by_client_msg_id(&conversation_id, &client_msg_id)
+            .await?;
+        info!(
+            "[Client/Msg] 🗑️ 删除本地消息: conversationID={}, clientMsgID={}",
+            conversation_id, client_msg_id
+        );
+        Ok(())
+    }
+
+    /// 删除会话本地消息并清理服务器（占位：本地清理 + HTTP 调用）
+    pub async fn delete_message(
+        &self,
+        conversation_id: String,
+        client_msg_id: String,
+    ) -> Result<()> {
+        // 本地
+        if let Some(store) = &self.message_store {
+            let _ = store
+                .delete_by_client_msg_id(&conversation_id, &client_msg_id)
+                .await;
+        }
+
+        // 服务器
+        let url = format!("{}/msg/delete_msg", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "clientMsgID": client_msg_id,
+            "userID": self.config.user_id,
+        });
+
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        if let Some(err_code) = serde_json::from_str::<serde_json::Value>(&text)?
+            .get("errCode")
+            .and_then(|v| v.as_i64())
+        {
+            if err_code != 0 {
+                let err_msg = serde_json::from_str::<serde_json::Value>(&text)
+                    .ok()
+                    .and_then(|v| {
+                        v.get("errMsg")
+                            .and_then(|s| s.as_str())
+                            .map(|s| s.to_string())
+                    })
+                    .unwrap_or_else(|| "未知错误".to_string());
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+
+        info!("[Client/Msg] ✅ 删除消息（本地+服务端）成功");
+        Ok(())
+    }
+
+    /// 删除指定会话的全部本地消息
+    pub async fn delete_all_msg_from_local(&self, conversation_id: String) -> Result<()> {
+        if let Some(store) = &self.message_store {
+            store.delete_conversation(&conversation_id).await?;
+        }
+        info!(
+            "[Client/Msg] 🗑️ 已删除本地会话全部消息，conversationID={}",
+            conversation_id
+        );
+        Ok(())
+    }
+
+    /// 插入单聊消息到本地存储（仿 openim-core InsertSingleMessageToLocalStorage）
+    pub async fn insert_single_message_to_local_storage(
+        &self,
+        message_json: String,
+        recv_id: String,
+        send_id: String,
+    ) -> Result<MsgStruct> {
+        let mut msg: MsgStruct = serde_json::from_str(&message_json)?;
+        msg.send_id = Some(send_id.clone());
+        msg.recv_id = Some(recv_id.clone());
+        if msg.client_msg_id.is_none() {
+            msg.client_msg_id = Some(generate_msg_id(&send_id));
+        }
+        let conv_id = format!("si_{}_{}", send_id, recv_id); // 简化版本
+        self.store_msg(conv_id, msg.clone()).await?;
+        Ok(msg)
+    }
+
+    /// 插入群聊消息到本地存储（仿 openim-core InsertGroupMessageToLocalStorage）
+    pub async fn insert_group_message_to_local_storage(
+        &self,
+        message_json: String,
+        group_id: String,
+        send_id: String,
+    ) -> Result<MsgStruct> {
+        let mut msg: MsgStruct = serde_json::from_str(&message_json)?;
+        msg.send_id = Some(send_id.clone());
+        msg.group_id = Some(group_id.clone());
+        msg.recv_id = Some(group_id.clone());
+        if msg.client_msg_id.is_none() {
+            msg.client_msg_id = Some(generate_msg_id(&send_id));
+        }
+        let conv_id = format!("gi_{}", group_id); // 简化版本
+        self.store_msg(conv_id, msg.clone()).await?;
+        Ok(msg)
+    }
+
+    /// 按消息 ID 标记已读（本地）
+    pub async fn mark_messages_as_read_by_msg_id_local(
+        &self,
+        conversation_id: String,
+        client_msg_ids: Vec<String>,
+    ) -> Result<i64> {
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+        store
+            .mark_as_read_by_msg_ids(&conversation_id, &client_msg_ids)
+            .await
+    }
+
+    /// 按消息 ID 标记已读（本地 + 服务端）
+    pub async fn mark_messages_as_read_by_msg_id(
+        &self,
+        conversation_id: String,
+        client_msg_ids: Vec<String>,
+    ) -> Result<()> {
+        // 本地
+        if let Some(store) = &self.message_store {
+            let _ = store
+                .mark_as_read_by_msg_ids(&conversation_id, &client_msg_ids)
+                .await?;
+        }
+
+        // 服务端
+        let url = format!(
+            "{}/msg/mark_msgs_as_read_by_msg_id",
+            self.config.api_base_url
+        );
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "clientMsgIDs": client_msg_ids,
+            "userID": self.config.user_id,
+        });
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        if let Some(err_code) = serde_json::from_str::<serde_json::Value>(&text)?
+            .get("errCode")
+            .and_then(|v| v.as_i64())
+        {
+            if err_code != 0 {
+                let err_msg = serde_json::from_str::<serde_json::Value>(&text)
+                    .ok()
+                    .and_then(|v| {
+                        v.get("errMsg")
+                            .and_then(|s| s.as_str())
+                            .map(|s| s.to_string())
+                    })
+                    .unwrap_or_else(|| "未知错误".to_string());
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+        Ok(())
+    }
+
+    /// 按会话标记已读（本地 + 服务端）
+    pub async fn mark_conversation_message_as_read_full(
+        &self,
+        conversation_id: String,
+    ) -> Result<()> {
+        // 本地：标记对端消息已读
+        if let Some(store) = &self.message_store {
+            // 读取未读消息的 seq 用于可能的 has_read_seq
+            let unread = store.get_unread_by_conversation(&conversation_id).await?;
+            let seqs: Vec<i64> = unread.iter().map(|m| m.seq).collect();
+            let _ = store.mark_as_read_by_seqs(&conversation_id, &seqs).await?;
+        }
+
+        // 服务端：沿用现有 HTTP 端点 mark_conversation_as_read
+        let url = format!("{}/msg/mark_conversation_as_read", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "userID": self.config.user_id,
+        });
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        if let Some(err_code) = serde_json::from_str::<serde_json::Value>(&text)?
+            .get("errCode")
+            .and_then(|v| v.as_i64())
+        {
+            if err_code != 0 {
+                let err_msg = serde_json::from_str::<serde_json::Value>(&text)
+                    .ok()
+                    .and_then(|v| {
+                        v.get("errMsg")
+                            .and_then(|s| s.as_str())
+                            .map(|s| s.to_string())
+                    })
+                    .unwrap_or_else(|| "未知错误".to_string());
+                return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
+            }
+        }
+        Ok(())
+    }
+
+    /// 删除所有消息（本地 + 服务端）
+    pub async fn delete_all_msg_from_local_and_server(&self) -> Result<()> {
+        // 本地清空所有已知会话表（无法枚举表名，采取粗暴 drop 数据库时请谨慎）
+        // 这里仅提示：需要调用方自行管理会话 ID 列表，逐个调用 delete_all_msg_from_local
+        // 服务端
+        let url = format!(
+            "{}/msg/delete_all_msg_from_local_and_svr",
+            self.config.api_base_url
+        );
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "userID": self.config.user_id,
+        });
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        Ok(())
+    }
+
+    /// 清空会话消息（本地 + 服务端）
+    pub async fn clear_conversation_and_delete_all_msg(
+        &self,
+        conversation_id: String,
+    ) -> Result<()> {
+        if let Some(store) = &self.message_store {
+            let _ = store.delete_conversation(&conversation_id).await;
+        }
+        let url = format!(
+            "{}/msg/clear_conversation_and_delete_all_msg",
+            self.config.api_base_url
+        );
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "userID": self.config.user_id,
+        });
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        Ok(())
+    }
+
+    /// 删除会话并删除全部消息（本地 + 服务端）
+    pub async fn delete_conversation_and_delete_all_msg(
+        &self,
+        conversation_id: String,
+    ) -> Result<()> {
+        if let Some(store) = &self.message_store {
+            let _ = store.delete_conversation(&conversation_id).await;
+        }
+        let url = format!(
+            "{}/msg/delete_conversation_and_delete_all_msg",
+            self.config.api_base_url
+        );
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "conversationID": conversation_id,
+            "userID": self.config.user_id,
+        });
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        Ok(())
+    }
+
+    /// Typing 状态更新（仿 openim-core TypingStatusUpdate）
+    pub async fn typing_status_update(&self, recv_id: String, msg_tip: String) -> Result<()> {
+        let url = format!("{}/msg/typing_status_update", self.config.api_base_url);
+        let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
+        let req_json = serde_json::json!({
+            "recvID": recv_id,
+            "msgTip": msg_tip,
+            "sendID": self.config.user_id,
+        });
+        let resp = reqwest::Client::new()
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .header("token", &self.config.token)
+            .json(&req_json)
+            .send()
+            .await?;
+        let status = resp.status();
+        let text = resp.text().await?;
+        if !status.is_success() {
+            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+        }
+        Ok(())
+    }
+
+    /// 消息构造器：文本
+    pub fn create_text_message(&self, text: String) -> MsgStruct {
+        self.build_msg(openim_protocol::constant::TEXT, Some(text), None, None)
+    }
+
+    /// 消息构造器：自定义
+    pub fn create_custom_message(
+        &self,
+        data: String,
+        extension: String,
+        description: String,
+    ) -> MsgStruct {
+        let elem = CustomElem {
+            data,
+            description,
+            extension,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(openim_protocol::constant::CUSTOM, Some(content), None, None)
+    }
+
+    /// 消息构造器：位置
+    pub fn create_location_message(
+        &self,
+        description: String,
+        longitude: f64,
+        latitude: f64,
+    ) -> MsgStruct {
+        let elem = LocationElem {
+            description,
+            longitude,
+            latitude,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::LOCATION,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：引用
+    pub fn create_quote_message(&self, text: Option<String>, quote: MsgStruct) -> MsgStruct {
+        let elem = QuoteElem {
+            text,
+            quote_message: Some(Box::new(quote)),
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(openim_protocol::constant::QUOTE, Some(content), None, None)
+    }
+
+    /// 消息构造器：图片
+    pub fn create_image_message(&self, elem: PictureElem) -> MsgStruct {
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::PICTURE,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：语音
+    pub fn create_sound_message(&self, elem: SoundElem) -> MsgStruct {
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(openim_protocol::constant::VOICE, Some(content), None, None)
+    }
+
+    /// 消息构造器：视频
+    pub fn create_video_message(&self, elem: VideoElem) -> MsgStruct {
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(openim_protocol::constant::VIDEO, Some(content), None, None)
+    }
+
+    /// 消息构造器：文件
+    pub fn create_file_message(&self, elem: FileElem) -> MsgStruct {
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(openim_protocol::constant::FILE, Some(content), None, None)
+    }
+
+    /// Typing 消息构造器（仅本地封装）
+    pub fn create_typing_message(&self, msg_tip: String) -> MsgStruct {
+        let content =
+            serde_json::to_string(&serde_json::json!({ "msgTip": msg_tip })).unwrap_or_default();
+        self.build_msg(openim_protocol::constant::TYPING, Some(content), None, None)
+    }
+
+    /// 消息构造器：文本@（带 atUserList / atUsersInfo）
+    pub fn create_text_at_message(
+        &self,
+        text: String,
+        at_user_list: Vec<String>,
+        at_users_info: Option<Vec<crate::im::msg::AtInfo>>,
+        quote_message: Option<MsgStruct>,
+        is_at_self: bool,
+    ) -> MsgStruct {
+        let elem = AtElem {
+            text,
+            at_user_list,
+            at_users_info,
+            quote_message: quote_message.map(Box::new),
+            is_at_self,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::AT_TEXT,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：合并消息（Merger）
+    pub fn create_merger_message(
+        &self,
+        message_list: Vec<MsgStruct>,
+        title: String,
+        summary_list: Vec<String>,
+    ) -> MsgStruct {
+        let content = serde_json::to_string(&serde_json::json!({
+            "title": title,
+            "summaryList": summary_list,
+            "multiMessage": message_list,
+        }))
+        .unwrap_or_default();
+        self.build_msg(openim_protocol::constant::MERGER, Some(content), None, None)
+    }
+
+    /// 消息构造器：卡片消息（Card）
+    pub fn create_card_message(&self, card_info: String) -> MsgStruct {
+        let content = serde_json::to_string(&serde_json::json!({
+            "cardInfo": card_info
+        }))
+        .unwrap_or_default();
+        self.build_msg(openim_protocol::constant::CARD, Some(content), None, None)
+    }
+
+    /// 消息构造器：Markdown 文本
+    pub fn create_markdown_message(&self, content: String) -> MsgStruct {
+        let elem = MarkdownTextElem { content };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::MARKDOWN_TEXT,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：AdvancedText（text + messageEntityList json）
+    pub fn create_advanced_text_message(
+        &self,
+        text: String,
+        message_entity_list: String,
+    ) -> MsgStruct {
+        let content = serde_json::to_string(&serde_json::json!({
+            "text": text,
+            "messageEntityList": message_entity_list,
+        }))
+        .unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::ADVANCED_TEXT,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：Markdown + @（复用 AtElem，text 使用 markdown）
+    pub fn create_markdown_at_message(
+        &self,
+        markdown_text: String,
+        at_user_list: Vec<String>,
+        at_users_info: Option<Vec<crate::im::msg::AtInfo>>,
+        quote_message: Option<MsgStruct>,
+        is_at_self: bool,
+    ) -> MsgStruct {
+        let elem = AtElem {
+            text: markdown_text,
+            at_user_list,
+            at_users_info,
+            quote_message: quote_message.map(Box::new),
+            is_at_self,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::MARKDOWN_TEXT,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：自定义 OnlineOnly
+    pub fn create_custom_online_only_message(
+        &self,
+        data: String,
+        extension: String,
+        description: String,
+    ) -> MsgStruct {
+        let elem = CustomElem {
+            data,
+            description,
+            extension,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::CUSTOM_ONLINE_ONLY,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：自定义不触发会话
+    pub fn create_custom_not_trigger_conversation_message(
+        &self,
+        data: String,
+        extension: String,
+        description: String,
+    ) -> MsgStruct {
+        let elem = CustomElem {
+            data,
+            description,
+            extension,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::CUSTOM_NOT_TRIGGER_CONVERSATION,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    fn build_msg(
+        &self,
+        content_type: i32,
+        content: Option<String>,
+        recv_id: Option<String>,
+        group_id: Option<String>,
+    ) -> MsgStruct {
+        let now = chrono::Utc::now().timestamp_millis();
+        let mut msg = MsgStruct {
+            client_msg_id: Some(generate_msg_id(&self.config.user_id)),
+            server_msg_id: None,
+            create_time: now,
+            send_time: now,
+            session_type: if group_id.is_some() {
+                openim_protocol::constant::GROUP_MSG
+            } else {
+                openim_protocol::constant::SINGLE_CHAT_TYPE
+            },
+            send_id: Some(self.config.user_id.clone()),
+            recv_id,
+            msg_from: 100,
+            content_type,
+            sender_platform_id: self.config.platform_id,
+            sender_nickname: None,
+            sender_face_url: None,
+            group_id,
+            content: None,
+            seq: 0,
+            is_read: false,
+            status: 1,
+            is_react: None,
+            is_external_extensions: None,
+            offline_push: None,
+            attached_info: None,
+            ex: None,
+            local_ex: None,
+            text_elem: None,
+            picture_elem: None,
+            sound_elem: None,
+            video_elem: None,
+            file_elem: None,
+            at_text_elem: None,
+            location_elem: None,
+            custom_elem: None,
+            quote_elem: None,
+        };
+        msg.content = content;
+        msg
+    }
+
+    async fn store_msg(&self, conversation_id: String, msg: MsgStruct) -> Result<()> {
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+        let now = chrono::Utc::now().timestamp_millis();
+        let log = crate::im::message_store::LocalChatLog {
+            conversation_id,
+            client_msg_id: msg
+                .client_msg_id
+                .clone()
+                .unwrap_or_else(|| generate_msg_id("unk")),
+            server_msg_id: msg.server_msg_id.clone().unwrap_or_default(),
+            send_id: msg.send_id.clone().unwrap_or_default(),
+            recv_id: msg.recv_id.clone().unwrap_or_default(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: msg.sender_nickname.clone().unwrap_or_default(),
+            sender_face_url: msg.sender_face_url.clone().unwrap_or_default(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: msg.content.clone().unwrap_or_default(),
+            is_read: msg.is_read,
+            status: msg.status,
+            seq: msg.seq,
+            send_time: if msg.send_time > 0 {
+                msg.send_time
+            } else {
+                now
+            },
+            create_time: if msg.create_time > 0 {
+                msg.create_time
+            } else {
+                now
+            },
+            attached_info: msg.attached_info.clone().unwrap_or_default(),
+            ex: msg.ex.clone().unwrap_or_default(),
+            local_ex: msg.local_ex.clone().unwrap_or_default(),
+            group_id: msg.group_id.clone().unwrap_or_default(),
+        };
+        store.insert_message(&log).await
     }
 
     /// 清空指定会话的所有消息
@@ -917,6 +2043,11 @@ impl OpenIMClient {
         Ok(())
     }
 
+    #[allow(
+        dead_code,
+        clippy::manual_range_contains,
+        clippy::manual_range_contains
+    )]
     fn get_content_type_name(content_type: i32) -> &'static str {
         use openim_protocol::constant;
 
@@ -996,6 +2127,7 @@ impl OpenIMClient {
         }
     }
 
+    #[allow(dead_code, clippy::single_match)]
     fn parse_content(msg: &openim_protocol::sdkws::MsgData) {
         if msg.content.is_empty() {
             debug!("[Client/Msg]  内容为空");
@@ -1005,10 +2137,7 @@ impl OpenIMClient {
         let content_str = match String::from_utf8(msg.content.clone()) {
             Ok(s) => s,
             Err(_) => {
-                debug!(
-                    "[Client/Msg]  [二进制 {} bytes]",
-                    msg.content.len()
-                );
+                debug!("[Client/Msg]  [二进制 {} bytes]", msg.content.len());
                 return;
             }
         };
@@ -1019,21 +2148,15 @@ impl OpenIMClient {
                 if let Some(detail_str) = json.get("detail").and_then(|v| v.as_str()) {
                     if msg.content_type == 2200 {
                         // 已读回执
-                        if let Ok(detail) =
-                            serde_json::from_str::<serde_json::Value>(detail_str)
-                        {
+                        if let Ok(detail) = serde_json::from_str::<serde_json::Value>(detail_str) {
                             info!("[Client/Msg]  📖 已读回执:");
-                            if let Some(seq) =
-                                detail.get("hasReadSeq").and_then(|v| v.as_i64())
-                            {
+                            if let Some(seq) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
                                 info!("[Client/Msg]     已读到: seq {}", seq);
                             }
                         }
                     } else {
                         // 其他通知
-                        if let Ok(detail) =
-                            serde_json::from_str::<serde_json::Value>(detail_str)
-                        {
+                        if let Ok(detail) = serde_json::from_str::<serde_json::Value>(detail_str) {
                             if let Ok(pretty) = serde_json::to_string_pretty(&detail) {
                                 for line in pretty.lines() {
                                     info!("[Client/Msg]    {}", line);
@@ -1056,6 +2179,8 @@ impl OpenIMClient {
     }
 }
 
+// 允许未使用的辅助方法（日志解析/调试）
+#[allow(dead_code, clippy::manual_range_contains, clippy::single_match)]
 #[cfg(test)]
 mod tests {
     use tracing::{error, info};
@@ -1199,17 +2324,17 @@ mod tests {
 
                     use openim_protocol::constant;
                     if message.content_type == constant::TEXT {
-                      let text_elem: crate::im::msg::TextElem = match serde_json::from_slice(&message.content) {
-                            Ok(elem) => {
-                                elem
-                            },
-                            Err(e) => {
-                                error!("   解析 TextElem 失败: {}", e);
-                                crate::im::msg::TextElem { content: String::new() }
-                            }
-                        };
+                        let text_elem: crate::im::msg::TextElem =
+                            match serde_json::from_slice(&message.content) {
+                                Ok(elem) => elem,
+                                Err(e) => {
+                                    error!("   解析 TextElem 失败: {}", e);
+                                    crate::im::msg::TextElem {
+                                        content: String::new(),
+                                    }
+                                }
+                            };
                         info!("   内容: {}", text_elem.content);
-
                     }
                 }
                 _ => {}

@@ -7,8 +7,8 @@ pub mod msg_type {
     pub const WS_PUSH_MSG: i32 = 2001;
     pub const WS_KICK_ONLINE_MSG: i32 = 2002;
     pub const WS_LOGOUT_MSG: i32 = 2003;
+    pub const WS_SEND_MSG_NOT_OSS: i32 = 3001; // 自定义：仿 go SendMessageNotOss
 }
-
 
 /// OpenIM 请求结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,7 +39,10 @@ pub struct OpenIMResp {
     pub err_code: i32,
     #[serde(rename = "errMsg")]
     pub err_msg: String,
-    #[serde(default, deserialize_with = "crate::im::serialization::deserialize_base64")]
+    #[serde(
+        default,
+        deserialize_with = "crate::im::serialization::deserialize_base64"
+    )]
     pub data: Vec<u8>,
 }
 
@@ -72,13 +75,36 @@ pub enum MessageEvent {
         server_msg_id: String,
         client_msg_id: String,
     },
+    /// 消息被撤回
+    MessageRevoked {
+        conversation_id: String,
+        client_msg_id: String,
+        revoker_id: String,
+        seq: i64,
+    },
+    /// 已读回执
+    MessageReadReceipt {
+        conversation_id: String,
+        has_read_seq: i64,
+        seqs: Vec<i64>,
+    },
+    /// reaction 变更
+    ReactionEvent {
+        conversation_id: String,
+        client_msg_id: String,
+        reaction_type: String,
+        is_delete: bool,
+    },
+    /// 输入状态（typing）
+    TypingStatus {
+        conversation_id: String,
+        send_id: String,
+        msg_tip: String,
+    },
     /// 被踢下线
     KickedOffline,
     /// 连接状态变化
-    ConnectionStatus {
-        connected: bool,
-        message: String,
-    },
+    ConnectionStatus { connected: bool, message: String },
     /// 其他消息
     Other {
         req_identifier: i32,
@@ -93,6 +119,10 @@ impl MessageEvent {
         match self {
             MessageEvent::NewMessage { .. } => "NewMessage".to_string(),
             MessageEvent::SendMessageResponse { .. } => "SendMessageResponse".to_string(),
+            MessageEvent::MessageRevoked { .. } => "MessageRevoked".to_string(),
+            MessageEvent::MessageReadReceipt { .. } => "MessageReadReceipt".to_string(),
+            MessageEvent::ReactionEvent { .. } => "ReactionEvent".to_string(),
+            MessageEvent::TypingStatus { .. } => "TypingStatus".to_string(),
             MessageEvent::KickedOffline => "KickedOffline".to_string(),
             MessageEvent::ConnectionStatus { .. } => "ConnectionStatus".to_string(),
             MessageEvent::Other { .. } => "Other".to_string(),
@@ -103,7 +133,9 @@ impl MessageEvent {
     #[flutter_rust_bridge::frb(sync)]
     pub fn get_conversation_id(&self) -> Option<String> {
         match self {
-            MessageEvent::NewMessage { conversation_id, .. } => Some(conversation_id.clone()),
+            MessageEvent::NewMessage {
+                conversation_id, ..
+            } => Some(conversation_id.clone()),
             _ => None,
         }
     }
@@ -118,7 +150,7 @@ impl MessageEvent {
                 } else {
                     Some(message.send_id.clone())
                 }
-            },
+            }
             _ => None,
         }
     }
@@ -133,7 +165,7 @@ impl MessageEvent {
                 } else {
                     Some(message.recv_id.clone())
                 }
-            },
+            }
             _ => None,
         }
     }
@@ -211,4 +243,3 @@ impl MessageEvent {
         }
     }
 }
-
