@@ -91,21 +91,12 @@ impl OpenIMBridgeClient {
     ///   }
     /// });
     /// ```
+    /// 
+    /// 注意：此方法已废弃，请使用 `set_advanced_msg_listener` 设置回调监听器
+    #[deprecated(note = "请使用 set_advanced_msg_listener 设置回调监听器")]
     pub fn subscribe_messages(&self, _sink: StreamSink<MessageEvent>) {
-       
-        // 这里只是个示例，假设 self.inner 有 subscribe_messages() 返回 Receiver<MessageEvent>
-        // 实际使用时应该考虑跨线程/跨运行时的处理方式并且避免阻塞
-        // 此桥接简单示意如何把内部消息通过 sink 推送到 Dart 层
-        // 目前假设 sink: StreamSink<MessageEvent> + Send + 'static
-        let mut receiver = self.inner.subscribe_messages();
-        // 这里假定你在外部用 tokio runtime 启了环境
-        tokio::spawn(async move {
-            while let Some(event) = receiver.recv().await {
-                // 忽略 send 错误（比如 Dart 端 Stream 已关闭）
-                let _ = _sink.add(event);
-            }
-        });
-
+        // 已移除 subscribe_messages，请使用 AdvancedMsgListener 回调方式
+        // TODO: 如果需要 Dart 桥接，可以通过 AdvancedMsgListener 实现
     }
 
     /// 注册会话监听（回调流）

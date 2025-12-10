@@ -8,6 +8,9 @@
         },
         {
             "path": "../protocol"
+        },
+        {
+            "path": "../openim-docker"
         }
     ]
 }

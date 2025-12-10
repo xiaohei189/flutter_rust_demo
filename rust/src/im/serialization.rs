@@ -4,13 +4,18 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::io::{Read, Write};
 
-/// Base64 反序列化函数
+/// Base64 反序列化函数（支持 null 值）
 pub fn deserialize_base64<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     use base64::Engine;
-    let s: String = Deserialize::deserialize(deserializer)?;
+    // 先尝试反序列化为 Option<String>，以支持 null 值
+    let opt_s: Option<String> = Deserialize::deserialize(deserializer)?;
+    let s = match opt_s {
+        Some(s) => s,
+        None => return Ok(Vec::new()), // null 或缺失时返回空 Vec
+    };
     if s.is_empty() {
         return Ok(Vec::new());
     }

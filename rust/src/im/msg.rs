@@ -144,6 +144,15 @@ pub struct MarkdownTextElem {
     pub content: String,
 }
 
+/// Markdown + 实体（扩展用）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarkdownEntityElem {
+    #[serde(rename = "content")]
+    pub content: String,
+    #[serde(rename = "messageEntityList", skip_serializing_if = "Option::is_none")]
+    pub message_entity_list: Option<String>,
+}
+
 /// 流式消息元素
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamMsgElem {

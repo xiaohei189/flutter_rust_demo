@@ -1740,6 +1740,9 @@ mod tests {
             );
 
             let fmt_layer = tracing_subscriber::fmt::layer()
+                .with_file(true)        // 包含文件名
+                .with_line_number(true) // 包含行号
+                .with_target(false)     // 不显示 target（可选，减少噪音）
                 .with_test_writer();
 
             tracing_subscriber::registry()

@@ -5,6 +5,7 @@
 //!
 //! 对外暴露的接口请使用 `bridge_client.rs` 中的 `OpenIMBridgeClient`。
 
+use crate::im::advanced_msg_listener::{AdvancedMsgListener, EmptyAdvancedMsgListener};
 use crate::im::conversation::{
     ConversationListener, ConversationSyncer, ConversationSyncerConfig, EmptyConversationListener,
     LocalConversation,
@@ -16,7 +17,7 @@ use crate::im::msg::{
     QuoteElem, SoundElem, VideoElem,
 };
 use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
-use crate::im::types::{msg_type, MessageEvent, OpenIMResp, ServerResponse};
+use crate::im::types::{msg_type, OpenIMResp, ServerResponse};
 use anyhow::Result;
 use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::{SinkExt, StreamExt};
@@ -26,7 +27,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::Mutex;
 use tokio::time::interval;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
@@ -95,8 +96,6 @@ pub struct OpenIMClient {
     pub(crate) config: ClientConfig,
     writer: Option<Arc<Mutex<WsWriter>>>,
     received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
-    // Rust 端订阅（通过 mpsc channel）
-    rust_subscribers: Arc<std::sync::Mutex<Vec<mpsc::UnboundedSender<MessageEvent>>>>,
     // 会话同步器（用于基于消息通知实时更新会话）
     pub(crate) conversation_syncer: Option<Arc<ConversationSyncer>>,
     // 好友同步器（用于联系人列表增量同步）
@@ -105,6 +104,8 @@ pub struct OpenIMClient {
     conversation_listener: Arc<dyn ConversationListener>,
     // 好友监听器（可由调用方注册）
     friend_listener: Arc<dyn FriendListener>,
+    // 高级消息监听器（可由调用方注册，参考 Go 版本的 OnAdvancedMsgListener）
+    advanced_msg_listener: Arc<dyn AdvancedMsgListener>,
     // 消息存储（本地 SQLite，sqlx 驱动）
     pub(crate) message_store: Option<Arc<MessageStore>>,
 }
@@ -165,6 +166,11 @@ impl OpenIMClient {
         }
     }
 
+    /// 注册高级消息监听器（参考 Go 版本的 SetAdvancedMsgListener）
+    pub fn set_advanced_msg_listener(&mut self, listener: Arc<dyn AdvancedMsgListener>) {
+        self.advanced_msg_listener = listener;
+    }
+
     /// 创建新的客户端
     /// - `config`: 客户端配置
     pub fn new(config: ClientConfig) -> Self {
@@ -172,48 +178,13 @@ impl OpenIMClient {
             config,
             writer: None,
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
-            rust_subscribers: Arc::new(std::sync::Mutex::new(Vec::new())),
             conversation_syncer: None,
             friend_syncer: None,
             conversation_listener: Arc::new(EmptyConversationListener),
             friend_listener: Arc::new(crate::im::friend::EmptyFriendListener),
+            advanced_msg_listener: Arc::new(EmptyAdvancedMsgListener),
             message_store: None,
         }
-    }
-
-    /// 订阅消息事件（Rust 端使用）
-    ///
-    /// 使用 Rust 原生的 channel 方式订阅消息事件。
-    /// 返回一个 `mpsc::UnboundedReceiver<MessageEvent>`，可以在 Rust 代码中接收事件。
-    ///
-    /// # 示例
-    ///
-    /// ```rust
-    /// let mut receiver = client.subscribe_messages_rust();
-    /// tokio::spawn(async move {
-    ///     while let Some(event) = receiver.recv().await {
-    ///         match event {
-    ///             MessageEvent::NewMessage { conversation_id, message, .. } => {
-    ///                 println!("收到消息: {} -> {}", message.send_id, message.recv_id);
-    ///             }
-    ///             _ => {}
-    ///         }
-    ///     }
-    /// });
-    /// ```
-    pub fn subscribe_messages(&self) -> mpsc::UnboundedReceiver<MessageEvent> {
-        let (tx, rx) = mpsc::unbounded_channel();
-        let mut subscribers = self.rust_subscribers.lock().unwrap();
-        subscribers.push(tx);
-        debug!("📡 消息事件订阅已激活 (Rust)");
-        rx
-    }
-
-    /// 发送事件到所有订阅者（仅 Rust 端）
-    fn emit_event(&self, event: MessageEvent) {
-        // 发送到 Rust 端订阅者（mpsc channel）
-        let mut subscribers = self.rust_subscribers.lock().unwrap();
-        subscribers.retain(|sender| sender.send(event.clone()).is_ok());
     }
     /// 构建 WebSocket 连接 URL
     fn build_url(&self, operation_id: &str) -> String {
@@ -262,9 +233,11 @@ impl OpenIMClient {
             if let Ok(resp) = serde_json::from_str::<ServerResponse>(&text) {
                 if resp.err_code == 0 {
                     info!("[Client/WS] ✅ 服务器连接鉴权成功");
-                    self.emit_event(MessageEvent::ConnectionStatus {
-                        connected: true,
-                        message: "连接成功".to_string(),
+                    let listener = self.advanced_msg_listener.clone();
+                    tokio::spawn(async move {
+                        listener
+                            .on_connection_status_changed(true, "连接成功".to_string())
+                            .await;
                     });
                 } else {
                     return Err(anyhow::anyhow!("服务器错误: {}", resp.err_msg));
@@ -539,9 +512,6 @@ impl OpenIMClient {
         let now = chrono::Utc::now().timestamp_millis();
         let client_msg_id = generate_msg_id(&self.config.user_id);
 
-        debug!("[Client/Msg]   消息 ID: {}", client_msg_id);
-        debug!("[Client/Msg]   ContentType: {}", content_type);
-
         // 构造 options
         let options = self.build_options(is_online_only, options_override);
 
@@ -578,7 +548,6 @@ impl OpenIMClient {
         // 序列化为 protobuf
         let mut pb_data = Vec::new();
         msg_data.encode(&mut pb_data)?;
-        debug!("[Client/Msg]   Protobuf 大小: {} bytes", pb_data.len());
 
         // 发送请求
         self.send_request(
@@ -687,27 +656,13 @@ impl OpenIMClient {
             data,
         };
 
-        debug!("[Client/WS]   请求结构:");
-        debug!("[Client/WS]     reqIdentifier: {}", req.req_identifier);
-        debug!("[Client/WS]     sendID: {}", req.send_id);
-        debug!("[Client/WS]     operationID: {}", operation_id);
-        debug!("[Client/WS]     data 长度: {} bytes", req.data.len());
-
         let json = serde_json::to_vec(&req)?;
-        debug!("[Client/WS]   JSON 大小: {} bytes", json.len());
 
         // 压缩 JSON
         let compressed = compress_gzip(&json)?;
-        debug!(
-            "[Client/WS]   压缩后大小: {} bytes (压缩率: {:.1}%)",
-            compressed.len(),
-            (compressed.len() as f64 / json.len() as f64) * 100.0
-        );
 
         let mut w = writer.lock().await;
         w.send(WsMessage::Binary(compressed)).await?;
-
-        debug!("[Client/WS]   ✅ WebSocket 发送成功");
         Ok(())
     }
 
@@ -740,7 +695,7 @@ impl OpenIMClient {
                 Ok(WsMessage::Text(text)) => {
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) {
                         if let Some(req_id) = json.get("reqIdentifier") {
-                            info!("[Client/WS] 📨 文本响应: reqId={}", req_id);
+                            debug!("[Client/WS] 文本响应: reqId={}", req_id);
                         }
                     }
                 }
@@ -780,7 +735,11 @@ impl OpenIMClient {
         let resp = match serde_json::from_slice::<OpenIMResp>(&decompressed) {
             Ok(r) => r,
             Err(e) => {
-                error!("[Client/WS] JSON 解析失败: {}", e);
+                error!(
+                    "[Client/WS] JSON 解析失败: {}, 原始数据: {:?}",
+                    e,
+                    String::from_utf8_lossy(&decompressed)
+                );
                 return;
             }
         };
@@ -791,39 +750,30 @@ impl OpenIMClient {
                 self.handle_push_message(&resp.data).await;
             }
             msg_type::WS_SEND_MSG => {
-                info!("[Client/Msg] ✅ 收到消息发送响应");
-                let (success, server_msg_id, client_msg_id) = if resp.err_code == 0 {
-                    info!("[Client/Msg]   发送成功");
+                // 消息发送响应：不通过回调处理（发送方可通过返回值获取）
+                if resp.err_code == 0 {
                     if let Ok(send_resp) = openim_protocol::msg::SendMsgResp::decode(&resp.data[..])
                     {
-                        info!("[Client/Msg]   服务器消息ID: {}", send_resp.server_msg_id);
-                        info!("[Client/Msg]   客户端消息ID: {}", send_resp.client_msg_id);
-                        (true, send_resp.server_msg_id, send_resp.client_msg_id)
+                        debug!(
+                            "[Client/Msg] 消息发送成功: serverMsgID={}, clientMsgID={}",
+                            send_resp.server_msg_id, send_resp.client_msg_id
+                        );
                     } else {
-                        (true, String::new(), String::new())
+                        debug!("[Client/Msg] 消息发送成功（解析响应失败）");
                     }
                 } else {
-                    error!("[Client/Msg]   发送失败: {}", resp.err_msg);
-                    (false, String::new(), String::new())
-                };
-
-                self.emit_event(MessageEvent::SendMessageResponse {
-                    success,
-                    err_msg: resp.err_msg,
-                    server_msg_id,
-                    client_msg_id,
-                });
+                    error!("[Client/Msg] 消息发送失败: {:?}", resp);
+                }
             }
             msg_type::WS_KICK_ONLINE_MSG => {
                 warn!("[Client/WS] ⚠️ 被踢下线");
-                self.emit_event(MessageEvent::KickedOffline);
+                let listener = self.advanced_msg_listener.clone();
+                tokio::spawn(async move {
+                    listener.on_kicked_offline().await;
+                });
             }
             _ => {
-                debug!("[Client/WS] 📨 未知消息类型: {}", resp.req_identifier);
-                self.emit_event(MessageEvent::Other {
-                    req_identifier: resp.req_identifier,
-                    message: format!("未知消息类型: {}", resp.req_identifier),
-                });
+                debug!("[Client/WS] 未知消息类型: {}", resp.req_identifier);
             }
         }
     }
@@ -849,81 +799,25 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                // 撤回 / 已读回执 / reaction / typing 等特殊事件
-                if msg.content_type == constant::REVOKE {
-                    self.emit_event(MessageEvent::MessageRevoked {
-                        conversation_id: conv_id.clone(),
-                        client_msg_id: msg.client_msg_id.clone(),
-                        revoker_id: msg.send_id.clone(),
-                        seq: msg.seq,
-                    });
-                    continue;
-                } else if msg.content_type == constant::HAS_READ_RECEIPT {
-                    // 尝试解析已读回执 detail
-                    let mut has_read_seq: i64 = 0;
-                    let mut seqs: Vec<i64> = Vec::new();
-                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
-                        if let Some(detail) = json.get("detail") {
-                            if let Some(v) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
-                                has_read_seq = v;
-                            }
-                            if let Some(list) = detail.get("seqList").and_then(|v| v.as_array()) {
-                                seqs = list.iter().filter_map(|x| x.as_i64()).collect();
-                            }
-                        }
-                    }
-                    self.emit_event(MessageEvent::MessageReadReceipt {
-                        conversation_id: conv_id.clone(),
-                        has_read_seq,
-                        seqs,
-                    });
-                    continue;
-                } else if msg.content_type == constant::REACTION_MESSAGE_MODIFIER
-                    || msg.content_type == constant::REACTION_MESSAGE_DELETER
-                {
-                    let mut client_msg_id = String::new();
-                    let mut reaction_type = String::new();
-                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
-                        if let Some(v) = json.get("clientMsgID").and_then(|v| v.as_str()) {
-                            client_msg_id = v.to_string();
-                        }
-                        if let Some(v) = json.get("reactionType").and_then(|v| v.as_str()) {
-                            reaction_type = v.to_string();
-                        }
-                    }
-                    self.emit_event(MessageEvent::ReactionEvent {
-                        conversation_id: conv_id.clone(),
-                        client_msg_id,
-                        reaction_type,
-                        is_delete: msg.content_type == constant::REACTION_MESSAGE_DELETER,
-                    });
-                    continue;
-                } else if msg.content_type == constant::TYPING {
-                    let mut msg_tip = String::new();
-                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
-                        if let Some(v) = json.get("msgTip").and_then(|v| v.as_str()) {
-                            msg_tip = v.to_string();
-                        }
-                    }
-                    self.emit_event(MessageEvent::TypingStatus {
-                        conversation_id: conv_id.clone(),
-                        send_id: msg.send_id.clone(),
-                        msg_tip,
-                    });
-                    continue;
-                } else {
-                    // 普通消息
-                    self.emit_event(MessageEvent::NewMessage {
-                        conversation_id: conv_id.clone(),
-                        message: msg.clone(),
-                        is_notification: false,
-                    });
+
+                let handled = self.handle_single_message(conv_id, msg, false).await;
+                if !handled {
+                    warn!(
+                        "[Client/Msg] ⚠️ 未处理的消息类型: contentType={} ({}) conversationID={} clientMsgID={}",
+                        msg.content_type,
+                        Self::get_content_type_name(msg.content_type),
+                        conv_id,
+                        msg.client_msg_id
+                    );
                 }
 
                 // 基于消息通知实时更新会话（未读数、最新消息等）
-                if let Some(syncer) = &self.conversation_syncer {
-                    if let Err(e) = syncer.on_new_message(conv_id, msg, false).await {
-                        error!("[Client/Conv] on_new_message 更新会话失败: {}", e);
+                // 注意：typing 消息不计入未读数，也不更新会话（参考 Go 版本的 IsUnreadCount: false）
+                if msg.content_type != constant::TYPING {
+                    if let Some(syncer) = &self.conversation_syncer {
+                        if let Err(e) = syncer.on_new_message(conv_id, msg, false).await {
+                            error!("[Client/Conv] on_new_message 更新会话失败: {}", e);
+                        }
                     }
                 }
             }
@@ -935,72 +829,16 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-                if msg.content_type == constant::REVOKE {
-                    self.emit_event(MessageEvent::MessageRevoked {
-                        conversation_id: conv_id.clone(),
-                        client_msg_id: msg.client_msg_id.clone(),
-                        revoker_id: msg.send_id.clone(),
-                        seq: msg.seq,
-                    });
-                    continue;
-                } else if msg.content_type == constant::HAS_READ_RECEIPT {
-                    let mut has_read_seq: i64 = 0;
-                    let mut seqs: Vec<i64> = Vec::new();
-                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
-                        if let Some(detail) = json.get("detail") {
-                            if let Some(v) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
-                                has_read_seq = v;
-                            }
-                            if let Some(list) = detail.get("seqList").and_then(|v| v.as_array()) {
-                                seqs = list.iter().filter_map(|x| x.as_i64()).collect();
-                            }
-                        }
-                    }
-                    self.emit_event(MessageEvent::MessageReadReceipt {
-                        conversation_id: conv_id.clone(),
-                        has_read_seq,
-                        seqs,
-                    });
-                    continue;
-                } else if msg.content_type == constant::REACTION_MESSAGE_MODIFIER
-                    || msg.content_type == constant::REACTION_MESSAGE_DELETER
-                {
-                    let mut client_msg_id = String::new();
-                    let mut reaction_type = String::new();
-                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
-                        if let Some(v) = json.get("clientMsgID").and_then(|v| v.as_str()) {
-                            client_msg_id = v.to_string();
-                        }
-                        if let Some(v) = json.get("reactionType").and_then(|v| v.as_str()) {
-                            reaction_type = v.to_string();
-                        }
-                    }
-                    self.emit_event(MessageEvent::ReactionEvent {
-                        conversation_id: conv_id.clone(),
-                        client_msg_id,
-                        reaction_type,
-                        is_delete: msg.content_type == constant::REACTION_MESSAGE_DELETER,
-                    });
-                    continue;
-                } else if msg.content_type == constant::TYPING {
-                    let mut msg_tip = String::new();
-                    if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
-                        if let Some(v) = json.get("msgTip").and_then(|v| v.as_str()) {
-                            msg_tip = v.to_string();
-                        }
-                    }
-                    self.emit_event(MessageEvent::TypingStatus {
-                        conversation_id: conv_id.clone(),
-                        send_id: msg.send_id.clone(),
-                        msg_tip,
-                    });
-                    continue;
-                } else {
-                    self.emit_event(MessageEvent::NewMessage {
-                        conversation_id: conv_id.clone(),
-                        message: msg.clone(),
-                        is_notification: true,
-                    });
+
+                let handled = self.handle_single_message(conv_id, msg, true).await;
+                if !handled {
+                    warn!(
+                        "[Client/Msg] ⚠️ 未处理的通知消息类型: contentType={} ({}) conversationID={} clientMsgID={}",
+                        msg.content_type,
+                        Self::get_content_type_name(msg.content_type),
+                        conv_id,
+                        msg.client_msg_id
+                    );
                 }
 
                 // 好友 / 关系相关通知：触发好友同步
@@ -1022,9 +860,13 @@ impl OpenIMClient {
                     }
                 }
 
-                if let Some(syncer) = &self.conversation_syncer {
-                    if let Err(e) = syncer.on_new_message(conv_id, msg, true).await {
-                        error!("[Client/Conv] on_new_message 更新通知会话失败: {}", e);
+                // 基于消息通知实时更新会话（未读数、最新消息等）
+                // 注意：typing 消息不计入未读数，也不更新会话（参考 Go 版本的 IsUnreadCount: false）
+                if msg.content_type != constant::TYPING {
+                    if let Some(syncer) = &self.conversation_syncer {
+                        if let Err(e) = syncer.on_new_message(conv_id, msg, true).await {
+                            error!("[Client/Conv] on_new_message 更新通知会话失败: {}", e);
+                        }
                     }
                 }
             }
@@ -1034,6 +876,147 @@ impl OpenIMClient {
     fn is_duplicate_message(&self, msg_id: &str) -> bool {
         let mut set = self.received_msg_ids.lock().unwrap();
         !set.insert(msg_id.to_string())
+    }
+
+    /// 处理单个消息，返回是否已处理
+    ///
+    /// - `conv_id`: 会话 ID
+    /// - `msg`: 消息数据
+    /// - `_is_notification`: 是否为通知消息（保留用于后续扩展）
+    /// - 返回: `true` 表示已处理，`false` 表示未处理（需要 warn）
+    async fn handle_single_message(
+        &self,
+        conv_id: &str,
+        msg: &openim_protocol::sdkws::MsgData,
+        _is_notification: bool,
+    ) -> bool {
+        // 撤回消息
+        if msg.content_type == constant::REVOKE {
+            let revoked_json = serde_json::json!({
+                "clientMsgID": msg.client_msg_id,
+                "revokerID": msg.send_id,
+                "revokeTime": msg.send_time,
+                "seq": msg.seq,
+                "conversationID": conv_id,
+            });
+            let revoked_json_str = serde_json::to_string(&revoked_json).unwrap_or_default();
+            let listener = self.advanced_msg_listener.clone();
+            tokio::spawn(async move {
+                listener.on_new_recv_message_revoked(revoked_json_str).await;
+            });
+            return true;
+        }
+
+        // 已读回执
+        if msg.content_type == constant::HAS_READ_RECEIPT {
+            let mut seqs: Vec<i64> = Vec::new();
+            let mut receipt_list = Vec::new();
+            if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                if let Some(detail) = json.get("detail") {
+                    if let Some(list) = detail.get("seqList").and_then(|v| v.as_array()) {
+                        seqs = list.iter().filter_map(|x| x.as_i64()).collect();
+                    }
+                }
+                receipt_list.push(serde_json::json!({
+                    "userID": msg.send_id,
+                    "msgIDList": seqs.iter().map(|s| format!("seq_{}", s)).collect::<Vec<_>>(),
+                    "sessionType": msg.session_type,
+                    "readTime": msg.send_time,
+                }));
+            }
+            let receipt_json_str = serde_json::to_string(&receipt_list).unwrap_or_default();
+            let listener = self.advanced_msg_listener.clone();
+            tokio::spawn(async move {
+                listener.on_recv_c2c_read_receipt(receipt_json_str).await;
+            });
+            return true;
+        }
+
+        // Reaction 事件（已处理，但暂不通过回调）
+        if msg.content_type == constant::REACTION_MESSAGE_MODIFIER
+            || msg.content_type == constant::REACTION_MESSAGE_DELETER
+        {
+            // Reaction 事件：目前不通过回调处理（可后续扩展）
+            return true;
+        }
+
+        // 输入提示（typing）
+        if msg.content_type == constant::TYPING {
+            let mut msg_tip = String::new();
+            if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
+                if let Some(v) = json.get("msgTip").and_then(|v| v.as_str()) {
+                    msg_tip = v.to_string();
+                }
+            }
+            let typing_json = serde_json::json!({
+                "conversationID": conv_id,
+                "sendID": msg.send_id,
+                "msgTip": msg_tip,
+            });
+            let typing_json_str = serde_json::to_string(&typing_json).unwrap_or_default();
+            let listener = self.advanced_msg_listener.clone();
+            tokio::spawn(async move {
+                listener.on_recv_typing_status(typing_json_str).await;
+            });
+            return true;
+        }
+
+        // 普通消息类型（CONTENT_TYPE_BEGIN 到 NOTIFICATION_BEGIN 之间的所有类型）
+        // 包括：TEXT, PICTURE, VOICE, VIDEO, FILE, AT_TEXT, MERGER, CARD, LOCATION, CUSTOM,
+        // REVOKE, TYPING, QUOTE, ADVANCED_TEXT, MARKDOWN_TEXT, CUSTOM_NOT_TRIGGER_CONVERSATION,
+        // CUSTOM_ONLINE_ONLY, REACTION_MESSAGE_MODIFIER, REACTION_MESSAGE_DELETER 等
+        // 注意：REVOKE, HAS_READ_RECEIPT, REACTION, TYPING 已在上面处理，这里处理其他普通消息
+        if msg.content_type >= constant::CONTENT_TYPE_BEGIN
+            && msg.content_type < constant::NOTIFICATION_BEGIN
+        {
+            // 排除已特殊处理的消息类型
+            if msg.content_type != constant::REVOKE
+                && msg.content_type != constant::HAS_READ_RECEIPT
+                && msg.content_type != constant::REACTION_MESSAGE_MODIFIER
+                && msg.content_type != constant::REACTION_MESSAGE_DELETER
+                && msg.content_type != constant::TYPING
+            {
+                let msg_json = self.msg_data_to_json(msg);
+                let listener = self.advanced_msg_listener.clone();
+                tokio::spawn(async move {
+                    listener.on_recv_new_message(msg_json).await;
+                });
+                return true;
+            }
+        }
+
+        // 通用消息类型（COMMON, GROUP_MSG, SIGNAL_MSG, CUSTOM_NOTIFICATION）
+        if msg.content_type == constant::COMMON
+            || msg.content_type == constant::GROUP_MSG
+            || msg.content_type == constant::SIGNAL_MSG
+            || msg.content_type == constant::CUSTOM_NOTIFICATION
+        {
+            let msg_json = self.msg_data_to_json(msg);
+            let listener = self.advanced_msg_listener.clone();
+            tokio::spawn(async move {
+                listener.on_recv_new_message(msg_json).await;
+            });
+            return true;
+        }
+
+        // 通知消息类型（NOTIFICATION_BEGIN 到 NOTIFICATION_END 之间的所有类型）
+        // 包括：好友通知、用户通知、群组通知、会话通知等
+        if msg.content_type >= constant::NOTIFICATION_BEGIN
+            && msg.content_type <= constant::NOTIFICATION_END
+        {
+            // 排除已特殊处理的通知类型（HAS_READ_RECEIPT）
+            if msg.content_type != constant::HAS_READ_RECEIPT {
+                let msg_json = self.msg_data_to_json(msg);
+                let listener = self.advanced_msg_listener.clone();
+                tokio::spawn(async move {
+                    listener.on_recv_new_message(msg_json).await;
+                });
+                return true;
+            }
+        }
+
+        // 未处理的消息类型（会触发 warn 日志）
+        false
     }
 
     /// 获取会话列表（分页）
@@ -1754,6 +1737,41 @@ impl OpenIMClient {
         )
     }
 
+    /// 消息构造器：Markdown 文本 + 实体列表
+    pub fn create_markdown_with_entities_message(
+        &self,
+        content: String,
+        message_entity_list: Option<String>,
+    ) -> MsgStruct {
+        let elem = crate::im::msg::MarkdownEntityElem {
+            content,
+            message_entity_list,
+        };
+        let content = serde_json::to_string(&elem).unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::MARKDOWN_TEXT,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：混合消息（Merger 近似，使用 MERGER contentType）
+    pub fn create_mixed_message(
+        &self,
+        title: String,
+        summary_list: Vec<String>,
+        message_list: Vec<MsgStruct>,
+    ) -> MsgStruct {
+        let content = serde_json::to_string(&serde_json::json!({
+            "title": title,
+            "summaryList": summary_list,
+            "message": message_list,
+        }))
+        .unwrap_or_default();
+        self.build_msg(openim_protocol::constant::MERGER, Some(content), None, None)
+    }
+
     /// 消息构造器：AdvancedText（text + messageEntityList json）
     pub fn create_advanced_text_message(
         &self,
@@ -1762,6 +1780,27 @@ impl OpenIMClient {
     ) -> MsgStruct {
         let content = serde_json::to_string(&serde_json::json!({
             "text": text,
+            "messageEntityList": message_entity_list,
+        }))
+        .unwrap_or_default();
+        self.build_msg(
+            openim_protocol::constant::ADVANCED_TEXT,
+            Some(content),
+            None,
+            None,
+        )
+    }
+
+    /// 消息构造器：AdvancedQuote（text + message + messageEntityList）
+    pub fn create_advanced_quote_message(
+        &self,
+        text: String,
+        message: MsgStruct,
+        message_entity_list: String,
+    ) -> MsgStruct {
+        let content = serde_json::to_string(&serde_json::json!({
+            "text": text,
+            "message": message,
             "messageEntityList": message_entity_list,
         }))
         .unwrap_or_default();
@@ -1888,6 +1927,49 @@ impl OpenIMClient {
         };
         msg.content = content;
         msg
+    }
+
+    /// 将 protobuf MsgData 转换为 MsgStruct 并序列化为 JSON（用于回调）
+    fn msg_data_to_json(&self, msg: &openim_protocol::sdkws::MsgData) -> String {
+        let msg_struct = MsgStruct {
+            client_msg_id: Some(msg.client_msg_id.clone()),
+            server_msg_id: Some(msg.server_msg_id.clone()),
+            create_time: msg.create_time,
+            send_time: msg.send_time,
+            session_type: msg.session_type,
+            send_id: Some(msg.send_id.clone()),
+            recv_id: Some(msg.recv_id.clone()),
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: Some(msg.sender_nickname.clone()),
+            sender_face_url: Some(msg.sender_face_url.clone()),
+            group_id: if !msg.group_id.is_empty() {
+                Some(msg.group_id.clone())
+            } else {
+                None
+            },
+            content: Some(String::from_utf8_lossy(&msg.content).to_string()),
+            seq: msg.seq,
+            is_read: msg.is_read,
+            status: msg.status,
+            is_react: None,
+            is_external_extensions: None,
+            offline_push: None,
+            attached_info: Some(msg.attached_info.clone()),
+            ex: Some(msg.ex.clone()),
+            local_ex: None,
+            text_elem: None,
+            picture_elem: None,
+            sound_elem: None,
+            video_elem: None,
+            file_elem: None,
+            at_text_elem: None,
+            location_elem: None,
+            custom_elem: None,
+            quote_elem: None,
+        };
+        serde_json::to_string(&msg_struct).unwrap_or_else(|_| "{}".to_string())
     }
 
     async fn store_msg(&self, conversation_id: String, msg: MsgStruct) -> Result<()> {
@@ -2126,68 +2208,20 @@ impl OpenIMClient {
             _ => "[UNKNOWN]",
         }
     }
-
-    #[allow(dead_code, clippy::single_match)]
-    fn parse_content(msg: &openim_protocol::sdkws::MsgData) {
-        if msg.content.is_empty() {
-            debug!("[Client/Msg]  内容为空");
-            return;
-        }
-
-        let content_str = match String::from_utf8(msg.content.clone()) {
-            Ok(s) => s,
-            Err(_) => {
-                debug!("[Client/Msg]  [二进制 {} bytes]", msg.content.len());
-                return;
-            }
-        };
-
-        // 通知类型
-        if msg.content_type >= 1000 {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content_str) {
-                if let Some(detail_str) = json.get("detail").and_then(|v| v.as_str()) {
-                    if msg.content_type == 2200 {
-                        // 已读回执
-                        if let Ok(detail) = serde_json::from_str::<serde_json::Value>(detail_str) {
-                            info!("[Client/Msg]  📖 已读回执:");
-                            if let Some(seq) = detail.get("hasReadSeq").and_then(|v| v.as_i64()) {
-                                info!("[Client/Msg]     已读到: seq {}", seq);
-                            }
-                        }
-                    } else {
-                        // 其他通知
-                        if let Ok(detail) = serde_json::from_str::<serde_json::Value>(detail_str) {
-                            if let Ok(pretty) = serde_json::to_string_pretty(&detail) {
-                                for line in pretty.lines() {
-                                    info!("[Client/Msg]    {}", line);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // 普通消息
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content_str) {
-                if let Some(text) = json.get("content").and_then(|v| v.as_str()) {
-                    info!("[Client/Msg]  💬 \"{}\"", text);
-                }
-            } else {
-                info!("[Client/Msg]  {}", content_str);
-            }
-        }
-    }
 }
 
 // 允许未使用的辅助方法（日志解析/调试）
 #[allow(dead_code, clippy::manual_range_contains, clippy::single_match)]
 #[cfg(test)]
 mod tests {
-    use tracing::{error, info};
+    use tracing::{error, info, warn};
 
     use super::{ClientConfig, OpenIMClient};
+    use crate::im::advanced_msg_listener::AdvancedMsgListener;
     use crate::im::auth::login_async;
-    use std::sync::Once;
+    use crate::im::conversation::ConversationListener;
+    use crate::im::friend::FriendListener;
+    use std::sync::{Arc, Once};
 
     static INIT_LOGGER: Once = Once::new();
 
@@ -2202,6 +2236,9 @@ mod tests {
             );
 
             let fmt_layer = tracing_subscriber::fmt::layer()
+                .with_file(true)        // 包含文件名
+                .with_line_number(true) // 包含行号
+                .with_target(false)     // 不显示 target（可选，减少噪音）
                 .with_test_writer();
 
             tracing_subscriber::registry()
@@ -2221,7 +2258,7 @@ mod tests {
         info!("🔐 正在登录获取 token...");
         let token_info = match login_async(
             "+86".to_string(),
-            "17764008284".to_string(),
+            "17764338283".to_string(),
             "284f3d09ea0695538e4ded1c1766d73a".to_string(),
             5,
         )
@@ -2247,6 +2284,117 @@ mod tests {
         let config = ClientConfig::new(user_id.clone(), im_token, 5);
         let mut client = OpenIMClient::new(config);
 
+        // 设置会话监听器
+        struct TestConversationListener;
+        #[async_trait::async_trait]
+        impl ConversationListener for TestConversationListener {
+            async fn on_sync_server_start(&self, reinstalled: bool) {
+                info!("[回调/会话] 🔄 同步服务器开始: reinstalled={}", reinstalled);
+            }
+
+            async fn on_sync_server_finish(&self, reinstalled: bool) {
+                info!("[回调/会话] ✅ 同步服务器完成: reinstalled={}", reinstalled);
+            }
+
+            async fn on_sync_server_progress(&self, progress: i32) {
+                info!("[回调/会话] 📊 同步服务器进度: {}%", progress);
+            }
+
+            async fn on_sync_server_failed(&self, reinstalled: bool) {
+                error!("[回调/会话] ❌ 同步服务器失败: reinstalled={}", reinstalled);
+            }
+
+            async fn on_new_conversation(&self, conversation_list: String) {
+                info!("[回调/会话] 🆕 新会话: {}", conversation_list);
+            }
+
+            async fn on_conversation_changed(&self, conversation_list: String) {
+                info!("[回调/会话] 🔄 会话变更: {}", conversation_list);
+            }
+
+            async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
+                info!("[回调/会话] 📬 总未读消息数变更: {}", total_unread_count);
+            }
+
+            async fn on_conversation_user_input_status_changed(&self, change: String) {
+                info!("[回调/会话] ⌨️ 会话用户输入状态变更: {}", change);
+            }
+        }
+        client.set_conversation_listener(Arc::new(TestConversationListener));
+
+        // 设置好友监听器
+        struct TestFriendListener;
+        #[async_trait::async_trait]
+        impl FriendListener for TestFriendListener {
+            async fn on_friend_list_changed(&self, friends_json: String) {
+                info!("[回调/好友] 👥 好友列表变更: {}", friends_json);
+            }
+
+            async fn on_black_list_changed(&self, blacks_json: String) {
+                info!("[回调/好友] 🚫 黑名单列表变更: {}", blacks_json);
+            }
+
+            async fn on_friend_request_list_changed(&self, requests_json: String) {
+                info!("[回调/好友] 📝 好友申请列表变更: {}", requests_json);
+            }
+        }
+        client.set_friend_listener(Arc::new(TestFriendListener));
+
+        // 设置高级消息监听器
+        struct TestAdvancedMsgListener;
+        #[async_trait::async_trait]
+        impl AdvancedMsgListener for TestAdvancedMsgListener {
+            async fn on_recv_new_message(&self, message: String) {
+                info!("[回调/消息] 📨 OnRecvNewMessage: {}", message);
+            }
+
+            async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
+                info!("[回调/消息] 📖 OnRecvC2CReadReceipt: {}", msg_receipt_list);
+            }
+
+            async fn on_new_recv_message_revoked(&self, message_revoked: String) {
+                info!(
+                    "[回调/消息] 🗑️ OnNewRecvMessageRevoked: {}",
+                    message_revoked
+                );
+            }
+
+            async fn on_recv_offline_new_message(&self, message: String) {
+                info!("[回调/消息] 📬 OnRecvOfflineNewMessage: {}", message);
+            }
+
+            async fn on_msg_deleted(&self, message: String) {
+                info!("[回调/消息] 🗑️ OnMsgDeleted: {}", message);
+            }
+
+            async fn on_recv_online_only_message(&self, message: String) {
+                info!("[回调/消息] 💬 OnRecvOnlineOnlyMessage: {}", message);
+            }
+
+            async fn on_kicked_offline(&self) {
+                warn!("[回调/消息] ⚠️ OnKickedOffline: 被踢下线");
+            }
+
+            async fn on_connection_status_changed(&self, connected: bool, message: String) {
+                if connected {
+                    info!(
+                        "[回调/消息] 🔗 OnConnectionStatusChanged: 已连接 - {}",
+                        message
+                    );
+                } else {
+                    warn!(
+                        "[回调/消息] 🔗 OnConnectionStatusChanged: 断开 - {}",
+                        message
+                    );
+                }
+            }
+
+            async fn on_recv_typing_status(&self, typing_info: String) {
+                info!("[回调/消息] ⌨️ OnRecvTypingStatus: {}", typing_info);
+            }
+        }
+        client.set_advanced_msg_listener(Arc::new(TestAdvancedMsgListener));
+
         // 连接到服务器（内部会自动启动消息处理）
         match client.connect().await {
             Ok(_) => {
@@ -2264,6 +2412,7 @@ mod tests {
 
         // 启动发送消息任务（延迟 3 秒后发送，确保连接稳定）
         tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             // 发送测试消息（单聊，发送给自己）
             info!("📤 准备发送测试消息...");
             match client_for_send
@@ -2302,43 +2451,8 @@ mod tests {
         // 保持主任务运行，让消息处理任务继续执行
         info!("📥 客户端运行中，等待消息推送...");
 
-        // 订阅消息事件（Rust 端）
-        let mut receiver = client.subscribe_messages();
-        while let Some(event) = receiver.recv().await {
-            match event {
-                crate::im::types::MessageEvent::NewMessage {
-                    conversation_id,
-                    message,
-                    ..
-                } => {
-                    info!("📨 收到消息:------------");
-                    info!("   会话ID: {}", conversation_id);
-                    info!(
-                        "   发送者: {} -> 接收者: {}",
-                        message.send_id, message.recv_id
-                    );
-                    info!(
-                        "   内容类型: {}",
-                        super::OpenIMClient::get_content_type_name(message.content_type)
-                    );
-
-                    use openim_protocol::constant;
-                    if message.content_type == constant::TEXT {
-                        let text_elem: crate::im::msg::TextElem =
-                            match serde_json::from_slice(&message.content) {
-                                Ok(elem) => elem,
-                                Err(e) => {
-                                    error!("   解析 TextElem 失败: {}", e);
-                                    crate::im::msg::TextElem {
-                                        content: String::new(),
-                                    }
-                                }
-                            };
-                        info!("   内容: {}", text_elem.content);
-                    }
-                }
-                _ => {}
-            }
-        }
+        // 所有消息事件已通过 AdvancedMsgListener 回调处理，无需订阅 channel
+        // 保持主任务运行
+        tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
     }
 }
