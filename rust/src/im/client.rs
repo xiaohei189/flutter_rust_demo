@@ -1111,20 +1111,51 @@ impl OpenIMClient {
 
     // ===================== 消息管理相关 HTTP 能力 =====================
 
-    /// 撤回消息（按会话 ID + seq）
-    pub async fn revoke_message(&self, conversation_id: String, seq: i64) -> Result<()> {
+    /// 撤回消息（按会话 ID + clientMsgID，参考 Go 版本的 RevokeMessage）
+    pub async fn revoke_message(
+        &self,
+        conversation_id: String,
+        client_msg_id: String,
+    ) -> Result<()> {
+        // 1. 从本地数据库获取消息的 seq（参考 Go 版本的 waitForMessageSyncSeq）
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+
+        let msg = store
+            .get_by_client_msg_id(&conversation_id, &client_msg_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("消息不存在或未同步: clientMsgID={}", client_msg_id))?;
+
+        if msg.seq == 0 {
+            return Err(anyhow::anyhow!(
+                "消息尚未同步到服务器，无法撤回: clientMsgID={}",
+                client_msg_id
+            ));
+        }
+
+        // 2. 检查消息状态（只有发送成功的消息才能撤回）
+        if msg.status != openim_protocol::constant::MSG_STATUS_SEND_SUCCESS {
+            return Err(anyhow::anyhow!(
+                "只有发送成功的消息才能撤回: status={}",
+                msg.status
+            ));
+        }
+
+        // 3. 调用服务端 API（服务端需要 seq）
         let url = format!("{}/msg/revoke_msg", self.config.api_base_url);
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
 
         let req_json = serde_json::json!({
             "conversationID": conversation_id,
-            "seq": seq,
+            "seq": msg.seq,
             "userID": self.config.user_id,
         });
 
         info!(
-            "[Client/Msg] 📡 撤回消息: conversationID={}, seq={}",
-            conversation_id, seq
+            "[Client/Msg] 📡 撤回消息: conversationID={}, clientMsgID={}, seq={}",
+            conversation_id, client_msg_id, msg.seq
         );
 
         let resp = reqwest::Client::new()
@@ -2313,7 +2344,10 @@ mod tests {
             }
 
             async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-                info!("[回调/会话] 📬 总未读消息数变更: {}", total_unread_count);
+                info!(
+                    "[回调/会话] 📬 总未读消息数变更: {} (同步未读数成功)",
+                    total_unread_count
+                );
             }
 
             async fn on_conversation_user_input_status_changed(&self, change: String) {
