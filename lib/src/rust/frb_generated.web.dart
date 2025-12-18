@@ -7,11 +7,15 @@
 // ignore_for_file: argument_type_not_assignable
 
 import 'api/bridge_client.dart';
+import 'api/listeners.dart';
 import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
 import 'im/auth.dart';
+import 'im/conversation.dart';
+import 'im/friend.dart';
+import 'im/msg.dart';
 import 'im/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
@@ -77,16 +81,69 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<String> dco_decode_StreamSink_String_Sse(dynamic raw);
+
+  @protected
+  RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw);
+
+  @protected
   String dco_decode_String(dynamic raw);
+
+  @protected
+  bool dco_decode_bool(dynamic raw);
+
+  @protected
+  FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
 
   @protected
   LoginData dco_decode_box_autoadd_login_data(dynamic raw);
 
   @protected
+  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
+
+  @protected
+  SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw);
+
+  @protected
+  VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
+
+  @protected
+  BridgeConversationListener dco_decode_bridge_conversation_listener(
+    dynamic raw,
+  );
+
+  @protected
+  BridgeFriendListener dco_decode_bridge_friend_listener(dynamic raw);
+
+  @protected
+  FileElem dco_decode_file_elem(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
+
+  @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
+
+  @protected
+  List<LocalFriend> dco_decode_list_local_friend(dynamic raw);
+
+  @protected
+  Int64List dco_decode_list_prim_i_64_strict(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  LocalConversation dco_decode_local_conversation(dynamic raw);
+
+  @protected
+  LocalFriend dco_decode_local_friend(dynamic raw);
 
   @protected
   LoginData dco_decode_login_data(dynamic raw);
@@ -95,10 +152,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoginResponse dco_decode_login_response(dynamic raw);
 
   @protected
+  RustStreamSink<String>? dco_decode_opt_StreamSink_String_Sse(dynamic raw);
+
+  @protected
+  RustStreamSink<int>? dco_decode_opt_StreamSink_i_32_Sse(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
   LoginData? dco_decode_opt_box_autoadd_login_data(dynamic raw);
+
+  @protected
+  PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
+
+  @protected
+  PictureElem dco_decode_picture_elem(dynamic raw);
+
+  @protected
+  SoundElem dco_decode_sound_elem(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -108,6 +180,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
+
+  @protected
+  VideoElem dco_decode_video_elem(dynamic raw);
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
@@ -155,16 +230,77 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<String> sse_decode_StreamSink_String_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
 
   @protected
   LoginData sse_decode_box_autoadd_login_data(SseDeserializer deserializer);
 
   @protected
+  PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
+
+  @protected
+  SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer);
+
+  @protected
+  VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
+
+  @protected
+  BridgeConversationListener sse_decode_bridge_conversation_listener(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  BridgeFriendListener sse_decode_bridge_friend_listener(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  FileElem sse_decode_file_elem(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<LocalConversation> sse_decode_list_local_conversation(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<LocalFriend> sse_decode_list_local_friend(SseDeserializer deserializer);
+
+  @protected
+  Int64List sse_decode_list_prim_i_64_strict(SseDeserializer deserializer);
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
+
+  @protected
+  LocalFriend sse_decode_local_friend(SseDeserializer deserializer);
 
   @protected
   LoginData sse_decode_login_data(SseDeserializer deserializer);
@@ -173,12 +309,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoginResponse sse_decode_login_response(SseDeserializer deserializer);
 
   @protected
+  RustStreamSink<String>? sse_decode_opt_StreamSink_String_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RustStreamSink<int>? sse_decode_opt_StreamSink_i_32_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
   LoginData? sse_decode_opt_box_autoadd_login_data(
     SseDeserializer deserializer,
   );
+
+  @protected
+  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
+
+  @protected
+  PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
+
+  @protected
+  SoundElem sse_decode_sound_elem(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -190,7 +345,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer);
+  VideoElem sse_decode_video_elem(SseDeserializer deserializer);
 
   @protected
   void sse_encode_AnyhowException(
@@ -248,7 +403,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_StreamSink_String_Sse(
+    RustStreamSink<String> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_i_32_Sse(
+    RustStreamSink<int> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_file_elem(
+    FileElem self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_box_autoadd_login_data(
@@ -257,7 +433,64 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_picture_elem(
+    PictureElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_sound_elem(
+    SoundElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_video_elem(
+    VideoElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_bridge_conversation_listener(
+    BridgeConversationListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_bridge_friend_listener(
+    BridgeFriendListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_file_elem(FileElem self, SseSerializer serializer);
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_local_conversation(
+    List<LocalConversation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_local_friend(
+    List<LocalFriend> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_i_64_strict(
+    Int64List self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_prim_u_8_strict(
@@ -266,10 +499,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_local_conversation(
+    LocalConversation self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_local_friend(LocalFriend self, SseSerializer serializer);
+
+  @protected
   void sse_encode_login_data(LoginData self, SseSerializer serializer);
 
   @protected
   void sse_encode_login_response(LoginResponse self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_StreamSink_String_Sse(
+    RustStreamSink<String>? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_StreamSink_i_32_Sse(
+    RustStreamSink<int>? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
@@ -281,6 +535,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sound_elem(SoundElem self, SseSerializer serializer);
+
+  @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
 
   @protected
@@ -290,7 +556,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_usize(BigInt self, SseSerializer serializer);
 
   @protected
-  void sse_encode_bool(bool self, SseSerializer serializer);
+  void sse_encode_video_elem(VideoElem self, SseSerializer serializer);
 }
 
 // Section: wire_class

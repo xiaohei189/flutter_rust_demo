@@ -5,6 +5,9 @@
 
 import '../frb_generated.dart';
 import '../im/auth.dart';
+import '../im/conversation.dart';
+import '../im/friend.dart';
+import '../im/msg.dart';
 import '../im/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
@@ -12,11 +15,32 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
+  /// 清空会话消息
+  Future<void> clearConversationMsgs({required List<String> conversationIds});
+
   /// 连接到服务器
   ///
   /// 建立 WebSocket 连接并启动消息监听。
   /// 连接成功后会自动启动心跳和消息处理任务。
   Future<void> connect();
+
+  /// 删除消息
+  Future<void> deleteMessages({
+    required String conversationId,
+    required Int64List seqs,
+  });
+
+  /// 获取所有会话列表
+  Future<List<LocalConversation>> getAllConversations();
+
+  /// 获取所有好友列表
+  Future<List<LocalFriend>> getAllFriends();
+
+  /// 获取会话列表（分页）
+  Future<List<LocalConversation>> getConversationList({
+    required PlatformInt64 offset,
+    required PlatformInt64 count,
+  });
 
   static Future<LoginResponse> loginAsync({
     required String areaCode,
@@ -29,6 +53,13 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     password: password,
     platform: platform,
   );
+
+  /// 标记会话为已读
+  Future<void> markConversationAsRead({
+    required String conversationId,
+    required PlatformInt64 hasReadSeq,
+    required Int64List seqs,
+  });
 
   /// 创建新的客户端实例
   ///
@@ -52,6 +83,53 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     wsUrl: wsUrl,
   );
 
+  /// 注册会话监听（回调流）
+  ///
+  /// - `conv_sink`: 会话相关事件（JSON 字符串），包括同步进度、新会话、会话变更、输入状态等
+  /// - `unread_sink`: 总未读数变化（整型）
+  Future<void> registerConversationListener({
+    RustStreamSink<String>? convSink,
+    RustStreamSink<int>? unreadSink,
+  });
+
+  /// 注册好友监听（回调流）
+  ///
+  /// - `friend_sink`: 好友列表变化（JSON 数组）
+  /// - `black_sink`: 黑名单列表变化（JSON 数组）
+  /// - `request_sink`: 好友申请列表变化（JSON 数组）
+  Future<void> registerFriendListener({
+    RustStreamSink<String>? friendSink,
+    RustStreamSink<String>? blackSink,
+    RustStreamSink<String>? requestSink,
+  });
+
+  /// 撤回消息
+  Future<void> revokeMessage({
+    required String conversationId,
+    required String seq,
+  });
+
+  /// 发送文件消息
+  Future<void> sendFileMessage({
+    required String recvId,
+    required FileElem file,
+    required int sessionType,
+  });
+
+  /// 发送图片消息
+  Future<void> sendPictureMessage({
+    required String recvId,
+    required PictureElem picture,
+    required int sessionType,
+  });
+
+  /// 发送语音消息
+  Future<void> sendSoundMessage({
+    required String recvId,
+    required SoundElem sound,
+    required int sessionType,
+  });
+
   /// 发送文本消息
   ///
   /// # 参数
@@ -61,6 +139,13 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> sendTextMessage({
     required String recvId,
     required String text,
+    required int sessionType,
+  });
+
+  /// 发送视频消息
+  Future<void> sendVideoMessage({
+    required String recvId,
+    required VideoElem video,
     required int sessionType,
   });
 
@@ -85,5 +170,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   ///   }
   /// });
   /// ```
+  ///
+  /// 注意：此方法已废弃，请使用 `set_advanced_msg_listener` 设置回调监听器
   Stream<MessageEvent> subscribeMessages();
 }

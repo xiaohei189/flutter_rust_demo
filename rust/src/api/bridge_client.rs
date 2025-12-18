@@ -239,7 +239,7 @@ impl OpenIMBridgeClient {
     pub async fn revoke_message(
         &self,
         conversation_id: String,
-        seq: i64,
+        seq: String,
     ) -> Result<()> {
         self.inner.revoke_message(conversation_id, seq).await
     }
