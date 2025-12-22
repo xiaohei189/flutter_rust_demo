@@ -12,14 +12,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
 
-  // 初始化并连接 WebSocket
-  // TODO: 从登录接口获取真实的 userId 和 token
+  // 初始化并连接 WebSocket（登录已集成在 SDK 中）
   try {
     await messageService.initialize(
-      areaCode: '+86',
-      phoneNumber: '17764008284',
-      password: '284f3d09ea0695538e4ded1c1766d73a',
-      platform: 5,
       wsUrl: 'ws://localhost:10001', // WebSocket 地址
     );
   } catch (e) {

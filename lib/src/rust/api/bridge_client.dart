@@ -4,62 +4,50 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import '../im/auth.dart';
-import '../im/conversation.dart';
-import '../im/friend.dart';
-import '../im/msg.dart';
-import '../im/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
+
+/// 登录接口
+///
+/// 参考 openim-cli.rs 的实现，先登录获取 token 信息
+Future<LoginResponse> loginAsync({
+  required String areaCode,
+  required String phoneNumber,
+  required String password,
+  required int platform,
+}) => RustLib.instance.api.crateApiBridgeClientLoginAsync(
+  areaCode: areaCode,
+  phoneNumber: phoneNumber,
+  password: password,
+  platform: platform,
+);
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LoginResponse>>
+abstract class LoginResponse implements RustOpaqueInterface {
+  /// 获取 Chat Token
+  String? chatToken();
+
+  /// 获取错误代码
+  int errCode();
+
+  /// 获取错误消息
+  String errMsg();
+
+  /// 获取 IM Token
+  String? imToken();
+
+  /// 获取用户 ID
+  String? userId();
+}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
-  /// 清空会话消息
-  Future<void> clearConversationMsgs({required List<String> conversationIds});
-
   /// 连接到服务器
   ///
   /// 建立 WebSocket 连接并启动消息监听。
   /// 连接成功后会自动启动心跳和消息处理任务。
   Future<void> connect();
-
-  /// 删除消息
-  Future<void> deleteMessages({
-    required String conversationId,
-    required Int64List seqs,
-  });
-
-  /// 获取所有会话列表
-  Future<List<LocalConversation>> getAllConversations();
-
-  /// 获取所有好友列表
-  Future<List<LocalFriend>> getAllFriends();
-
-  /// 获取会话列表（分页）
-  Future<List<LocalConversation>> getConversationList({
-    required PlatformInt64 offset,
-    required PlatformInt64 count,
-  });
-
-  static Future<LoginResponse> loginAsync({
-    required String areaCode,
-    required String phoneNumber,
-    required String password,
-    required int platform,
-  }) => RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientLoginAsync(
-    areaCode: areaCode,
-    phoneNumber: phoneNumber,
-    password: password,
-    platform: platform,
-  );
-
-  /// 标记会话为已读
-  Future<void> markConversationAsRead({
-    required String conversationId,
-    required PlatformInt64 hasReadSeq,
-    required Int64List seqs,
-  });
 
   /// 创建新的客户端实例
   ///
@@ -82,95 +70,4 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     platformId: platformId,
     wsUrl: wsUrl,
   );
-
-  /// 注册会话监听（回调流）
-  ///
-  /// - `conv_sink`: 会话相关事件（JSON 字符串），包括同步进度、新会话、会话变更、输入状态等
-  /// - `unread_sink`: 总未读数变化（整型）
-  Future<void> registerConversationListener({
-    RustStreamSink<String>? convSink,
-    RustStreamSink<int>? unreadSink,
-  });
-
-  /// 注册好友监听（回调流）
-  ///
-  /// - `friend_sink`: 好友列表变化（JSON 数组）
-  /// - `black_sink`: 黑名单列表变化（JSON 数组）
-  /// - `request_sink`: 好友申请列表变化（JSON 数组）
-  Future<void> registerFriendListener({
-    RustStreamSink<String>? friendSink,
-    RustStreamSink<String>? blackSink,
-    RustStreamSink<String>? requestSink,
-  });
-
-  /// 撤回消息
-  Future<void> revokeMessage({
-    required String conversationId,
-    required String seq,
-  });
-
-  /// 发送文件消息
-  Future<void> sendFileMessage({
-    required String recvId,
-    required FileElem file,
-    required int sessionType,
-  });
-
-  /// 发送图片消息
-  Future<void> sendPictureMessage({
-    required String recvId,
-    required PictureElem picture,
-    required int sessionType,
-  });
-
-  /// 发送语音消息
-  Future<void> sendSoundMessage({
-    required String recvId,
-    required SoundElem sound,
-    required int sessionType,
-  });
-
-  /// 发送文本消息
-  ///
-  /// # 参数
-  /// - `recv_id`: 接收者 ID
-  /// - `text`: 消息文本内容
-  /// - `session_type`: 会话类型（1=单聊, 2=群聊）
-  Future<void> sendTextMessage({
-    required String recvId,
-    required String text,
-    required int sessionType,
-  });
-
-  /// 发送视频消息
-  Future<void> sendVideoMessage({
-    required String recvId,
-    required VideoElem video,
-    required int sessionType,
-  });
-
-  /// 订阅消息事件
-  ///
-  /// 订阅客户端内部的消息事件流。
-  /// 在 Dart 端会返回一个 Stream<MessageEvent>，持续接收事件直到连接断开。
-  ///
-  /// # 事件类型
-  /// - `NewMessage`: 收到新消息，包含完整的 MessageData
-  /// - `SendMessageResponse`: 消息发送响应
-  /// - `KickedOffline`: 被踢下线
-  /// - `ConnectionStatus`: 连接状态变化
-  /// - `Other`: 其他消息
-  ///
-  /// # Dart 使用示例
-  /// ```dart
-  /// final stream = client.subscribeMessages();
-  /// stream.listen((event) {
-  ///   if (event is NewMessage) {
-  ///     print('收到消息: ${event.message.sendId} -> ${event.message.recvId}');
-  ///   }
-  /// });
-  /// ```
-  ///
-  /// 注意：此方法已废弃，请使用 `set_advanced_msg_listener` 设置回调监听器
-  Stream<MessageEvent> subscribeMessages();
 }
