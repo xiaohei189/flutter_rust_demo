@@ -13,7 +13,7 @@ pub struct ConnectionStatusEvent {
 
 /// 新消息事件
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NewMessageEvent {
+pub struct MessageEvent {
     pub message: String, // JSON 字符串
 }
 
@@ -77,18 +77,15 @@ impl ConversationListener for DartConversationListener {
 
 /// 消息监听器（桥接到 Dart）
 pub struct DartAdvancedMsgListener {
-    pub message_sink: StreamSink<NewMessageEvent>,
-    pub connection_sink: StreamSink<ConnectionStatusEvent>,
+    pub message_sink: StreamSink<MessageEvent>,
 }
 
 impl DartAdvancedMsgListener {
     pub fn new(
-        message_sink: StreamSink<NewMessageEvent>,
-        connection_sink: StreamSink<ConnectionStatusEvent>,
+        message_sink: StreamSink<MessageEvent>,
     ) -> Self {
         Self {
             message_sink,
-            connection_sink,
         }
     }
 }
@@ -96,47 +93,50 @@ impl DartAdvancedMsgListener {
 #[async_trait]
 impl AdvancedMsgListener for DartAdvancedMsgListener {
     async fn on_recv_new_message(&self, message: String) {
-        let event = NewMessageEvent { message };
+        let event = MessageEvent { message };
         let _ = self.message_sink.add(event);
     }
 
     async fn on_recv_c2c_read_receipt(&self, _msg_receipt_list: String) {
-        // 可以发送已读回执事件
-    }
-
-    async fn on_new_recv_message_revoked(&self, _message_revoked: String) {
-        // 可以发送消息撤回事件
-    }
-
-    async fn on_recv_offline_new_message(&self, message: String) {
-        let event = NewMessageEvent { message };
+        let event = MessageEvent { message: _msg_receipt_list };
         let _ = self.message_sink.add(event);
     }
 
-    async fn on_msg_deleted(&self, _message: String) {
-        // 可以发送消息删除事件
+    async fn on_new_recv_message_revoked(&self, _message_revoked: String) {
+        let event = MessageEvent { message: _message_revoked };
+        let _ = self.message_sink.add(event);
+    }
+
+    async fn on_recv_offline_new_message(&self, message: String) {
+        let event = MessageEvent { message };
+        let _ = self.message_sink.add(event);
+    }
+
+    async fn on_msg_deleted(&self, message: String) {
+             let event = MessageEvent { message };
+        let _ = self.message_sink.add(event);
     }
 
     async fn on_recv_online_only_message(&self, message: String) {
-        let event = NewMessageEvent { message };
+        let event = MessageEvent { message };
         let _ = self.message_sink.add(event);
     }
 
     async fn on_kicked_offline(&self) {
-        let event = ConnectionStatusEvent {
-            connected: false,
-            message: "被踢下线".to_string(),
-        };
-        let _ = self.connection_sink.add(event);
+        let event = MessageEvent { message: "kicked_offline".to_string() };
+        let _ = self.message_sink.add(event);
+
     }
 
-    async fn on_connection_status_changed(&self, connected: bool, message: String) {
-        let event = ConnectionStatusEvent { connected, message };
-        let _ = self.connection_sink.add(event);
+    async fn on_connection_status_changed(&self, _connected: bool, message: String) {
+        // connected 参数暂不使用，保留以便以后扩展
+        let event = MessageEvent { message };
+        let _ = self.message_sink.add(event);
     }
 
     async fn on_recv_typing_status(&self, _typing_info: String) {
-        // 可以发送输入状态事件
+        let event = MessageEvent { message: _typing_info };
+        let _ = self.message_sink.add(event);
     }
 }
 

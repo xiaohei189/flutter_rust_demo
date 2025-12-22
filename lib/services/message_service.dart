@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import '../models/chat.dart';
 import '../models/message.dart';
@@ -15,17 +13,16 @@ import '../src/rust/im/types.dart';
 class MessageService extends ChangeNotifier {
   OpenImBridgeClient? _client;
   bool _isConnected = false;
-  
+
   // 会话列表
   final List<Chat> _chats = [];
-  
+
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
-  
+
   // Stream 订阅
   StreamSubscription<ConversationChangedEvent>? _conversationSubscription;
-  StreamSubscription<NewMessageEvent>? _messageSubscription;
-  StreamSubscription<ConnectionStatusEvent>? _connectionSubscription;
+  StreamSubscription<MessageEvent>? _messageSubscription;
 
   /// 是否已连接
   bool get isConnected => _isConnected;
@@ -51,9 +48,8 @@ class MessageService extends ChangeNotifier {
   }
 
   /// 初始化并连接服务
-  Future<void> initialize({
-    String? wsUrl,
-  }) async {
+  Future<void> initialize({String? wsUrl}) async {
+    // 否则，如果有旧 client 但未连接，先彻底断开并重新创建
     if (_client != null) {
       await disconnect();
     }
@@ -97,7 +93,7 @@ class MessageService extends ChangeNotifier {
       notifyListeners();
 
       debugPrint('✅ 客户端连接成功');
-      
+
       // 加载初始会话列表
       await _loadConversations();
     } catch (e) {
@@ -111,63 +107,69 @@ class MessageService extends ChangeNotifier {
   /// 设置监听器
   void _setupListeners() {
     if (_client == null) return;
+    // 取消已有订阅，防止热重载或重复调用造成重复监听
+    unawaited(_messageSubscription?.cancel());
+    unawaited(_conversationSubscription?.cancel());
+    _messageSubscription = null;
+    _conversationSubscription = null;
 
-    // 设置连接状态监听器
-    final connectionSink = RustStreamSink<ConnectionStatusEvent>();
-    _connectionSubscription = connectionSink.stream.listen((event) {
-      _isConnected = event.connected;
-      debugPrint('🔌 连接状态变更: ${event.connected ? "已连接" : "已断开"} - ${event.message}');
-      notifyListeners();
-    });
-
-    // 设置消息监听器
-    final messageSink = RustStreamSink<NewMessageEvent>();
-    _messageSubscription = messageSink.stream.listen((event) {
-      _handleNewMessage(event.message);
-    });
-
-    _client!.setAdvancedMsgListener(
-      messageSink: messageSink,
-      connectionSink: connectionSink,
+    // 订阅消息事件流（来自 Rust）
+    _messageSubscription = _client!.messageEvent().listen(
+      (event) {
+        _handleNewMessage(event.message);
+      },
+      onError: (err, st) {
+        debugPrint('❌ messageEvent stream error: $err');
+        // 如果流出错，尝试标记为断开并通知 UI
+        _isConnected = false;
+        notifyListeners();
+      },
     );
 
-    // 设置会话监听器
-    _conversationSubscription = _client!.setConversationListener().listen((event) {
-      _handleConversationChanged(event.conversationList);
-    });
+    // 订阅会话变更事件流（来自 Rust）
+    _conversationSubscription = _client!.conversationEvent().listen(
+      (event) {
+        _handleConversationChanged(event.conversationList);
+      },
+      onError: (err, st) {
+        debugPrint('❌ conversationEvent stream error: $err');
+      },
+    );
   }
 
   /// 处理新消息
   void _handleNewMessage(String messageJson) {
     try {
-      final messageData = jsonDecode(messageJson) as Map<String, dynamic>;
-      final conversationId = messageData['conversationID'] as String?;
-      final senderId = messageData['sendID'] as String?;
-      final content = messageData['content'] as String?;
-      final sendTime = messageData['sendTime'] as int?;
+      // final messageData = jsonDecode(messageJson) as Map<String, dynamic>;
+      // final conversationId = messageData['conversationID'] as String?;
+      // final senderId = messageData['sendID'] as String?;
+      // final content = messageData['content'] as String?;
+      // final sendTime = messageData['sendTime'] as int?;
 
-      if (conversationId == null || senderId == null || content == null) {
-        debugPrint('⚠️ 消息格式不完整: $messageJson');
-        return;
-      }
+      // if (conversationId == null || senderId == null || content == null) {
+      //   debugPrint('⚠️ 消息格式不完整: $messageJson');
+      //   return;
+      // }
 
-      final message = Message(
-        id: messageData['clientMsgID'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: senderId,
-        content: content,
-        timestamp: sendTime != null
-            ? DateTime.fromMillisecondsSinceEpoch(sendTime)
-            : DateTime.now(),
-      );
+      // final message = Message(
+      //   id:
+      //       messageData['clientMsgID'] as String? ??
+      //       DateTime.now().millisecondsSinceEpoch.toString(),
+      //   senderId: senderId,
+      //   content: content,
+      //   timestamp: sendTime != null
+      //       ? DateTime.fromMillisecondsSinceEpoch(sendTime)
+      //       : DateTime.now(),
+      // );
 
-      // 添加到消息列表
-      _messages.putIfAbsent(conversationId, () => []).add(message);
-      
-      // 更新会话列表
-      _updateConversationFromMessage(conversationId, message);
-      
-      notifyListeners();
-      debugPrint('📨 收到新消息: $conversationId - $content');
+      // // 添加到消息列表
+      // _messages.putIfAbsent(conversationId, () => []).add(message);
+
+      // // 更新会话列表
+      // _updateConversationFromMessage(conversationId, message);
+
+      // notifyListeners();
+      debugPrint('📨 收到新消息:  - $messageJson');
     } catch (e) {
       debugPrint('❌ 处理新消息失败: $e');
     }
@@ -186,11 +188,13 @@ class MessageService extends ChangeNotifier {
 
   /// 从 LocalConversation 更新 Chat
   void _updateChatFromConversation(LocalConversation conv) {
-    final chatIndex = _chats.indexWhere((chat) => chat.id == conv.conversationId);
-    
+    final chatIndex = _chats.indexWhere(
+      (chat) => chat.id == conv.conversationId,
+    );
+
     // 处理 PlatformInt64（转换为 int）
     final latestMsgTime = conv.latestMsgSendTime.toInt();
-    
+
     final chat = Chat(
       id: conv.conversationId,
       user: User(
@@ -209,7 +213,7 @@ class MessageService extends ChangeNotifier {
     } else {
       _chats.add(chat);
     }
-    
+
     // 按最后消息时间排序
     _chats.sort((a, b) {
       final aTime = a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -230,11 +234,13 @@ class MessageService extends ChangeNotifier {
         unreadCount: chat.unreadCount + 1,
         lastMessageTime: message.timestamp,
       );
-      
+
       // 重新排序
       _chats.sort((a, b) {
-        final aTime = a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bTime = b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final aTime =
+            a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime =
+            b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bTime.compareTo(aTime);
       });
     }
@@ -243,7 +249,7 @@ class MessageService extends ChangeNotifier {
   /// 加载会话列表
   Future<void> _loadConversations() async {
     if (_client == null) return;
-    
+
     try {
       final conversations = await _client!.getAllConversations();
       _chats.clear();
@@ -261,11 +267,9 @@ class MessageService extends ChangeNotifier {
   Future<void> disconnect() async {
     await _conversationSubscription?.cancel();
     await _messageSubscription?.cancel();
-    await _connectionSubscription?.cancel();
     _conversationSubscription = null;
     _messageSubscription = null;
-    _connectionSubscription = null;
-    
+
     _client = null;
     _isConnected = false;
     _chats.clear();

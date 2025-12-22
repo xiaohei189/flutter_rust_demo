@@ -3,7 +3,7 @@ use crate::im::client::{ClientConfig, OpenIMClient};
 use crate::im::auth::LoginResponse;
 use crate::api::listeners::{
     DartConversationListener, DartAdvancedMsgListener,
-    ConnectionStatusEvent, NewMessageEvent, ConversationChangedEvent,
+    ConnectionStatusEvent, MessageEvent, ConversationChangedEvent,
 };
 use crate::frb_generated::StreamSink;
 use std::sync::Arc;
@@ -55,7 +55,7 @@ impl OpenIMBridgeClient {
     /// 设置会话监听器
     /// 
     /// 监听会话变更事件，通过 StreamSink 发送到 Dart
-    pub fn set_conversation_listener(
+    pub fn conversation_event(
         &mut self,
         #[allow(unused)] sink: StreamSink<ConversationChangedEvent>,
     ) {
@@ -66,12 +66,11 @@ impl OpenIMBridgeClient {
     /// 设置消息监听器
     /// 
     /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
-    pub fn set_advanced_msg_listener(
+    pub fn message_event(
         &mut self,
-        #[allow(unused)] message_sink: StreamSink<NewMessageEvent>,
-        #[allow(unused)] connection_sink: StreamSink<ConnectionStatusEvent>,
+        message_sink: StreamSink<MessageEvent>,
     ) {
-        let listener = Arc::new(DartAdvancedMsgListener::new(message_sink, connection_sink));
+        let listener = Arc::new(DartAdvancedMsgListener::new(message_sink));
         self.inner.set_advanced_msg_listener(listener);
     }
 
