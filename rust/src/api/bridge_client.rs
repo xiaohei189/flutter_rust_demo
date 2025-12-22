@@ -1,5 +1,5 @@
 use anyhow::Result;
-use openim_sdk_core_rust::{ClientConfig, OpenIMClient};
+use crate::im::client::{ClientConfig, OpenIMClient};
 
 /// OpenIM 客户端桥接器
 /// 
@@ -56,7 +56,7 @@ pub async fn login_async(
     password: String,
     platform: i32,
 ) -> Result<LoginResponse, String> {
-    let resp = openim_sdk_core_rust::im::auth::login_async(area_code, phone_number, password, platform).await?;
+    let resp = crate::im::auth::login_async(area_code, phone_number, password, platform).await?;
     Ok(LoginResponse { inner: resp })
 }
 
@@ -64,7 +64,7 @@ pub async fn login_async(
 #[derive(Debug)]
 #[flutter_rust_bridge::frb(opaque)]
 pub struct LoginResponse {
-    inner: openim_sdk_core_rust::im::auth::LoginResponse,
+    inner: crate::im::auth::LoginResponse,
 }
 
 impl LoginResponse {

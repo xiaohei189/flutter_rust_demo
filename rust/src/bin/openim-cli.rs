@@ -5,11 +5,11 @@
 
 use anyhow::Result;
 use clap::Parser;
-use openim_sdk_core_rust::im::client::{ClientConfig, OpenIMClient};
-use openim_sdk_core_rust::im::conversation::listener::ConversationListener;
-use openim_sdk_core_rust::im::friend::FriendListener;
-use openim_sdk_core_rust::im::message::listener::AdvancedMsgListener;
-use openim_sdk_core_rust::login_async;
+use rust_lib_flutter_rust_demo::im::client::{ClientConfig, OpenIMClient};
+use rust_lib_flutter_rust_demo::im::conversation::listener::ConversationListener;
+use rust_lib_flutter_rust_demo::im::friend::FriendListener;
+use rust_lib_flutter_rust_demo::im::message::listener::AdvancedMsgListener;
+use rust_lib_flutter_rust_demo::login_async;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
@@ -28,8 +28,8 @@ struct Args {
     #[arg(short, long, default_value = "0")]
     duration: u64,
 
-    /// 日志级别（默认: info,openim_sdk_core_rust=debug）
-    #[arg(long, default_value = "info,openim_sdk_core_rust=debug")]
+    /// 日志级别（默认: info,rust_lib_flutter_rust_demo=debug）
+    #[arg(long, default_value = "info,rust_lib_flutter_rust_demo=debug")]
     log_level: String,
 }
 
