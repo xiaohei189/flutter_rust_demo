@@ -1,11 +1,17 @@
 use anyhow::Result;
 use crate::im::client::{ClientConfig, OpenIMClient};
+use crate::im::auth::LoginResponse;
+use crate::api::listeners::{
+    DartConversationListener, DartAdvancedMsgListener,
+    ConnectionStatusEvent, NewMessageEvent, ConversationChangedEvent,
+};
+use crate::frb_generated::StreamSink;
+use std::sync::Arc;
 
 /// OpenIM 客户端桥接器
 /// 
 /// 这是一个面向 Dart 的桥接客户端，通过 flutter_rust_bridge 暴露给 Flutter/Dart。
 /// 内部封装了 OpenIMClient 核心逻辑，提供简洁的 API。
-#[derive(Clone)]
 pub struct OpenIMBridgeClient {
     inner: OpenIMClient,
 }
@@ -45,57 +51,46 @@ impl OpenIMBridgeClient {
     pub async fn connect(&mut self) -> Result<()> {
         self.inner.connect().await
     }
+
+    /// 设置会话监听器
+    /// 
+    /// 监听会话变更事件，通过 StreamSink 发送到 Dart
+    pub fn set_conversation_listener(
+        &mut self,
+        #[allow(unused)] sink: StreamSink<ConversationChangedEvent>,
+    ) {
+        let listener = Arc::new(DartConversationListener::new(sink));
+        self.inner.set_conversation_listener(listener);
+    }
+
+    /// 设置消息监听器
+    /// 
+    /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
+    pub fn set_advanced_msg_listener(
+        &mut self,
+        #[allow(unused)] message_sink: StreamSink<NewMessageEvent>,
+        #[allow(unused)] connection_sink: StreamSink<ConnectionStatusEvent>,
+    ) {
+        let listener = Arc::new(DartAdvancedMsgListener::new(message_sink, connection_sink));
+        self.inner.set_advanced_msg_listener(listener);
+    }
+
+    /// 获取所有会话列表
+    pub async fn get_all_conversations(&self) -> Result<Vec<crate::im::types::LocalConversation>> {
+        self.inner.get_all_conversations().await
+    }
 }
 
 /// 登录接口
 /// 
 /// 参考 openim-cli.rs 的实现，先登录获取 token 信息
+/// 直接使用本地 im 模块的类型，无需包装
 pub async fn login_async(
     area_code: String,
     phone_number: String,
     password: String,
     platform: i32,
 ) -> Result<LoginResponse, String> {
-    let resp = crate::im::auth::login_async(area_code, phone_number, password, platform).await?;
-    Ok(LoginResponse { inner: resp })
-}
-
-/// 登录响应包装类型（用于 Dart 访问字段）
-#[derive(Debug)]
-#[flutter_rust_bridge::frb(opaque)]
-pub struct LoginResponse {
-    inner: crate::im::auth::LoginResponse,
-}
-
-impl LoginResponse {
-    /// 获取错误代码
-    #[flutter_rust_bridge::frb(sync)]
-    pub fn err_code(&self) -> i32 {
-        self.inner.err_code
-    }
-
-    /// 获取错误消息
-    #[flutter_rust_bridge::frb(sync)]
-    pub fn err_msg(&self) -> String {
-        self.inner.err_msg.clone()
-    }
-
-    /// 获取用户 ID
-    #[flutter_rust_bridge::frb(sync)]
-    pub fn user_id(&self) -> Option<String> {
-        self.inner.data.as_ref().map(|d| d.user_id.clone())
-    }
-
-    /// 获取 IM Token
-    #[flutter_rust_bridge::frb(sync)]
-    pub fn im_token(&self) -> Option<String> {
-        self.inner.data.as_ref().map(|d| d.im_token.clone())
-    }
-
-    /// 获取 Chat Token
-    #[flutter_rust_bridge::frb(sync)]
-    pub fn chat_token(&self) -> Option<String> {
-        self.inner.data.as_ref().map(|d| d.chat_token.clone())
-    }
+    crate::im::auth::login_async(area_code, phone_number, password, platform).await
 }
 

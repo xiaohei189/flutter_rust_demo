@@ -11,7 +11,10 @@ pub struct LoginRequest {
     pub platform: i32,
 }
 
-#[derive(Debug, Deserialize)]
+/// 登录响应（暴露给 Dart）
+/// 
+/// 添加 Serialize 和 Clone trait 以支持 flutter_rust_bridge
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LoginResponse {
     #[serde(rename = "errCode")]
     pub err_code: i32,
@@ -20,7 +23,10 @@ pub struct LoginResponse {
     pub data: Option<LoginData>,
 }
 
-#[derive(Debug, Deserialize)]
+/// 登录数据（暴露给 Dart）
+/// 
+/// 添加 Serialize 和 Clone trait 以支持 flutter_rust_bridge
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LoginData {
     #[serde(rename = "imToken")]
     pub im_token: String,

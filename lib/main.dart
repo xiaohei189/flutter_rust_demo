@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_rust_demo/src/rust/api/logger.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
 
 import 'screens/main_screen.dart';
@@ -10,9 +11,20 @@ final messageService = MessageService();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 1. 初始化 Rust 库
   await RustLib.init();
 
-  // 初始化并连接 WebSocket（登录已集成在 SDK 中）
+  // 2. 初始化日志系统（必须在其他逻辑之前）
+  try {
+    initLoggerSimple(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
+    debugPrint('✅ 日志系统初始化成功');
+  } catch (e) {
+    debugPrint('⚠️ 日志系统初始化失败: $e');
+    // 即使日志初始化失败也继续运行
+  }
+
+  // 3. 初始化并连接 WebSocket（登录已集成在 SDK 中）
   try {
     await messageService.initialize(
       wsUrl: 'ws://localhost:10001', // WebSocket 地址

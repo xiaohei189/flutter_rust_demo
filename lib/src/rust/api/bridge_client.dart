@@ -4,13 +4,15 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import '../im/auth.dart';
+import '../im/types.dart';
+import 'listeners.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
 
 /// 登录接口
 ///
 /// 参考 openim-cli.rs 的实现，先登录获取 token 信息
+/// 直接使用本地 im 模块的类型，无需包装
 Future<LoginResponse> loginAsync({
   required String areaCode,
   required String phoneNumber,
@@ -23,24 +25,6 @@ Future<LoginResponse> loginAsync({
   platform: platform,
 );
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<LoginResponse>>
-abstract class LoginResponse implements RustOpaqueInterface {
-  /// 获取 Chat Token
-  String? chatToken();
-
-  /// 获取错误代码
-  int errCode();
-
-  /// 获取错误消息
-  String errMsg();
-
-  /// 获取 IM Token
-  String? imToken();
-
-  /// 获取用户 ID
-  String? userId();
-}
-
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 连接到服务器
@@ -48,6 +32,9 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 建立 WebSocket 连接并启动消息监听。
   /// 连接成功后会自动启动心跳和消息处理任务。
   Future<void> connect();
+
+  /// 获取所有会话列表
+  Future<List<LocalConversation>> getAllConversations();
 
   /// 创建新的客户端实例
   ///
@@ -70,4 +57,17 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     platformId: platformId,
     wsUrl: wsUrl,
   );
+
+  /// 设置消息监听器
+  ///
+  /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
+  Future<void> setAdvancedMsgListener({
+    required RustStreamSink<NewMessageEvent> messageSink,
+    required RustStreamSink<ConnectionStatusEvent> connectionSink,
+  });
+
+  /// 设置会话监听器
+  ///
+  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConversationChangedEvent> setConversationListener();
 }

@@ -4,12 +4,16 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/bridge_client.dart';
+import 'api/listeners.dart';
+import 'api/logger.dart';
 import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
+import 'im/auth.dart';
+import 'im/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
@@ -67,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1492412717;
+  int get rustContentHash => -1083946241;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -78,23 +82,12 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  String? crateApiBridgeClientLoginResponseChatToken({
-    required LoginResponse that,
-  });
-
-  int crateApiBridgeClientLoginResponseErrCode({required LoginResponse that});
-
-  String crateApiBridgeClientLoginResponseErrMsg({required LoginResponse that});
-
-  String? crateApiBridgeClientLoginResponseImToken({
-    required LoginResponse that,
-  });
-
-  String? crateApiBridgeClientLoginResponseUserId({
-    required LoginResponse that,
-  });
-
   Future<void> crateApiBridgeClientOpenImBridgeClientConnect({
+    required OpenImBridgeClient that,
+  });
+
+  Future<List<LocalConversation>>
+  crateApiBridgeClientOpenImBridgeClientGetAllConversations({
     required OpenImBridgeClient that,
   });
 
@@ -105,9 +98,34 @@ abstract class RustLibApi extends BaseApi {
     String? wsUrl,
   });
 
+  Future<void> crateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListener({
+    required OpenImBridgeClient that,
+    required RustStreamSink<NewMessageEvent> messageSink,
+    required RustStreamSink<ConnectionStatusEvent> connectionSink,
+  });
+
+  Stream<ConversationChangedEvent>
+  crateApiBridgeClientOpenImBridgeClientSetConversationListener({
+    required OpenImBridgeClient that,
+  });
+
+  Future<DartAdvancedMsgListener> crateApiListenersDartAdvancedMsgListenerNew({
+    required RustStreamSink<NewMessageEvent> messageSink,
+    required RustStreamSink<ConnectionStatusEvent> connectionSink,
+  });
+
+  Stream<ConversationChangedEvent>
+  crateApiListenersDartConversationListenerNew();
+
   String crateApiSimpleGreet({required String name});
 
   Future<void> crateApiSimpleInitApp();
+
+  void crateApiLoggerInitLogger({required LoggerConfig config});
+
+  void crateApiLoggerInitLoggerSimple({String? logLevel});
+
+  Future<LoggerConfig> crateApiLoggerLoggerConfigDefault();
 
   Future<LoginResponse> crateApiBridgeClientLoginAsync({
     required String areaCode,
@@ -115,15 +133,6 @@ abstract class RustLibApi extends BaseApi {
     required String password,
     required int platform,
   });
-
-  RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_LoginResponse;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_LoginResponse;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_LoginResponsePtr;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_OpenImBridgeClient;
@@ -144,159 +153,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  String? crateApiBridgeClientLoginResponseChatToken({
-    required LoginResponse that,
-  }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-            that,
-            serializer,
-          );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_opt_String,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiBridgeClientLoginResponseChatTokenConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiBridgeClientLoginResponseChatTokenConstMeta =>
-      const TaskConstMeta(
-        debugName: "LoginResponse_chat_token",
-        argNames: ["that"],
-      );
-
-  @override
-  int crateApiBridgeClientLoginResponseErrCode({required LoginResponse that}) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-            that,
-            serializer,
-          );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_i_32,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiBridgeClientLoginResponseErrCodeConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiBridgeClientLoginResponseErrCodeConstMeta =>
-      const TaskConstMeta(
-        debugName: "LoginResponse_err_code",
-        argNames: ["that"],
-      );
-
-  @override
-  String crateApiBridgeClientLoginResponseErrMsg({
-    required LoginResponse that,
-  }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-            that,
-            serializer,
-          );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiBridgeClientLoginResponseErrMsgConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiBridgeClientLoginResponseErrMsgConstMeta =>
-      const TaskConstMeta(
-        debugName: "LoginResponse_err_msg",
-        argNames: ["that"],
-      );
-
-  @override
-  String? crateApiBridgeClientLoginResponseImToken({
-    required LoginResponse that,
-  }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-            that,
-            serializer,
-          );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_opt_String,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiBridgeClientLoginResponseImTokenConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiBridgeClientLoginResponseImTokenConstMeta =>
-      const TaskConstMeta(
-        debugName: "LoginResponse_im_token",
-        argNames: ["that"],
-      );
-
-  @override
-  String? crateApiBridgeClientLoginResponseUserId({
-    required LoginResponse that,
-  }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-            that,
-            serializer,
-          );
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_opt_String,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiBridgeClientLoginResponseUserIdConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiBridgeClientLoginResponseUserIdConstMeta =>
-      const TaskConstMeta(
-        debugName: "LoginResponse_user_id",
-        argNames: ["that"],
-      );
-
-  @override
   Future<void> crateApiBridgeClientOpenImBridgeClientConnect({
     required OpenImBridgeClient that,
   }) {
@@ -311,7 +167,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 1,
             port: port_,
           );
         },
@@ -333,6 +189,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<List<LocalConversation>>
+  crateApiBridgeClientOpenImBridgeClientGetAllConversations({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_local_conversation,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientGetAllConversationsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetAllConversationsConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_all_conversations",
+        argNames: ["that"],
+      );
+
+  @override
   OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({
     required String userId,
     required String token,
@@ -347,7 +242,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(token, serializer);
           sse_encode_i_32(platformId, serializer);
           sse_encode_opt_String(wsUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -365,6 +260,175 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_new",
         argNames: ["userId", "token", "platformId", "wsUrl"],
+      );
+
+  @override
+  Future<void> crateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListener({
+    required OpenImBridgeClient that,
+    required RustStreamSink<NewMessageEvent> messageSink,
+    required RustStreamSink<ConnectionStatusEvent> connectionSink,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_StreamSink_new_message_event_Sse(messageSink, serializer);
+          sse_encode_StreamSink_connection_status_event_Sse(
+            connectionSink,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListenerConstMeta,
+        argValues: [that, messageSink, connectionSink],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListenerConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_set_advanced_msg_listener",
+        argNames: ["that", "messageSink", "connectionSink"],
+      );
+
+  @override
+  Stream<ConversationChangedEvent>
+  crateApiBridgeClientOpenImBridgeClientSetConversationListener({
+    required OpenImBridgeClient that,
+  }) {
+    final sink = RustStreamSink<ConversationChangedEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_conversation_changed_event_Sse(
+              sink,
+              serializer,
+            );
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 5,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientSetConversationListenerConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientSetConversationListenerConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_set_conversation_listener",
+        argNames: ["that", "sink"],
+      );
+
+  @override
+  Future<DartAdvancedMsgListener> crateApiListenersDartAdvancedMsgListenerNew({
+    required RustStreamSink<NewMessageEvent> messageSink,
+    required RustStreamSink<ConnectionStatusEvent> connectionSink,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_StreamSink_new_message_event_Sse(messageSink, serializer);
+          sse_encode_StreamSink_connection_status_event_Sse(
+            connectionSink,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 6,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_dart_advanced_msg_listener,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiListenersDartAdvancedMsgListenerNewConstMeta,
+        argValues: [messageSink, connectionSink],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiListenersDartAdvancedMsgListenerNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "dart_advanced_msg_listener_new",
+        argNames: ["messageSink", "connectionSink"],
+      );
+
+  @override
+  Stream<ConversationChangedEvent>
+  crateApiListenersDartConversationListenerNew() {
+    final sink = RustStreamSink<ConversationChangedEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_StreamSink_conversation_changed_event_Sse(
+              sink,
+              serializer,
+            );
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 7,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_dart_conversation_listener,
+            decodeErrorData: null,
+          ),
+          constMeta: kCrateApiListenersDartConversationListenerNewConstMeta,
+          argValues: [sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta get kCrateApiListenersDartConversationListenerNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "dart_conversation_listener_new",
+        argNames: ["sink"],
       );
 
   @override
@@ -418,6 +482,82 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "init_app", argNames: []);
 
   @override
+  void crateApiLoggerInitLogger({required LoggerConfig config}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_logger_config(config, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiLoggerInitLoggerConstMeta,
+        argValues: [config],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLoggerInitLoggerConstMeta =>
+      const TaskConstMeta(debugName: "init_logger", argNames: ["config"]);
+
+  @override
+  void crateApiLoggerInitLoggerSimple({String? logLevel}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_opt_String(logLevel, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiLoggerInitLoggerSimpleConstMeta,
+        argValues: [logLevel],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLoggerInitLoggerSimpleConstMeta =>
+      const TaskConstMeta(
+        debugName: "init_logger_simple",
+        argNames: ["logLevel"],
+      );
+
+  @override
+  Future<LoggerConfig> crateApiLoggerLoggerConfigDefault() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_logger_config,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiLoggerLoggerConfigDefaultConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLoggerLoggerConfigDefaultConstMeta =>
+      const TaskConstMeta(debugName: "logger_config_default", argNames: []);
+
+  @override
   Future<LoginResponse> crateApiBridgeClientLoginAsync({
     required String areaCode,
     required String phoneNumber,
@@ -435,13 +575,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 13,
             port: port_,
           );
         },
         codec: SseCodec(
-          decodeSuccessData:
-              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse,
+          decodeSuccessData: sse_decode_login_response,
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiBridgeClientLoginAsyncConstMeta,
@@ -458,14 +597,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_LoginResponse => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_LoginResponse => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse;
-
-  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_OpenImBridgeClient => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
 
@@ -477,15 +608,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return AnyhowException(raw as String);
-  }
-
-  @protected
-  LoginResponse
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return LoginResponseImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -507,21 +629,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginResponse
-  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
+  OpenImBridgeClient
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return LoginResponseImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  LoginResponse
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return LoginResponseImpl.frbInternalDcoDecode(raw as List<dynamic>);
+    return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -534,9 +647,95 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<ConnectionStatusEvent>
+  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  RustStreamSink<ConversationChangedEvent>
+  dco_decode_StreamSink_conversation_changed_event_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  RustStreamSink<NewMessageEvent> dco_decode_StreamSink_new_message_event_Sse(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
+  }
+
+  @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_logger_config(raw);
+  }
+
+  @protected
+  LoginData dco_decode_box_autoadd_login_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_login_data(raw);
+  }
+
+  @protected
+  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ConnectionStatusEvent(
+      connected: dco_decode_bool(arr[0]),
+      message: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  ConversationChangedEvent dco_decode_conversation_changed_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return ConversationChangedEvent(
+      conversationList: dco_decode_String(arr[0]),
+    );
+  }
+
+  @protected
+  DartAdvancedMsgListener dco_decode_dart_advanced_msg_listener(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return DartAdvancedMsgListener(
+      messageSink: dco_decode_StreamSink_new_message_event_Sse(arr[0]),
+      connectionSink: dco_decode_StreamSink_connection_status_event_Sse(arr[1]),
+    );
+  }
+
+  @protected
+  DartConversationListener dco_decode_dart_conversation_listener(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return DartConversationListener(
+      sink: dco_decode_StreamSink_conversation_changed_event_Sse(arr[0]),
+    );
   }
 
   @protected
@@ -546,15 +745,115 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeI64(raw);
+  }
+
+  @protected
+  List<LocalConversation> dco_decode_list_local_conversation(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_local_conversation).toList();
+  }
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
   }
 
   @protected
+  LocalConversation dco_decode_local_conversation(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 24)
+      throw Exception('unexpected arr length: expect 24 but see ${arr.length}');
+    return LocalConversation(
+      conversationId: dco_decode_String(arr[0]),
+      conversationType: dco_decode_i_32(arr[1]),
+      userId: dco_decode_String(arr[2]),
+      groupId: dco_decode_String(arr[3]),
+      showName: dco_decode_String(arr[4]),
+      faceUrl: dco_decode_String(arr[5]),
+      latestMsg: dco_decode_String(arr[6]),
+      latestMsgSendTime: dco_decode_i_64(arr[7]),
+      unreadCount: dco_decode_i_32(arr[8]),
+      recvMsgOpt: dco_decode_i_32(arr[9]),
+      isPinned: dco_decode_bool(arr[10]),
+      isPrivateChat: dco_decode_bool(arr[11]),
+      burnDuration: dco_decode_i_32(arr[12]),
+      groupAtType: dco_decode_i_32(arr[13]),
+      isNotInGroup: dco_decode_bool(arr[14]),
+      updateUnreadCountTime: dco_decode_i_64(arr[15]),
+      attachedInfo: dco_decode_String(arr[16]),
+      ex: dco_decode_String(arr[17]),
+      draftText: dco_decode_String(arr[18]),
+      draftTextTime: dco_decode_i_64(arr[19]),
+      maxSeq: dco_decode_i_64(arr[20]),
+      minSeq: dco_decode_i_64(arr[21]),
+      isMsgDestruct: dco_decode_bool(arr[22]),
+      msgDestructTime: dco_decode_i_64(arr[23]),
+    );
+  }
+
+  @protected
+  LoggerConfig dco_decode_logger_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LoggerConfig(
+      logLevel: dco_decode_String(arr[0]),
+      logFilePath: dco_decode_String(arr[1]),
+      isLogStandardOutput: dco_decode_bool(arr[2]),
+    );
+  }
+
+  @protected
+  LoginData dco_decode_login_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LoginData(
+      imToken: dco_decode_String(arr[0]),
+      chatToken: dco_decode_String(arr[1]),
+      userId: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
+  LoginResponse dco_decode_login_response(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LoginResponse(
+      errCode: dco_decode_i_32(arr[0]),
+      errMsg: dco_decode_String(arr[1]),
+      data: dco_decode_opt_box_autoadd_login_data(arr[2]),
+    );
+  }
+
+  @protected
+  NewMessageEvent dco_decode_new_message_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return NewMessageEvent(message: dco_decode_String(arr[0]));
+  }
+
+  @protected
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  LoginData? dco_decode_opt_box_autoadd_login_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_login_data(raw);
   }
 
   @protected
@@ -583,18 +882,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginResponse
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return LoginResponseImpl.frbInternalSseDecode(
-      sse_decode_usize(deserializer),
-      sse_decode_i_32(deserializer),
-    );
-  }
-
-  @protected
   OpenImBridgeClient
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
@@ -619,24 +906,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginResponse
-  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
+  OpenImBridgeClient
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return LoginResponseImpl.frbInternalSseDecode(
-      sse_decode_usize(deserializer),
-      sse_decode_i_32(deserializer),
-    );
-  }
-
-  @protected
-  LoginResponse
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return LoginResponseImpl.frbInternalSseDecode(
+    return OpenImBridgeClientImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -655,6 +930,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<ConnectionStatusEvent>
+  sse_decode_StreamSink_connection_status_event_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  RustStreamSink<ConversationChangedEvent>
+  sse_decode_StreamSink_conversation_changed_event_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  RustStreamSink<NewMessageEvent> sse_decode_StreamSink_new_message_event_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -662,9 +963,99 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  LoggerConfig sse_decode_box_autoadd_logger_config(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_logger_config(deserializer));
+  }
+
+  @protected
+  LoginData sse_decode_box_autoadd_login_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_login_data(deserializer));
+  }
+
+  @protected
+  ConnectionStatusEvent sse_decode_connection_status_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_connected = sse_decode_bool(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return ConnectionStatusEvent(
+      connected: var_connected,
+      message: var_message,
+    );
+  }
+
+  @protected
+  ConversationChangedEvent sse_decode_conversation_changed_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationList = sse_decode_String(deserializer);
+    return ConversationChangedEvent(conversationList: var_conversationList);
+  }
+
+  @protected
+  DartAdvancedMsgListener sse_decode_dart_advanced_msg_listener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_messageSink = sse_decode_StreamSink_new_message_event_Sse(
+      deserializer,
+    );
+    var var_connectionSink = sse_decode_StreamSink_connection_status_event_Sse(
+      deserializer,
+    );
+    return DartAdvancedMsgListener(
+      messageSink: var_messageSink,
+      connectionSink: var_connectionSink,
+    );
+  }
+
+  @protected
+  DartConversationListener sse_decode_dart_conversation_listener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sink = sse_decode_StreamSink_conversation_changed_event_Sse(
+      deserializer,
+    );
+    return DartConversationListener(sink: var_sink);
+  }
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getPlatformInt64();
+  }
+
+  @protected
+  List<LocalConversation> sse_decode_list_local_conversation(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <LocalConversation>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_local_conversation(deserializer));
+    }
+    return ans_;
   }
 
   @protected
@@ -675,11 +1066,127 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  LocalConversation sse_decode_local_conversation(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_conversationType = sse_decode_i_32(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    var var_groupId = sse_decode_String(deserializer);
+    var var_showName = sse_decode_String(deserializer);
+    var var_faceUrl = sse_decode_String(deserializer);
+    var var_latestMsg = sse_decode_String(deserializer);
+    var var_latestMsgSendTime = sse_decode_i_64(deserializer);
+    var var_unreadCount = sse_decode_i_32(deserializer);
+    var var_recvMsgOpt = sse_decode_i_32(deserializer);
+    var var_isPinned = sse_decode_bool(deserializer);
+    var var_isPrivateChat = sse_decode_bool(deserializer);
+    var var_burnDuration = sse_decode_i_32(deserializer);
+    var var_groupAtType = sse_decode_i_32(deserializer);
+    var var_isNotInGroup = sse_decode_bool(deserializer);
+    var var_updateUnreadCountTime = sse_decode_i_64(deserializer);
+    var var_attachedInfo = sse_decode_String(deserializer);
+    var var_ex = sse_decode_String(deserializer);
+    var var_draftText = sse_decode_String(deserializer);
+    var var_draftTextTime = sse_decode_i_64(deserializer);
+    var var_maxSeq = sse_decode_i_64(deserializer);
+    var var_minSeq = sse_decode_i_64(deserializer);
+    var var_isMsgDestruct = sse_decode_bool(deserializer);
+    var var_msgDestructTime = sse_decode_i_64(deserializer);
+    return LocalConversation(
+      conversationId: var_conversationId,
+      conversationType: var_conversationType,
+      userId: var_userId,
+      groupId: var_groupId,
+      showName: var_showName,
+      faceUrl: var_faceUrl,
+      latestMsg: var_latestMsg,
+      latestMsgSendTime: var_latestMsgSendTime,
+      unreadCount: var_unreadCount,
+      recvMsgOpt: var_recvMsgOpt,
+      isPinned: var_isPinned,
+      isPrivateChat: var_isPrivateChat,
+      burnDuration: var_burnDuration,
+      groupAtType: var_groupAtType,
+      isNotInGroup: var_isNotInGroup,
+      updateUnreadCountTime: var_updateUnreadCountTime,
+      attachedInfo: var_attachedInfo,
+      ex: var_ex,
+      draftText: var_draftText,
+      draftTextTime: var_draftTextTime,
+      maxSeq: var_maxSeq,
+      minSeq: var_minSeq,
+      isMsgDestruct: var_isMsgDestruct,
+      msgDestructTime: var_msgDestructTime,
+    );
+  }
+
+  @protected
+  LoggerConfig sse_decode_logger_config(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_logLevel = sse_decode_String(deserializer);
+    var var_logFilePath = sse_decode_String(deserializer);
+    var var_isLogStandardOutput = sse_decode_bool(deserializer);
+    return LoggerConfig(
+      logLevel: var_logLevel,
+      logFilePath: var_logFilePath,
+      isLogStandardOutput: var_isLogStandardOutput,
+    );
+  }
+
+  @protected
+  LoginData sse_decode_login_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_imToken = sse_decode_String(deserializer);
+    var var_chatToken = sse_decode_String(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    return LoginData(
+      imToken: var_imToken,
+      chatToken: var_chatToken,
+      userId: var_userId,
+    );
+  }
+
+  @protected
+  LoginResponse sse_decode_login_response(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_errCode = sse_decode_i_32(deserializer);
+    var var_errMsg = sse_decode_String(deserializer);
+    var var_data = sse_decode_opt_box_autoadd_login_data(deserializer);
+    return LoginResponse(
+      errCode: var_errCode,
+      errMsg: var_errMsg,
+      data: var_data,
+    );
+  }
+
+  @protected
+  NewMessageEvent sse_decode_new_message_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_message = sse_decode_String(deserializer);
+    return NewMessageEvent(message: var_message);
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  LoginData? sse_decode_opt_box_autoadd_login_data(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_login_data(deserializer));
     } else {
       return null;
     }
@@ -703,31 +1210,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
-  }
-
-  @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.message, serializer);
-  }
-
-  @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    LoginResponse self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-      (self as LoginResponseImpl).frbInternalSseEncode(move: true),
-      serializer,
-    );
   }
 
   @protected
@@ -758,26 +1246,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    LoginResponse self,
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
-      (self as LoginResponseImpl).frbInternalSseEncode(move: false),
-      serializer,
-    );
-  }
-
-  @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerLoginResponse(
-    LoginResponse self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-      (self as LoginResponseImpl).frbInternalSseEncode(move: null),
+      (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: false),
       serializer,
     );
   }
@@ -796,15 +1271,149 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_StreamSink_connection_status_event_Sse(
+    RustStreamSink<ConnectionStatusEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_connection_status_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_conversation_changed_event_Sse(
+    RustStreamSink<ConversationChangedEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_conversation_changed_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_new_message_event_Sse(
+    RustStreamSink<NewMessageEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_new_message_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
   }
 
   @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_logger_config(
+    LoggerConfig self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_logger_config(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_login_data(
+    LoginData self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_login_data(self, serializer);
+  }
+
+  @protected
+  void sse_encode_connection_status_event(
+    ConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.connected, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void sse_encode_conversation_changed_event(
+    ConversationChangedEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationList, serializer);
+  }
+
+  @protected
+  void sse_encode_dart_advanced_msg_listener(
+    DartAdvancedMsgListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_StreamSink_new_message_event_Sse(self.messageSink, serializer);
+    sse_encode_StreamSink_connection_status_event_Sse(
+      self.connectionSink,
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_dart_conversation_listener(
+    DartConversationListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_StreamSink_conversation_changed_event_Sse(self.sink, serializer);
+  }
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
+  }
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putPlatformInt64(self);
+  }
+
+  @protected
+  void sse_encode_list_local_conversation(
+    List<LocalConversation> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_local_conversation(item, serializer);
+    }
   }
 
   @protected
@@ -818,12 +1427,90 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_local_conversation(
+    LocalConversation self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_i_32(self.conversationType, serializer);
+    sse_encode_String(self.userId, serializer);
+    sse_encode_String(self.groupId, serializer);
+    sse_encode_String(self.showName, serializer);
+    sse_encode_String(self.faceUrl, serializer);
+    sse_encode_String(self.latestMsg, serializer);
+    sse_encode_i_64(self.latestMsgSendTime, serializer);
+    sse_encode_i_32(self.unreadCount, serializer);
+    sse_encode_i_32(self.recvMsgOpt, serializer);
+    sse_encode_bool(self.isPinned, serializer);
+    sse_encode_bool(self.isPrivateChat, serializer);
+    sse_encode_i_32(self.burnDuration, serializer);
+    sse_encode_i_32(self.groupAtType, serializer);
+    sse_encode_bool(self.isNotInGroup, serializer);
+    sse_encode_i_64(self.updateUnreadCountTime, serializer);
+    sse_encode_String(self.attachedInfo, serializer);
+    sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.draftText, serializer);
+    sse_encode_i_64(self.draftTextTime, serializer);
+    sse_encode_i_64(self.maxSeq, serializer);
+    sse_encode_i_64(self.minSeq, serializer);
+    sse_encode_bool(self.isMsgDestruct, serializer);
+    sse_encode_i_64(self.msgDestructTime, serializer);
+  }
+
+  @protected
+  void sse_encode_logger_config(LoggerConfig self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.logLevel, serializer);
+    sse_encode_String(self.logFilePath, serializer);
+    sse_encode_bool(self.isLogStandardOutput, serializer);
+  }
+
+  @protected
+  void sse_encode_login_data(LoginData self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.imToken, serializer);
+    sse_encode_String(self.chatToken, serializer);
+    sse_encode_String(self.userId, serializer);
+  }
+
+  @protected
+  void sse_encode_login_response(LoginResponse self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.errCode, serializer);
+    sse_encode_String(self.errMsg, serializer);
+    sse_encode_opt_box_autoadd_login_data(self.data, serializer);
+  }
+
+  @protected
+  void sse_encode_new_message_event(
+    NewMessageEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_login_data(
+    LoginData? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_login_data(self, serializer);
     }
   }
 
@@ -843,52 +1530,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putBigUint64(self);
   }
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
-  }
-}
-
-@sealed
-class LoginResponseImpl extends RustOpaque implements LoginResponse {
-  // Not to be used by end users
-  LoginResponseImpl.frbInternalDcoDecode(List<dynamic> wire)
-    : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  LoginResponseImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-    : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_LoginResponse,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_LoginResponse,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_LoginResponsePtr,
-  );
-
-  /// 获取 Chat Token
-  String? chatToken() => RustLib.instance.api
-      .crateApiBridgeClientLoginResponseChatToken(that: this);
-
-  /// 获取错误代码
-  int errCode() =>
-      RustLib.instance.api.crateApiBridgeClientLoginResponseErrCode(that: this);
-
-  /// 获取错误消息
-  String errMsg() =>
-      RustLib.instance.api.crateApiBridgeClientLoginResponseErrMsg(that: this);
-
-  /// 获取 IM Token
-  String? imToken() =>
-      RustLib.instance.api.crateApiBridgeClientLoginResponseImToken(that: this);
-
-  /// 获取用户 ID
-  String? userId() =>
-      RustLib.instance.api.crateApiBridgeClientLoginResponseUserId(that: this);
 }
 
 @sealed
@@ -920,4 +1561,31 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   /// 连接成功后会自动启动心跳和消息处理任务。
   Future<void> connect() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientConnect(that: this);
+
+  /// 获取所有会话列表
+  Future<List<LocalConversation>> getAllConversations() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientGetAllConversations(that: this);
+
+  /// 设置消息监听器
+  ///
+  /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
+  Future<void> setAdvancedMsgListener({
+    required RustStreamSink<NewMessageEvent> messageSink,
+    required RustStreamSink<ConnectionStatusEvent> connectionSink,
+  }) => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListener(
+        that: this,
+        messageSink: messageSink,
+        connectionSink: connectionSink,
+      );
+
+  /// 设置会话监听器
+  ///
+  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConversationChangedEvent> setConversationListener() => RustLib
+      .instance
+      .api
+      .crateApiBridgeClientOpenImBridgeClientSetConversationListener(
+        that: this,
+      );
 }
