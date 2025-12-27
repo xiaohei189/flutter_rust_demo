@@ -2,15 +2,6 @@
     "folders": [
         {
             "path": "."
-        },
-        {
-            "path": "../openim-sdk-core"
-        },
-        {
-            "path": "../protocol"
-        },
-        {
-            "path": "../openim-docker"
         }
     ]
 }
