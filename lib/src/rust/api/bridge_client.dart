@@ -33,8 +33,18 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 连接成功后会自动启动心跳和消息处理任务。
   Future<void> connect();
 
+  /// 设置会话监听器
+  ///
+  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConversationChangedEvent> conversationEvent();
+
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations();
+
+  /// 设置消息监听器
+  ///
+  /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
+  Stream<MessageEvent> messageEvent();
 
   /// 创建新的客户端实例
   ///
@@ -57,17 +67,4 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     platformId: platformId,
     wsUrl: wsUrl,
   );
-
-  /// 设置消息监听器
-  ///
-  /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
-  Future<void> setAdvancedMsgListener({
-    required RustStreamSink<NewMessageEvent> messageSink,
-    required RustStreamSink<ConnectionStatusEvent> connectionSink,
-  });
-
-  /// 设置会话监听器
-  ///
-  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
-  Stream<ConversationChangedEvent> setConversationListener();
 }

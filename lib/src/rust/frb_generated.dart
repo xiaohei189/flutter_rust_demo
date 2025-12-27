@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1083946241;
+  int get rustContentHash => 1769084870;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -86,8 +86,17 @@ abstract class RustLibApi extends BaseApi {
     required OpenImBridgeClient that,
   });
 
+  Stream<ConversationChangedEvent>
+  crateApiBridgeClientOpenImBridgeClientConversationEvent({
+    required OpenImBridgeClient that,
+  });
+
   Future<List<LocalConversation>>
   crateApiBridgeClientOpenImBridgeClientGetAllConversations({
+    required OpenImBridgeClient that,
+  });
+
+  Stream<MessageEvent> crateApiBridgeClientOpenImBridgeClientMessageEvent({
     required OpenImBridgeClient that,
   });
 
@@ -98,21 +107,7 @@ abstract class RustLibApi extends BaseApi {
     String? wsUrl,
   });
 
-  Future<void> crateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListener({
-    required OpenImBridgeClient that,
-    required RustStreamSink<NewMessageEvent> messageSink,
-    required RustStreamSink<ConnectionStatusEvent> connectionSink,
-  });
-
-  Stream<ConversationChangedEvent>
-  crateApiBridgeClientOpenImBridgeClientSetConversationListener({
-    required OpenImBridgeClient that,
-  });
-
-  Future<DartAdvancedMsgListener> crateApiListenersDartAdvancedMsgListenerNew({
-    required RustStreamSink<NewMessageEvent> messageSink,
-    required RustStreamSink<ConnectionStatusEvent> connectionSink,
-  });
+  Stream<MessageEvent> crateApiListenersDartAdvancedMsgListenerNew();
 
   Stream<ConversationChangedEvent>
   crateApiListenersDartConversationListenerNew();
@@ -189,6 +184,53 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<ConversationChangedEvent>
+  crateApiBridgeClientOpenImBridgeClientConversationEvent({
+    required OpenImBridgeClient that,
+  }) {
+    final sink = RustStreamSink<ConversationChangedEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_conversation_changed_event_Sse(
+              sink,
+              serializer,
+            );
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 2,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientConversationEventConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientConversationEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_conversation_event",
+        argNames: ["that", "sink"],
+      );
+
+  @override
   Future<List<LocalConversation>>
   crateApiBridgeClientOpenImBridgeClientGetAllConversations({
     required OpenImBridgeClient that,
@@ -204,7 +246,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -228,6 +270,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<MessageEvent> crateApiBridgeClientOpenImBridgeClientMessageEvent({
+    required OpenImBridgeClient that,
+  }) {
+    final messageSink = RustStreamSink<MessageEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_message_event_Sse(messageSink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 4,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientMessageEventConstMeta,
+          argValues: [that, messageSink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return messageSink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientMessageEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_message_event",
+        argNames: ["that", "messageSink"],
+      );
+
+  @override
   OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({
     required String userId,
     required String token,
@@ -242,7 +327,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(token, serializer);
           sse_encode_i_32(platformId, serializer);
           sse_encode_opt_String(wsUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -263,133 +348,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListener({
-    required OpenImBridgeClient that,
-    required RustStreamSink<NewMessageEvent> messageSink,
-    required RustStreamSink<ConnectionStatusEvent> connectionSink,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          sse_encode_StreamSink_new_message_event_Sse(messageSink, serializer);
-          sse_encode_StreamSink_connection_status_event_Sse(
-            connectionSink,
-            serializer,
-          );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 4,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        ),
-        constMeta:
-            kCrateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListenerConstMeta,
-        argValues: [that, messageSink, connectionSink],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListenerConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_set_advanced_msg_listener",
-        argNames: ["that", "messageSink", "connectionSink"],
-      );
-
-  @override
-  Stream<ConversationChangedEvent>
-  crateApiBridgeClientOpenImBridgeClientSetConversationListener({
-    required OpenImBridgeClient that,
-  }) {
-    final sink = RustStreamSink<ConversationChangedEvent>();
+  Stream<MessageEvent> crateApiListenersDartAdvancedMsgListenerNew() {
+    final messageSink = RustStreamSink<MessageEvent>();
     unawaited(
       handler.executeNormal(
         NormalTask(
           callFfi: (port_) {
             final serializer = SseSerializer(generalizedFrbRustBinding);
-            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-              that,
-              serializer,
-            );
-            sse_encode_StreamSink_conversation_changed_event_Sse(
-              sink,
-              serializer,
-            );
+            sse_encode_StreamSink_message_event_Sse(messageSink, serializer);
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 5,
+              funcId: 6,
               port: port_,
             );
           },
           codec: SseCodec(
-            decodeSuccessData: sse_decode_unit,
+            decodeSuccessData: sse_decode_dart_advanced_msg_listener,
             decodeErrorData: null,
           ),
-          constMeta:
-              kCrateApiBridgeClientOpenImBridgeClientSetConversationListenerConstMeta,
-          argValues: [that, sink],
+          constMeta: kCrateApiListenersDartAdvancedMsgListenerNewConstMeta,
+          argValues: [messageSink],
           apiImpl: this,
         ),
       ),
     );
-    return sink.stream;
-  }
-
-  TaskConstMeta
-  get kCrateApiBridgeClientOpenImBridgeClientSetConversationListenerConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_set_conversation_listener",
-        argNames: ["that", "sink"],
-      );
-
-  @override
-  Future<DartAdvancedMsgListener> crateApiListenersDartAdvancedMsgListenerNew({
-    required RustStreamSink<NewMessageEvent> messageSink,
-    required RustStreamSink<ConnectionStatusEvent> connectionSink,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_StreamSink_new_message_event_Sse(messageSink, serializer);
-          sse_encode_StreamSink_connection_status_event_Sse(
-            connectionSink,
-            serializer,
-          );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 6,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_dart_advanced_msg_listener,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiListenersDartAdvancedMsgListenerNewConstMeta,
-        argValues: [messageSink, connectionSink],
-        apiImpl: this,
-      ),
-    );
+    return messageSink.stream;
   }
 
   TaskConstMeta get kCrateApiListenersDartAdvancedMsgListenerNewConstMeta =>
       const TaskConstMeta(
         debugName: "dart_advanced_msg_listener_new",
-        argNames: ["messageSink", "connectionSink"],
+        argNames: ["messageSink"],
       );
 
   @override
@@ -647,13 +637,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<ConnectionStatusEvent>
-  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    throw UnimplementedError();
-  }
-
-  @protected
   RustStreamSink<ConversationChangedEvent>
   dco_decode_StreamSink_conversation_changed_event_Sse(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -661,7 +644,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<NewMessageEvent> dco_decode_StreamSink_new_message_event_Sse(
+  RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -693,18 +676,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return ConnectionStatusEvent(
-      connected: dco_decode_bool(arr[0]),
-      message: dco_decode_String(arr[1]),
-    );
-  }
-
-  @protected
   ConversationChangedEvent dco_decode_conversation_changed_event(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -719,11 +690,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   DartAdvancedMsgListener dco_decode_dart_advanced_msg_listener(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
     return DartAdvancedMsgListener(
-      messageSink: dco_decode_StreamSink_new_message_event_Sse(arr[0]),
-      connectionSink: dco_decode_StreamSink_connection_status_event_Sse(arr[1]),
+      messageSink: dco_decode_StreamSink_message_event_Sse(arr[0]),
     );
   }
 
@@ -836,12 +806,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  NewMessageEvent dco_decode_new_message_event(dynamic raw) {
+  MessageEvent dco_decode_message_event(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
     if (arr.length != 1)
       throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
-    return NewMessageEvent(message: dco_decode_String(arr[0]));
+    return MessageEvent(message: dco_decode_String(arr[0]));
   }
 
   @protected
@@ -930,15 +900,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<ConnectionStatusEvent>
-  sse_decode_StreamSink_connection_status_event_Sse(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    throw UnimplementedError('Unreachable ()');
-  }
-
-  @protected
   RustStreamSink<ConversationChangedEvent>
   sse_decode_StreamSink_conversation_changed_event_Sse(
     SseDeserializer deserializer,
@@ -948,7 +909,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<NewMessageEvent> sse_decode_StreamSink_new_message_event_Sse(
+  RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -983,19 +944,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  ConnectionStatusEvent sse_decode_connection_status_event(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_connected = sse_decode_bool(deserializer);
-    var var_message = sse_decode_String(deserializer);
-    return ConnectionStatusEvent(
-      connected: var_connected,
-      message: var_message,
-    );
-  }
-
-  @protected
   ConversationChangedEvent sse_decode_conversation_changed_event(
     SseDeserializer deserializer,
   ) {
@@ -1009,16 +957,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_messageSink = sse_decode_StreamSink_new_message_event_Sse(
-      deserializer,
-    );
-    var var_connectionSink = sse_decode_StreamSink_connection_status_event_Sse(
-      deserializer,
-    );
-    return DartAdvancedMsgListener(
-      messageSink: var_messageSink,
-      connectionSink: var_connectionSink,
-    );
+    var var_messageSink = sse_decode_StreamSink_message_event_Sse(deserializer);
+    return DartAdvancedMsgListener(messageSink: var_messageSink);
   }
 
   @protected
@@ -1162,10 +1102,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  NewMessageEvent sse_decode_new_message_event(SseDeserializer deserializer) {
+  MessageEvent sse_decode_message_event(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_message = sse_decode_String(deserializer);
-    return NewMessageEvent(message: var_message);
+    return MessageEvent(message: var_message);
   }
 
   @protected
@@ -1271,23 +1211,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_StreamSink_connection_status_event_Sse(
-    RustStreamSink<ConnectionStatusEvent> self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(
-      self.setupAndSerialize(
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_connection_status_event,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-      ),
-      serializer,
-    );
-  }
-
-  @protected
   void sse_encode_StreamSink_conversation_changed_event_Sse(
     RustStreamSink<ConversationChangedEvent> self,
     SseSerializer serializer,
@@ -1305,15 +1228,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_StreamSink_new_message_event_Sse(
-    RustStreamSink<NewMessageEvent> self,
+  void sse_encode_StreamSink_message_event_Sse(
+    RustStreamSink<MessageEvent> self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(
       self.setupAndSerialize(
         codec: SseCodec(
-          decodeSuccessData: sse_decode_new_message_event,
+          decodeSuccessData: sse_decode_message_event,
           decodeErrorData: sse_decode_AnyhowException,
         ),
       ),
@@ -1352,16 +1275,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_connection_status_event(
-    ConnectionStatusEvent self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_bool(self.connected, serializer);
-    sse_encode_String(self.message, serializer);
-  }
-
-  @protected
   void sse_encode_conversation_changed_event(
     ConversationChangedEvent self,
     SseSerializer serializer,
@@ -1376,11 +1289,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_StreamSink_new_message_event_Sse(self.messageSink, serializer);
-    sse_encode_StreamSink_connection_status_event_Sse(
-      self.connectionSink,
-      serializer,
-    );
+    sse_encode_StreamSink_message_event_Sse(self.messageSink, serializer);
   }
 
   @protected
@@ -1483,10 +1392,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_new_message_event(
-    NewMessageEvent self,
-    SseSerializer serializer,
-  ) {
+  void sse_encode_message_event(MessageEvent self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.message, serializer);
   }
@@ -1562,6 +1468,12 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<void> connect() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientConnect(that: this);
 
+  /// 设置会话监听器
+  ///
+  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConversationChangedEvent> conversationEvent() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientConversationEvent(that: this);
+
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientGetAllConversations(that: this);
@@ -1569,23 +1481,6 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   /// 设置消息监听器
   ///
   /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
-  Future<void> setAdvancedMsgListener({
-    required RustStreamSink<NewMessageEvent> messageSink,
-    required RustStreamSink<ConnectionStatusEvent> connectionSink,
-  }) => RustLib.instance.api
-      .crateApiBridgeClientOpenImBridgeClientSetAdvancedMsgListener(
-        that: this,
-        messageSink: messageSink,
-        connectionSink: connectionSink,
-      );
-
-  /// 设置会话监听器
-  ///
-  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
-  Stream<ConversationChangedEvent> setConversationListener() => RustLib
-      .instance
-      .api
-      .crateApiBridgeClientOpenImBridgeClientSetConversationListener(
-        that: this,
-      );
+  Stream<MessageEvent> messageEvent() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientMessageEvent(that: this);
 }

@@ -55,15 +55,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  RustStreamSink<ConnectionStatusEvent>
-  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw);
-
-  @protected
   RustStreamSink<ConversationChangedEvent>
   dco_decode_StreamSink_conversation_changed_event_Sse(dynamic raw);
 
   @protected
-  RustStreamSink<NewMessageEvent> dco_decode_StreamSink_new_message_event_Sse(
+  RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(
     dynamic raw,
   );
 
@@ -78,9 +74,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LoginData dco_decode_box_autoadd_login_data(dynamic raw);
-
-  @protected
-  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw);
 
   @protected
   ConversationChangedEvent dco_decode_conversation_changed_event(dynamic raw);
@@ -116,7 +109,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoginResponse dco_decode_login_response(dynamic raw);
 
   @protected
-  NewMessageEvent dco_decode_new_message_event(dynamic raw);
+  MessageEvent dco_decode_message_event(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
@@ -161,19 +154,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  RustStreamSink<ConnectionStatusEvent>
-  sse_decode_StreamSink_connection_status_event_Sse(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   RustStreamSink<ConversationChangedEvent>
   sse_decode_StreamSink_conversation_changed_event_Sse(
     SseDeserializer deserializer,
   );
 
   @protected
-  RustStreamSink<NewMessageEvent> sse_decode_StreamSink_new_message_event_Sse(
+  RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(
     SseDeserializer deserializer,
   );
 
@@ -190,11 +177,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LoginData sse_decode_box_autoadd_login_data(SseDeserializer deserializer);
-
-  @protected
-  ConnectionStatusEvent sse_decode_connection_status_event(
-    SseDeserializer deserializer,
-  );
 
   @protected
   ConversationChangedEvent sse_decode_conversation_changed_event(
@@ -238,7 +220,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoginResponse sse_decode_login_response(SseDeserializer deserializer);
 
   @protected
-  NewMessageEvent sse_decode_new_message_event(SseDeserializer deserializer);
+  MessageEvent sse_decode_message_event(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
@@ -292,20 +274,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_StreamSink_connection_status_event_Sse(
-    RustStreamSink<ConnectionStatusEvent> self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_StreamSink_conversation_changed_event_Sse(
     RustStreamSink<ConversationChangedEvent> self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_StreamSink_new_message_event_Sse(
-    RustStreamSink<NewMessageEvent> self,
+  void sse_encode_StreamSink_message_event_Sse(
+    RustStreamSink<MessageEvent> self,
     SseSerializer serializer,
   );
 
@@ -324,12 +300,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_login_data(
     LoginData self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_connection_status_event(
-    ConnectionStatusEvent self,
     SseSerializer serializer,
   );
 
@@ -385,10 +355,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_login_response(LoginResponse self, SseSerializer serializer);
 
   @protected
-  void sse_encode_new_message_event(
-    NewMessageEvent self,
-    SseSerializer serializer,
-  );
+  void sse_encode_message_event(MessageEvent self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);

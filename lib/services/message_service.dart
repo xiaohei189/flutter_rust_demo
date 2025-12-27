@@ -122,7 +122,6 @@ class MessageService extends ChangeNotifier {
   void _setupListeners() {
     if (_client == null) return;
 
-
     // 设置连接状态监听器
     final connectionSink = RustStreamSink<ConnectionStatusEvent>();
     _connectionSubscription = connectionSink.stream.listen((event) {
