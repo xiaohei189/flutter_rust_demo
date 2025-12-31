@@ -9,4 +9,7 @@ pub use im::{
     login_async, AllConversationsResp, IncrementalConversationResp, LocalConversation,
 };
 
+// 重新导出 OfflinePushInfo，以便生成的代码可以访问
+pub use api::OfflinePushInfo;
+
 mod frb_generated;

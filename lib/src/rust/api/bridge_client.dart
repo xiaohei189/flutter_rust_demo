@@ -5,9 +5,17 @@
 
 import '../frb_generated.dart';
 import '../im/auth.dart';
+import '../im/message/types.dart';
 import '../im/types.dart';
-import 'listeners.dart';
+import '../lib.dart';
+import 'listeners/connection_status.dart';
+import 'listeners/conversation.dart';
+import 'listeners/message.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+// These functions are ignored because they are not marked as `pub`: `update_listener_wrapper`
+// These functions are ignored because they have generic arguments: `on_connection_status_changed`, `on_kicked_offline`, `on_msg_deleted`, `on_new_recv_message_revoked`, `on_recv_c2c_read_receipt`, `on_recv_new_message`, `on_recv_offline_new_message`, `on_recv_online_only_message`, `on_recv_typing_status`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ListenerWrapper`
 
 /// 登录接口
 ///
@@ -41,7 +49,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 设置会话监听器
   ///
   /// 监听会话变更事件，通过 StreamSink 发送到 Dart
-  Stream<ConversationChangedEvent> conversationEvent();
+  Stream<ConversationEvent> conversationEvent();
 
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations();

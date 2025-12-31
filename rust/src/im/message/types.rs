@@ -301,3 +301,14 @@ pub struct AtInfo {
     #[serde(rename = "groupNickname", skip_serializing_if = "Option::is_none")]
     pub group_nickname: Option<String>,
 }
+
+/// 输入提示（typing）状态信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypingStatus {
+    #[serde(rename = "conversationID")]
+    pub conversation_id: String,
+    #[serde(rename = "sendID", skip_serializing_if = "Option::is_none")]
+    pub send_id: Option<String>,
+    #[serde(rename = "msgTip")]
+    pub msg_tip: String,
+}

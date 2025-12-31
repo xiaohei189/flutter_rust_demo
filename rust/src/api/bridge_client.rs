@@ -1,12 +1,98 @@
 use crate::api::listeners::{
-    ConnectionStatusEvent, ConversationChangedEvent, DartAdvancedMsgListener,
-    DartConversationListener, MessageEvent,
+    ConnectionStatusEvent, conversation::ConversationEvent, DartConnectionStatusListener,
+    DartConversationListener, DartMessageListener, MessageEvent,
 };
 use crate::frb_generated::StreamSink;
 use crate::im::auth::LoginResponse;
 use crate::im::client::{ClientConfig, OpenIMClient};
+use crate::im::message::listener::AdvancedMsgListener;
+use crate::im::message::types::{MsgStruct, MessageRevoked, TypingStatus};
 use anyhow::Result;
+use async_trait::async_trait;
+use serde_json;
 use std::sync::Arc;
+
+/// 内部监听器包装器，实现 AdvancedMsgListener trait
+/// 直接使用最小颗粒度的监听器，不暴露给 Dart
+struct ListenerWrapper {
+    message_listener: Option<Arc<DartMessageListener>>,
+    connection_listener: Option<Arc<DartConnectionStatusListener>>,
+}
+
+#[async_trait]
+impl AdvancedMsgListener for ListenerWrapper {
+    async fn on_recv_new_message(&self, message: String) {
+        if let Some(ref listener) = self.message_listener {
+            if let Ok(msg) = serde_json::from_str::<MsgStruct>(&message) {
+                listener.send_event(MessageEvent::RecvNewMessage { message: msg });
+            }
+        }
+    }
+
+    async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
+        if let Some(ref listener) = self.message_listener {
+            listener.send_event(MessageEvent::RecvC2CReadReceipt {
+                msg_receipt_list,
+            });
+        }
+    }
+
+    async fn on_new_recv_message_revoked(&self, message_revoked: String) {
+        if let Some(ref listener) = self.message_listener {
+            if let Ok(revoked) = serde_json::from_str::<MessageRevoked>(&message_revoked) {
+                listener.send_event(MessageEvent::NewRecvMessageRevoked {
+                    message_revoked: revoked,
+                });
+            }
+        }
+    }
+
+    async fn on_recv_offline_new_message(&self, message: String) {
+        if let Some(ref listener) = self.message_listener {
+            if let Ok(msg) = serde_json::from_str::<MsgStruct>(&message) {
+                listener.send_event(MessageEvent::RecvOfflineNewMessage { message: msg });
+            }
+        }
+    }
+
+    async fn on_msg_deleted(&self, message: String) {
+        if let Some(ref listener) = self.message_listener {
+            if let Ok(msg) = serde_json::from_str::<MsgStruct>(&message) {
+                listener.send_event(MessageEvent::MsgDeleted { message: msg });
+            }
+        }
+    }
+
+    async fn on_recv_online_only_message(&self, message: String) {
+        if let Some(ref listener) = self.message_listener {
+            if let Ok(msg) = serde_json::from_str::<MsgStruct>(&message) {
+                listener.send_event(MessageEvent::RecvOnlineOnlyMessage { message: msg });
+            }
+        }
+    }
+
+    async fn on_kicked_offline(&self) {
+        if let Some(ref listener) = self.message_listener {
+            listener.send_event(MessageEvent::KickedOffline);
+        }
+    }
+
+    async fn on_connection_status_changed(&self, connected: bool, message: String) {
+        if let Some(ref listener) = self.connection_listener {
+            listener.send_event(ConnectionStatusEvent { connected, message });
+        }
+    }
+
+    async fn on_recv_typing_status(&self, typing_info: String) {
+        if let Some(ref listener) = self.message_listener {
+            if let Ok(typing_status) = serde_json::from_str::<TypingStatus>(&typing_info) {
+                listener.send_event(MessageEvent::RecvTypingStatus {
+                    typing_status,
+                });
+            }
+        }
+    }
+}
 
 /// OpenIM 客户端桥接器
 ///
@@ -14,8 +100,11 @@ use std::sync::Arc;
 /// 内部封装了 OpenIMClient 核心逻辑，提供简洁的 API。
 pub struct OpenIMBridgeClient {
     inner: OpenIMClient,
-    // 维护高级消息监听器，以便可以分别设置两个 sink
-    advanced_listener: Option<Arc<DartAdvancedMsgListener>>,
+    // 维护独立的监听器
+    message_listener: Option<Arc<DartMessageListener>>,
+    connection_listener: Option<Arc<DartConnectionStatusListener>>,
+    // 内部监听器包装器，用于实现 AdvancedMsgListener trait
+    listener_wrapper: Option<Arc<ListenerWrapper>>,
 }
 
 impl OpenIMBridgeClient {
@@ -38,7 +127,9 @@ impl OpenIMBridgeClient {
 
         Self {
             inner: OpenIMClient::new(config),
-            advanced_listener: None,
+            message_listener: None,
+            connection_listener: None,
+            listener_wrapper: None,
         }
     }
 
@@ -55,7 +146,7 @@ impl OpenIMBridgeClient {
     /// 监听会话变更事件，通过 StreamSink 发送到 Dart
     pub fn conversation_event(
         &mut self,
-        #[allow(unused)] sink: StreamSink<ConversationChangedEvent>,
+        #[allow(unused)] sink: StreamSink<ConversationEvent>,
     ) {
         let listener = Arc::new(DartConversationListener::new(sink));
         self.inner.set_conversation_listener(listener);
@@ -66,17 +157,19 @@ impl OpenIMBridgeClient {
     /// 监听消息事件，通过 StreamSink 发送到 Dart
     pub fn message_event(&mut self, message_sink: StreamSink<MessageEvent>) {
         // 获取或创建 listener
-        let listener = if let Some(ref listener) = self.advanced_listener {
+        let listener = if let Some(ref listener) = self.message_listener {
             listener.clone()
         } else {
-            let new_listener = Arc::new(DartAdvancedMsgListener::new());
-            self.advanced_listener = Some(new_listener.clone());
-            self.inner.set_advanced_msg_listener(new_listener.clone());
+            let new_listener = Arc::new(DartMessageListener::new());
+            self.message_listener = Some(new_listener.clone());
             new_listener
         };
 
         // 设置消息 sink
-        listener.set_message_sink(message_sink);
+        listener.set_sink(message_sink);
+
+        // 更新内部监听器包装器
+        self.update_listener_wrapper();
     }
 
     /// 设置连接状态监听器
@@ -84,17 +177,29 @@ impl OpenIMBridgeClient {
     /// 监听连接状态变更事件，通过 StreamSink 发送到 Dart
     pub fn connection_event(&mut self, connection_sink: StreamSink<ConnectionStatusEvent>) {
         // 获取或创建 listener
-        let listener = if let Some(ref listener) = self.advanced_listener {
+        let listener = if let Some(ref listener) = self.connection_listener {
             listener.clone()
         } else {
-            let new_listener = Arc::new(DartAdvancedMsgListener::new());
-            self.advanced_listener = Some(new_listener.clone());
-            self.inner.set_advanced_msg_listener(new_listener.clone());
+            let new_listener = Arc::new(DartConnectionStatusListener::new());
+            self.connection_listener = Some(new_listener.clone());
             new_listener
         };
 
         // 设置连接状态 sink
-        listener.set_connection_sink(connection_sink);
+        listener.set_sink(connection_sink);
+
+        // 更新内部监听器包装器
+        self.update_listener_wrapper();
+    }
+
+    /// 更新内部监听器包装器
+    fn update_listener_wrapper(&mut self) {
+        let wrapper = Arc::new(ListenerWrapper {
+            message_listener: self.message_listener.clone(),
+            connection_listener: self.connection_listener.clone(),
+        });
+        self.listener_wrapper = Some(wrapper.clone());
+        self.inner.set_advanced_msg_listener(wrapper);
     }
 
     /// 获取所有会话列表

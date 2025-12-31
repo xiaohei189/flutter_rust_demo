@@ -14,6 +14,6 @@ pub use models::LocalChatLog;
 pub use types::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownEntityElem, MarkdownTextElem,
     MessageRevoked, MsgStruct, OANotificationElem, PictureElem, PictureBaseInfo, QuoteElem,
-    RevokeElem, SoundElem, StreamMsgElem, TextElem, VideoElem,
+    RevokeElem, SoundElem, StreamMsgElem, TextElem, TypingStatus, VideoElem,
 };
 
