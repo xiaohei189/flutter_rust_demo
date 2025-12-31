@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import '../models/chat.dart';
 import '../models/message.dart';
@@ -19,13 +18,12 @@ class MessageService extends ChangeNotifier {
 
   // 会话列表
   final List<Chat> _chats = [];
-
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
 
   // Stream 订阅
   StreamSubscription<ConversationChangedEvent>? _conversationSubscription;
-  StreamSubscription<NewMessageEvent>? _messageSubscription;
+  StreamSubscription<MessageEvent>? _messageSubscription;
   StreamSubscription<ConnectionStatusEvent>? _connectionSubscription;
 
   /// 是否已连接
@@ -122,32 +120,23 @@ class MessageService extends ChangeNotifier {
   void _setupListeners() {
     if (_client == null) return;
 
-    // 设置连接状态监听器
-    final connectionSink = RustStreamSink<ConnectionStatusEvent>();
-    _connectionSubscription = connectionSink.stream.listen((event) {
+    // 设置会话监听器
+    _conversationSubscription = _client?.conversationEvent().listen((event) {
+      _handleConversationChanged(event.conversationList);
+    });
+
+    // 设置消息监听器（独立的事件源）
+    _messageSubscription = _client?.messageEvent().listen((event) {
+      _handleNewMessage(event.message);
+    });
+
+    // 设置连接状态监听器（独立的事件源）
+    _connectionSubscription = _client?.connectionEvent().listen((event) {
       _isConnected = event.connected;
       debugPrint(
         '🔌 连接状态变更: ${event.connected ? "已连接" : "已断开"} - ${event.message}',
       );
       notifyListeners();
-    });
-
-    // 设置消息监听器
-    final messageSink = RustStreamSink<NewMessageEvent>();
-    _messageSubscription = messageSink.stream.listen((event) {
-      _handleNewMessage(event.message);
-    });
-
-    _client!.setAdvancedMsgListener(
-      messageSink: messageSink,
-      connectionSink: connectionSink,
-    );
-
-    // 设置会话监听器
-    _conversationSubscription = _client!.setConversationListener().listen((
-      event,
-    ) {
-      _handleConversationChanged(event.conversationList);
     });
   }
 

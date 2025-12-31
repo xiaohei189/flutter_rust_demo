@@ -4,11 +4,55 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import '../im/message/listener.dart';
+import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they have generic arguments: `on_connection_status_changed`, `on_conversation_changed`, `on_conversation_user_input_status_changed`, `on_kicked_offline`, `on_msg_deleted`, `on_new_conversation`, `on_new_recv_message_revoked`, `on_recv_c2c_read_receipt`, `on_recv_new_message`, `on_recv_offline_new_message`, `on_recv_online_only_message`, `on_recv_typing_status`, `on_sync_server_failed`, `on_sync_server_finish`, `on_sync_server_progress`, `on_sync_server_start`, `on_total_unread_message_count_changed`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ConnectionStatusEvent`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<DartAdvancedMsgListener>>
+abstract class DartAdvancedMsgListener
+    implements RustOpaqueInterface, AdvancedMsgListener {
+  ArcMutexOptionStreamSinkConnectionStatusEvent get connectionSink;
+
+  ArcMutexOptionStreamSinkMessageEvent get messageSink;
+
+  set connectionSink(
+    ArcMutexOptionStreamSinkConnectionStatusEvent connectionSink,
+  );
+
+  set messageSink(ArcMutexOptionStreamSinkMessageEvent messageSink);
+
+  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
+  static Future<DartAdvancedMsgListener> newInstance() =>
+      RustLib.instance.api.crateApiListenersDartAdvancedMsgListenerNew();
+
+  /// 设置连接状态 sink
+  Stream<ConnectionStatusEvent> setConnectionSink();
+
+  /// 设置消息 sink
+  Stream<MessageEvent> setMessageSink();
+}
+
+/// 连接状态事件
+class ConnectionStatusEvent {
+  final bool connected;
+  final String message;
+
+  const ConnectionStatusEvent({required this.connected, required this.message});
+
+  @override
+  int get hashCode => connected.hashCode ^ message.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConnectionStatusEvent &&
+          runtimeType == other.runtimeType &&
+          connected == other.connected &&
+          message == other.message;
+}
 
 /// 会话变更事件
 class ConversationChangedEvent {
@@ -25,27 +69,6 @@ class ConversationChangedEvent {
       other is ConversationChangedEvent &&
           runtimeType == other.runtimeType &&
           conversationList == other.conversationList;
-}
-
-/// 消息监听器（桥接到 Dart）
-class DartAdvancedMsgListener {
-  final RustStreamSink<MessageEvent> messageSink;
-
-  const DartAdvancedMsgListener({required this.messageSink});
-
-  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-  static Stream<MessageEvent> newInstance() =>
-      RustLib.instance.api.crateApiListenersDartAdvancedMsgListenerNew();
-
-  @override
-  int get hashCode => messageSink.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DartAdvancedMsgListener &&
-          runtimeType == other.runtimeType &&
-          messageSink == other.messageSink;
 }
 
 /// 会话监听器（桥接到 Dart）

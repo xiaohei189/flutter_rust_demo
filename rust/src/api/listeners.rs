@@ -1,8 +1,9 @@
-use async_trait::async_trait;
+use crate::frb_generated::StreamSink;
 use crate::im::conversation::listener::ConversationListener;
 use crate::im::message::listener::AdvancedMsgListener;
-use crate::frb_generated::StreamSink;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 /// 连接状态事件
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,16 +54,12 @@ impl ConversationListener for DartConversationListener {
     }
 
     async fn on_new_conversation(&self, conversation_list: String) {
-        let event = ConversationChangedEvent {
-            conversation_list,
-        };
+        let event = ConversationChangedEvent { conversation_list };
         let _ = self.sink.add(event);
     }
 
     async fn on_conversation_changed(&self, conversation_list: String) {
-        let event = ConversationChangedEvent {
-            conversation_list,
-        };
+        let event = ConversationChangedEvent { conversation_list };
         let _ = self.sink.add(event);
     }
 
@@ -76,17 +73,28 @@ impl ConversationListener for DartConversationListener {
 }
 
 /// 消息监听器（桥接到 Dart）
+/// 使用 Arc<Mutex<Option<StreamSink>>> 以便可以分别设置两个 sink
 pub struct DartAdvancedMsgListener {
-    pub message_sink: StreamSink<MessageEvent>,
+    pub message_sink: Arc<Mutex<Option<StreamSink<MessageEvent>>>>,
+    pub connection_sink: Arc<Mutex<Option<StreamSink<ConnectionStatusEvent>>>>,
 }
 
 impl DartAdvancedMsgListener {
-    pub fn new(
-        message_sink: StreamSink<MessageEvent>,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
-            message_sink,
+            message_sink: Arc::new(Mutex::new(None)),
+            connection_sink: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// 设置消息 sink
+    pub fn set_message_sink(&self, sink: StreamSink<MessageEvent>) {
+        *self.message_sink.lock().unwrap() = Some(sink);
+    }
+
+    /// 设置连接状态 sink
+    pub fn set_connection_sink(&self, sink: StreamSink<ConnectionStatusEvent>) {
+        *self.connection_sink.lock().unwrap() = Some(sink);
     }
 }
 
@@ -94,49 +102,90 @@ impl DartAdvancedMsgListener {
 impl AdvancedMsgListener for DartAdvancedMsgListener {
     async fn on_recv_new_message(&self, message: String) {
         let event = MessageEvent { message };
-        let _ = self.message_sink.add(event);
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
-    async fn on_recv_c2c_read_receipt(&self, _msg_receipt_list: String) {
-        let event = MessageEvent { message: _msg_receipt_list };
-        let _ = self.message_sink.add(event);
+    async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
+        let event = MessageEvent {
+            message: msg_receipt_list,
+        };
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
-    async fn on_new_recv_message_revoked(&self, _message_revoked: String) {
-        let event = MessageEvent { message: _message_revoked };
-        let _ = self.message_sink.add(event);
+    async fn on_new_recv_message_revoked(&self, message_revoked: String) {
+        let event = MessageEvent {
+            message: message_revoked,
+        };
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
     async fn on_recv_offline_new_message(&self, message: String) {
         let event = MessageEvent { message };
-        let _ = self.message_sink.add(event);
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
     async fn on_msg_deleted(&self, message: String) {
-             let event = MessageEvent { message };
-        let _ = self.message_sink.add(event);
+        let event = MessageEvent { message };
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
     async fn on_recv_online_only_message(&self, message: String) {
         let event = MessageEvent { message };
-        let _ = self.message_sink.add(event);
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
     async fn on_kicked_offline(&self) {
-        let event = MessageEvent { message: "kicked_offline".to_string() };
-        let _ = self.message_sink.add(event);
-
+        let event = MessageEvent {
+            message: "kicked_offline".to_string(),
+        };
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
-    async fn on_connection_status_changed(&self, _connected: bool, message: String) {
-        // connected 参数暂不使用，保留以便以后扩展
-        let event = MessageEvent { message };
-        let _ = self.message_sink.add(event);
+    async fn on_connection_status_changed(&self, connected: bool, message: String) {
+        let event = ConnectionStatusEvent { connected, message };
+        if let Ok(sink) = self.connection_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 
-    async fn on_recv_typing_status(&self, _typing_info: String) {
-        let event = MessageEvent { message: _typing_info };
-        let _ = self.message_sink.add(event);
+    async fn on_recv_typing_status(&self, typing_info: String) {
+        let event = MessageEvent {
+            message: typing_info,
+        };
+        if let Ok(sink) = self.message_sink.lock() {
+            if let Some(ref s) = *sink {
+                let _ = s.add(event);
+            }
+        }
     }
 }
-

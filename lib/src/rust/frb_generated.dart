@@ -14,6 +14,7 @@ import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'im/auth.dart';
 import 'im/types.dart';
+import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
@@ -71,7 +72,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1769084870;
+  int get rustContentHash => -1718705542;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -82,7 +83,43 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  crateApiListenersDartAdvancedMsgListenerAutoAccessorGetConnectionSink({
+    required DartAdvancedMsgListener that,
+  });
+
+  ArcMutexOptionStreamSinkMessageEvent
+  crateApiListenersDartAdvancedMsgListenerAutoAccessorGetMessageSink({
+    required DartAdvancedMsgListener that,
+  });
+
+  void crateApiListenersDartAdvancedMsgListenerAutoAccessorSetConnectionSink({
+    required DartAdvancedMsgListener that,
+    required ArcMutexOptionStreamSinkConnectionStatusEvent connectionSink,
+  });
+
+  void crateApiListenersDartAdvancedMsgListenerAutoAccessorSetMessageSink({
+    required DartAdvancedMsgListener that,
+    required ArcMutexOptionStreamSinkMessageEvent messageSink,
+  });
+
+  Future<DartAdvancedMsgListener> crateApiListenersDartAdvancedMsgListenerNew();
+
+  Stream<ConnectionStatusEvent>
+  crateApiListenersDartAdvancedMsgListenerSetConnectionSink({
+    required DartAdvancedMsgListener that,
+  });
+
+  Stream<MessageEvent> crateApiListenersDartAdvancedMsgListenerSetMessageSink({
+    required DartAdvancedMsgListener that,
+  });
+
   Future<void> crateApiBridgeClientOpenImBridgeClientConnect({
+    required OpenImBridgeClient that,
+  });
+
+  Stream<ConnectionStatusEvent>
+  crateApiBridgeClientOpenImBridgeClientConnectionEvent({
     required OpenImBridgeClient that,
   });
 
@@ -107,8 +144,6 @@ abstract class RustLibApi extends BaseApi {
     String? wsUrl,
   });
 
-  Stream<MessageEvent> crateApiListenersDartAdvancedMsgListenerNew();
-
   Stream<ConversationChangedEvent>
   crateApiListenersDartConversationListenerNew();
 
@@ -130,6 +165,33 @@ abstract class RustLibApi extends BaseApi {
   });
 
   RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_DartAdvancedMsgListener;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_DartAdvancedMsgListener;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_DartAdvancedMsgListenerPtr;
+
+  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_OpenImBridgeClient;
 
   RustArcDecrementStrongCountFnType
@@ -148,6 +210,271 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  crateApiListenersDartAdvancedMsgListenerAutoAccessorGetConnectionSink({
+    required DartAdvancedMsgListener that,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+            that,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateApiListenersDartAdvancedMsgListenerAutoAccessorGetConnectionSinkConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersDartAdvancedMsgListenerAutoAccessorGetConnectionSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_auto_accessor_get_connection_sink",
+        argNames: ["that"],
+      );
+
+  @override
+  ArcMutexOptionStreamSinkMessageEvent
+  crateApiListenersDartAdvancedMsgListenerAutoAccessorGetMessageSink({
+    required DartAdvancedMsgListener that,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+            that,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateApiListenersDartAdvancedMsgListenerAutoAccessorGetMessageSinkConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersDartAdvancedMsgListenerAutoAccessorGetMessageSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_auto_accessor_get_message_sink",
+        argNames: ["that"],
+      );
+
+  @override
+  void crateApiListenersDartAdvancedMsgListenerAutoAccessorSetConnectionSink({
+    required DartAdvancedMsgListener that,
+    required ArcMutexOptionStreamSinkConnectionStatusEvent connectionSink,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+            that,
+            serializer,
+          );
+          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+            connectionSink,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateApiListenersDartAdvancedMsgListenerAutoAccessorSetConnectionSinkConstMeta,
+        argValues: [that, connectionSink],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersDartAdvancedMsgListenerAutoAccessorSetConnectionSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_auto_accessor_set_connection_sink",
+        argNames: ["that", "connectionSink"],
+      );
+
+  @override
+  void crateApiListenersDartAdvancedMsgListenerAutoAccessorSetMessageSink({
+    required DartAdvancedMsgListener that,
+    required ArcMutexOptionStreamSinkMessageEvent messageSink,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+            that,
+            serializer,
+          );
+          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+            messageSink,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateApiListenersDartAdvancedMsgListenerAutoAccessorSetMessageSinkConstMeta,
+        argValues: [that, messageSink],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersDartAdvancedMsgListenerAutoAccessorSetMessageSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_auto_accessor_set_message_sink",
+        argNames: ["that", "messageSink"],
+      );
+
+  @override
+  Future<DartAdvancedMsgListener>
+  crateApiListenersDartAdvancedMsgListenerNew() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiListenersDartAdvancedMsgListenerNewConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiListenersDartAdvancedMsgListenerNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_new",
+        argNames: [],
+      );
+
+  @override
+  Stream<ConnectionStatusEvent>
+  crateApiListenersDartAdvancedMsgListenerSetConnectionSink({
+    required DartAdvancedMsgListener that,
+  }) {
+    final sink = RustStreamSink<ConnectionStatusEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_connection_status_event_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 6,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiListenersDartAdvancedMsgListenerSetConnectionSinkConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersDartAdvancedMsgListenerSetConnectionSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_set_connection_sink",
+        argNames: ["that", "sink"],
+      );
+
+  @override
+  Stream<MessageEvent> crateApiListenersDartAdvancedMsgListenerSetMessageSink({
+    required DartAdvancedMsgListener that,
+  }) {
+    final sink = RustStreamSink<MessageEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_message_event_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 7,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiListenersDartAdvancedMsgListenerSetMessageSinkConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersDartAdvancedMsgListenerSetMessageSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartAdvancedMsgListener_set_message_sink",
+        argNames: ["that", "sink"],
+      );
+
+  @override
   Future<void> crateApiBridgeClientOpenImBridgeClientConnect({
     required OpenImBridgeClient that,
   }) {
@@ -162,7 +489,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 8,
             port: port_,
           );
         },
@@ -181,6 +508,53 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_connect",
         argNames: ["that"],
+      );
+
+  @override
+  Stream<ConnectionStatusEvent>
+  crateApiBridgeClientOpenImBridgeClientConnectionEvent({
+    required OpenImBridgeClient that,
+  }) {
+    final connectionSink = RustStreamSink<ConnectionStatusEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_connection_status_event_Sse(
+              connectionSink,
+              serializer,
+            );
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 9,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientConnectionEventConstMeta,
+          argValues: [that, connectionSink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return connectionSink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientConnectionEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_connection_event",
+        argNames: ["that", "connectionSink"],
       );
 
   @override
@@ -205,7 +579,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 2,
+              funcId: 10,
               port: port_,
             );
           },
@@ -246,7 +620,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 11,
             port: port_,
           );
         },
@@ -287,7 +661,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 4,
+              funcId: 12,
               port: port_,
             );
           },
@@ -327,7 +701,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(token, serializer);
           sse_encode_i_32(platformId, serializer);
           sse_encode_opt_String(wsUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -348,41 +722,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Stream<MessageEvent> crateApiListenersDartAdvancedMsgListenerNew() {
-    final messageSink = RustStreamSink<MessageEvent>();
-    unawaited(
-      handler.executeNormal(
-        NormalTask(
-          callFfi: (port_) {
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            sse_encode_StreamSink_message_event_Sse(messageSink, serializer);
-            pdeCallFfi(
-              generalizedFrbRustBinding,
-              serializer,
-              funcId: 6,
-              port: port_,
-            );
-          },
-          codec: SseCodec(
-            decodeSuccessData: sse_decode_dart_advanced_msg_listener,
-            decodeErrorData: null,
-          ),
-          constMeta: kCrateApiListenersDartAdvancedMsgListenerNewConstMeta,
-          argValues: [messageSink],
-          apiImpl: this,
-        ),
-      ),
-    );
-    return messageSink.stream;
-  }
-
-  TaskConstMeta get kCrateApiListenersDartAdvancedMsgListenerNewConstMeta =>
-      const TaskConstMeta(
-        debugName: "dart_advanced_msg_listener_new",
-        argNames: ["messageSink"],
-      );
-
-  @override
   Stream<ConversationChangedEvent>
   crateApiListenersDartConversationListenerNew() {
     final sink = RustStreamSink<ConversationChangedEvent>();
@@ -398,7 +737,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 7,
+              funcId: 14,
               port: port_,
             );
           },
@@ -428,7 +767,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -453,7 +792,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 16,
             port: port_,
           );
         },
@@ -478,7 +817,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_box_autoadd_logger_config(config, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -501,7 +840,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_opt_String(logLevel, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -529,7 +868,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 19,
             port: port_,
           );
         },
@@ -565,7 +904,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 20,
             port: port_,
           );
         },
@@ -587,6 +926,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_DartAdvancedMsgListener => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_DartAdvancedMsgListener => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener;
+
+  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_OpenImBridgeClient => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
 
@@ -601,12 +964,56 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartAdvancedMsgListener
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
   OpenImBridgeClient
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  DartAdvancedMsgListener
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
   }
 
   @protected
@@ -619,6 +1026,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  DartAdvancedMsgListener
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
   OpenImBridgeClient
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
@@ -628,12 +1046,52 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartAdvancedMsgListener
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
   OpenImBridgeClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  RustStreamSink<ConnectionStatusEvent>
+  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
   }
 
   @protected
@@ -676,6 +1134,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ConnectionStatusEvent(
+      connected: dco_decode_bool(arr[0]),
+      message: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
   ConversationChangedEvent dco_decode_conversation_changed_event(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -683,17 +1153,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
     return ConversationChangedEvent(
       conversationList: dco_decode_String(arr[0]),
-    );
-  }
-
-  @protected
-  DartAdvancedMsgListener dco_decode_dart_advanced_msg_listener(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 1)
-      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
-    return DartAdvancedMsgListener(
-      messageSink: dco_decode_StreamSink_message_event_Sse(arr[0]),
     );
   }
 
@@ -852,12 +1311,60 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartAdvancedMsgListener
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
   OpenImBridgeClient
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartAdvancedMsgListener
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -876,12 +1383,60 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  DartAdvancedMsgListener
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
   OpenImBridgeClient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartAdvancedMsgListener
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartAdvancedMsgListenerImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -897,6 +1452,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
+  }
+
+  @protected
+  RustStreamSink<ConnectionStatusEvent>
+  sse_decode_StreamSink_connection_status_event_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
   }
 
   @protected
@@ -944,21 +1508,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ConnectionStatusEvent sse_decode_connection_status_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_connected = sse_decode_bool(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return ConnectionStatusEvent(
+      connected: var_connected,
+      message: var_message,
+    );
+  }
+
+  @protected
   ConversationChangedEvent sse_decode_conversation_changed_event(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_conversationList = sse_decode_String(deserializer);
     return ConversationChangedEvent(conversationList: var_conversationList);
-  }
-
-  @protected
-  DartAdvancedMsgListener sse_decode_dart_advanced_msg_listener(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_messageSink = sse_decode_StreamSink_message_event_Sse(deserializer);
-    return DartAdvancedMsgListener(messageSink: var_messageSink);
   }
 
   @protected
@@ -1160,6 +1728,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    ArcMutexOptionStreamSinkConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkConnectionStatusEventImpl)
+          .frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    ArcMutexOptionStreamSinkMessageEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkMessageEventImpl).frbInternalSseEncode(
+        move: true,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    DartAdvancedMsgListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartAdvancedMsgListenerImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
     SseSerializer serializer,
@@ -1167,6 +1777,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    DartAdvancedMsgListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartAdvancedMsgListenerImpl).frbInternalSseEncode(move: false),
       serializer,
     );
   }
@@ -1186,6 +1809,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    DartAdvancedMsgListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartAdvancedMsgListenerImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
     SseSerializer serializer,
@@ -1199,6 +1835,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    ArcMutexOptionStreamSinkConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkConnectionStatusEventImpl)
+          .frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    ArcMutexOptionStreamSinkMessageEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkMessageEventImpl).frbInternalSseEncode(
+        move: null,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartAdvancedMsgListener(
+    DartAdvancedMsgListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartAdvancedMsgListenerImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
     SseSerializer serializer,
@@ -1206,6 +1884,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_connection_status_event_Sse(
+    RustStreamSink<ConnectionStatusEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_connection_status_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
       serializer,
     );
   }
@@ -1275,21 +1970,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_connection_status_event(
+    ConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.connected, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
   void sse_encode_conversation_changed_event(
     ConversationChangedEvent self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.conversationList, serializer);
-  }
-
-  @protected
-  void sse_encode_dart_advanced_msg_listener(
-    DartAdvancedMsgListener self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_StreamSink_message_event_Sse(self.messageSink, serializer);
   }
 
   @protected
@@ -1439,6 +2135,131 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 }
 
 @sealed
+class ArcMutexOptionStreamSinkConnectionStatusEventImpl extends RustOpaque
+    implements ArcMutexOptionStreamSinkConnectionStatusEvent {
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(
+    List<dynamic> wire,
+  ) : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr,
+  );
+}
+
+@sealed
+class ArcMutexOptionStreamSinkMessageEventImpl extends RustOpaque
+    implements ArcMutexOptionStreamSinkMessageEvent {
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(
+    List<dynamic> wire,
+  ) : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr,
+  );
+}
+
+@sealed
+class DartAdvancedMsgListenerImpl extends RustOpaque
+    implements DartAdvancedMsgListener {
+  // Not to be used by end users
+  DartAdvancedMsgListenerImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  DartAdvancedMsgListenerImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_DartAdvancedMsgListener,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_DartAdvancedMsgListener,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_DartAdvancedMsgListenerPtr,
+  );
+
+  ArcMutexOptionStreamSinkConnectionStatusEvent get connectionSink => RustLib
+      .instance
+      .api
+      .crateApiListenersDartAdvancedMsgListenerAutoAccessorGetConnectionSink(
+        that: this,
+      );
+
+  ArcMutexOptionStreamSinkMessageEvent get messageSink => RustLib.instance.api
+      .crateApiListenersDartAdvancedMsgListenerAutoAccessorGetMessageSink(
+        that: this,
+      );
+
+  set connectionSink(
+    ArcMutexOptionStreamSinkConnectionStatusEvent connectionSink,
+  ) => RustLib.instance.api
+      .crateApiListenersDartAdvancedMsgListenerAutoAccessorSetConnectionSink(
+        that: this,
+        connectionSink: connectionSink,
+      );
+
+  set messageSink(ArcMutexOptionStreamSinkMessageEvent messageSink) => RustLib
+      .instance
+      .api
+      .crateApiListenersDartAdvancedMsgListenerAutoAccessorSetMessageSink(
+        that: this,
+        messageSink: messageSink,
+      );
+
+  /// 设置连接状态 sink
+  Stream<ConnectionStatusEvent> setConnectionSink() => RustLib.instance.api
+      .crateApiListenersDartAdvancedMsgListenerSetConnectionSink(that: this);
+
+  /// 设置消息 sink
+  Stream<MessageEvent> setMessageSink() => RustLib.instance.api
+      .crateApiListenersDartAdvancedMsgListenerSetMessageSink(that: this);
+}
+
+@sealed
 class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   // Not to be used by end users
   OpenImBridgeClientImpl.frbInternalDcoDecode(List<dynamic> wire)
@@ -1468,6 +2289,12 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<void> connect() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientConnect(that: this);
 
+  /// 设置连接状态监听器
+  ///
+  /// 监听连接状态变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConnectionStatusEvent> connectionEvent() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientConnectionEvent(that: this);
+
   /// 设置会话监听器
   ///
   /// 监听会话变更事件，通过 StreamSink 发送到 Dart
@@ -1480,7 +2307,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
 
   /// 设置消息监听器
   ///
-  /// 监听消息和连接状态事件，通过 StreamSink 发送到 Dart
+  /// 监听消息事件，通过 StreamSink 发送到 Dart
   Stream<MessageEvent> messageEvent() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientMessageEvent(that: this);
 }
