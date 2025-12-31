@@ -1279,13 +1279,15 @@ impl SseDecode for crate::api::listeners::conversation::ConversationEvent {
                 };
             }
             4 => {
-                let mut var_conversationList = <String>::sse_decode(deserializer);
+                let mut var_conversationList =
+                    <Vec<crate::im::types::LocalConversation>>::sse_decode(deserializer);
                 return crate::api::listeners::conversation::ConversationEvent::NewConversation {
                     conversation_list: var_conversationList,
                 };
             }
             5 => {
-                let mut var_conversationList = <String>::sse_decode(deserializer);
+                let mut var_conversationList =
+                    <Vec<crate::im::types::LocalConversation>>::sse_decode(deserializer);
                 return crate::api::listeners::conversation::ConversationEvent::ConversationChanged{conversation_list: var_conversationList};
             }
             6 => {
@@ -3022,9 +3024,9 @@ crate::api::listeners::conversation::ConversationEvent::SyncServerProgress{progr
  }
 crate::api::listeners::conversation::ConversationEvent::SyncServerFailed{reinstalled} => { <i32>::sse_encode(3, serializer); <bool>::sse_encode(reinstalled, serializer);
  }
-crate::api::listeners::conversation::ConversationEvent::NewConversation{conversation_list} => { <i32>::sse_encode(4, serializer); <String>::sse_encode(conversation_list, serializer);
+crate::api::listeners::conversation::ConversationEvent::NewConversation{conversation_list} => { <i32>::sse_encode(4, serializer); <Vec<crate::im::types::LocalConversation>>::sse_encode(conversation_list, serializer);
  }
-crate::api::listeners::conversation::ConversationEvent::ConversationChanged{conversation_list} => { <i32>::sse_encode(5, serializer); <String>::sse_encode(conversation_list, serializer);
+crate::api::listeners::conversation::ConversationEvent::ConversationChanged{conversation_list} => { <i32>::sse_encode(5, serializer); <Vec<crate::im::types::LocalConversation>>::sse_encode(conversation_list, serializer);
  }
 crate::api::listeners::conversation::ConversationEvent::TotalUnreadMessageCountChanged{total_unread_count} => { <i32>::sse_encode(6, serializer); <i32>::sse_encode(total_unread_count, serializer);
  }

@@ -1,5 +1,3 @@
 rust_input: crate::api
 rust_root: rust/
 dart_output: lib/src/rust
-dart:
-  enable_dart_json_serializable: true

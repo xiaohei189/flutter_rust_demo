@@ -2,8 +2,10 @@
 
 use crate::frb_generated::StreamSink;
 use crate::im::conversation::listener::ConversationListener;
+use crate::im::types::LocalConversation;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use serde_json;
 
 /// 会话事件枚举，包含所有会话相关的回调事件
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,11 +29,11 @@ pub enum ConversationEvent {
     },
     /// 新会话
     NewConversation {
-        conversation_list: String, // JSON 字符串
+        conversation_list: Vec<LocalConversation>,
     },
     /// 会话变更
     ConversationChanged {
-        conversation_list: String, // JSON 字符串
+        conversation_list: Vec<LocalConversation>,
     },
     /// 总未读消息数变更
     TotalUnreadMessageCountChanged {
@@ -77,12 +79,22 @@ impl ConversationListener for DartConversationListener {
     }
 
     async fn on_new_conversation(&self, conversation_list: String) {
-        let event = ConversationEvent::NewConversation { conversation_list };
+        // 解析 JSON 字符串为 Vec<LocalConversation>
+        let conversations: Vec<LocalConversation> = serde_json::from_str(&conversation_list)
+            .unwrap_or_default();
+        let event = ConversationEvent::NewConversation {
+            conversation_list: conversations,
+        };
         let _ = self.sink.add(event);
     }
 
     async fn on_conversation_changed(&self, conversation_list: String) {
-        let event = ConversationEvent::ConversationChanged { conversation_list };
+        // 解析 JSON 字符串为 Vec<LocalConversation>
+        let conversations: Vec<LocalConversation> = serde_json::from_str(&conversation_list)
+            .unwrap_or_default();
+        let event = ConversationEvent::ConversationChanged {
+            conversation_list: conversations,
+        };
         let _ = self.sink.add(event);
     }
 

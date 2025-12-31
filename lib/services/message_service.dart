@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../models/chat.dart';
 import '../models/message.dart';
-import '../models/user.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/listeners/connection_status.dart';
 import '../src/rust/api/listeners/conversation.dart';
 import '../src/rust/api/listeners/message.dart';
 import '../src/rust/im/types.dart';
-import '../utils/json_serializer.dart';
 
 /// 消息服务 - 管理客户端连接、监听事件、更新会话列表
 class MessageService extends ChangeNotifier {
@@ -19,7 +17,7 @@ class MessageService extends ChangeNotifier {
   bool _isInitializing = false; // 初始化状态标志，防止并发初始化
 
   // 会话列表
-  final List<Chat> _chats = [];
+  final List<LocalConversation> _conversations = [];
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
 
@@ -35,7 +33,12 @@ class MessageService extends ChangeNotifier {
   OpenImBridgeClient? get client => _client;
 
   /// 获取所有会话列表
-  List<Chat> get chats => List.unmodifiable(_chats);
+  List<LocalConversation> get conversations =>
+      List.unmodifiable(_conversations);
+
+  /// 获取所有会话列表（兼容旧代码）
+  @Deprecated('使用 conversations 替代')
+  List<Chat> get chats => [];
 
   /// 获取指定会话的消息列表
   List<Message> getMessages(String conversationId) {
@@ -201,114 +204,104 @@ class MessageService extends ChangeNotifier {
     }
   }
 
-  /// 处理会话变更
-  void _handleConversationEvent(ConversationEvent event) {
-    event.when(
-      syncServerStart: (reinstalled) {
-        debugPrint(
-          'dart ConversationEvent sync start, reinstalled=$reinstalled',
-        );
-      },
-      syncServerFinish: (reinstalled) {
-        debugPrint(
-          'dart ConversationEvent sync finish, reinstalled=$reinstalled',
-        );
-      },
-      syncServerProgress: (progress) {
-        debugPrint('dart ConversationEvent progress=$progress');
-      },
-      syncServerFailed: (reinstalled) {
-        debugPrint(
-          'dart ConversationEvent sync failed, reinstalled=$reinstalled',
-        );
-      },
-      newConversation: (conversationList) {
-        debugPrint(
-          'dart ConversationEvent new conversation, conversationList=$conversationList',
-        );
-      },
-      conversationChanged: (conversationList) {
-        debugPrint(
-          'dart ConversationEvent conversation changed, conversationList=$conversationList',
-        );
-      },
-      totalUnreadMessageCountChanged: (totalUnreadCount) {
-        debugPrint(
-          'dart ConversationEvent total unread message count changed, totalUnreadCount=$totalUnreadCount',
-        );
-      },
-      conversationUserInputStatusChanged: (change) {
-        debugPrint(
-          'dart ConversationEvent conversation user input status changed, change=$change',
-        );
-      },
-    );
+  /// 更新会话列表（从结构体列表）
+  void _updateConversationsFromList(List<LocalConversation> conversationList) {
     try {
-      // 会话变更时重新加载会话列表
-      _loadConversations();
-      debugPrint('dart MessageService 🔄 会话列表已更新: ${_chats.length} 个会话');
+      for (final conv in conversationList) {
+        _updateConversation(conv);
+      }
+      notifyListeners();
+      debugPrint(
+        'dart MessageService 🔄 会话列表已更新: ${_conversations.length} 个会话',
+      );
     } catch (e) {
-      debugPrint('dart MessageService ❌ 处理会话变更失败: $e');
+      debugPrint('dart MessageService ❌ 更新会话列表失败: $e');
     }
   }
 
-  /// 从 LocalConversation 更新 Chat
-  void _updateChatFromConversation(LocalConversation conv) {
-    final chatIndex = _chats.indexWhere(
-      (chat) => chat.id == conv.conversationId,
+  /// 更新或添加会话
+  void _updateConversation(LocalConversation conv) {
+    final index = _conversations.indexWhere(
+      (c) => c.conversationId == conv.conversationId,
     );
 
-    // 处理 PlatformInt64（转换为 int）
-    final latestMsgTime = conv.latestMsgSendTime.toInt();
-
-    final chat = Chat(
-      id: conv.conversationId,
-      user: User(
-        id: conv.userId.isNotEmpty ? conv.userId : conv.groupId,
-        name: conv.showName.isNotEmpty ? conv.showName : conv.conversationId,
-        avatar: conv.faceUrl.isNotEmpty ? conv.faceUrl : null,
-      ),
-      unreadCount: conv.unreadCount,
-      lastMessageTime: latestMsgTime > 0
-          ? DateTime.fromMillisecondsSinceEpoch(latestMsgTime)
-          : null,
-    );
-
-    if (chatIndex >= 0) {
-      _chats[chatIndex] = chat;
+    if (index >= 0) {
+      _conversations[index] = conv;
     } else {
-      _chats.add(chat);
+      _conversations.add(conv);
     }
 
-    // 按最后消息时间排序
-    _chats.sort((a, b) {
-      final aTime = a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final bTime = b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+    // 按最后消息时间排序（置顶的排在前面）
+    _conversations.sort((a, b) {
+      // 置顶的排在前面
+      if (a.isPinned != b.isPinned) {
+        return a.isPinned ? -1 : 1;
+      }
+      // 按最后消息时间倒序
+      final aTime = a.latestMsgSendTime.toInt();
+      final bTime = b.latestMsgSendTime.toInt();
       return bTime.compareTo(aTime);
     });
   }
 
-  /// 从消息更新会话
-  void _updateConversationFromMessage(String conversationId, Message message) {
-    final chatIndex = _chats.indexWhere((chat) => chat.id == conversationId);
-    if (chatIndex >= 0) {
-      final chat = _chats[chatIndex];
-      _chats[chatIndex] = Chat(
-        id: chat.id,
-        user: chat.user,
-        lastMessage: message,
-        unreadCount: chat.unreadCount + 1,
-        lastMessageTime: message.timestamp,
+  /// 处理会话变更
+  void _handleConversationEvent(ConversationEvent event) {
+    try {
+      event.when(
+        syncServerStart: (reinstalled) {
+          debugPrint(
+            'dart ConversationEvent sync start, reinstalled=$reinstalled',
+          );
+          // 同步开始时，可以显示加载状态
+        },
+        syncServerFinish: (reinstalled) {
+          debugPrint(
+            'dart ConversationEvent sync finish, reinstalled=$reinstalled',
+          );
+          // 同步完成时，重新加载会话列表
+          _loadConversations();
+        },
+        syncServerProgress: (progress) {
+          debugPrint('dart ConversationEvent progress=$progress');
+          // 可以更新同步进度UI
+        },
+        syncServerFailed: (reinstalled) {
+          debugPrint(
+            'dart ConversationEvent sync failed, reinstalled=$reinstalled',
+          );
+          // 同步失败时，可以显示错误提示
+        },
+        newConversation: (conversationList) {
+          debugPrint(
+            'dart ConversationEvent new conversation, count=${conversationList.length}',
+          );
+          // 新会话：直接使用结构体列表更新
+          _updateConversationsFromList(conversationList);
+        },
+        conversationChanged: (conversationList) {
+          debugPrint(
+            'dart ConversationEvent conversation changed, count=${conversationList.length}',
+          );
+          // 会话变更：直接使用结构体列表更新
+          _updateConversationsFromList(conversationList);
+        },
+        totalUnreadMessageCountChanged: (totalUnreadCount) {
+          debugPrint(
+            'dart ConversationEvent total unread message count changed, totalUnreadCount=$totalUnreadCount',
+          );
+          // 总未读数变更：可以更新应用角标等
+          // 注意：这里只是总未读数，具体会话的未读数在 conversationChanged 中更新
+        },
+        conversationUserInputStatusChanged: (change) {
+          debugPrint(
+            'dart ConversationEvent conversation user input status changed, change=$change',
+          );
+          // 用户输入状态变更：可以显示"正在输入"提示
+          // change 是 JSON 字符串，包含 conversationID 和状态信息
+        },
       );
-
-      // 重新排序
-      _chats.sort((a, b) {
-        final aTime =
-            a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bTime =
-            b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bTime.compareTo(aTime);
-      });
+    } catch (e) {
+      debugPrint('dart MessageService ❌ 处理会话变更失败: $e');
     }
   }
 
@@ -318,12 +311,14 @@ class MessageService extends ChangeNotifier {
 
     try {
       final conversations = await _client!.getAllConversations();
-      _chats.clear();
+      _conversations.clear();
       for (final conv in conversations) {
-        _updateChatFromConversation(conv);
+        _updateConversation(conv);
       }
       notifyListeners();
-      debugPrint('dart MessageService ✅ 加载会话列表成功: ${_chats.length} 个会话');
+      debugPrint(
+        'dart MessageService ✅ 加载会话列表成功: ${_conversations.length} 个会话',
+      );
     } catch (e) {
       debugPrint('dart MessageService ❌ 加载会话列表失败: $e');
     }
@@ -341,7 +336,7 @@ class MessageService extends ChangeNotifier {
     _client = null;
     _isConnected = false;
     _isInitializing = false; // 重置初始化状态
-    _chats.clear();
+    _conversations.clear();
     _messages.clear();
     notifyListeners();
   }

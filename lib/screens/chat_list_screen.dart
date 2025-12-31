@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../main.dart';
 import '../widgets/chat_list_item.dart';
 import 'chat_detail_screen.dart';
-import '../main.dart';
 
 /// 聊天列表页面
 class ChatListScreen extends StatefulWidget {
@@ -33,8 +34,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chats = messageService.chats;
-    
+    final conversations = messageService.conversations;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('聊天'),
@@ -58,7 +59,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
         ],
       ),
-      body: chats.isEmpty
+      body: conversations.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -71,35 +72,28 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   const SizedBox(height: 16),
                   Text(
                     '暂无会话',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    messageService.isConnected
-                        ? '等待接收消息...'
-                        : 'WebSocket 未连接',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    messageService.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                 ],
               ),
             )
           : ListView.builder(
-              itemCount: chats.length,
+              itemCount: conversations.length,
               itemBuilder: (context, index) {
-                final chat = chats[index];
+                final conversation = conversations[index];
                 return ChatListItem(
-                  chat: chat,
+                  conversation: conversation,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ChatDetailScreen(chat: chat),
+                        builder: (context) =>
+                            ChatDetailScreen(conversation: conversation),
                       ),
                     );
                   },
@@ -109,6 +103,3 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 }
-
-
-

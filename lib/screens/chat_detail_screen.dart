@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../models/chat.dart';
+import '../main.dart';
+import '../models/user.dart';
+import '../src/rust/im/types.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/user_avatar.dart';
-import '../main.dart';
 
 /// 聊天详情页面
 class ChatDetailScreen extends StatefulWidget {
-  final Chat chat;
+  final LocalConversation conversation;
 
-  const ChatDetailScreen({super.key, required this.chat});
+  const ChatDetailScreen({super.key, required this.conversation});
 
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
@@ -45,9 +46,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
+  User _getUser() {
+    final userId = widget.conversation.userId.isNotEmpty
+        ? widget.conversation.userId
+        : widget.conversation.groupId;
+    final userName = widget.conversation.showName.isNotEmpty
+        ? widget.conversation.showName
+        : widget.conversation.conversationId;
+
+    return User(
+      id: userId,
+      name: userName,
+      avatar: widget.conversation.faceUrl.isNotEmpty
+          ? widget.conversation.faceUrl
+          : null,
+      status: null,
+    );
+  }
+
   void _loadMessages() {
     // 从消息服务获取该会话的消息
-    final messages = messageService.getMessages(widget.chat.id);
+    final messages = messageService.getMessages(
+      widget.conversation.conversationId,
+    );
     if (messages.isEmpty) {
       // 如果没有消息，加载一些模拟数据（可选）
       // _loadMockMessages();
@@ -86,9 +107,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
     try {
       // 确定接收者ID和会话类型
-      // 从会话ID中提取接收者ID，或者使用聊天对象的用户ID
-      final recvId = widget.chat.user.id;
-      final sessionType = 1; // 单聊，如果是群聊则为 2
+      final recvId = widget.conversation.userId.isNotEmpty
+          ? widget.conversation.userId
+          : widget.conversation.groupId;
+      final sessionType = widget.conversation.conversationType;
 
       // 发送消息
       await messageService.sendTextMessage(
@@ -102,10 +124,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('发送消息失败: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('发送消息失败: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -117,9 +136,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            UserAvatar(user: widget.chat.user, radius: 18),
+            UserAvatar(user: _getUser(), radius: 18),
             const SizedBox(width: 10),
-            Text(widget.chat.user.name),
+            Text(_getUser().name),
           ],
         ),
         actions: [
@@ -149,8 +168,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           Expanded(
             child: Builder(
               builder: (context) {
-                final messages = messageService.getMessages(widget.chat.id);
-                
+                final messages = messageService.getMessages(
+                  widget.conversation.conversationId,
+                );
+
                 if (messages.isEmpty) {
                   return Center(
                     child: Column(
@@ -173,7 +194,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     ),
                   );
                 }
-                
+
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16),
@@ -182,7 +203,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     final message = messages[index];
                     return MessageBubble(
                       message: message,
-                      otherUser: widget.chat.user,
+                      otherUser: _getUser(),
                     );
                   },
                 );
@@ -196,5 +217,4 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ),
     );
   }
-
 }

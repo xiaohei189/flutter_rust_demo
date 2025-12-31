@@ -1411,11 +1411,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         );
       case 4:
         return ConversationEvent_NewConversation(
-          conversationList: dco_decode_String(raw[1]),
+          conversationList: dco_decode_list_local_conversation(raw[1]),
         );
       case 5:
         return ConversationEvent_ConversationChanged(
-          conversationList: dco_decode_String(raw[1]),
+          conversationList: dco_decode_list_local_conversation(raw[1]),
         );
       case 6:
         return ConversationEvent_TotalUnreadMessageCountChanged(
@@ -2355,12 +2355,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_reinstalled = sse_decode_bool(deserializer);
         return ConversationEvent_SyncServerFailed(reinstalled: var_reinstalled);
       case 4:
-        var var_conversationList = sse_decode_String(deserializer);
+        var var_conversationList = sse_decode_list_local_conversation(
+          deserializer,
+        );
         return ConversationEvent_NewConversation(
           conversationList: var_conversationList,
         );
       case 5:
-        var var_conversationList = sse_decode_String(deserializer);
+        var var_conversationList = sse_decode_list_local_conversation(
+          deserializer,
+        );
         return ConversationEvent_ConversationChanged(
           conversationList: var_conversationList,
         );
@@ -3564,12 +3568,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         conversationList: final conversationList,
       ):
         sse_encode_i_32(4, serializer);
-        sse_encode_String(conversationList, serializer);
+        sse_encode_list_local_conversation(conversationList, serializer);
       case ConversationEvent_ConversationChanged(
         conversationList: final conversationList,
       ):
         sse_encode_i_32(5, serializer);
-        sse_encode_String(conversationList, serializer);
+        sse_encode_list_local_conversation(conversationList, serializer);
       case ConversationEvent_TotalUnreadMessageCountChanged(
         totalUnreadCount: final totalUnreadCount,
       ):

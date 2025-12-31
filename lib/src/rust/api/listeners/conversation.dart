@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../../frb_generated.dart';
+import '../../im/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'conversation.freezed.dart';
@@ -35,12 +36,12 @@ sealed class ConversationEvent with _$ConversationEvent {
 
   /// 新会话
   const factory ConversationEvent.newConversation({
-    required String conversationList,
+    required List<LocalConversation> conversationList,
   }) = ConversationEvent_NewConversation;
 
   /// 会话变更
   const factory ConversationEvent.conversationChanged({
-    required String conversationList,
+    required List<LocalConversation> conversationList,
   }) = ConversationEvent_ConversationChanged;
 
   /// 总未读消息数变更
