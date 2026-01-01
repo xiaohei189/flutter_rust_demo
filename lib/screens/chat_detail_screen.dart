@@ -20,12 +20,16 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _isLoadingHistory = false; // 是否正在加载历史消息
+  bool _hasMoreHistory = true; // 是否还有更多历史消息
 
   @override
   void initState() {
     super.initState();
     // 监听消息服务的变化
     messageService.addListener(_onMessageServiceChanged);
+    // 监听滚动事件，实现翻页加载
+    _scrollController.addListener(_onScroll);
     // 加载历史消息
     _loadMessages();
   }
@@ -33,6 +37,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   void dispose() {
     messageService.removeListener(_onMessageServiceChanged);
+    _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -64,19 +69,62 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     );
   }
 
-  void _loadMessages() {
-    // 从消息服务获取该会话的消息
-    final messages = messageService.getMessages(
-      widget.conversation.conversationId,
-    );
-    if (messages.isEmpty) {
-      // 如果没有消息，加载一些模拟数据（可选）
-      // _loadMockMessages();
-    }
-    // 延迟滚动到底部，确保列表已渲染
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
+  /// 加载历史消息（首次加载或翻页）
+  Future<void> _loadMessages({bool isLoadMore = false}) async {
+    if (_isLoadingHistory) return; // 防止重复加载
+    if (!_hasMoreHistory && isLoadMore) return; // 没有更多消息时不再加载
+
+    setState(() {
+      _isLoadingHistory = true;
     });
+
+    try {
+      final conversationId = widget.conversation.conversationId;
+
+      // 获取当前消息列表，用于确定翻页的起始消息ID
+      final currentMessages = messageService.getMessages(conversationId);
+      String? startClientMsgId;
+
+      if (isLoadMore && currentMessages.isNotEmpty) {
+        // 翻页加载：使用最早的消息ID作为起始消息ID（完全匹配 Go SDK）
+        startClientMsgId = currentMessages.first.id;
+      }
+
+      // 加载历史消息
+      final hasMore = await messageService.loadHistoryMessages(
+        conversationId,
+        count: 20,
+        startClientMsgId: startClientMsgId,
+      );
+
+      setState(() {
+        _hasMoreHistory = hasMore;
+        _isLoadingHistory = false;
+      });
+
+      // 首次加载时滚动到底部
+      if (!isLoadMore) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
+      }
+    } catch (e) {
+      debugPrint('加载历史消息失败: $e');
+      setState(() {
+        _isLoadingHistory = false;
+      });
+    }
+  }
+
+  /// 滚动事件监听，实现滚动到顶部时加载更早的消息
+  void _onScroll() {
+    // 当滚动到顶部附近时（距离顶部 200px 内），加载更早的消息
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels < 200 &&
+        _hasMoreHistory &&
+        !_isLoadingHistory) {
+      _loadMessages(isLoadMore: true);
+    }
   }
 
   void _scrollToBottom() {
@@ -198,9 +246,25 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
+                  itemCount: messages.length + (_isLoadingHistory ? 1 : 0),
                   itemBuilder: (context, index) {
-                    final message = messages[index];
+                    // 显示加载指示器
+                    if (index == 0 && _isLoadingHistory) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    // 调整索引（如果有加载指示器）
+                    final messageIndex = _isLoadingHistory ? index - 1 : index;
+                    if (messageIndex < 0 || messageIndex >= messages.length) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final message = messages[messageIndex];
                     return MessageBubble(
                       message: message,
                       otherUser: _getUser(),

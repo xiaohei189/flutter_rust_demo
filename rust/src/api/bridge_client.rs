@@ -206,6 +206,26 @@ impl OpenIMBridgeClient {
     pub async fn get_all_conversations(&self) -> Result<Vec<crate::im::types::LocalConversation>> {
         self.inner.get_all_conversations().await
     }
+
+    /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
+    ///
+    /// 参数和返回值完全匹配 Go SDK
+    pub async fn get_advanced_history_message_list(
+        &self,
+        req: crate::im::message::types::GetAdvancedHistoryMessageListParams,
+    ) -> Result<crate::im::message::types::GetAdvancedHistoryMessageListCallback> {
+        self.inner.get_advanced_history_message_list(req, false).await
+    }
+
+    /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
+    ///
+    /// 参数和返回值完全匹配 Go SDK
+    pub async fn get_advanced_history_message_list_reverse(
+        &self,
+        req: crate::im::message::types::GetAdvancedHistoryMessageListParams,
+    ) -> Result<crate::im::message::types::GetAdvancedHistoryMessageListCallback> {
+        self.inner.get_advanced_history_message_list(req, true).await
+    }
 }
 
 /// 登录接口

@@ -124,6 +124,70 @@ class FileElem {
           fileSize == other.fileSize;
 }
 
+/// 获取高级历史消息列表回调（完全匹配 Go SDK 的 GetAdvancedHistoryMessageListCallback）
+class GetAdvancedHistoryMessageListCallback {
+  final List<MsgStruct> messageList;
+  final bool isEnd;
+  final int errCode;
+  final String errMsg;
+
+  const GetAdvancedHistoryMessageListCallback({
+    required this.messageList,
+    required this.isEnd,
+    required this.errCode,
+    required this.errMsg,
+  });
+
+  @override
+  int get hashCode =>
+      messageList.hashCode ^
+      isEnd.hashCode ^
+      errCode.hashCode ^
+      errMsg.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetAdvancedHistoryMessageListCallback &&
+          runtimeType == other.runtimeType &&
+          messageList == other.messageList &&
+          isEnd == other.isEnd &&
+          errCode == other.errCode &&
+          errMsg == other.errMsg;
+}
+
+/// 获取高级历史消息列表参数（完全匹配 Go SDK 的 GetAdvancedHistoryMessageListParams）
+class GetAdvancedHistoryMessageListParams {
+  final String conversationId;
+  final String startClientMsgId;
+  final int count;
+  final int viewType;
+
+  const GetAdvancedHistoryMessageListParams({
+    required this.conversationId,
+    required this.startClientMsgId,
+    required this.count,
+    required this.viewType,
+  });
+
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^
+      startClientMsgId.hashCode ^
+      count.hashCode ^
+      viewType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetAdvancedHistoryMessageListParams &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          startClientMsgId == other.startClientMsgId &&
+          count == other.count &&
+          viewType == other.viewType;
+}
+
 /// 位置元素
 class LocationElem {
   final String description;

@@ -51,6 +51,21 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 监听会话变更事件，通过 StreamSink 发送到 Dart
   Stream<ConversationEvent> conversationEvent();
 
+  /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
+  ///
+  /// 参数和返回值完全匹配 Go SDK
+  Future<GetAdvancedHistoryMessageListCallback> getAdvancedHistoryMessageList({
+    required GetAdvancedHistoryMessageListParams req,
+  });
+
+  /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
+  ///
+  /// 参数和返回值完全匹配 Go SDK
+  Future<GetAdvancedHistoryMessageListCallback>
+  getAdvancedHistoryMessageListReverse({
+    required GetAdvancedHistoryMessageListParams req,
+  });
+
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations();
 

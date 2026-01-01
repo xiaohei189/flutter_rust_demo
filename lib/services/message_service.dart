@@ -8,6 +8,7 @@ import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/listeners/connection_status.dart';
 import '../src/rust/api/listeners/conversation.dart';
 import '../src/rust/api/listeners/message.dart';
+import '../src/rust/im/message/types.dart';
 import '../src/rust/im/types.dart';
 
 /// 消息服务 - 管理客户端连接、监听事件、更新会话列表
@@ -43,6 +44,128 @@ class MessageService extends ChangeNotifier {
   /// 获取指定会话的消息列表
   List<Message> getMessages(String conversationId) {
     return List.unmodifiable(_messages[conversationId] ?? []);
+  }
+
+  /// 加载历史消息（首次加载或翻页）
+  ///
+  /// 完全参考 Go SDK 的 GetAdvancedHistoryMessageList 实现
+  /// - `conversationId`: 会话 ID
+  /// - `count`: 每次加载的消息数量
+  /// - `startClientMsgId`: 起始消息ID（可选，用于翻页，获取比这个消息更早的消息）
+  /// - 返回: 是否还有更多消息
+  Future<bool> loadHistoryMessages(
+    String conversationId, {
+    int count = 20,
+    String? startClientMsgId,
+  }) async {
+    if (_client == null) return false;
+
+    try {
+      // 构建请求参数（完全匹配 Go SDK）
+      final req = GetAdvancedHistoryMessageListParams(
+        conversationId: conversationId,
+        startClientMsgId: startClientMsgId ?? '', // 空字符串表示从最新开始
+        count: count,
+        viewType: 0, // 视图类型，0 表示普通视图
+      );
+
+      // 调用 Rust API 获取历史消息
+      final result = await _client!.getAdvancedHistoryMessageList(req: req);
+
+      // 检查错误
+      if (result.errCode != 0) {
+        debugPrint(
+          'dart MessageService ❌ 加载历史消息失败: ${result.errMsg} (code: ${result.errCode})',
+        );
+        return false;
+      }
+
+      if (result.messageList.isEmpty) {
+        return false; // 没有更多消息
+      }
+
+      // 转换为 Message 模型并添加到消息列表
+      final messages = result.messageList
+          .map((msg) => _msgStructToMessage(msg))
+          .toList();
+
+      // 获取当前消息列表
+      final currentMessages = _messages.putIfAbsent(conversationId, () => []);
+
+      // 将新消息插入到列表开头（因为历史消息是按时间倒序的，最新的在前）
+      // 但我们需要按时间正序显示（最旧的在前面，最新的在后面）
+      // 所以需要反转后添加到列表开头
+      currentMessages.insertAll(0, messages.reversed);
+
+      // 去重（基于消息 ID）
+      final seenIds = <String>{};
+      _messages[conversationId] = currentMessages
+          .where((msg) => seenIds.add(msg.id))
+          .toList();
+
+      notifyListeners();
+      debugPrint(
+        'dart MessageService ✅ 加载历史消息成功: ${messages.length} 条，isEnd: ${result.isEnd}',
+      );
+
+      // 返回是否还有更多消息（取反，因为 isEnd 表示已到末尾）
+      return !result.isEnd;
+    } catch (e) {
+      debugPrint('dart MessageService ❌ 加载历史消息失败: $e');
+      return false;
+    }
+  }
+
+  /// 将 MsgStruct 转换为 Message
+  Message _msgStructToMessage(MsgStruct msg) {
+    // 从 MsgStruct 中提取信息
+    final clientMsgId = msg.clientMsgId ?? '';
+    final sendId = msg.sendId ?? '';
+
+    // 提取内容（优先使用 textElem，否则使用 content）
+    String content = '';
+    if (msg.textElem != null) {
+      content = msg.textElem!.content;
+    } else if (msg.content != null) {
+      // 如果是文本消息，content 可能是 JSON，需要解析
+      if (msg.contentType == 101) {
+        // TEXT 类型
+        try {
+          final json = msg.content!;
+          // 尝试解析 JSON，如果失败则直接使用
+          if (json.startsWith('{')) {
+            // 可能是 JSON 格式的 {"content": "..."}
+            // 这里简化处理，直接使用 content
+            content = json;
+          } else {
+            content = json;
+          }
+        } catch (e) {
+          content = msg.content!;
+        }
+      } else {
+        content = msg.content ?? '';
+      }
+    }
+
+    final sendTime = msg.sendTime.toInt();
+
+    // 判断是否是自己发送的消息
+    // TODO: 从客户端配置中获取当前用户ID
+    final isSent = true; // 暂时假设都是已发送的
+
+    return Message(
+      id: clientMsgId.isNotEmpty
+          ? clientMsgId
+          : DateTime.now().millisecondsSinceEpoch.toString(),
+      senderId: sendId,
+      content: content,
+      type: MessageType.text, // 暂时都当作文本消息
+      timestamp: sendTime > 0
+          ? DateTime.fromMillisecondsSinceEpoch(sendTime)
+          : DateTime.now(),
+      isSent: isSent,
+    );
   }
 
   /// 发送文本消息（空实现）

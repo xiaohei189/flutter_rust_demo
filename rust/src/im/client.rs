@@ -1268,6 +1268,131 @@ impl OpenIMClient {
         syncer.get_all_conversation_list().await
     }
 
+    /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList 实现）
+    ///
+    /// 参数和返回值完全匹配 Go SDK
+    pub async fn get_advanced_history_message_list(
+        &self,
+        req: crate::im::message::types::GetAdvancedHistoryMessageListParams,
+        is_reverse: bool,
+    ) -> Result<crate::im::message::types::GetAdvancedHistoryMessageListCallback> {
+        use crate::im::message::types::{GetAdvancedHistoryMessageListCallback, MsgStruct};
+
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+
+        let conversation_id = &req.conversation_id;
+        let mut start_time: i64 = 0;
+        let mut start_seq: i64 = 0;
+        let start_client_msg_id = req.start_client_msg_id.clone();
+
+        // 如果提供了 StartClientMsgID，先获取该消息（完全匹配 Go SDK）
+        if !start_client_msg_id.is_empty() {
+            if let Some(msg) = store
+                .get_by_client_msg_id(conversation_id, &start_client_msg_id)
+                .await?
+            {
+                start_time = msg.send_time;
+                start_seq = msg.seq;
+            } else {
+                return Ok(GetAdvancedHistoryMessageListCallback {
+                    message_list: vec![],
+                    is_end: true,
+                    err_code: -1,
+                    err_msg: format!("消息不存在: {}", start_client_msg_id),
+                });
+            }
+        }
+
+        // 调用 GetMessageList（完全匹配 Go SDK）
+        let list = store
+            .get_message_list(
+                conversation_id,
+                req.count,
+                start_time,
+                start_seq,
+                &start_client_msg_id,
+                is_reverse,
+            )
+            .await?;
+
+        // 转换为 MsgStruct（完全匹配 Go SDK 的 LocalChatLog2MsgStruct）
+        let message_list: Vec<MsgStruct> = list
+            .into_iter()
+            .map(|log| Self::local_chat_log_to_msg_struct(log))
+            .collect();
+
+        // 判断是否已到末尾（如果返回的消息数量小于请求的数量，说明已到末尾）
+        let is_end = message_list.len() < req.count as usize;
+
+        Ok(GetAdvancedHistoryMessageListCallback {
+            message_list,
+            is_end,
+            err_code: 0,
+            err_msg: String::new(),
+        })
+    }
+
+    /// 将 LocalChatLog 转换为 MsgStruct（参考 Go SDK 的 LocalChatLog2MsgStruct）
+    fn local_chat_log_to_msg_struct(log: crate::im::message::models::LocalChatLog) -> crate::im::message::types::MsgStruct {
+        use crate::im::message::types::MsgStruct;
+
+        // 解析 content（可能是 JSON）
+        let content_str = log.content.clone();
+        // 暂时不解析具体的元素类型，直接使用 content
+        // TODO: 根据 content_type 解析不同的元素类型（text_elem, picture_elem 等）
+        let text_elem = None;
+        let picture_elem = None;
+        let sound_elem = None;
+        let video_elem = None;
+        let file_elem = None;
+        let at_text_elem = None;
+        let location_elem = None;
+        let custom_elem = None;
+        let quote_elem = None;
+
+        MsgStruct {
+            client_msg_id: Some(log.client_msg_id),
+            server_msg_id: Some(log.server_msg_id),
+            create_time: log.create_time,
+            send_time: log.send_time,
+            session_type: log.session_type,
+            send_id: Some(log.send_id),
+            recv_id: Some(log.recv_id),
+            msg_from: log.msg_from,
+            content_type: log.content_type,
+            sender_platform_id: log.sender_platform_id,
+            sender_nickname: Some(log.sender_nickname),
+            sender_face_url: Some(log.sender_face_url),
+            group_id: if !log.group_id.is_empty() {
+                Some(log.group_id)
+            } else {
+                None
+            },
+            content: Some(content_str),
+            seq: log.seq,
+            is_read: log.is_read,
+            status: log.status,
+            is_react: None,
+            is_external_extensions: None,
+            offline_push: None,
+            attached_info: Some(log.attached_info),
+            ex: Some(log.ex),
+            local_ex: Some(log.local_ex),
+            text_elem,
+            picture_elem,
+            sound_elem,
+            video_elem,
+            file_elem,
+            at_text_elem,
+            location_elem,
+            custom_elem,
+            quote_elem,
+        }
+    }
+
     /// 获取所有好友列表
     pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
         let syncer = self

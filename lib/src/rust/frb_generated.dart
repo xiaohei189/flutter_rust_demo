@@ -75,7 +75,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -849989112;
+  int get rustContentHash => 1425873587;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -133,6 +133,18 @@ abstract class RustLibApi extends BaseApi {
   Stream<ConversationEvent>
   crateApiBridgeClientOpenImBridgeClientConversationEvent({
     required OpenImBridgeClient that,
+  });
+
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  });
+
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
   });
 
   Future<List<LocalConversation>>
@@ -658,6 +670,97 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_get_advanced_history_message_list_params(
+            req,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_get_advanced_history_message_list_callback,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListConstMeta,
+        argValues: [that, req],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_advanced_history_message_list",
+        argNames: ["that", "req"],
+      );
+
+  @override
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_get_advanced_history_message_list_params(
+            req,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_get_advanced_history_message_list_callback,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverseConstMeta,
+        argValues: [that, req],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverseConstMeta =>
+      const TaskConstMeta(
+        debugName:
+            "OpenImBridgeClient_get_advanced_history_message_list_reverse",
+        argNames: ["that", "req"],
+      );
+
+  @override
   Future<List<LocalConversation>>
   crateApiBridgeClientOpenImBridgeClientGetAllConversations({
     required OpenImBridgeClient that,
@@ -673,7 +776,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 14,
             port: port_,
           );
         },
@@ -714,7 +817,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 13,
+              funcId: 15,
               port: port_,
             );
           },
@@ -754,7 +857,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(token, serializer);
           sse_encode_i_32(platformId, serializer);
           sse_encode_opt_String(wsUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -787,7 +890,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 15,
+              funcId: 17,
               port: port_,
             );
           },
@@ -819,7 +922,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -844,7 +947,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 19,
             port: port_,
           );
         },
@@ -869,7 +972,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_box_autoadd_logger_config(config, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -892,7 +995,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_opt_String(logLevel, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -920,7 +1023,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 22,
             port: port_,
           );
         },
@@ -956,7 +1059,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 23,
             port: port_,
           );
         },
@@ -1306,6 +1409,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_get_advanced_history_message_list_params(raw);
+  }
+
+  @protected
   LocationElem dco_decode_box_autoadd_location_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_location_elem(raw);
@@ -1476,6 +1586,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GetAdvancedHistoryMessageListCallback
+  dco_decode_get_advanced_history_message_list_callback(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return GetAdvancedHistoryMessageListCallback(
+      messageList: dco_decode_list_msg_struct(arr[0]),
+      isEnd: dco_decode_bool(arr[1]),
+      errCode: dco_decode_i_32(arr[2]),
+      errMsg: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_get_advanced_history_message_list_params(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return GetAdvancedHistoryMessageListParams(
+      conversationId: dco_decode_String(arr[0]),
+      startClientMsgId: dco_decode_String(arr[1]),
+      count: dco_decode_i_32(arr[2]),
+      viewType: dco_decode_i_32(arr[3]),
+    );
+  }
+
+  @protected
   int dco_decode_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -1503,6 +1643,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_local_conversation).toList();
+  }
+
+  @protected
+  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_msg_struct).toList();
   }
 
   @protected
@@ -2240,6 +2386,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_box_autoadd_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_get_advanced_history_message_list_params(deserializer));
+  }
+
+  @protected
   LocationElem sse_decode_box_autoadd_location_elem(
     SseDeserializer deserializer,
   ) {
@@ -2429,6 +2584,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GetAdvancedHistoryMessageListCallback
+  sse_decode_get_advanced_history_message_list_callback(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_messageList = sse_decode_list_msg_struct(deserializer);
+    var var_isEnd = sse_decode_bool(deserializer);
+    var var_errCode = sse_decode_i_32(deserializer);
+    var var_errMsg = sse_decode_String(deserializer);
+    return GetAdvancedHistoryMessageListCallback(
+      messageList: var_messageList,
+      isEnd: var_isEnd,
+      errCode: var_errCode,
+      errMsg: var_errMsg,
+    );
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_startClientMsgId = sse_decode_String(deserializer);
+    var var_count = sse_decode_i_32(deserializer);
+    var var_viewType = sse_decode_i_32(deserializer);
+    return GetAdvancedHistoryMessageListParams(
+      conversationId: var_conversationId,
+      startClientMsgId: var_startClientMsgId,
+      count: var_count,
+      viewType: var_viewType,
+    );
+  }
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
@@ -2474,6 +2665,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <LocalConversation>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_local_conversation(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <MsgStruct>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_msg_struct(deserializer));
     }
     return ans_;
   }
@@ -3431,6 +3634,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_get_advanced_history_message_list_params(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_location_elem(
     LocationElem self,
     SseSerializer serializer,
@@ -3621,6 +3833,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_get_advanced_history_message_list_callback(
+    GetAdvancedHistoryMessageListCallback self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_msg_struct(self.messageList, serializer);
+    sse_encode_bool(self.isEnd, serializer);
+    sse_encode_i_32(self.errCode, serializer);
+    sse_encode_String(self.errMsg, serializer);
+  }
+
+  @protected
+  void sse_encode_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_String(self.startClientMsgId, serializer);
+    sse_encode_i_32(self.count, serializer);
+    sse_encode_i_32(self.viewType, serializer);
+  }
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
@@ -3659,6 +3895,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_local_conversation(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_msg_struct(
+    List<MsgStruct> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_msg_struct(item, serializer);
     }
   }
 
@@ -4325,6 +4573,29 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   /// 监听会话变更事件，通过 StreamSink 发送到 Dart
   Stream<ConversationEvent> conversationEvent() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientConversationEvent(that: this);
+
+  /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
+  ///
+  /// 参数和返回值完全匹配 Go SDK
+  Future<GetAdvancedHistoryMessageListCallback> getAdvancedHistoryMessageList({
+    required GetAdvancedHistoryMessageListParams req,
+  }) => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList(
+        that: this,
+        req: req,
+      );
+
+  /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
+  ///
+  /// 参数和返回值完全匹配 Go SDK
+  Future<GetAdvancedHistoryMessageListCallback>
+  getAdvancedHistoryMessageListReverse({
+    required GetAdvancedHistoryMessageListParams req,
+  }) => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse(
+        that: this,
+        req: req,
+      );
 
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations() => RustLib.instance.api

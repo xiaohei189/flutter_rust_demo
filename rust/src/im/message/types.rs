@@ -222,6 +222,32 @@ pub struct MessageRevoked {
     pub seq: u32,
 }
 
+/// 获取高级历史消息列表参数（完全匹配 Go SDK 的 GetAdvancedHistoryMessageListParams）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetAdvancedHistoryMessageListParams {
+    #[serde(rename = "conversationID")]
+    pub conversation_id: String,
+    #[serde(rename = "startClientMsgID")]
+    pub start_client_msg_id: String,
+    #[serde(rename = "count")]
+    pub count: i32,
+    #[serde(rename = "viewType")]
+    pub view_type: i32,
+}
+
+/// 获取高级历史消息列表回调（完全匹配 Go SDK 的 GetAdvancedHistoryMessageListCallback）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetAdvancedHistoryMessageListCallback {
+    #[serde(rename = "messageList")]
+    pub message_list: Vec<MsgStruct>,
+    #[serde(rename = "isEnd")]
+    pub is_end: bool,
+    #[serde(rename = "errCode")]
+    pub err_code: i32,
+    #[serde(rename = "errMsg")]
+    pub err_msg: String,
+}
+
 /// 消息结构体（对应 Go 的 MsgStruct）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MsgStruct {

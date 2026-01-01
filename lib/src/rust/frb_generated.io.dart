@@ -206,6 +206,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
 
   @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw);
+
+  @protected
   LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
 
   @protected
@@ -260,6 +264,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileElem dco_decode_file_elem(dynamic raw);
 
   @protected
+  GetAdvancedHistoryMessageListCallback
+  dco_decode_get_advanced_history_message_list_callback(dynamic raw);
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_get_advanced_history_message_list_params(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
@@ -273,6 +285,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
+
+  @protected
+  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
@@ -539,6 +554,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
 
   @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_box_autoadd_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   LocationElem sse_decode_box_autoadd_location_elem(
     SseDeserializer deserializer,
   );
@@ -605,6 +626,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileElem sse_decode_file_elem(SseDeserializer deserializer);
 
   @protected
+  GetAdvancedHistoryMessageListCallback
+  sse_decode_get_advanced_history_message_list_callback(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
@@ -620,6 +653,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<LocalConversation> sse_decode_list_local_conversation(
     SseDeserializer deserializer,
   );
+
+  @protected
+  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
@@ -931,6 +967,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_location_elem(
     LocationElem self,
     SseSerializer serializer,
@@ -1027,6 +1069,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_file_elem(FileElem self, SseSerializer serializer);
 
   @protected
+  void sse_encode_get_advanced_history_message_list_callback(
+    GetAdvancedHistoryMessageListCallback self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
@@ -1041,6 +1095,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_local_conversation(
     List<LocalConversation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_msg_struct(
+    List<MsgStruct> self,
     SseSerializer serializer,
   );
 

@@ -318,6 +318,69 @@ impl MessageStore {
         Ok(res.rows_affected())
     }
 
+    /// 获取历史消息列表（完全参考 Go SDK 的 GetMessageList 实现）
+    ///
+    /// 参数完全匹配 Go SDK：
+    /// - `conversation_id`: 会话 ID
+    /// - `count`: 每次加载的消息数量
+    /// - `start_time`: 起始时间戳（0 表示从最新开始）
+    /// - `start_seq`: 起始序列号（0 表示从最新开始）
+    /// - `start_client_msg_id`: 起始消息ID（空字符串表示从最新开始）
+    /// - `is_reverse`: 是否反向（true=从旧到新，false=从新到旧）
+    ///
+    /// 返回: 消息列表
+    pub async fn get_message_list(
+        &self,
+        conversation_id: &str,
+        count: i32,
+        start_time: i64,
+        start_seq: i64,
+        start_client_msg_id: &str,
+        is_reverse: bool,
+    ) -> Result<Vec<LocalChatLog>> {
+        let table = self.ensure_table(conversation_id).await?;
+        
+        // 确定排序方式和比较符号（完全匹配 Go SDK）
+        let (time_order, time_symbol) = if is_reverse {
+            ("send_time ASC, seq ASC", ">")
+        } else {
+            ("send_time DESC, seq DESC", "<")
+        };
+
+        let rows = if start_time > 0 {
+            // 复杂查询条件（完全匹配 Go SDK）
+            // send_time < startTime OR (send_time = startTime AND (seq < startSeq OR (seq = 0 AND client_msg_id != startClientMsgID)))
+            let condition = format!(
+                "send_time {} ? OR (send_time = ? AND (seq {} ? OR (seq = 0 AND client_msg_id != ?)))",
+                time_symbol, time_symbol
+            );
+            let sql = format!(
+                "SELECT * FROM {table} WHERE {} ORDER BY {} LIMIT ?",
+                condition, time_order, table = table
+            );
+            sqlx::query(&sql)
+                .bind(start_time)
+                .bind(start_time)
+                .bind(start_seq)
+                .bind(start_client_msg_id)
+                .bind(count)
+                .fetch_all(&self.pool)
+                .await?
+        } else {
+            // 没有起始条件，直接查询
+            let sql = format!(
+                "SELECT * FROM {table} ORDER BY {} LIMIT ?",
+                time_order, table = table
+            );
+            sqlx::query(&sql)
+                .bind(count)
+                .fetch_all(&self.pool)
+                .await?
+        };
+
+        Ok(rows.into_iter().map(Self::row_to_log).collect())
+    }
+
     pub async fn search_local_messages(
         &self,
         conversation_id: Option<&str>,

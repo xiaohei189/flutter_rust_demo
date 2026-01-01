@@ -1,7 +1,9 @@
 //! 消息本地模型定义
 
+use serde::{Deserialize, Serialize};
+
 /// 本地聊天记录结构体
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalChatLog {
     pub conversation_id: String,
     pub client_msg_id: String,
