@@ -116,3 +116,100 @@ final hasMore = await messageService.loadHistoryMessages(
 );
 ```
 
+
+Rust 与 Go 版本功能对比
+一、会话处理功能对比
+已实现（Rust）
+获取会话列表（分页/全部）
+增量同步会话
+标记会话已读
+会话监听器
+缺失（Rust）
+会话管理
+GetOneConversation：根据会话类型和源ID获取单个会话
+GetMultipleConversation：批量获取会话
+HideConversation：隐藏会话
+HideAllConversations：隐藏所有会话
+SetConversationDraft：设置会话草稿
+SetConversation：设置会话属性（置顶、免打扰等）
+会话同步
+SyncAllConversationHashReadSeqs：同步所有会话的已读序列号
+会话差异计算（diff）：更精细的会话更新逻辑
+二、消息处理功能对比
+已实现（Rust）
+发送消息（文本、图片、语音、视频、文件等）
+创建消息（各种类型）
+获取历史消息（GetAdvancedHistoryMessageList）
+批量插入/更新消息
+消息去重
+消息撤回
+删除消息（本地/服务器）
+标记消息已读
+消息监听器
+缺失（Rust）
+消息完整性检查
+validateAndFillInternalGaps：检查并填充消息块内部间隙
+validateAndFillInterBlockGaps：检查并填充消息块之间的间隙
+validateAndFillEndBlockContinuity：检查并填充消息块末尾连续性
+checkEndBlock：检查消息块是否结束
+fetchAndMergeMissingMessages：获取并合并缺失消息
+MaxSeqRecorder（最大序列号记录器）
+MaxSeqRecorder：跟踪每个会话的最大序列号
+IsNewMsg：判断是否为新消息（用于未读数计算）
+Incr：递增序列号
+Get/Set：获取/设置序列号
+消息内容解析
+msgHandleByContentType：根据内容类型解析消息（TextElem、PictureElem 等）
+消息内容反序列化逻辑
+消息状态管理
+updateMsgStatusAndTriggerConversation：更新消息状态并触发会话更新
+waitForMessageSyncSeq：等待消息同步序列号
+handleExceptionMessages：处理异常消息（重复消息等）
+已读回执处理
+doReadDrawing：处理已读回执
+getAsReadMsgMapAndList：获取已读消息映射和列表
+doUnreadCount：处理未读数计算
+unreadChangeTrigger：未读数变更触发
+消息拉取优化
+messagePullForwardEndSeqMap：前向拉取结束序列号映射
+messagePullReverseEndSeqMap：反向拉取结束序列号映射
+handleEndSeq：处理结束序列号
+fetchMessagesWithGapCheck：带间隙检查的消息拉取
+用户信息处理
+faceURLAndNicknameHandle：处理头像和昵称
+singleHandle：单聊消息处理（填充用户信息）
+groupHandle：群聊消息处理（填充群组信息）
+其他功能
+GetActiveConversations：获取活跃会话
+getConversationMaxSeq/MinSeq：获取会话最大/最小序列号
+setConversationMinSeq：设置会话最小序列号
+pullMessageIntoTable：拉取消息到表
+三、核心差异总结
+1. 消息完整性保证
+Go：通过三层检查（内部、块间、块尾）确保消息连续性，自动填充缺失消息
+Rust：仅实现基础历史消息拉取，缺少间隙检测与自动填充
+2. 未读数计算
+Go：使用 MaxSeqRecorder 判断新消息，精确计算未读数
+Rust：简化处理，未实现 MaxSeqRecorder，未读数计算不准确
+3. 消息内容解析
+Go：完整的 msgHandleByContentType，支持所有消息类型解析
+Rust：部分实现，缺少完整的内容类型解析逻辑
+4. 会话管理
+Go：完整的会话管理（隐藏、草稿、属性设置等）
+Rust：仅基础会话列表和已读标记
+5. 性能优化
+Go：使用映射缓存拉取结束序列号，避免重复拉取
+Rust：未实现序列号缓存机制
+四、优先级建议
+高优先级：
+MaxSeqRecorder：未读数计算必需
+msgHandleByContentType：消息内容解析必需
+消息完整性检查：保证消息连续性
+中优先级：
+会话管理功能（隐藏、草稿等）
+已读回执处理优化
+用户信息填充（头像、昵称）
+低优先级：
+消息拉取优化（序列号缓存）
+其他辅助功能
+以上为当前对比结果，Rust 版本在基础功能上已实现，但在消息完整性、未读数计算和会话管理方面仍需完善

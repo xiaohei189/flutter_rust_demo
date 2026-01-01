@@ -150,3 +150,4 @@ final result = await client.getAdvancedHistoryMessageList(req);
 2. **消息元素解析**：`local_chat_log_to_msg_struct` 中的元素解析需要根据 `content_type` 完整实现
 3. **ViewType 处理**：Go SDK 使用 ViewType 管理不同的消息视图，Rust 版本暂时只传递参数
 
+

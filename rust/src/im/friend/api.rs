@@ -105,12 +105,7 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_full_friend_user_ids", self.api_base_url);
 
-        info!("[FriendAPI] 📡 请求全量好友ID列表");
-        debug!("[FriendAPI]   请求URL: {}", url);
-        debug!(
-            "[FriendAPI]   用户ID: {}, 操作ID: {}",
-            self.user_id, operation_id
-        );
+        debug!("[API] 📡 请求全量好友ID列表   请求URL: {}, 操作ID: {}", url, operation_id);
 
         #[derive(Deserialize)]
         struct FriendIdsData {
@@ -121,7 +116,7 @@ impl FriendApi {
             user_ids: Vec<String>,
         }
 
-        let response = self
+        let response = match self
             .client
             .post(&url)
             .header("Content-Type", "application/json")
@@ -132,7 +127,13 @@ impl FriendApi {
             }))
             .send()
             .await
-            .context("请求失败")?;
+        {
+            Ok(resp) => resp,
+            Err(e) => {
+                error!("[FriendAPI] 全量好友ID列表请求失败: {:?}", e);
+                return Err(anyhow::anyhow!("请求失败: {:?}", e));
+            }
+        };
 
         let status = response.status();
         let body_bytes = response.bytes().await.context("读取响应 body 失败")?;
@@ -419,5 +420,29 @@ impl FriendApi {
         );
 
         Ok(resp.friend_requests)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::im::auth::login_async;
+    #[tokio::test]
+    async fn test_get_incremental_friends() {
+        let area_code = "+86".to_string();
+        let password = "284f3d09ea0695538e4ded1c1766d73a".to_string(); // 测试密码
+        let platform = 5;
+    
+        let token_info = login_async(area_code, "17764338283".to_string(), password, platform)
+            .await.unwrap();
+    
+        let (user_id, im_token) = if let Some(data) = &token_info.data {
+            (data.user_id.clone(), data.im_token.clone())
+        } else {
+            panic!("登录失败：服务器返回数据为空");
+        };
+        let api = FriendApi::new(reqwest::Client::new(), "http://localhost:10002".to_string(), "1234567890".to_string());
+        let resp = api.get_incremental_friends(0, "").await.unwrap();
+        println!("{:?}", resp);
     }
 }

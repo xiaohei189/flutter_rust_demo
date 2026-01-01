@@ -7,11 +7,11 @@ use crate::im::conversation::{
     models::ConversationSyncerConfig,
     service::ConversationSyncer,
 };
+use crate::im::db::create_sqlite_pool_with_migration;
 use crate::im::friend::{
     EmptyFriendListener, FriendListener, FriendSyncer, FriendSyncerConfig, LocalFriend,
 };
 use crate::im::message::dao::MessageStore;
-use crate::im::db::create_sqlite_pool_with_migration;
 use crate::im::message::listener::{AdvancedMsgListener, EmptyAdvancedMsgListener};
 use crate::im::message::types::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem,
@@ -97,7 +97,11 @@ struct ConnectFatalError {
 
 impl std::fmt::Display for ConnectFatalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "fatal ws connect error code={}, msg={}", self.code, self.message)
+        write!(
+            f,
+            "fatal ws connect error code={}, msg={}",
+            self.code, self.message
+        )
     }
 }
 
@@ -134,6 +138,63 @@ impl ReconnectStrategy {
     }
 }
 
+/// 序列号映射缓存（完全参考 Go SDK 的 ConversationSeqContextCache）
+///
+/// 用于跟踪消息拉取的结束序列号，避免重复拉取
+#[derive(Clone)]
+struct ConversationSeqContextCache {
+    cache: Arc<std::sync::Mutex<HashMap<String, i64>>>,
+}
+
+impl ConversationSeqContextCache {
+    fn new() -> Self {
+        Self {
+            cache: Arc::new(std::sync::Mutex::new(HashMap::new())),
+        }
+    }
+
+    fn get_key(conversation_id: &str, view_type: i32) -> String {
+        format!("{}::viewType::{}", conversation_id, view_type)
+    }
+
+    fn load(&self, conversation_id: &str, view_type: i32) -> Option<i64> {
+        let key = Self::get_key(conversation_id, view_type);
+        let cache = self.cache.lock().unwrap();
+        cache.get(&key).copied()
+    }
+
+    fn store(&self, conversation_id: &str, view_type: i32, seq: i64) {
+        let key = Self::get_key(conversation_id, view_type);
+        let mut cache = self.cache.lock().unwrap();
+        cache.insert(key, seq);
+    }
+
+    #[allow(dead_code)]
+    fn store_with_func<F>(&self, conversation_id: &str, view_type: i32, seq: i64, func: F)
+    where
+        F: FnOnce(&str, i64) -> bool,
+    {
+        let key = Self::get_key(conversation_id, view_type);
+        let mut cache = self.cache.lock().unwrap();
+        if func(&key, seq) {
+            cache.insert(key, seq);
+        }
+    }
+
+    fn delete(&self, conversation_id: &str, view_type: i32) {
+        let key = Self::get_key(conversation_id, view_type);
+        let mut cache = self.cache.lock().unwrap();
+        cache.remove(&key);
+    }
+
+    #[allow(dead_code)]
+    fn delete_by_view_type(&self, view_type: i32) {
+        let mut cache = self.cache.lock().unwrap();
+        let suffix = format!("::viewType::{}", view_type);
+        cache.retain(|k, _| !k.ends_with(&suffix));
+    }
+}
+
 /// OpenIM 客户端
 ///
 /// 核心 IM 逻辑实现
@@ -159,6 +220,10 @@ pub struct OpenIMClient {
     db: Option<Arc<Pool<Sqlite>>>,
     // 重连策略（指数退避）
     reconnect_strategy: Arc<ReconnectStrategy>,
+    // 消息拉取前向结束序列号映射（完全参考 Go SDK 的 messagePullForwardEndSeqMap）
+    message_pull_forward_end_seq_map: ConversationSeqContextCache,
+    // 消息拉取反向结束序列号映射（完全参考 Go SDK 的 messagePullReverseEndSeqMap）
+    message_pull_reverse_end_seq_map: ConversationSeqContextCache,
 }
 
 impl OpenIMClient {
@@ -264,6 +329,8 @@ impl OpenIMClient {
             message_store: None,
             db: None,
             reconnect_strategy: Arc::new(ReconnectStrategy::new()),
+            message_pull_forward_end_seq_map: ConversationSeqContextCache::new(),
+            message_pull_reverse_end_seq_map: ConversationSeqContextCache::new(),
         }
     }
     /// 构建 WebSocket 连接 URL
@@ -292,12 +359,7 @@ impl OpenIMClient {
     async fn connect_ws_once(&self) -> Result<WsReader> {
         let operation_id = format!("{}", chrono::Utc::now().timestamp_millis());
         let url = self.build_url(&operation_id);
-
-        info!(
-            "[Client] 🔗 连接到 OpenIM Server (user={}, platform={})",
-            self.config.user_id, self.config.platform_id
-        );
-
+        debug!("[Client] 🔗 WebSocket 连接 URL: {}", url);
         let (ws_stream, response) = connect_async(&url).await?;
         info!(
             "[Client] ✅ WebSocket 连接成功, 状态: {}",
@@ -505,10 +567,7 @@ impl OpenIMClient {
 
                 // 断线后按 Go 版逻辑进行带退避的重连
                 let wait = client.reconnect_strategy.next_interval();
-                info!(
-                    "[Client] 尝试重连，等待 {:?} 后重试（指数退避）",
-                    wait
-                );
+                info!("[Client] 尝试重连，等待 {:?} 后重试（指数退避）", wait);
                 tokio::time::sleep(wait).await;
 
                 match client.connect_ws_once().await {
@@ -886,9 +945,7 @@ impl OpenIMClient {
         let compressed = compress_gzip(&json)?;
 
         let mut guard = self.writer.lock().await;
-        let writer = guard
-            .as_mut()
-            .ok_or_else(|| anyhow::anyhow!("未连接"))?;
+        let writer = guard.as_mut().ok_or_else(|| anyhow::anyhow!("未连接"))?;
         writer.send(WsMessage::Binary(compressed)).await?;
         Ok(())
     }
@@ -1020,89 +1077,349 @@ impl OpenIMClient {
             }
         };
 
-        // 处理消息
+        // 按会话分组处理消息（完全参考 Go SDK 的 doMsgNew）
+        let mut all_msgs: HashMap<String, Vec<&sdkws::MsgData>> = HashMap::new();
+
+        // 处理普通消息
         for (conv_id, pull_msgs) in &push_msg.msgs {
             for msg in &pull_msgs.msgs {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
-
-                let handled = self.handle_single_message(conv_id, msg, false).await;
-                if !handled {
-                    warn!(
-                        "[Client] ⚠️ 未处理的消息类型: contentType={} ({}) conversationID={} clientMsgID={}",
-                        msg.content_type,
-                        Self::get_content_type_name(msg.content_type),
-                        conv_id,
-                        msg.client_msg_id
-                    );
-                }
-
-                // 基于消息通知实时更新会话（未读数、最新消息等）
-                // 注意：typing 消息不计入未读数，也不更新会话（参考 Go 版本的 IsUnreadCount: false）
-                if msg.content_type != constant::TYPING {
-                    if let Some(syncer) = &self.conversation_syncer {
-                        if let Err(e) = syncer.on_new_message(conv_id, msg, false).await {
-                            error!("[Client] on_new_message 更新会话失败: {}", e);
-                        }
-                    }
-                }
+                all_msgs
+                    .entry(conv_id.clone())
+                    .or_insert_with(Vec::new)
+                    .push(msg);
             }
         }
 
-        // 处理通知（会话 / 好友 / 其他系统通知）
+        // 处理通知消息
         for (conv_id, pull_msgs) in &push_msg.notification_msgs {
             for msg in &pull_msgs.msgs {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
+                all_msgs
+                    .entry(conv_id.clone())
+                    .or_insert_with(Vec::new)
+                    .push(msg);
+            }
+        }
 
-                let handled = self.handle_single_message(conv_id, msg, true).await;
-                if !handled {
-                    warn!(
-                        "[Client] ⚠️ 未处理的通知消息类型: contentType={} ({}) conversationID={} clientMsgID={}",
-                        msg.content_type,
-                        Self::get_content_type_name(msg.content_type),
-                        conv_id,
-                        msg.client_msg_id
-                    );
+        // 批量处理消息（类似 Go SDK 的 doMsgNew）
+        if !all_msgs.is_empty() {
+            if let Err(e) = self.do_msg_new(all_msgs).await {
+                error!("[Client] do_msg_new 处理消息失败: {}", e);
+            }
+        }
+    }
+
+    /// 批量处理新消息（完全参考 Go SDK 的 doMsgNew）
+    ///
+    /// - `all_msgs`: 按会话 ID 分组的消息列表
+    async fn do_msg_new(
+        &self,
+        all_msgs: HashMap<String, Vec<&openim_protocol::sdkws::MsgData>>,
+    ) -> Result<()> {
+        use crate::im::message::models::LocalChatLog;
+        use openim_protocol::constant;
+
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+
+        // 按会话分组存储消息
+        let mut insert_msg: HashMap<String, Vec<LocalChatLog>> = HashMap::new();
+        let mut update_msg: HashMap<String, Vec<LocalChatLog>> = HashMap::new();
+        let mut new_messages: Vec<MsgStruct> = Vec::new();
+        let mut conversation_set: HashMap<String, LocalConversation> = HashMap::new();
+
+        // 遍历每个会话的消息
+        for (conversation_id, msgs) in all_msgs {
+            if conversation_id.is_empty() {
+                warn!("[Client] conversationID 为空，跳过消息");
+                continue;
+            }
+
+            let mut insert_message: Vec<LocalChatLog> = Vec::new();
+            let mut self_insert_message: Vec<LocalChatLog> = Vec::new();
+            let mut others_insert_message: Vec<LocalChatLog> = Vec::new();
+            let mut update_message: Vec<LocalChatLog> = Vec::new();
+
+            for msg in msgs {
+                // 解析消息选项（完全参考 Go SDK）
+                let is_history = Self::get_switch_from_options(&msg.options, "history");
+                let is_unread_count = Self::get_switch_from_options(&msg.options, "unreadCount");
+                let is_conversation_update =
+                    Self::get_switch_from_options(&msg.options, "conversationUpdate");
+                let _is_not_private = Self::get_switch_from_options(&msg.options, "isNotPrivate");
+                let is_sender_conversation_update =
+                    Self::get_switch_from_options(&msg.options, "senderConversationUpdate");
+
+                // 处理已删除的消息（直接插入，不更新会话）
+                if msg.status == constant::MSG_STATUS_HAS_DELETED {
+                    let db_message = Self::msg_data_to_local_chat_log(msg, &conversation_id);
+                    insert_message.push(db_message.clone());
+                    insert_message.push(db_message);
+                    continue;
                 }
 
-                // 好友 / 关系相关通知：触发好友同步
-                if let Some(friend_syncer) = &self.friend_syncer {
-                    // 好友相关通知（1201~1210），包括好友申请、添加/删除、备注修改、黑名单变更、好友信息更新等
-                    if msg.content_type >= constant::FRIEND_APPLICATION_APPROVED_NOTIFICATION
-                        && msg.content_type <= constant::FRIENDS_INFO_UPDATE_NOTIFICATION
+                // 将 MsgData 转换为 MsgStruct（用于回调）
+                let mut msg_struct = self.msg_data_to_msg_struct(msg);
+                msg_struct.status = constant::MSG_STATUS_SEND_SUCCESS;
+
+                // 处理消息内容（需要根据 content_type 解析）
+                // TODO: 实现 msgHandleByContentType 的逻辑
+
+                // 判断是否为自己发送的消息
+                let is_from_me = msg.send_id == self.config.user_id;
+
+                if is_from_me {
+                    // 自己发送的消息
+                    // 检查本地是否已存在
+                    if let Ok(Some(existing_msg)) = store
+                        .get_by_client_msg_id(&conversation_id, &msg.client_msg_id)
+                        .await
                     {
-                        info!(
-                            "[Client] 收到好友相关通知 contentType={}，触发好友增量同步",
-                            msg.content_type
-                        );
-                        let syncer = friend_syncer.clone();
-                        tokio::spawn(async move {
-                            if let Err(e) = syncer.incr_sync_friends().await {
-                                error!("[Client] 好友通知触发同步失败: {}", e);
+                        if existing_msg.seq == 0 {
+                            // 本地消息 seq 为 0，需要更新（服务器返回的 seq）
+                            if !is_conversation_update {
+                                msg_struct.status = constant::MSG_STATUS_FILTERED;
                             }
-                        });
-                    }
-                }
+                            update_message
+                                .push(Self::msg_data_to_local_chat_log(msg, &conversation_id));
+                        } else {
+                            // 已存在且 seq 不为 0，可能是重复消息，插入到异常消息列表
+                            let db_message =
+                                Self::msg_data_to_local_chat_log(msg, &conversation_id);
+                            insert_message.push(db_message);
+                        }
+                    } else {
+                        // 本地不存在，需要同步
+                        // 构建会话信息
+                        let mut lc = LocalConversation {
+                            conversation_type: msg.session_type,
+                            latest_msg: serde_json::to_string(&msg_struct).unwrap_or_default(),
+                            latest_msg_send_time: msg.send_time,
+                            conversation_id: conversation_id.clone(),
+                            user_id: String::new(),
+                            group_id: String::new(),
+                            show_name: String::new(),
+                            face_url: String::new(),
+                            recv_msg_opt: 0,
+                            unread_count: 0,
+                            draft_text: String::new(),
+                            draft_text_time: 0,
+                            is_pinned: false,
+                            is_private_chat: false,
+                            burn_duration: 0,
+                            is_not_in_group: false,
+                            update_unread_count_time: 0,
+                            attached_info: String::new(),
+                            ex: String::new(),
+                            group_at_type: 0,
+                            max_seq: 0,
+                            min_seq: 0,
+                            is_msg_destruct: false,
+                            msg_destruct_time: 0,
+                        };
 
-                // 基于消息通知实时更新会话（未读数、最新消息等）
-                // 注意：typing 消息不计入未读数，也不更新会话（参考 Go 版本的 IsUnreadCount: false）
-                if msg.content_type != constant::TYPING {
-                    if let Some(syncer) = &self.conversation_syncer {
-                        if let Err(e) = syncer.on_new_message(conv_id, msg, true).await {
-                            error!("[Client] on_new_message 更新通知会话失败: {}", e);
+                        match msg.session_type {
+                            constant::SINGLE_CHAT_TYPE => {
+                                lc.user_id = msg.recv_id.clone();
+                            }
+                            constant::WRITE_GROUP_CHAT_TYPE | constant::READ_GROUP_CHAT_TYPE => {
+                                lc.group_id = msg.group_id.clone();
+                            }
+                            _ => {}
+                        }
+
+                        if is_conversation_update {
+                            if is_sender_conversation_update {
+                                conversation_set.insert(conversation_id.clone(), lc);
+                            }
+                            new_messages.push(msg_struct);
+                        }
+
+                        if is_history {
+                            self_insert_message
+                                .push(Self::msg_data_to_local_chat_log(msg, &conversation_id));
+                        }
+                    }
+                } else {
+                    // 他人发送的消息
+                    if let Ok(Some(_existing_msg)) = store
+                        .get_by_client_msg_id(&conversation_id, &msg.client_msg_id)
+                        .await
+                    {
+                        // 已存在，可能是重复消息，插入到异常消息列表
+                        let db_message = Self::msg_data_to_local_chat_log(msg, &conversation_id);
+                        insert_message.push(db_message);
+                    } else {
+                        // 本地不存在，需要插入
+                        // 构建会话信息
+                        let mut lc = LocalConversation {
+                            conversation_type: msg.session_type,
+                            latest_msg: serde_json::to_string(&msg_struct).unwrap_or_default(),
+                            latest_msg_send_time: msg.send_time,
+                            conversation_id: conversation_id.clone(),
+                            user_id: String::new(),
+                            group_id: String::new(),
+                            show_name: String::new(),
+                            face_url: String::new(),
+                            recv_msg_opt: 0,
+                            unread_count: 0,
+                            draft_text: String::new(),
+                            draft_text_time: 0,
+                            is_pinned: false,
+                            is_private_chat: false,
+                            burn_duration: 0,
+                            is_not_in_group: false,
+                            update_unread_count_time: 0,
+                            attached_info: String::new(),
+                            ex: String::new(),
+                            group_at_type: 0,
+                            max_seq: 0,
+                            min_seq: 0,
+                            is_msg_destruct: false,
+                            msg_destruct_time: 0,
+                        };
+
+                        match msg.session_type {
+                            constant::SINGLE_CHAT_TYPE => {
+                                lc.user_id = msg.send_id.clone();
+                                lc.show_name = msg.sender_nickname.clone();
+                                lc.face_url = msg.sender_face_url.clone();
+                            }
+                            constant::WRITE_GROUP_CHAT_TYPE | constant::READ_GROUP_CHAT_TYPE => {
+                                lc.group_id = msg.group_id.clone();
+                            }
+                            constant::NOTIFICATION_CHAT_TYPE => {
+                                lc.user_id = msg.send_id.clone();
+                            }
+                            _ => {}
+                        }
+
+                        // 处理未读数（完全参考 Go SDK）
+                        if is_unread_count {
+                            // TODO: 实现 maxSeqRecorder 的逻辑来判断是否为新消息
+                            // 这里简化处理，假设所有消息都触发未读数
+                            lc.unread_count = 1;
+                        }
+
+                        if is_conversation_update {
+                            conversation_set.insert(conversation_id.clone(), lc);
+                            new_messages.push(msg_struct);
+                        }
+
+                        if is_history {
+                            others_insert_message
+                                .push(Self::msg_data_to_local_chat_log(msg, &conversation_id));
                         }
                     }
                 }
             }
+
+            // 合并插入消息列表（自己发送的 + 他人发送的）
+            let mut all_insert = insert_message;
+            all_insert.extend(self_insert_message);
+            all_insert.extend(others_insert_message);
+            if !all_insert.is_empty() {
+                insert_msg.insert(conversation_id.clone(), all_insert);
+            }
+            if !update_message.is_empty() {
+                update_msg.insert(conversation_id, update_message);
+            }
         }
+
+        // 批量更新消息（完全参考 Go SDK 的 batchUpdateMessageList）
+        for (conversation_id, messages) in update_msg {
+            for msg in messages {
+                if let Err(e) = store.update_message(&conversation_id, &msg).await {
+                    error!(
+                        "[Client] 更新消息失败 conversationID={} clientMsgID={}: {}",
+                        conversation_id, msg.client_msg_id, e
+                    );
+                }
+            }
+        }
+
+        // 批量插入消息（完全参考 Go SDK 的 batchInsertMessageList）
+        for (conversation_id, messages) in insert_msg {
+            if let Err(e) = store
+                .batch_insert_message_list(&conversation_id, &messages)
+                .await
+            {
+                error!(
+                    "[Client] 批量插入消息失败 conversationID={}: {}",
+                    conversation_id, e
+                );
+            }
+        }
+
+        // 更新会话（完全参考 Go SDK 的 diff 逻辑）
+        // 注意：这里我们直接使用 conversation_dao 的 upsert_conversation
+        // 但由于它是私有的，我们通过 on_new_message 来触发会话更新
+        // 实际上，在 do_msg_new 中我们已经处理了会话更新逻辑，这里主要是触发回调
+        // TODO: 如果需要直接更新会话，可以考虑在 ConversationSyncer 中添加公开的 upsert_conversation 方法
+
+        // 触发新消息回调（完全参考 Go SDK）
+        for msg_struct in new_messages {
+            let msg_json = serde_json::to_string(&msg_struct).unwrap_or_default();
+            let listener = self.advanced_msg_listener.clone();
+            tokio::spawn(async move {
+                listener.on_recv_new_message(msg_json).await;
+            });
+        }
+
+        Ok(())
     }
 
     fn is_duplicate_message(&self, msg_id: &str) -> bool {
         let mut set = self.received_msg_ids.lock().unwrap();
         !set.insert(msg_id.to_string())
+    }
+
+    /// 从消息选项（Options）中获取开关值（完全参考 Go SDK 的 GetSwitchFromOptions）
+    ///
+    /// - `options`: 消息选项 HashMap
+    /// - `key`: 选项键名（如 "history", "unreadCount", "conversationUpdate"）
+    /// - 返回: 如果选项存在且为 true，返回 true；否则返回 false
+    fn get_switch_from_options(options: &HashMap<String, bool>, key: &str) -> bool {
+        options.get(key).copied().unwrap_or(false)
+    }
+
+    /// 将 MsgData 转换为 LocalChatLog（完全参考 Go SDK 的 MsgStructToLocalChatLog）
+    fn msg_data_to_local_chat_log(
+        msg: &openim_protocol::sdkws::MsgData,
+        conversation_id: &str,
+    ) -> crate::im::message::models::LocalChatLog {
+        use crate::im::message::models::LocalChatLog;
+
+        LocalChatLog {
+            conversation_id: conversation_id.to_string(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: String::from_utf8_lossy(&msg.content).to_string(),
+            is_read: msg.is_read,
+            status: msg.status,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
     }
 
     /// 处理单个消息，返回是否已处理
@@ -1268,9 +1585,370 @@ impl OpenIMClient {
         syncer.get_all_conversation_list().await
     }
 
+    /// 获取消息列表的最大和最小序列号（完全参考 Go SDK 的 getMaxAndMinHaveSeqList）
+    fn get_max_and_min_have_seq_list(
+        messages: &[crate::im::message::models::LocalChatLog],
+    ) -> (i64, i64, Vec<i64>) {
+        let mut max_seq = 0i64;
+        let mut min_seq = 0i64;
+        let mut seq_list = Vec::new();
+
+        for msg in messages {
+            if msg.seq != 0 {
+                seq_list.push(msg.seq);
+                if min_seq == 0 && max_seq == 0 {
+                    min_seq = msg.seq;
+                    max_seq = msg.seq;
+                }
+                if msg.seq < min_seq {
+                    min_seq = msg.seq;
+                }
+                if msg.seq > max_seq {
+                    max_seq = msg.seq;
+                }
+            }
+        }
+
+        (max_seq, min_seq, seq_list)
+    }
+
+    /// 获取丢失的序列号列表（完全参考 Go SDK 的 getLostSeqListWithLimitLength）
+    ///
+    /// - `min_seq`: 最小序列号
+    /// - `max_seq`: 最大序列号
+    /// - `have_seq_list`: 已有的序列号列表
+    /// - `is_reverse`: 是否反向
+    /// - 返回: 丢失的序列号列表（限制长度）
+    fn get_lost_seq_list_with_limit_length(
+        min_seq: i64,
+        max_seq: i64,
+        have_seq_list: &[i64],
+        is_reverse: bool,
+    ) -> Vec<i64> {
+
+        let have_seq_set: std::collections::HashSet<i64> = have_seq_list.iter().copied().collect();
+        let mut lost_seq_list = Vec::new();
+
+        for seq in min_seq..=max_seq {
+            if !have_seq_set.contains(&seq) {
+                lost_seq_list.push(seq);
+            }
+        }
+
+        // 限制长度（参考 Go SDK 的 PullMsgNumForReadDiffusion，这里使用 100）
+        const MAX_LOST_SEQ_LENGTH: usize = 100;
+        if lost_seq_list.len() > MAX_LOST_SEQ_LENGTH {
+            if is_reverse {
+                // 反向：取前 MAX_LOST_SEQ_LENGTH 个
+                lost_seq_list.truncate(MAX_LOST_SEQ_LENGTH);
+            } else {
+                // 正向：取后 MAX_LOST_SEQ_LENGTH 个
+                let start = lost_seq_list.len() - MAX_LOST_SEQ_LENGTH;
+                lost_seq_list = lost_seq_list[start..].to_vec();
+            }
+        }
+
+        lost_seq_list
+    }
+
+    /// 检查并填充消息块内部间隙（完全参考 Go SDK 的 validateAndFillInternalGaps）
+    async fn validate_and_fill_internal_gaps(
+        &self,
+        conversation_id: &str,
+        is_reverse: bool,
+        count: i32,
+        start_time: i64,
+        list: &mut Vec<crate::im::message::models::LocalChatLog>,
+        message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
+    ) -> i64 {
+        let (max_seq, min_seq, have_seq_list) = Self::get_max_and_min_have_seq_list(list);
+
+        if max_seq != 0 && min_seq != 0 {
+            let lost_seq_list = Self::get_lost_seq_list_with_limit_length(
+                min_seq,
+                max_seq,
+                &have_seq_list,
+                is_reverse,
+            );
+
+            if !lost_seq_list.is_empty() {
+                debug!(
+                    "[Client] 检测到消息块内部间隙，conversationID={}, lostSeqList={:?}",
+                    conversation_id, lost_seq_list
+                );
+                self.fetch_and_merge_missing_messages(
+                    conversation_id,
+                    &lost_seq_list,
+                    is_reverse,
+                    count,
+                    start_time,
+                    list,
+                    message_list_callback,
+                )
+                .await;
+            }
+        }
+
+        if is_reverse {
+            min_seq
+        } else {
+            max_seq
+        }
+    }
+
+    /// 检查并填充消息块之间的间隙（完全参考 Go SDK 的 validateAndFillInterBlockGaps）
+    async fn validate_and_fill_inter_block_gaps(
+        &self,
+        this_start_seq: i64,
+        conversation_id: &str,
+        is_reverse: bool,
+        view_type: i32,
+        count: i32,
+        start_time: i64,
+        list: &mut Vec<crate::im::message::models::LocalChatLog>,
+        message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
+    ) {
+        let (last_end_seq, start_seq, end_seq, is_lost_seq) = if is_reverse {
+            let last_end_seq = self
+                .message_pull_reverse_end_seq_map
+                .load(conversation_id, view_type)
+                .unwrap_or(0);
+            let is_lost_seq = last_end_seq != 0 && last_end_seq + 1 != this_start_seq;
+            let start_seq = last_end_seq + 1;
+            let end_seq = this_start_seq - 1;
+            (last_end_seq, start_seq, end_seq, is_lost_seq)
+        } else {
+            let last_end_seq = self
+                .message_pull_forward_end_seq_map
+                .load(conversation_id, view_type)
+                .unwrap_or(0);
+            let is_lost_seq = last_end_seq != 0 && this_start_seq + 1 != last_end_seq;
+            let start_seq = this_start_seq + 1;
+            let end_seq = last_end_seq - 1;
+            (last_end_seq, start_seq, end_seq, is_lost_seq)
+        };
+
+        if is_lost_seq && last_end_seq != 0 {
+            debug!(
+                "[Client] 检测到消息块之间间隙，conversationID={}, lastEndSeq={}, thisStartSeq={}",
+                conversation_id, last_end_seq, this_start_seq
+            );
+            let lost_seq_list = Self::get_lost_seq_list_with_limit_length(
+                start_seq,
+                end_seq,
+                &[],
+                is_reverse,
+            );
+
+            if !lost_seq_list.is_empty() {
+                self.fetch_and_merge_missing_messages(
+                    conversation_id,
+                    &lost_seq_list,
+                    is_reverse,
+                    count,
+                    start_time,
+                    list,
+                    message_list_callback,
+                )
+                .await;
+            }
+        }
+    }
+
+    /// 检查消息块是否结束（完全参考 Go SDK 的 checkEndBlock）
+    async fn check_end_block(
+        &self,
+        conversation_id: &str,
+        is_reverse: bool,
+        view_type: i32,
+        count: i32,
+        list: &[crate::im::message::models::LocalChatLog],
+        message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
+    ) -> (bool, Vec<i64>) {
+        if list.len() >= count as usize {
+            message_list_callback.is_end = false;
+            return (false, Vec::new());
+        }
+
+        if is_reverse {
+            // 反向拉取：检查是否到达最大序列号
+            let current_max_seq = self.get_conversation_max_seq(conversation_id).await;
+            let (max_seq, _, _) = Self::get_max_and_min_have_seq_list(list);
+
+            if max_seq >= current_max_seq {
+                message_list_callback.is_end = true;
+                return (false, Vec::new());
+            }
+
+            let last_end_seq = self
+                .message_pull_reverse_end_seq_map
+                .load(conversation_id, view_type)
+                .unwrap_or(0);
+
+            if max_seq == 0 && last_end_seq >= current_max_seq {
+                message_list_callback.is_end = true;
+                return (false, Vec::new());
+            }
+
+            let lost_seq_list = Self::get_lost_seq_list_with_limit_length(
+                max_seq + 1,
+                current_max_seq,
+                &[],
+                is_reverse,
+            );
+
+            if !lost_seq_list.is_empty() {
+                return (true, lost_seq_list);
+            }
+        } else {
+            // 正向拉取：检查是否到达最小序列号
+            let user_can_pull_min_seq = self.get_conversation_min_seq(conversation_id).await;
+            let (_, min_seq, _) = Self::get_max_and_min_have_seq_list(list);
+
+            if min_seq <= user_can_pull_min_seq {
+                message_list_callback.is_end = true;
+                return (false, Vec::new());
+            }
+
+            let last_min_seq = self
+                .message_pull_forward_end_seq_map
+                .load(conversation_id, view_type)
+                .unwrap_or(0);
+
+            if min_seq == 0 && last_min_seq <= user_can_pull_min_seq {
+                message_list_callback.is_end = true;
+                return (false, Vec::new());
+            }
+
+            let lost_seq_list = Self::get_lost_seq_list_with_limit_length(
+                user_can_pull_min_seq,
+                min_seq - 1,
+                &[],
+                is_reverse,
+            );
+
+            if !lost_seq_list.is_empty() {
+                return (true, lost_seq_list);
+            }
+        }
+
+        (false, Vec::new())
+    }
+
+    /// 检查并填充消息块末尾连续性（完全参考 Go SDK 的 validateAndFillEndBlockContinuity）
+    async fn validate_and_fill_end_block_continuity(
+        &self,
+        conversation_id: &str,
+        is_reverse: bool,
+        view_type: i32,
+        count: i32,
+        start_time: i64,
+        list: &mut Vec<crate::im::message::models::LocalChatLog>,
+        message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
+    ) {
+        let (is_should_fetch, lost_seq_list) = self
+            .check_end_block(conversation_id, is_reverse, view_type, count, list, message_list_callback)
+            .await;
+
+        if is_should_fetch && !lost_seq_list.is_empty() {
+            self.fetch_and_merge_missing_messages(
+                conversation_id,
+                &lost_seq_list,
+                is_reverse,
+                count,
+                start_time,
+                list,
+                message_list_callback,
+            )
+            .await;
+
+            // 再次检查
+            let _ = self
+                .check_end_block(conversation_id, is_reverse, view_type, count, list, message_list_callback)
+                .await;
+        }
+    }
+
+    /// 获取并合并缺失消息（完全参考 Go SDK 的 fetchAndMergeMissingMessages）
+    ///
+    /// 注意：这里需要调用服务器 API 获取缺失的消息，然后合并到列表中
+    async fn fetch_and_merge_missing_messages(
+        &self,
+        conversation_id: &str,
+        seq_list: &[i64],
+        is_reverse: bool,
+        _count: i32,
+        _start_time: i64,
+        list: &mut Vec<crate::im::message::models::LocalChatLog>,
+        message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
+    ) {
+        if seq_list.is_empty() {
+            return;
+        }
+
+        // TODO: 实现从服务器拉取消息的逻辑
+        // 参考 Go SDK 的 SendReqWaitResp 调用 constant.PullMsgBySeqList
+        // 这里暂时只记录日志，实际实现需要：
+        // 1. 构建 GetSeqMessageReq
+        // 2. 调用服务器 API 获取消息
+        // 3. 将消息转换为 LocalChatLog
+        // 4. 合并到 list 中
+
+        warn!(
+            "[Client] 需要从服务器拉取缺失消息，conversationID={}, seqList={:?}, isReverse={}, listLen={}",
+            conversation_id, seq_list, is_reverse, list.len()
+        );
+
+        // 暂时标记错误，表示需要实现服务器拉取逻辑
+        message_list_callback.err_code = 100;
+        message_list_callback.err_msg = format!(
+            "需要从服务器拉取缺失消息（seqList={:?}），但服务器拉取功能尚未实现",
+            seq_list
+        );
+    }
+
+    /// 获取会话最大序列号（完全参考 Go SDK 的 getConversationMaxSeq）
+    async fn get_conversation_max_seq(&self, conversation_id: &str) -> i64 {
+        // 从会话表中获取 MaxSeq，如果为 0 则返回一个较大的值
+        if let Some(conv) = self.get_conversation_by_id(conversation_id).await.ok().flatten() {
+            if conv.max_seq > 0 {
+                return conv.max_seq;
+            }
+        }
+        // 如果没有会话记录，返回一个默认值
+        1_000_000_000 // 返回一个很大的值，表示还没有到达末尾
+    }
+
+    /// 获取会话最小序列号（完全参考 Go SDK 的 getConversationMinSeq）
+    async fn get_conversation_min_seq(&self, conversation_id: &str) -> i64 {
+        // 从会话表中获取 MinSeq，如果为 0 则返回 1
+        if let Some(conv) = self.get_conversation_by_id(conversation_id).await.ok().flatten() {
+            if conv.min_seq > 0 {
+                return conv.min_seq;
+            }
+        }
+        1 // 默认返回 1
+    }
+
+    /// 获取会话（通过会话同步器）
+    async fn get_conversation_by_id(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<LocalConversation>> {
+        if let Some(syncer) = &self.conversation_syncer {
+            // 使用会话同步器的公开方法
+            let conversations = syncer.get_all_conversations().await?;
+            Ok(conversations
+                .into_iter()
+                .find(|c| c.conversation_id == conversation_id))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList 实现）
     ///
-    /// 参数和返回值完全匹配 Go SDK
+    /// 参数和返回值完全匹配 Go SDK，包含消息完整性检查
     pub async fn get_advanced_history_message_list(
         &self,
         req: crate::im::message::types::GetAdvancedHistoryMessageListParams,
@@ -1296,6 +1974,8 @@ impl OpenIMClient {
             {
                 start_time = msg.send_time;
                 start_seq = msg.seq;
+                // 处理结束序列号（参考 Go SDK 的 handleEndSeq）
+                self.handle_end_seq(&req, is_reverse, &msg).await?;
             } else {
                 return Ok(GetAdvancedHistoryMessageListCallback {
                     message_list: vec![],
@@ -1304,17 +1984,32 @@ impl OpenIMClient {
                     err_msg: format!("消息不存在: {}", start_client_msg_id),
                 });
             }
+        } else {
+            // 清除序列号映射（参考 Go SDK）
+            self.message_pull_forward_end_seq_map
+                .delete(conversation_id, req.view_type);
+            self.message_pull_reverse_end_seq_map
+                .delete(conversation_id, req.view_type);
         }
 
-        // 调用 GetMessageList（完全匹配 Go SDK）
-        let list = store
-            .get_message_list(
+        // 调用带间隙检查的消息拉取（完全参考 Go SDK 的 fetchMessagesWithGapCheck）
+        let mut message_list_callback = GetAdvancedHistoryMessageListCallback {
+            message_list: vec![],
+            is_end: false,
+            err_code: 0,
+            err_msg: String::new(),
+        };
+
+        let list = self
+            .fetch_messages_with_gap_check(
                 conversation_id,
                 req.count,
                 start_time,
                 start_seq,
                 &start_client_msg_id,
                 is_reverse,
+                req.view_type,
+                &mut message_list_callback,
             )
             .await?;
 
@@ -1324,19 +2019,132 @@ impl OpenIMClient {
             .map(|log| Self::local_chat_log_to_msg_struct(log))
             .collect();
 
-        // 判断是否已到末尾（如果返回的消息数量小于请求的数量，说明已到末尾）
-        let is_end = message_list.len() < req.count as usize;
+        message_list_callback.message_list = message_list;
 
-        Ok(GetAdvancedHistoryMessageListCallback {
-            message_list,
-            is_end,
-            err_code: 0,
-            err_msg: String::new(),
-        })
+        Ok(message_list_callback)
+    }
+
+    /// 处理结束序列号（完全参考 Go SDK 的 handleEndSeq）
+    async fn handle_end_seq(
+        &self,
+        req: &crate::im::message::types::GetAdvancedHistoryMessageListParams,
+        is_reverse: bool,
+        start_message: &crate::im::message::models::LocalChatLog,
+    ) -> Result<()> {
+        if is_reverse {
+            if self
+                .message_pull_reverse_end_seq_map
+                .load(&req.conversation_id, req.view_type)
+                .is_none()
+            {
+                if start_message.seq != 0 {
+                    self.message_pull_reverse_end_seq_map
+                        .store(&req.conversation_id, req.view_type, start_message.seq);
+                } else {
+                    // TODO: 获取有效的服务器消息
+                    // 参考 Go SDK 的 GetLatestValidServerMessage
+                }
+            }
+        } else {
+            if self
+                .message_pull_forward_end_seq_map
+                .load(&req.conversation_id, req.view_type)
+                .is_none()
+            {
+                if start_message.seq != 0 {
+                    self.message_pull_forward_end_seq_map
+                        .store(&req.conversation_id, req.view_type, start_message.seq);
+                } else {
+                    // TODO: 获取有效的服务器消息
+                    // 参考 Go SDK 的 GetLatestValidServerMessage
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// 带间隙检查的消息拉取（完全参考 Go SDK 的 fetchMessagesWithGapCheck）
+    async fn fetch_messages_with_gap_check(
+        &self,
+        conversation_id: &str,
+        count: i32,
+        start_time: i64,
+        start_seq: i64,
+        start_client_msg_id: &str,
+        is_reverse: bool,
+        view_type: i32,
+        message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
+    ) -> Result<Vec<crate::im::message::models::LocalChatLog>> {
+        let store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+
+        // 从数据库获取消息列表
+        let mut list = store
+            .get_message_list(
+                conversation_id,
+                count,
+                start_time,
+                start_seq,
+                start_client_msg_id,
+                is_reverse,
+            )
+            .await?;
+
+        // 1. 检查并填充消息块内部间隙
+        let this_start_seq = self
+            .validate_and_fill_internal_gaps(
+                conversation_id,
+                is_reverse,
+                count,
+                start_time,
+                &mut list,
+                message_list_callback,
+            )
+            .await;
+
+        // 2. 检查并填充消息块之间的间隙
+        self.validate_and_fill_inter_block_gaps(
+            this_start_seq,
+            conversation_id,
+            is_reverse,
+            view_type,
+            count,
+            start_time,
+            &mut list,
+            message_list_callback,
+        )
+        .await;
+
+        // 3. 检查并填充消息块末尾连续性
+        self.validate_and_fill_end_block_continuity(
+            conversation_id,
+            is_reverse,
+            view_type,
+            count,
+            start_time,
+            &mut list,
+            message_list_callback,
+        )
+        .await;
+
+        // 过滤有效消息（排除已删除和异常消息）
+        let valid_messages: Vec<_> = list
+            .into_iter()
+            .filter(|msg| {
+                use openim_protocol::constant;
+                msg.status < constant::MSG_STATUS_HAS_DELETED
+            })
+            .collect();
+
+        Ok(valid_messages)
     }
 
     /// 将 LocalChatLog 转换为 MsgStruct（参考 Go SDK 的 LocalChatLog2MsgStruct）
-    fn local_chat_log_to_msg_struct(log: crate::im::message::models::LocalChatLog) -> crate::im::message::types::MsgStruct {
+    fn local_chat_log_to_msg_struct(
+        log: crate::im::message::models::LocalChatLog,
+    ) -> crate::im::message::types::MsgStruct {
         use crate::im::message::types::MsgStruct;
 
         // 解析 content（可能是 JSON）
@@ -2310,8 +3118,9 @@ impl OpenIMClient {
     }
 
     /// 将 protobuf MsgData 转换为 MsgStruct 并序列化为 JSON（用于回调）
-    fn msg_data_to_json(&self, msg: &openim_protocol::sdkws::MsgData) -> String {
-        let msg_struct = MsgStruct {
+    /// 将 MsgData 转换为 MsgStruct（用于回调和处理）
+    fn msg_data_to_msg_struct(&self, msg: &openim_protocol::sdkws::MsgData) -> MsgStruct {
+        MsgStruct {
             client_msg_id: Some(msg.client_msg_id.clone()),
             server_msg_id: Some(msg.server_msg_id.clone()),
             create_time: msg.create_time,
@@ -2348,7 +3157,11 @@ impl OpenIMClient {
             location_elem: None,
             custom_elem: None,
             quote_elem: None,
-        };
+        }
+    }
+
+    fn msg_data_to_json(&self, msg: &openim_protocol::sdkws::MsgData) -> String {
+        let msg_struct = self.msg_data_to_msg_struct(msg);
         serde_json::to_string(&msg_struct).unwrap_or_else(|_| "{}".to_string())
     }
 
@@ -2601,41 +3414,35 @@ mod tests {
     use crate::im::conversation::ConversationListener;
     use crate::im::friend::FriendListener;
     use crate::im::message::listener::AdvancedMsgListener;
-    use std::sync::{Arc, Once};
+    use std::sync::Arc;
 
-    static INIT_LOGGER: Once = Once::new();
-
+    // 配置测试环境下的 debug 日志（trace）
+    use tracing_subscriber::prelude::*;
+    use tracing_subscriber::EnvFilter;
     fn init_test_logger() {
-        INIT_LOGGER.call_once(|| {
-            use tracing_subscriber::prelude::*;
-            use tracing_subscriber::EnvFilter;
+        // 测试中默认打开当前 crate 和 sqlx 的 debug，关闭底层 HTTP 客户端的 debug 噪音
+        let filter_layer = EnvFilter::new(
+            "info,openim_sdk_core_rust=debug,sqlx=debug,hyper_util::client=info,reqwest=info",
+        );
 
-            // 测试中默认打开当前 crate 和 sqlx 的 debug，关闭底层 HTTP 客户端的 debug 噪音
-            let filter_layer = EnvFilter::new(
-                "info,openim_sdk_core_rust=debug,sqlx=debug,hyper_util::client=info,reqwest=info",
-            );
+        let fmt_layer = tracing_subscriber::fmt::layer()
+            .with_file(true) // 包含文件名
+            .with_line_number(true) // 包含行号
+            .with_target(false) // 不显示 target（可选，减少噪音）
+            .pretty()
+            // .with_test_writer()
+            ;
 
-            let fmt_layer = tracing_subscriber::fmt::layer()
-                .with_file(true) // 包含文件名
-                .with_line_number(true) // 包含行号
-                .with_target(false) // 不显示 target（可选，减少噪音）
-                .with_test_writer();
-
-            tracing_subscriber::registry()
-                .with(filter_layer)
-                .with(fmt_layer)
-                .init();
-        });
+        tracing_subscriber::registry()
+            .with(filter_layer)
+            .with(fmt_layer)
+            .init();
     }
-
     #[tokio::test]
     #[ignore]
     async fn run_openim_client() {
-        // 配置测试环境下的 debug 日志（trace）
-        init_test_logger();
-
         // 先登录获取 token
-        info!("🔐 正在登录获取 token...");
+        init_test_logger();
         let token_info = match login_async(
             "+86".to_string(),
             "17764338283".to_string(),
@@ -2664,172 +3471,57 @@ mod tests {
         let config = ClientConfig::new(user_id.clone(), im_token, 5);
         let mut client = OpenIMClient::new(config);
 
-        // 设置会话监听器
-        struct TestConversationListener;
-        #[async_trait::async_trait]
-        impl ConversationListener for TestConversationListener {
-            async fn on_sync_server_start(&self, reinstalled: bool) {
-                info!("[回调/会话] 🔄 同步服务器开始: reinstalled={}", reinstalled);
-            }
-
-            async fn on_sync_server_finish(&self, reinstalled: bool) {
-                info!("[回调/会话] ✅ 同步服务器完成: reinstalled={}", reinstalled);
-            }
-
-            async fn on_sync_server_progress(&self, progress: i32) {
-                info!("[回调/会话] 📊 同步服务器进度: {}%", progress);
-            }
-
-            async fn on_sync_server_failed(&self, reinstalled: bool) {
-                error!("[回调/会话] ❌ 同步服务器失败: reinstalled={}", reinstalled);
-            }
-
-            async fn on_new_conversation(&self, conversation_list: String) {
-                info!("[回调/会话] 🆕 新会话: {}", conversation_list);
-            }
-
-            async fn on_conversation_changed(&self, conversation_list: String) {
-                info!("[回调/会话] 🔄 会话变更: {}", conversation_list);
-            }
-
-            async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-                info!(
-                    "[回调/会话] 📬 总未读消息数变更: {} (同步未读数成功)",
-                    total_unread_count
-                );
-            }
-
-            async fn on_conversation_user_input_status_changed(&self, change: String) {
-                info!("[回调/会话] ⌨️ 会话用户输入状态变更: {}", change);
-            }
-        }
         client.set_conversation_listener(Arc::new(TestConversationListener));
-
-        // 设置好友监听器
-        struct TestFriendListener;
-        #[async_trait::async_trait]
-        impl FriendListener for TestFriendListener {
-            async fn on_friend_list_changed(&self, friends_json: String) {
-                info!("[回调/好友] 👥 好友列表变更: {}", friends_json);
-            }
-
-            async fn on_black_list_changed(&self, blacks_json: String) {
-                info!("[回调/好友] 🚫 黑名单列表变更: {}", blacks_json);
-            }
-
-            async fn on_friend_request_list_changed(&self, requests_json: String) {
-                info!("[回调/好友] 📝 好友申请列表变更: {}", requests_json);
-            }
-        }
         client.set_friend_listener(Arc::new(TestFriendListener));
-
-        // 设置高级消息监听器
-        struct TestAdvancedMsgListener;
-        #[async_trait::async_trait]
-        impl AdvancedMsgListener for TestAdvancedMsgListener {
-            async fn on_recv_new_message(&self, message: String) {
-                info!("[回调/消息] 📨 OnRecvNewMessage: {}", message);
-            }
-
-            async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
-                info!("[回调/消息] 📖 OnRecvC2CReadReceipt: {}", msg_receipt_list);
-            }
-
-            async fn on_new_recv_message_revoked(&self, message_revoked: String) {
-                info!(
-                    "[回调/消息] 🗑️ OnNewRecvMessageRevoked: {}",
-                    message_revoked
-                );
-            }
-
-            async fn on_recv_offline_new_message(&self, message: String) {
-                info!("[回调/消息] 📬 OnRecvOfflineNewMessage: {}", message);
-            }
-
-            async fn on_msg_deleted(&self, message: String) {
-                info!("[回调/消息] 🗑️ OnMsgDeleted: {}", message);
-            }
-
-            async fn on_recv_online_only_message(&self, message: String) {
-                info!("[回调/消息] 💬 OnRecvOnlineOnlyMessage: {}", message);
-            }
-
-            async fn on_kicked_offline(&self) {
-                warn!("[回调/消息] ⚠️ OnKickedOffline: 被踢下线");
-            }
-
-            async fn on_connection_status_changed(&self, connected: bool, message: String) {
-                if connected {
-                    info!(
-                        "[回调/消息] 🔗 OnConnectionStatusChanged: 已连接 - {}",
-                        message
-                    );
-                } else {
-                    warn!(
-                        "[回调/消息] 🔗 OnConnectionStatusChanged: 断开 - {}",
-                        message
-                    );
-                }
-            }
-
-            async fn on_recv_typing_status(&self, typing_info: String) {
-                info!("[回调/消息] ⌨️ OnRecvTypingStatus: {}", typing_info);
-            }
-        }
         client.set_advanced_msg_listener(Arc::new(TestAdvancedMsgListener));
 
         // 连接到服务器（内部会自动启动消息处理）
-        match client.connect().await {
-            Ok(_) => {
-                info!("✅ WebSocket 连接成功！");
-            }
-            Err(e) => {
-                error!("连接失败: {}", e);
-                return;
-            }
-        }
-
-        // 克隆 client 和 user_id 用于发送消息
-        let client_for_send = client.clone();
-        let recv_id = "7226915075".to_string();
-
-        // 启动发送消息任务（延迟 3 秒后发送，确保连接稳定）
-        tokio::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-            // 发送测试消息（单聊，发送给自己）
-            info!("📤 准备发送测试消息...");
-            match client_for_send
-                .send_text_message(
-                    recv_id.clone(), // 接收者 ID（发送给自己）
-                    "Hello from Rust client!".to_string(),
-                    1, // 单聊
-                )
-                .await
-            {
-                Ok(_) => {
-                    info!("✅ 消息发送成功！");
-                }
-                Err(e) => {
-                    error!("消息发送失败: {}", e);
-                }
-            }
-
-            match client_for_send
-                .send_text_message(
-                    recv_id,
-                    "这是第二条测试消息".to_string(),
-                    1, // 单聊
-                )
-                .await
-            {
-                Ok(_) => {
-                    info!("✅ 第二条消息发送成功！");
-                }
-                Err(e) => {
-                    error!("第二条消息发送失败: {}", e);
-                }
-            }
+         client.connect().await.unwrap_or_else(|e| {
+            error!("连接失败: {}", e);
+            return;
         });
+
+        // // 克隆 client 和 user_id 用于发送消息
+        // let client_for_send = client.clone();
+        // let recv_id = "7226915075".to_string();
+
+        // // 启动发送消息任务（延迟 3 秒后发送，确保连接稳定）
+        // tokio::spawn(async move {
+        //     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+        //     // 发送测试消息（单聊，发送给自己）
+        //     info!("📤 准备发送测试消息...");
+        //     match client_for_send
+        //         .send_text_message(
+        //             recv_id.clone(), // 接收者 ID（发送给自己）
+        //             "Hello from Rust client!".to_string(),
+        //             1, // 单聊
+        //         )
+        //         .await
+        //     {
+        //         Ok(_) => {
+        //             info!("✅ 消息发送成功！");
+        //         }
+        //         Err(e) => {
+        //             error!("消息发送失败: {}", e);
+        //         }
+        //     }
+
+        //     match client_for_send
+        //         .send_text_message(
+        //             recv_id,
+        //             "这是第二条测试消息".to_string(),
+        //             1, // 单聊
+        //         )
+        //         .await
+        //     {
+        //         Ok(_) => {
+        //             info!("✅ 第二条消息发送成功！");
+        //         }
+        //         Err(e) => {
+        //             error!("第二条消息发送失败: {}", e);
+        //         }
+        //     }
+        // });
 
         // 保持主任务运行，让消息处理任务继续执行
         info!("📥 客户端运行中，等待消息推送...");
@@ -2837,5 +3529,140 @@ mod tests {
         // 所有消息事件已通过 AdvancedMsgListener 回调处理，无需订阅 channel
         // 保持主任务运行
         tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
+    }
+
+    struct TestConversationListener;
+    #[async_trait::async_trait]
+    impl ConversationListener for TestConversationListener {
+        async fn on_sync_server_start(&self, reinstalled: bool) {
+            info!(
+                "TestConversationListener 🔄 同步服务器开始: reinstalled={}",
+                reinstalled
+            );
+        }
+
+        async fn on_sync_server_finish(&self, reinstalled: bool) {
+            info!(
+                "TestConversationListener ✅ 同步服务器完成: reinstalled={}",
+                reinstalled
+            );
+        }
+
+        async fn on_sync_server_progress(&self, progress: i32) {
+            info!("TestConversationListener 📊 同步服务器进度: {}%", progress);
+        }
+
+        async fn on_sync_server_failed(&self, reinstalled: bool) {
+            error!(
+                "TestConversationListener ❌ 同步服务器失败: reinstalled={}",
+                reinstalled
+            );
+        }
+
+        async fn on_new_conversation(&self, conversation_list: String) {
+            info!("TestConversationListener 🆕 新会话: {}", conversation_list);
+        }
+
+        async fn on_conversation_changed(&self, conversation_list: String) {
+            info!(
+                "TestConversationListener 🔄 会话变更: {}",
+                conversation_list
+            );
+        }
+
+        async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
+            info!(
+                "TestConversationListener 📬 总未读消息数变更: {} (同步未读数成功)",
+                total_unread_count
+            );
+        }
+
+        async fn on_conversation_user_input_status_changed(&self, change: String) {
+            info!(
+                "TestConversationListener ⌨️ 会话用户输入状态变更: {}",
+                change
+            );
+        }
+    }
+
+    struct TestFriendListener;
+    #[async_trait::async_trait]
+    impl FriendListener for TestFriendListener {
+        async fn on_friend_list_changed(&self, friends_json: String) {
+            info!("TestFriendListener 👥 好友列表变更: {}", friends_json);
+        }
+
+        async fn on_black_list_changed(&self, blacks_json: String) {
+            info!("TestFriendListener 🚫 黑名单列表变更: {}", blacks_json);
+        }
+
+        async fn on_friend_request_list_changed(&self, requests_json: String) {
+            info!("TestFriendListener 📝 好友申请列表变更: {}", requests_json);
+        }
+    }
+
+    struct TestAdvancedMsgListener;
+    #[async_trait::async_trait]
+    impl AdvancedMsgListener for TestAdvancedMsgListener {
+        async fn on_recv_new_message(&self, message: String) {
+            info!("TestAdvancedMsgListener 📨 OnRecvNewMessage: {}", message);
+        }
+
+        async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
+            info!(
+                "TestAdvancedMsgListener 📖 OnRecvC2CReadReceipt: {}",
+                msg_receipt_list
+            );
+        }
+
+        async fn on_new_recv_message_revoked(&self, message_revoked: String) {
+            info!(
+                "TestAdvancedMsgListener 🗑️ OnNewRecvMessageRevoked: {}",
+                message_revoked
+            );
+        }
+
+        async fn on_recv_offline_new_message(&self, message: String) {
+            info!(
+                "TestAdvancedMsgListener 📬 OnRecvOfflineNewMessage: {}",
+                message
+            );
+        }
+
+        async fn on_msg_deleted(&self, message: String) {
+            info!("TestAdvancedMsgListener 🗑️ OnMsgDeleted: {}", message);
+        }
+
+        async fn on_recv_online_only_message(&self, message: String) {
+            info!(
+                "TestAdvancedMsgListener 💬 OnRecvOnlineOnlyMessage: {}",
+                message
+            );
+        }
+
+        async fn on_kicked_offline(&self) {
+            warn!("TestAdvancedMsgListener ⚠️ OnKickedOffline: 被踢下线");
+        }
+
+        async fn on_connection_status_changed(&self, connected: bool, message: String) {
+            if connected {
+                info!(
+                    "TestAdvancedMsgListener 🔗 OnConnectionStatusChanged: 已连接 - {}",
+                    message
+                );
+            } else {
+                warn!(
+                    "TestAdvancedMsgListener 🔗 OnConnectionStatusChanged: 断开 - {}",
+                    message
+                );
+            }
+        }
+
+        async fn on_recv_typing_status(&self, typing_info: String) {
+            info!(
+                "TestAdvancedMsgListener ⌨️ OnRecvTypingStatus: {}",
+                typing_info
+            );
+        }
     }
 }

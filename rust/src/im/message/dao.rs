@@ -121,6 +121,167 @@ impl MessageStore {
         Ok(())
     }
 
+    /// 批量插入消息列表（完全参考 Go SDK 的 BatchInsertMessageList）
+    ///
+    /// - `conversation_id`: 会话 ID
+    /// - `messages`: 消息列表
+    pub async fn batch_insert_message_list(
+        &self,
+        conversation_id: &str,
+        messages: &[LocalChatLog],
+    ) -> Result<()> {
+        if messages.is_empty() {
+            return Ok(());
+        }
+
+        let table = self.ensure_table(conversation_id).await?;
+        
+        // 使用事务批量插入
+        let mut tx = self.pool.begin().await?;
+        
+        for msg in messages {
+            let sql = r#"
+            INSERT OR REPLACE INTO {table} (
+                client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
+                sender_nickname, sender_face_url, session_type, msg_from, content_type, content,
+                is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
+            ) VALUES (
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+            );
+            "#;
+            let sql = sql.replace("{table}", &table);
+            sqlx::query(&sql)
+                .bind(&msg.client_msg_id)
+                .bind(&msg.server_msg_id)
+                .bind(&msg.send_id)
+                .bind(&msg.recv_id)
+                .bind(msg.sender_platform_id)
+                .bind(&msg.sender_nickname)
+                .bind(&msg.sender_face_url)
+                .bind(msg.session_type)
+                .bind(msg.msg_from)
+                .bind(msg.content_type)
+                .bind(&msg.content)
+                .bind(if msg.is_read { 1 } else { 0 })
+                .bind(msg.status)
+                .bind(msg.seq)
+                .bind(msg.send_time)
+                .bind(msg.create_time)
+                .bind(&msg.attached_info)
+                .bind(&msg.ex)
+                .bind(&msg.local_ex)
+                .bind(&msg.group_id)
+                .execute(&mut *tx)
+                .await?;
+        }
+        
+        tx.commit().await?;
+        Ok(())
+    }
+
+    /// 更新消息（完全参考 Go SDK 的 UpdateMessage）
+    ///
+    /// - `conversation_id`: 会话 ID
+    /// - `msg`: 要更新的消息
+    pub async fn update_message(
+        &self,
+        conversation_id: &str,
+        msg: &LocalChatLog,
+    ) -> Result<()> {
+        let table = self.ensure_table(conversation_id).await?;
+        let sql = format!(
+            r#"
+            UPDATE {table} SET
+                server_msg_id = ?,
+                send_id = ?,
+                recv_id = ?,
+                sender_platform_id = ?,
+                sender_nickname = ?,
+                sender_face_url = ?,
+                session_type = ?,
+                msg_from = ?,
+                content_type = ?,
+                content = ?,
+                is_read = ?,
+                status = ?,
+                seq = ?,
+                send_time = ?,
+                create_time = ?,
+                attached_info = ?,
+                ex = ?,
+                local_ex = ?,
+                group_id = ?
+            WHERE client_msg_id = ?
+            "#,
+            table = table
+        );
+        let rows_affected = sqlx::query(&sql)
+            .bind(&msg.server_msg_id)
+            .bind(&msg.send_id)
+            .bind(&msg.recv_id)
+            .bind(msg.sender_platform_id)
+            .bind(&msg.sender_nickname)
+            .bind(&msg.sender_face_url)
+            .bind(msg.session_type)
+            .bind(msg.msg_from)
+            .bind(msg.content_type)
+            .bind(&msg.content)
+            .bind(if msg.is_read { 1 } else { 0 })
+            .bind(msg.status)
+            .bind(msg.seq)
+            .bind(msg.send_time)
+            .bind(msg.create_time)
+            .bind(&msg.attached_info)
+            .bind(&msg.ex)
+            .bind(&msg.local_ex)
+            .bind(&msg.group_id)
+            .bind(&msg.client_msg_id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+        
+        if rows_affected == 0 {
+            return Err(anyhow::anyhow!("消息不存在或未更新"));
+        }
+        Ok(())
+    }
+
+    /// 更新消息时间和状态（完全参考 Go SDK 的 UpdateMessageTimeAndStatus）
+    ///
+    /// - `conversation_id`: 会话 ID
+    /// - `client_msg_id`: 消息 ID
+    /// - `server_msg_id`: 服务器消息 ID
+    /// - `send_time`: 发送时间
+    /// - `status`: 消息状态
+    pub async fn update_message_time_and_status(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+        server_msg_id: &str,
+        send_time: i64,
+        status: i32,
+    ) -> Result<()> {
+        let table = self.ensure_table(conversation_id).await?;
+        let sql = format!(
+            r#"
+            UPDATE {table} SET
+                server_msg_id = ?,
+                send_time = ?,
+                status = ?
+            WHERE client_msg_id = ?
+            "#,
+            table = table
+        );
+        sqlx::query(&sql)
+            .bind(server_msg_id)
+            .bind(send_time)
+            .bind(status)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     pub async fn get_by_client_msg_id(
         &self,
         conversation_id: &str,
