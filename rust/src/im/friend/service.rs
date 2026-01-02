@@ -52,7 +52,7 @@ impl FriendSyncer {
             reqwest::Client::new(),
             config.api_base_url.clone(),
             config.user_id.clone(),
-            config.token.clone(),
+            &config.token,
         );
         let friend_dao = FriendDao::new(db, config.user_id.clone());
         Ok(Self {
@@ -79,7 +79,7 @@ impl FriendSyncer {
                 reqwest::Client::new(),
                 config.api_base_url.clone(),
                 config.user_id.clone(),
-                config.token.clone(),
+                &config.token,
             ),
             friend_dao: FriendDao::new((*db).clone(), config.user_id.clone()),
             listener,

@@ -22,12 +22,12 @@ pub struct HttpRequestContextService<S> {
     inner: S,
 }
 
-impl<S, B> Service<Request<B>> for HttpRequestContextService<S>
+impl<S, ReqB, RespB> Service<Request<ReqB>> for HttpRequestContextService<S>
 where
-    S: Service<Request<B>, Response = Response<B>> + Send + 'static,
+    S: Service<Request<ReqB>, Response = Response<RespB>> + Send + 'static,
     S::Future: Send + 'static,
 {
-    type Response = S::Response;
+    type Response = Response<RespB>;
     type Error = S::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
@@ -35,7 +35,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self,  req: Request<B>) -> Self::Future {
+    fn call(&mut self,  req: Request<ReqB>) -> Self::Future {
         let ctx = HttpRequestContext {
             method: req.method().clone(),
             uri: req.uri().clone(),
@@ -45,7 +45,7 @@ where
 
         let fut = self.inner.call(req);
         Box::pin(async move {
-            let mut resp = fut.await?;
+            let mut resp: Response<RespB> = fut.await?;
             // 将请求上下文透传到 Response.extensions，便于后续日志/错误输出
             resp.extensions_mut().insert(ctx);
             Ok(resp)

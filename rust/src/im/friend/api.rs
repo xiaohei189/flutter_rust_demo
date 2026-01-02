@@ -28,7 +28,7 @@ impl FriendApi {
         client: reqwest::Client,
         api_base_url: String,
         user_id: String,
-        token: String,
+        token: &str,
     ) -> Self {
         Self {
             client: make_client(client, token),
@@ -208,7 +208,7 @@ mod tests {
                         reqwest::Client::new(),
                         "http://localhost:10002".to_string(),
                         token_info.user_id.clone(),
-                        token_info.im_token.clone(),
+                        &token_info.im_token,
                     );
                     AppCtx { api }
                 })

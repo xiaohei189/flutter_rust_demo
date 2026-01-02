@@ -46,7 +46,6 @@ pub async fn login_async(
     password: String,
     platform: i32,
 ) -> Result<LoginData> {
-    let operation_id = Uuid::new_v4().to_string();
     let url = "http://localhost:10008/account/login".to_string();
 
     let login_req = LoginRequest {
@@ -58,7 +57,7 @@ pub async fn login_async(
 
     // 创建不带 token 的 HTTP 客户端
     let base_client = reqwest::Client::builder()
-       .build()?;
+        .build()?;
     let http_client = make_client_without_token(base_client);
 
     // 使用新的客户端封装发送请求
@@ -67,7 +66,6 @@ pub async fn login_async(
 
     let req = service
         .post(url.as_str())
-        .header("operationID", &operation_id)
         .json(&login_req)?;
 
     let data: LoginData = HttpResponseExtractor::send(req).await?;

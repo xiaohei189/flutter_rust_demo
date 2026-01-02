@@ -1,11 +1,14 @@
 use crate::im::http::context::HttpRequestContext;
 use crate::im::types::ApiResponse;
 use anyhow::{Context as _, Result};
+use bytes::Bytes;
 use http;
 use serde::de::DeserializeOwned;
 use tower::Service;
 use tower_http_client::ResponseExt as _;
 use tower_http_client::client::ClientRequest;
+use tracing::debug;
+
 
 /// 基于 Response 的扩展信息输出通用日志（如果 Response 没有携带 RequestContext，会降级提醒）。
 ///
@@ -46,6 +49,8 @@ impl HttpResponseExtractor {
         };
 
         let status = response.status();
+        let headers = response.headers().clone();
+
 
         // 先把 body 读成字节，便于错误场景输出原始文本
         let body_bytes = response
@@ -54,15 +59,9 @@ impl HttpResponseExtractor {
             .await
             .map_err(|e| anyhow::anyhow!("read body failed: method={} url={} operation_id={} status={} err={}", method, uri, operation_id, status, e))?;
         let body_text = String::from_utf8_lossy(&body_bytes).to_string();
+        
+        debug!(method = %method, uri = %uri, status = %status, headers = ?headers, body = ?body_text, "HttpResponseExtractor");
 
-        tracing::debug!(
-            "HTTP response: method={} url={} operation_id={} status={} body={}",
-            method,
-            uri,
-            operation_id,
-            status,
-            body_text
-        );
 
         if status != http::StatusCode::OK {
             anyhow::bail!(
