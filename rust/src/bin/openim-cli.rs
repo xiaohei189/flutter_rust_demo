@@ -8,6 +8,7 @@ use clap::Parser;
 use rust_lib_flutter_rust_demo::im::client::{ClientConfig, OpenIMClient};
 use rust_lib_flutter_rust_demo::im::conversation::listener::ConversationListener;
 use rust_lib_flutter_rust_demo::im::friend::FriendListener;
+use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::im::message::listener::AdvancedMsgListener;
 use rust_lib_flutter_rust_demo::login_async;
 use std::sync::Arc;
@@ -33,31 +34,7 @@ struct Args {
     log_level: String,
 }
 
-/// 初始化日志（同时输出到 stdout 和文件）
-fn init_logger(log_level: &str) {
-    use std::io;
-    use tracing_subscriber::prelude::*;
-    use tracing_subscriber::EnvFilter;
 
-    // 优先使用环境变量 RUST_LOG（如果设置了），否则使用命令行参数
-    let filter_layer =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
-
-    // 只输出到 stdout（控制台），保留 ANSI 颜色代码用于终端显示
-    let stdout_layer = tracing_subscriber::fmt::layer()
-        .with_writer(io::stdout)
-        .with_file(true)
-        .with_line_number(true)
-        .with_target(false)
-        .with_ansi(true);
-
-    tracing_subscriber::registry()
-        .with(filter_layer)
-        .with(stdout_layer)
-        .init();
-
-    info!("[CLI] 📝 日志已输出到控制台");
-}
 
 /// 设置监听器（输出所有接收到的信息）
 fn setup_listeners(client: &mut OpenIMClient) {
@@ -185,7 +162,6 @@ async fn main() -> Result<()> {
     info!("[CLI] ⏱️  运行时长: {} 秒（0=持续运行）", args.duration);
 
     // 登录
-    info!("[CLI] 🔐 正在登录...");
     let area_code = "+86".to_string();
     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string(); // 测试密码
     let platform = 5;

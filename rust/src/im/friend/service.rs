@@ -7,11 +7,12 @@ use crate::im::friend::api::FriendApi;
 use crate::im::friend::dao::FriendDao;
 use crate::im::friend::listener::{EmptyFriendListener, FriendListener};
 use crate::im::friend::models::FriendSyncerConfig;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::task::JoinHandle;
 use tracing::{debug, error, info};
 
 /// 好友同步器
@@ -26,28 +27,21 @@ pub struct FriendSyncer {
 }
 
 impl FriendSyncer {
-    /// 创建新的好友同步器（使用默认空监听器）
-    pub async fn new(config: FriendSyncerConfig) -> Result<Self> {
-        Self::with_listener(config, Arc::new(EmptyFriendListener)).await
+    /// 创建新的好友同步器（必须外部提供数据库；监听器可选）
+    pub async fn new(
+        config: FriendSyncerConfig,
+        db: Arc<Pool<Sqlite>>,
+        listener: Option<Arc<dyn FriendListener>>,
+    ) -> Result<Self> {
+        let listener = listener.unwrap_or_else(|| Arc::new(EmptyFriendListener));
+        Self::build(config, listener, (*db).clone()).await
     }
 
-    /// 创建新的好友同步器（带自定义监听器，内部创建连接池）
-    pub async fn with_listener(
+    async fn build(
         config: FriendSyncerConfig,
         listener: Arc<dyn FriendListener>,
+        db: Pool<Sqlite>,
     ) -> Result<Self> {
-        let db_url = config.db_path.clone();
-        info!(
-            "[FriendSync] 创建好友同步器，用户ID: {}, SQLite数据库: {}",
-            config.user_id, db_url
-        );
-
-        let db = sqlx::sqlite::SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect(&db_url)
-            .await
-            .context(format!("连接SQLite数据库失败: {}", db_url))?;
-
         let api = FriendApi::new(
             reqwest::Client::new(),
             config.api_base_url.clone(),
@@ -63,27 +57,14 @@ impl FriendSyncer {
         })
     }
 
-    /// 创建新的好友同步器（使用共享连接池）
-    pub async fn with_listener_and_db(
-        config: FriendSyncerConfig,
-        listener: Arc<dyn FriendListener>,
-        db: Arc<Pool<Sqlite>>,
-    ) -> Result<Self> {
-        info!(
-            "[FriendSync] 创建好友同步器（使用共享连接池），用户ID: {}",
-            config.user_id
-        );
-
-        Ok(Self {
-            api: FriendApi::new(
-                reqwest::Client::new(),
-                config.api_base_url.clone(),
-                config.user_id.clone(),
-                &config.token,
-            ),
-            friend_dao: FriendDao::new((*db).clone(), config.user_id.clone()),
-            listener,
-            config,
+    /// 启动后台好友增量同步任务
+    pub fn spawn_incr_sync(self: Arc<Self>) -> JoinHandle<()> {
+        tokio::spawn(async move {
+            info!("[FriendSync] 🔄 启动好友增量同步任务");
+            match self.incr_sync_friends().await {
+                Ok(_) => info!("[FriendSync] ✅ 好友同步完成"),
+                Err(e) => error!("[FriendSync] ❌ 好友同步失败: {e}"),
+            }
         })
     }
 

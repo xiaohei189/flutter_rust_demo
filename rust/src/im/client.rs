@@ -87,6 +87,7 @@ impl ClientConfig {
             conversation_db_url: "sqlite://conversations.db?mode=rwc".to_string(),
         }
     }
+
 }
 
 /// WebSocket 连接致命错误（如 token 失效），用于通知重连逻辑“不要再重连”
@@ -274,40 +275,7 @@ impl OpenIMClient {
     /// 注册好友监听器
     pub fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
         self.friend_listener = listener.clone();
-
-        // 若同步器已存在，则用新的监听器重建同步器，保持回调一致
-        if self.friend_syncer.is_some() {
-            if let Ok(handle) = tokio::runtime::Handle::try_current() {
-                let cfg = FriendSyncerConfig {
-                    user_id: self.config.user_id.clone(),
-                    api_base_url: self.config.api_base_url.clone(),
-                    token: self.config.token.clone(),
-                    db_path: self.config.conversation_db_url.clone(),
-                };
-                let listener = listener.clone();
-                let syncer_slot = &mut self.friend_syncer;
-                let db = self.db.clone();
-                handle.block_on(async {
-                    if let Some(db_conn) = db {
-                        if let Ok(syncer) =
-                            FriendSyncer::with_listener_and_db(cfg, listener.clone(), db_conn).await
-                        {
-                            *syncer_slot = Some(Arc::new(syncer));
-                        } else {
-                            tracing::error!("[Client] 重建好友同步器失败，保持原同步器");
-                        }
-                    } else {
-                        // 如果没有共享数据库连接，使用旧方法
-                        if let Ok(syncer) = FriendSyncer::with_listener(cfg, listener.clone()).await
-                        {
-                            *syncer_slot = Some(Arc::new(syncer));
-                        } else {
-                            tracing::error!("[Client] 重建好友同步器失败，保持原同步器");
-                        }
-                    }
-                });
-            }
-        }
+        // FriendSyncer 当前不再重建，沿用已有实例
     }
 
     /// 注册高级消息监听器（参考 Go 版本的 SetAdvancedMsgListener）
@@ -354,6 +322,26 @@ impl OpenIMClient {
             self.config.is_msg_resp,
             self.config.sdk_type
         )
+    }
+
+    async fn init_friend_syncer(&mut self) -> Result<()> {
+        let friend_cfg = FriendSyncerConfig {
+            user_id: self.config.user_id.clone(),
+            api_base_url: self.config.api_base_url.clone(),
+            token: self.config.token.clone(),
+            db_path: self.config.conversation_db_url.clone(),
+        };
+        let friend_syncer = Arc::new(
+            FriendSyncer::new(
+                friend_cfg,
+                self.db.clone().unwrap(),
+                Some(self.friend_listener.clone()),
+            )
+            .await?,
+        );
+        friend_syncer.clone().spawn_incr_sync();
+        self.friend_syncer = Some(friend_syncer);
+        Ok(())
     }
 
     /// 建立一次 WebSocket 连接并完成鉴权握手（不包含 DB/同步器初始化）
@@ -500,30 +488,7 @@ impl OpenIMClient {
         });
 
         // 启动好友同步（HTTP + 本地 SQLite）
-        let friend_cfg = FriendSyncerConfig {
-            user_id: self.config.user_id.clone(),
-            api_base_url: self.config.api_base_url.clone(),
-            token: self.config.token.clone(),
-            db_path: self.config.conversation_db_url.clone(),
-        };
-        let friend_syncer = Arc::new(
-            FriendSyncer::with_listener_and_db(
-                friend_cfg,
-                self.friend_listener.clone(),
-                db.clone(),
-            )
-            .await?,
-        );
-        self.friend_syncer = Some(friend_syncer.clone());
-
-        tokio::spawn(async move {
-            info!("[Client] 🔄 启动好友增量同步任务");
-            let result = friend_syncer.incr_sync_friends().await;
-            match result {
-                Ok(_) => info!("[Client] ✅ 好友同步完成"),
-                Err(e) => error!("[Client] ❌ 好友同步失败: {e}"),
-            }
-        });
+        self.init_friend_syncer().await?;
 
         // 初始化消息存储（单表，使用 sqlx）
         let store = Arc::new(
