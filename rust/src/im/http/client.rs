@@ -1,21 +1,14 @@
 use crate::im::http::RequestContextPropagateLayer;
-use anyhow::Error;
-use bytes::Bytes;
 use http::HeaderName;
 use http::HeaderValue;
 use http::Request;
-use http_body::Body;
-use http_body_util::BodyExt as _;
 use tower::util::BoxCloneSyncService;
-use tower::util::MapResponseLayer;
 use tower::ServiceBuilder;
 use tower_http::request_id::PropagateRequestIdLayer;
 use tower_http::request_id::RequestId;
 use tower_http::request_id::SetRequestIdLayer;
-use tower_http::trace::TraceLayer;
 use tower_http::ServiceBuilderExt;
 use tower_reqwest::HttpClientLayer;
-use tracing::debug;
 use tower_http::request_id::MakeRequestId;
 
 
@@ -24,8 +17,10 @@ use tower_http::request_id::MakeRequestId;
 struct MyMakeRequestId {}
 
 impl MakeRequestId for MyMakeRequestId {
-    fn make_request_id<B>(&mut self, request: &Request<B>) -> Option<RequestId> {
-        Some(RequestId::new(HeaderValue::from_str(&uuid::Uuid::new_v4().to_string()).unwrap()))
+    fn make_request_id<B>(&mut self, _request: &Request<B>) -> Option<RequestId> {
+        Some(RequestId::new(
+            HeaderValue::from_str(&uuid::Uuid::new_v4().to_string()).unwrap(),
+        ))
     }
 }
 

@@ -2,7 +2,6 @@ use crate::im::http::{make_client_without_token, HttpResponseExtractor};
 use serde::{Deserialize, Serialize};
 use tower::ServiceExt;
 use tower_http_client::ServiceExt as _;
-use tracing::info;
 use anyhow::Result;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
@@ -67,7 +66,7 @@ pub async fn login_async(
         .post(url.as_str())
         .json(&login_req)?;
 
-    let data: LoginData = HttpResponseExtractor::send(req).await?;
+    let data: LoginData = HttpResponseExtractor::send_data(req).await?;
 
     Ok(data)
 }

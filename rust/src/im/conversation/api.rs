@@ -3,13 +3,18 @@
 //! 负责所有会话相关的 HTTP 请求
 
 use crate::im::conversation::types::{AllConversationsResp, IncrementalConversationResp};
+use crate::im::conversation::models::{
+    ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq,
+    GetConversationsResp, GetSortedConversationListReq, GetSortedConversationListResp,
+    OwnerConversationReq, SetConversationsReq,
+};
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::collections::HashSet;
 use tower::ServiceExt;
 use tower_http_client::ServiceExt as _;
-use tracing::info;
 use uuid::Uuid;
 
 /// 会话相关的 HTTP API 客户端
@@ -70,14 +75,13 @@ impl ConversationApi {
             seqs: HashMap<String, SeqInfo>,
         }
 
-        let data: SeqsData = HttpResponseExtractor::send(req).await?;
+        let data: SeqsData = HttpResponseExtractor::send_data(req).await?;
 
         let mut result = HashMap::new();
 
         for (conv_id, seq_info) in data.seqs.iter() {
             let max_seq = seq_info.max_seq;
             let has_read_seq = seq_info.has_read_seq;
-            let unread = (max_seq - has_read_seq).max(0);
             result.insert(conv_id.clone(), (max_seq, has_read_seq));
         }
 
@@ -108,7 +112,7 @@ impl ConversationApi {
                 "versionID": version_id
             }))?;
 
-        let resp: IncrementalConversationResp = HttpResponseExtractor::send(req).await?;
+        let resp: IncrementalConversationResp = HttpResponseExtractor::send_data(req).await?;
 
         Ok(resp)
     }
@@ -128,7 +132,7 @@ impl ConversationApi {
                 "ownerUserID": self.user_id
             }))?;
 
-        let resp: AllConversationsResp = HttpResponseExtractor::send(req).await?;
+        let resp: AllConversationsResp = HttpResponseExtractor::send_data(req).await?;
 
         Ok(resp)
     }
@@ -157,9 +161,74 @@ impl ConversationApi {
             conversation_ids: Vec<String>,
         }
 
-        let data: ConversationIdsData = HttpResponseExtractor::send(req).await?;
+        let data: ConversationIdsData = HttpResponseExtractor::send_data(req).await?;
 
         Ok(data.conversation_ids)
+    }
+
+    /// /conversation/get_sorted_conversation_list
+    pub async fn get_sorted_conversation_list(
+        &self,
+        req: GetSortedConversationListReq,
+    ) -> Result<GetSortedConversationListResp> {
+        let url = format!("{}/conversation/get_sorted_conversation_list", self.api_base_url);
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
+        let req = service
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", Uuid::new_v4().to_string())
+            .json(&req)?;
+        HttpResponseExtractor::send_data(req).await
+    }
+
+    /// /conversation/get_conversation
+    pub async fn get_conversation(&self, req: GetConversationReq) -> Result<GetConversationResp> {
+        self.post_json("/conversation/get_conversation", req).await
+    }
+
+    /// /conversation/get_conversations
+    pub async fn get_conversations(&self, req: GetConversationsReq) -> Result<GetConversationsResp> {
+        self.post_json("/conversation/get_conversations", req).await
+    }
+
+    /// /conversation/set_conversations
+    pub async fn set_conversations(&self, req: SetConversationsReq) -> Result<EmptyResp> {
+        self.post_json("/conversation/set_conversations", req).await
+    }
+
+    /// /conversation/get_owner_conversation
+    pub async fn get_owner_conversation(&self, req: OwnerConversationReq) -> Result<GetConversationResp> {
+        self.post_json("/conversation/get_owner_conversation", req).await
+    }
+
+    /// /conversation/get_not_notify_conversation_ids
+    pub async fn get_not_notify_conversation_ids(&self) -> Result<HashSet<String>> {
+        let payload = serde_json::json!({ "ownerUserID": self.user_id });
+        let resp: ConversationIDsResp = self.post_json("/conversation/get_not_notify_conversation_ids", payload).await?;
+        Ok(resp.conversation_ids.into_iter().collect())
+    }
+
+    /// /conversation/get_pinned_conversation_ids
+    pub async fn get_pinned_conversation_ids(&self) -> Result<HashSet<String>> {
+        let payload = serde_json::json!({ "ownerUserID": self.user_id });
+        let resp: ConversationIDsResp = self.post_json("/conversation/get_pinned_conversation_ids", payload).await?;
+        Ok(resp.conversation_ids.into_iter().collect())
+    }
+
+    async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(
+        &self,
+        path: &str,
+        payload: T,
+    ) -> Result<R> {
+        let url = format!("{}{}", self.api_base_url, path);
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
+        let req = service
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&payload)?;
+        HttpResponseExtractor::send_data(req).await
     }
 }
 
@@ -167,10 +236,15 @@ impl ConversationApi {
 mod tests {
     use super::*;
     use crate::im::auth::login_async;
+    use crate::im::conversation::RequestPagination;
     use crate::im::logger::logger::init_logger;
+    use crate::im::conversation::models::{
+        GetSortedConversationListReq, SetConversationsReq, GetConversationReq, GetConversationsReq,
+        OwnerConversationReq,
+    };
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;
-    use tracing::info;
+    use tracing::{info, error};
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 
@@ -240,5 +314,121 @@ mod tests {
         let api = ctx.api.clone();
         let ids = api.get_all_conversation_ids().await.unwrap();
         info!("会话 ID 获取成功，数量: {}", ids.len());
+    }
+
+    async fn pick_first_conversation_id(api: &ConversationApi) -> Option<String> {
+        match api.get_all_conversation_ids().await {
+            Ok(mut ids) if !ids.is_empty() => Some(ids.swap_remove(0)),
+            _ => None,
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_sorted_conversation_list(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let req = GetSortedConversationListReq {
+            user_id: api.user_id.clone(),
+            conversation_ids: vec![],
+            pagination: RequestPagination::default(),
+        };
+        match api.get_sorted_conversation_list(req).await {
+            Ok(resp) => info!("get_sorted_conversation_list total: {}", resp.conversation_total),
+            Err(e) => error!("get_sorted_conversation_list error: {:?}", e),
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_conversation(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        if let Some(conv_id) = pick_first_conversation_id(&api).await {
+            let req = GetConversationReq {
+                owner_user_id: api.user_id.clone(),
+                conversation_id: conv_id,
+            };
+            match api.get_conversation(req).await {
+                Ok(resp) => info!("get_conversation resp: {:?}", resp.conversation),
+                Err(e) => error!("get_conversation error: {:?}", e),
+            }
+        } else {
+            info!("skip get_conversation: no conversation id available");
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_conversations(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        if let Some(conv_id) = pick_first_conversation_id(&api).await {
+            let req = GetConversationsReq {
+                owner_user_id: api.user_id.clone(),
+                conversation_ids: vec![conv_id],
+            };
+            match api.get_conversations(req).await {
+                Ok(resp) => info!("get_conversations count: {}", resp.conversations.len()),
+                Err(e) => error!("get_conversations error: {:?}", e),
+            }
+        } else {
+            info!("skip get_conversations: no conversation id available");
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_set_conversations(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        if let Some(conv_id) = pick_first_conversation_id(&api).await {
+            let req = SetConversationsReq {
+                owner_user_id: api.user_id.clone(),
+                conversation_ids: vec![conv_id],
+                recv_msg_opt: 0,
+                is_pinned: false,
+            };
+            match api.set_conversations(req).await {
+                Ok(_) => info!("set_conversations ok"),
+                Err(e) => error!("set_conversations error: {:?}", e),
+            }
+        } else {
+            info!("skip set_conversations: no conversation id available");
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_owner_conversation(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        if let Some(conv_id) = pick_first_conversation_id(&api).await {
+            let req = OwnerConversationReq {
+                owner_user_id: api.user_id.clone(),
+                conversation_id: conv_id,
+            };
+            match api.get_owner_conversation(req).await {
+                Ok(resp) => info!("get_owner_conversation resp: {:?}", resp.conversation),
+                Err(e) => error!("get_owner_conversation error: {:?}", e),
+            }
+        } else {
+            info!("skip get_owner_conversation: no conversation id available");
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_not_notify_conversation_ids(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        match api.get_not_notify_conversation_ids().await {
+            Ok(ids) => info!("not_notify ids: {}", ids.len()),
+            Err(e) => error!("get_not_notify_conversation_ids error: {:?}", e),
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_pinned_conversation_ids(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        match api.get_pinned_conversation_ids().await {
+            Ok(ids) => info!("pinned ids: {}", ids.len()),
+            Err(e) => error!("get_pinned_conversation_ids error: {:?}", e),
+        }
     }
 }

@@ -17,7 +17,8 @@ pub use models::{
     SetConversationHasReadSeqReq, ClearConversationsMsgReq, UserClearAllMsgReq, DeleteMsgsReq,
     DeleteMsgPhysicalReq, DeleteMsgPhysicalBySeqReq, PullMessageBySeqsReq, BatchSendMsgReq,
     SendSimpleMsgReq, DeleteSyncOpt, SeqRange, SearchMessageReq, PullMsgs, SendMsgResp,
-    ServerTimeResp, PullMessageBySeqsResp, SearchMessageResp, EmptyResp,
+    ServerTimeResp, PullMessageBySeqsResp, SearchMessageResp, EmptyResp, CheckMsgIsSendSuccessReq,
+    CheckMsgIsSendSuccessResp, GetNewestSeqReq, GetNewestSeqResp,
 };
 pub use types::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownEntityElem, MarkdownTextElem,

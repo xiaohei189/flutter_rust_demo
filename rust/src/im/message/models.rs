@@ -169,6 +169,36 @@ pub struct DeleteMsgPhysicalBySeqReq {
     pub seqs: Vec<i64>,
 }
 
+/// /msg/check_msg_is_send_success
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CheckMsgIsSendSuccessReq {
+    #[serde(rename = "clientMsgID")]
+    pub client_msg_id: String,
+    #[serde(rename = "conversationID", skip_serializing_if = "Option::is_none")]
+    pub conversation_id: Option<String>,
+    #[serde(rename = "userID", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CheckMsgIsSendSuccessResp {
+    #[serde(rename = "isSendSuccess")]
+    pub is_send_success: bool,
+}
+
+/// /msg/newest_seq
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetNewestSeqReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GetNewestSeqResp {
+    #[serde(rename = "maxSeqs", default)]
+    pub max_seqs: HashMap<String, i64>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SeqRange {
     #[serde(rename = "conversationID")]

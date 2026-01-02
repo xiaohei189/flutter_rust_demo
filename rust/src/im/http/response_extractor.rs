@@ -19,9 +19,10 @@ pub struct HttpResponseExtractor;
 impl HttpResponseExtractor {
     /// 已有 Response 场景：仅使用 `ClientRequestBuilder` 提供的请求元信息 + 现成 Response 做统一解析。
     /// 适用于：上层已调用 `send()` 拿到 Response，但仍希望在错误/日志中包含请求 method/uri/operationID。
-    pub async fn send<T, S, Err, ReqBody>(
+    /// 直接返回完整的 `ApiResponse<T>`，便于上层自行处理 errCode/errMsg/data。
+    pub async fn send_response<T, S, Err, ReqBody>(
         req: ClientRequest<'_, S, Err, ReqBody, reqwest::Body>,
-    ) -> Result<T>
+    ) -> Result<ApiResponse<T>>
     where
         T: DeserializeOwned,
         Err: Into<anyhow::Error> + Send + Sync + 'static,
@@ -97,9 +98,30 @@ impl HttpResponseExtractor {
             );
         }
 
-        api_resp
-            .data
-            .with_context(|| format!("API response missing data field (data==null): method={} url={} operation_id={} status={} body={}", method, uri, operation_id, status, body_text))
+        Ok(api_resp)
+    }
+
+    /// 已有 Response 场景：返回 data 字段，保留原有行为。
+    pub async fn send_data<T, S, Err, ReqBody>(
+        req: ClientRequest<'_, S, Err, ReqBody, reqwest::Body>,
+    ) -> Result<T>
+    where
+        T: DeserializeOwned,
+        Err: Into<anyhow::Error> + Send + Sync + 'static,
+        ReqBody: Send + 'static,
+        reqwest::Body: From<ReqBody>,
+        S: Service<http::Request<reqwest::Body>, Response = http::Response<reqwest::Body>, Error = Err>
+            + Send,
+        S::Future: Send + 'static,
+    {
+        let api_resp = Self::send_response(req).await?;
+
+        api_resp.data.with_context(|| {
+            format!(
+                "API response missing data field (data==null): errCode={} errMsg={}",
+                api_resp.err_code, api_resp.err_msg
+            )
+        })
     }
 }
 

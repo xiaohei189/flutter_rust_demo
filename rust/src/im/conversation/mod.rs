@@ -17,5 +17,10 @@ pub use listener::{ConversationListener, EmptyConversationListener};
 pub use models::{ConversationSyncerConfig, LocalVersionSync};
 pub use service::ConversationSyncer;
 pub use types::{AllConversationsResp, IncrementalConversationResp};
+pub use models::{
+    EmptyResp, GetSortedConversationListReq, GetSortedConversationListResp, RequestPagination,
+    ConversationElem, GetConversationReq, GetConversationResp, GetConversationsReq,
+    GetConversationsResp, SetConversationsReq, OwnerConversationReq, ConversationIDsResp,
+};
 
 

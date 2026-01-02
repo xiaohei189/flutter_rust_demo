@@ -59,7 +59,7 @@ impl FriendApi {
                 "versionID": version_id,
             }))?;
 
-        let resp: IncrementalFriendsResp = HttpResponseExtractor::send(req).await?;
+        let resp: IncrementalFriendsResp = HttpResponseExtractor::send_data(req).await?;
         Ok(resp)
     }
 
@@ -88,7 +88,7 @@ impl FriendApi {
                 "idHash": 0u64,
             }))?;
 
-        let data: FriendIdsData = HttpResponseExtractor::send(req).await?;
+        let data: FriendIdsData = HttpResponseExtractor::send_data(req).await?;
 
         Ok((data.version, data.version_id, data.user_ids))
     }
@@ -113,7 +113,7 @@ impl FriendApi {
             }))?;
 
         let data: crate::im::friend::types::AllFriendsResp =
-            HttpResponseExtractor::send(req).await?;
+            HttpResponseExtractor::send_data(req).await?;
 
         Ok(data)
     }
@@ -145,7 +145,7 @@ impl FriendApi {
                 }
             }))?;
 
-        let data: BlackListData = HttpResponseExtractor::send(req).await?;
+        let data: BlackListData = HttpResponseExtractor::send_data(req).await?;
         Ok(data.blacks)
     }
 
@@ -167,7 +167,7 @@ impl FriendApi {
                     "showNumber": 100
                 }
             }))?;
-        let resp: FriendRequestsResp = HttpResponseExtractor::send(req).await?;
+        let resp: FriendRequestsResp = HttpResponseExtractor::send_data(req).await?;
         Ok(resp.friend_requests)
     }
 }

@@ -2,11 +2,11 @@
 //! 对齐 open-im-server `/msg` 路由：发送、撤回、已读、历史查询。
 use crate::im::http::{HttpClient, HttpResponseExtractor, make_client};
 use crate::im::message::models::{
-    BatchSendMsgReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq,
-    DeleteMsgsReq, EmptyResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
+    BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq,
+    DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
+    GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
     PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendMsgReq,
-    SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq,
-    UserClearAllMsgReq,
+    SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
 };
 use anyhow::Result;
 use tower::ServiceExt;
@@ -37,7 +37,7 @@ impl MessageApi {
             .post(&url)
             .header("Content-Type", "application/json")
             .json(&req)?;
-        HttpResponseExtractor::send(req).await
+        HttpResponseExtractor::send_data(req).await
     }
 
     /// /msg/revoke_msg
@@ -61,7 +61,10 @@ impl MessageApi {
     }
 
     /// /msg/newest_seq
-    pub async fn get_newest_seq(&self, payload: serde_json::Value) -> Result<serde_json::Value> {
+    pub async fn get_newest_seq(&self) -> Result<GetNewestSeqResp> {
+        let payload = GetNewestSeqReq {
+            user_id: self.user_id.clone(),
+        };
         self.post_json("/msg/newest_seq", payload).await
     }
 
@@ -113,6 +116,14 @@ impl MessageApi {
         self.post_json("/msg/send_simple_msg", payload).await
     }
 
+    /// /msg/check_msg_is_send_success
+    pub async fn check_msg_is_send_success(
+        &self,
+        payload: CheckMsgIsSendSuccessReq,
+    ) -> Result<CheckMsgIsSendSuccessResp> {
+        self.post_json("/msg/check_msg_is_send_success", payload).await
+    }
+
     /// /msg/get_server_time
     pub async fn get_server_time(&self) -> Result<ServerTimeResp> {
         self.post_json("/msg/get_server_time", serde_json::json!({})).await
@@ -130,7 +141,7 @@ impl MessageApi {
             .post(&url)
             .header("Content-Type", "application/json")
             .json(&payload)?;
-        HttpResponseExtractor::send(req).await
+        HttpResponseExtractor::send_data(req).await
     }
 }
 
@@ -140,10 +151,11 @@ mod tests {
     use crate::im::auth::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::message::models::{
-        BatchSendMsgReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq,
-        DeleteMsgPhysicalReq, DeleteMsgsReq, MarkConversationAsReadReq, MarkMsgsAsReadReq,
-        PullMessageBySeqsReq, RevokeMsgReq, SearchMessageReq, SendSimpleMsgReq,
-        SetConversationHasReadSeqReq, SeqRange, UserClearAllMsgReq,
+        BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq,
+        DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp,
+        MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, RevokeMsgReq,
+        SearchMessageReq, SendSimpleMsgReq, SetConversationHasReadSeqReq, SeqRange,
+        UserClearAllMsgReq,
     };
     use openim_protocol::constant;
     use serde_json::json;
@@ -296,6 +308,33 @@ mod tests {
         match api.get_server_time().await {
             Ok(v) => info!("get_server_time resp: {:?}", v),
             Err(e) => error!("get_server_time error: {:?}", e),
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_newest_seq(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        match api.get_newest_seq().await {
+            Ok(GetNewestSeqResp { max_seqs }) => {
+                info!("get_newest_seq resp count: {}", max_seqs.len())
+            }
+            Err(e) => error!("get_newest_seq error: {:?}", e),
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_check_msg_is_send_success(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let payload = CheckMsgIsSendSuccessReq {
+            client_msg_id: "dummy-client-msg-id".to_string(),
+            conversation_id: Some("dummy-conv-id".to_string()),
+            user_id: Some(ctx.self_user.clone()),
+        };
+        match api.check_msg_is_send_success(payload).await {
+            Ok(v) => info!("check_msg_is_send_success resp: {:?}", v),
+            Err(e) => error!("check_msg_is_send_success error: {:?}", e),
         }
     }
 
