@@ -8,12 +8,15 @@ use crate::im::friend::dao::FriendDao;
 use crate::im::friend::listener::{EmptyFriendListener, FriendListener};
 use crate::im::friend::models::FriendSyncerConfig;
 use anyhow::Result;
+use crate::im::db::create_sqlite_pool_with_migration;
+use crate::im::auth::login_async;
+use crate::im::logger::logger::init_logger;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
-use tracing::{debug, error, info};
+use tracing::{Instrument, debug, error, info};
 
 /// 好友同步器
 pub struct FriendSyncer {
@@ -60,7 +63,6 @@ impl FriendSyncer {
     /// 启动后台好友增量同步任务
     pub fn spawn_incr_sync(self: Arc<Self>) -> JoinHandle<()> {
         tokio::spawn(async move {
-            info!("[FriendSync] 🔄 启动好友增量同步任务");
             match self.incr_sync_friends().await {
                 Ok(_) => info!("[FriendSync] ✅ 好友同步完成"),
                 Err(e) => error!("[FriendSync] ❌ 好友同步失败: {e}"),
@@ -105,11 +107,6 @@ impl FriendSyncer {
         local_friends: Vec<sdkws::FriendInfo>,
         is_full: bool,
     ) -> Result<()> {
-        info!(
-            "[FriendSync] 开始同步好友，服务器好友数: {}, 本地好友数: {}",
-            server_friends.len(),
-            local_friends.len()
-        );
 
         let local_map: HashMap<String, sdkws::FriendInfo> = local_friends
             .into_iter()
@@ -211,17 +208,16 @@ impl FriendSyncer {
 
     /// 增量同步好友列表
     pub async fn incr_sync_friends(&self) -> Result<()> {
-        info!("[FriendSync] 🔄 开始增量同步好友...");
 
         let version_sync = self.get_version_sync().await?;
 
         if let Some(ref vs) = version_sync {
-            debug!(
+            info!(
                 "[FriendSync] 本地好友版本信息 - 版本: {}, 版本ID: {}",
                 vs.version, vs.version_id
             );
         } else {
-            debug!("[FriendSync] 本地无好友版本信息");
+            debug!(user_id = self.config.user_id.clone(), "[FriendSync] 本地无好友版本信息");
         }
 
         let local_friends = self.get_all_friends().await?;
@@ -332,6 +328,11 @@ impl FriendSyncer {
             return Ok(());
         }
 
+        info!(
+            "[FriendSync] 开始处理增量好友同步，服务器新增/更新好友数: {}, 本地好友数: {}",
+            resp.insert.len() + resp.update.len(),
+            local_friends.len()
+        );
         // 处理 insert/update（增量）
         let mut server_friends = Vec::new();
         server_friends.extend(resp.insert.into_iter());
@@ -371,8 +372,6 @@ impl FriendSyncer {
             );
         }
 
-        info!("[FriendSync] ✅ 增量同步好友完成");
-
         // 增量好友同步完成后，顺带同步一次黑名单和好友申请列表，触发对应监听器
         if let Ok(blacks) = self.api.get_black_list().await {
             if let Ok(json) = serde_json::to_string(&blacks) {
@@ -387,6 +386,83 @@ impl FriendSyncer {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_context::{test_context, AsyncTestContext};
+    use tokio::sync::OnceCell;
+    use tracing::{info, Instrument};
+
+    static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
+
+    #[derive(Clone)]
+    struct AppCtx {
+        syncer: Arc<FriendSyncer>,
+    }
+
+    impl AsyncTestContext for AppCtx {
+        async fn setup() -> Self {
+            APP_CTX
+                .get_or_init(|| async {
+                    init_logger("rust_lib_flutter_rust_demo=debug,hyper_util::client=info,reqwest=info");
+                    let area_code = "+86".to_string();
+                    let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
+                    let platform = 5;
+                    let token_info =
+                        login_async(area_code, "17764338283".to_string(), password, platform)
+                            .await
+                            .expect("登录失败");
+
+                    let db_path = format!(
+                        "sqlite://{}/friend_sync_{}.db?mode=rwc",
+                        std::env::temp_dir()
+                            .as_path()
+                            .to_string_lossy(),
+                        token_info.user_id.clone()
+                    );
+                    let pool = create_sqlite_pool_with_migration(&db_path)
+                        .await
+                        .expect("创建测试数据库失败");
+
+                    let cfg = FriendSyncerConfig {
+                        user_id: token_info.user_id.clone(),
+                        api_base_url: "http://localhost:10002".to_string(),
+                        token: token_info.im_token.clone(),
+                        db_path,
+                    };
+                    let syncer = Arc::new(
+                        FriendSyncer::new(cfg, Arc::new(pool), None)
+                            .await
+                            .expect("创建好友同步器失败"),
+                    );
+                    AppCtx { syncer }
+                })
+                .await
+                .clone()
+        }
+
+        async fn teardown(self) {
+            let _ = self;
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_friend_incr_sync(ctx: &mut AppCtx) {
+        ctx.syncer.incr_sync_friends().await.expect("增量同步失败");
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_friend_spawn_incr_sync(ctx: &mut AppCtx) {
+        let span = tracing::info_span!(
+            "task",
+            task_id = "test_friend_spawn_incr_sync"
+        );
+        ctx.syncer.clone().spawn_incr_sync().instrument(span).await.expect("spawn_incr_sync 任务失败");
     }
 }
 

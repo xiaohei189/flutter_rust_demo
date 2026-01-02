@@ -76,11 +76,6 @@ impl FriendDao {
                 }
             })
             .collect();
-
-        debug!(
-            "[FriendDAO] 获取本地好友列表，共 {} 个好友",
-            friends.len()
-        );
         Ok(friends)
     }
 
@@ -100,7 +95,6 @@ impl FriendDao {
             .into_iter()
             .map(|m| m.get::<String, _>("friend_user_id"))
             .collect::<Vec<_>>();
-        debug!("[FriendDAO] 获取本地好友ID列表，共 {} 个", ids.len());
         Ok(ids)
     }
 
@@ -117,7 +111,7 @@ impl FriendDao {
         .fetch_optional(&self.db)
         .await
         .context("查询好友版本同步信息失败")?;
-
+        info!(user_id = self.user_id.clone(), "[FriendDAO] 查询好友版本同步信息");
         Ok(row.map(|m| LocalVersionSync {
             table_name: m.get("table_name"),
             entity_id: m.get("entity_id"),
