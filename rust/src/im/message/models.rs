@@ -186,6 +186,23 @@ pub struct CheckMsgIsSendSuccessResp {
     pub is_send_success: bool,
 }
 
+/// /msg/send_business_notification
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SendBusinessNotificationReq {
+    pub key: Option<String>,
+    pub data: Option<String>,
+    #[serde(rename = "sendUserID")]
+    pub send_user_id: String,
+    #[serde(rename = "recvUserID", skip_serializing_if = "Option::is_none")]
+    pub recv_user_id: Option<String>,
+    #[serde(rename = "recvGroupID", skip_serializing_if = "Option::is_none")]
+    pub recv_group_id: Option<String>,
+    #[serde(rename = "sendMsg", default)]
+    pub send_msg: bool,
+    #[serde(rename = "reliabilityLevel", skip_serializing_if = "Option::is_none")]
+    pub reliability_level: Option<i32>,
+}
+
 /// /msg/newest_seq
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetNewestSeqReq {

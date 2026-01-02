@@ -5,8 +5,9 @@ use crate::im::message::models::{
     BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq,
     DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
     GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
-    PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendMsgReq,
-    SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
+    PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendBusinessNotificationReq,
+    SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq,
+    UserClearAllMsgReq,
 };
 use anyhow::Result;
 use tower::ServiceExt;
@@ -116,6 +117,14 @@ impl MessageApi {
         self.post_json("/msg/send_simple_msg", payload).await
     }
 
+    /// /msg/send_business_notification
+    pub async fn send_business_notification(
+        &self,
+        payload: SendBusinessNotificationReq,
+    ) -> Result<SendMsgResp> {
+        self.post_json("/msg/send_business_notification", payload).await
+    }
+
     /// /msg/check_msg_is_send_success
     pub async fn check_msg_is_send_success(
         &self,
@@ -154,8 +163,8 @@ mod tests {
         BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq,
         DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp,
         MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, RevokeMsgReq,
-        SearchMessageReq, SendSimpleMsgReq, SetConversationHasReadSeqReq, SeqRange,
-        UserClearAllMsgReq,
+        SearchMessageReq, SendBusinessNotificationReq, SendSimpleMsgReq, SetConversationHasReadSeqReq,
+        SeqRange, UserClearAllMsgReq,
     };
     use openim_protocol::constant;
     use serde_json::json;
@@ -488,6 +497,25 @@ mod tests {
         match api.send_simple_message(payload).await {
             Ok(v) => info!("send_simple_message resp: {:?}", v),
             Err(e) => error!("send_simple_message error: {:?}", e),
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_send_business_notification(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let payload = SendBusinessNotificationReq {
+            key: Some("k1".into()),
+            data: Some("demo business payload".into()),
+            send_user_id: ctx.self_user.clone(),
+            recv_user_id: Some(ctx.self_user.clone()),
+            recv_group_id: None,
+            send_msg: true,
+            reliability_level: Some(1),
+        };
+        match api.send_business_notification(payload).await {
+            Ok(v) => info!("send_business_notification resp: {:?}", v),
+            Err(e) => error!("send_business_notification error: {:?}", e),
         }
     }
 }
