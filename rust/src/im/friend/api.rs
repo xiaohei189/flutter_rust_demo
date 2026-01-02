@@ -4,15 +4,17 @@
 
 use crate::im::friend::models::BlackList;
 use crate::im::friend::types::{FriendRequestsResp, IncrementalFriendsResp};
-use crate::im::types::ApiResponse;
-use anyhow::{Context, Result};
+use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use anyhow::Result;
 use serde::Deserialize;
-use tracing::{debug, error, info};
+use tower::ServiceExt;
+use tower_http_client::ServiceExt as _;
 use uuid::Uuid;
 
 /// 好友相关的 HTTP API 客户端
+#[derive(Clone)]
 pub struct FriendApi {
-    client: reqwest::Client,
+    client: HttpClient,
     api_base_url: String,
     user_id: String,
 }
@@ -21,9 +23,14 @@ impl FriendApi {
     /// 创建新的好友 API 客户端
     ///
     /// `client` 应该已经在外部配置好认证拦截器
-    pub fn new(client: reqwest::Client, api_base_url: String, user_id: String) -> Self {
+    pub fn new(
+        client: reqwest::Client,
+        api_base_url: String,
+        user_id: String,
+        token: String,
+    ) -> Self {
         Self {
-            client,
+            client: make_client(client, token),
             api_base_url,
             user_id,
         }
@@ -38,15 +45,10 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_incremental_friends", self.api_base_url);
 
-        info!("[FriendAPI] 📡 请求增量好友同步");
-        debug!("[FriendAPI]   请求URL: {}", url);
-        debug!(
-            "[FriendAPI]   用户ID: {}, 操作ID: {}",
-            self.user_id, operation_id
-        );
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
 
-        let response = self
-            .client
+        let req = service
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -54,49 +56,9 @@ impl FriendApi {
                 "userID": self.user_id,
                 "version": version,
                 "versionID": version_id,
-            }))
-            .send()
-            .await
-            .context("请求失败")?;
+            }))?;
 
-        let status = response.status();
-        let body_bytes = response.bytes().await.context("读取响应 body 失败")?;
-        let body_str = String::from_utf8_lossy(&body_bytes);
-        info!("[FriendAPI] 增量好友同步响应 Body: {}", body_str);
-
-        if !status.is_success() {
-            error!(
-                "[FriendAPI] 增量好友同步请求失败，HTTP状态: {}, 响应: {}",
-                status, body_str
-            );
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, body_str));
-        }
-
-        let api_resp: ApiResponse<IncrementalFriendsResp> = serde_json::from_slice(&body_bytes)
-            .map_err(|e| {
-                error!(
-                    "[FriendAPI] 增量好友同步反序列化失败: {:?}\n原始响应: {}",
-                    e, body_str
-                );
-                anyhow::anyhow!("反序列化响应失败: {:?}", e)
-            })?;
-
-        if api_resp.err_code != 0 {
-            error!(
-                "[FriendAPI] 增量好友同步服务器错误，错误码: {}, 错误信息: {}",
-                api_resp.err_code, api_resp.err_msg
-            );
-            return Err(anyhow::anyhow!(
-                "服务器错误 {}: {}",
-                api_resp.err_code,
-                api_resp.err_msg
-            ));
-        }
-
-        let resp = api_resp
-            .data
-            .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
-
+        let resp: IncrementalFriendsResp = HttpResponseExtractor::send(req).await?;
         Ok(resp)
     }
 
@@ -104,8 +66,6 @@ impl FriendApi {
     pub async fn get_full_friend_user_ids(&self) -> Result<(u64, String, Vec<String>)> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_full_friend_user_ids", self.api_base_url);
-
-        debug!("[API] 📡 请求全量好友ID列表   请求URL: {}, 操作ID: {}", url, operation_id);
 
         #[derive(Deserialize)]
         struct FriendIdsData {
@@ -116,69 +76,18 @@ impl FriendApi {
             user_ids: Vec<String>,
         }
 
-        let response = match self
-            .client
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
+        let req = service
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
                 "idHash": 0u64,
-            }))
-            .send()
-            .await
-        {
-            Ok(resp) => resp,
-            Err(e) => {
-                error!("[FriendAPI] 全量好友ID列表请求失败: {:?}", e);
-                return Err(anyhow::anyhow!("请求失败: {:?}", e));
-            }
-        };
+            }))?;
 
-        let status = response.status();
-        let body_bytes = response.bytes().await.context("读取响应 body 失败")?;
-        let body_str = String::from_utf8_lossy(&body_bytes);
-        info!("[FriendAPI] 全量好友ID列表响应 Body: {}", body_str);
-
-        if !status.is_success() {
-            error!(
-                "[FriendAPI] 全量好友ID列表请求失败，HTTP状态: {}, 响应: {}",
-                status, body_str
-            );
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, body_str));
-        }
-
-        let api_resp: ApiResponse<FriendIdsData> =
-            serde_json::from_slice(&body_bytes).map_err(|e| {
-                error!(
-                    "[FriendAPI] 全量好友ID列表反序列化失败: {:?}\n原始响应: {}",
-                    e, body_str
-                );
-                anyhow::anyhow!("反序列化响应失败: {:?}", e)
-            })?;
-
-        if api_resp.err_code != 0 {
-            error!(
-                "[FriendAPI] 全量好友ID列表服务器错误，错误码: {}, 错误信息: {}",
-                api_resp.err_code, api_resp.err_msg
-            );
-            return Err(anyhow::anyhow!(
-                "服务器错误 {}: {}",
-                api_resp.err_code,
-                api_resp.err_msg
-            ));
-        }
-
-        let data = api_resp
-            .data
-            .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
-
-        info!(
-            "[FriendAPI] ✅ 全量好友ID列表响应，版本: {}, 版本ID: {}，好友数: {}",
-            data.version,
-            data.version_id,
-            data.user_ids.len()
-        );
+        let data: FriendIdsData = HttpResponseExtractor::send(req).await?;
 
         Ok((data.version, data.version_id, data.user_ids))
     }
@@ -188,21 +97,15 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_list", self.api_base_url);
 
-        info!("[FriendAPI] 📡 请求全量好友列表");
-        debug!("[FriendAPI]   请求URL: {}", url);
-        debug!(
-            "[FriendAPI]   用户ID: {}, 操作ID: {}",
-            self.user_id, operation_id
-        );
-
         #[derive(Deserialize)]
         struct AllFriendsData {
             #[serde(rename = "friendsInfo")]
             friends_info: Vec<crate::im::friend::models::LocalFriend>,
         }
 
-        let response = self
-            .client
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
+        let req = service
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -212,54 +115,9 @@ impl FriendApi {
                     "pageNumber": 1,
                     "showNumber": 1000
                 }
-            }))
-            .send()
-            .await
-            .context("请求失败")?;
+            }))?;
 
-        let status = response.status();
-        let body_bytes = response.bytes().await.context("读取响应 body 失败")?;
-        let body_str = String::from_utf8_lossy(&body_bytes);
-        info!("[FriendAPI] 全量好友列表响应 Body: {}", body_str);
-
-        if !status.is_success() {
-            error!(
-                "[FriendAPI] 全量好友列表请求失败，HTTP状态: {}, 响应: {}",
-                status, body_str
-            );
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, body_str));
-        }
-
-        let api_resp: ApiResponse<AllFriendsData> =
-            serde_json::from_slice(&body_bytes).map_err(|e| {
-                error!(
-                    "[FriendAPI] 全量好友列表反序列化失败: {:?}\n原始响应: {}",
-                    e, body_str
-                );
-                anyhow::anyhow!("反序列化响应失败: {:?}", e)
-            })?;
-
-        if api_resp.err_code != 0 {
-            error!(
-                "[FriendAPI] 全量好友列表服务器错误，错误码: {}, 错误信息: {}",
-                api_resp.err_code, api_resp.err_msg
-            );
-            return Err(anyhow::anyhow!(
-                "服务器错误 {}: {}",
-                api_resp.err_code,
-                api_resp.err_msg
-            ));
-        }
-
-        let data = api_resp
-            .data
-            .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
-
-        info!(
-            "[FriendAPI] ✅ 全量好友列表响应，好友数: {}",
-            data.friends_info.len()
-        );
-
+        let data: AllFriendsData = HttpResponseExtractor::send(req).await?;
         Ok(data.friends_info)
     }
 
@@ -267,14 +125,6 @@ impl FriendApi {
     pub async fn get_black_list(&self) -> Result<Vec<BlackList>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_black_list", self.api_base_url);
-
-        info!("[FriendAPI] 📡 请求黑名单列表");
-        debug!("[FriendAPI]   请求URL: {}", url);
-        debug!(
-            "[FriendAPI]   用户ID: {}, 操作ID: {}",
-            self.user_id, operation_id
-        );
-
         #[derive(Deserialize)]
         struct BlackListData {
             #[serde(rename = "blacks")]
@@ -284,8 +134,9 @@ impl FriendApi {
             total: Option<i32>,
         }
 
-        let response = self
-            .client
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
+        let req = service
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -295,54 +146,9 @@ impl FriendApi {
                     "pageNumber": 1,
                     "showNumber": 1000
                 }
-            }))
-            .send()
-            .await
-            .context("请求失败")?;
+            }))?;
 
-        let status = response.status();
-        let body_bytes = response.bytes().await.context("读取响应 body 失败")?;
-        let body_str = String::from_utf8_lossy(&body_bytes);
-        info!("[FriendAPI] 黑名单列表响应 Body: {}", body_str);
-
-        if !status.is_success() {
-            error!(
-                "[FriendAPI] 黑名单列表请求失败，HTTP状态: {}, 响应: {}",
-                status, body_str
-            );
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, body_str));
-        }
-
-        let api_resp: ApiResponse<BlackListData> =
-            serde_json::from_slice(&body_bytes).map_err(|e| {
-                error!(
-                    "[FriendAPI] 黑名单列表反序列化失败: {:?}\n原始响应: {}",
-                    e, body_str
-                );
-                anyhow::anyhow!("反序列化响应失败: {:?}", e)
-            })?;
-
-        if api_resp.err_code != 0 {
-            error!(
-                "[FriendAPI] 黑名单列表服务器错误，错误码: {}, 错误信息: {}",
-                api_resp.err_code, api_resp.err_msg
-            );
-            return Err(anyhow::anyhow!(
-                "服务器错误 {}: {}",
-                api_resp.err_code,
-                api_resp.err_msg
-            ));
-        }
-
-        let data = api_resp
-            .data
-            .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
-
-        info!(
-            "[FriendAPI] ✅ 黑名单列表响应，条目数: {}",
-            data.blacks.len()
-        );
-
+        let data: BlackListData = HttpResponseExtractor::send(req).await?;
         Ok(data.blacks)
     }
 
@@ -352,18 +158,10 @@ impl FriendApi {
     ) -> Result<Vec<crate::im::friend::types::FriendRequest>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_apply_list", self.api_base_url);
-
-        info!("[FriendAPI] 📡 请求好友申请列表");
-        debug!("[FriendAPI]   请求URL: {}", url);
-        debug!(
-            "[FriendAPI]   用户ID: {}, 操作ID: {}",
-            self.user_id, operation_id
-        );
-
-        let response = self
-            .client
+        let mut client = self.client.clone();
+        let service = client.ready().await?;
+        let req = service
             .post(&url)
-            .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
@@ -371,54 +169,8 @@ impl FriendApi {
                     "pageNumber": 1,
                     "showNumber": 100
                 }
-            }))
-            .send()
-            .await
-            .context("请求失败")?;
-
-        let status = response.status();
-        let body_bytes = response.bytes().await.context("读取响应 body 失败")?;
-        let body_str = String::from_utf8_lossy(&body_bytes);
-        info!("[FriendAPI] 好友申请列表响应 Body: {}", body_str);
-
-        if !status.is_success() {
-            error!(
-                "[FriendAPI] 好友申请列表请求失败，HTTP状态: {}, 响应: {}",
-                status, body_str
-            );
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, body_str));
-        }
-
-        let api_resp: ApiResponse<FriendRequestsResp> = serde_json::from_slice(&body_bytes)
-            .map_err(|e| {
-                error!(
-                    "[FriendAPI] 好友申请列表反序列化失败: {:?}\n原始响应: {}",
-                    e, body_str
-                );
-                anyhow::anyhow!("反序列化响应失败: {:?}", e)
-            })?;
-
-        if api_resp.err_code != 0 {
-            error!(
-                "[FriendAPI] 好友申请列表服务器错误，错误码: {}, 错误信息: {}",
-                api_resp.err_code, api_resp.err_msg
-            );
-            return Err(anyhow::anyhow!(
-                "服务器错误 {}: {}",
-                api_resp.err_code,
-                api_resp.err_msg
-            ));
-        }
-
-        let resp = api_resp
-            .data
-            .ok_or_else(|| anyhow::anyhow!("响应中缺少 data 字段"))?;
-
-        info!(
-            "[FriendAPI] ✅ 好友申请列表响应，条目数: {}",
-            resp.friend_requests.len()
-        );
-
+            }))?;
+        let resp: FriendRequestsResp = HttpResponseExtractor::send(req).await?;
         Ok(resp.friend_requests)
     }
 }
@@ -427,22 +179,93 @@ impl FriendApi {
 mod tests {
     use super::*;
     use crate::im::auth::login_async;
+    use crate::im::logger::logger::init_logger;
+    use tokio::sync::OnceCell;
+    use tracing::info;
+    use test_context::test_context;
+    use test_context::AsyncTestContext;
+
+    static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
+
+    #[derive(Clone)]
+    pub struct AppCtx {
+        pub api: FriendApi,
+    }
+
+    impl AsyncTestContext for AppCtx {
+        async fn setup() -> Self {
+            APP_CTX
+                .get_or_init(|| async {
+                    init_logger("debug,sqlx=debug,hyper_util::client=info,reqwest=info");
+                    // 异步登录获取 token
+                    let area_code = "+86".to_string();
+                    let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
+                    let platform = 5;
+
+                    let token_info =
+                        login_async(area_code, "17764338283".to_string(), password, platform)
+                            .await
+                            .expect("登录失败");
+                    let api = FriendApi::new(
+                        reqwest::Client::new(),
+                        "http://localhost:10002".to_string(),
+                        token_info.data.as_ref().unwrap().user_id.clone(),
+                        token_info.data.as_ref().unwrap().im_token.clone(),
+                    );
+                    AppCtx { api }
+                })
+                .await
+                .clone()
+        }
+
+        async fn teardown(self) {
+            // 如果需要，可以在这里做清理
+        }
+    }
+
+    #[test_context(AppCtx)]
     #[tokio::test]
-    async fn test_get_incremental_friends() {
-        let area_code = "+86".to_string();
-        let password = "284f3d09ea0695538e4ded1c1766d73a".to_string(); // 测试密码
-        let platform = 5;
-    
-        let token_info = login_async(area_code, "17764338283".to_string(), password, platform)
-            .await.unwrap();
-    
-        let (user_id, im_token) = if let Some(data) = &token_info.data {
-            (data.user_id.clone(), data.im_token.clone())
-        } else {
-            panic!("登录失败：服务器返回数据为空");
-        };
-        let api = FriendApi::new(reqwest::Client::new(), "http://localhost:10002".to_string(), "1234567890".to_string());
+    async fn test_get_friend_requests(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let requests = api.get_friend_requests().await.unwrap();
+        info!("获取好友申请列表成功: {:?}", requests);
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_incremental_friends(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
         let resp = api.get_incremental_friends(0, "").await.unwrap();
-        println!("{:?}", resp);
+        info!(
+            "增量好友同步成功: version={}, version_id={}, full={}, count={}",
+            resp.version,
+            resp.version_id,
+            resp.full,
+            resp.insert.len() + resp.update.len() + resp.delete.len()
+        );
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_full_friend_user_ids(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let (_ver, _ver_id, ids) = api.get_full_friend_user_ids().await.unwrap();
+        info!("全量好友ID列表获取成功，数量: {}", ids.len());
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_all_friends(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let friends = api.get_all_friends().await.unwrap();
+        info!("全量好友列表获取成功，数量: {}", friends.len());
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_get_black_list(ctx: &mut AppCtx) {
+        let api = ctx.api.clone();
+        let blacks = api.get_black_list().await.unwrap();
+        info!("黑名单列表获取成功，数量: {}", blacks.len());
     }
 }

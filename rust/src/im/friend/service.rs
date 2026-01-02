@@ -47,23 +47,11 @@ impl FriendSyncer {
             .await
             .context(format!("连接SQLite数据库失败: {}", db_url))?;
 
-        // 创建带认证拦截器的 HTTP 客户端（token 通过 default_headers 自动添加）
-        let http_client = reqwest::ClientBuilder::new()
-            .default_headers({
-                let mut headers = reqwest::header::HeaderMap::new();
-                headers.insert(
-                    reqwest::header::HeaderName::from_static("token"),
-                    reqwest::header::HeaderValue::from_str(&config.token)
-                        .context("无效的 token")?,
-                );
-                headers
-            })
-            .build()
-            .context("创建 HTTP 客户端失败")?;
         let api = FriendApi::new(
-            http_client,
+            reqwest::Client::new(),
             config.api_base_url.clone(),
             config.user_id.clone(),
+            config.token.clone(),
         );
         let friend_dao = FriendDao::new(db, config.user_id.clone());
         Ok(Self {
@@ -80,20 +68,6 @@ impl FriendSyncer {
         listener: Arc<dyn FriendListener>,
         db: Arc<Pool<Sqlite>>,
     ) -> Result<Self> {
-        // 创建带认证拦截器的 HTTP 客户端（token 通过 default_headers 自动添加）
-        let http_client = reqwest::ClientBuilder::new()
-            .default_headers({
-                let mut headers = reqwest::header::HeaderMap::new();
-                headers.insert(
-                    reqwest::header::HeaderName::from_static("token"),
-                    reqwest::header::HeaderValue::from_str(&config.token)
-                        .context("无效的 token")?,
-                );
-                headers
-            })
-            .build()
-            .context("创建 HTTP 客户端失败")?;
-
         info!(
             "[FriendSync] 创建好友同步器（使用共享连接池），用户ID: {}",
             config.user_id
@@ -101,9 +75,10 @@ impl FriendSyncer {
 
         Ok(Self {
             api: FriendApi::new(
-                http_client,
+                reqwest::Client::new(),
                 config.api_base_url.clone(),
                 config.user_id.clone(),
+                config.token.clone(),
             ),
             friend_dao: FriendDao::new((*db).clone(), config.user_id.clone()),
             listener,
