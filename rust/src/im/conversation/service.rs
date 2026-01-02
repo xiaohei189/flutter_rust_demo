@@ -3,6 +3,7 @@
 //! 实现 OpenIM SDK 的会话增量同步逻辑，参考 Go 版本的实现
 
 use crate::im::conversation::api::ConversationApi;
+use crate::im::message::api::MessageApi;
 use crate::im::conversation::dao::{ConversationDao, VersionSyncDao};
 use crate::im::conversation::listener::{ConversationListener, EmptyConversationListener};
 use crate::im::conversation::models::{ConversationSyncerConfig, LocalVersionSync};
@@ -21,6 +22,8 @@ pub struct ConversationSyncer {
     config: ConversationSyncerConfig,
     /// 会话 API 客户端
     api: ConversationApi,
+    /// 消息 HTTP API 客户端
+    message_api: MessageApi,
     /// 会话 DAO
     conversation_dao: ConversationDao,
     /// 版本同步 DAO
@@ -87,13 +90,20 @@ impl ConversationSyncer {
         // 注意：reqwest 不支持动态 base_url，所以我们仍然需要在 API 方法中使用完整 URL
         // 但认证信息已经通过 default_headers 设置好了
         let api = ConversationApi::new(
-            http_client,
+            http_client.clone(),
             config.api_base_url.clone(),
             config.user_id.clone(),
+            &config.token,
         );
 
         Ok(Self {
             api,
+            message_api: MessageApi::new(
+                http_client,
+                config.api_base_url.clone(),
+                config.user_id.clone(),
+                &config.token,
+            ),
             conversation_dao: ConversationDao::new((*db).clone()),
             version_sync_dao: VersionSyncDao::new((*db).clone(), config.user_id.clone()),
             listener,

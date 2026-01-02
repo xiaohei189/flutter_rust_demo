@@ -249,7 +249,7 @@ pub struct GetAdvancedHistoryMessageListCallback {
 }
 
 /// 消息结构体（对应 Go 的 MsgStruct）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MsgStruct {
     #[serde(rename = "clientMsgID", skip_serializing_if = "Option::is_none")]
     pub client_msg_id: Option<String>,

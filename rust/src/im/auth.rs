@@ -2,8 +2,7 @@ use crate::im::http::{make_client_without_token, HttpResponseExtractor};
 use serde::{Deserialize, Serialize};
 use tower::ServiceExt;
 use tower_http_client::ServiceExt as _;
-use tracing::{debug, info};
-use uuid::Uuid;
+use tracing::info;
 use anyhow::Result;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {

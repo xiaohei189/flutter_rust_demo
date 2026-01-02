@@ -15,7 +15,6 @@ use tower_http::request_id::SetRequestIdLayer;
 use tower_http::trace::TraceLayer;
 use tower_http::ServiceBuilderExt;
 use tower_reqwest::HttpClientLayer;
-use tracing::Span;
 use tracing::debug;
 use tower_http::request_id::MakeRequestId;
 
