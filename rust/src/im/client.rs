@@ -456,8 +456,10 @@ impl OpenIMClient {
         let db = Arc::new(pool);
         self.db = Some(db.clone());
 
-        // 创建带认证拦截器的 HTTP 客户端（token 通过 default_headers 自动添加）
-        let http_client = reqwest::ClientBuilder::new()
+        // 创建带认证拦截器的 HTTP 客户端（使用统一的客户端创建方式）
+        // 对于 ConversationApi，使用带 token header 的 reqwest::Client
+        // 对于 FriendApi，使用 make_client 创建的 HttpClient（在 FriendSyncer 内部创建）
+        let http_client = reqwest::Client::builder()
             .default_headers({
                 let mut headers = reqwest::header::HeaderMap::new();
                 headers.insert(
@@ -3463,13 +3465,9 @@ mod tests {
         };
 
         // 解析 token（如果登录成功）
-        let (user_id, im_token) = if let Some(data) = &token_info.data {
-            (data.user_id.clone(), data.im_token.clone())
-        } else {
-            ("".to_string(), "".to_string())
-        };
+        let (user_id, im_token) = (token_info.  user_id.clone(), token_info.im_token.clone());
 
-        let config = ClientConfig::new(user_id.clone(), im_token, 5);
+        let config = ClientConfig::new(user_id, im_token, 5);
         let mut client = OpenIMClient::new(config);
 
         client.set_conversation_listener(Arc::new(TestConversationListener));

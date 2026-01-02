@@ -194,11 +194,7 @@ async fn main() -> Result<()> {
         .await
         .map_err(|e| anyhow::anyhow!("登录失败: {}", e))?;
 
-    let (user_id, im_token) = if let Some(data) = &token_info.data {
-        (data.user_id.clone(), data.im_token.clone())
-    } else {
-        return Err(anyhow::anyhow!("登录失败：服务器返回数据为空"));
-    };
+    let (user_id, im_token) = (token_info.user_id.clone(), token_info.im_token.clone());
 
     info!("[CLI] ✅ 登录成功！用户ID: {}", user_id);
 

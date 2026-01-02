@@ -21,7 +21,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 ///
 /// 参考 openim-cli.rs 的实现，先登录获取 token 信息
 /// 直接使用本地 im 模块的类型，无需包装
-Future<LoginResponse> loginAsync({
+Future<LoginData> loginAsync({
   required String areaCode,
   required String phoneNumber,
   required String password,

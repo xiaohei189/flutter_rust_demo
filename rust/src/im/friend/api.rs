@@ -207,8 +207,8 @@ mod tests {
                     let api = FriendApi::new(
                         reqwest::Client::new(),
                         "http://localhost:10002".to_string(),
-                        token_info.data.as_ref().unwrap().user_id.clone(),
-                        token_info.data.as_ref().unwrap().im_token.clone(),
+                        token_info.user_id.clone(),
+                        token_info.im_token.clone(),
                     );
                     AppCtx { api }
                 })

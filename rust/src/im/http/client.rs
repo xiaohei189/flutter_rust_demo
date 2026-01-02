@@ -27,3 +27,13 @@ pub fn make_client(client: reqwest::Client, token: String) -> HttpClient {
     BoxCloneSyncService::new(svc)
 }
 
+/// Creates HTTP client without token (for login and other public endpoints).
+pub fn make_client_without_token(client: reqwest::Client) -> HttpClient {
+    let svc = ServiceBuilder::new()
+        .override_request_header(USER_AGENT, HeaderValue::from_static("tower-http-client"))
+        .layer(RequestContextPropagateLayer)
+        .layer(HttpClientLayer)
+        .service(client);
+    BoxCloneSyncService::new(svc)
+}
+

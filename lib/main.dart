@@ -11,7 +11,7 @@ final messageService = MessageService();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 1. 初始化 Rust 库
   await RustLib.init();
 

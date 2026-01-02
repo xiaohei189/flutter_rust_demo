@@ -194,23 +194,15 @@ class MessageService extends ChangeNotifier {
     _isInitializing = true;
     try {
       // 先登录获取 token 信息（参考 openim-cli.rs 的实现）
-      final loginResponse = await loginAsync(
+      final resp = await loginAsync(
         areaCode: '+86',
         phoneNumber: '17764338283',
         password: '284f3d09ea0695538e4ded1c1766d73a',
         platform: 5,
       );
 
-      if (loginResponse.errCode != 0) {
-        throw Exception('登录失败: ${loginResponse.errMsg}');
-      }
-
-      final userId = loginResponse.data?.userId;
-      final imToken = loginResponse.data?.imToken;
-
-      if (userId == null || imToken == null) {
-        throw Exception('登录失败：服务器返回数据为空');
-      }
+      final userId = resp.userId;
+      final imToken = resp.imToken;
 
       debugPrint('✅ 登录成功！用户ID----: $userId');
 

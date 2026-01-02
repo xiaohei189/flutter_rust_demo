@@ -32,26 +32,3 @@ class LoginData {
           chatToken == other.chatToken &&
           userId == other.userId;
 }
-
-/// 登录响应（暴露给 Dart）
-///
-/// 添加 Serialize 和 Clone trait 以支持 flutter_rust_bridge
-class LoginResponse {
-  final int errCode;
-  final String errMsg;
-  final LoginData? data;
-
-  const LoginResponse({required this.errCode, required this.errMsg, this.data});
-
-  @override
-  int get hashCode => errCode.hashCode ^ errMsg.hashCode ^ data.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LoginResponse &&
-          runtimeType == other.runtimeType &&
-          errCode == other.errCode &&
-          errMsg == other.errMsg &&
-          data == other.data;
-}

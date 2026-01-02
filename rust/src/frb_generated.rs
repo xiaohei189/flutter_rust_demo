@@ -1007,7 +1007,7 @@ fn wire__crate__api__bridge_client__login_async_impl(
             let api_platform = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, String>(
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
                         let output_ok = crate::api::bridge_client::login_async(
                             api_area_code,
@@ -1616,20 +1616,6 @@ impl SseDecode for crate::im::auth::LoginData {
     }
 }
 
-impl SseDecode for crate::im::auth::LoginResponse {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_errCode = <i32>::sse_decode(deserializer);
-        let mut var_errMsg = <String>::sse_decode(deserializer);
-        let mut var_data = <Option<crate::im::auth::LoginData>>::sse_decode(deserializer);
-        return crate::im::auth::LoginResponse {
-            err_code: var_errCode,
-            err_msg: var_errMsg,
-            data: var_data,
-        };
-    }
-}
-
 impl SseDecode for crate::api::listeners::message::MessageEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1873,17 +1859,6 @@ impl SseDecode for Option<crate::im::message::types::LocationElem> {
             return Some(<crate::im::message::types::LocationElem>::sse_decode(
                 deserializer,
             ));
-        } else {
-            return None;
-        }
-    }
-}
-
-impl SseDecode for Option<crate::im::auth::LoginData> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        if (<bool>::sse_decode(deserializer)) {
-            return Some(<crate::im::auth::LoginData>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -2626,28 +2601,6 @@ impl flutter_rust_bridge::IntoIntoDart<crate::im::auth::LoginData> for crate::im
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::im::auth::LoginResponse {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.err_code.into_into_dart().into_dart(),
-            self.err_msg.into_into_dart().into_dart(),
-            self.data.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::im::auth::LoginResponse
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::im::auth::LoginResponse>
-    for crate::im::auth::LoginResponse
-{
-    fn into_into_dart(self) -> crate::im::auth::LoginResponse {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::listeners::message::MessageEvent {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -3367,15 +3320,6 @@ impl SseEncode for crate::im::auth::LoginData {
     }
 }
 
-impl SseEncode for crate::im::auth::LoginResponse {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.err_code, serializer);
-        <String>::sse_encode(self.err_msg, serializer);
-        <Option<crate::im::auth::LoginData>>::sse_encode(self.data, serializer);
-    }
-}
-
 impl SseEncode for crate::api::listeners::message::MessageEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -3544,16 +3488,6 @@ impl SseEncode for Option<crate::im::message::types::LocationElem> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::im::message::types::LocationElem>::sse_encode(value, serializer);
-        }
-    }
-}
-
-impl SseEncode for Option<crate::im::auth::LoginData> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <bool>::sse_encode(self.is_some(), serializer);
-        if let Some(value) = self {
-            <crate::im::auth::LoginData>::sse_encode(value, serializer);
         }
     }
 }

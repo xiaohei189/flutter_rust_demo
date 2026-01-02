@@ -79,7 +79,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
-        stem: 'rust_lib_flutter_rust_demo',
+        stem: 'UNKNOWN',
         ioDirectory: 'rust/target/release/',
         webPrefix: 'pkg/',
       );
@@ -176,7 +176,7 @@ abstract class RustLibApi extends BaseApi {
 
   Future<LoggerConfig> crateApiLoggerLoggerConfigDefault();
 
-  Future<LoginResponse> crateApiBridgeClientLoginAsync({
+  Future<LoginData> crateApiBridgeClientLoginAsync({
     required String areaCode,
     required String phoneNumber,
     required String password,
@@ -1042,7 +1042,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "logger_config_default", argNames: []);
 
   @override
-  Future<LoginResponse> crateApiBridgeClientLoginAsync({
+  Future<LoginData> crateApiBridgeClientLoginAsync({
     required String areaCode,
     required String phoneNumber,
     required String password,
@@ -1064,8 +1064,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_login_response,
-          decodeErrorData: sse_decode_String,
+          decodeSuccessData: sse_decode_login_data,
+          decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientLoginAsyncConstMeta,
         argValues: [areaCode, phoneNumber, password, platform],
@@ -1428,12 +1428,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginData dco_decode_box_autoadd_login_data(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_login_data(raw);
-  }
-
-  @protected
   MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_message_revoked(raw);
@@ -1731,19 +1725,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginResponse dco_decode_login_response(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-    return LoginResponse(
-      errCode: dco_decode_i_32(arr[0]),
-      errMsg: dco_decode_String(arr[1]),
-      data: dco_decode_opt_box_autoadd_login_data(arr[2]),
-    );
-  }
-
-  @protected
   MessageEvent dco_decode_message_event(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     switch (raw[0]) {
@@ -1890,12 +1871,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_location_elem(raw);
-  }
-
-  @protected
-  LoginData? dco_decode_opt_box_autoadd_login_data(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_box_autoadd_login_data(raw);
   }
 
   @protected
@@ -2411,12 +2386,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginData sse_decode_box_autoadd_login_data(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_login_data(deserializer));
-  }
-
-  @protected
   MessageRevoked sse_decode_box_autoadd_message_revoked(
     SseDeserializer deserializer,
   ) {
@@ -2785,19 +2754,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  LoginResponse sse_decode_login_response(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_errCode = sse_decode_i_32(deserializer);
-    var var_errMsg = sse_decode_String(deserializer);
-    var var_data = sse_decode_opt_box_autoadd_login_data(deserializer);
-    return LoginResponse(
-      errCode: var_errCode,
-      errMsg: var_errMsg,
-      data: var_data,
-    );
-  }
-
-  @protected
   MessageEvent sse_decode_message_event(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -3017,19 +2973,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_location_elem(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  LoginData? sse_decode_opt_box_autoadd_login_data(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_box_autoadd_login_data(deserializer));
     } else {
       return null;
     }
@@ -3661,15 +3604,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_box_autoadd_login_data(
-    LoginData self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_login_data(self, serializer);
-  }
-
-  @protected
   void sse_encode_box_autoadd_message_revoked(
     MessageRevoked self,
     SseSerializer serializer,
@@ -3977,14 +3911,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_login_response(LoginResponse self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.errCode, serializer);
-    sse_encode_String(self.errMsg, serializer);
-    sse_encode_opt_box_autoadd_login_data(self.data, serializer);
-  }
-
-  @protected
   void sse_encode_message_event(MessageEvent self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     switch (self) {
@@ -4158,19 +4084,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_location_elem(self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_box_autoadd_login_data(
-    LoginData? self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_box_autoadd_login_data(self, serializer);
     }
   }
 

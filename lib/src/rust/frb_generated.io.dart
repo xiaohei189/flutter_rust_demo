@@ -216,9 +216,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw);
 
   @protected
-  LoginData dco_decode_box_autoadd_login_data(dynamic raw);
-
-  @protected
   MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw);
 
   @protected
@@ -305,9 +302,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoginData dco_decode_login_data(dynamic raw);
 
   @protected
-  LoginResponse dco_decode_login_response(dynamic raw);
-
-  @protected
   MessageEvent dco_decode_message_event(dynamic raw);
 
   @protected
@@ -339,9 +333,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw);
-
-  @protected
-  LoginData? dco_decode_opt_box_autoadd_login_data(dynamic raw);
 
   @protected
   PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw);
@@ -570,9 +561,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  LoginData sse_decode_box_autoadd_login_data(SseDeserializer deserializer);
-
-  @protected
   MessageRevoked sse_decode_box_autoadd_message_revoked(
     SseDeserializer deserializer,
   );
@@ -673,9 +661,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LoginData sse_decode_login_data(SseDeserializer deserializer);
 
   @protected
-  LoginResponse sse_decode_login_response(SseDeserializer deserializer);
-
-  @protected
   MessageEvent sse_decode_message_event(SseDeserializer deserializer);
 
   @protected
@@ -709,11 +694,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LocationElem? sse_decode_opt_box_autoadd_location_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  LoginData? sse_decode_opt_box_autoadd_login_data(
     SseDeserializer deserializer,
   );
 
@@ -985,12 +965,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_box_autoadd_login_data(
-    LoginData self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_box_autoadd_message_revoked(
     MessageRevoked self,
     SseSerializer serializer,
@@ -1126,9 +1100,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_login_data(LoginData self, SseSerializer serializer);
 
   @protected
-  void sse_encode_login_response(LoginResponse self, SseSerializer serializer);
-
-  @protected
   void sse_encode_message_event(MessageEvent self, SseSerializer serializer);
 
   @protected
@@ -1174,12 +1145,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_location_elem(
     LocationElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_login_data(
-    LoginData? self,
     SseSerializer serializer,
   );
 

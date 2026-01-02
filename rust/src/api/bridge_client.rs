@@ -1,3 +1,4 @@
+use crate::api::LoginData;
 use crate::api::listeners::{
     ConnectionStatusEvent, conversation::ConversationEvent, DartConnectionStatusListener,
     DartConversationListener, DartMessageListener, MessageEvent,
@@ -237,6 +238,6 @@ pub async fn login_async(
     phone_number: String,
     password: String,
     platform: i32,
-) -> Result<LoginResponse, String> {
+) -> Result<LoginData> {
     crate::im::auth::login_async(area_code, phone_number, password, platform).await
 }
