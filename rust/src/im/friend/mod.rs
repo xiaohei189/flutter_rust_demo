@@ -3,6 +3,7 @@
 //! 实现 OpenIM SDK 的好友同步功能
 
 pub mod api;
+pub mod api_ba;
 pub mod dao;
 pub mod entities;
 pub mod listener;

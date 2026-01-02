@@ -151,3 +151,6 @@ final result = await client.getAdvancedHistoryMessageList(req);
 3. **ViewType 处理**：Go SDK 使用 ViewType 管理不同的消息视图，Rust 版本暂时只传递参数
 
 
+
+
+

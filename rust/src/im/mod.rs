@@ -6,6 +6,8 @@ pub mod message;
 pub mod serialization;
 pub mod types;
 pub mod db;
+pub mod http;
+pub mod logger;
 
 // 重新导出认证相关函数
 pub use auth::login_async;
