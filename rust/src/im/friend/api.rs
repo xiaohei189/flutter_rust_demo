@@ -2,6 +2,7 @@
 //!
 //! 负责所有好友相关的 HTTP 请求
 
+use crate::im::friend::AllFriendsResp;
 use crate::im::friend::models::BlackList;
 use crate::im::friend::types::{FriendRequestsResp, IncrementalFriendsResp};
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
@@ -93,15 +94,9 @@ impl FriendApi {
     }
 
     /// 从服务器获取全量好友列表
-    pub async fn get_all_friends(&self) -> Result<Vec<crate::im::friend::models::LocalFriend>> {
+    pub async fn get_all_friends(&self) -> Result<AllFriendsResp> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_list", self.api_base_url);
-
-        #[derive(Deserialize)]
-        struct AllFriendsData {
-            #[serde(rename = "friendsInfo")]
-            friends_info: Vec<crate::im::friend::models::LocalFriend>,
-        }
 
         let mut client = self.client.clone();
         let service = client.ready().await?;
@@ -117,8 +112,10 @@ impl FriendApi {
                 }
             }))?;
 
-        let data: AllFriendsData = HttpResponseExtractor::send(req).await?;
-        Ok(data.friends_info)
+        let data: crate::im::friend::types::AllFriendsResp =
+            HttpResponseExtractor::send(req).await?;
+
+        Ok(data)
     }
 
     /// 从服务器获取黑名单列表（全量）
@@ -174,6 +171,7 @@ impl FriendApi {
         Ok(resp.friend_requests)
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -258,7 +256,7 @@ mod tests {
     async fn test_get_all_friends(ctx: &mut AppCtx) {
         let api = ctx.api.clone();
         let friends = api.get_all_friends().await.unwrap();
-        info!("全量好友列表获取成功，数量: {}", friends.len());
+        info!("全量好友列表获取成功，数量: {}", friends.total);
     }
 
     #[test_context(AppCtx)]

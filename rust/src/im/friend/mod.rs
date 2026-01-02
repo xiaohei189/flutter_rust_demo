@@ -3,7 +3,6 @@
 //! 实现 OpenIM SDK 的好友同步功能
 
 pub mod api;
-pub mod api_ba;
 pub mod dao;
 pub mod entities;
 pub mod listener;
@@ -15,7 +14,7 @@ pub mod types;
 pub use api::FriendApi;
 pub use dao::FriendDao;
 pub use listener::{EmptyFriendListener, FriendListener};
-pub use models::{FriendSyncerConfig, LocalFriend};
+pub use models::FriendSyncerConfig;
 pub use service::FriendSyncer;
 pub use types::{AllFriendsResp, FriendRequest, FriendRequestsResp, IncrementalFriendsResp};
 

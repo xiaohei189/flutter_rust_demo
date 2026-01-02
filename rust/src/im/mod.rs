@@ -16,7 +16,7 @@ pub use auth::login_async;
 pub use conversation::{ConversationSyncer, ConversationSyncerConfig, LocalVersionSync};
 
 // 重新导出好友相关类型和函数
-pub use friend::{FriendSyncer, FriendSyncerConfig, LocalFriend};
+pub use friend::{FriendSyncer, FriendSyncerConfig};
 
 // 重新导出消息相关类型和函数
 pub use message::{

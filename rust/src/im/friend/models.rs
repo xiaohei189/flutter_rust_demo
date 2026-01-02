@@ -2,33 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 
-/// 本地好友数据结构（与 Go 的 LocalFriend 字段基本对应）
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LocalFriend {
-    #[serde(rename = "ownerUserID")]
-    pub owner_user_id: String,
-    #[serde(rename = "userID")]
-    pub friend_user_id: String,
-    #[serde(rename = "remark")]
-    pub remark: String,
-    #[serde(rename = "createTime")]
-    pub create_time: i64,
-    #[serde(rename = "addSource")]
-    pub add_source: i32,
-    #[serde(rename = "operatorUserID")]
-    pub operator_user_id: String,
-    #[serde(rename = "nickname")]
-    pub nickname: String,
-    #[serde(rename = "faceURL")]
-    pub face_url: String,
-    #[serde(rename = "ex")]
-    pub ex: String,
-    #[serde(rename = "attachedInfo")]
-    pub attached_info: String,
-    #[serde(rename = "isPinned")]
-    pub is_pinned: bool,
-}
-
 /// 黑名单数据结构（与好友结构类似）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlackList {

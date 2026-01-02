@@ -1,6 +1,6 @@
 //! 好友 API DTO（请求和响应结构体）
 
-use crate::im::friend::models::LocalFriend;
+use openim_protocol::sdkws;
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// 反序列化数组字段，处理 null 值
@@ -24,17 +24,19 @@ pub struct IncrementalFriendsResp {
     #[serde(deserialize_with = "deserialize_vec_or_null")]
     pub delete: Vec<String>,
     #[serde(deserialize_with = "deserialize_vec_or_null")]
-    pub insert: Vec<LocalFriend>,
+    pub insert: Vec<sdkws::FriendInfo>,
     #[serde(deserialize_with = "deserialize_vec_or_null")]
-    pub update: Vec<LocalFriend>,
+    pub update: Vec<sdkws::FriendInfo>,
 }
 
 /// 全量好友响应（业务逻辑层结构体，可直接从 API 响应反序列化）
+/// 现在直接使用 proto 生成的结构体，已配置好 serde 支持
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AllFriendsResp {
-    #[serde(deserialize_with = "deserialize_vec_or_null")]
-    pub friends_info: Vec<LocalFriend>,
+    #[serde(rename = "friendsInfo")]
+    pub friends_info: Vec<sdkws::FriendInfo>,
+    pub total: i32,
 }
 
 /// 好友申请信息

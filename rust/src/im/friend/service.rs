@@ -6,8 +6,9 @@ use crate::im::conversation::models::LocalVersionSync;
 use crate::im::friend::api::FriendApi;
 use crate::im::friend::dao::FriendDao;
 use crate::im::friend::listener::{EmptyFriendListener, FriendListener};
-use crate::im::friend::models::{FriendSyncerConfig, LocalFriend};
+use crate::im::friend::models::FriendSyncerConfig;
 use anyhow::{Context, Result};
+use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -87,7 +88,7 @@ impl FriendSyncer {
     }
 
     /// 从数据库获取所有好友
-    pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
+    pub async fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
         self.friend_dao.get_all_friends().await
     }
 
@@ -107,7 +108,7 @@ impl FriendSyncer {
     }
 
     /// 插入或更新好友到数据库
-    async fn upsert_friend(&self, f: &LocalFriend) -> Result<()> {
+    async fn upsert_friend(&self, f: &sdkws::FriendInfo) -> Result<()> {
         self.friend_dao.upsert_friend(f).await
     }
 
@@ -119,8 +120,8 @@ impl FriendSyncer {
     /// 同步好友列表（对比服务器和本地数据）
     async fn sync_friends(
         &self,
-        server_friends: Vec<LocalFriend>,
-        local_friends: Vec<LocalFriend>,
+        server_friends: Vec<sdkws::FriendInfo>,
+        local_friends: Vec<sdkws::FriendInfo>,
         is_full: bool,
     ) -> Result<()> {
         info!(
@@ -129,13 +130,27 @@ impl FriendSyncer {
             local_friends.len()
         );
 
-        let local_map: HashMap<String, LocalFriend> = local_friends
+        let local_map: HashMap<String, sdkws::FriendInfo> = local_friends
             .into_iter()
-            .map(|f| (f.friend_user_id.clone(), f))
+            .map(|f| {
+                let friend_user_id = f
+                    .friend_user
+                    .as_ref()
+                    .map(|u| u.user_id.clone())
+                    .unwrap_or_default();
+                (friend_user_id, f)
+            })
             .collect();
-        let server_map: HashMap<String, LocalFriend> = server_friends
+        let server_map: HashMap<String, sdkws::FriendInfo> = server_friends
             .into_iter()
-            .map(|f| (f.friend_user_id.clone(), f))
+            .map(|f| {
+                let friend_user_id = f
+                    .friend_user
+                    .as_ref()
+                    .map(|u| u.user_id.clone())
+                    .unwrap_or_default();
+                (friend_user_id, f)
+            })
             .collect();
 
         let mut insert_count = 0;
@@ -201,15 +216,16 @@ impl FriendSyncer {
     }
 
     /// 比较两个好友是否相等（用于判断是否需要更新）
-    fn friends_equal(local: &LocalFriend, server: &LocalFriend) -> bool {
+    fn friends_equal(local: &sdkws::FriendInfo, server: &sdkws::FriendInfo) -> bool {
         local.remark == server.remark
             && local.add_source == server.add_source
             && local.operator_user_id == server.operator_user_id
-            && local.nickname == server.nickname
-            && local.face_url == server.face_url
             && local.ex == server.ex
-            && local.attached_info == server.attached_info
             && local.is_pinned == server.is_pinned
+            && local.friend_user.as_ref().map(|u| &u.nickname)
+                == server.friend_user.as_ref().map(|u| &u.nickname)
+            && local.friend_user.as_ref().map(|u| &u.face_url)
+                == server.friend_user.as_ref().map(|u| &u.face_url)
     }
 
     /// 增量同步好友列表
@@ -246,7 +262,8 @@ impl FriendSyncer {
                     );
 
                     // 全量拉取好友列表并对齐
-                    let server_friends = self.api.get_all_friends().await?;
+                    let all_friends_resp = self.api.get_all_friends().await?;
+                    let server_friends = all_friends_resp.friends_info;
                     self.sync_friends(server_friends, local_friends, true).await?;
 
                     // 以 full friend IDs 的版本信息为起点写入 version_sync
@@ -307,7 +324,8 @@ impl FriendSyncer {
         // 如果服务器标记 full=true，则以服务器为权威做一次全量对齐
         if resp.full {
             info!("[FriendSync] 服务器要求全量好友同步...");
-            let server_friends = self.api.get_all_friends().await?;
+            let all_friends_resp = self.api.get_all_friends().await?;
+            let server_friends = all_friends_resp.friends_info;
             self.sync_friends(server_friends, local_friends, true).await?;
 
             if !resp.version_id.is_empty() {

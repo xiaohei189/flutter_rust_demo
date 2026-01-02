@@ -4,8 +4,8 @@
 //! 本模块已从 SeaORM 完全迁移到 sqlx。
 
 use crate::im::conversation::models::LocalVersionSync;
-use crate::im::friend::models::LocalFriend;
 use anyhow::{Context, Result};
+use openim_protocol::sdkws;
 use sqlx::{Pool, Row, Sqlite};
 use tracing::{debug, info};
 
@@ -28,7 +28,7 @@ impl FriendDao {
     }
 
     /// 从数据库获取所有好友
-    pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
+    pub async fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
         let rows = sqlx::query(
             r#"
             SELECT
@@ -52,21 +52,26 @@ impl FriendDao {
         .await
         .context("查询好友列表失败")?;
 
-        let friends: Vec<LocalFriend> = rows
+        let friends: Vec<sdkws::FriendInfo> = rows
             .into_iter()
             .map(|m| {
                 let is_pinned: i64 = m.get("is_pinned");
-                LocalFriend {
+                sdkws::FriendInfo {
                     owner_user_id: m.get("owner_user_id"),
-                    friend_user_id: m.get("friend_user_id"),
                     remark: m.get("remark"),
                     create_time: m.get("create_time"),
+                    friend_user: Some(sdkws::UserInfo {
+                        user_id: m.get("friend_user_id"),
+                        nickname: m.get("nickname"),
+                        face_url: m.get("face_url"),
+                        ex: m.get("ex"),
+                        create_time: 0,
+                        app_manger_level: 0,
+                        global_recv_msg_opt: 0,
+                    }),
                     add_source: m.get("add_source"),
                     operator_user_id: m.get("operator_user_id"),
-                    nickname: m.get("nickname"),
-                    face_url: m.get("face_url"),
                     ex: m.get("ex"),
-                    attached_info: m.get("attached_info"),
                     is_pinned: is_pinned != 0,
                 }
             })
@@ -144,7 +149,23 @@ impl FriendDao {
     }
 
     /// 插入或更新好友到数据库
-    pub async fn upsert_friend(&self, f: &LocalFriend) -> Result<()> {
+    pub async fn upsert_friend(&self, f: &sdkws::FriendInfo) -> Result<()> {
+        let friend_user_id = f
+            .friend_user
+            .as_ref()
+            .map(|u| u.user_id.as_str())
+            .unwrap_or("");
+        let nickname = f
+            .friend_user
+            .as_ref()
+            .map(|u| u.nickname.as_str())
+            .unwrap_or("");
+        let face_url = f
+            .friend_user
+            .as_ref()
+            .map(|u| u.face_url.as_str())
+            .unwrap_or("");
+
         let sql = r#"
             INSERT INTO local_friends (
                 owner_user_id,
@@ -175,15 +196,15 @@ impl FriendDao {
 
         sqlx::query(sql)
             .bind(&f.owner_user_id)
-            .bind(&f.friend_user_id)
+            .bind(friend_user_id)
             .bind(&f.remark)
             .bind(f.create_time)
             .bind(f.add_source)
             .bind(&f.operator_user_id)
-            .bind(&f.nickname)
-            .bind(&f.face_url)
+            .bind(nickname)
+            .bind(face_url)
             .bind(&f.ex)
-            .bind(&f.attached_info)
+            .bind("") // attached_info 字段在 FriendInfo 中不存在，使用空字符串
             .bind(if f.is_pinned { 1 } else { 0 })
             .execute(&self.db)
             .await

@@ -5,7 +5,6 @@ pub mod im;
 pub use im::{
     client::{ClientConfig, OpenIMClient},
     conversation::{ConversationSyncer, ConversationSyncerConfig},
-    friend::LocalFriend,
     login_async, AllConversationsResp, IncrementalConversationResp, LocalConversation,
 };
 

@@ -9,7 +9,7 @@ use crate::im::conversation::{
 };
 use crate::im::db::create_sqlite_pool_with_migration;
 use crate::im::friend::{
-    EmptyFriendListener, FriendListener, FriendSyncer, FriendSyncerConfig, LocalFriend,
+    EmptyFriendListener, FriendListener, FriendSyncer, FriendSyncerConfig,
 };
 use crate::im::message::dao::MessageStore;
 use crate::im::message::listener::{AdvancedMsgListener, EmptyAdvancedMsgListener};
@@ -17,6 +17,7 @@ use crate::im::message::types::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem,
     QuoteElem, SoundElem, VideoElem,
 };
+use openim_protocol::sdkws;
 use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
 use crate::im::types::LocalConversation;
 use crate::im::types::{msg_type, OpenIMResp, WebSocketConnectResp};
@@ -2202,7 +2203,7 @@ impl OpenIMClient {
     }
 
     /// 获取所有好友列表
-    pub async fn get_all_friends(&self) -> Result<Vec<LocalFriend>> {
+    pub async fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
         let syncer = self
             .friend_syncer
             .as_ref()
