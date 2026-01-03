@@ -1,8 +1,8 @@
 //! 会话监听器
 
 use crate::frb_generated::StreamSink;
-use crate::im::conversation::listener::ConversationListener;
-use crate::im::types::LocalConversation;
+use crate::im::listener::ConversationListener;
+use crate::im::model::LocalConversation;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json;

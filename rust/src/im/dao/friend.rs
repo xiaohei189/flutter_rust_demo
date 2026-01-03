@@ -3,11 +3,11 @@
 //! 负责所有好友相关的数据库操作，将数据访问逻辑与业务逻辑分离。
 //! 本模块已从 SeaORM 完全迁移到 sqlx。
 
-use crate::im::conversation::models::LocalVersionSync;
+use crate::im::model::conversation::LocalVersionSync;
 use anyhow::{Context, Result};
 use openim_protocol::sdkws;
 use sqlx::{Pool, Row, Sqlite};
-use tracing::{debug, info};
+use tracing::info;
 
 /// 好友 DAO（基于 sqlx）
 pub struct FriendDao {

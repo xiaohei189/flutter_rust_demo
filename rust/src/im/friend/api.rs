@@ -3,8 +3,7 @@
 //! 负责所有好友相关的 HTTP 请求
 
 use crate::im::friend::AllFriendsResp;
-use crate::im::friend::models::BlackList;
-use crate::im::friend::types::{FriendRequestsResp, IncrementalFriendsResp};
+use crate::im::model::friend::{BlackList, FriendRequestsResp, IncrementalFriendsResp};
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
 use anyhow::Result;
 use serde::Deserialize;

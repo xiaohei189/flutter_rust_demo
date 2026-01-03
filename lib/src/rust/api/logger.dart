@@ -6,54 +6,52 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
 
-/// 初始化日志
-///
+            // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
+
+
+            /// 初始化日志
+/// 
 /// 根据配置初始化日志系统，支持输出到控制台和文件
 /// 只能初始化一次，后续调用会被忽略
-void initLogger({required LoggerConfig config}) =>
-    RustLib.instance.api.crateApiLoggerInitLogger(config: config);
+void  initLogger({required LoggerConfig config }) => RustLib.instance.api.crateApiLoggerInitLogger(config: config);
 
 /// 简化版日志初始化（使用默认配置）
-///
+/// 
 /// 默认配置：
 /// - 日志级别: "info"
 /// - 输出到标准输出: true
 /// - 日志文件路径: 空（不写入文件）
-void initLoggerSimple({String? logLevel}) =>
-    RustLib.instance.api.crateApiLoggerInitLoggerSimple(logLevel: logLevel);
+void  initLoggerSimple({String? logLevel }) => RustLib.instance.api.crateApiLoggerInitLoggerSimple(logLevel: logLevel);
 
-/// 日志配置
-class LoggerConfig {
-  /// 日志级别（例如："info", "debug", "warn", "error"）
-  final String logLevel;
+            /// 日志配置
+class LoggerConfig  {
+                /// 日志级别（例如："info", "debug", "warn", "error"）
+final String logLevel;
+/// 日志文件路径（如果为空则不写入文件）
+final String logFilePath;
+/// 是否输出到标准输出（控制台）
+final bool isLogStandardOutput;
 
-  /// 日志文件路径（如果为空则不写入文件）
-  final String logFilePath;
+                const LoggerConfig({required this.logLevel ,required this.logFilePath ,required this.isLogStandardOutput ,});
 
-  /// 是否输出到标准输出（控制台）
-  final bool isLogStandardOutput;
+                static Future<LoggerConfig>  default_()=>RustLib.instance.api.crateApiLoggerLoggerConfigDefault();
 
-  const LoggerConfig({
-    required this.logLevel,
-    required this.logFilePath,
-    required this.isLogStandardOutput,
-  });
 
-  static Future<LoggerConfig> default_() =>
-      RustLib.instance.api.crateApiLoggerLoggerConfigDefault();
+                
 
-  @override
-  int get hashCode =>
-      logLevel.hashCode ^ logFilePath.hashCode ^ isLogStandardOutput.hashCode;
+                
+        @override
+        int get hashCode => logLevel.hashCode^logFilePath.hashCode^isLogStandardOutput.hashCode;
+        
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LoggerConfig &&
-          runtimeType == other.runtimeType &&
-          logLevel == other.logLevel &&
-          logFilePath == other.logFilePath &&
-          isLogStandardOutput == other.isLogStandardOutput;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is LoggerConfig &&
+                runtimeType == other.runtimeType
+                && logLevel == other.logLevel&& logFilePath == other.logFilePath&& isLogStandardOutput == other.isLogStandardOutput;
+        
+            }
+            

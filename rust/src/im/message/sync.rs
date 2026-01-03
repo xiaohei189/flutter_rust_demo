@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::Result;
 use crate::im::message::api::MessageApi;
-use crate::im::message::dao::MessageStore;
+use crate::im::dao::MessageStore;
 use crate::im::message::models::{PullMessageBySeqsReq, SeqRange};
 use crate::im::message::models::PullMessageBySeqsResp;
 use crate::im::message::types::MsgStruct;

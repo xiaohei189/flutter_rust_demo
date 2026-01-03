@@ -2,21 +2,18 @@
 //!
 //! 实现 OpenIM SDK 的好友增量同步逻辑，参考 Go 版本的实现
 
-use crate::im::conversation::models::LocalVersionSync;
+use crate::im::model::conversation::LocalVersionSync;
 use crate::im::friend::api::FriendApi;
-use crate::im::friend::dao::FriendDao;
-use crate::im::friend::listener::{EmptyFriendListener, FriendListener};
-use crate::im::friend::models::FriendSyncerConfig;
+use crate::im::dao::FriendDao;
+use crate::im::friend::{EmptyFriendListener, FriendListener};
+use crate::im::model::friend::FriendSyncerConfig;
 use anyhow::Result;
-use crate::im::db::create_sqlite_pool_with_migration;
-use crate::im::auth::login_async;
-use crate::im::logger::logger::init_logger;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
-use tracing::{Instrument, debug, error, info};
+use tracing::{debug, error, info};
 
 /// 好友同步器
 pub struct FriendSyncer {
@@ -26,7 +23,7 @@ pub struct FriendSyncer {
     /// 好友 DAO
     friend_dao: FriendDao,
     /// 好友监听器
-    listener: Arc<dyn FriendListener>,
+    listener: Option<Arc<dyn FriendListener>>,
 }
 
 impl FriendSyncer {
@@ -36,13 +33,12 @@ impl FriendSyncer {
         db: Arc<Pool<Sqlite>>,
         listener: Option<Arc<dyn FriendListener>>,
     ) -> Result<Self> {
-        let listener = listener.unwrap_or_else(|| Arc::new(EmptyFriendListener));
         Self::build(config, listener, (*db).clone()).await
     }
 
     async fn build(
         config: FriendSyncerConfig,
-        listener: Arc<dyn FriendListener>,
+        listener: Option<Arc<dyn FriendListener>>,
         db: Pool<Sqlite>,
     ) -> Result<Self> {
         let api = FriendApi::new(
@@ -181,7 +177,9 @@ impl FriendSyncer {
 
             if !changed.is_empty() {
                 if let Ok(json) = serde_json::to_string(&changed) {
-                    self.listener.on_friend_list_changed(json).await;
+                    if let Some(listener) = &self.listener {
+                        listener.on_friend_list_changed(json).await;
+                    }
                 }
             }
         }
@@ -375,13 +373,17 @@ impl FriendSyncer {
         // 增量好友同步完成后，顺带同步一次黑名单和好友申请列表，触发对应监听器
         if let Ok(blacks) = self.api.get_black_list().await {
             if let Ok(json) = serde_json::to_string(&blacks) {
-                self.listener.on_black_list_changed(json).await;
+                if let Some(listener) = &self.listener {
+                    listener.on_black_list_changed(json).await;
+                }
             }
         }
 
         if let Ok(requests) = self.api.get_friend_requests().await {
             if let Ok(json) = serde_json::to_string(&requests) {
-                self.listener.on_friend_request_list_changed(json).await;
+                if let Some(listener) = &self.listener {
+                    listener.on_friend_request_list_changed(json).await;
+                }
             }
         }
 
@@ -391,10 +393,12 @@ impl FriendSyncer {
 
 #[cfg(test)]
 mod tests {
+    use crate::{im::{db::db::create_sqlite_pool_with_migration, logger::logger::init_logger}, login_async};
+
     use super::*;
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;
-    use tracing::{info, Instrument};
+    use tracing::Instrument;
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 

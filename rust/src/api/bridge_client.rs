@@ -5,7 +5,7 @@ use crate::api::listeners::{
 };
 use crate::frb_generated::StreamSink;
 use crate::im::client::{ClientConfig, OpenIMClient};
-use crate::im::message::listener::AdvancedMsgListener;
+use crate::im::listener::AdvancedMsgListener;
 use crate::im::message::types::{MsgStruct, MessageRevoked, TypingStatus};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -203,7 +203,7 @@ impl OpenIMBridgeClient {
     }
 
     /// 获取所有会话列表
-    pub async fn get_all_conversations(&self) -> Result<Vec<crate::im::types::LocalConversation>> {
+    pub async fn get_all_conversations(&self) -> Result<Vec<crate::im::model::LocalConversation>> {
         self.inner.get_all_conversations().await
     }
 
@@ -238,5 +238,5 @@ pub async fn login_async(
     password: String,
     platform: i32,
 ) -> Result<LoginData> {
-    crate::im::auth::login_async(area_code, phone_number, password, platform).await
+    crate::im::auth::auth::login_async(area_code, phone_number, password, platform).await
 }

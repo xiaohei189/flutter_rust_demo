@@ -2,11 +2,11 @@
 //!
 //! 负责所有会话相关的 HTTP 请求
 
-use crate::im::conversation::types::{AllConversationsResp, IncrementalConversationResp};
-use crate::im::conversation::models::{
-    ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq,
-    GetConversationsResp, GetSortedConversationListReq, GetSortedConversationListResp,
-    OwnerConversationReq, SetConversationsReq,
+use crate::im::model::conversation::{
+    AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp,
+    GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
+    GetSortedConversationListResp, IncrementalConversationResp, OwnerConversationReq,
+    SetConversationsReq,
 };
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
 use anyhow::Result;
@@ -238,9 +238,9 @@ mod tests {
     use crate::im::auth::login_async;
     use crate::im::conversation::RequestPagination;
     use crate::im::logger::logger::init_logger;
-    use crate::im::conversation::models::{
-        GetSortedConversationListReq, SetConversationsReq, GetConversationReq, GetConversationsReq,
-        OwnerConversationReq,
+    use crate::im::model::conversation::{
+        GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq,
+        SetConversationsReq,
     };
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;

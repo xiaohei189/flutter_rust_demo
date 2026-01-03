@@ -5,9 +5,9 @@ use crate::im::message::models::{
     BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq,
     DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
     GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
-    PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendBusinessNotificationReq,
-    SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq,
-    UserClearAllMsgReq,
+    PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp,
+    SendBusinessNotificationReq, SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp,
+    SetConversationHasReadSeqReq, UserClearAllMsgReq,
 };
 use anyhow::Result;
 use tower::ServiceExt;
@@ -163,8 +163,8 @@ mod tests {
         BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq,
         DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp,
         MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, RevokeMsgReq,
-        SearchMessageReq, SendBusinessNotificationReq, SendSimpleMsgReq, SetConversationHasReadSeqReq,
-        SeqRange, UserClearAllMsgReq,
+        SendBusinessNotificationReq, SendSimpleMsgReq, SetConversationHasReadSeqReq, SeqRange,
+        UserClearAllMsgReq,
     };
     use openim_protocol::constant;
     use serde_json::json;

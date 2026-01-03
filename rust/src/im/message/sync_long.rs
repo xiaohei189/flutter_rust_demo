@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use crate::im::message::dao::MessageStore;
+use crate::im::dao::MessageStore;
 use crate::im::message::longconn::LongConnRpc;
 use crate::im::message::models::{PullMessageBySeqsResp, SeqRange};
 use crate::im::message::types::MsgStruct;
@@ -99,8 +99,8 @@ impl LongConnMessageSyncer {
         self.sync_from_server_filtered(None).await
     }
 
-    async fn sync_from_server_filtered(&mut self, filter: Option<Vec<String>>) -> Result<()> {
-        let newest = self.rpc.get_newest_seq().await?;
+    async fn sync_from_server_filtered(&mut self, _filter: Option<Vec<String>>) -> Result<()> {
+        let _newest = self.rpc.get_newest_seq().await?;
         let mut ranges = Vec::new();
 
         // for (conv_id, remote_max) in newest.max_seqs.iter() {

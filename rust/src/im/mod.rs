@@ -3,8 +3,10 @@ pub mod client;
 pub mod conversation;
 pub mod friend;
 pub mod message;
+pub mod dao;
+pub mod listener;
 pub mod serialization;
-pub mod types;
+pub mod model;
 pub mod db;
 pub mod http;
 pub mod logger;
@@ -19,14 +21,18 @@ pub use conversation::{ConversationSyncer, ConversationSyncerConfig, LocalVersio
 pub use friend::{FriendSyncer, FriendSyncerConfig};
 
 // 重新导出消息相关类型和函数
+pub use listener::{AdvancedMsgListener, EmptyAdvancedMsgListener};
 pub use message::{
-    AdvancedMsgListener, AtElem, AtInfo, CustomElem, EmptyAdvancedMsgListener, FileElem,
-    LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MessageStore, MsgStruct,
-    PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem,
+    AtElem, AtInfo, CustomElem, FileElem, LocalChatLog, LocationElem, MarkdownEntityElem,
+    MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem,
 };
+// DAO 统一出口
+pub use dao::{MessageStore, FriendDao, ConversationDao, VersionSyncDao};
 
-// 重新导出类型相关结构体和函数
-pub use types::{
+// 重新导出模型相关结构体和函数
+pub use model::{
     AllConversationsResp, ApiResponse, IncrementalConversationResp, LocalConversation,
     WebSocketConnectResp,
 };
+// 重新导出客户端接口与类型
+pub use client::{OpenIMClientApi, OpenIMClient, ClientConfig};

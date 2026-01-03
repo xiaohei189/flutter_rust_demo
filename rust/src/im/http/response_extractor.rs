@@ -1,5 +1,5 @@
 use crate::im::http::context::HttpRequestContext;
-use crate::im::types::ApiResponse;
+use crate::im::model::ApiResponse;
 use anyhow::{Context as _, Result};
 use http;
 use serde::de::DeserializeOwned;

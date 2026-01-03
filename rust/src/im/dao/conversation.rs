@@ -3,8 +3,8 @@
 //! 负责所有会话相关的数据库操作，将数据访问逻辑与业务逻辑分离。
 //! 本模块已从 SeaORM 完全迁移到 sqlx。
 
-use crate::im::conversation::models::LocalVersionSync;
-use crate::im::types::LocalConversation;
+use crate::im::model::conversation::LocalVersionSync;
+use crate::im::model::LocalConversation;
 use anyhow::{Context, Result};
 use sqlx::{Pool, Row, Sqlite};
 use tracing::{debug, info};

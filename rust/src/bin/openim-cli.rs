@@ -6,10 +6,10 @@
 use anyhow::Result;
 use clap::Parser;
 use rust_lib_flutter_rust_demo::im::client::{ClientConfig, OpenIMClient};
-use rust_lib_flutter_rust_demo::im::conversation::listener::ConversationListener;
+use rust_lib_flutter_rust_demo::im::listener::ConversationListener;
 use rust_lib_flutter_rust_demo::im::friend::FriendListener;
 use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
-use rust_lib_flutter_rust_demo::im::message::listener::AdvancedMsgListener;
+use rust_lib_flutter_rust_demo::im::listener::AdvancedMsgListener;
 use rust_lib_flutter_rust_demo::login_async;
 use std::sync::Arc;
 use tokio::sync::Mutex;
