@@ -647,7 +647,7 @@ impl OpenIMClient {
     /// - `msg`: 消息数据
     /// - `_is_notification`: 是否为通知消息（保留用于后续扩展）
     /// - 返回: `true` 表示已处理，`false` 表示未处理（需要 warn）
-    async fn handle_single_message(
+    pub async fn handle_single_message(
         &self,
         conv_id: &str,
         msg: &openim_protocol::sdkws::MsgData,
@@ -662,6 +662,8 @@ impl OpenIMClient {
                 "seq": msg.seq,
                 "conversationID": conv_id,
             });
+
+            info!("receive message: revoked_json: {:?}", revoked_json);
             let revoked_json_str = serde_json::to_string(&revoked_json).unwrap_or_default();
             let listener = self.advanced_msg_listener.clone();
             tokio::spawn(async move {
@@ -720,6 +722,7 @@ impl OpenIMClient {
                 "sendID": msg.send_id,
                 "msgTip": msg_tip,
             });
+            info!("receive message: typing: {:?}", msg);
             let typing_json_str = serde_json::to_string(&typing_json).unwrap_or_default();
             let listener = self.advanced_msg_listener.clone();
             tokio::spawn(async move {
@@ -2790,7 +2793,7 @@ mod tests {
     use crate::im::model::SeqRange;
     // OpenIMClientApi 未直接使用，保留 OpenIMClient 本体即可
     use std::sync::Arc;
-    use std::time;
+    use std::time::{self, Duration};
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 
@@ -2880,7 +2883,8 @@ mod tests {
                 }], 1).await.unwrap();
                 info!("ws_pull_msg_by_range: {:?}", resp)
             }
-            
+            tokio::time::sleep(Duration::from_secs(300)
+            ).await;
     
     }
 

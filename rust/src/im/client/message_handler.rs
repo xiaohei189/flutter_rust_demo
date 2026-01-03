@@ -62,7 +62,6 @@ impl OpenIMClient {
         };
 
         let resp = serde_json::from_slice::<OpenIMResp>(&decompressed)?;
-        info!("resp: {:?}", resp);
 
         match resp.req_identifier {
             crate::im::model::msg_type::WS_GET_NEWEST_SEQ
@@ -102,6 +101,7 @@ impl OpenIMClient {
             }
         };
 
+        info!("receive message: push_msg: {:?}", push_msg);
         let mut all_msgs: HashMap<String, Vec<&sdkws::MsgData>> = HashMap::new();
 
         for (conv_id, pull_msgs) in &push_msg.msgs {
@@ -138,6 +138,18 @@ impl OpenIMClient {
 
     // do_msg_new 等实现留在 client.rs
 
+    /// 处理推送消息，分类决定插入/更新/会话更新/回调
+    ///
+    /// 流程概览（与 Go SDK 对齐的分类逻辑）：
+    /// 1) 按会话聚合 -> 每条消息读 `options`：`history`/`unreadCount`/`conversationUpdate`/`senderConversationUpdate`
+    /// 2) 去重：`is_duplicate_message` 基于 `clientMsgID`
+    /// 3) 删除：`status == MSG_STATUS_HAS_DELETED` 直接 INSERT OR REPLACE 写库，跳过后续分支
+    /// 4) 自发：库里有且 `seq==0` → update（占位补全）；否则 insert。`history` 另存自发历史集合
+    /// 5) 他发：库里有 → 覆盖插入；库里无 → 先建会话占位（单聊填 user_id，群聊填 group_id），`unreadCount` 决定未读=1，`history` 另存他发历史集合
+    /// 6) 会话更新：`conversationUpdate` / `senderConversationUpdate` 为真时，将会话放入 `conversation_set`，并把对应 `msg_struct` 记录到 `new_messages`
+    /// 7) 落库与回调：`update_message`（seq==0 补全）-> `batch_insert_message_list`（幂等插入）-> `new_messages` 异步回调 `on_recv_new_message`
+    /// 
+    
     pub(crate) async fn do_msg_new(
         &self,
         all_msgs: HashMap<String, Vec<&sdkws::MsgData>>,
@@ -164,6 +176,11 @@ impl OpenIMClient {
             let mut update_message: Vec<LocalChatLog> = Vec::new();
 
             for msg in msgs {
+                // 对齐 Go SDK 的 options 语义：
+                // - history: 补拉/历史消息（不一定影响未读，主要用于落库，不走实时提示）
+                // - unreadCount: 是否计入未读（实时推送通常为 true，历史补拉可能为 false）
+                // - conversationUpdate: 推动会话摘要/最新消息/未读等更新
+                // - senderConversationUpdate: 发送端是否也需要会话更新（自发消息时使用）
                 let is_history = Self::get_switch_from_options(&msg.options, "history");
                 let is_unread_count = Self::get_switch_from_options(&msg.options, "unreadCount");
                 let is_conversation_update =
@@ -175,6 +192,10 @@ impl OpenIMClient {
                     let db_message = Self::msg_data_to_local_chat_log(msg, &conversation_id);
                     insert_message.push(db_message.clone());
                     insert_message.push(db_message);
+                    continue;
+                }
+
+                if !self.handle_single_message(&conversation_id, msg, false).await {
                     continue;
                 }
 
@@ -237,11 +258,13 @@ impl OpenIMClient {
                             _ => {}
                         }
 
-                        if is_conversation_update {
-                            if is_sender_conversation_update {
-                                conversation_set.insert(conversation_id.clone(), lc);
-                            }
-                            new_messages.push(msg_struct);
+                        if is_conversation_update && is_sender_conversation_update {
+                            conversation_set.insert(conversation_id.clone(), lc.clone());
+                        }
+
+                        // 对齐 Go：自发实时消息（非 history）也推送回调
+                        if !is_history {
+                            new_messages.push(msg_struct.clone());
                         }
 
                         if is_history {
@@ -300,12 +323,17 @@ impl OpenIMClient {
                         }
 
                         if is_unread_count {
-                            lc.unread_count = 1;
+                            // Go 版：未读计数按开关累加；这里最少保证新会话初始未读为 1
+                            lc.unread_count = lc.unread_count.saturating_add(1);
                         }
 
                         if is_conversation_update {
-                            conversation_set.insert(conversation_id.clone(), lc);
-                            new_messages.push(msg_struct);
+                            conversation_set.insert(conversation_id.clone(), lc.clone());
+                        }
+
+                        // 对齐 Go：他发实时消息（非 history）推送回调
+                        if !is_history {
+                            new_messages.push(msg_struct.clone());
                         }
 
                         if is_history {
@@ -326,6 +354,9 @@ impl OpenIMClient {
                 update_msg.insert(conversation_id, update_message);
             }
         }
+        info!("receive message: update_msg: {:?}", update_msg);
+        info!("receive message: insert_msg: {:?}", insert_msg);
+        info!("receive message: new_messages: {:?}", new_messages);
 
         for (conversation_id, messages) in update_msg {
             for msg in messages {

@@ -63,11 +63,13 @@ impl MessageStore {
                 create_time           INTEGER,
                 attached_info         TEXT,
                 ex                    TEXT,
-                local_ex              TEXT
+                local_ex              TEXT,
+                group_id              TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_{table}_seq ON {table}(seq);
             CREATE INDEX IF NOT EXISTS idx_{table}_send_time ON {table}(send_time);
             CREATE INDEX IF NOT EXISTS idx_{table}_content_type ON {table}(content_type);
+            CREATE INDEX IF NOT EXISTS idx_{table}_group_id ON {table}(group_id);
             "#,
             table = table
         );
@@ -91,7 +93,7 @@ impl MessageStore {
             sender_nickname, sender_face_url, session_type, msg_from, content_type, content,
             is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
         ) VALUES (
-            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
         );
         "#;
         let sql = sql.replace("{table}", &table);
@@ -146,7 +148,7 @@ impl MessageStore {
                 sender_nickname, sender_face_url, session_type, msg_from, content_type, content,
                 is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
             ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
             );
             "#;
             let sql = sql.replace("{table}", &table);
