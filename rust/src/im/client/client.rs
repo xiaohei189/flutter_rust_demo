@@ -2862,7 +2862,7 @@ mod tests {
         info!("ws_get_newest_seq: {:?}", resp);
         client
             .send_text_message(
-                "7226915075".to_string(),
+                "1056224172".to_string(),
                 chrono::Local::now()
                     .format("Hello from Rust client! %Y-%m-%d %H:%M:%S")
                     .to_string(),
