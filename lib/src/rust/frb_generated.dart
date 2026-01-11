@@ -12,2443 +12,4511 @@ import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
-import 'frb_generated.io.dart' if (dart.library.js_interop) 'frb_generated.web.dart';
+import 'frb_generated.io.dart'
+    if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'im/auth/auth.dart';
 import 'im/model/conversation.dart';
 import 'im/model/message.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// Main entrypoint of the Rust API
+class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
+  @internal
+  static final instance = RustLib._();
 
-                /// Main entrypoint of the Rust API
-                class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
-                  @internal
-                  static final instance = RustLib._();
+  RustLib._();
 
-                  RustLib._();
+  /// Initialize flutter_rust_bridge
+  static Future<void> init({
+    RustLibApi? api,
+    BaseHandler? handler,
+    ExternalLibrary? externalLibrary,
+    bool forceSameCodegenVersion = true,
+  }) async {
+    await instance.initImpl(
+      api: api,
+      handler: handler,
+      externalLibrary: externalLibrary,
+      forceSameCodegenVersion: forceSameCodegenVersion,
+    );
+  }
 
-                  /// Initialize flutter_rust_bridge
-                  static Future<void> init({
-                    RustLibApi? api,
-                    BaseHandler? handler,
-                    ExternalLibrary? externalLibrary,
-                    bool forceSameCodegenVersion = true,
-                  }) async {
-                    await instance.initImpl(
-                      api: api,
-                      handler: handler,
-                      externalLibrary: externalLibrary,
-                      forceSameCodegenVersion: forceSameCodegenVersion,
-                    );
-                  }
+  /// Initialize flutter_rust_bridge in mock mode.
+  /// No libraries for FFI are loaded.
+  static void initMock({required RustLibApi api}) {
+    instance.initMockImpl(api: api);
+  }
 
-                  /// Initialize flutter_rust_bridge in mock mode.
-                  /// No libraries for FFI are loaded.
-                  static void initMock({
-                    required RustLibApi api,
-                  }) {
-                    instance.initMockImpl(
-                      api: api,
-                    );
-                  }
+  /// Dispose flutter_rust_bridge
+  ///
+  /// The call to this function is optional, since flutter_rust_bridge (and everything else)
+  /// is automatically disposed when the app stops.
+  static void dispose() => instance.disposeImpl();
 
-                  /// Dispose flutter_rust_bridge
-                  ///
-                  /// The call to this function is optional, since flutter_rust_bridge (and everything else)
-                  /// is automatically disposed when the app stops.
-                  static void dispose() => instance.disposeImpl();
+  @override
+  ApiImplConstructor<RustLibApiImpl, RustLibWire> get apiImplConstructor =>
+      RustLibApiImpl.new;
 
-                  @override
-                  ApiImplConstructor<RustLibApiImpl, RustLibWire> get apiImplConstructor => RustLibApiImpl.new;
+  @override
+  WireConstructor<RustLibWire> get wireConstructor =>
+      RustLibWire.fromExternalLibrary;
 
-                  @override
-                  WireConstructor<RustLibWire> get wireConstructor => RustLibWire.fromExternalLibrary;
+  @override
+  Future<void> executeRustInitializers() async {
+    await api.crateApiSimpleInitApp();
+  }
 
-                  @override
-                  Future<void> executeRustInitializers() async {
-                    await api.crateApiSimpleInitApp();
+  @override
+  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig =>
+      kDefaultExternalLibraryLoaderConfig;
 
-                  }
+  @override
+  String get codegenVersion => '2.11.1';
 
-                  @override
-                  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig => kDefaultExternalLibraryLoaderConfig;
+  @override
+  int get rustContentHash => 1425873587;
 
-                  @override
-                  String get codegenVersion => '2.11.1';
+  static const kDefaultExternalLibraryLoaderConfig =
+      ExternalLibraryLoaderConfig(
+        stem: 'rust_lib_flutter_rust_demo',
+        ioDirectory: 'rust/target/release/',
+        webPrefix: 'pkg/',
+      );
+}
 
-                  @override
-                  int get rustContentHash => 1425873587;
+abstract class RustLibApi extends BaseApi {
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSink({
+    required DartConnectionStatusListener that,
+  });
 
-                  static const kDefaultExternalLibraryLoaderConfig = ExternalLibraryLoaderConfig(
-                    stem: 'UNKNOWN',
-                    ioDirectory: 'rust/target/release/',
-                    webPrefix: 'pkg/',
-                  );
-                }
-                
+  void
+  crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSink({
+    required DartConnectionStatusListener that,
+    required ArcMutexOptionStreamSinkConnectionStatusEvent sink,
+  });
 
-                abstract class RustLibApi extends BaseApi {
-                  ArcMutexOptionStreamSinkConnectionStatusEvent crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSink({required DartConnectionStatusListener that });
+  Future<DartConnectionStatusListener>
+  crateApiListenersConnectionStatusDartConnectionStatusListenerNew();
 
-void crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSink({required DartConnectionStatusListener that , required ArcMutexOptionStreamSinkConnectionStatusEvent sink });
+  Stream<ConnectionStatusEvent>
+  crateApiListenersConnectionStatusDartConnectionStatusListenerSetSink({
+    required DartConnectionStatusListener that,
+  });
 
-Future<DartConnectionStatusListener> crateApiListenersConnectionStatusDartConnectionStatusListenerNew();
+  ArcMutexOptionStreamSinkMessageEvent
+  crateApiListenersMessageDartMessageListenerAutoAccessorGetSink({
+    required DartMessageListener that,
+  });
 
-Stream<ConnectionStatusEvent> crateApiListenersConnectionStatusDartConnectionStatusListenerSetSink({required DartConnectionStatusListener that });
+  void crateApiListenersMessageDartMessageListenerAutoAccessorSetSink({
+    required DartMessageListener that,
+    required ArcMutexOptionStreamSinkMessageEvent sink,
+  });
 
-ArcMutexOptionStreamSinkMessageEvent crateApiListenersMessageDartMessageListenerAutoAccessorGetSink({required DartMessageListener that });
+  Future<DartMessageListener> crateApiListenersMessageDartMessageListenerNew();
 
-void crateApiListenersMessageDartMessageListenerAutoAccessorSetSink({required DartMessageListener that , required ArcMutexOptionStreamSinkMessageEvent sink });
+  Stream<MessageEvent> crateApiListenersMessageDartMessageListenerSetSink({
+    required DartMessageListener that,
+  });
 
-Future<DartMessageListener> crateApiListenersMessageDartMessageListenerNew();
+  Future<void> crateApiBridgeClientOpenImBridgeClientConnect({
+    required OpenImBridgeClient that,
+  });
 
-Stream<MessageEvent> crateApiListenersMessageDartMessageListenerSetSink({required DartMessageListener that });
+  Stream<ConnectionStatusEvent>
+  crateApiBridgeClientOpenImBridgeClientConnectionEvent({
+    required OpenImBridgeClient that,
+  });
 
-Future<void> crateApiBridgeClientOpenImBridgeClientConnect({required OpenImBridgeClient that });
+  Stream<ConversationEvent>
+  crateApiBridgeClientOpenImBridgeClientConversationEvent({
+    required OpenImBridgeClient that,
+  });
 
-Stream<ConnectionStatusEvent> crateApiBridgeClientOpenImBridgeClientConnectionEvent({required OpenImBridgeClient that });
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  });
 
-Stream<ConversationEvent> crateApiBridgeClientOpenImBridgeClientConversationEvent({required OpenImBridgeClient that });
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  });
 
-Future<GetAdvancedHistoryMessageListCallback> crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList({required OpenImBridgeClient that , required GetAdvancedHistoryMessageListParams req });
+  Future<List<LocalConversation>>
+  crateApiBridgeClientOpenImBridgeClientGetAllConversations({
+    required OpenImBridgeClient that,
+  });
 
-Future<GetAdvancedHistoryMessageListCallback> crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse({required OpenImBridgeClient that , required GetAdvancedHistoryMessageListParams req });
+  Stream<MessageEvent> crateApiBridgeClientOpenImBridgeClientMessageEvent({
+    required OpenImBridgeClient that,
+  });
 
-Future<List<LocalConversation>> crateApiBridgeClientOpenImBridgeClientGetAllConversations({required OpenImBridgeClient that });
+  OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({
+    required String userId,
+    required String token,
+    required int platformId,
+    String? wsUrl,
+  });
 
-Stream<MessageEvent> crateApiBridgeClientOpenImBridgeClientMessageEvent({required OpenImBridgeClient that });
+  Stream<ConversationEvent>
+  crateApiListenersConversationDartConversationListenerNew();
 
-OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({required String userId , required String token , required int platformId , String? wsUrl });
+  String crateApiSimpleGreet({required String name});
 
-Stream<ConversationEvent> crateApiListenersConversationDartConversationListenerNew();
+  Future<void> crateApiSimpleInitApp();
 
-String crateApiSimpleGreet({required String name });
+  void crateApiLoggerInitLogger({required LoggerConfig config});
 
-Future<void> crateApiSimpleInitApp();
+  void crateApiLoggerInitLoggerSimple({String? logLevel});
 
-void crateApiLoggerInitLogger({required LoggerConfig config });
+  Future<LoggerConfig> crateApiLoggerLoggerConfigDefault();
 
-void crateApiLoggerInitLoggerSimple({String? logLevel });
+  Future<LoginData> crateApiBridgeClientLoginAsync({
+    required String areaCode,
+    required String phoneNumber,
+    required String password,
+    required int platform,
+  });
 
-Future<LoggerConfig> crateApiLoggerLoggerConfigDefault();
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent;
 
-Future<LoginData> crateApiBridgeClientLoginAsync({required String areaCode , required String phoneNumber , required String password , required int platform });
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent;
 
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent;
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr;
 
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent;
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent;
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr;
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent;
 
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent;
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr;
 
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent;
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_DartConnectionStatusListener;
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr;
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_DartConnectionStatusListener;
 
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_DartConnectionStatusListener;
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr;
 
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_DartConnectionStatusListener;
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_DartMessageListener;
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr;
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_DartMessageListener;
 
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_DartMessageListener;
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_DartMessageListenerPtr;
 
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_DartMessageListener;
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_OfflinePushInfo;
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_DartMessageListenerPtr;
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_OfflinePushInfo;
 
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_OfflinePushInfo;
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_OfflinePushInfoPtr;
 
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_OfflinePushInfo;
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_OpenImBridgeClient;
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_OfflinePushInfoPtr;
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_OpenImBridgeClient;
 
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_OpenImBridgeClient;
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_OpenImBridgeClientPtr;
+}
 
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_OpenImBridgeClient;
+class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
+  RustLibApiImpl({
+    required super.handler,
+    required super.wire,
+    required super.generalizedFrbRustBinding,
+    required super.portManager,
+  });
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_OpenImBridgeClientPtr;
-
-
-                }
-                
-
-                class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
-                  RustLibApiImpl({
-                    required super.handler,
-                    required super.wire,
-                    required super.generalizedFrbRustBinding,
-                    required super.portManager,
-                  });
-
-                  @override ArcMutexOptionStreamSinkConnectionStatusEvent crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSink({required DartConnectionStatusListener that })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(that, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent,
+  @override
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSink({
+    required DartConnectionStatusListener that,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+            that,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSinkConstMeta,
-            argValues: [that],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta:
+            kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSinkConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartConnectionStatusListener_auto_accessor_get_sink",
+        argNames: ["that"],
+      );
 
-        TaskConstMeta get kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSinkConstMeta => const TaskConstMeta(
-            debugName: "DartConnectionStatusListener_auto_accessor_get_sink",
-            argNames: ["that"],
-        );
-        
-
-@override void crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSink({required DartConnectionStatusListener that , required ArcMutexOptionStreamSinkConnectionStatusEvent sink })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(that, serializer);
-sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(sink, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  void
+  crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSink({
+    required DartConnectionStatusListener that,
+    required ArcMutexOptionStreamSinkConnectionStatusEvent sink,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+            that,
+            serializer,
+          );
+          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+            sink,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2)!;
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSinkConstMeta,
-            argValues: [that, sink],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta:
+            kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSinkConstMeta,
+        argValues: [that, sink],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartConnectionStatusListener_auto_accessor_set_sink",
+        argNames: ["that", "sink"],
+      );
 
-        TaskConstMeta get kCrateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSinkConstMeta => const TaskConstMeta(
-            debugName: "DartConnectionStatusListener_auto_accessor_set_sink",
-            argNames: ["that", "sink"],
-        );
-        
+  @override
+  Future<DartConnectionStatusListener>
+  crateApiListenersConnectionStatusDartConnectionStatusListenerNew() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateApiListenersConnectionStatusDartConnectionStatusListenerNewConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
-@override Future<DartConnectionStatusListener> crateApiListenersConnectionStatusDartConnectionStatusListenerNew()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
+  TaskConstMeta
+  get kCrateApiListenersConnectionStatusDartConnectionStatusListenerNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartConnectionStatusListener_new",
+        argNames: [],
+      );
+
+  @override
+  Stream<ConnectionStatusEvent>
+  crateApiListenersConnectionStatusDartConnectionStatusListenerSetSink({
+    required DartConnectionStatusListener that,
+  }) {
+    final sink = RustStreamSink<ConnectionStatusEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
             final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener,
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_connection_status_event_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 4,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiListenersConnectionStatusDartConnectionStatusListenerSetSinkConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta
+  get kCrateApiListenersConnectionStatusDartConnectionStatusListenerSetSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartConnectionStatusListener_set_sink",
+        argNames: ["that", "sink"],
+      );
+
+  @override
+  ArcMutexOptionStreamSinkMessageEvent
+  crateApiListenersMessageDartMessageListenerAutoAccessorGetSink({
+    required DartMessageListener that,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+            that,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersConnectionStatusDartConnectionStatusListenerNewConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta:
+            kCrateApiListenersMessageDartMessageListenerAutoAccessorGetSinkConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiListenersMessageDartMessageListenerAutoAccessorGetSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartMessageListener_auto_accessor_get_sink",
+        argNames: ["that"],
+      );
 
-        TaskConstMeta get kCrateApiListenersConnectionStatusDartConnectionStatusListenerNewConstMeta => const TaskConstMeta(
-            debugName: "DartConnectionStatusListener_new",
-            argNames: [],
-        );
-        
-
-@override Stream<ConnectionStatusEvent> crateApiListenersConnectionStatusDartConnectionStatusListenerSetSink({required DartConnectionStatusListener that })  { 
-            final sink = RustStreamSink<ConnectionStatusEvent>();
-            unawaited(handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(that, serializer);
-sse_encode_StreamSink_connection_status_event_Sse(sink, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  void crateApiListenersMessageDartMessageListenerAutoAccessorSetSink({
+    required DartMessageListener that,
+    required ArcMutexOptionStreamSinkMessageEvent sink,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+            that,
+            serializer,
+          );
+          sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+            sink,
+            serializer,
+          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersConnectionStatusDartConnectionStatusListenerSetSinkConstMeta,
-            argValues: [that, sink],
-            apiImpl: this,
-        )));
-            return sink.stream;
-             }
+        ),
+        constMeta:
+            kCrateApiListenersMessageDartMessageListenerAutoAccessorSetSinkConstMeta,
+        argValues: [that, sink],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiListenersMessageDartMessageListenerAutoAccessorSetSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartMessageListener_auto_accessor_set_sink",
+        argNames: ["that", "sink"],
+      );
 
-        TaskConstMeta get kCrateApiListenersConnectionStatusDartConnectionStatusListenerSetSinkConstMeta => const TaskConstMeta(
-            debugName: "DartConnectionStatusListener_set_sink",
-            argNames: ["that", "sink"],
-        );
-        
-
-@override ArcMutexOptionStreamSinkMessageEvent crateApiListenersMessageDartMessageListenerAutoAccessorGetSink({required DartMessageListener that })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(that, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent,
+  @override
+  Future<DartMessageListener> crateApiListenersMessageDartMessageListenerNew() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 7,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersMessageDartMessageListenerAutoAccessorGetSinkConstMeta,
-            argValues: [that],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiListenersMessageDartMessageListenerNewConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiListenersMessageDartMessageListenerNewConstMeta =>
+      const TaskConstMeta(debugName: "DartMessageListener_new", argNames: []);
 
-        TaskConstMeta get kCrateApiListenersMessageDartMessageListenerAutoAccessorGetSinkConstMeta => const TaskConstMeta(
-            debugName: "DartMessageListener_auto_accessor_get_sink",
-            argNames: ["that"],
-        );
-        
-
-@override void crateApiListenersMessageDartMessageListenerAutoAccessorSetSink({required DartMessageListener that , required ArcMutexOptionStreamSinkMessageEvent sink })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(that, serializer);
-sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(sink, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersMessageDartMessageListenerAutoAccessorSetSinkConstMeta,
-            argValues: [that, sink],
-            apiImpl: this,
-        )); }
-
-
-        TaskConstMeta get kCrateApiListenersMessageDartMessageListenerAutoAccessorSetSinkConstMeta => const TaskConstMeta(
-            debugName: "DartMessageListener_auto_accessor_set_sink",
-            argNames: ["that", "sink"],
-        );
-        
-
-@override Future<DartMessageListener> crateApiListenersMessageDartMessageListenerNew()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
+  @override
+  Stream<MessageEvent> crateApiListenersMessageDartMessageListenerSetSink({
+    required DartMessageListener that,
+  }) {
+    final sink = RustStreamSink<MessageEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
             final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersMessageDartMessageListenerNewConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_message_event_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 8,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiListenersMessageDartMessageListenerSetSinkConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
 
+  TaskConstMeta
+  get kCrateApiListenersMessageDartMessageListenerSetSinkConstMeta =>
+      const TaskConstMeta(
+        debugName: "DartMessageListener_set_sink",
+        argNames: ["that", "sink"],
+      );
 
-        TaskConstMeta get kCrateApiListenersMessageDartMessageListenerNewConstMeta => const TaskConstMeta(
-            debugName: "DartMessageListener_new",
-            argNames: [],
-        );
-        
-
-@override Stream<MessageEvent> crateApiListenersMessageDartMessageListenerSetSink({required DartMessageListener that })  { 
-            final sink = RustStreamSink<MessageEvent>();
-            unawaited(handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(that, serializer);
-sse_encode_StreamSink_message_event_Sse(sink, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersMessageDartMessageListenerSetSinkConstMeta,
-            argValues: [that, sink],
-            apiImpl: this,
-        )));
-            return sink.stream;
-             }
-
-
-        TaskConstMeta get kCrateApiListenersMessageDartMessageListenerSetSinkConstMeta => const TaskConstMeta(
-            debugName: "DartMessageListener_set_sink",
-            argNames: ["that", "sink"],
-        );
-        
-
-@override Future<void> crateApiBridgeClientOpenImBridgeClientConnect({required OpenImBridgeClient that })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiBridgeClientOpenImBridgeClientConnect({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientConnectConstMeta,
-            argValues: [that],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiBridgeClientOpenImBridgeClientConnectConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientConnectConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_connect",
+        argNames: ["that"],
+      );
 
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientConnectConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_connect",
-            argNames: ["that"],
-        );
-        
+  @override
+  Stream<ConnectionStatusEvent>
+  crateApiBridgeClientOpenImBridgeClientConnectionEvent({
+    required OpenImBridgeClient that,
+  }) {
+    final connectionSink = RustStreamSink<ConnectionStatusEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_connection_status_event_Sse(
+              connectionSink,
+              serializer,
+            );
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 10,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientConnectionEventConstMeta,
+          argValues: [that, connectionSink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return connectionSink.stream;
+  }
 
-@override Stream<ConnectionStatusEvent> crateApiBridgeClientOpenImBridgeClientConnectionEvent({required OpenImBridgeClient that })  { 
-            final connectionSink = RustStreamSink<ConnectionStatusEvent>();
-            unawaited(handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-sse_encode_StreamSink_connection_status_event_Sse(connectionSink, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientConnectionEventConstMeta,
-            argValues: [that, connectionSink],
-            apiImpl: this,
-        )));
-            return connectionSink.stream;
-             }
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientConnectionEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_connection_event",
+        argNames: ["that", "connectionSink"],
+      );
 
+  @override
+  Stream<ConversationEvent>
+  crateApiBridgeClientOpenImBridgeClientConversationEvent({
+    required OpenImBridgeClient that,
+  }) {
+    final sink = RustStreamSink<ConversationEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_conversation_event_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 11,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientConversationEventConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
 
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientConnectionEventConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_connection_event",
-            argNames: ["that", "connectionSink"],
-        );
-        
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientConversationEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_conversation_event",
+        argNames: ["that", "sink"],
+      );
 
-@override Stream<ConversationEvent> crateApiBridgeClientOpenImBridgeClientConversationEvent({required OpenImBridgeClient that })  { 
-            final sink = RustStreamSink<ConversationEvent>();
-            unawaited(handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-sse_encode_StreamSink_conversation_event_Sse(sink, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientConversationEventConstMeta,
-            argValues: [that, sink],
-            apiImpl: this,
-        )));
-            return sink.stream;
-             }
-
-
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientConversationEventConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_conversation_event",
-            argNames: ["that", "sink"],
-        );
-        
-
-@override Future<GetAdvancedHistoryMessageListCallback> crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList({required OpenImBridgeClient that , required GetAdvancedHistoryMessageListParams req })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-sse_encode_box_autoadd_get_advanced_history_message_list_params(req, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_get_advanced_history_message_list_callback,
+  @override
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_get_advanced_history_message_list_params(
+            req,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_get_advanced_history_message_list_callback,
           decodeErrorData: sse_decode_AnyhowException,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListConstMeta,
-            argValues: [that, req],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListConstMeta,
+        argValues: [that, req],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_advanced_history_message_list",
+        argNames: ["that", "req"],
+      );
 
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_get_advanced_history_message_list",
-            argNames: ["that", "req"],
-        );
-        
-
-@override Future<GetAdvancedHistoryMessageListCallback> crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse({required OpenImBridgeClient that , required GetAdvancedHistoryMessageListParams req })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-sse_encode_box_autoadd_get_advanced_history_message_list_params(req, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_get_advanced_history_message_list_callback,
+  @override
+  Future<GetAdvancedHistoryMessageListCallback>
+  crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse({
+    required OpenImBridgeClient that,
+    required GetAdvancedHistoryMessageListParams req,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_get_advanced_history_message_list_params(
+            req,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_get_advanced_history_message_list_callback,
           decodeErrorData: sse_decode_AnyhowException,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverseConstMeta,
-            argValues: [that, req],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverseConstMeta,
+        argValues: [that, req],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverseConstMeta =>
+      const TaskConstMeta(
+        debugName:
+            "OpenImBridgeClient_get_advanced_history_message_list_reverse",
+        argNames: ["that", "req"],
+      );
 
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverseConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_get_advanced_history_message_list_reverse",
-            argNames: ["that", "req"],
-        );
-        
-
-@override Future<List<LocalConversation>> crateApiBridgeClientOpenImBridgeClientGetAllConversations({required OpenImBridgeClient that })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<List<LocalConversation>>
+  crateApiBridgeClientOpenImBridgeClientGetAllConversations({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 14,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_local_conversation,
           decodeErrorData: sse_decode_AnyhowException,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientGetAllConversationsConstMeta,
-            argValues: [that],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientGetAllConversationsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetAllConversationsConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_all_conversations",
+        argNames: ["that"],
+      );
 
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientGetAllConversationsConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_get_all_conversations",
-            argNames: ["that"],
-        );
-        
+  @override
+  Stream<MessageEvent> crateApiBridgeClientOpenImBridgeClientMessageEvent({
+    required OpenImBridgeClient that,
+  }) {
+    final messageSink = RustStreamSink<MessageEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_message_event_Sse(messageSink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 15,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiBridgeClientOpenImBridgeClientMessageEventConstMeta,
+          argValues: [that, messageSink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return messageSink.stream;
+  }
 
-@override Stream<MessageEvent> crateApiBridgeClientOpenImBridgeClientMessageEvent({required OpenImBridgeClient that })  { 
-            final messageSink = RustStreamSink<MessageEvent>();
-            unawaited(handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(that, serializer);
-sse_encode_StreamSink_message_event_Sse(messageSink, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_unit,
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientMessageEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_message_event",
+        argNames: ["that", "messageSink"],
+      );
+
+  @override
+  OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({
+    required String userId,
+    required String token,
+    required int platformId,
+    String? wsUrl,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(userId, serializer);
+          sse_encode_String(token, serializer);
+          sse_encode_i_32(platformId, serializer);
+          sse_encode_opt_String(wsUrl, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientMessageEventConstMeta,
-            argValues: [that, messageSink],
-            apiImpl: this,
-        )));
-            return messageSink.stream;
-             }
+        ),
+        constMeta: kCrateApiBridgeClientOpenImBridgeClientNewConstMeta,
+        argValues: [userId, token, platformId, wsUrl],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_new",
+        argNames: ["userId", "token", "platformId", "wsUrl"],
+      );
 
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientMessageEventConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_message_event",
-            argNames: ["that", "messageSink"],
-        );
-        
+  @override
+  Stream<ConversationEvent>
+  crateApiListenersConversationDartConversationListenerNew() {
+    final sink = RustStreamSink<ConversationEvent>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_StreamSink_conversation_event_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 17,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_dart_conversation_listener,
+            decodeErrorData: null,
+          ),
+          constMeta:
+              kCrateApiListenersConversationDartConversationListenerNewConstMeta,
+          argValues: [sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
 
-@override OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({required String userId , required String token , required int platformId , String? wsUrl })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(userId, serializer);
-sse_encode_String(token, serializer);
-sse_encode_i_32(platformId, serializer);
-sse_encode_opt_String(wsUrl, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientOpenImBridgeClientNewConstMeta,
-            argValues: [userId, token, platformId, wsUrl],
-            apiImpl: this,
-        )); }
+  TaskConstMeta
+  get kCrateApiListenersConversationDartConversationListenerNewConstMeta =>
+      const TaskConstMeta(
+        debugName: "dart_conversation_listener_new",
+        argNames: ["sink"],
+      );
 
-
-        TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientNewConstMeta => const TaskConstMeta(
-            debugName: "OpenImBridgeClient_new",
-            argNames: ["userId", "token", "platformId", "wsUrl"],
-        );
-        
-
-@override Stream<ConversationEvent> crateApiListenersConversationDartConversationListenerNew()  { 
-            final sink = RustStreamSink<ConversationEvent>();
-            unawaited(handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_StreamSink_conversation_event_Sse(sink, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
-          decodeSuccessData: sse_decode_dart_conversation_listener,
-          decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiListenersConversationDartConversationListenerNewConstMeta,
-            argValues: [sink],
-            apiImpl: this,
-        )));
-            return sink.stream;
-             }
-
-
-        TaskConstMeta get kCrateApiListenersConversationDartConversationListenerNewConstMeta => const TaskConstMeta(
-            debugName: "dart_conversation_listener_new",
-            argNames: ["sink"],
-        );
-        
-
-@override String crateApiSimpleGreet({required String name })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(name, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  String crateApiSimpleGreet({required String name}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(name, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_String,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiSimpleGreetConstMeta,
-            argValues: [name],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSimpleGreetConstMeta,
+        argValues: [name],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSimpleGreetConstMeta =>
+      const TaskConstMeta(debugName: "greet", argNames: ["name"]);
 
-        TaskConstMeta get kCrateApiSimpleGreetConstMeta => const TaskConstMeta(
-            debugName: "greet",
-            argNames: ["name"],
-        );
-        
-
-@override Future<void> crateApiSimpleInitApp()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<void> crateApiSimpleInitApp() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiSimpleInitAppConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiSimpleInitAppConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiSimpleInitAppConstMeta =>
+      const TaskConstMeta(debugName: "init_app", argNames: []);
 
-        TaskConstMeta get kCrateApiSimpleInitAppConstMeta => const TaskConstMeta(
-            debugName: "init_app",
-            argNames: [],
-        );
-        
-
-@override void crateApiLoggerInitLogger({required LoggerConfig config })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_logger_config(config, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  void crateApiLoggerInitLogger({required LoggerConfig config}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_logger_config(config, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiLoggerInitLoggerConstMeta,
-            argValues: [config],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiLoggerInitLoggerConstMeta,
+        argValues: [config],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiLoggerInitLoggerConstMeta =>
+      const TaskConstMeta(debugName: "init_logger", argNames: ["config"]);
 
-        TaskConstMeta get kCrateApiLoggerInitLoggerConstMeta => const TaskConstMeta(
-            debugName: "init_logger",
-            argNames: ["config"],
-        );
-        
-
-@override void crateApiLoggerInitLoggerSimple({String? logLevel })  { return handler.executeSync(SyncTask(
-            callFfi: () {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_opt_String(logLevel, serializer);
-            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  void crateApiLoggerInitLoggerSimple({String? logLevel}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_opt_String(logLevel, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_String,
-        )
-        ,
-            constMeta: kCrateApiLoggerInitLoggerSimpleConstMeta,
-            argValues: [logLevel],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiLoggerInitLoggerSimpleConstMeta,
+        argValues: [logLevel],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiLoggerInitLoggerSimpleConstMeta =>
+      const TaskConstMeta(
+        debugName: "init_logger_simple",
+        argNames: ["logLevel"],
+      );
 
-        TaskConstMeta get kCrateApiLoggerInitLoggerSimpleConstMeta => const TaskConstMeta(
-            debugName: "init_logger_simple",
-            argNames: ["logLevel"],
-        );
-        
-
-@override Future<LoggerConfig> crateApiLoggerLoggerConfigDefault()  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<LoggerConfig> crateApiLoggerLoggerConfigDefault() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 22,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_logger_config,
           decodeErrorData: null,
-        )
-        ,
-            constMeta: kCrateApiLoggerLoggerConfigDefaultConstMeta,
-            argValues: [],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiLoggerLoggerConfigDefaultConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiLoggerLoggerConfigDefaultConstMeta =>
+      const TaskConstMeta(debugName: "logger_config_default", argNames: []);
 
-        TaskConstMeta get kCrateApiLoggerLoggerConfigDefaultConstMeta => const TaskConstMeta(
-            debugName: "logger_config_default",
-            argNames: [],
-        );
-        
-
-@override Future<LoginData> crateApiBridgeClientLoginAsync({required String areaCode , required String phoneNumber , required String password , required int platform })  { return handler.executeNormal(NormalTask(
-            callFfi: (port_) {
-              
-            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(areaCode, serializer);
-sse_encode_String(phoneNumber, serializer);
-sse_encode_String(password, serializer);
-sse_encode_i_32(platform, serializer);
-            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23, port: port_);
-            
-            },
-            codec: 
-        SseCodec(
+  @override
+  Future<LoginData> crateApiBridgeClientLoginAsync({
+    required String areaCode,
+    required String phoneNumber,
+    required String password,
+    required int platform,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(areaCode, serializer);
+          sse_encode_String(phoneNumber, serializer);
+          sse_encode_String(password, serializer);
+          sse_encode_i_32(platform, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 23,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_login_data,
           decodeErrorData: sse_decode_AnyhowException,
-        )
-        ,
-            constMeta: kCrateApiBridgeClientLoginAsyncConstMeta,
-            argValues: [areaCode, phoneNumber, password, platform],
-            apiImpl: this,
-        )); }
+        ),
+        constMeta: kCrateApiBridgeClientLoginAsyncConstMeta,
+        argValues: [areaCode, phoneNumber, password, platform],
+        apiImpl: this,
+      ),
+    );
+  }
 
+  TaskConstMeta get kCrateApiBridgeClientLoginAsyncConstMeta =>
+      const TaskConstMeta(
+        debugName: "login_async",
+        argNames: ["areaCode", "phoneNumber", "password", "platform"],
+      );
 
-        TaskConstMeta get kCrateApiBridgeClientLoginAsyncConstMeta => const TaskConstMeta(
-            debugName: "login_async",
-            argNames: ["areaCode", "phoneNumber", "password", "platform"],
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent =>
+      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_DartConnectionStatusListener => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_DartConnectionStatusListener => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_DartMessageListener => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_DartMessageListener => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_OfflinePushInfo => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_OfflinePushInfo => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_OpenImBridgeClient => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_OpenImBridgeClient => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
+
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AnyhowException(raw as String);
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartMessageListener
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  OfflinePushInfo
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return OfflinePushInfoImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartMessageListener
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartMessageListener
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalDcoDecode(
+      raw as List<dynamic>,
+    );
+  }
+
+  @protected
+  DartMessageListener
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  OfflinePushInfo
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return OfflinePushInfoImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  RustStreamSink<ConnectionStatusEvent>
+  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  RustStreamSink<ConversationEvent>
+  dco_decode_StreamSink_conversation_event_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  String dco_decode_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as String;
+  }
+
+  @protected
+  AtElem dco_decode_at_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return AtElem(
+      text: dco_decode_String(arr[0]),
+      atUserList: dco_decode_list_String(arr[1]),
+      atUsersInfo: dco_decode_opt_list_at_info(arr[2]),
+      quoteMessage: dco_decode_opt_box_msg_struct(arr[3]),
+      isAtSelf: dco_decode_bool(arr[4]),
+    );
+  }
+
+  @protected
+  AtInfo dco_decode_at_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return AtInfo(
+      atUserId: dco_decode_opt_String(arr[0]),
+      groupNickname: dco_decode_opt_String(arr[1]),
+    );
+  }
+
+  @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  OfflinePushInfo
+  dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+      raw,
+    );
+  }
+
+  @protected
+  AtElem dco_decode_box_autoadd_at_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_at_elem(raw);
+  }
+
+  @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_custom_elem(raw);
+  }
+
+  @protected
+  FileElem dco_decode_box_autoadd_file_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_file_elem(raw);
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_get_advanced_history_message_list_params(raw);
+  }
+
+  @protected
+  LocationElem dco_decode_box_autoadd_location_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_location_elem(raw);
+  }
+
+  @protected
+  LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_logger_config(raw);
+  }
+
+  @protected
+  MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_message_revoked(raw);
+  }
+
+  @protected
+  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_msg_struct(raw);
+  }
+
+  @protected
+  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_picture_elem(raw);
+  }
+
+  @protected
+  QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_quote_elem(raw);
+  }
+
+  @protected
+  SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_sound_elem(raw);
+  }
+
+  @protected
+  TextElem dco_decode_box_autoadd_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_text_elem(raw);
+  }
+
+  @protected
+  TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_typing_status(raw);
+  }
+
+  @protected
+  VideoElem dco_decode_box_autoadd_video_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_video_elem(raw);
+  }
+
+  @protected
+  MsgStruct dco_decode_box_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_msg_struct(raw);
+  }
+
+  @protected
+  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ConnectionStatusEvent(
+      connected: dco_decode_bool(arr[0]),
+      message: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  ConversationEvent dco_decode_conversation_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return ConversationEvent_SyncServerStart(
+          reinstalled: dco_decode_bool(raw[1]),
         );
-        
-
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
-
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
-
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
-
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
-
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_DartConnectionStatusListener => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener;
-
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_DartConnectionStatusListener => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener;
-
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_DartMessageListener => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener;
-
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_DartMessageListener => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener;
-
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_OfflinePushInfo => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
-
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_OfflinePushInfo => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
-
-RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_OpenImBridgeClient => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
-
-RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_OpenImBridgeClient => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
-
-
-
-                  @protected AnyhowException dco_decode_AnyhowException(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return AnyhowException(raw as String); }
-
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected ArcMutexOptionStreamSinkMessageEvent dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartConnectionStatusListener dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartMessageListener dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected OfflinePushInfo dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return OfflinePushInfoImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected OpenImBridgeClient dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartConnectionStatusListener dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartMessageListener dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected OpenImBridgeClient dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartConnectionStatusListener dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartMessageListener dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected OpenImBridgeClient dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected ArcMutexOptionStreamSinkMessageEvent dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartConnectionStatusListener dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected DartMessageListener dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected OfflinePushInfo dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return OfflinePushInfoImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected OpenImBridgeClient dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>); }
-
-@protected RustStreamSink<ConnectionStatusEvent> dco_decode_StreamSink_connection_status_event_Sse(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-throw UnimplementedError(); }
-
-@protected RustStreamSink<ConversationEvent> dco_decode_StreamSink_conversation_event_Sse(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-throw UnimplementedError(); }
-
-@protected RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-throw UnimplementedError(); }
-
-@protected String dco_decode_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as String; }
-
-@protected AtElem dco_decode_at_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return AtElem(text: dco_decode_String(arr[0]),
-atUserList: dco_decode_list_String(arr[1]),
-atUsersInfo: dco_decode_opt_list_at_info(arr[2]),
-quoteMessage: dco_decode_opt_box_msg_struct(arr[3]),
-isAtSelf: dco_decode_bool(arr[4]),); }
-
-@protected AtInfo dco_decode_at_info(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-                return AtInfo(atUserId: dco_decode_opt_String(arr[0]),
-groupNickname: dco_decode_opt_String(arr[1]),); }
-
-@protected bool dco_decode_bool(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as bool; }
-
-@protected OfflinePushInfo dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(raw); }
-
-@protected AtElem dco_decode_box_autoadd_at_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_at_elem(raw); }
-
-@protected bool dco_decode_box_autoadd_bool(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as bool; }
-
-@protected CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_custom_elem(raw); }
-
-@protected FileElem dco_decode_box_autoadd_file_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_file_elem(raw); }
-
-@protected GetAdvancedHistoryMessageListParams dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_get_advanced_history_message_list_params(raw); }
-
-@protected LocationElem dco_decode_box_autoadd_location_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_location_elem(raw); }
-
-@protected LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_logger_config(raw); }
-
-@protected MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_message_revoked(raw); }
-
-@protected MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_msg_struct(raw); }
-
-@protected PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_picture_elem(raw); }
-
-@protected QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_quote_elem(raw); }
-
-@protected SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_sound_elem(raw); }
-
-@protected TextElem dco_decode_box_autoadd_text_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_text_elem(raw); }
-
-@protected TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_typing_status(raw); }
-
-@protected VideoElem dco_decode_box_autoadd_video_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_video_elem(raw); }
-
-@protected MsgStruct dco_decode_box_msg_struct(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dco_decode_msg_struct(raw); }
-
-@protected ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-                return ConnectionStatusEvent(connected: dco_decode_bool(arr[0]),
-message: dco_decode_String(arr[1]),); }
-
-@protected ConversationEvent dco_decode_conversation_event(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-switch (raw[0]) {
-                case 0: return ConversationEvent_SyncServerStart(reinstalled: dco_decode_bool(raw[1]),);
-case 1: return ConversationEvent_SyncServerFinish(reinstalled: dco_decode_bool(raw[1]),);
-case 2: return ConversationEvent_SyncServerProgress(progress: dco_decode_i_32(raw[1]),);
-case 3: return ConversationEvent_SyncServerFailed(reinstalled: dco_decode_bool(raw[1]),);
-case 4: return ConversationEvent_NewConversation(conversationList: dco_decode_list_local_conversation(raw[1]),);
-case 5: return ConversationEvent_ConversationChanged(conversationList: dco_decode_list_local_conversation(raw[1]),);
-case 6: return ConversationEvent_TotalUnreadMessageCountChanged(totalUnreadCount: dco_decode_i_32(raw[1]),);
-case 7: return ConversationEvent_ConversationUserInputStatusChanged(change: dco_decode_String(raw[1]),);
-                default: throw Exception("unreachable");
-            } }
-
-@protected CustomElem dco_decode_custom_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return CustomElem(data: dco_decode_String(arr[0]),
-description: dco_decode_String(arr[1]),
-extension_: dco_decode_String(arr[2]),); }
-
-@protected DartConversationListener dco_decode_dart_conversation_listener(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 1) throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
-                return DartConversationListener(sink: dco_decode_StreamSink_conversation_event_Sse(arr[0]),); }
-
-@protected double dco_decode_f_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as double; }
-
-@protected FileElem dco_decode_file_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return FileElem(filePath: dco_decode_String(arr[0]),
-uuid: dco_decode_String(arr[1]),
-sourceUrl: dco_decode_String(arr[2]),
-fileName: dco_decode_String(arr[3]),
-fileSize: dco_decode_i_64(arr[4]),); }
-
-@protected GetAdvancedHistoryMessageListCallback dco_decode_get_advanced_history_message_list_callback(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return GetAdvancedHistoryMessageListCallback(messageList: dco_decode_list_msg_struct(arr[0]),
-isEnd: dco_decode_bool(arr[1]),
-errCode: dco_decode_i_32(arr[2]),
-errMsg: dco_decode_String(arr[3]),); }
-
-@protected GetAdvancedHistoryMessageListParams dco_decode_get_advanced_history_message_list_params(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return GetAdvancedHistoryMessageListParams(conversationId: dco_decode_String(arr[0]),
-startClientMsgId: dco_decode_String(arr[1]),
-count: dco_decode_i_32(arr[2]),
-viewType: dco_decode_i_32(arr[3]),); }
-
-@protected int dco_decode_i_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected PlatformInt64 dco_decode_i_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dcoDecodeI64(raw); }
-
-@protected List<String> dco_decode_list_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_String).toList(); }
-
-@protected List<AtInfo> dco_decode_list_at_info(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_at_info).toList(); }
-
-@protected List<LocalConversation> dco_decode_list_local_conversation(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_local_conversation).toList(); }
-
-@protected List<MsgStruct> dco_decode_list_msg_struct(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return (raw as List<dynamic>).map(dco_decode_msg_struct).toList(); }
-
-@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as Uint8List; }
-
-@protected LocalConversation dco_decode_local_conversation(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 24) throw Exception('unexpected arr length: expect 24 but see ${arr.length}');
-                return LocalConversation(conversationId: dco_decode_String(arr[0]),
-conversationType: dco_decode_i_32(arr[1]),
-userId: dco_decode_String(arr[2]),
-groupId: dco_decode_String(arr[3]),
-showName: dco_decode_String(arr[4]),
-faceUrl: dco_decode_String(arr[5]),
-latestMsg: dco_decode_String(arr[6]),
-latestMsgSendTime: dco_decode_i_64(arr[7]),
-unreadCount: dco_decode_i_32(arr[8]),
-recvMsgOpt: dco_decode_i_32(arr[9]),
-isPinned: dco_decode_bool(arr[10]),
-isPrivateChat: dco_decode_bool(arr[11]),
-burnDuration: dco_decode_i_32(arr[12]),
-groupAtType: dco_decode_i_32(arr[13]),
-isNotInGroup: dco_decode_bool(arr[14]),
-updateUnreadCountTime: dco_decode_i_64(arr[15]),
-attachedInfo: dco_decode_String(arr[16]),
-ex: dco_decode_String(arr[17]),
-draftText: dco_decode_String(arr[18]),
-draftTextTime: dco_decode_i_64(arr[19]),
-maxSeq: dco_decode_i_64(arr[20]),
-minSeq: dco_decode_i_64(arr[21]),
-isMsgDestruct: dco_decode_bool(arr[22]),
-msgDestructTime: dco_decode_i_64(arr[23]),); }
-
-@protected LocationElem dco_decode_location_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return LocationElem(description: dco_decode_String(arr[0]),
-longitude: dco_decode_f_64(arr[1]),
-latitude: dco_decode_f_64(arr[2]),); }
-
-@protected LoggerConfig dco_decode_logger_config(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return LoggerConfig(logLevel: dco_decode_String(arr[0]),
-logFilePath: dco_decode_String(arr[1]),
-isLogStandardOutput: dco_decode_bool(arr[2]),); }
-
-@protected LoginData dco_decode_login_data(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return LoginData(imToken: dco_decode_String(arr[0]),
-chatToken: dco_decode_String(arr[1]),
-userId: dco_decode_String(arr[2]),); }
-
-@protected MessageEvent dco_decode_message_event(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-switch (raw[0]) {
-                case 0: return MessageEvent_RecvNewMessage(message: dco_decode_box_autoadd_msg_struct(raw[1]),);
-case 1: return MessageEvent_RecvC2CReadReceipt(msgReceiptList: dco_decode_String(raw[1]),);
-case 2: return MessageEvent_NewRecvMessageRevoked(messageRevoked: dco_decode_box_autoadd_message_revoked(raw[1]),);
-case 3: return MessageEvent_RecvOfflineNewMessage(message: dco_decode_box_autoadd_msg_struct(raw[1]),);
-case 4: return MessageEvent_MsgDeleted(message: dco_decode_box_autoadd_msg_struct(raw[1]),);
-case 5: return MessageEvent_RecvOnlineOnlyMessage(message: dco_decode_box_autoadd_msg_struct(raw[1]),);
-case 6: return MessageEvent_KickedOffline();
-case 7: return MessageEvent_RecvTypingStatus(typingStatus: dco_decode_box_autoadd_typing_status(raw[1]),);
-                default: throw Exception("unreachable");
-            } }
-
-@protected MessageRevoked dco_decode_message_revoked(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 6) throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
-                return MessageRevoked(revokerId: dco_decode_String(arr[0]),
-revokerRole: dco_decode_i_32(arr[1]),
-clientMsgId: dco_decode_String(arr[2]),
-revokerNickname: dco_decode_String(arr[3]),
-sessionType: dco_decode_i_32(arr[4]),
-seq: dco_decode_u_32(arr[5]),); }
-
-@protected MsgStruct dco_decode_msg_struct(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 32) throw Exception('unexpected arr length: expect 32 but see ${arr.length}');
-                return MsgStruct(clientMsgId: dco_decode_opt_String(arr[0]),
-serverMsgId: dco_decode_opt_String(arr[1]),
-createTime: dco_decode_i_64(arr[2]),
-sendTime: dco_decode_i_64(arr[3]),
-sessionType: dco_decode_i_32(arr[4]),
-sendId: dco_decode_opt_String(arr[5]),
-recvId: dco_decode_opt_String(arr[6]),
-msgFrom: dco_decode_i_32(arr[7]),
-contentType: dco_decode_i_32(arr[8]),
-senderPlatformId: dco_decode_i_32(arr[9]),
-senderNickname: dco_decode_opt_String(arr[10]),
-senderFaceUrl: dco_decode_opt_String(arr[11]),
-groupId: dco_decode_opt_String(arr[12]),
-content: dco_decode_opt_String(arr[13]),
-seq: dco_decode_i_64(arr[14]),
-isRead: dco_decode_bool(arr[15]),
-status: dco_decode_i_32(arr[16]),
-isReact: dco_decode_opt_box_autoadd_bool(arr[17]),
-isExternalExtensions: dco_decode_opt_box_autoadd_bool(arr[18]),
-offlinePush: dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(arr[19]),
-attachedInfo: dco_decode_opt_String(arr[20]),
-ex: dco_decode_opt_String(arr[21]),
-localEx: dco_decode_opt_String(arr[22]),
-textElem: dco_decode_opt_box_autoadd_text_elem(arr[23]),
-pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[24]),
-soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[25]),
-videoElem: dco_decode_opt_box_autoadd_video_elem(arr[26]),
-fileElem: dco_decode_opt_box_autoadd_file_elem(arr[27]),
-atTextElem: dco_decode_opt_box_autoadd_at_elem(arr[28]),
-locationElem: dco_decode_opt_box_autoadd_location_elem(arr[29]),
-customElem: dco_decode_opt_box_autoadd_custom_elem(arr[30]),
-quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[31]),); }
-
-@protected String? dco_decode_opt_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_String(raw); }
-
-@protected OfflinePushInfo? dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(raw); }
-
-@protected AtElem? dco_decode_opt_box_autoadd_at_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_at_elem(raw); }
-
-@protected bool? dco_decode_opt_box_autoadd_bool(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_bool(raw); }
-
-@protected CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_custom_elem(raw); }
-
-@protected FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_file_elem(raw); }
-
-@protected LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_location_elem(raw); }
-
-@protected PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_picture_elem(raw); }
-
-@protected QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_quote_elem(raw); }
-
-@protected SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_sound_elem(raw); }
-
-@protected TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_text_elem(raw); }
-
-@protected VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_autoadd_video_elem(raw); }
-
-@protected MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_box_msg_struct(raw); }
-
-@protected List<AtInfo>? dco_decode_opt_list_at_info(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw == null ? null : dco_decode_list_at_info(raw); }
-
-@protected PictureBaseInfo dco_decode_picture_base_info(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 6) throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
-                return PictureBaseInfo(uuid: dco_decode_String(arr[0]),
-type: dco_decode_String(arr[1]),
-size: dco_decode_i_64(arr[2]),
-width: dco_decode_i_32(arr[3]),
-height: dco_decode_i_32(arr[4]),
-url: dco_decode_String(arr[5]),); }
-
-@protected PictureElem dco_decode_picture_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-                return PictureElem(sourcePath: dco_decode_String(arr[0]),
-sourcePicture: dco_decode_picture_base_info(arr[1]),
-bigPicture: dco_decode_picture_base_info(arr[2]),
-snapshotPicture: dco_decode_picture_base_info(arr[3]),); }
-
-@protected QuoteElem dco_decode_quote_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-                return QuoteElem(text: dco_decode_opt_String(arr[0]),
-quoteMessage: dco_decode_opt_box_msg_struct(arr[1]),); }
-
-@protected SoundElem dco_decode_sound_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-                return SoundElem(uuid: dco_decode_String(arr[0]),
-soundPath: dco_decode_String(arr[1]),
-sourceUrl: dco_decode_String(arr[2]),
-dataSize: dco_decode_i_64(arr[3]),
-duration: dco_decode_i_64(arr[4]),); }
-
-@protected TextElem dco_decode_text_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 1) throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
-                return TextElem(content: dco_decode_String(arr[0]),); }
-
-@protected TypingStatus dco_decode_typing_status(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-                return TypingStatus(conversationId: dco_decode_String(arr[0]),
-sendId: dco_decode_opt_String(arr[1]),
-msgTip: dco_decode_String(arr[2]),); }
-
-@protected int dco_decode_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected int dco_decode_u_8(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return raw as int; }
-
-@protected void dco_decode_unit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return; }
-
-@protected BigInt dco_decode_usize(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-return dcoDecodeU64(raw); }
-
-@protected VideoElem dco_decode_video_elem(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
-final arr = raw as List<dynamic>;
-                if (arr.length != 12) throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
-                return VideoElem(videoPath: dco_decode_String(arr[0]),
-videoUuid: dco_decode_String(arr[1]),
-videoUrl: dco_decode_String(arr[2]),
-videoType: dco_decode_String(arr[3]),
-videoSize: dco_decode_i_64(arr[4]),
-duration: dco_decode_i_64(arr[5]),
-snapshotPath: dco_decode_String(arr[6]),
-snapshotUuid: dco_decode_String(arr[7]),
-snapshotSize: dco_decode_i_64(arr[8]),
-snapshotUrl: dco_decode_String(arr[9]),
-snapshotWidth: dco_decode_i_32(arr[10]),
-snapshotHeight: dco_decode_i_32(arr[11]),); }
-
-@protected AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_String(deserializer);
-        return AnyhowException(inner); }
-
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected ArcMutexOptionStreamSinkMessageEvent sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartConnectionStatusListener sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartMessageListener sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected OfflinePushInfo sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return OfflinePushInfoImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected OpenImBridgeClient sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartConnectionStatusListener sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartMessageListener sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected OpenImBridgeClient sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartConnectionStatusListener sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartMessageListener sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected OpenImBridgeClient sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected ArcMutexOptionStreamSinkMessageEvent sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartConnectionStatusListener sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartConnectionStatusListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected DartMessageListener sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return DartMessageListenerImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected OfflinePushInfo sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return OfflinePushInfoImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected OpenImBridgeClient sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return OpenImBridgeClientImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
-
-@protected RustStreamSink<ConnectionStatusEvent> sse_decode_StreamSink_connection_status_event_Sse(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-throw UnimplementedError('Unreachable ()'); }
-
-@protected RustStreamSink<ConversationEvent> sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-throw UnimplementedError('Unreachable ()'); }
-
-@protected RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-throw UnimplementedError('Unreachable ()'); }
-
-@protected String sse_decode_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var inner = sse_decode_list_prim_u_8_strict(deserializer);
-        return utf8.decoder.convert(inner); }
-
-@protected AtElem sse_decode_at_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_text = sse_decode_String(deserializer);
-var var_atUserList = sse_decode_list_String(deserializer);
-var var_atUsersInfo = sse_decode_opt_list_at_info(deserializer);
-var var_quoteMessage = sse_decode_opt_box_msg_struct(deserializer);
-var var_isAtSelf = sse_decode_bool(deserializer);
-return AtElem(text: var_text, atUserList: var_atUserList, atUsersInfo: var_atUsersInfo, quoteMessage: var_quoteMessage, isAtSelf: var_isAtSelf); }
-
-@protected AtInfo sse_decode_at_info(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_atUserId = sse_decode_opt_String(deserializer);
-var var_groupNickname = sse_decode_opt_String(deserializer);
-return AtInfo(atUserId: var_atUserId, groupNickname: var_groupNickname); }
-
-@protected bool sse_decode_bool(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint8() != 0; }
-
-@protected OfflinePushInfo sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(deserializer)); }
-
-@protected AtElem sse_decode_box_autoadd_at_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_at_elem(deserializer)); }
-
-@protected bool sse_decode_box_autoadd_bool(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_bool(deserializer)); }
-
-@protected CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_custom_elem(deserializer)); }
-
-@protected FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_file_elem(deserializer)); }
-
-@protected GetAdvancedHistoryMessageListParams sse_decode_box_autoadd_get_advanced_history_message_list_params(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_get_advanced_history_message_list_params(deserializer)); }
-
-@protected LocationElem sse_decode_box_autoadd_location_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_location_elem(deserializer)); }
-
-@protected LoggerConfig sse_decode_box_autoadd_logger_config(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_logger_config(deserializer)); }
-
-@protected MessageRevoked sse_decode_box_autoadd_message_revoked(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_message_revoked(deserializer)); }
-
-@protected MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_msg_struct(deserializer)); }
-
-@protected PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_picture_elem(deserializer)); }
-
-@protected QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_quote_elem(deserializer)); }
-
-@protected SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_sound_elem(deserializer)); }
-
-@protected TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_text_elem(deserializer)); }
-
-@protected TypingStatus sse_decode_box_autoadd_typing_status(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_typing_status(deserializer)); }
-
-@protected VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_video_elem(deserializer)); }
-
-@protected MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return (sse_decode_msg_struct(deserializer)); }
-
-@protected ConnectionStatusEvent sse_decode_connection_status_event(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_connected = sse_decode_bool(deserializer);
-var var_message = sse_decode_String(deserializer);
-return ConnectionStatusEvent(connected: var_connected, message: var_message); }
-
-@protected ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            var tag_ = sse_decode_i_32(deserializer);
-            switch (tag_) { case 0: var var_reinstalled = sse_decode_bool(deserializer);
-return ConversationEvent_SyncServerStart(reinstalled: var_reinstalled);case 1: var var_reinstalled = sse_decode_bool(deserializer);
-return ConversationEvent_SyncServerFinish(reinstalled: var_reinstalled);case 2: var var_progress = sse_decode_i_32(deserializer);
-return ConversationEvent_SyncServerProgress(progress: var_progress);case 3: var var_reinstalled = sse_decode_bool(deserializer);
-return ConversationEvent_SyncServerFailed(reinstalled: var_reinstalled);case 4: var var_conversationList = sse_decode_list_local_conversation(deserializer);
-return ConversationEvent_NewConversation(conversationList: var_conversationList);case 5: var var_conversationList = sse_decode_list_local_conversation(deserializer);
-return ConversationEvent_ConversationChanged(conversationList: var_conversationList);case 6: var var_totalUnreadCount = sse_decode_i_32(deserializer);
-return ConversationEvent_TotalUnreadMessageCountChanged(totalUnreadCount: var_totalUnreadCount);case 7: var var_change = sse_decode_String(deserializer);
-return ConversationEvent_ConversationUserInputStatusChanged(change: var_change); default: throw UnimplementedError(''); }
-             }
-
-@protected CustomElem sse_decode_custom_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_data = sse_decode_String(deserializer);
-var var_description = sse_decode_String(deserializer);
-var var_extension_ = sse_decode_String(deserializer);
-return CustomElem(data: var_data, description: var_description, extension_: var_extension_); }
-
-@protected DartConversationListener sse_decode_dart_conversation_listener(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_sink = sse_decode_StreamSink_conversation_event_Sse(deserializer);
-return DartConversationListener(sink: var_sink); }
-
-@protected double sse_decode_f_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getFloat64(); }
-
-@protected FileElem sse_decode_file_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_filePath = sse_decode_String(deserializer);
-var var_uuid = sse_decode_String(deserializer);
-var var_sourceUrl = sse_decode_String(deserializer);
-var var_fileName = sse_decode_String(deserializer);
-var var_fileSize = sse_decode_i_64(deserializer);
-return FileElem(filePath: var_filePath, uuid: var_uuid, sourceUrl: var_sourceUrl, fileName: var_fileName, fileSize: var_fileSize); }
-
-@protected GetAdvancedHistoryMessageListCallback sse_decode_get_advanced_history_message_list_callback(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_messageList = sse_decode_list_msg_struct(deserializer);
-var var_isEnd = sse_decode_bool(deserializer);
-var var_errCode = sse_decode_i_32(deserializer);
-var var_errMsg = sse_decode_String(deserializer);
-return GetAdvancedHistoryMessageListCallback(messageList: var_messageList, isEnd: var_isEnd, errCode: var_errCode, errMsg: var_errMsg); }
-
-@protected GetAdvancedHistoryMessageListParams sse_decode_get_advanced_history_message_list_params(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_conversationId = sse_decode_String(deserializer);
-var var_startClientMsgId = sse_decode_String(deserializer);
-var var_count = sse_decode_i_32(deserializer);
-var var_viewType = sse_decode_i_32(deserializer);
-return GetAdvancedHistoryMessageListParams(conversationId: var_conversationId, startClientMsgId: var_startClientMsgId, count: var_count, viewType: var_viewType); }
-
-@protected int sse_decode_i_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getInt32(); }
-
-@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getPlatformInt64(); }
-
-@protected List<String> sse_decode_list_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <String>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_String(deserializer)); }
-        return ans_;
-         }
-
-@protected List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <AtInfo>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_at_info(deserializer)); }
-        return ans_;
-         }
-
-@protected List<LocalConversation> sse_decode_list_local_conversation(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <LocalConversation>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_local_conversation(deserializer)); }
-        return ans_;
-         }
-
-@protected List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-        var len_ = sse_decode_i_32(deserializer);
-        var ans_ = <MsgStruct>[];
-        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_msg_struct(deserializer)); }
-        return ans_;
-         }
-
-@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var len_ = sse_decode_i_32(deserializer);
-                return deserializer.buffer.getUint8List(len_); }
-
-@protected LocalConversation sse_decode_local_conversation(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_conversationId = sse_decode_String(deserializer);
-var var_conversationType = sse_decode_i_32(deserializer);
-var var_userId = sse_decode_String(deserializer);
-var var_groupId = sse_decode_String(deserializer);
-var var_showName = sse_decode_String(deserializer);
-var var_faceUrl = sse_decode_String(deserializer);
-var var_latestMsg = sse_decode_String(deserializer);
-var var_latestMsgSendTime = sse_decode_i_64(deserializer);
-var var_unreadCount = sse_decode_i_32(deserializer);
-var var_recvMsgOpt = sse_decode_i_32(deserializer);
-var var_isPinned = sse_decode_bool(deserializer);
-var var_isPrivateChat = sse_decode_bool(deserializer);
-var var_burnDuration = sse_decode_i_32(deserializer);
-var var_groupAtType = sse_decode_i_32(deserializer);
-var var_isNotInGroup = sse_decode_bool(deserializer);
-var var_updateUnreadCountTime = sse_decode_i_64(deserializer);
-var var_attachedInfo = sse_decode_String(deserializer);
-var var_ex = sse_decode_String(deserializer);
-var var_draftText = sse_decode_String(deserializer);
-var var_draftTextTime = sse_decode_i_64(deserializer);
-var var_maxSeq = sse_decode_i_64(deserializer);
-var var_minSeq = sse_decode_i_64(deserializer);
-var var_isMsgDestruct = sse_decode_bool(deserializer);
-var var_msgDestructTime = sse_decode_i_64(deserializer);
-return LocalConversation(conversationId: var_conversationId, conversationType: var_conversationType, userId: var_userId, groupId: var_groupId, showName: var_showName, faceUrl: var_faceUrl, latestMsg: var_latestMsg, latestMsgSendTime: var_latestMsgSendTime, unreadCount: var_unreadCount, recvMsgOpt: var_recvMsgOpt, isPinned: var_isPinned, isPrivateChat: var_isPrivateChat, burnDuration: var_burnDuration, groupAtType: var_groupAtType, isNotInGroup: var_isNotInGroup, updateUnreadCountTime: var_updateUnreadCountTime, attachedInfo: var_attachedInfo, ex: var_ex, draftText: var_draftText, draftTextTime: var_draftTextTime, maxSeq: var_maxSeq, minSeq: var_minSeq, isMsgDestruct: var_isMsgDestruct, msgDestructTime: var_msgDestructTime); }
-
-@protected LocationElem sse_decode_location_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_description = sse_decode_String(deserializer);
-var var_longitude = sse_decode_f_64(deserializer);
-var var_latitude = sse_decode_f_64(deserializer);
-return LocationElem(description: var_description, longitude: var_longitude, latitude: var_latitude); }
-
-@protected LoggerConfig sse_decode_logger_config(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_logLevel = sse_decode_String(deserializer);
-var var_logFilePath = sse_decode_String(deserializer);
-var var_isLogStandardOutput = sse_decode_bool(deserializer);
-return LoggerConfig(logLevel: var_logLevel, logFilePath: var_logFilePath, isLogStandardOutput: var_isLogStandardOutput); }
-
-@protected LoginData sse_decode_login_data(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_imToken = sse_decode_String(deserializer);
-var var_chatToken = sse_decode_String(deserializer);
-var var_userId = sse_decode_String(deserializer);
-return LoginData(imToken: var_imToken, chatToken: var_chatToken, userId: var_userId); }
-
-@protected MessageEvent sse_decode_message_event(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            var tag_ = sse_decode_i_32(deserializer);
-            switch (tag_) { case 0: var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
-return MessageEvent_RecvNewMessage(message: var_message);case 1: var var_msgReceiptList = sse_decode_String(deserializer);
-return MessageEvent_RecvC2CReadReceipt(msgReceiptList: var_msgReceiptList);case 2: var var_messageRevoked = sse_decode_box_autoadd_message_revoked(deserializer);
-return MessageEvent_NewRecvMessageRevoked(messageRevoked: var_messageRevoked);case 3: var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
-return MessageEvent_RecvOfflineNewMessage(message: var_message);case 4: var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
-return MessageEvent_MsgDeleted(message: var_message);case 5: var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
-return MessageEvent_RecvOnlineOnlyMessage(message: var_message);case 6: return MessageEvent_KickedOffline();case 7: var var_typingStatus = sse_decode_box_autoadd_typing_status(deserializer);
-return MessageEvent_RecvTypingStatus(typingStatus: var_typingStatus); default: throw UnimplementedError(''); }
-             }
-
-@protected MessageRevoked sse_decode_message_revoked(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_revokerId = sse_decode_String(deserializer);
-var var_revokerRole = sse_decode_i_32(deserializer);
-var var_clientMsgId = sse_decode_String(deserializer);
-var var_revokerNickname = sse_decode_String(deserializer);
-var var_sessionType = sse_decode_i_32(deserializer);
-var var_seq = sse_decode_u_32(deserializer);
-return MessageRevoked(revokerId: var_revokerId, revokerRole: var_revokerRole, clientMsgId: var_clientMsgId, revokerNickname: var_revokerNickname, sessionType: var_sessionType, seq: var_seq); }
-
-@protected MsgStruct sse_decode_msg_struct(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_clientMsgId = sse_decode_opt_String(deserializer);
-var var_serverMsgId = sse_decode_opt_String(deserializer);
-var var_createTime = sse_decode_i_64(deserializer);
-var var_sendTime = sse_decode_i_64(deserializer);
-var var_sessionType = sse_decode_i_32(deserializer);
-var var_sendId = sse_decode_opt_String(deserializer);
-var var_recvId = sse_decode_opt_String(deserializer);
-var var_msgFrom = sse_decode_i_32(deserializer);
-var var_contentType = sse_decode_i_32(deserializer);
-var var_senderPlatformId = sse_decode_i_32(deserializer);
-var var_senderNickname = sse_decode_opt_String(deserializer);
-var var_senderFaceUrl = sse_decode_opt_String(deserializer);
-var var_groupId = sse_decode_opt_String(deserializer);
-var var_content = sse_decode_opt_String(deserializer);
-var var_seq = sse_decode_i_64(deserializer);
-var var_isRead = sse_decode_bool(deserializer);
-var var_status = sse_decode_i_32(deserializer);
-var var_isReact = sse_decode_opt_box_autoadd_bool(deserializer);
-var var_isExternalExtensions = sse_decode_opt_box_autoadd_bool(deserializer);
-var var_offlinePush = sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(deserializer);
-var var_attachedInfo = sse_decode_opt_String(deserializer);
-var var_ex = sse_decode_opt_String(deserializer);
-var var_localEx = sse_decode_opt_String(deserializer);
-var var_textElem = sse_decode_opt_box_autoadd_text_elem(deserializer);
-var var_pictureElem = sse_decode_opt_box_autoadd_picture_elem(deserializer);
-var var_soundElem = sse_decode_opt_box_autoadd_sound_elem(deserializer);
-var var_videoElem = sse_decode_opt_box_autoadd_video_elem(deserializer);
-var var_fileElem = sse_decode_opt_box_autoadd_file_elem(deserializer);
-var var_atTextElem = sse_decode_opt_box_autoadd_at_elem(deserializer);
-var var_locationElem = sse_decode_opt_box_autoadd_location_elem(deserializer);
-var var_customElem = sse_decode_opt_box_autoadd_custom_elem(deserializer);
-var var_quoteElem = sse_decode_opt_box_autoadd_quote_elem(deserializer);
-return MsgStruct(clientMsgId: var_clientMsgId, serverMsgId: var_serverMsgId, createTime: var_createTime, sendTime: var_sendTime, sessionType: var_sessionType, sendId: var_sendId, recvId: var_recvId, msgFrom: var_msgFrom, contentType: var_contentType, senderPlatformId: var_senderPlatformId, senderNickname: var_senderNickname, senderFaceUrl: var_senderFaceUrl, groupId: var_groupId, content: var_content, seq: var_seq, isRead: var_isRead, status: var_status, isReact: var_isReact, isExternalExtensions: var_isExternalExtensions, offlinePush: var_offlinePush, attachedInfo: var_attachedInfo, ex: var_ex, localEx: var_localEx, textElem: var_textElem, pictureElem: var_pictureElem, soundElem: var_soundElem, videoElem: var_videoElem, fileElem: var_fileElem, atTextElem: var_atTextElem, locationElem: var_locationElem, customElem: var_customElem, quoteElem: var_quoteElem); }
-
-@protected String? sse_decode_opt_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_String(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected OfflinePushInfo? sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected AtElem? sse_decode_opt_box_autoadd_at_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_at_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_bool(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected CustomElem? sse_decode_opt_box_autoadd_custom_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_custom_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_file_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected LocationElem? sse_decode_opt_box_autoadd_location_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_location_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected PictureElem? sse_decode_opt_box_autoadd_picture_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_picture_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected QuoteElem? sse_decode_opt_box_autoadd_quote_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_quote_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected SoundElem? sse_decode_opt_box_autoadd_sound_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_sound_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_text_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected VideoElem? sse_decode_opt_box_autoadd_video_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_autoadd_video_elem(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_box_msg_struct(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected List<AtInfo>? sse_decode_opt_list_at_info(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-            if (sse_decode_bool(deserializer)) {
-                return (sse_decode_list_at_info(deserializer));
-            } else {
-                return null;
-            }
-             }
-
-@protected PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_uuid = sse_decode_String(deserializer);
-var var_type = sse_decode_String(deserializer);
-var var_size = sse_decode_i_64(deserializer);
-var var_width = sse_decode_i_32(deserializer);
-var var_height = sse_decode_i_32(deserializer);
-var var_url = sse_decode_String(deserializer);
-return PictureBaseInfo(uuid: var_uuid, type: var_type, size: var_size, width: var_width, height: var_height, url: var_url); }
-
-@protected PictureElem sse_decode_picture_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_sourcePath = sse_decode_String(deserializer);
-var var_sourcePicture = sse_decode_picture_base_info(deserializer);
-var var_bigPicture = sse_decode_picture_base_info(deserializer);
-var var_snapshotPicture = sse_decode_picture_base_info(deserializer);
-return PictureElem(sourcePath: var_sourcePath, sourcePicture: var_sourcePicture, bigPicture: var_bigPicture, snapshotPicture: var_snapshotPicture); }
-
-@protected QuoteElem sse_decode_quote_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_text = sse_decode_opt_String(deserializer);
-var var_quoteMessage = sse_decode_opt_box_msg_struct(deserializer);
-return QuoteElem(text: var_text, quoteMessage: var_quoteMessage); }
-
-@protected SoundElem sse_decode_sound_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_uuid = sse_decode_String(deserializer);
-var var_soundPath = sse_decode_String(deserializer);
-var var_sourceUrl = sse_decode_String(deserializer);
-var var_dataSize = sse_decode_i_64(deserializer);
-var var_duration = sse_decode_i_64(deserializer);
-return SoundElem(uuid: var_uuid, soundPath: var_soundPath, sourceUrl: var_sourceUrl, dataSize: var_dataSize, duration: var_duration); }
-
-@protected TextElem sse_decode_text_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_content = sse_decode_String(deserializer);
-return TextElem(content: var_content); }
-
-@protected TypingStatus sse_decode_typing_status(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_conversationId = sse_decode_String(deserializer);
-var var_sendId = sse_decode_opt_String(deserializer);
-var var_msgTip = sse_decode_String(deserializer);
-return TypingStatus(conversationId: var_conversationId, sendId: var_sendId, msgTip: var_msgTip); }
-
-@protected int sse_decode_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint32(); }
-
-@protected int sse_decode_u_8(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getUint8(); }
-
-@protected void sse_decode_unit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
- }
-
-@protected BigInt sse_decode_usize(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-return deserializer.buffer.getBigUint64(); }
-
-@protected VideoElem sse_decode_video_elem(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-var var_videoPath = sse_decode_String(deserializer);
-var var_videoUuid = sse_decode_String(deserializer);
-var var_videoUrl = sse_decode_String(deserializer);
-var var_videoType = sse_decode_String(deserializer);
-var var_videoSize = sse_decode_i_64(deserializer);
-var var_duration = sse_decode_i_64(deserializer);
-var var_snapshotPath = sse_decode_String(deserializer);
-var var_snapshotUuid = sse_decode_String(deserializer);
-var var_snapshotSize = sse_decode_i_64(deserializer);
-var var_snapshotUrl = sse_decode_String(deserializer);
-var var_snapshotWidth = sse_decode_i_32(deserializer);
-var var_snapshotHeight = sse_decode_i_32(deserializer);
-return VideoElem(videoPath: var_videoPath, videoUuid: var_videoUuid, videoUrl: var_videoUrl, videoType: var_videoType, videoSize: var_videoSize, duration: var_duration, snapshotPath: var_snapshotPath, snapshotUuid: var_snapshotUuid, snapshotSize: var_snapshotSize, snapshotUrl: var_snapshotUrl, snapshotWidth: var_snapshotWidth, snapshotHeight: var_snapshotHeight); }
-
-@protected void sse_encode_AnyhowException(AnyhowException self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.message, serializer); }
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(ArcMutexOptionStreamSinkConnectionStatusEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as ArcMutexOptionStreamSinkConnectionStatusEventImpl).frbInternalSseEncode(move: true), serializer); }
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(ArcMutexOptionStreamSinkMessageEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as ArcMutexOptionStreamSinkMessageEventImpl).frbInternalSseEncode(move: true), serializer); }
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartConnectionStatusListenerImpl).frbInternalSseEncode(move: true), serializer); }
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartMessageListenerImpl).frbInternalSseEncode(move: true), serializer); }
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as OfflinePushInfoImpl).frbInternalSseEncode(move: true), serializer); }
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as OpenImBridgeClientImpl).frbInternalSseEncode(move: true), serializer); }
-
-@protected void sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartConnectionStatusListenerImpl).frbInternalSseEncode(move: false), serializer); }
-
-@protected void sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartMessageListenerImpl).frbInternalSseEncode(move: false), serializer); }
-
-@protected void sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as OpenImBridgeClientImpl).frbInternalSseEncode(move: false), serializer); }
-
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartConnectionStatusListenerImpl).frbInternalSseEncode(move: false), serializer); }
-
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartMessageListenerImpl).frbInternalSseEncode(move: false), serializer); }
-
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as OpenImBridgeClientImpl).frbInternalSseEncode(move: false), serializer); }
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(ArcMutexOptionStreamSinkConnectionStatusEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as ArcMutexOptionStreamSinkConnectionStatusEventImpl).frbInternalSseEncode(move: null), serializer); }
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(ArcMutexOptionStreamSinkMessageEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as ArcMutexOptionStreamSinkMessageEventImpl).frbInternalSseEncode(move: null), serializer); }
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartConnectionStatusListenerImpl).frbInternalSseEncode(move: null), serializer); }
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as DartMessageListenerImpl).frbInternalSseEncode(move: null), serializer); }
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as OfflinePushInfoImpl).frbInternalSseEncode(move: null), serializer); }
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_usize((self as OpenImBridgeClientImpl).frbInternalSseEncode(move: null), serializer); }
-
-@protected void sse_encode_StreamSink_connection_status_event_Sse(RustStreamSink<ConnectionStatusEvent> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.setupAndSerialize(codec: SseCodec(
-            decodeSuccessData: sse_decode_connection_status_event,
-            decodeErrorData: sse_decode_AnyhowException,
-        )), serializer); }
-
-@protected void sse_encode_StreamSink_conversation_event_Sse(RustStreamSink<ConversationEvent> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.setupAndSerialize(codec: SseCodec(
-            decodeSuccessData: sse_decode_conversation_event,
-            decodeErrorData: sse_decode_AnyhowException,
-        )), serializer); }
-
-@protected void sse_encode_StreamSink_message_event_Sse(RustStreamSink<MessageEvent> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.setupAndSerialize(codec: SseCodec(
-            decodeSuccessData: sse_decode_message_event,
-            decodeErrorData: sse_decode_AnyhowException,
-        )), serializer); }
-
-@protected void sse_encode_String(String self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer); }
-
-@protected void sse_encode_at_elem(AtElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.text, serializer);
-sse_encode_list_String(self.atUserList, serializer);
-sse_encode_opt_list_at_info(self.atUsersInfo, serializer);
-sse_encode_opt_box_msg_struct(self.quoteMessage, serializer);
-sse_encode_bool(self.isAtSelf, serializer);
- }
-
-@protected void sse_encode_at_info(AtInfo self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_opt_String(self.atUserId, serializer);
-sse_encode_opt_String(self.groupNickname, serializer);
- }
-
-@protected void sse_encode_bool(bool self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint8(self ? 1 : 0); }
-
-@protected void sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(self, serializer); }
-
-@protected void sse_encode_box_autoadd_at_elem(AtElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_at_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_bool(self, serializer); }
-
-@protected void sse_encode_box_autoadd_custom_elem(CustomElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_custom_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_file_elem(FileElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_file_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_get_advanced_history_message_list_params(GetAdvancedHistoryMessageListParams self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_get_advanced_history_message_list_params(self, serializer); }
-
-@protected void sse_encode_box_autoadd_location_elem(LocationElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_location_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_logger_config(LoggerConfig self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_logger_config(self, serializer); }
-
-@protected void sse_encode_box_autoadd_message_revoked(MessageRevoked self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_message_revoked(self, serializer); }
-
-@protected void sse_encode_box_autoadd_msg_struct(MsgStruct self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_msg_struct(self, serializer); }
-
-@protected void sse_encode_box_autoadd_picture_elem(PictureElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_picture_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_quote_elem(QuoteElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_quote_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_sound_elem(SoundElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_sound_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_text_elem(TextElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_text_elem(self, serializer); }
-
-@protected void sse_encode_box_autoadd_typing_status(TypingStatus self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_typing_status(self, serializer); }
-
-@protected void sse_encode_box_autoadd_video_elem(VideoElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_video_elem(self, serializer); }
-
-@protected void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_msg_struct(self, serializer); }
-
-@protected void sse_encode_connection_status_event(ConnectionStatusEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_bool(self.connected, serializer);
-sse_encode_String(self.message, serializer);
- }
-
-@protected void sse_encode_conversation_event(ConversationEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-switch (self) { case ConversationEvent_SyncServerStart(reinstalled: final reinstalled): sse_encode_i_32(0, serializer); sse_encode_bool(reinstalled, serializer);
-case ConversationEvent_SyncServerFinish(reinstalled: final reinstalled): sse_encode_i_32(1, serializer); sse_encode_bool(reinstalled, serializer);
-case ConversationEvent_SyncServerProgress(progress: final progress): sse_encode_i_32(2, serializer); sse_encode_i_32(progress, serializer);
-case ConversationEvent_SyncServerFailed(reinstalled: final reinstalled): sse_encode_i_32(3, serializer); sse_encode_bool(reinstalled, serializer);
-case ConversationEvent_NewConversation(conversationList: final conversationList): sse_encode_i_32(4, serializer); sse_encode_list_local_conversation(conversationList, serializer);
-case ConversationEvent_ConversationChanged(conversationList: final conversationList): sse_encode_i_32(5, serializer); sse_encode_list_local_conversation(conversationList, serializer);
-case ConversationEvent_TotalUnreadMessageCountChanged(totalUnreadCount: final totalUnreadCount): sse_encode_i_32(6, serializer); sse_encode_i_32(totalUnreadCount, serializer);
-case ConversationEvent_ConversationUserInputStatusChanged(change: final change): sse_encode_i_32(7, serializer); sse_encode_String(change, serializer);
-  } }
-
-@protected void sse_encode_custom_elem(CustomElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.data, serializer);
-sse_encode_String(self.description, serializer);
-sse_encode_String(self.extension_, serializer);
- }
-
-@protected void sse_encode_dart_conversation_listener(DartConversationListener self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_StreamSink_conversation_event_Sse(self.sink, serializer);
- }
-
-@protected void sse_encode_f_64(double self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putFloat64(self); }
-
-@protected void sse_encode_file_elem(FileElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.filePath, serializer);
-sse_encode_String(self.uuid, serializer);
-sse_encode_String(self.sourceUrl, serializer);
-sse_encode_String(self.fileName, serializer);
-sse_encode_i_64(self.fileSize, serializer);
- }
-
-@protected void sse_encode_get_advanced_history_message_list_callback(GetAdvancedHistoryMessageListCallback self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_list_msg_struct(self.messageList, serializer);
-sse_encode_bool(self.isEnd, serializer);
-sse_encode_i_32(self.errCode, serializer);
-sse_encode_String(self.errMsg, serializer);
- }
-
-@protected void sse_encode_get_advanced_history_message_list_params(GetAdvancedHistoryMessageListParams self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.conversationId, serializer);
-sse_encode_String(self.startClientMsgId, serializer);
-sse_encode_i_32(self.count, serializer);
-sse_encode_i_32(self.viewType, serializer);
- }
-
-@protected void sse_encode_i_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putInt32(self); }
-
-@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putPlatformInt64(self); }
-
-@protected void sse_encode_list_String(List<String> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_String(item, serializer); } }
-
-@protected void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_at_info(item, serializer); } }
-
-@protected void sse_encode_list_local_conversation(List<LocalConversation> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_local_conversation(item, serializer); } }
-
-@protected void sse_encode_list_msg_struct(List<MsgStruct> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-        for (final item in self) { sse_encode_msg_struct(item, serializer); } }
-
-@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_i_32(self.length, serializer);
-                    serializer.buffer.putUint8List(self); }
-
-@protected void sse_encode_local_conversation(LocalConversation self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.conversationId, serializer);
-sse_encode_i_32(self.conversationType, serializer);
-sse_encode_String(self.userId, serializer);
-sse_encode_String(self.groupId, serializer);
-sse_encode_String(self.showName, serializer);
-sse_encode_String(self.faceUrl, serializer);
-sse_encode_String(self.latestMsg, serializer);
-sse_encode_i_64(self.latestMsgSendTime, serializer);
-sse_encode_i_32(self.unreadCount, serializer);
-sse_encode_i_32(self.recvMsgOpt, serializer);
-sse_encode_bool(self.isPinned, serializer);
-sse_encode_bool(self.isPrivateChat, serializer);
-sse_encode_i_32(self.burnDuration, serializer);
-sse_encode_i_32(self.groupAtType, serializer);
-sse_encode_bool(self.isNotInGroup, serializer);
-sse_encode_i_64(self.updateUnreadCountTime, serializer);
-sse_encode_String(self.attachedInfo, serializer);
-sse_encode_String(self.ex, serializer);
-sse_encode_String(self.draftText, serializer);
-sse_encode_i_64(self.draftTextTime, serializer);
-sse_encode_i_64(self.maxSeq, serializer);
-sse_encode_i_64(self.minSeq, serializer);
-sse_encode_bool(self.isMsgDestruct, serializer);
-sse_encode_i_64(self.msgDestructTime, serializer);
- }
-
-@protected void sse_encode_location_elem(LocationElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.description, serializer);
-sse_encode_f_64(self.longitude, serializer);
-sse_encode_f_64(self.latitude, serializer);
- }
-
-@protected void sse_encode_logger_config(LoggerConfig self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.logLevel, serializer);
-sse_encode_String(self.logFilePath, serializer);
-sse_encode_bool(self.isLogStandardOutput, serializer);
- }
-
-@protected void sse_encode_login_data(LoginData self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.imToken, serializer);
-sse_encode_String(self.chatToken, serializer);
-sse_encode_String(self.userId, serializer);
- }
-
-@protected void sse_encode_message_event(MessageEvent self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-switch (self) { case MessageEvent_RecvNewMessage(message: final message): sse_encode_i_32(0, serializer); sse_encode_box_autoadd_msg_struct(message, serializer);
-case MessageEvent_RecvC2CReadReceipt(msgReceiptList: final msgReceiptList): sse_encode_i_32(1, serializer); sse_encode_String(msgReceiptList, serializer);
-case MessageEvent_NewRecvMessageRevoked(messageRevoked: final messageRevoked): sse_encode_i_32(2, serializer); sse_encode_box_autoadd_message_revoked(messageRevoked, serializer);
-case MessageEvent_RecvOfflineNewMessage(message: final message): sse_encode_i_32(3, serializer); sse_encode_box_autoadd_msg_struct(message, serializer);
-case MessageEvent_MsgDeleted(message: final message): sse_encode_i_32(4, serializer); sse_encode_box_autoadd_msg_struct(message, serializer);
-case MessageEvent_RecvOnlineOnlyMessage(message: final message): sse_encode_i_32(5, serializer); sse_encode_box_autoadd_msg_struct(message, serializer);
-case MessageEvent_KickedOffline(): sse_encode_i_32(6, serializer); case MessageEvent_RecvTypingStatus(typingStatus: final typingStatus): sse_encode_i_32(7, serializer); sse_encode_box_autoadd_typing_status(typingStatus, serializer);
-  } }
-
-@protected void sse_encode_message_revoked(MessageRevoked self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.revokerId, serializer);
-sse_encode_i_32(self.revokerRole, serializer);
-sse_encode_String(self.clientMsgId, serializer);
-sse_encode_String(self.revokerNickname, serializer);
-sse_encode_i_32(self.sessionType, serializer);
-sse_encode_u_32(self.seq, serializer);
- }
-
-@protected void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_opt_String(self.clientMsgId, serializer);
-sse_encode_opt_String(self.serverMsgId, serializer);
-sse_encode_i_64(self.createTime, serializer);
-sse_encode_i_64(self.sendTime, serializer);
-sse_encode_i_32(self.sessionType, serializer);
-sse_encode_opt_String(self.sendId, serializer);
-sse_encode_opt_String(self.recvId, serializer);
-sse_encode_i_32(self.msgFrom, serializer);
-sse_encode_i_32(self.contentType, serializer);
-sse_encode_i_32(self.senderPlatformId, serializer);
-sse_encode_opt_String(self.senderNickname, serializer);
-sse_encode_opt_String(self.senderFaceUrl, serializer);
-sse_encode_opt_String(self.groupId, serializer);
-sse_encode_opt_String(self.content, serializer);
-sse_encode_i_64(self.seq, serializer);
-sse_encode_bool(self.isRead, serializer);
-sse_encode_i_32(self.status, serializer);
-sse_encode_opt_box_autoadd_bool(self.isReact, serializer);
-sse_encode_opt_box_autoadd_bool(self.isExternalExtensions, serializer);
-sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(self.offlinePush, serializer);
-sse_encode_opt_String(self.attachedInfo, serializer);
-sse_encode_opt_String(self.ex, serializer);
-sse_encode_opt_String(self.localEx, serializer);
-sse_encode_opt_box_autoadd_text_elem(self.textElem, serializer);
-sse_encode_opt_box_autoadd_picture_elem(self.pictureElem, serializer);
-sse_encode_opt_box_autoadd_sound_elem(self.soundElem, serializer);
-sse_encode_opt_box_autoadd_video_elem(self.videoElem, serializer);
-sse_encode_opt_box_autoadd_file_elem(self.fileElem, serializer);
-sse_encode_opt_box_autoadd_at_elem(self.atTextElem, serializer);
-sse_encode_opt_box_autoadd_location_elem(self.locationElem, serializer);
-sse_encode_opt_box_autoadd_custom_elem(self.customElem, serializer);
-sse_encode_opt_box_autoadd_quote_elem(self.quoteElem, serializer);
- }
-
-@protected void sse_encode_opt_String(String? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_String(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_at_elem(AtElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_at_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_bool(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_custom_elem(CustomElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_custom_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_file_elem(FileElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_file_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_location_elem(LocationElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_location_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_picture_elem(PictureElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_picture_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_quote_elem(QuoteElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_quote_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_sound_elem(SoundElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_sound_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_text_elem(TextElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_text_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_autoadd_video_elem(VideoElem? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_autoadd_video_elem(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_box_msg_struct(MsgStruct? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_box_msg_struct(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_opt_list_at_info(List<AtInfo>? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-
-                sse_encode_bool(self != null, serializer);
-                if (self != null) {
-                    sse_encode_list_at_info(self, serializer);
-                }
-                 }
-
-@protected void sse_encode_picture_base_info(PictureBaseInfo self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.uuid, serializer);
-sse_encode_String(self.type, serializer);
-sse_encode_i_64(self.size, serializer);
-sse_encode_i_32(self.width, serializer);
-sse_encode_i_32(self.height, serializer);
-sse_encode_String(self.url, serializer);
- }
-
-@protected void sse_encode_picture_elem(PictureElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.sourcePath, serializer);
-sse_encode_picture_base_info(self.sourcePicture, serializer);
-sse_encode_picture_base_info(self.bigPicture, serializer);
-sse_encode_picture_base_info(self.snapshotPicture, serializer);
- }
-
-@protected void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_opt_String(self.text, serializer);
-sse_encode_opt_box_msg_struct(self.quoteMessage, serializer);
- }
-
-@protected void sse_encode_sound_elem(SoundElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.uuid, serializer);
-sse_encode_String(self.soundPath, serializer);
-sse_encode_String(self.sourceUrl, serializer);
-sse_encode_i_64(self.dataSize, serializer);
-sse_encode_i_64(self.duration, serializer);
- }
-
-@protected void sse_encode_text_elem(TextElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.content, serializer);
- }
-
-@protected void sse_encode_typing_status(TypingStatus self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.conversationId, serializer);
-sse_encode_opt_String(self.sendId, serializer);
-sse_encode_String(self.msgTip, serializer);
- }
-
-@protected void sse_encode_u_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint32(self); }
-
-@protected void sse_encode_u_8(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putUint8(self); }
-
-@protected void sse_encode_unit(void self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
- }
-
-@protected void sse_encode_usize(BigInt self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-serializer.buffer.putBigUint64(self); }
-
-@protected void sse_encode_video_elem(VideoElem self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
-sse_encode_String(self.videoPath, serializer);
-sse_encode_String(self.videoUuid, serializer);
-sse_encode_String(self.videoUrl, serializer);
-sse_encode_String(self.videoType, serializer);
-sse_encode_i_64(self.videoSize, serializer);
-sse_encode_i_64(self.duration, serializer);
-sse_encode_String(self.snapshotPath, serializer);
-sse_encode_String(self.snapshotUuid, serializer);
-sse_encode_i_64(self.snapshotSize, serializer);
-sse_encode_String(self.snapshotUrl, serializer);
-sse_encode_i_32(self.snapshotWidth, serializer);
-sse_encode_i_32(self.snapshotHeight, serializer);
- }
-                }
-                
-
-            @sealed class ArcMutexOptionStreamSinkConnectionStatusEventImpl extends RustOpaque implements ArcMutexOptionStreamSinkConnectionStatusEvent {
-                // Not to be used by end users
-                ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(List<dynamic> wire):
-                    super.frbInternalDcoDecode(wire, _kStaticData);
-
-                // Not to be used by end users
-                ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
-                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-                static final _kStaticData = RustArcStaticData(
-                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent,
-                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent,
-                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr,
-                );
-
-                
-            }
-            @sealed class ArcMutexOptionStreamSinkMessageEventImpl extends RustOpaque implements ArcMutexOptionStreamSinkMessageEvent {
-                // Not to be used by end users
-                ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(List<dynamic> wire):
-                    super.frbInternalDcoDecode(wire, _kStaticData);
-
-                // Not to be used by end users
-                ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
-                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-                static final _kStaticData = RustArcStaticData(
-                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent,
-                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent,
-                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr,
-                );
-
-                
-            }
-            @sealed class DartConnectionStatusListenerImpl extends RustOpaque implements DartConnectionStatusListener {
-                // Not to be used by end users
-                DartConnectionStatusListenerImpl.frbInternalDcoDecode(List<dynamic> wire):
-                    super.frbInternalDcoDecode(wire, _kStaticData);
-
-                // Not to be used by end users
-                DartConnectionStatusListenerImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
-                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-                static final _kStaticData = RustArcStaticData(
-                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_DartConnectionStatusListener,
-                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_DartConnectionStatusListener,
-                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr,
-                );
-
-                 ArcMutexOptionStreamSinkConnectionStatusEvent get sink=>RustLib.instance.api.crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSink(that: this, );
-
-
-  set sink(ArcMutexOptionStreamSinkConnectionStatusEvent sink)=>RustLib.instance.api.crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSink(that: this, sink: sink);
-
-
-/// 设置连接状态 sink
- Stream<ConnectionStatusEvent>  setSink()=>RustLib.instance.api.crateApiListenersConnectionStatusDartConnectionStatusListenerSetSink(that: this, );
-
-
-            }
-            @sealed class DartMessageListenerImpl extends RustOpaque implements DartMessageListener {
-                // Not to be used by end users
-                DartMessageListenerImpl.frbInternalDcoDecode(List<dynamic> wire):
-                    super.frbInternalDcoDecode(wire, _kStaticData);
-
-                // Not to be used by end users
-                DartMessageListenerImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
-                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-                static final _kStaticData = RustArcStaticData(
-                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_DartMessageListener,
-                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_DartMessageListener,
-                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_DartMessageListenerPtr,
-                );
-
-                 ArcMutexOptionStreamSinkMessageEvent get sink=>RustLib.instance.api.crateApiListenersMessageDartMessageListenerAutoAccessorGetSink(that: this, );
-
-
-  set sink(ArcMutexOptionStreamSinkMessageEvent sink)=>RustLib.instance.api.crateApiListenersMessageDartMessageListenerAutoAccessorSetSink(that: this, sink: sink);
-
-
-/// 设置消息 sink
- Stream<MessageEvent>  setSink()=>RustLib.instance.api.crateApiListenersMessageDartMessageListenerSetSink(that: this, );
-
-
-            }
-            @sealed class OfflinePushInfoImpl extends RustOpaque implements OfflinePushInfo {
-                // Not to be used by end users
-                OfflinePushInfoImpl.frbInternalDcoDecode(List<dynamic> wire):
-                    super.frbInternalDcoDecode(wire, _kStaticData);
-
-                // Not to be used by end users
-                OfflinePushInfoImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
-                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-                static final _kStaticData = RustArcStaticData(
-                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_OfflinePushInfo,
-                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_OfflinePushInfo,
-                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_OfflinePushInfoPtr,
-                );
-
-                
-            }
-            @sealed class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
-                // Not to be used by end users
-                OpenImBridgeClientImpl.frbInternalDcoDecode(List<dynamic> wire):
-                    super.frbInternalDcoDecode(wire, _kStaticData);
-
-                // Not to be used by end users
-                OpenImBridgeClientImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
-                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-                static final _kStaticData = RustArcStaticData(
-                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_OpenImBridgeClient,
-                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_OpenImBridgeClient,
-                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_OpenImBridgeClientPtr,
-                );
-
-                /// 连接到服务器
-///
-/// 建立 WebSocket 连接并启动消息监听。
-/// 连接成功后会自动启动心跳和消息处理任务。
- Future<void>  connect()=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientConnect(that: this, );
-
-
-/// 设置连接状态监听器
-///
-/// 监听连接状态变更事件，通过 StreamSink 发送到 Dart
- Stream<ConnectionStatusEvent>  connectionEvent()=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientConnectionEvent(that: this, );
-
-
-/// 设置会话监听器
-///
-/// 监听会话变更事件，通过 StreamSink 发送到 Dart
- Stream<ConversationEvent>  conversationEvent()=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientConversationEvent(that: this, );
-
-
-/// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
-///
-/// 参数和返回值完全匹配 Go SDK
- Future<GetAdvancedHistoryMessageListCallback>  getAdvancedHistoryMessageList({required GetAdvancedHistoryMessageListParams req })=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList(that: this, req: req);
-
-
-/// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
-///
-/// 参数和返回值完全匹配 Go SDK
- Future<GetAdvancedHistoryMessageListCallback>  getAdvancedHistoryMessageListReverse({required GetAdvancedHistoryMessageListParams req })=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse(that: this, req: req);
-
-
-/// 获取所有会话列表
- Future<List<LocalConversation>>  getAllConversations()=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientGetAllConversations(that: this, );
-
-
-/// 设置消息监听器
-///
-/// 监听消息事件，通过 StreamSink 发送到 Dart
- Stream<MessageEvent>  messageEvent()=>RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientMessageEvent(that: this, );
-
-
-            }
+      case 1:
+        return ConversationEvent_SyncServerFinish(
+          reinstalled: dco_decode_bool(raw[1]),
+        );
+      case 2:
+        return ConversationEvent_SyncServerProgress(
+          progress: dco_decode_i_32(raw[1]),
+        );
+      case 3:
+        return ConversationEvent_SyncServerFailed(
+          reinstalled: dco_decode_bool(raw[1]),
+        );
+      case 4:
+        return ConversationEvent_NewConversation(
+          conversationList: dco_decode_list_local_conversation(raw[1]),
+        );
+      case 5:
+        return ConversationEvent_ConversationChanged(
+          conversationList: dco_decode_list_local_conversation(raw[1]),
+        );
+      case 6:
+        return ConversationEvent_TotalUnreadMessageCountChanged(
+          totalUnreadCount: dco_decode_i_32(raw[1]),
+        );
+      case 7:
+        return ConversationEvent_ConversationUserInputStatusChanged(
+          change: dco_decode_String(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  CustomElem dco_decode_custom_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return CustomElem(
+      data: dco_decode_String(arr[0]),
+      description: dco_decode_String(arr[1]),
+      extension_: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
+  DartConversationListener dco_decode_dart_conversation_listener(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return DartConversationListener(
+      sink: dco_decode_StreamSink_conversation_event_Sse(arr[0]),
+    );
+  }
+
+  @protected
+  double dco_decode_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
+  }
+
+  @protected
+  FileElem dco_decode_file_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return FileElem(
+      filePath: dco_decode_String(arr[0]),
+      uuid: dco_decode_String(arr[1]),
+      sourceUrl: dco_decode_String(arr[2]),
+      fileName: dco_decode_String(arr[3]),
+      fileSize: dco_decode_i_64(arr[4]),
+    );
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListCallback
+  dco_decode_get_advanced_history_message_list_callback(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return GetAdvancedHistoryMessageListCallback(
+      messageList: dco_decode_list_msg_struct(arr[0]),
+      isEnd: dco_decode_bool(arr[1]),
+      errCode: dco_decode_i_32(arr[2]),
+      errMsg: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_get_advanced_history_message_list_params(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return GetAdvancedHistoryMessageListParams(
+      conversationId: dco_decode_String(arr[0]),
+      startClientMsgId: dco_decode_String(arr[1]),
+      count: dco_decode_i_32(arr[2]),
+      viewType: dco_decode_i_32(arr[3]),
+    );
+  }
+
+  @protected
+  int dco_decode_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeI64(raw);
+  }
+
+  @protected
+  List<String> dco_decode_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
+  List<AtInfo> dco_decode_list_at_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_at_info).toList();
+  }
+
+  @protected
+  List<LocalConversation> dco_decode_list_local_conversation(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_local_conversation).toList();
+  }
+
+  @protected
+  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_msg_struct).toList();
+  }
+
+  @protected
+  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as Uint8List;
+  }
+
+  @protected
+  LocalConversation dco_decode_local_conversation(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 24)
+      throw Exception('unexpected arr length: expect 24 but see ${arr.length}');
+    return LocalConversation(
+      conversationId: dco_decode_String(arr[0]),
+      conversationType: dco_decode_i_32(arr[1]),
+      userId: dco_decode_String(arr[2]),
+      groupId: dco_decode_String(arr[3]),
+      showName: dco_decode_String(arr[4]),
+      faceUrl: dco_decode_String(arr[5]),
+      latestMsg: dco_decode_String(arr[6]),
+      latestMsgSendTime: dco_decode_i_64(arr[7]),
+      unreadCount: dco_decode_i_32(arr[8]),
+      recvMsgOpt: dco_decode_i_32(arr[9]),
+      isPinned: dco_decode_bool(arr[10]),
+      isPrivateChat: dco_decode_bool(arr[11]),
+      burnDuration: dco_decode_i_32(arr[12]),
+      groupAtType: dco_decode_i_32(arr[13]),
+      isNotInGroup: dco_decode_bool(arr[14]),
+      updateUnreadCountTime: dco_decode_i_64(arr[15]),
+      attachedInfo: dco_decode_String(arr[16]),
+      ex: dco_decode_String(arr[17]),
+      draftText: dco_decode_String(arr[18]),
+      draftTextTime: dco_decode_i_64(arr[19]),
+      maxSeq: dco_decode_i_64(arr[20]),
+      minSeq: dco_decode_i_64(arr[21]),
+      isMsgDestruct: dco_decode_bool(arr[22]),
+      msgDestructTime: dco_decode_i_64(arr[23]),
+    );
+  }
+
+  @protected
+  LocationElem dco_decode_location_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LocationElem(
+      description: dco_decode_String(arr[0]),
+      longitude: dco_decode_f_64(arr[1]),
+      latitude: dco_decode_f_64(arr[2]),
+    );
+  }
+
+  @protected
+  LoggerConfig dco_decode_logger_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LoggerConfig(
+      logLevel: dco_decode_String(arr[0]),
+      logFilePath: dco_decode_String(arr[1]),
+      isLogStandardOutput: dco_decode_bool(arr[2]),
+    );
+  }
+
+  @protected
+  LoginData dco_decode_login_data(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LoginData(
+      imToken: dco_decode_String(arr[0]),
+      chatToken: dco_decode_String(arr[1]),
+      userId: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
+  MessageEvent dco_decode_message_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return MessageEvent_RecvNewMessage(
+          message: dco_decode_box_autoadd_msg_struct(raw[1]),
+        );
+      case 1:
+        return MessageEvent_RecvC2CReadReceipt(
+          msgReceiptList: dco_decode_String(raw[1]),
+        );
+      case 2:
+        return MessageEvent_NewRecvMessageRevoked(
+          messageRevoked: dco_decode_box_autoadd_message_revoked(raw[1]),
+        );
+      case 3:
+        return MessageEvent_RecvOfflineNewMessage(
+          message: dco_decode_box_autoadd_msg_struct(raw[1]),
+        );
+      case 4:
+        return MessageEvent_MsgDeleted(
+          message: dco_decode_box_autoadd_msg_struct(raw[1]),
+        );
+      case 5:
+        return MessageEvent_RecvOnlineOnlyMessage(
+          message: dco_decode_box_autoadd_msg_struct(raw[1]),
+        );
+      case 6:
+        return MessageEvent_KickedOffline();
+      case 7:
+        return MessageEvent_RecvTypingStatus(
+          typingStatus: dco_decode_box_autoadd_typing_status(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  MessageRevoked dco_decode_message_revoked(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return MessageRevoked(
+      revokerId: dco_decode_String(arr[0]),
+      revokerRole: dco_decode_i_32(arr[1]),
+      clientMsgId: dco_decode_String(arr[2]),
+      revokerNickname: dco_decode_String(arr[3]),
+      sessionType: dco_decode_i_32(arr[4]),
+      seq: dco_decode_u_32(arr[5]),
+    );
+  }
+
+  @protected
+  MsgStruct dco_decode_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 32)
+      throw Exception('unexpected arr length: expect 32 but see ${arr.length}');
+    return MsgStruct(
+      clientMsgId: dco_decode_opt_String(arr[0]),
+      serverMsgId: dco_decode_opt_String(arr[1]),
+      createTime: dco_decode_i_64(arr[2]),
+      sendTime: dco_decode_i_64(arr[3]),
+      sessionType: dco_decode_i_32(arr[4]),
+      sendId: dco_decode_opt_String(arr[5]),
+      recvId: dco_decode_opt_String(arr[6]),
+      msgFrom: dco_decode_i_32(arr[7]),
+      contentType: dco_decode_i_32(arr[8]),
+      senderPlatformId: dco_decode_i_32(arr[9]),
+      senderNickname: dco_decode_opt_String(arr[10]),
+      senderFaceUrl: dco_decode_opt_String(arr[11]),
+      groupId: dco_decode_opt_String(arr[12]),
+      content: dco_decode_opt_String(arr[13]),
+      seq: dco_decode_i_64(arr[14]),
+      isRead: dco_decode_bool(arr[15]),
+      status: dco_decode_i_32(arr[16]),
+      isReact: dco_decode_opt_box_autoadd_bool(arr[17]),
+      isExternalExtensions: dco_decode_opt_box_autoadd_bool(arr[18]),
+      offlinePush:
+          dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+            arr[19],
+          ),
+      attachedInfo: dco_decode_opt_String(arr[20]),
+      ex: dco_decode_opt_String(arr[21]),
+      localEx: dco_decode_opt_String(arr[22]),
+      textElem: dco_decode_opt_box_autoadd_text_elem(arr[23]),
+      pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[24]),
+      soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[25]),
+      videoElem: dco_decode_opt_box_autoadd_video_elem(arr[26]),
+      fileElem: dco_decode_opt_box_autoadd_file_elem(arr[27]),
+      atTextElem: dco_decode_opt_box_autoadd_at_elem(arr[28]),
+      locationElem: dco_decode_opt_box_autoadd_location_elem(arr[29]),
+      customElem: dco_decode_opt_box_autoadd_custom_elem(arr[30]),
+      quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[31]),
+    );
+  }
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  OfflinePushInfo?
+  dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null
+        ? null
+        : dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+            raw,
+          );
+  }
+
+  @protected
+  AtElem? dco_decode_opt_box_autoadd_at_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_at_elem(raw);
+  }
+
+  @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
+  CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_custom_elem(raw);
+  }
+
+  @protected
+  FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_file_elem(raw);
+  }
+
+  @protected
+  LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_location_elem(raw);
+  }
+
+  @protected
+  PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_picture_elem(raw);
+  }
+
+  @protected
+  QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_quote_elem(raw);
+  }
+
+  @protected
+  SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_sound_elem(raw);
+  }
+
+  @protected
+  TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_text_elem(raw);
+  }
+
+  @protected
+  VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_video_elem(raw);
+  }
+
+  @protected
+  MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_msg_struct(raw);
+  }
+
+  @protected
+  List<AtInfo>? dco_decode_opt_list_at_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_at_info(raw);
+  }
+
+  @protected
+  PictureBaseInfo dco_decode_picture_base_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return PictureBaseInfo(
+      uuid: dco_decode_String(arr[0]),
+      type: dco_decode_String(arr[1]),
+      size: dco_decode_i_64(arr[2]),
+      width: dco_decode_i_32(arr[3]),
+      height: dco_decode_i_32(arr[4]),
+      url: dco_decode_String(arr[5]),
+    );
+  }
+
+  @protected
+  PictureElem dco_decode_picture_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return PictureElem(
+      sourcePath: dco_decode_String(arr[0]),
+      sourcePicture: dco_decode_picture_base_info(arr[1]),
+      bigPicture: dco_decode_picture_base_info(arr[2]),
+      snapshotPicture: dco_decode_picture_base_info(arr[3]),
+    );
+  }
+
+  @protected
+  QuoteElem dco_decode_quote_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return QuoteElem(
+      text: dco_decode_opt_String(arr[0]),
+      quoteMessage: dco_decode_opt_box_msg_struct(arr[1]),
+    );
+  }
+
+  @protected
+  SoundElem dco_decode_sound_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return SoundElem(
+      uuid: dco_decode_String(arr[0]),
+      soundPath: dco_decode_String(arr[1]),
+      sourceUrl: dco_decode_String(arr[2]),
+      dataSize: dco_decode_i_64(arr[3]),
+      duration: dco_decode_i_64(arr[4]),
+    );
+  }
+
+  @protected
+  TextElem dco_decode_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return TextElem(content: dco_decode_String(arr[0]));
+  }
+
+  @protected
+  TypingStatus dco_decode_typing_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return TypingStatus(
+      conversationId: dco_decode_String(arr[0]),
+      sendId: dco_decode_opt_String(arr[1]),
+      msgTip: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
+  int dco_decode_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  int dco_decode_u_8(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
+  void dco_decode_unit(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return;
+  }
+
+  @protected
+  BigInt dco_decode_usize(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeU64(raw);
+  }
+
+  @protected
+  VideoElem dco_decode_video_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 12)
+      throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
+    return VideoElem(
+      videoPath: dco_decode_String(arr[0]),
+      videoUuid: dco_decode_String(arr[1]),
+      videoUrl: dco_decode_String(arr[2]),
+      videoType: dco_decode_String(arr[3]),
+      videoSize: dco_decode_i_64(arr[4]),
+      duration: dco_decode_i_64(arr[5]),
+      snapshotPath: dco_decode_String(arr[6]),
+      snapshotUuid: dco_decode_String(arr[7]),
+      snapshotSize: dco_decode_i_64(arr[8]),
+      snapshotUrl: dco_decode_String(arr[9]),
+      snapshotWidth: dco_decode_i_32(arr[10]),
+      snapshotHeight: dco_decode_i_32(arr[11]),
+    );
+  }
+
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_String(deserializer);
+    return AnyhowException(inner);
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartConnectionStatusListener
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartMessageListener
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  OfflinePushInfo
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return OfflinePushInfoImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartConnectionStatusListener
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartMessageListener
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartConnectionStatusListener
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartMessageListener
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartConnectionStatusListener
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartConnectionStatusListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  DartMessageListener
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return DartMessageListenerImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  OfflinePushInfo
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return OfflinePushInfoImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  OpenImBridgeClient
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  RustStreamSink<ConnectionStatusEvent>
+  sse_decode_StreamSink_connection_status_event_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  RustStreamSink<ConversationEvent>
+  sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  String sse_decode_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_list_prim_u_8_strict(deserializer);
+    return utf8.decoder.convert(inner);
+  }
+
+  @protected
+  AtElem sse_decode_at_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_text = sse_decode_String(deserializer);
+    var var_atUserList = sse_decode_list_String(deserializer);
+    var var_atUsersInfo = sse_decode_opt_list_at_info(deserializer);
+    var var_quoteMessage = sse_decode_opt_box_msg_struct(deserializer);
+    var var_isAtSelf = sse_decode_bool(deserializer);
+    return AtElem(
+      text: var_text,
+      atUserList: var_atUserList,
+      atUsersInfo: var_atUsersInfo,
+      quoteMessage: var_quoteMessage,
+      isAtSelf: var_isAtSelf,
+    );
+  }
+
+  @protected
+  AtInfo sse_decode_at_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_atUserId = sse_decode_opt_String(deserializer);
+    var var_groupNickname = sse_decode_opt_String(deserializer);
+    return AtInfo(atUserId: var_atUserId, groupNickname: var_groupNickname);
+  }
+
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  OfflinePushInfo
+  sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+      deserializer,
+    ));
+  }
+
+  @protected
+  AtElem sse_decode_box_autoadd_at_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_at_elem(deserializer));
+  }
+
+  @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_bool(deserializer));
+  }
+
+  @protected
+  CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_custom_elem(deserializer));
+  }
+
+  @protected
+  FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_file_elem(deserializer));
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_box_autoadd_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_get_advanced_history_message_list_params(deserializer));
+  }
+
+  @protected
+  LocationElem sse_decode_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_location_elem(deserializer));
+  }
+
+  @protected
+  LoggerConfig sse_decode_box_autoadd_logger_config(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_logger_config(deserializer));
+  }
+
+  @protected
+  MessageRevoked sse_decode_box_autoadd_message_revoked(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_message_revoked(deserializer));
+  }
+
+  @protected
+  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_msg_struct(deserializer));
+  }
+
+  @protected
+  PictureElem sse_decode_box_autoadd_picture_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_picture_elem(deserializer));
+  }
+
+  @protected
+  QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_quote_elem(deserializer));
+  }
+
+  @protected
+  SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_sound_elem(deserializer));
+  }
+
+  @protected
+  TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_text_elem(deserializer));
+  }
+
+  @protected
+  TypingStatus sse_decode_box_autoadd_typing_status(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_typing_status(deserializer));
+  }
+
+  @protected
+  VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_video_elem(deserializer));
+  }
+
+  @protected
+  MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_msg_struct(deserializer));
+  }
+
+  @protected
+  ConnectionStatusEvent sse_decode_connection_status_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_connected = sse_decode_bool(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return ConnectionStatusEvent(
+      connected: var_connected,
+      message: var_message,
+    );
+  }
+
+  @protected
+  ConversationEvent sse_decode_conversation_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_reinstalled = sse_decode_bool(deserializer);
+        return ConversationEvent_SyncServerStart(reinstalled: var_reinstalled);
+      case 1:
+        var var_reinstalled = sse_decode_bool(deserializer);
+        return ConversationEvent_SyncServerFinish(reinstalled: var_reinstalled);
+      case 2:
+        var var_progress = sse_decode_i_32(deserializer);
+        return ConversationEvent_SyncServerProgress(progress: var_progress);
+      case 3:
+        var var_reinstalled = sse_decode_bool(deserializer);
+        return ConversationEvent_SyncServerFailed(reinstalled: var_reinstalled);
+      case 4:
+        var var_conversationList = sse_decode_list_local_conversation(
+          deserializer,
+        );
+        return ConversationEvent_NewConversation(
+          conversationList: var_conversationList,
+        );
+      case 5:
+        var var_conversationList = sse_decode_list_local_conversation(
+          deserializer,
+        );
+        return ConversationEvent_ConversationChanged(
+          conversationList: var_conversationList,
+        );
+      case 6:
+        var var_totalUnreadCount = sse_decode_i_32(deserializer);
+        return ConversationEvent_TotalUnreadMessageCountChanged(
+          totalUnreadCount: var_totalUnreadCount,
+        );
+      case 7:
+        var var_change = sse_decode_String(deserializer);
+        return ConversationEvent_ConversationUserInputStatusChanged(
+          change: var_change,
+        );
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  CustomElem sse_decode_custom_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_data = sse_decode_String(deserializer);
+    var var_description = sse_decode_String(deserializer);
+    var var_extension_ = sse_decode_String(deserializer);
+    return CustomElem(
+      data: var_data,
+      description: var_description,
+      extension_: var_extension_,
+    );
+  }
+
+  @protected
+  DartConversationListener sse_decode_dart_conversation_listener(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sink = sse_decode_StreamSink_conversation_event_Sse(deserializer);
+    return DartConversationListener(sink: var_sink);
+  }
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat64();
+  }
+
+  @protected
+  FileElem sse_decode_file_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_filePath = sse_decode_String(deserializer);
+    var var_uuid = sse_decode_String(deserializer);
+    var var_sourceUrl = sse_decode_String(deserializer);
+    var var_fileName = sse_decode_String(deserializer);
+    var var_fileSize = sse_decode_i_64(deserializer);
+    return FileElem(
+      filePath: var_filePath,
+      uuid: var_uuid,
+      sourceUrl: var_sourceUrl,
+      fileName: var_fileName,
+      fileSize: var_fileSize,
+    );
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListCallback
+  sse_decode_get_advanced_history_message_list_callback(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_messageList = sse_decode_list_msg_struct(deserializer);
+    var var_isEnd = sse_decode_bool(deserializer);
+    var var_errCode = sse_decode_i_32(deserializer);
+    var var_errMsg = sse_decode_String(deserializer);
+    return GetAdvancedHistoryMessageListCallback(
+      messageList: var_messageList,
+      isEnd: var_isEnd,
+      errCode: var_errCode,
+      errMsg: var_errMsg,
+    );
+  }
+
+  @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_startClientMsgId = sse_decode_String(deserializer);
+    var var_count = sse_decode_i_32(deserializer);
+    var var_viewType = sse_decode_i_32(deserializer);
+    return GetAdvancedHistoryMessageListParams(
+      conversationId: var_conversationId,
+      startClientMsgId: var_startClientMsgId,
+      count: var_count,
+      viewType: var_viewType,
+    );
+  }
+
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getPlatformInt64();
+  }
+
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <String>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <AtInfo>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_at_info(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<LocalConversation> sse_decode_list_local_conversation(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <LocalConversation>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_local_conversation(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <MsgStruct>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_msg_struct(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var len_ = sse_decode_i_32(deserializer);
+    return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  LocalConversation sse_decode_local_conversation(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_conversationType = sse_decode_i_32(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    var var_groupId = sse_decode_String(deserializer);
+    var var_showName = sse_decode_String(deserializer);
+    var var_faceUrl = sse_decode_String(deserializer);
+    var var_latestMsg = sse_decode_String(deserializer);
+    var var_latestMsgSendTime = sse_decode_i_64(deserializer);
+    var var_unreadCount = sse_decode_i_32(deserializer);
+    var var_recvMsgOpt = sse_decode_i_32(deserializer);
+    var var_isPinned = sse_decode_bool(deserializer);
+    var var_isPrivateChat = sse_decode_bool(deserializer);
+    var var_burnDuration = sse_decode_i_32(deserializer);
+    var var_groupAtType = sse_decode_i_32(deserializer);
+    var var_isNotInGroup = sse_decode_bool(deserializer);
+    var var_updateUnreadCountTime = sse_decode_i_64(deserializer);
+    var var_attachedInfo = sse_decode_String(deserializer);
+    var var_ex = sse_decode_String(deserializer);
+    var var_draftText = sse_decode_String(deserializer);
+    var var_draftTextTime = sse_decode_i_64(deserializer);
+    var var_maxSeq = sse_decode_i_64(deserializer);
+    var var_minSeq = sse_decode_i_64(deserializer);
+    var var_isMsgDestruct = sse_decode_bool(deserializer);
+    var var_msgDestructTime = sse_decode_i_64(deserializer);
+    return LocalConversation(
+      conversationId: var_conversationId,
+      conversationType: var_conversationType,
+      userId: var_userId,
+      groupId: var_groupId,
+      showName: var_showName,
+      faceUrl: var_faceUrl,
+      latestMsg: var_latestMsg,
+      latestMsgSendTime: var_latestMsgSendTime,
+      unreadCount: var_unreadCount,
+      recvMsgOpt: var_recvMsgOpt,
+      isPinned: var_isPinned,
+      isPrivateChat: var_isPrivateChat,
+      burnDuration: var_burnDuration,
+      groupAtType: var_groupAtType,
+      isNotInGroup: var_isNotInGroup,
+      updateUnreadCountTime: var_updateUnreadCountTime,
+      attachedInfo: var_attachedInfo,
+      ex: var_ex,
+      draftText: var_draftText,
+      draftTextTime: var_draftTextTime,
+      maxSeq: var_maxSeq,
+      minSeq: var_minSeq,
+      isMsgDestruct: var_isMsgDestruct,
+      msgDestructTime: var_msgDestructTime,
+    );
+  }
+
+  @protected
+  LocationElem sse_decode_location_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_description = sse_decode_String(deserializer);
+    var var_longitude = sse_decode_f_64(deserializer);
+    var var_latitude = sse_decode_f_64(deserializer);
+    return LocationElem(
+      description: var_description,
+      longitude: var_longitude,
+      latitude: var_latitude,
+    );
+  }
+
+  @protected
+  LoggerConfig sse_decode_logger_config(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_logLevel = sse_decode_String(deserializer);
+    var var_logFilePath = sse_decode_String(deserializer);
+    var var_isLogStandardOutput = sse_decode_bool(deserializer);
+    return LoggerConfig(
+      logLevel: var_logLevel,
+      logFilePath: var_logFilePath,
+      isLogStandardOutput: var_isLogStandardOutput,
+    );
+  }
+
+  @protected
+  LoginData sse_decode_login_data(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_imToken = sse_decode_String(deserializer);
+    var var_chatToken = sse_decode_String(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    return LoginData(
+      imToken: var_imToken,
+      chatToken: var_chatToken,
+      userId: var_userId,
+    );
+  }
+
+  @protected
+  MessageEvent sse_decode_message_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
+        return MessageEvent_RecvNewMessage(message: var_message);
+      case 1:
+        var var_msgReceiptList = sse_decode_String(deserializer);
+        return MessageEvent_RecvC2CReadReceipt(
+          msgReceiptList: var_msgReceiptList,
+        );
+      case 2:
+        var var_messageRevoked = sse_decode_box_autoadd_message_revoked(
+          deserializer,
+        );
+        return MessageEvent_NewRecvMessageRevoked(
+          messageRevoked: var_messageRevoked,
+        );
+      case 3:
+        var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
+        return MessageEvent_RecvOfflineNewMessage(message: var_message);
+      case 4:
+        var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
+        return MessageEvent_MsgDeleted(message: var_message);
+      case 5:
+        var var_message = sse_decode_box_autoadd_msg_struct(deserializer);
+        return MessageEvent_RecvOnlineOnlyMessage(message: var_message);
+      case 6:
+        return MessageEvent_KickedOffline();
+      case 7:
+        var var_typingStatus = sse_decode_box_autoadd_typing_status(
+          deserializer,
+        );
+        return MessageEvent_RecvTypingStatus(typingStatus: var_typingStatus);
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  MessageRevoked sse_decode_message_revoked(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_revokerId = sse_decode_String(deserializer);
+    var var_revokerRole = sse_decode_i_32(deserializer);
+    var var_clientMsgId = sse_decode_String(deserializer);
+    var var_revokerNickname = sse_decode_String(deserializer);
+    var var_sessionType = sse_decode_i_32(deserializer);
+    var var_seq = sse_decode_u_32(deserializer);
+    return MessageRevoked(
+      revokerId: var_revokerId,
+      revokerRole: var_revokerRole,
+      clientMsgId: var_clientMsgId,
+      revokerNickname: var_revokerNickname,
+      sessionType: var_sessionType,
+      seq: var_seq,
+    );
+  }
+
+  @protected
+  MsgStruct sse_decode_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_clientMsgId = sse_decode_opt_String(deserializer);
+    var var_serverMsgId = sse_decode_opt_String(deserializer);
+    var var_createTime = sse_decode_i_64(deserializer);
+    var var_sendTime = sse_decode_i_64(deserializer);
+    var var_sessionType = sse_decode_i_32(deserializer);
+    var var_sendId = sse_decode_opt_String(deserializer);
+    var var_recvId = sse_decode_opt_String(deserializer);
+    var var_msgFrom = sse_decode_i_32(deserializer);
+    var var_contentType = sse_decode_i_32(deserializer);
+    var var_senderPlatformId = sse_decode_i_32(deserializer);
+    var var_senderNickname = sse_decode_opt_String(deserializer);
+    var var_senderFaceUrl = sse_decode_opt_String(deserializer);
+    var var_groupId = sse_decode_opt_String(deserializer);
+    var var_content = sse_decode_opt_String(deserializer);
+    var var_seq = sse_decode_i_64(deserializer);
+    var var_isRead = sse_decode_bool(deserializer);
+    var var_status = sse_decode_i_32(deserializer);
+    var var_isReact = sse_decode_opt_box_autoadd_bool(deserializer);
+    var var_isExternalExtensions = sse_decode_opt_box_autoadd_bool(
+      deserializer,
+    );
+    var var_offlinePush =
+        sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+          deserializer,
+        );
+    var var_attachedInfo = sse_decode_opt_String(deserializer);
+    var var_ex = sse_decode_opt_String(deserializer);
+    var var_localEx = sse_decode_opt_String(deserializer);
+    var var_textElem = sse_decode_opt_box_autoadd_text_elem(deserializer);
+    var var_pictureElem = sse_decode_opt_box_autoadd_picture_elem(deserializer);
+    var var_soundElem = sse_decode_opt_box_autoadd_sound_elem(deserializer);
+    var var_videoElem = sse_decode_opt_box_autoadd_video_elem(deserializer);
+    var var_fileElem = sse_decode_opt_box_autoadd_file_elem(deserializer);
+    var var_atTextElem = sse_decode_opt_box_autoadd_at_elem(deserializer);
+    var var_locationElem = sse_decode_opt_box_autoadd_location_elem(
+      deserializer,
+    );
+    var var_customElem = sse_decode_opt_box_autoadd_custom_elem(deserializer);
+    var var_quoteElem = sse_decode_opt_box_autoadd_quote_elem(deserializer);
+    return MsgStruct(
+      clientMsgId: var_clientMsgId,
+      serverMsgId: var_serverMsgId,
+      createTime: var_createTime,
+      sendTime: var_sendTime,
+      sessionType: var_sessionType,
+      sendId: var_sendId,
+      recvId: var_recvId,
+      msgFrom: var_msgFrom,
+      contentType: var_contentType,
+      senderPlatformId: var_senderPlatformId,
+      senderNickname: var_senderNickname,
+      senderFaceUrl: var_senderFaceUrl,
+      groupId: var_groupId,
+      content: var_content,
+      seq: var_seq,
+      isRead: var_isRead,
+      status: var_status,
+      isReact: var_isReact,
+      isExternalExtensions: var_isExternalExtensions,
+      offlinePush: var_offlinePush,
+      attachedInfo: var_attachedInfo,
+      ex: var_ex,
+      localEx: var_localEx,
+      textElem: var_textElem,
+      pictureElem: var_pictureElem,
+      soundElem: var_soundElem,
+      videoElem: var_videoElem,
+      fileElem: var_fileElem,
+      atTextElem: var_atTextElem,
+      locationElem: var_locationElem,
+      customElem: var_customElem,
+      quoteElem: var_quoteElem,
+    );
+  }
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  OfflinePushInfo?
+  sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+        deserializer,
+      ));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  AtElem? sse_decode_opt_box_autoadd_at_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_at_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_bool(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  CustomElem? sse_decode_opt_box_autoadd_custom_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_custom_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_file_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  LocationElem? sse_decode_opt_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_location_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PictureElem? sse_decode_opt_box_autoadd_picture_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_picture_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  QuoteElem? sse_decode_opt_box_autoadd_quote_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_quote_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  SoundElem? sse_decode_opt_box_autoadd_sound_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_sound_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_text_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  VideoElem? sse_decode_opt_box_autoadd_video_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_video_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_msg_struct(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  List<AtInfo>? sse_decode_opt_list_at_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_at_info(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_uuid = sse_decode_String(deserializer);
+    var var_type = sse_decode_String(deserializer);
+    var var_size = sse_decode_i_64(deserializer);
+    var var_width = sse_decode_i_32(deserializer);
+    var var_height = sse_decode_i_32(deserializer);
+    var var_url = sse_decode_String(deserializer);
+    return PictureBaseInfo(
+      uuid: var_uuid,
+      type: var_type,
+      size: var_size,
+      width: var_width,
+      height: var_height,
+      url: var_url,
+    );
+  }
+
+  @protected
+  PictureElem sse_decode_picture_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sourcePath = sse_decode_String(deserializer);
+    var var_sourcePicture = sse_decode_picture_base_info(deserializer);
+    var var_bigPicture = sse_decode_picture_base_info(deserializer);
+    var var_snapshotPicture = sse_decode_picture_base_info(deserializer);
+    return PictureElem(
+      sourcePath: var_sourcePath,
+      sourcePicture: var_sourcePicture,
+      bigPicture: var_bigPicture,
+      snapshotPicture: var_snapshotPicture,
+    );
+  }
+
+  @protected
+  QuoteElem sse_decode_quote_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_text = sse_decode_opt_String(deserializer);
+    var var_quoteMessage = sse_decode_opt_box_msg_struct(deserializer);
+    return QuoteElem(text: var_text, quoteMessage: var_quoteMessage);
+  }
+
+  @protected
+  SoundElem sse_decode_sound_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_uuid = sse_decode_String(deserializer);
+    var var_soundPath = sse_decode_String(deserializer);
+    var var_sourceUrl = sse_decode_String(deserializer);
+    var var_dataSize = sse_decode_i_64(deserializer);
+    var var_duration = sse_decode_i_64(deserializer);
+    return SoundElem(
+      uuid: var_uuid,
+      soundPath: var_soundPath,
+      sourceUrl: var_sourceUrl,
+      dataSize: var_dataSize,
+      duration: var_duration,
+    );
+  }
+
+  @protected
+  TextElem sse_decode_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_content = sse_decode_String(deserializer);
+    return TextElem(content: var_content);
+  }
+
+  @protected
+  TypingStatus sse_decode_typing_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_sendId = sse_decode_opt_String(deserializer);
+    var var_msgTip = sse_decode_String(deserializer);
+    return TypingStatus(
+      conversationId: var_conversationId,
+      sendId: var_sendId,
+      msgTip: var_msgTip,
+    );
+  }
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint32();
+  }
+
+  @protected
+  int sse_decode_u_8(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8();
+  }
+
+  @protected
+  void sse_decode_unit(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+  }
+
+  @protected
+  BigInt sse_decode_usize(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getBigUint64();
+  }
+
+  @protected
+  VideoElem sse_decode_video_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_videoPath = sse_decode_String(deserializer);
+    var var_videoUuid = sse_decode_String(deserializer);
+    var var_videoUrl = sse_decode_String(deserializer);
+    var var_videoType = sse_decode_String(deserializer);
+    var var_videoSize = sse_decode_i_64(deserializer);
+    var var_duration = sse_decode_i_64(deserializer);
+    var var_snapshotPath = sse_decode_String(deserializer);
+    var var_snapshotUuid = sse_decode_String(deserializer);
+    var var_snapshotSize = sse_decode_i_64(deserializer);
+    var var_snapshotUrl = sse_decode_String(deserializer);
+    var var_snapshotWidth = sse_decode_i_32(deserializer);
+    var var_snapshotHeight = sse_decode_i_32(deserializer);
+    return VideoElem(
+      videoPath: var_videoPath,
+      videoUuid: var_videoUuid,
+      videoUrl: var_videoUrl,
+      videoType: var_videoType,
+      videoSize: var_videoSize,
+      duration: var_duration,
+      snapshotPath: var_snapshotPath,
+      snapshotUuid: var_snapshotUuid,
+      snapshotSize: var_snapshotSize,
+      snapshotUrl: var_snapshotUrl,
+      snapshotWidth: var_snapshotWidth,
+      snapshotHeight: var_snapshotHeight,
+    );
+  }
+
+  @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    ArcMutexOptionStreamSinkConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkConnectionStatusEventImpl)
+          .frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    ArcMutexOptionStreamSinkMessageEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkMessageEventImpl).frbInternalSseEncode(
+        move: true,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartConnectionStatusListenerImpl).frbInternalSseEncode(
+        move: true,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartMessageListenerImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as OfflinePushInfoImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartConnectionStatusListenerImpl).frbInternalSseEncode(
+        move: false,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartMessageListenerImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartConnectionStatusListenerImpl).frbInternalSseEncode(
+        move: false,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartMessageListenerImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    ArcMutexOptionStreamSinkConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkConnectionStatusEventImpl)
+          .frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    ArcMutexOptionStreamSinkMessageEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcMutexOptionStreamSinkMessageEventImpl).frbInternalSseEncode(
+        move: null,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartConnectionStatusListenerImpl).frbInternalSseEncode(
+        move: null,
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as DartMessageListenerImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as OfflinePushInfoImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_connection_status_event_Sse(
+    RustStreamSink<ConnectionStatusEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_connection_status_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_conversation_event_Sse(
+    RustStreamSink<ConversationEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_conversation_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_message_event_Sse(
+    RustStreamSink<MessageEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_event,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_String(String self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
+  }
+
+  @protected
+  void sse_encode_at_elem(AtElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.text, serializer);
+    sse_encode_list_String(self.atUserList, serializer);
+    sse_encode_opt_list_at_info(self.atUsersInfo, serializer);
+    sse_encode_opt_box_msg_struct(self.quoteMessage, serializer);
+    sse_encode_bool(self.isAtSelf, serializer);
+  }
+
+  @protected
+  void sse_encode_at_info(AtInfo self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.atUserId, serializer);
+    sse_encode_opt_String(self.groupNickname, serializer);
+  }
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void
+  sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+      self,
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_box_autoadd_at_elem(AtElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_at_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_custom_elem(
+    CustomElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_custom_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_file_elem(
+    FileElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_file_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_get_advanced_history_message_list_params(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_location_elem(
+    LocationElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_location_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_logger_config(
+    LoggerConfig self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_logger_config(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_message_revoked(
+    MessageRevoked self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_message_revoked(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_msg_struct(
+    MsgStruct self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_msg_struct(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_picture_elem(
+    PictureElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_picture_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_quote_elem(
+    QuoteElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_quote_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_sound_elem(
+    SoundElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_sound_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_text_elem(
+    TextElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_text_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_typing_status(
+    TypingStatus self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_typing_status(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_video_elem(
+    VideoElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_video_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_msg_struct(self, serializer);
+  }
+
+  @protected
+  void sse_encode_connection_status_event(
+    ConnectionStatusEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.connected, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void sse_encode_conversation_event(
+    ConversationEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case ConversationEvent_SyncServerStart(reinstalled: final reinstalled):
+        sse_encode_i_32(0, serializer);
+        sse_encode_bool(reinstalled, serializer);
+      case ConversationEvent_SyncServerFinish(reinstalled: final reinstalled):
+        sse_encode_i_32(1, serializer);
+        sse_encode_bool(reinstalled, serializer);
+      case ConversationEvent_SyncServerProgress(progress: final progress):
+        sse_encode_i_32(2, serializer);
+        sse_encode_i_32(progress, serializer);
+      case ConversationEvent_SyncServerFailed(reinstalled: final reinstalled):
+        sse_encode_i_32(3, serializer);
+        sse_encode_bool(reinstalled, serializer);
+      case ConversationEvent_NewConversation(
+        conversationList: final conversationList,
+      ):
+        sse_encode_i_32(4, serializer);
+        sse_encode_list_local_conversation(conversationList, serializer);
+      case ConversationEvent_ConversationChanged(
+        conversationList: final conversationList,
+      ):
+        sse_encode_i_32(5, serializer);
+        sse_encode_list_local_conversation(conversationList, serializer);
+      case ConversationEvent_TotalUnreadMessageCountChanged(
+        totalUnreadCount: final totalUnreadCount,
+      ):
+        sse_encode_i_32(6, serializer);
+        sse_encode_i_32(totalUnreadCount, serializer);
+      case ConversationEvent_ConversationUserInputStatusChanged(
+        change: final change,
+      ):
+        sse_encode_i_32(7, serializer);
+        sse_encode_String(change, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_custom_elem(CustomElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.data, serializer);
+    sse_encode_String(self.description, serializer);
+    sse_encode_String(self.extension_, serializer);
+  }
+
+  @protected
+  void sse_encode_dart_conversation_listener(
+    DartConversationListener self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_StreamSink_conversation_event_Sse(self.sink, serializer);
+  }
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat64(self);
+  }
+
+  @protected
+  void sse_encode_file_elem(FileElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.filePath, serializer);
+    sse_encode_String(self.uuid, serializer);
+    sse_encode_String(self.sourceUrl, serializer);
+    sse_encode_String(self.fileName, serializer);
+    sse_encode_i_64(self.fileSize, serializer);
+  }
+
+  @protected
+  void sse_encode_get_advanced_history_message_list_callback(
+    GetAdvancedHistoryMessageListCallback self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_msg_struct(self.messageList, serializer);
+    sse_encode_bool(self.isEnd, serializer);
+    sse_encode_i_32(self.errCode, serializer);
+    sse_encode_String(self.errMsg, serializer);
+  }
+
+  @protected
+  void sse_encode_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_String(self.startClientMsgId, serializer);
+    sse_encode_i_32(self.count, serializer);
+    sse_encode_i_32(self.viewType, serializer);
+  }
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putInt32(self);
+  }
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putPlatformInt64(self);
+  }
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_at_info(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_local_conversation(
+    List<LocalConversation> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_local_conversation(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_msg_struct(
+    List<MsgStruct> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_msg_struct(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+    Uint8List self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_local_conversation(
+    LocalConversation self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_i_32(self.conversationType, serializer);
+    sse_encode_String(self.userId, serializer);
+    sse_encode_String(self.groupId, serializer);
+    sse_encode_String(self.showName, serializer);
+    sse_encode_String(self.faceUrl, serializer);
+    sse_encode_String(self.latestMsg, serializer);
+    sse_encode_i_64(self.latestMsgSendTime, serializer);
+    sse_encode_i_32(self.unreadCount, serializer);
+    sse_encode_i_32(self.recvMsgOpt, serializer);
+    sse_encode_bool(self.isPinned, serializer);
+    sse_encode_bool(self.isPrivateChat, serializer);
+    sse_encode_i_32(self.burnDuration, serializer);
+    sse_encode_i_32(self.groupAtType, serializer);
+    sse_encode_bool(self.isNotInGroup, serializer);
+    sse_encode_i_64(self.updateUnreadCountTime, serializer);
+    sse_encode_String(self.attachedInfo, serializer);
+    sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.draftText, serializer);
+    sse_encode_i_64(self.draftTextTime, serializer);
+    sse_encode_i_64(self.maxSeq, serializer);
+    sse_encode_i_64(self.minSeq, serializer);
+    sse_encode_bool(self.isMsgDestruct, serializer);
+    sse_encode_i_64(self.msgDestructTime, serializer);
+  }
+
+  @protected
+  void sse_encode_location_elem(LocationElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.description, serializer);
+    sse_encode_f_64(self.longitude, serializer);
+    sse_encode_f_64(self.latitude, serializer);
+  }
+
+  @protected
+  void sse_encode_logger_config(LoggerConfig self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.logLevel, serializer);
+    sse_encode_String(self.logFilePath, serializer);
+    sse_encode_bool(self.isLogStandardOutput, serializer);
+  }
+
+  @protected
+  void sse_encode_login_data(LoginData self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.imToken, serializer);
+    sse_encode_String(self.chatToken, serializer);
+    sse_encode_String(self.userId, serializer);
+  }
+
+  @protected
+  void sse_encode_message_event(MessageEvent self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case MessageEvent_RecvNewMessage(message: final message):
+        sse_encode_i_32(0, serializer);
+        sse_encode_box_autoadd_msg_struct(message, serializer);
+      case MessageEvent_RecvC2CReadReceipt(
+        msgReceiptList: final msgReceiptList,
+      ):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(msgReceiptList, serializer);
+      case MessageEvent_NewRecvMessageRevoked(
+        messageRevoked: final messageRevoked,
+      ):
+        sse_encode_i_32(2, serializer);
+        sse_encode_box_autoadd_message_revoked(messageRevoked, serializer);
+      case MessageEvent_RecvOfflineNewMessage(message: final message):
+        sse_encode_i_32(3, serializer);
+        sse_encode_box_autoadd_msg_struct(message, serializer);
+      case MessageEvent_MsgDeleted(message: final message):
+        sse_encode_i_32(4, serializer);
+        sse_encode_box_autoadd_msg_struct(message, serializer);
+      case MessageEvent_RecvOnlineOnlyMessage(message: final message):
+        sse_encode_i_32(5, serializer);
+        sse_encode_box_autoadd_msg_struct(message, serializer);
+      case MessageEvent_KickedOffline():
+        sse_encode_i_32(6, serializer);
+      case MessageEvent_RecvTypingStatus(typingStatus: final typingStatus):
+        sse_encode_i_32(7, serializer);
+        sse_encode_box_autoadd_typing_status(typingStatus, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_message_revoked(
+    MessageRevoked self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.revokerId, serializer);
+    sse_encode_i_32(self.revokerRole, serializer);
+    sse_encode_String(self.clientMsgId, serializer);
+    sse_encode_String(self.revokerNickname, serializer);
+    sse_encode_i_32(self.sessionType, serializer);
+    sse_encode_u_32(self.seq, serializer);
+  }
+
+  @protected
+  void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.clientMsgId, serializer);
+    sse_encode_opt_String(self.serverMsgId, serializer);
+    sse_encode_i_64(self.createTime, serializer);
+    sse_encode_i_64(self.sendTime, serializer);
+    sse_encode_i_32(self.sessionType, serializer);
+    sse_encode_opt_String(self.sendId, serializer);
+    sse_encode_opt_String(self.recvId, serializer);
+    sse_encode_i_32(self.msgFrom, serializer);
+    sse_encode_i_32(self.contentType, serializer);
+    sse_encode_i_32(self.senderPlatformId, serializer);
+    sse_encode_opt_String(self.senderNickname, serializer);
+    sse_encode_opt_String(self.senderFaceUrl, serializer);
+    sse_encode_opt_String(self.groupId, serializer);
+    sse_encode_opt_String(self.content, serializer);
+    sse_encode_i_64(self.seq, serializer);
+    sse_encode_bool(self.isRead, serializer);
+    sse_encode_i_32(self.status, serializer);
+    sse_encode_opt_box_autoadd_bool(self.isReact, serializer);
+    sse_encode_opt_box_autoadd_bool(self.isExternalExtensions, serializer);
+    sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+      self.offlinePush,
+      serializer,
+    );
+    sse_encode_opt_String(self.attachedInfo, serializer);
+    sse_encode_opt_String(self.ex, serializer);
+    sse_encode_opt_String(self.localEx, serializer);
+    sse_encode_opt_box_autoadd_text_elem(self.textElem, serializer);
+    sse_encode_opt_box_autoadd_picture_elem(self.pictureElem, serializer);
+    sse_encode_opt_box_autoadd_sound_elem(self.soundElem, serializer);
+    sse_encode_opt_box_autoadd_video_elem(self.videoElem, serializer);
+    sse_encode_opt_box_autoadd_file_elem(self.fileElem, serializer);
+    sse_encode_opt_box_autoadd_at_elem(self.atTextElem, serializer);
+    sse_encode_opt_box_autoadd_location_elem(self.locationElem, serializer);
+    sse_encode_opt_box_autoadd_custom_elem(self.customElem, serializer);
+    sse_encode_opt_box_autoadd_quote_elem(self.quoteElem, serializer);
+  }
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void
+  sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+        self,
+        serializer,
+      );
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_at_elem(
+    AtElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_at_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_custom_elem(
+    CustomElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_custom_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_file_elem(
+    FileElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_file_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_location_elem(
+    LocationElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_location_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_picture_elem(
+    PictureElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_picture_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_quote_elem(
+    QuoteElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_quote_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_sound_elem(
+    SoundElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_sound_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_text_elem(
+    TextElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_text_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_video_elem(
+    VideoElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_video_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_msg_struct(
+    MsgStruct? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_msg_struct(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_at_info(
+    List<AtInfo>? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_at_info(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.uuid, serializer);
+    sse_encode_String(self.type, serializer);
+    sse_encode_i_64(self.size, serializer);
+    sse_encode_i_32(self.width, serializer);
+    sse_encode_i_32(self.height, serializer);
+    sse_encode_String(self.url, serializer);
+  }
+
+  @protected
+  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.sourcePath, serializer);
+    sse_encode_picture_base_info(self.sourcePicture, serializer);
+    sse_encode_picture_base_info(self.bigPicture, serializer);
+    sse_encode_picture_base_info(self.snapshotPicture, serializer);
+  }
+
+  @protected
+  void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.text, serializer);
+    sse_encode_opt_box_msg_struct(self.quoteMessage, serializer);
+  }
+
+  @protected
+  void sse_encode_sound_elem(SoundElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.uuid, serializer);
+    sse_encode_String(self.soundPath, serializer);
+    sse_encode_String(self.sourceUrl, serializer);
+    sse_encode_i_64(self.dataSize, serializer);
+    sse_encode_i_64(self.duration, serializer);
+  }
+
+  @protected
+  void sse_encode_text_elem(TextElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.content, serializer);
+  }
+
+  @protected
+  void sse_encode_typing_status(TypingStatus self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_opt_String(self.sendId, serializer);
+    sse_encode_String(self.msgTip, serializer);
+  }
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint32(self);
+  }
+
+  @protected
+  void sse_encode_u_8(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self);
+  }
+
+  @protected
+  void sse_encode_unit(void self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+  }
+
+  @protected
+  void sse_encode_usize(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putBigUint64(self);
+  }
+
+  @protected
+  void sse_encode_video_elem(VideoElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.videoPath, serializer);
+    sse_encode_String(self.videoUuid, serializer);
+    sse_encode_String(self.videoUrl, serializer);
+    sse_encode_String(self.videoType, serializer);
+    sse_encode_i_64(self.videoSize, serializer);
+    sse_encode_i_64(self.duration, serializer);
+    sse_encode_String(self.snapshotPath, serializer);
+    sse_encode_String(self.snapshotUuid, serializer);
+    sse_encode_i_64(self.snapshotSize, serializer);
+    sse_encode_String(self.snapshotUrl, serializer);
+    sse_encode_i_32(self.snapshotWidth, serializer);
+    sse_encode_i_32(self.snapshotHeight, serializer);
+  }
+}
+
+@sealed
+class ArcMutexOptionStreamSinkConnectionStatusEventImpl extends RustOpaque
+    implements ArcMutexOptionStreamSinkConnectionStatusEvent {
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalDcoDecode(
+    List<dynamic> wire,
+  ) : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkConnectionStatusEventImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEvent,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr,
+  );
+}
+
+@sealed
+class ArcMutexOptionStreamSinkMessageEventImpl extends RustOpaque
+    implements ArcMutexOptionStreamSinkMessageEvent {
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkMessageEventImpl.frbInternalDcoDecode(
+    List<dynamic> wire,
+  ) : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  ArcMutexOptionStreamSinkMessageEventImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_ArcMutexOptionStreamSinkMessageEvent,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEvent,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr,
+  );
+}
+
+@sealed
+class DartConnectionStatusListenerImpl extends RustOpaque
+    implements DartConnectionStatusListener {
+  // Not to be used by end users
+  DartConnectionStatusListenerImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  DartConnectionStatusListenerImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_DartConnectionStatusListener,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_DartConnectionStatusListener,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr,
+  );
+
+  ArcMutexOptionStreamSinkConnectionStatusEvent get sink => RustLib.instance.api
+      .crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorGetSink(
+        that: this,
+      );
+
+  set sink(ArcMutexOptionStreamSinkConnectionStatusEvent sink) => RustLib
+      .instance
+      .api
+      .crateApiListenersConnectionStatusDartConnectionStatusListenerAutoAccessorSetSink(
+        that: this,
+        sink: sink,
+      );
+
+  /// 设置连接状态 sink
+  Stream<ConnectionStatusEvent> setSink() => RustLib.instance.api
+      .crateApiListenersConnectionStatusDartConnectionStatusListenerSetSink(
+        that: this,
+      );
+}
+
+@sealed
+class DartMessageListenerImpl extends RustOpaque
+    implements DartMessageListener {
+  // Not to be used by end users
+  DartMessageListenerImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  DartMessageListenerImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_increment_strong_count_DartMessageListener,
+    rustArcDecrementStrongCount: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_DartMessageListener,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_DartMessageListenerPtr,
+  );
+
+  ArcMutexOptionStreamSinkMessageEvent get sink => RustLib.instance.api
+      .crateApiListenersMessageDartMessageListenerAutoAccessorGetSink(
+        that: this,
+      );
+
+  set sink(ArcMutexOptionStreamSinkMessageEvent sink) => RustLib.instance.api
+      .crateApiListenersMessageDartMessageListenerAutoAccessorSetSink(
+        that: this,
+        sink: sink,
+      );
+
+  /// 设置消息 sink
+  Stream<MessageEvent> setSink() => RustLib.instance.api
+      .crateApiListenersMessageDartMessageListenerSetSink(that: this);
+}
+
+@sealed
+class OfflinePushInfoImpl extends RustOpaque implements OfflinePushInfo {
+  // Not to be used by end users
+  OfflinePushInfoImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  OfflinePushInfoImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
+    : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount:
+        RustLib.instance.api.rust_arc_increment_strong_count_OfflinePushInfo,
+    rustArcDecrementStrongCount:
+        RustLib.instance.api.rust_arc_decrement_strong_count_OfflinePushInfo,
+    rustArcDecrementStrongCountPtr:
+        RustLib.instance.api.rust_arc_decrement_strong_count_OfflinePushInfoPtr,
+  );
+}
+
+@sealed
+class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
+  // Not to be used by end users
+  OpenImBridgeClientImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  OpenImBridgeClientImpl.frbInternalSseDecode(
+    BigInt ptr,
+    int externalSizeOnNative,
+  ) : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount:
+        RustLib.instance.api.rust_arc_increment_strong_count_OpenImBridgeClient,
+    rustArcDecrementStrongCount:
+        RustLib.instance.api.rust_arc_decrement_strong_count_OpenImBridgeClient,
+    rustArcDecrementStrongCountPtr: RustLib
+        .instance
+        .api
+        .rust_arc_decrement_strong_count_OpenImBridgeClientPtr,
+  );
+
+  /// 连接到服务器
+  ///
+  /// 建立 WebSocket 连接并启动消息监听。
+  /// 连接成功后会自动启动心跳和消息处理任务。
+  Future<void> connect() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientConnect(that: this);
+
+  /// 设置连接状态监听器
+  ///
+  /// 监听连接状态变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConnectionStatusEvent> connectionEvent() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientConnectionEvent(that: this);
+
+  /// 设置会话监听器
+  ///
+  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
+  Stream<ConversationEvent> conversationEvent() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientConversationEvent(that: this);
+
+  /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
+  ///
+  /// 参数和返回值完全匹配 Go SDK
+  Future<GetAdvancedHistoryMessageListCallback> getAdvancedHistoryMessageList({
+    required GetAdvancedHistoryMessageListParams req,
+  }) => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageList(
+        that: this,
+        req: req,
+      );
+
+  /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
+  ///
+  /// 参数和返回值完全匹配 Go SDK
+  Future<GetAdvancedHistoryMessageListCallback>
+  getAdvancedHistoryMessageListReverse({
+    required GetAdvancedHistoryMessageListParams req,
+  }) => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientGetAdvancedHistoryMessageListReverse(
+        that: this,
+        req: req,
+      );
+
+  /// 获取所有会话列表
+  Future<List<LocalConversation>> getAllConversations() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientGetAllConversations(that: this);
+
+  /// 设置消息监听器
+  ///
+  /// 监听消息事件，通过 StreamSink 发送到 Dart
+  Stream<MessageEvent> messageEvent() => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientMessageEvent(that: this);
+}

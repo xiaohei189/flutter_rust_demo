@@ -1,7 +1,7 @@
 pub mod bridge_client;
-pub mod listeners;
 pub mod logger;
 pub mod simple;
+pub mod listeners;
 
 // 重新导出主要类型（桥接客户端对外暴露）
 pub use bridge_client::{login_async, OpenIMBridgeClient};

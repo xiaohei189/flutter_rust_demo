@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_list_item.dart';
 import 'chat_detail_screen.dart';
 
@@ -85,7 +86,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
           : ListView.builder(
               itemCount: conversations.length,
               itemBuilder: (context, index) {
-                final conversation = conversations[index];
+                final im_conv.LocalConversation conversation =
+                    conversations[index];
                 return ChatListItem(
                   conversation: conversation,
                   onTap: () {

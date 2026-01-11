@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/user.dart';
-import '../src/rust/im/types.dart';
+import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_input.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/user_avatar.dart';
 
 /// 聊天详情页面
 class ChatDetailScreen extends StatefulWidget {
-  final LocalConversation conversation;
+  final im_conv.LocalConversation conversation;
 
   const ChatDetailScreen({super.key, required this.conversation});
 

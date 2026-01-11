@@ -6,36 +6,29 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-
-            
-
-            
-
-            /// 登录数据（暴露给 Dart）
-/// 
+/// 登录数据（暴露给 Dart）
+///
 /// 添加 Serialize 和 Clone trait 以支持 flutter_rust_bridge
-class LoginData  {
-                final String imToken;
-final String chatToken;
-final String userId;
+class LoginData {
+  final String imToken;
+  final String chatToken;
+  final String userId;
 
-                const LoginData({required this.imToken ,required this.chatToken ,required this.userId ,});
+  const LoginData({
+    required this.imToken,
+    required this.chatToken,
+    required this.userId,
+  });
 
-                
-                
+  @override
+  int get hashCode => imToken.hashCode ^ chatToken.hashCode ^ userId.hashCode;
 
-                
-        @override
-        int get hashCode => imToken.hashCode^chatToken.hashCode^userId.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is LoginData &&
-                runtimeType == other.runtimeType
-                && imToken == other.imToken&& chatToken == other.chatToken&& userId == other.userId;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoginData &&
+          runtimeType == other.runtimeType &&
+          imToken == other.imToken &&
+          chatToken == other.chatToken &&
+          userId == other.userId;
+}

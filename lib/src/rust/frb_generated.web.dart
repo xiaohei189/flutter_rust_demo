@@ -3,7 +3,6 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
@@ -22,628 +21,1376 @@ import 'im/model/message.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
+abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
+  RustLibApiImplPlatform({
+    required super.handler,
+    required super.wire,
+    required super.generalizedFrbRustBinding,
+    required super.portManager,
+  });
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_DartMessageListenerPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_OfflinePushInfoPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_OpenImBridgeClientPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
+
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    dynamic raw,
+  );
+
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    dynamic raw,
+  );
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  );
+
+  @protected
+  DartMessageListener
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  );
+
+  @protected
+  OfflinePushInfo
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  );
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  );
+
+  @protected
+  DartMessageListener
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  );
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
+
+  @protected
+  DartConnectionStatusListener
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  );
+
+  @protected
+  DartMessageListener
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  );
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
+
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    dynamic raw,
+  );
 
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    dynamic raw,
+  );
 
+  @protected
+  DartConnectionStatusListener
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    dynamic raw,
+  );
 
-                abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
-                  RustLibApiImplPlatform({
-                    required super.handler,
-                    required super.wire,
-                    required super.generalizedFrbRustBinding,
-                    required super.portManager,
-                  });
+  @protected
+  DartMessageListener
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    dynamic raw,
+  );
 
-                  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent;
+  @protected
+  OfflinePushInfo
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  );
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent;
+  @protected
+  OpenImBridgeClient
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener;
+  @protected
+  RustStreamSink<ConnectionStatusEvent>
+  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw);
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_DartMessageListenerPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener;
+  @protected
+  RustStreamSink<ConversationEvent>
+  dco_decode_StreamSink_conversation_event_Sse(dynamic raw);
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_OfflinePushInfoPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
+  @protected
+  RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(
+    dynamic raw,
+  );
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_OpenImBridgeClientPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
+  @protected
+  String dco_decode_String(dynamic raw);
 
+  @protected
+  AtElem dco_decode_at_elem(dynamic raw);
 
+  @protected
+  AtInfo dco_decode_at_info(dynamic raw);
 
-                  @protected AnyhowException dco_decode_AnyhowException(dynamic raw);
+  @protected
+  bool dco_decode_bool(dynamic raw);
 
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(dynamic raw);
+  @protected
+  OfflinePushInfo
+  dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  );
 
-@protected ArcMutexOptionStreamSinkMessageEvent dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(dynamic raw);
+  @protected
+  AtElem dco_decode_box_autoadd_at_elem(dynamic raw);
 
-@protected DartConnectionStatusListener dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw);
+  @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw);
 
-@protected DartMessageListener dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw);
+  @protected
+  CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw);
 
-@protected OfflinePushInfo dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw);
+  @protected
+  FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
 
-@protected OpenImBridgeClient dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw);
 
-@protected DartConnectionStatusListener dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw);
+  @protected
+  LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
 
-@protected DartMessageListener dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw);
+  @protected
+  LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw);
 
-@protected OpenImBridgeClient dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw);
 
-@protected DartConnectionStatusListener dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw);
+  @protected
+  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
 
-@protected DartMessageListener dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw);
+  @protected
+  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
 
-@protected OpenImBridgeClient dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw);
 
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(dynamic raw);
+  @protected
+  SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw);
 
-@protected ArcMutexOptionStreamSinkMessageEvent dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(dynamic raw);
+  @protected
+  TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
 
-@protected DartConnectionStatusListener dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(dynamic raw);
+  @protected
+  TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw);
 
-@protected DartMessageListener dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(dynamic raw);
+  @protected
+  VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
 
-@protected OfflinePushInfo dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw);
+  @protected
+  MsgStruct dco_decode_box_msg_struct(dynamic raw);
 
-@protected OpenImBridgeClient dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw);
 
-@protected RustStreamSink<ConnectionStatusEvent> dco_decode_StreamSink_connection_status_event_Sse(dynamic raw);
+  @protected
+  ConversationEvent dco_decode_conversation_event(dynamic raw);
 
-@protected RustStreamSink<ConversationEvent> dco_decode_StreamSink_conversation_event_Sse(dynamic raw);
+  @protected
+  CustomElem dco_decode_custom_elem(dynamic raw);
 
-@protected RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(dynamic raw);
+  @protected
+  DartConversationListener dco_decode_dart_conversation_listener(dynamic raw);
 
-@protected String dco_decode_String(dynamic raw);
+  @protected
+  double dco_decode_f_64(dynamic raw);
 
-@protected AtElem dco_decode_at_elem(dynamic raw);
+  @protected
+  FileElem dco_decode_file_elem(dynamic raw);
 
-@protected AtInfo dco_decode_at_info(dynamic raw);
+  @protected
+  GetAdvancedHistoryMessageListCallback
+  dco_decode_get_advanced_history_message_list_callback(dynamic raw);
 
-@protected bool dco_decode_bool(dynamic raw);
+  @protected
+  GetAdvancedHistoryMessageListParams
+  dco_decode_get_advanced_history_message_list_params(dynamic raw);
 
-@protected OfflinePushInfo dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw);
+  @protected
+  int dco_decode_i_32(dynamic raw);
 
-@protected AtElem dco_decode_box_autoadd_at_elem(dynamic raw);
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
-@protected bool dco_decode_box_autoadd_bool(dynamic raw);
+  @protected
+  List<String> dco_decode_list_String(dynamic raw);
 
-@protected CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw);
+  @protected
+  List<AtInfo> dco_decode_list_at_info(dynamic raw);
 
-@protected FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
+  @protected
+  List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
 
-@protected GetAdvancedHistoryMessageListParams dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw);
+  @protected
+  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw);
 
-@protected LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
+  @protected
+  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
-@protected LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw);
+  @protected
+  LocalConversation dco_decode_local_conversation(dynamic raw);
 
-@protected MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw);
+  @protected
+  LocationElem dco_decode_location_elem(dynamic raw);
 
-@protected MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
+  @protected
+  LoggerConfig dco_decode_logger_config(dynamic raw);
 
-@protected PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
+  @protected
+  LoginData dco_decode_login_data(dynamic raw);
 
-@protected QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw);
+  @protected
+  MessageEvent dco_decode_message_event(dynamic raw);
 
-@protected SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw);
+  @protected
+  MessageRevoked dco_decode_message_revoked(dynamic raw);
 
-@protected TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
+  @protected
+  MsgStruct dco_decode_msg_struct(dynamic raw);
 
-@protected TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw);
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
 
-@protected VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
+  @protected
+  OfflinePushInfo?
+  dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    dynamic raw,
+  );
 
-@protected MsgStruct dco_decode_box_msg_struct(dynamic raw);
+  @protected
+  AtElem? dco_decode_opt_box_autoadd_at_elem(dynamic raw);
 
-@protected ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw);
+  @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
 
-@protected ConversationEvent dco_decode_conversation_event(dynamic raw);
+  @protected
+  CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw);
 
-@protected CustomElem dco_decode_custom_elem(dynamic raw);
+  @protected
+  FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw);
 
-@protected DartConversationListener dco_decode_dart_conversation_listener(dynamic raw);
+  @protected
+  LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw);
 
-@protected double dco_decode_f_64(dynamic raw);
+  @protected
+  PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw);
 
-@protected FileElem dco_decode_file_elem(dynamic raw);
+  @protected
+  QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw);
 
-@protected GetAdvancedHistoryMessageListCallback dco_decode_get_advanced_history_message_list_callback(dynamic raw);
+  @protected
+  SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw);
 
-@protected GetAdvancedHistoryMessageListParams dco_decode_get_advanced_history_message_list_params(dynamic raw);
+  @protected
+  TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw);
 
-@protected int dco_decode_i_32(dynamic raw);
+  @protected
+  VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw);
 
-@protected PlatformInt64 dco_decode_i_64(dynamic raw);
+  @protected
+  MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw);
 
-@protected List<String> dco_decode_list_String(dynamic raw);
+  @protected
+  List<AtInfo>? dco_decode_opt_list_at_info(dynamic raw);
 
-@protected List<AtInfo> dco_decode_list_at_info(dynamic raw);
+  @protected
+  PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
 
-@protected List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
+  @protected
+  PictureElem dco_decode_picture_elem(dynamic raw);
 
-@protected List<MsgStruct> dco_decode_list_msg_struct(dynamic raw);
+  @protected
+  QuoteElem dco_decode_quote_elem(dynamic raw);
 
-@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+  @protected
+  SoundElem dco_decode_sound_elem(dynamic raw);
 
-@protected LocalConversation dco_decode_local_conversation(dynamic raw);
+  @protected
+  TextElem dco_decode_text_elem(dynamic raw);
 
-@protected LocationElem dco_decode_location_elem(dynamic raw);
+  @protected
+  TypingStatus dco_decode_typing_status(dynamic raw);
 
-@protected LoggerConfig dco_decode_logger_config(dynamic raw);
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
-@protected LoginData dco_decode_login_data(dynamic raw);
+  @protected
+  int dco_decode_u_8(dynamic raw);
 
-@protected MessageEvent dco_decode_message_event(dynamic raw);
+  @protected
+  void dco_decode_unit(dynamic raw);
 
-@protected MessageRevoked dco_decode_message_revoked(dynamic raw);
+  @protected
+  BigInt dco_decode_usize(dynamic raw);
 
-@protected MsgStruct dco_decode_msg_struct(dynamic raw);
+  @protected
+  VideoElem dco_decode_video_elem(dynamic raw);
 
-@protected String? dco_decode_opt_String(dynamic raw);
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
-@protected OfflinePushInfo? dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(dynamic raw);
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    SseDeserializer deserializer,
+  );
 
-@protected AtElem? dco_decode_opt_box_autoadd_at_elem(dynamic raw);
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    SseDeserializer deserializer,
+  );
 
-@protected bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+  @protected
+  DartConnectionStatusListener
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  );
 
-@protected CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw);
+  @protected
+  DartMessageListener
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  );
 
-@protected FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw);
+  @protected
+  OfflinePushInfo
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  );
 
-@protected LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw);
+  @protected
+  DartConnectionStatusListener
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  );
 
-@protected QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw);
+  @protected
+  DartMessageListener
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  );
 
-@protected SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw);
+  @protected
+  DartConnectionStatusListener
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  );
 
-@protected VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw);
+  @protected
+  DartMessageListener
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  );
 
-@protected MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected List<AtInfo>? dco_decode_opt_list_at_info(dynamic raw);
+  @protected
+  ArcMutexOptionStreamSinkConnectionStatusEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    SseDeserializer deserializer,
+  );
 
-@protected PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
+  @protected
+  ArcMutexOptionStreamSinkMessageEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    SseDeserializer deserializer,
+  );
 
-@protected PictureElem dco_decode_picture_elem(dynamic raw);
+  @protected
+  DartConnectionStatusListener
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    SseDeserializer deserializer,
+  );
 
-@protected QuoteElem dco_decode_quote_elem(dynamic raw);
+  @protected
+  DartMessageListener
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    SseDeserializer deserializer,
+  );
 
-@protected SoundElem dco_decode_sound_elem(dynamic raw);
+  @protected
+  OfflinePushInfo
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  );
 
-@protected TextElem dco_decode_text_elem(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected TypingStatus dco_decode_typing_status(dynamic raw);
+  @protected
+  RustStreamSink<ConnectionStatusEvent>
+  sse_decode_StreamSink_connection_status_event_Sse(
+    SseDeserializer deserializer,
+  );
 
-@protected int dco_decode_u_32(dynamic raw);
+  @protected
+  RustStreamSink<ConversationEvent>
+  sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer);
 
-@protected int dco_decode_u_8(dynamic raw);
+  @protected
+  RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(
+    SseDeserializer deserializer,
+  );
 
-@protected void dco_decode_unit(dynamic raw);
+  @protected
+  String sse_decode_String(SseDeserializer deserializer);
 
-@protected BigInt dco_decode_usize(dynamic raw);
+  @protected
+  AtElem sse_decode_at_elem(SseDeserializer deserializer);
 
-@protected VideoElem dco_decode_video_elem(dynamic raw);
+  @protected
+  AtInfo sse_decode_at_info(SseDeserializer deserializer);
 
-@protected AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
 
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(SseDeserializer deserializer);
+  @protected
+  OfflinePushInfo
+  sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  );
 
-@protected ArcMutexOptionStreamSinkMessageEvent sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(SseDeserializer deserializer);
+  @protected
+  AtElem sse_decode_box_autoadd_at_elem(SseDeserializer deserializer);
 
-@protected DartConnectionStatusListener sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer);
+  @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
 
-@protected DartMessageListener sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer);
+  @protected
+  CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer);
 
-@protected OfflinePushInfo sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer);
+  @protected
+  FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
 
-@protected OpenImBridgeClient sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_box_autoadd_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  );
 
-@protected DartConnectionStatusListener sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer);
+  @protected
+  LocationElem sse_decode_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected DartMessageListener sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer);
+  @protected
+  LoggerConfig sse_decode_box_autoadd_logger_config(
+    SseDeserializer deserializer,
+  );
 
-@protected OpenImBridgeClient sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  MessageRevoked sse_decode_box_autoadd_message_revoked(
+    SseDeserializer deserializer,
+  );
 
-@protected DartConnectionStatusListener sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer);
+  @protected
+  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
 
-@protected DartMessageListener sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer);
+  @protected
+  PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
 
-@protected OpenImBridgeClient sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer);
 
-@protected ArcMutexOptionStreamSinkConnectionStatusEvent sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(SseDeserializer deserializer);
+  @protected
+  SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer);
 
-@protected ArcMutexOptionStreamSinkMessageEvent sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(SseDeserializer deserializer);
+  @protected
+  TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
 
-@protected DartConnectionStatusListener sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(SseDeserializer deserializer);
+  @protected
+  TypingStatus sse_decode_box_autoadd_typing_status(
+    SseDeserializer deserializer,
+  );
 
-@protected DartMessageListener sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(SseDeserializer deserializer);
+  @protected
+  VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
 
-@protected OfflinePushInfo sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer);
+  @protected
+  MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer);
 
-@protected OpenImBridgeClient sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  ConnectionStatusEvent sse_decode_connection_status_event(
+    SseDeserializer deserializer,
+  );
 
-@protected RustStreamSink<ConnectionStatusEvent> sse_decode_StreamSink_connection_status_event_Sse(SseDeserializer deserializer);
+  @protected
+  ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer);
 
-@protected RustStreamSink<ConversationEvent> sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer);
+  @protected
+  CustomElem sse_decode_custom_elem(SseDeserializer deserializer);
 
-@protected RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(SseDeserializer deserializer);
+  @protected
+  DartConversationListener sse_decode_dart_conversation_listener(
+    SseDeserializer deserializer,
+  );
 
-@protected String sse_decode_String(SseDeserializer deserializer);
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer);
 
-@protected AtElem sse_decode_at_elem(SseDeserializer deserializer);
+  @protected
+  FileElem sse_decode_file_elem(SseDeserializer deserializer);
 
-@protected AtInfo sse_decode_at_info(SseDeserializer deserializer);
+  @protected
+  GetAdvancedHistoryMessageListCallback
+  sse_decode_get_advanced_history_message_list_callback(
+    SseDeserializer deserializer,
+  );
 
-@protected bool sse_decode_bool(SseDeserializer deserializer);
+  @protected
+  GetAdvancedHistoryMessageListParams
+  sse_decode_get_advanced_history_message_list_params(
+    SseDeserializer deserializer,
+  );
 
-@protected OfflinePushInfo sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer);
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer);
 
-@protected AtElem sse_decode_box_autoadd_at_elem(SseDeserializer deserializer);
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
-@protected bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
 
-@protected CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer);
+  @protected
+  List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer);
 
-@protected FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
+  @protected
+  List<LocalConversation> sse_decode_list_local_conversation(
+    SseDeserializer deserializer,
+  );
 
-@protected GetAdvancedHistoryMessageListParams sse_decode_box_autoadd_get_advanced_history_message_list_params(SseDeserializer deserializer);
+  @protected
+  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer);
 
-@protected LocationElem sse_decode_box_autoadd_location_elem(SseDeserializer deserializer);
+  @protected
+  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
-@protected LoggerConfig sse_decode_box_autoadd_logger_config(SseDeserializer deserializer);
+  @protected
+  LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
-@protected MessageRevoked sse_decode_box_autoadd_message_revoked(SseDeserializer deserializer);
+  @protected
+  LocationElem sse_decode_location_elem(SseDeserializer deserializer);
 
-@protected MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
+  @protected
+  LoggerConfig sse_decode_logger_config(SseDeserializer deserializer);
 
-@protected PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
+  @protected
+  LoginData sse_decode_login_data(SseDeserializer deserializer);
 
-@protected QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer);
+  @protected
+  MessageEvent sse_decode_message_event(SseDeserializer deserializer);
 
-@protected SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer);
+  @protected
+  MessageRevoked sse_decode_message_revoked(SseDeserializer deserializer);
 
-@protected TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
+  @protected
+  MsgStruct sse_decode_msg_struct(SseDeserializer deserializer);
 
-@protected TypingStatus sse_decode_box_autoadd_typing_status(SseDeserializer deserializer);
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
 
-@protected VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
+  @protected
+  OfflinePushInfo?
+  sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    SseDeserializer deserializer,
+  );
 
-@protected MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer);
+  @protected
+  AtElem? sse_decode_opt_box_autoadd_at_elem(SseDeserializer deserializer);
 
-@protected ConnectionStatusEvent sse_decode_connection_status_event(SseDeserializer deserializer);
+  @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
 
-@protected ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer);
+  @protected
+  CustomElem? sse_decode_opt_box_autoadd_custom_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected CustomElem sse_decode_custom_elem(SseDeserializer deserializer);
+  @protected
+  FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer);
 
-@protected DartConversationListener sse_decode_dart_conversation_listener(SseDeserializer deserializer);
+  @protected
+  LocationElem? sse_decode_opt_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected double sse_decode_f_64(SseDeserializer deserializer);
+  @protected
+  PictureElem? sse_decode_opt_box_autoadd_picture_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected FileElem sse_decode_file_elem(SseDeserializer deserializer);
+  @protected
+  QuoteElem? sse_decode_opt_box_autoadd_quote_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected GetAdvancedHistoryMessageListCallback sse_decode_get_advanced_history_message_list_callback(SseDeserializer deserializer);
+  @protected
+  SoundElem? sse_decode_opt_box_autoadd_sound_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected GetAdvancedHistoryMessageListParams sse_decode_get_advanced_history_message_list_params(SseDeserializer deserializer);
+  @protected
+  TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer);
 
-@protected int sse_decode_i_32(SseDeserializer deserializer);
+  @protected
+  VideoElem? sse_decode_opt_box_autoadd_video_elem(
+    SseDeserializer deserializer,
+  );
 
-@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+  @protected
+  MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer);
 
-@protected List<String> sse_decode_list_String(SseDeserializer deserializer);
+  @protected
+  List<AtInfo>? sse_decode_opt_list_at_info(SseDeserializer deserializer);
 
-@protected List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer);
+  @protected
+  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
 
-@protected List<LocalConversation> sse_decode_list_local_conversation(SseDeserializer deserializer);
+  @protected
+  PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
 
-@protected List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer);
+  @protected
+  QuoteElem sse_decode_quote_elem(SseDeserializer deserializer);
 
-@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+  @protected
+  SoundElem sse_decode_sound_elem(SseDeserializer deserializer);
 
-@protected LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
+  @protected
+  TextElem sse_decode_text_elem(SseDeserializer deserializer);
+
+  @protected
+  TypingStatus sse_decode_typing_status(SseDeserializer deserializer);
 
-@protected LocationElem sse_decode_location_elem(SseDeserializer deserializer);
-
-@protected LoggerConfig sse_decode_logger_config(SseDeserializer deserializer);
-
-@protected LoginData sse_decode_login_data(SseDeserializer deserializer);
-
-@protected MessageEvent sse_decode_message_event(SseDeserializer deserializer);
-
-@protected MessageRevoked sse_decode_message_revoked(SseDeserializer deserializer);
-
-@protected MsgStruct sse_decode_msg_struct(SseDeserializer deserializer);
-
-@protected String? sse_decode_opt_String(SseDeserializer deserializer);
-
-@protected OfflinePushInfo? sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(SseDeserializer deserializer);
-
-@protected AtElem? sse_decode_opt_box_autoadd_at_elem(SseDeserializer deserializer);
-
-@protected bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
-
-@protected CustomElem? sse_decode_opt_box_autoadd_custom_elem(SseDeserializer deserializer);
-
-@protected FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer);
-
-@protected LocationElem? sse_decode_opt_box_autoadd_location_elem(SseDeserializer deserializer);
-
-@protected PictureElem? sse_decode_opt_box_autoadd_picture_elem(SseDeserializer deserializer);
-
-@protected QuoteElem? sse_decode_opt_box_autoadd_quote_elem(SseDeserializer deserializer);
-
-@protected SoundElem? sse_decode_opt_box_autoadd_sound_elem(SseDeserializer deserializer);
-
-@protected TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer);
-
-@protected VideoElem? sse_decode_opt_box_autoadd_video_elem(SseDeserializer deserializer);
-
-@protected MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer);
-
-@protected List<AtInfo>? sse_decode_opt_list_at_info(SseDeserializer deserializer);
-
-@protected PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
-
-@protected PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
-
-@protected QuoteElem sse_decode_quote_elem(SseDeserializer deserializer);
-
-@protected SoundElem sse_decode_sound_elem(SseDeserializer deserializer);
-
-@protected TextElem sse_decode_text_elem(SseDeserializer deserializer);
-
-@protected TypingStatus sse_decode_typing_status(SseDeserializer deserializer);
-
-@protected int sse_decode_u_32(SseDeserializer deserializer);
-
-@protected int sse_decode_u_8(SseDeserializer deserializer);
-
-@protected void sse_decode_unit(SseDeserializer deserializer);
-
-@protected BigInt sse_decode_usize(SseDeserializer deserializer);
-
-@protected VideoElem sse_decode_video_elem(SseDeserializer deserializer);
-
-@protected void sse_encode_AnyhowException(AnyhowException self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(ArcMutexOptionStreamSinkConnectionStatusEvent self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(ArcMutexOptionStreamSinkMessageEvent self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer);
-
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(ArcMutexOptionStreamSinkConnectionStatusEvent self, SseSerializer serializer);
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(ArcMutexOptionStreamSinkMessageEvent self, SseSerializer serializer);
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(DartConnectionStatusListener self, SseSerializer serializer);
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(DartMessageListener self, SseSerializer serializer);
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo self, SseSerializer serializer);
-
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
-
-@protected void sse_encode_StreamSink_connection_status_event_Sse(RustStreamSink<ConnectionStatusEvent> self, SseSerializer serializer);
-
-@protected void sse_encode_StreamSink_conversation_event_Sse(RustStreamSink<ConversationEvent> self, SseSerializer serializer);
-
-@protected void sse_encode_StreamSink_message_event_Sse(RustStreamSink<MessageEvent> self, SseSerializer serializer);
-
-@protected void sse_encode_String(String self, SseSerializer serializer);
-
-@protected void sse_encode_at_elem(AtElem self, SseSerializer serializer);
-
-@protected void sse_encode_at_info(AtInfo self, SseSerializer serializer);
-
-@protected void sse_encode_bool(bool self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_at_elem(AtElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_custom_elem(CustomElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_file_elem(FileElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_get_advanced_history_message_list_params(GetAdvancedHistoryMessageListParams self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_location_elem(LocationElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_logger_config(LoggerConfig self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_message_revoked(MessageRevoked self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_msg_struct(MsgStruct self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_picture_elem(PictureElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_quote_elem(QuoteElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_sound_elem(SoundElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_text_elem(TextElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_typing_status(TypingStatus self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_video_elem(VideoElem self, SseSerializer serializer);
-
-@protected void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer);
-
-@protected void sse_encode_connection_status_event(ConnectionStatusEvent self, SseSerializer serializer);
-
-@protected void sse_encode_conversation_event(ConversationEvent self, SseSerializer serializer);
-
-@protected void sse_encode_custom_elem(CustomElem self, SseSerializer serializer);
-
-@protected void sse_encode_dart_conversation_listener(DartConversationListener self, SseSerializer serializer);
-
-@protected void sse_encode_f_64(double self, SseSerializer serializer);
-
-@protected void sse_encode_file_elem(FileElem self, SseSerializer serializer);
-
-@protected void sse_encode_get_advanced_history_message_list_callback(GetAdvancedHistoryMessageListCallback self, SseSerializer serializer);
-
-@protected void sse_encode_get_advanced_history_message_list_params(GetAdvancedHistoryMessageListParams self, SseSerializer serializer);
-
-@protected void sse_encode_i_32(int self, SseSerializer serializer);
-
-@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
-
-@protected void sse_encode_list_String(List<String> self, SseSerializer serializer);
-
-@protected void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_local_conversation(List<LocalConversation> self, SseSerializer serializer);
-
-@protected void sse_encode_list_msg_struct(List<MsgStruct> self, SseSerializer serializer);
-
-@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
-
-@protected void sse_encode_local_conversation(LocalConversation self, SseSerializer serializer);
-
-@protected void sse_encode_location_elem(LocationElem self, SseSerializer serializer);
-
-@protected void sse_encode_logger_config(LoggerConfig self, SseSerializer serializer);
-
-@protected void sse_encode_login_data(LoginData self, SseSerializer serializer);
-
-@protected void sse_encode_message_event(MessageEvent self, SseSerializer serializer);
-
-@protected void sse_encode_message_revoked(MessageRevoked self, SseSerializer serializer);
-
-@protected void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer);
-
-@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(OfflinePushInfo? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_at_elem(AtElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_custom_elem(CustomElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_file_elem(FileElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_location_elem(LocationElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_picture_elem(PictureElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_quote_elem(QuoteElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_sound_elem(SoundElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_text_elem(TextElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_video_elem(VideoElem? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_msg_struct(MsgStruct? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_list_at_info(List<AtInfo>? self, SseSerializer serializer);
-
-@protected void sse_encode_picture_base_info(PictureBaseInfo self, SseSerializer serializer);
-
-@protected void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
-
-@protected void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer);
-
-@protected void sse_encode_sound_elem(SoundElem self, SseSerializer serializer);
-
-@protected void sse_encode_text_elem(TextElem self, SseSerializer serializer);
-
-@protected void sse_encode_typing_status(TypingStatus self, SseSerializer serializer);
-
-@protected void sse_encode_u_32(int self, SseSerializer serializer);
-
-@protected void sse_encode_u_8(int self, SseSerializer serializer);
-
-@protected void sse_encode_unit(void self, SseSerializer serializer);
-
-@protected void sse_encode_usize(BigInt self, SseSerializer serializer);
-
-@protected void sse_encode_video_elem(VideoElem self, SseSerializer serializer);
-                }
-                
-
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_8(SseDeserializer deserializer);
+
+  @protected
+  void sse_decode_unit(SseDeserializer deserializer);
+
+  @protected
+  BigInt sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  VideoElem sse_decode_video_elem(SseDeserializer deserializer);
+
+  @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    ArcMutexOptionStreamSinkConnectionStatusEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    ArcMutexOptionStreamSinkMessageEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    ArcMutexOptionStreamSinkConnectionStatusEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    ArcMutexOptionStreamSinkMessageEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    DartConnectionStatusListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    DartMessageListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_connection_status_event_Sse(
+    RustStreamSink<ConnectionStatusEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_conversation_event_Sse(
+    RustStreamSink<ConversationEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_message_event_Sse(
+    RustStreamSink<MessageEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_at_elem(AtElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_at_info(AtInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void
+  sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_at_elem(AtElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_custom_elem(
+    CustomElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_file_elem(
+    FileElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_location_elem(
+    LocationElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_logger_config(
+    LoggerConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_message_revoked(
+    MessageRevoked self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_msg_struct(
+    MsgStruct self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_picture_elem(
+    PictureElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_quote_elem(
+    QuoteElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_sound_elem(
+    SoundElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_text_elem(
+    TextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_typing_status(
+    TypingStatus self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_video_elem(
+    VideoElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_connection_status_event(
+    ConnectionStatusEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_conversation_event(
+    ConversationEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_custom_elem(CustomElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_dart_conversation_listener(
+    DartConversationListener self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_file_elem(FileElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_get_advanced_history_message_list_callback(
+    GetAdvancedHistoryMessageListCallback self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_get_advanced_history_message_list_params(
+    GetAdvancedHistoryMessageListParams self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_local_conversation(
+    List<LocalConversation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_msg_struct(
+    List<MsgStruct> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+    Uint8List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_local_conversation(
+    LocalConversation self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_location_elem(LocationElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_logger_config(LoggerConfig self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_login_data(LoginData self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_message_event(MessageEvent self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_message_revoked(
+    MessageRevoked self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void
+  sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    OfflinePushInfo? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_at_elem(
+    AtElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_custom_elem(
+    CustomElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_file_elem(
+    FileElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_location_elem(
+    LocationElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_picture_elem(
+    PictureElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_quote_elem(
+    QuoteElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_sound_elem(
+    SoundElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_text_elem(
+    TextElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_video_elem(
+    VideoElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_msg_struct(MsgStruct? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_list_at_info(
+    List<AtInfo>? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sound_elem(SoundElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_text_elem(TextElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_typing_status(TypingStatus self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_8(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_video_elem(VideoElem self, SseSerializer serializer);
+}
 
 // Section: wire_class
 
 class RustLibWire implements BaseWire {
-            RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+  RustLibWire.fromExternalLibrary(ExternalLibrary lib);
 
-            void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(ptr);
-        }
-        @JS('wasm_bindgen') external RustLibWasmModule get wasmModule;
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+        ptr,
+      );
+}
 
-        @JS() @anonymous extension type RustLibWasmModule._(JSObject _) implements JSObject {
-            external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(int ptr);
+@JS('wasm_bindgen')
+external RustLibWasmModule get wasmModule;
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(int ptr);
+@JS()
+@anonymous
+extension type RustLibWasmModule._(JSObject _) implements JSObject {
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(int ptr);
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(int ptr);
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(int ptr);
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(int ptr);
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr);
-        }
-        
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  );
+}

@@ -8,8 +8,8 @@ import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/listeners/connection_status.dart';
 import '../src/rust/api/listeners/conversation.dart';
 import '../src/rust/api/listeners/message.dart';
-import '../src/rust/im/message/types.dart';
-import '../src/rust/im/types.dart';
+import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/im/model/message.dart' as im_msg;
 
 /// 消息服务 - 管理客户端连接、监听事件、更新会话列表
 class MessageService extends ChangeNotifier {
@@ -18,7 +18,7 @@ class MessageService extends ChangeNotifier {
   bool _isInitializing = false; // 初始化状态标志，防止并发初始化
 
   // 会话列表
-  final List<LocalConversation> _conversations = [];
+  final List<im_conv.LocalConversation> _conversations = [];
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
 
@@ -34,7 +34,7 @@ class MessageService extends ChangeNotifier {
   OpenImBridgeClient? get client => _client;
 
   /// 获取所有会话列表
-  List<LocalConversation> get conversations =>
+  List<im_conv.LocalConversation> get conversations =>
       List.unmodifiable(_conversations);
 
   /// 获取所有会话列表（兼容旧代码）
@@ -62,7 +62,7 @@ class MessageService extends ChangeNotifier {
 
     try {
       // 构建请求参数（完全匹配 Go SDK）
-      final req = GetAdvancedHistoryMessageListParams(
+      final req = im_msg.GetAdvancedHistoryMessageListParams(
         conversationId: conversationId,
         startClientMsgId: startClientMsgId ?? '', // 空字符串表示从最新开始
         count: count,
@@ -117,7 +117,7 @@ class MessageService extends ChangeNotifier {
   }
 
   /// 将 MsgStruct 转换为 Message
-  Message _msgStructToMessage(MsgStruct msg) {
+  Message _msgStructToMessage(im_msg.MsgStruct msg) {
     // 从 MsgStruct 中提取信息
     final clientMsgId = msg.clientMsgId ?? '';
     final sendId = msg.sendId ?? '';
@@ -276,23 +276,23 @@ class MessageService extends ChangeNotifier {
         },
         newRecvMessageRevoked: (messageRevoked) {
           debugPrint(
-            'dart MessageEvent new recv message revoked: ${messageRevoked}',
+            'dart MessageEvent new recv message revoked: $messageRevoked',
           );
         },
         recvOfflineNewMessage: (message) {
-          debugPrint('dart MessageEvent recv offline new message: ${message}');
+          debugPrint('dart MessageEvent recv offline new message: $message');
         },
         msgDeleted: (message) {
-          debugPrint('dart MessageEvent msg deleted: ${message}');
+          debugPrint('dart MessageEvent msg deleted: $message');
         },
         recvOnlineOnlyMessage: (message) {
-          debugPrint('dart MessageEvent recv online only message: ${message}');
+          debugPrint('dart MessageEvent recv online only message: $message');
         },
         kickedOffline: () {
           debugPrint('dart MessageEvent kicked offline');
         },
         recvTypingStatus: (typingStatus) {
-          debugPrint('dart MessageEvent recv typing status: ${typingStatus}');
+          debugPrint('dart MessageEvent recv typing status: $typingStatus');
         },
       );
       // final message = Message(
@@ -320,7 +320,9 @@ class MessageService extends ChangeNotifier {
   }
 
   /// 更新会话列表（从结构体列表）
-  void _updateConversationsFromList(List<LocalConversation> conversationList) {
+  void _updateConversationsFromList(
+    List<im_conv.LocalConversation> conversationList,
+  ) {
     try {
       for (final conv in conversationList) {
         _updateConversation(conv);
@@ -335,7 +337,7 @@ class MessageService extends ChangeNotifier {
   }
 
   /// 更新或添加会话
-  void _updateConversation(LocalConversation conv) {
+  void _updateConversation(im_conv.LocalConversation conv) {
     final index = _conversations.indexWhere(
       (c) => c.conversationId == conv.conversationId,
     );

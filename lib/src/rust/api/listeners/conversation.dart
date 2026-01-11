@@ -9,62 +9,69 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'conversation.freezed.dart';
 
-            // These functions are ignored because they have generic arguments: `on_conversation_changed`, `on_conversation_user_input_status_changed`, `on_new_conversation`, `on_sync_server_failed`, `on_sync_server_finish`, `on_sync_server_progress`, `on_sync_server_start`, `on_total_unread_message_count_changed`
+// These functions are ignored because they have generic arguments: `on_conversation_changed`, `on_conversation_user_input_status_changed`, `on_new_conversation`, `on_sync_server_failed`, `on_sync_server_finish`, `on_sync_server_progress`, `on_sync_server_start`, `on_total_unread_message_count_changed`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
 
+@freezed
+sealed class ConversationEvent with _$ConversationEvent {
+  const ConversationEvent._();
 
-            
+  /// 同步服务器开始
+  const factory ConversationEvent.syncServerStart({required bool reinstalled}) =
+      ConversationEvent_SyncServerStart;
 
-            @freezed
-                sealed class ConversationEvent with _$ConversationEvent  {
-                    const ConversationEvent._();
+  /// 同步服务器完成
+  const factory ConversationEvent.syncServerFinish({
+    required bool reinstalled,
+  }) = ConversationEvent_SyncServerFinish;
 
-                     /// 同步服务器开始
-const factory ConversationEvent.syncServerStart({   required bool reinstalled , }) = ConversationEvent_SyncServerStart;
- /// 同步服务器完成
-const factory ConversationEvent.syncServerFinish({   required bool reinstalled , }) = ConversationEvent_SyncServerFinish;
- /// 同步服务器进度
-const factory ConversationEvent.syncServerProgress({   required int progress , }) = ConversationEvent_SyncServerProgress;
- /// 同步服务器失败
-const factory ConversationEvent.syncServerFailed({   required bool reinstalled , }) = ConversationEvent_SyncServerFailed;
- /// 新会话
-const factory ConversationEvent.newConversation({   required List<LocalConversation> conversationList , }) = ConversationEvent_NewConversation;
- /// 会话变更
-const factory ConversationEvent.conversationChanged({   required List<LocalConversation> conversationList , }) = ConversationEvent_ConversationChanged;
- /// 总未读消息数变更
-const factory ConversationEvent.totalUnreadMessageCountChanged({   required int totalUnreadCount , }) = ConversationEvent_TotalUnreadMessageCountChanged;
- /// 会话用户输入状态变更
-const factory ConversationEvent.conversationUserInputStatusChanged({   required String change , }) = ConversationEvent_ConversationUserInputStatusChanged;
+  /// 同步服务器进度
+  const factory ConversationEvent.syncServerProgress({required int progress}) =
+      ConversationEvent_SyncServerProgress;
 
-                    
+  /// 同步服务器失败
+  const factory ConversationEvent.syncServerFailed({
+    required bool reinstalled,
+  }) = ConversationEvent_SyncServerFailed;
 
-                    
-                }
+  /// 新会话
+  const factory ConversationEvent.newConversation({
+    required List<LocalConversation> conversationList,
+  }) = ConversationEvent_NewConversation;
+
+  /// 会话变更
+  const factory ConversationEvent.conversationChanged({
+    required List<LocalConversation> conversationList,
+  }) = ConversationEvent_ConversationChanged;
+
+  /// 总未读消息数变更
+  const factory ConversationEvent.totalUnreadMessageCountChanged({
+    required int totalUnreadCount,
+  }) = ConversationEvent_TotalUnreadMessageCountChanged;
+
+  /// 会话用户输入状态变更
+  const factory ConversationEvent.conversationUserInputStatusChanged({
+    required String change,
+  }) = ConversationEvent_ConversationUserInputStatusChanged;
+}
 
 /// 会话监听器（桥接到 Dart）
-class DartConversationListener  {
-                final RustStreamSink<ConversationEvent> sink;
+class DartConversationListener {
+  final RustStreamSink<ConversationEvent> sink;
 
-                const DartConversationListener({required this.sink ,});
+  const DartConversationListener({required this.sink});
 
-                  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-static Stream<ConversationEvent>  newInstance()=>RustLib.instance.api.crateApiListenersConversationDartConversationListenerNew();
+  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
+  static Stream<ConversationEvent> newInstance() => RustLib.instance.api
+      .crateApiListenersConversationDartConversationListenerNew();
 
+  @override
+  int get hashCode => sink.hashCode;
 
-                
-
-                
-        @override
-        int get hashCode => sink.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is DartConversationListener &&
-                runtimeType == other.runtimeType
-                && sink == other.sink;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DartConversationListener &&
+          runtimeType == other.runtimeType &&
+          sink == other.sink;
+}

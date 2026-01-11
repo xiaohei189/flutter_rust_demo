@@ -3,12 +3,12 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:intl/intl.dart';
 
 import '../models/user.dart';
-import '../src/rust/im/types.dart';
+import '../src/rust/im/model/conversation.dart' as im_conv;
 import 'user_avatar.dart';
 
 /// 聊天列表项组件
 class ChatListItem extends StatelessWidget {
-  final LocalConversation conversation;
+  final im_conv.LocalConversation conversation;
   final VoidCallback onTap;
 
   const ChatListItem({
