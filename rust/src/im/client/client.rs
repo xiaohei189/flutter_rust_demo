@@ -269,6 +269,16 @@ impl OpenIMClient {
 
                         // 每次重连后重新启动心跳任务
                         client.spawn_heartbeat();
+
+                        // 重连后触发一次会话增量同步，确保会话名/头像/未读等被服务端数据覆盖
+                        if let Some(syncer) = client.conversation_syncer.clone() {
+                            tokio::spawn(async move {
+                                info!("[Client] 🔄 重连后触发会话增量同步");
+                                if let Err(e) = syncer.incr_sync_conversations().await {
+                                    error!("[Client] ❌ 会话增量同步失败: {e}");
+                                }
+                            });
+                        }
                     }
                     Err(e) => {
                         // 如果是致命连接错误（例如 token 失效/被踢），则停止重连循环

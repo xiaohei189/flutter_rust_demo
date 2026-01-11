@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use futures_util::StreamExt;
-use log::info;
 use openim_protocol::{constant, sdkws, Message as ProtobufMessage};
 use serde_json;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
@@ -167,11 +166,15 @@ impl OpenIMClient {
         };
 
         let mut all_msgs: HashMap<String, Vec<&sdkws::MsgData>> = HashMap::new();
+        let mut need_conv_sync = false;
 
         for (conv_id, pull_msgs) in &push_msg.msgs {
             for msg in &pull_msgs.msgs {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
+                }
+                if Self::is_conversation_notification(msg) {
+                    need_conv_sync = true;
                 }
                 all_msgs.entry(conv_id.clone()).or_default().push(msg);
             }
@@ -182,12 +185,26 @@ impl OpenIMClient {
                 if self.is_duplicate_message(&msg.client_msg_id) {
                     continue;
                 }
+                if Self::is_conversation_notification(msg) {
+                    need_conv_sync = true;
+                }
                 all_msgs.entry(conv_id.clone()).or_default().push(msg);
             }
         }
 
         if !all_msgs.is_empty() {
             self.handle_new_message(all_msgs).await?;
+        }
+
+        // 收到会话相关通知后，触发会话增量同步以覆盖本地占位数据（名称/头像/未读等）
+        if need_conv_sync {
+            if let Some(syncer) = self.conversation_syncer.clone() {
+                tokio::spawn(async move {
+                    if let Err(e) = syncer.incr_sync_conversations().await {
+                        error!("[Client] ❌ 会话增量同步失败: {e}");
+                    }
+                });
+            }
         }
         Ok(())
     }
@@ -468,6 +485,18 @@ impl OpenIMClient {
     pub(crate) fn is_duplicate_message(&self, msg_id: &str) -> bool {
         let mut set = self.received_msg_ids.lock().unwrap();
         !set.insert(msg_id.to_string())
+    }
+
+    fn is_conversation_notification(msg: &sdkws::MsgData) -> bool {
+        matches!(
+            msg.content_type,
+            constant::CONVERSATION_CHANGE_NOTIFICATION
+                | constant::CONVERSATION_PRIVATE_CHAT_NOTIFICATION
+                | constant::CLEAR_CONVERSATION_NOTIFICATION
+                | constant::CONVERSATION_UNREAD_NOTIFICATION
+                | constant::CONVERSATION_DELETE_NOTIFICATION
+                | constant::HAS_READ_RECEIPT
+        )
     }
 
     fn msg_data_to_local_chat_log(msg: &sdkws::MsgData, conversation_id: &str) -> LocalChatLog {

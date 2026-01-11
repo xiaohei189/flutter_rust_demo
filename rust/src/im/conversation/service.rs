@@ -14,6 +14,7 @@ use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
@@ -81,11 +82,6 @@ impl ConversationSyncer {
         db: Arc<Pool<Sqlite>>,
         http_client: reqwest::Client,
     ) -> Result<Self> {
-        info!(
-            "[ConvSync] 创建会话同步器（使用共享数据库连接），用户ID: {}",
-            config.user_id
-        );
-
         // 创建带 base_url 的客户端（通过 URL 前缀实现）
         // 注意：reqwest 不支持动态 base_url，所以我们仍然需要在 API 方法中使用完整 URL
         // 但认证信息已经通过 default_headers 设置好了
@@ -540,10 +536,12 @@ impl ConversationSyncer {
             if let Some(local_conv) = local_map.get(id) {
                 // 更新：比较并更新变化的字段
                 // 注意：即使字段相同，如果未读数有变化也需要更新
-                if !self.conversations_equal(local_conv, server_conv)
+                let mut server_conv = server_conv.clone();
+                self.fill_display_fields(&mut server_conv);
+                let need_update = !self.conversations_equal(local_conv, &server_conv)
                     || local_conv.unread_count != server_conv.unread_count
-                    || local_conv.max_seq != server_conv.max_seq
-                {
+                    || local_conv.max_seq != server_conv.max_seq;
+                if need_update {
                     info!(
                         "[ConvSync]   更新会话: {} (类型: {}), 未读数: {} -> {}",
                         id,
@@ -558,14 +556,16 @@ impl ConversationSyncer {
                         local_conv.max_seq,
                         server_conv.max_seq
                     );
-                    self.upsert_conversation(server_conv).await?;
-                    changed_conversations.push(server_conv.clone());
+                    self.upsert_conversation(&server_conv).await?;
+                    changed_conversations.push(server_conv);
                     update_count += 1;
                 } else {
                     debug!("[ConvSync]   会话 {} 无需更新", id);
                 }
             } else {
                 // 插入：新会话
+                let mut server_conv = server_conv.clone();
+                self.fill_display_fields(&mut server_conv);
                 info!(
                     "[ConvSync]   新增会话: {} (类型: {}), 未读数: {}",
                     id, server_conv.conversation_type, server_conv.unread_count
@@ -574,8 +574,8 @@ impl ConversationSyncer {
                     "[ConvSync]   会话详情 - 置顶: {}, 私聊: {}, maxSeq: {}",
                     server_conv.is_pinned, server_conv.is_private_chat, server_conv.max_seq
                 );
-                self.upsert_conversation(server_conv).await?;
-                new_conversations.push(server_conv.clone());
+                self.upsert_conversation(&server_conv).await?;
+                new_conversations.push(server_conv);
                 insert_count += 1;
             }
         }
@@ -637,15 +637,22 @@ impl ConversationSyncer {
             && local.min_seq == server.min_seq
             && local.msg_destruct_time == server.msg_destruct_time
             && local.is_msg_destruct == server.is_msg_destruct
+            && local.show_name == server.show_name
+            && local.face_url == server.face_url
+            && local.latest_msg == server.latest_msg
+            && local.latest_msg_send_time == server.latest_msg_send_time
+    }
+
+    /// 参考 Go：在写库前补齐展示字段，避免 show_name/face_url 为空
+    fn fill_display_fields(&self, _conv: &mut LocalConversation) {
+        // 按 Go 行为：不在客户端虚构展示字段或时间，保持服务端/消息路径的真实数据
     }
 
     /// 增量同步会话（核心函数，对应 Go 版本的 IncrSyncConversations）
     pub async fn incr_sync_conversations(&self) -> Result<()> {
-        info!("[ConvSync] 🔄 开始增量同步会话...");
 
         // 1. 获取本地版本信息
         let version_sync = self.get_version_sync().await?;
-
         if let Some(ref vs) = version_sync {
             debug!(
                 "[ConvSync] 本地版本信息 - 版本: {}, 版本ID: {}",
@@ -658,12 +665,25 @@ impl ConversationSyncer {
         // 2. 获取本地所有会话
         let local_conversations = self.get_all_conversations().await?;
         let local_ids = self.get_all_conversation_ids().await?;
-        info!("[ConvSync] 本地会话数: {}", local_ids.len());
 
         // 3. 判断是否需要全量同步
         let reinstalled = local_ids.is_empty();
         if reinstalled {
             warn!("[ConvSync] 本地无会话，执行全量同步...");
+            if let Some(listener) = &self.listener {
+                listener.on_sync_server_start(true).await;
+            }
+            return self.full_sync().await;
+        }
+        // 若本地会话均为占位（名称/头像/摘要/时间全空），也按全量兜底，避免增量不生效
+        let all_placeholder = local_conversations.iter().all(|c| {
+            c.show_name.is_empty()
+                && c.face_url.is_empty()
+                && c.latest_msg.is_empty()
+                && c.latest_msg_send_time == 0
+        });
+        if all_placeholder {
+            warn!("[ConvSync] 本地会话疑似占位数据，执行全量同步兜底...");
             if let Some(listener) = &self.listener {
                 listener.on_sync_server_start(true).await;
             }
@@ -874,7 +894,6 @@ impl ConversationSyncer {
 
     /// 全量同步会话
     async fn full_sync(&self) -> Result<()> {
-        info!("[ConvSync] 🔄 开始全量同步会话...");
 
         let reinstalled = self.get_all_conversation_ids().await?.is_empty();
         debug!(
@@ -1025,5 +1044,109 @@ impl ConversationSyncer {
     /// 获取所有会话列表
     pub async fn get_all_conversation_list(&self) -> Result<Vec<LocalConversation>> {
         self.get_conversation_list_split(0, usize::MAX).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::im::logger::logger::init_logger;
+    use crate::{
+        im::{db::db::create_sqlite_pool_with_migration, login_async},
+        im::conversation::service::ConversationSyncer,
+    };
+    use test_context::{test_context, AsyncTestContext};
+    use tokio::sync::OnceCell;
+
+    static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
+
+    #[derive(Clone)]
+    struct AppCtx {
+        syncer: Arc<ConversationSyncer>,
+    }
+
+    impl AsyncTestContext for AppCtx {
+        async fn setup() -> Self {
+            APP_CTX
+                .get_or_init(|| async {
+                    init_logger(
+                        "rust_lib_flutter_rust_demo=debug,hyper_util::client=info,reqwest=info",
+                    );
+                    let area_code = "+86".to_string();
+                    let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
+                    let platform = 5;
+                    let token_info =
+                        login_async(area_code, "17764338283".to_string(), password, platform)
+                            .await
+                            .expect("登录失败");
+
+                    let db_path = format!(
+                        "sqlite://{}/conv_sync_{}.db?mode=rwc",
+                        std::env::temp_dir().as_path().to_string_lossy(),
+                        token_info.user_id.clone()
+                    );
+                    let pool = create_sqlite_pool_with_migration(&db_path)
+                        .await
+                        .expect("创建测试数据库失败");
+
+                    let cfg = ConversationSyncerConfig {
+                        user_id: token_info.user_id.clone(),
+                        api_base_url: "http://localhost:10002".to_string(),
+                        token: token_info.im_token.clone(),
+                        db_path,
+                    };
+                    let syncer = Arc::new(
+                        ConversationSyncer::with_listener_and_db_and_client(
+                            cfg,
+                            None,
+                            Arc::new(pool),
+                            reqwest::Client::new(),
+                        )
+                        .await
+                        .expect("创建会话同步器失败"),
+                    );
+                    AppCtx { syncer }
+                })
+                .await
+                .clone()
+        }
+
+        async fn teardown(self) {
+            let _ = self;
+        }
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_conversation_incr_sync(ctx: &mut AppCtx) {
+        ctx.syncer
+            .incr_sync_conversations()
+            .await
+            .expect("增量同步失败");
+    }
+
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    async fn test_conversation_full_sync(ctx: &mut AppCtx) {
+        ctx.syncer.full_sync().await.expect("全量同步失败");
+        // 输出数据库中所有会话信息，并检查关键字段
+        let conversations = ctx
+            .syncer
+            .get_all_conversations()
+            .await
+            .expect("获取会话失败");
+        println!("数据库中当前会话信息数量: {}", conversations.len());
+        for (i, conv) in conversations.iter().enumerate() {
+            println!("会话#{}: {:?}", i + 1, conv);
+            assert!(
+                !conv.conversation_id.is_empty(),
+                "conversation_id 不能为空"
+            );
+            assert!(
+                conv.conversation_type != 0,
+                "conversation_type 不能为 0"
+            );
+            // Go 行为：若服务端未返回最新消息字段，允许 show_name/face_url/latest_msg_send_time 为空，等待消息路径刷新
+        }
     }
 }

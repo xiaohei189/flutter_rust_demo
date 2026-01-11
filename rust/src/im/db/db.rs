@@ -5,9 +5,11 @@
 
 use anyhow::{Context, Result};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
+use tracing::info;
 
 /// 创建 SQLite 连接池并执行所有未执行的迁移
 pub async fn create_sqlite_pool_with_migration(db_url: &str) -> Result<Pool<Sqlite>> {
+    info!("创建 SQLite 连接池: {}", db_url);
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(db_url)
