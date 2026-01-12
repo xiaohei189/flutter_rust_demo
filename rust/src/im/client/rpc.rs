@@ -1,3 +1,7 @@
+//! WebSocket RPC 核心模块
+//!
+//! 提供核心的 WebSocket RPC 交互逻辑，包括请求发送、响应处理和超时管理
+
 use std::time::{Duration, Instant};
 
 use crate::im::client::client::PendingRpc;
@@ -7,16 +11,21 @@ use crate::im::serialization::compress_gzip;
 use crate::OpenIMClient;
 use anyhow::Result;
 use futures_util::SinkExt;
-use openim_protocol::Message as ProtobufMessage;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tracing::debug;
 use uuid::Uuid;
 
-// 通过ws调用protobuf请求，通用方法
 impl OpenIMClient {
-   
+    /// 核心方法：发送请求并等待响应
+    ///
+    /// 这是 WebSocket RPC 的核心方法，负责：
+    /// 1. 创建请求并分配唯一 ID
+    /// 2. 注册 pending 请求
+    /// 3. 通过 WebSocket 发送请求
+    /// 4. 等待响应或超时
+    /// 5. 清理 pending 请求
     pub async fn send_request_and_wait(
         &self,
         req_identifier: i32,
@@ -75,20 +84,9 @@ impl OpenIMClient {
             }
         }
     }
-    /// 通用：发送 protobuf 请求并解析回执为 protobuf 响应
-    pub async fn proto_call_by_ws<Req, Resp>(&self, msg_type: i32, req: Req) -> Result<Resp>
-    where
-        Req: ProtobufMessage,
-        Resp: ProtobufMessage + Default,
-    {
-        let req_data = req.encode_to_vec();
-        let resp = self.send_request_and_wait(msg_type, req_data, None).await?;
-        let resp_data = resp.data;
-        let decoded = Resp::decode(resp_data.as_slice())?;
-        Ok(decoded)
-    }
+
     /// 发送裸请求（无等待），调用方需自行管理 pending
-    async fn send_raw_req(&self, req: OpenIMReq) -> Result<()> {
+    pub(crate) async fn send_raw_req(&self, req: OpenIMReq) -> Result<()> {
         let json = serde_json::to_vec(&req)?;
         let compressed = compress_gzip(&json)?;
         let mut guard = self.writer.lock().await;
@@ -97,7 +95,8 @@ impl OpenIMClient {
         Ok(())
     }
 
-    fn make_req(&self, req_identifier: i32, data: Vec<u8>) -> OpenIMReq {
+    /// 创建 WebSocket 请求对象
+    pub(crate) fn make_req(&self, req_identifier: i32, data: Vec<u8>) -> OpenIMReq {
         OpenIMReq {
             req_identifier,
             token: self.config.token.clone(),
@@ -108,12 +107,17 @@ impl OpenIMClient {
         }
     }
 
+    /// 生成操作 ID（时间戳）
     pub fn make_operation_id(&self) -> String {
         format!("{}", chrono::Utc::now().timestamp_millis())
     }
-    fn make_msg_incr(&self) -> String {
+
+    /// 生成消息递增 ID（UUID）
+    pub(crate) fn make_msg_incr(&self) -> String {
         Uuid::new_v4().to_string()
     }
+
+    /// 处理 RPC 响应（从 WebSocket 消息处理器调用）
     pub async fn handle_rpc_response(&self, resp: OpenIMResp) -> Result<()> {
         let mut pending = self.pending_rpc.lock().await;
         if let Some(pending_rpc) = pending.remove(&resp.msg_incr) {

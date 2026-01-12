@@ -16,13 +16,12 @@ use crate::im::model::message::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem,
     QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem,
 };
-use crate::im::model::{msg_type, LocalConversation, OpenIMResp};
+use crate::im::model::{LocalConversation, OpenIMResp};
 use crate::im::serialization::generate_msg_id;
 use anyhow::{Context, Result};
 use futures_util::stream::{SplitSink, SplitStream};
 use openim_protocol::constant;
 use openim_protocol::sdkws;
-use openim_protocol::Message as ProtobufMessage;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -79,6 +78,12 @@ pub struct OpenIMClient {
     message_pull_forward_end_seq_map: ConversationSeqContextCache,
     // 消息拉取反向结束序列号映射（完全参考 Go SDK 的 messagePullReverseEndSeqMap）
     message_pull_reverse_end_seq_map: ConversationSeqContextCache,
+    // 二进制消息处理器回调（使用 Mutex 包装以便延迟初始化）
+    pub(crate) binary_message_handler_callbacks: Arc<
+        tokio::sync::Mutex<
+            Option<Arc<crate::im::message::binary_handler::BinaryMessageHandlerCallbacks>>,
+        >,
+    >,
 }
 
 impl OpenIMClient {
@@ -102,8 +107,40 @@ impl OpenIMClient {
             message_pull_forward_end_seq_map: ConversationSeqContextCache::new(),
             message_pull_reverse_end_seq_map: ConversationSeqContextCache::new(),
             pending_rpc: pending,
+            binary_message_handler_callbacks: Arc::new(tokio::sync::Mutex::new(None)),
         }
     }
+
+    /// 获取推送消息处理器上下文（供 BinaryMessageHandler 使用）
+    pub(crate) fn get_push_message_handler_context(
+        &self,
+    ) -> Result<crate::im::message::binary_handler::PushMessageHandlerContext> {
+        use crate::im::message::binary_handler::PushMessageHandlerContext;
+        use crate::im::message::handler::MessageHandlerContext;
+
+        let message_store = self
+            .message_store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("消息存储未初始化"))?;
+
+        let handler_ctx = MessageHandlerContext::new(
+            self.config.user_id.clone(),
+            message_store.clone(),
+            self.advanced_msg_listener.clone(),
+            self.conversation_syncer.clone(),
+        );
+
+        let is_duplicate = self.received_msg_ids.clone();
+        Ok(PushMessageHandlerContext {
+            message_handler_ctx: handler_ctx,
+            is_duplicate_message: Box::new(move |msg_id: &str| {
+                let mut set = is_duplicate.lock().unwrap();
+                !set.insert(msg_id.to_string())
+            }),
+            conversation_syncer: self.conversation_syncer.clone(),
+        })
+    }
+
     /// 构建 WebSocket 连接 URL
     pub(crate) fn build_url(&self, operation_id: &str) -> String {
         let compression_param = if self.config.compression.is_empty() {
@@ -305,19 +342,9 @@ impl OpenIMClient {
         text: String,
         session_type: i32, // 1=单聊, 2=群聊
     ) -> Result<()> {
-        let content_json = serde_json::json!({ "content": text });
-        let content_str = serde_json::to_string(&content_json)?;
-
-        self.send_rich_message(
-            recv_id,
-            session_type,
-            openim_protocol::constant::TEXT,
-            content_str.into_bytes(),
-            None,
-            false,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_text_message(recv_id, text, session_type)
+            .await
     }
 
     /// 发送图片消息
@@ -327,18 +354,9 @@ impl OpenIMClient {
         picture: PictureElem,
         session_type: i32,
     ) -> Result<()> {
-        debug!("[Client] 🔧 构造图片消息");
-        let content_str = serde_json::to_string(&picture)?;
-        self.send_rich_message(
-            recv_id,
-            session_type,
-            openim_protocol::constant::PICTURE,
-            content_str.into_bytes(),
-            None,
-            false,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_picture_message(recv_id, picture, session_type)
+            .await
     }
 
     /// 发送语音消息
@@ -348,18 +366,9 @@ impl OpenIMClient {
         sound: SoundElem,
         session_type: i32,
     ) -> Result<()> {
-        debug!("[Client] 🔧 构造语音消息");
-        let content_str = serde_json::to_string(&sound)?;
-        self.send_rich_message(
-            recv_id,
-            session_type,
-            openim_protocol::constant::VOICE,
-            content_str.into_bytes(),
-            None,
-            false,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_sound_message(recv_id, sound, session_type)
+            .await
     }
 
     /// 发送视频消息
@@ -369,18 +378,9 @@ impl OpenIMClient {
         video: VideoElem,
         session_type: i32,
     ) -> Result<()> {
-        debug!("[Client] 🔧 构造视频消息");
-        let content_str = serde_json::to_string(&video)?;
-        self.send_rich_message(
-            recv_id,
-            session_type,
-            openim_protocol::constant::VIDEO,
-            content_str.into_bytes(),
-            None,
-            false,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_video_message(recv_id, video, session_type)
+            .await
     }
 
     /// 发送文件消息
@@ -390,18 +390,9 @@ impl OpenIMClient {
         file: FileElem,
         session_type: i32,
     ) -> Result<()> {
-        debug!("[Client] 🔧 构造文件消息");
-        let content_str = serde_json::to_string(&file)?;
-        self.send_rich_message(
-            recv_id,
-            session_type,
-            openim_protocol::constant::FILE,
-            content_str.into_bytes(),
-            None,
-            false,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_file_message(recv_id, file, session_type)
+            .await
     }
 
     /// SendMessage NotOss
@@ -413,16 +404,16 @@ impl OpenIMClient {
         offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
         is_online_only: bool,
     ) -> Result<()> {
-        self.send_message_internal(
-            recv_id,
-            group_id,
-            message,
-            offline_push_info,
-            is_online_only,
-            true,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_message(
+                recv_id,
+                group_id,
+                message,
+                offline_push_info,
+                is_online_only,
+                true,
+            )
+            .await
     }
 
     /// SendMessage（默认支持 oss）
@@ -434,16 +425,16 @@ impl OpenIMClient {
         offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
         is_online_only: bool,
     ) -> Result<()> {
-        self.send_message_internal(
-            recv_id,
-            group_id,
-            message,
-            offline_push_info,
-            is_online_only,
-            false,
-            None,
-        )
-        .await
+        self.get_message_rpc_for_send()
+            .send_message(
+                recv_id,
+                group_id,
+                message,
+                offline_push_info,
+                is_online_only,
+                false,
+            )
+            .await
     }
 
     /// SendMessage（允许自定义 options 覆盖）
@@ -454,195 +445,59 @@ impl OpenIMClient {
         message: MsgStruct,
         offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
         is_online_only: bool,
-        options_override: Option<HashMap<String, bool>>,
+        _options_override: Option<HashMap<String, bool>>,
     ) -> Result<()> {
-        self.send_message_internal(
-            recv_id,
-            group_id,
-            message,
-            offline_push_info,
-            is_online_only,
-            false,
-            options_override,
-        )
-        .await
-    }
-
-    /// 通用发送（content_type + content bytes + offlinePush/options）
-    #[allow(clippy::too_many_arguments)]
-    async fn send_rich_message(
-        &self,
-        recv_id: String,
-        session_type: i32,
-        content_type: i32,
-        content: Vec<u8>,
-        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
-        is_online_only: bool,
-        options_override: Option<HashMap<String, bool>>,
-    ) -> Result<()> {
-        use openim_protocol::sdkws;
-
-        let now = chrono::Utc::now().timestamp_millis();
-
-        // 构造 options
-        let options = HashMap::new();
-
-        // 构造 MsgData
-        let msg_data = sdkws::MsgData {
-            send_id: self.config.user_id.clone(),
-            recv_id: recv_id.clone(),
-            group_id: if session_type == 2 {
-                recv_id.clone()
-            } else {
-                String::new()
-            },
-            client_msg_id: generate_msg_id(&self.config.user_id),
-            server_msg_id: String::new(),
-            sender_platform_id: self.config.platform_id,
-            sender_nickname: String::new(),
-            sender_face_url: String::new(),
-            session_type,
-            msg_from: 100, // UserMsgType
-            content_type,
-            content,
-            seq: 0,
-            send_time: 0,
-            create_time: now,
-            status: 1,
-            is_read: false,
-            options,
-            offline_push_info,
-            at_user_id_list: vec![],
-            attached_info: String::new(),
-            ex: String::new(),
-        };
-
-        // 序列化为 protobuf
-        let mut pb_data = Vec::new();
-        msg_data.encode(&mut pb_data)?;
-
-        let resp = self
-            .send_request_and_wait(
-                if is_online_only {
-                    msg_type::WS_SEND_MSG_NOT_OSS
-                } else {
-                    msg_type::WS_SEND_MSG
-                },
-                pb_data,
-                None,
+        // 注意：options_override 在当前实现中暂未使用，保留参数以保持 API 兼容性
+        self.get_message_rpc_for_send()
+            .send_message(
+                recv_id,
+                group_id,
+                message,
+                offline_push_info,
+                is_online_only,
+                false,
             )
-            .await?;
-
-        Ok(())
+            .await
     }
 
-    /// 高级发送封装：MsgStruct -> protobuf MsgData
-    #[allow(clippy::too_many_arguments)]
-    async fn send_message_internal(
-        &self,
-        recv_id: String,
-        group_id: String,
-        message: MsgStruct,
-        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
-        is_online_only: bool,
-        not_oss: bool,
-        options_override: Option<HashMap<String, bool>>,
-    ) -> Result<()> {
-        let content = message
-            .content
-            .clone()
-            .map(|s| s.into_bytes())
-            .unwrap_or_default();
-        let session_type = if !group_id.is_empty() { 2 } else { 1 };
+    /// 获取消息 RPC 实例（用于查询操作）
+    fn get_message_rpc(&self) -> crate::im::message::ws_rpc::WsMessageRpc<'_, Self> {
+        use crate::im::message::ws_rpc::WsMessageRpc;
+        WsMessageRpc::new(self, self.config.user_id.clone())
+    }
 
-        // options（按 openim-core 默认，结合 onlineOnly，可覆盖）
-        let options = HashMap::new();
-
-        let now = chrono::Utc::now().timestamp_millis();
-        let msg_data = openim_protocol::sdkws::MsgData {
-            send_id: self.config.user_id.clone(),
-            recv_id: recv_id.clone(),
-            group_id: group_id.clone(),
-            client_msg_id: message
-                .client_msg_id
-                .clone()
-                .unwrap_or_else(|| generate_msg_id(&self.config.user_id)),
-            server_msg_id: message.server_msg_id.clone().unwrap_or_default(),
-            sender_platform_id: self.config.platform_id,
-            sender_nickname: message.sender_nickname.clone().unwrap_or_default(),
-            sender_face_url: message.sender_face_url.clone().unwrap_or_default(),
-            session_type,
-            msg_from: message.msg_from,
-            content_type: message.content_type,
-            content,
-            seq: message.seq,
-            send_time: if message.send_time > 0 {
-                message.send_time
-            } else {
-                now
-            },
-            create_time: if message.create_time > 0 {
-                message.create_time
-            } else {
-                now
-            },
-            status: message.status,
-            is_read: message.is_read,
-            options,
-            offline_push_info,
-            at_user_id_list: vec![],
-            attached_info: message.attached_info.clone().unwrap_or_default(),
-            ex: message.ex.clone().unwrap_or_default(),
-        };
-
-        let mut pb_data = Vec::new();
-        msg_data.encode(&mut pb_data)?;
-
-        // self.ws_rpc
-        //     .send_request(
-        //             if not_oss {
-        //                 msg_type::WS_SEND_MSG_NOT_OSS
-        //             } else {
-        //                 msg_type::WS_SEND_MSG
-        //             },
-        //             pb_data,
-        //         )
-        //         .await?;
-        Ok(())
+    /// 获取消息 RPC 实例（用于发送操作）
+    fn get_message_rpc_for_send(&self) -> crate::im::message::ws_rpc::WsMessageRpc<'_, Self> {
+        use crate::im::message::ws_rpc::WsMessageRpc;
+        WsMessageRpc::with_send_context(self, self.config.user_id.clone(), self.config.platform_id)
     }
 
     /// WebSocket：获取各会话最新 seq（reqIdentifier=1001）
+    /// WebSocket：获取最新序列号（reqIdentifier=1001）
     pub async fn ws_get_newest_seq(&self) -> Result<sdkws::GetMaxSeqResp> {
-        let req = sdkws::GetMaxSeqReq {
-            user_id: self.config.user_id.clone(),
-        };
-        self.proto_call_by_ws(msg_type::WS_GET_NEWEST_SEQ, req).await
+        self.get_message_rpc().get_newest_seq().await
     }
 
-  
     /// WebSocket：按区间拉取消息（reqIdentifier=1002）
     pub async fn ws_pull_msg_by_range(
         &self,
         ranges: Vec<SeqRangeModel>,
         order: i32,
     ) -> Result<sdkws::PullMessageBySeqsResp> {
-        let seq_ranges: Vec<sdkws::SeqRange> = ranges
-            .into_iter()
-            .map(|r| sdkws::SeqRange {
-                conversation_id: r.conversation_id,
-                begin: r.begin,
-                end: r.end,
-                num: r.num,
-            })
-            .collect();
+        self.get_message_rpc()
+            .pull_msg_by_range(ranges, order)
+            .await
+    }
 
-        let req: sdkws::PullMessageBySeqsReq = sdkws::PullMessageBySeqsReq {
-            user_id: self.config.user_id.clone(),
-            seq_ranges,
-            order,
-        };
-        self.proto_call_by_ws(msg_type::WS_PULL_MSG_BY_RANGE, req).await
-     
+    /// WebSocket：按序列号列表拉取消息（reqIdentifier=1003）
+    pub async fn ws_pull_msg_by_seq_list(
+        &self,
+        conversation_id: String,
+        seq_list: Vec<i64>,
+    ) -> Result<sdkws::PullMessageBySeqsResp> {
+        self.get_message_rpc()
+            .pull_msg_by_seq_list(conversation_id, seq_list)
+            .await
     }
 
     /// 处理接收消息（事件循环） -> ws_handlers 模块实现
@@ -2624,6 +2479,29 @@ impl OpenIMClient {
     }
 }
 
+// 实现 WsRpcClient trait（为 OpenIMClient 和 &OpenIMClient）
+impl crate::im::message::ws_rpc::WsRpcClient for OpenIMClient {
+    async fn send_request_and_wait(
+        &self,
+        req_identifier: i32,
+        data: Vec<u8>,
+        timeout_duration: Option<tokio::time::Duration>,
+    ) -> Result<crate::im::model::OpenIMResp> {
+        OpenIMClient::send_request_and_wait(self, req_identifier, data, timeout_duration).await
+    }
+}
+
+impl crate::im::message::ws_rpc::WsRpcClient for &OpenIMClient {
+    async fn send_request_and_wait(
+        &self,
+        req_identifier: i32,
+        data: Vec<u8>,
+        timeout_duration: Option<tokio::time::Duration>,
+    ) -> Result<crate::im::model::OpenIMResp> {
+        OpenIMClient::send_request_and_wait(self, req_identifier, data, timeout_duration).await
+    }
+}
+
 // 对外特征接口实现
 impl OpenIMClientApi for OpenIMClient {
     fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
@@ -2881,21 +2759,25 @@ mod tests {
             .await
             .unwrap();
 
-            let resp = client.get_all_conversations().await.unwrap();
-            info!("get_all_conversations: {:?}", resp);
+        let resp = client.get_all_conversations().await.unwrap();
+        info!("get_all_conversations: {:?}", resp);
 
-            for ele in resp {
-                let resp = client.ws_pull_msg_by_range(vec![SeqRange {
-                    conversation_id: ele.conversation_id.clone(),
-                    begin: 0,
-                    end: 100,
-                    num: 10,
-                }], 1).await.unwrap();
-                info!("ws_pull_msg_by_range: {:?}", resp)
-            }
-            tokio::time::sleep(Duration::from_secs(300)
-            ).await;
-    
+        for ele in resp {
+            let resp = client
+                .ws_pull_msg_by_range(
+                    vec![SeqRange {
+                        conversation_id: ele.conversation_id.clone(),
+                        begin: 0,
+                        end: 100,
+                        num: 10,
+                    }],
+                    1,
+                )
+                .await
+                .unwrap();
+            info!("ws_pull_msg_by_range: {:?}", resp)
+        }
+        tokio::time::sleep(Duration::from_secs(300)).await;
     }
 
     struct TestConversationListener;
