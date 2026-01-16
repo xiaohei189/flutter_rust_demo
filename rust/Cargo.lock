@@ -2242,6 +2242,7 @@ dependencies = [
  "test-context",
  "tokio",
  "tokio-tungstenite",
+ "tokio-util",
  "tower",
  "tower-http",
  "tower-http-client",

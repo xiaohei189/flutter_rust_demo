@@ -16,6 +16,7 @@ use crate::im::model::message::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem,
     QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem,
 };
+use crate::im::model::ws::AppState;
 use crate::im::model::{LocalConversation, OpenIMResp};
 use crate::im::serialization::generate_msg_id;
 use anyhow::{Context, Result};
@@ -50,8 +51,11 @@ pub(crate) struct PendingRpc {
 #[derive(Clone)]
 pub struct OpenIMClient {
     pub(crate) config: ClientConfig,
-    // 当前可用的 WebSocket 写端，使用 Arc<Mutex<Option<...>>> 以便在重连时原子更新
-    pub(crate) writer: Arc<Mutex<Option<WsWriter>>>,
+    pub(crate) app_state: AppState,
+    // WebSocket 消息发送通道（供其他模块使用，不直接暴露 writer）
+    pub(crate) ws_message_tx: Arc<Mutex<Option<tokio::sync::mpsc::Sender<WsMessage>>>>,
+    // 当前可用的 WebSocket 写端（仅在连接时使用，实际发送通过 ws_message_tx）
+    writer: Arc<Mutex<Option<WsWriter>>>,
     pub(crate) received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
     pub(crate) pending_rpc: Arc<Mutex<HashMap<String, PendingRpc>>>,
 
@@ -94,6 +98,7 @@ impl OpenIMClient {
         let pending = Arc::new(Mutex::new(HashMap::new()));
         Self {
             config,
+            ws_message_tx: Arc::new(Mutex::new(None)),
             writer: writer.clone(),
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
             conversation_syncer: None,
@@ -108,6 +113,7 @@ impl OpenIMClient {
             message_pull_reverse_end_seq_map: ConversationSeqContextCache::new(),
             pending_rpc: pending,
             binary_message_handler_callbacks: Arc::new(tokio::sync::Mutex::new(None)),
+            app_state: AppState::default(),
         }
     }
 
@@ -202,28 +208,21 @@ impl OpenIMClient {
     /// 建立一次 WebSocket 连接并完成鉴权握手（不包含 DB/同步器初始化）
     // connect_ws_once 已迁移至 connection.rs
 
-    /// 连接到服务器并在内部启动消息处理（包含断线重连）
-    pub async fn connect(&mut self) -> Result<()> {
-        // 第一次连接：若失败直接返回错误（与 Go 首次失败行为一致）
-        let read = self.connect_ws_once().await?;
-
-        info!("[Client] 💓 启动心跳");
-        info!("[Client] 📥 开始监听服务器消息");
-
-        // 创建共享 SQLite 连接池并执行迁移（会话 / 好友等表）
+    /// 初始化数据库连接池
+    async fn init_database(&mut self) -> Result<Arc<Pool<Sqlite>>> {
         info!(
             "[Client] 🔗 创建共享 SQLite 连接池并执行迁移: {}",
             self.config.conversation_db_url
         );
-        let pool: Pool<Sqlite> =
-            create_sqlite_pool_with_migration(&self.config.conversation_db_url).await?;
+        let pool = create_sqlite_pool_with_migration(&self.config.conversation_db_url).await?;
         let db = Arc::new(pool);
         self.db = Some(db.clone());
+        Ok(db)
+    }
 
-        // 创建带认证拦截器的 HTTP 客户端（使用统一的客户端创建方式）
-        // 对于 ConversationApi，使用带 token header 的 reqwest::Client
-        // 对于 FriendApi，使用 make_client 创建的 HttpClient（在 FriendSyncer 内部创建）
-        let http_client = reqwest::Client::builder()
+    /// 创建带认证的 HTTP 客户端
+    fn create_http_client(&self) -> Result<reqwest::Client> {
+        reqwest::Client::builder()
             .default_headers({
                 let mut headers = reqwest::header::HeaderMap::new();
                 headers.insert(
@@ -234,9 +233,15 @@ impl OpenIMClient {
                 headers
             })
             .build()
-            .context("创建 HTTP 客户端失败")?;
+            .context("创建 HTTP 客户端失败")
+    }
 
-        // 启动会话同步（HTTP + 本地 SQLite），并保存同步器用于后续基于消息通知的实时更新
+    /// 初始化会话同步器
+    async fn init_conversation_syncer(
+        &mut self,
+        db: Arc<Pool<Sqlite>>,
+        http_client: reqwest::Client,
+    ) -> Result<()> {
         let cfg = ConversationSyncerConfig {
             user_id: self.config.user_id.clone(),
             api_base_url: self.config.api_base_url.clone(),
@@ -254,6 +259,7 @@ impl OpenIMClient {
         );
         self.conversation_syncer = Some(syncer.clone());
 
+        // 启动会话增量同步任务
         tokio::spawn(async move {
             info!("[Client] 🔄 启动会话增量同步任务");
             let result = syncer.incr_sync_conversations().await;
@@ -263,10 +269,11 @@ impl OpenIMClient {
             }
         });
 
-        // 启动好友同步（HTTP + 本地 SQLite）
-        self.init_friend_syncer().await?;
+        Ok(())
+    }
 
-        // 初始化消息存储（单表，使用 sqlx）
+    /// 初始化消息存储
+    async fn init_message_store(&mut self) -> Result<()> {
         let store = Arc::new(
             MessageStore::new(
                 &self.config.conversation_db_url,
@@ -275,22 +282,19 @@ impl OpenIMClient {
             .await?,
         );
         self.message_store = Some(store);
+        Ok(())
+    }
 
-        // 启动心跳任务（使用可更新的 writer）
-        self.spawn_heartbeat();
-
-        // 在内部启动消息处理 + 重连任务
+    /// 启动消息处理和重连任务
+    fn spawn_message_handler_and_reconnect(&self, initial_read: WsReader) {
         let client = self.clone();
         tokio::spawn(async move {
-            let mut current_read = Some(read);
-
+            let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+            let tx1 = tx.clone();
             loop {
-                if let Some(reader) = current_read.take() {
-                    if let Err(e) = client.handle_messages(reader).await {
-                        error!("消息处理错误: {}", e);
-                    } else {
-                        warn!("[Client] 消息处理结束，准备检查是否需要重连");
-                    }
+
+                if let Err(e) = client.connect_ws_once_v2(tx1, rx).await {
+                    error!("[Client] 连接失败: {}", e);
                 }
 
                 // 断线后按 Go 版逻辑进行带退避的重连
@@ -298,39 +302,60 @@ impl OpenIMClient {
                 info!("[Client] 尝试重连，等待 {:?} 后重试（指数退避）", wait);
                 tokio::time::sleep(wait).await;
 
-                match client.connect_ws_once().await {
-                    Ok(new_read) => {
-                        info!("[Client] 🔁 重连成功，恢复消息读取");
-                        client.reconnect_strategy.reset();
-                        current_read = Some(new_read);
+                //     match client.connect_ws_once().await {
+                //         Ok(new_read) => {
+                //             info!("[Client] 🔁 重连成功，恢复消息读取");
+                //             client.reconnect_strategy.reset();
+                //             current_read = Some(new_read);
 
-                        // 每次重连后重新启动心跳任务
-                        client.spawn_heartbeat();
+                //             // 每次重连后重新启动心跳任务
+                //             client.spawn_heartbeat();
 
-                        // 重连后触发一次会话增量同步，确保会话名/头像/未读等被服务端数据覆盖
-                        if let Some(syncer) = client.conversation_syncer.clone() {
-                            tokio::spawn(async move {
-                                info!("[Client] 🔄 重连后触发会话增量同步");
-                                if let Err(e) = syncer.incr_sync_conversations().await {
-                                    error!("[Client] ❌ 会话增量同步失败: {e}");
-                                }
-                            });
-                        }
-                    }
-                    Err(e) => {
-                        // 如果是致命连接错误（例如 token 失效/被踢），则停止重连循环
-                        if e.downcast_ref::<ConnectFatalError>().is_some() {
-                            error!("[Client] 遇到致命连接错误，停止重连: {}", e);
-                            break;
-                        }
+            
+                //         }
+                //         Err(e) => {
+                //             // 如果是致命连接错误（例如 token 失效/被踢），则停止重连循环
+                //             if e.downcast_ref::<ConnectFatalError>().is_some() {
+                //                 error!("[Client] 遇到致命连接错误，停止重连: {}", e);
+                //                 break;
+                //             }
 
-                        error!("[Client] 重连失败: {}", e);
-                        // 非致命错误则继续外层循环，按指数退避再次尝试
-                        continue;
-                    }
-                }
+                //             error!("[Client] 重连失败: {}", e);
+                //             // 非致命错误则继续外层循环，按指数退避再次尝试
+                //             continue;
+                //         }
+                //     }
+                // }
             }
         });
+    }
+
+    /// 初始化所有资源（数据库、同步器、消息存储等）
+    async fn initialize_resources(&mut self) -> Result<()> {
+        // 初始化数据库连接池
+        let db = self.init_database().await?;
+
+        // 创建 HTTP 客户端
+        let http_client = self.create_http_client()?;
+
+        // 初始化会话同步器
+        self.init_conversation_syncer(db, http_client).await?;
+
+        // 初始化好友同步器
+        self.init_friend_syncer().await?;
+
+        // 初始化消息存储
+        self.init_message_store().await?;
+
+        Ok(())
+    }
+
+    /// 连接到服务器并在内部启动消息处理（包含断线重连）
+    pub async fn connect(&mut self) -> Result<()> {
+        // 初始化所有资源（数据库、同步器、消息存储等）
+        self.initialize_resources().await?;
+        // 启动消息处理和重连任务
+        self.spawn_message_handler_and_reconnect(read);
 
         Ok(())
     }

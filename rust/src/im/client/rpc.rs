@@ -62,7 +62,7 @@ impl OpenIMClient {
             pending.insert(req_id.clone(), PendingRpc { tx, sent_at });
         }
 
-        if let Err(e) = self.send_raw_req(req).await {
+        if let Err(e) = self.send_raw_req(req) {
             let mut pending = self.pending_rpc.lock().await;
             pending.remove(&req_id);
             return Err(e);
@@ -86,13 +86,24 @@ impl OpenIMClient {
     }
 
     /// 发送裸请求（无等待），调用方需自行管理 pending
-    pub(crate) async fn send_raw_req(&self, req: OpenIMReq) -> Result<()> {
+    pub(crate) fn send_raw_req(&self, req: OpenIMReq) -> Result<()> {
         let json = serde_json::to_vec(&req)?;
         let compressed = compress_gzip(&json)?;
-        let mut guard = self.writer.lock().await;
-        let writer = guard.as_mut().ok_or_else(|| anyhow::anyhow!("未连接"))?;
-        writer.send(WsMessage::Binary(compressed)).await?;
-        Ok(())
+
+        // 通过消息通道发送（非阻塞）
+        // 使用阻塞方式获取 tx（因为 send 是同步的）
+        let tx = {
+            let guard = self.ws_message_tx.blocking_lock();
+            guard.clone()
+        };
+
+        if let Some(tx) = tx {
+            tx.send(WsMessage::Binary(compressed))
+                .map_err(|_| anyhow::anyhow!("WebSocket 消息通道已关闭"))?;
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("WebSocket 未连接"))
+        }
     }
 
     /// 创建 WebSocket 请求对象

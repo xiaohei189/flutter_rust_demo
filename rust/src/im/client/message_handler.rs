@@ -40,7 +40,7 @@ impl OpenIMClient {
         Ok(())
     }
 
-    async fn handle_binary_message(&self, data: Vec<u8>) -> Result<()> {
+    pub async fn handle_binary_message(&self, data: Vec<u8>) -> Result<()> {
         use crate::im::message::binary_handler::{
             BinaryMessageHandler, BinaryMessageHandlerCallbacks,
         };

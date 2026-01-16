@@ -88,3 +88,13 @@ pub struct WebSocketConnectResp {
     pub data: Option<serde_json::Value>,
 }
 
+pub enum CommandMessage {
+    Text(String),
+    Binary(Vec<u8>),
+    Ping,
+    Disconnect(String),
+}
+#[derive(Debug, Clone,Default)]
+pub struct AppState {
+    
+}
