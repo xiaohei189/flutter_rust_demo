@@ -11,26 +11,35 @@ use crate::im::dao::MessageStore;
 use crate::im::db::db::create_sqlite_pool_with_migration;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
+use crate::im::message::BinaryMessageHandler;
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{
     AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem,
     QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem,
 };
-use crate::im::model::ws::AppState;
+use crate::im::model::ws::CommandMessage;
 use crate::im::model::{LocalConversation, OpenIMResp};
-use crate::im::serialization::generate_msg_id;
+use crate::im::serialization::{decompress_gzip, generate_msg_id};
+use crate::im::WebSocketConnectResp;
 use anyhow::{Context, Result};
+use futures_util::future::select_all;
 use futures_util::stream::{SplitSink, SplitStream};
+use futures_util::StreamExt;
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::net::TcpStream;
+use tokio::runtime::Runtime;
+use tokio::sync::mpsc::Receiver;
 use tokio::sync::{oneshot, Mutex};
+use tokio::time::interval;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
-use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::WebSocketStream;
+use tokio_tungstenite::{connect_async, MaybeTlsStream};
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
 /// WebSocket 写入端类型别名
@@ -46,7 +55,20 @@ pub(crate) struct PendingRpc {
 }
 
 /// OpenIM 客户端
-///
+#[derive(Clone, Default)]
+pub struct AppState {
+    // 共享数据库连接池（用于会话和好友同步器）
+    db: Option<Arc<Pool<Sqlite>>>,
+    // 消息存储（本地 SQLite，sqlx 驱动）
+    pub(crate) message_store: Option<Arc<MessageStore>>,
+    // 会话同步器（用于基于消息通知实时更新会话）
+    pub(crate) conversation_syncer: Option<Arc<ConversationSyncer>>,
+    // 好友同步器（用于联系人列表增量同步）
+    pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
+    // 高级消息监听器（可由调用方注册，参考 Go 版本的 OnAdvancedMsgListener）
+    pub(crate) advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
+}
+
 /// 核心 IM 逻辑实现
 #[derive(Clone)]
 pub struct OpenIMClient {
@@ -54,8 +76,6 @@ pub struct OpenIMClient {
     pub(crate) app_state: AppState,
     // WebSocket 消息发送通道（供其他模块使用，不直接暴露 writer）
     pub(crate) ws_message_tx: Arc<Mutex<Option<tokio::sync::mpsc::Sender<WsMessage>>>>,
-    // 当前可用的 WebSocket 写端（仅在连接时使用，实际发送通过 ws_message_tx）
-    writer: Arc<Mutex<Option<WsWriter>>>,
     pub(crate) received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
     pub(crate) pending_rpc: Arc<Mutex<HashMap<String, PendingRpc>>>,
 
@@ -82,24 +102,16 @@ pub struct OpenIMClient {
     message_pull_forward_end_seq_map: ConversationSeqContextCache,
     // 消息拉取反向结束序列号映射（完全参考 Go SDK 的 messagePullReverseEndSeqMap）
     message_pull_reverse_end_seq_map: ConversationSeqContextCache,
-    // 二进制消息处理器回调（使用 Mutex 包装以便延迟初始化）
-    pub(crate) binary_message_handler_callbacks: Arc<
-        tokio::sync::Mutex<
-            Option<Arc<crate::im::message::binary_handler::BinaryMessageHandlerCallbacks>>,
-        >,
-    >,
 }
 
 impl OpenIMClient {
     /// 创建新的客户端
     /// - `config`: 客户端配置
     pub fn new(config: ClientConfig) -> Self {
-        let writer = Arc::new(Mutex::new(None));
         let pending = Arc::new(Mutex::new(HashMap::new()));
-        Self {
+        let client = Self {
             config,
             ws_message_tx: Arc::new(Mutex::new(None)),
-            writer: writer.clone(),
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
             conversation_syncer: None,
             friend_syncer: None,
@@ -112,9 +124,14 @@ impl OpenIMClient {
             message_pull_forward_end_seq_map: ConversationSeqContextCache::new(),
             message_pull_reverse_end_seq_map: ConversationSeqContextCache::new(),
             pending_rpc: pending,
-            binary_message_handler_callbacks: Arc::new(tokio::sync::Mutex::new(None)),
             app_state: AppState::default(),
-        }
+        };
+        client
+    }
+
+    async fn init(&mut self) -> Result<()> {
+        self.initialize_resources().await?;
+        Ok(())
     }
 
     /// 获取推送消息处理器上下文（供 BinaryMessageHandler 使用）
@@ -138,7 +155,7 @@ impl OpenIMClient {
 
         let is_duplicate = self.received_msg_ids.clone();
         Ok(PushMessageHandlerContext {
-            message_handler_ctx: handler_ctx,
+            message_handler_ctx: None,
             is_duplicate_message: Box::new(move |msg_id: &str| {
                 let mut set = is_duplicate.lock().unwrap();
                 !set.insert(msg_id.to_string())
@@ -148,7 +165,7 @@ impl OpenIMClient {
     }
 
     /// 构建 WebSocket 连接 URL
-    pub(crate) fn build_url(&self, operation_id: &str) -> String {
+    pub(crate) fn connect_url(&self) -> String {
         let compression_param = if self.config.compression.is_empty() {
             String::new()
         } else {
@@ -161,28 +178,12 @@ impl OpenIMClient {
             self.config.token,
             self.config.user_id,
             self.config.platform_id,
-            operation_id,
+            OpenIMClient::make_operation_id(),
             compression_param,
             self.config.is_background,
             self.config.is_msg_resp,
             self.config.sdk_type
         )
-    }
-
-    /// 注册会话监听器
-    pub fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
-        self.conversation_listener = Some(listener.clone());
-    }
-
-    /// 注册好友监听器
-    pub fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
-        self.friend_listener = Some(listener.clone());
-        // FriendSyncer 当前不再重建，沿用已有实例
-    }
-
-    /// 注册高级消息监听器（参考 Go 版本的 SetAdvancedMsgListener）
-    pub fn set_advanced_msg_listener(&mut self, listener: Arc<dyn AdvancedMsgListener>) {
-        self.advanced_msg_listener = Some(listener.clone());
     }
 
     async fn init_friend_syncer(&mut self) -> Result<()> {
@@ -209,25 +210,24 @@ impl OpenIMClient {
     // connect_ws_once 已迁移至 connection.rs
 
     /// 初始化数据库连接池
-    async fn init_database(&mut self) -> Result<Arc<Pool<Sqlite>>> {
+    async fn init_database(config: &ClientConfig) -> Result<Arc<Pool<Sqlite>>> {
         info!(
             "[Client] 🔗 创建共享 SQLite 连接池并执行迁移: {}",
-            self.config.conversation_db_url
+            config.conversation_db_url
         );
-        let pool = create_sqlite_pool_with_migration(&self.config.conversation_db_url).await?;
+        let pool = create_sqlite_pool_with_migration(&config.conversation_db_url).await?;
         let db = Arc::new(pool);
-        self.db = Some(db.clone());
         Ok(db)
     }
 
     /// 创建带认证的 HTTP 客户端
-    fn create_http_client(&self) -> Result<reqwest::Client> {
+    fn create_http_client(config: &ClientConfig) -> Result<reqwest::Client> {
         reqwest::Client::builder()
             .default_headers({
                 let mut headers = reqwest::header::HeaderMap::new();
                 headers.insert(
                     reqwest::header::HeaderName::from_static("token"),
-                    reqwest::header::HeaderValue::from_str(&self.config.token)
+                    reqwest::header::HeaderValue::from_str(&config.token)
                         .context("无效的 token")?,
                 );
                 headers
@@ -238,38 +238,27 @@ impl OpenIMClient {
 
     /// 初始化会话同步器
     async fn init_conversation_syncer(
-        &mut self,
+        config: &ClientConfig,
         db: Arc<Pool<Sqlite>>,
         http_client: reqwest::Client,
-    ) -> Result<()> {
+        conversation_listener: Option<Arc<dyn ConversationListener>>,
+    ) -> Result<Arc<ConversationSyncer>> {
         let cfg = ConversationSyncerConfig {
-            user_id: self.config.user_id.clone(),
-            api_base_url: self.config.api_base_url.clone(),
-            token: self.config.token.clone(),
-            db_path: self.config.conversation_db_url.clone(),
+            user_id: config.user_id.clone(),
+            api_base_url: config.api_base_url.clone(),
+            token: config.token.clone(),
+            db_path: config.conversation_db_url.clone(),
         };
         let syncer = Arc::new(
             ConversationSyncer::with_listener_and_db_and_client(
                 cfg,
-                self.conversation_listener.clone(),
+                conversation_listener,
                 db.clone(),
                 http_client,
             )
             .await?,
         );
-        self.conversation_syncer = Some(syncer.clone());
-
-        // 启动会话增量同步任务
-        tokio::spawn(async move {
-            info!("[Client] 🔄 启动会话增量同步任务");
-            let result = syncer.incr_sync_conversations().await;
-            match result {
-                Ok(_) => info!("[Client] ✅ 会话同步完成"),
-                Err(e) => error!("[Client] ❌ 会话同步失败: {e}"),
-            }
-        });
-
-        Ok(())
+        Ok(syncer)
     }
 
     /// 初始化消息存储
@@ -286,80 +275,356 @@ impl OpenIMClient {
     }
 
     /// 启动消息处理和重连任务
-    fn spawn_message_handler_and_reconnect(&self, initial_read: WsReader) {
-        let client = self.clone();
-        tokio::spawn(async move {
-            let (tx, mut rx) = tokio::sync::mpsc::channel(100);
-            let tx1 = tx.clone();
-            loop {
-
-                if let Err(e) = client.connect_ws_once_v2(tx1, rx).await {
-                    error!("[Client] 连接失败: {}", e);
-                }
-
-                // 断线后按 Go 版逻辑进行带退避的重连
-                let wait = client.reconnect_strategy.next_interval();
-                info!("[Client] 尝试重连，等待 {:?} 后重试（指数退避）", wait);
-                tokio::time::sleep(wait).await;
-
-                //     match client.connect_ws_once().await {
-                //         Ok(new_read) => {
-                //             info!("[Client] 🔁 重连成功，恢复消息读取");
-                //             client.reconnect_strategy.reset();
-                //             current_read = Some(new_read);
-
-                //             // 每次重连后重新启动心跳任务
-                //             client.spawn_heartbeat();
-
-            
-                //         }
-                //         Err(e) => {
-                //             // 如果是致命连接错误（例如 token 失效/被踢），则停止重连循环
-                //             if e.downcast_ref::<ConnectFatalError>().is_some() {
-                //                 error!("[Client] 遇到致命连接错误，停止重连: {}", e);
-                //                 break;
-                //             }
-
-                //             error!("[Client] 重连失败: {}", e);
-                //             // 非致命错误则继续外层循环，按指数退避再次尝试
-                //             continue;
-                //         }
-                //     }
-                // }
+    pub async fn connect_with_reconnect(&self) -> Result<()> {
+        let mut reconnect_count = 0;
+        loop {
+            if let Err(e) = self.connect().await {
+                error!("[Client] 连接失败: {}", e);
             }
-        });
+            // 断线后按 Go 版逻辑进行带退避的重连
+            let wait = self.reconnect_strategy.next_interval();
+            reconnect_count += 1;
+            info!(
+                "[Client] 尝试重连，等待 {:?} 后重试（指数退避），重连次数: {}",
+                wait, reconnect_count
+            );
+            tokio::time::sleep(wait).await;
+        }
+    }
+
+    pub(crate) async fn connect(&self) -> Result<()> {
+        let (tx, rx) = tokio::sync::mpsc::channel(100);
+        let url = self.connect_url();
+        debug!("[Client] 🔗 WebSocket 连接 URL: {}", url);
+        let (ws_stream, response) = connect_async(&url).await?;
+        info!(
+            "[Client] ✅ WebSocket 连接成功, 状态: {}",
+            response.status()
+        );
+        let (writer, mut read) = ws_stream.split();
+
+        if let Some(Ok(WsMessage::Text(text))) = read.next().await {
+            match serde_json::from_str::<WebSocketConnectResp>(&text) {
+                Ok(resp) => {
+                    if resp.err_code == 0 {
+                        info!("[Client] ✅ 服务器连接鉴权成功");
+                        let listener = self.advanced_msg_listener.clone();
+                        tokio::spawn(async move {
+                            if let Some(listener) = &listener {
+                                listener
+                                    .on_connection_status_changed(true, "连接成功".to_string())
+                                    .await;
+                            }
+                        });
+                    } else {
+                        let error_msg = if !resp.err_dlt.is_empty() {
+                            format!("{} (详情: {})", resp.err_msg, resp.err_dlt)
+                        } else {
+                            resp.err_msg.clone()
+                        };
+                        error!(
+                            "[Client] ❌ WebSocket 连接失败，错误码: {}, 错误信息: {}",
+                            resp.err_code, error_msg
+                        );
+
+                        let listener = self.advanced_msg_listener.clone();
+                        let msg_for_cb = format!(
+                            "WebSocket 鉴权失败, code={}, msg={}",
+                            resp.err_code, error_msg
+                        );
+                        tokio::spawn(async move {
+                            if let Some(listener) = &listener {
+                                listener
+                                    .on_connection_status_changed(false, msg_for_cb)
+                                    .await;
+                            }
+                        });
+
+                        return Err(anyhow::anyhow!(error_msg));
+                    }
+                }
+                Err(e) => {
+                    error!(
+                        "[Client] ❌ WebSocket 响应解析失败: {}, 原始响应: {}",
+                        e, text
+                    );
+                    return Err(anyhow::anyhow!(
+                        "WebSocket 响应解析失败: {}, 原始响应: {}",
+                        e,
+                        text
+                    ));
+                }
+            }
+        } else {
+            error!("[Client] ❌ 未收到 WebSocket 连接响应");
+            return Err(anyhow::anyhow!("未收到 WebSocket 连接响应"));
+        }
+
+        // 创建统一的取消令牌，用于协调所有任务的退出
+        let cancel_token = CancellationToken::new();
+
+        // 发送任务：从通道接收消息并写入 socket
+        let send_task = self.send_message_loop(cancel_token.clone(), writer, rx);
+        // 接收任务：从 socket 读取消息并处理
+        let recv_task = self.recv_message_loop(cancel_token.clone(), read);
+        // 心跳任务：定期通过 tx 发送 Ping 消息
+        let heartbeat_task = self.heartbeat_task_with_cancel(tx.clone(), cancel_token.clone());
+
+        //             // 重连后触发一次会话增量同步，确保会话名/头像/未读等被服务端数据覆盖
+        //             if let Some(syncer) = client.conversation_syncer.clone() {
+        //                 tokio::spawn(async move {
+        //                     info!("[Client] 🔄 重连后触发会话增量同步");
+        //                     if let Err(e) = syncer.incr_sync_conversations().await {
+        //                         error!("[Client] ❌ 会话增量同步失败: {e}");
+        //                     }
+        //                 });
+        //             }
+        // 使用 select_all 等待三个任务，任何一个退出时取消所有任务
+        let tasks = vec![send_task, recv_task, heartbeat_task];
+        let (result, index, remaining) = select_all(tasks).await;
+
+        // 取消所有任务（通过 cancel_token）
+        let task_name = match index {
+            0 => "发送",
+            1 => "接收",
+            2 => "心跳",
+            _ => "未知",
+        };
+        debug!("[Client]  {task_name}任务退出，取消所有任务");
+        cancel_token.cancel();
+
+        // 等待所有任务完成清理
+        for task in remaining {
+            match task.await {
+                Ok(Ok(())) => {}
+                Ok(Err(e)) => {
+                    error!("[Client] 剩余任务退出并返回错误: {e}");
+                }
+                Err(join_err) => {
+                    error!("[Client] 剩余任务 Join 失败: {join_err}");
+                }
+            }
+        }
+        // 将首个退出任务的错误上抛（包含 JoinError 情况）
+        let task_result = match result {
+            Ok(inner) => inner,
+            Err(join_err) => Err(anyhow::anyhow!("任务 Join 失败: {join_err}")),
+        };
+        if let Err(e) = task_result {
+            return Err(anyhow::anyhow!("[Client] {task_name}任务异常退出: {e}"));
+        }
+
+        Ok(())
+    }
+    fn recv_message_loop(
+        &self,
+        recv_cancel_token: CancellationToken,
+        mut read: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+    ) -> tokio::task::JoinHandle<Result<()>> {
+        let app_state = self.app_state.clone();
+        tokio::spawn(async move {
+            loop {
+                let msg_opt = tokio::select! {
+                    // 检查取消信号
+                    _ = recv_cancel_token.cancelled() => {
+                        debug!("[Client] 接收任务收到取消信号，退出循环");
+                        return Ok(());
+                    }
+                    // 接收消息
+                    msg_opt = read.next() =>   msg_opt,
+                };
+
+                let msg = match msg_opt {
+                    Some(Ok(msg)) => msg,
+                    Some(Err(e)) => {
+                        error!("[Client] 接收ws消息失败: {}", e);
+                        return Err(anyhow::anyhow!("接收ws消息失败: {e}"));
+                    }
+                    None => {
+                        warn!("[Client] 收到空ws消息，跳过不退出接收循环");
+                        continue;
+                    }
+                };
+
+                match msg {
+                    WsMessage::Text(text) => {
+                        info!("[Client] 收到文本消息: {}", text);
+                    }
+                    WsMessage::Binary(data) => {
+                        // 解压 gzip 数据
+                        let data = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+                            match decompress_gzip(&data) {
+                                Ok(d) => d,
+                                Err(e) => {
+                                    return Err(anyhow::anyhow!("解压失败: {}", e));
+                                }
+                            }
+                        } else {
+                            data
+                        };
+                        // 将二进制消息尝试转为字符串后输出日志
+                        info!(
+                            "[Client] 收到二进制消息: {}",
+                            String::from_utf8_lossy(&data)
+                        );
+                        if let Err(e) =
+                            BinaryMessageHandler::handle_binary_message(app_state.clone(), &data)
+                                .await
+                        {
+                            error!("[Client] handle_binary_message 处理二进制消息失败: {}", e);
+                        }
+                    }
+                    WsMessage::Ping(_) | WsMessage::Pong(_) => { /* 忽略处理 */ }
+                    WsMessage::Close(frame) => {
+                        warn!("[Client] 👋 连接关闭: {:?}", frame);
+                        return Ok(());
+                    }
+                    _ => { /* 忽略其他类型 */ }
+                }
+            }
+        })
+    }
+    fn send_message_loop(
+        &self,
+        send_cancel_token: CancellationToken,
+        mut writer: WsWriter,
+        mut rx: Receiver<CommandMessage>,
+    ) -> tokio::task::JoinHandle<Result<()>> {
+        tokio::spawn(async move {
+            use futures_util::SinkExt;
+            loop {
+                tokio::select! {
+                    // 检查取消信号
+                    _ = send_cancel_token.cancelled() => {
+                        debug!("[Client] 发送任务收到取消信号，退出循环");
+                        return Ok(());
+                    }
+                    // 接收消息
+                    msg_opt = rx.recv() => {
+                        match msg_opt {
+                            Some(msg) => {
+                                match msg {
+                                    CommandMessage::Text(text) => {
+                                        if let Err(e) = writer.send(WsMessage::Text(text)).await {
+                                            error!("[Client] ws消息发送失败: {}", e);
+                                            return Err(anyhow::anyhow!("ws消息发送失败: {e}"));
+                                        }
+                                    }
+                                    CommandMessage::Binary(data) => {
+                                        if let Err(e) = writer.send(WsMessage::Binary(data)).await {
+                                            error!("[Client] ws消息发送失败: {}", e);
+                                            return Err(anyhow::anyhow!("ws消息发送失败: {e}"));
+                                        }
+                                    }
+                                    CommandMessage::Ping => {
+                                        if let Err(e) = writer.send(WsMessage::Ping(vec![])).await {
+                                            error!("[Client] ws心跳发送失败: {}", e);
+                                            return Err(anyhow::anyhow!("ws心跳发送失败: {e}"));
+                                        }
+                                    }
+                                    CommandMessage::Disconnect(_reason) => {
+                                        // 断开连接请求，退出发送循环
+                                        debug!("[Client] 收到断开连接请求");
+                                        return Ok(());
+                                    }
+                                }
+                            }
+                            None => {
+                                debug!("[Client] ws消息mpsc通道已关闭，发送任务退出");
+                                return Ok(());
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    fn heartbeat_task_with_cancel(
+        &self,
+        tx: tokio::sync::mpsc::Sender<CommandMessage>,
+        cancel_token: CancellationToken,
+    ) -> tokio::task::JoinHandle<Result<()>> {
+        tokio::spawn(async move {
+            let mut ticker = interval(Duration::from_secs(25));
+            loop {
+                tokio::select! {
+                    // 检查取消信号
+                    _ = cancel_token.cancelled() => {
+                        debug!("[Client] 💓 心跳任务收到取消信号，退出循环");
+                        return Ok(());
+                    }
+                    // 发送心跳
+                    _ = ticker.tick() => {
+                        debug!("[Client] 💓 心跳任务：发送心跳");
+                        if let Err(e) = tx.send(CommandMessage::Ping).await {
+                            error!("[Client] 💓 心跳任务：消息通道发送失败: {}", e);
+                            return Err(anyhow::anyhow!("心跳发送失败: {e}"));
+                        }
+                    }
+                }
+            }
+            debug!("[Client] 💓 心跳任务退出");
+            Ok(())
+        })
     }
 
     /// 初始化所有资源（数据库、同步器、消息存储等）
+    ///
+    /// 使用当前客户端的配置 `self.config`，逐步完成：
+    /// 1. 创建并缓存 SQLite 连接池
+    /// 2. 创建带 token 的 HTTP 客户端
+    /// 3. 初始化会话同步器并缓存
+    /// 4. 初始化好友同步器并启动增量同步
+    /// 5. 初始化消息存储
     async fn initialize_resources(&mut self) -> Result<()> {
-        // 初始化数据库连接池
-        let db = self.init_database().await?;
+        // 1) 初始化数据库连接池
+        let db = Self::init_database(&self.config).await?;
+        self.db = Some(db.clone());
 
-        // 创建 HTTP 客户端
-        let http_client = self.create_http_client()?;
+        // 2) 创建 HTTP 客户端
+        let http_client = Self::create_http_client(&self.config)?;
 
-        // 初始化会话同步器
-        self.init_conversation_syncer(db, http_client).await?;
+        // 3) 初始化会话同步器
+        let conv_syncer = Self::init_conversation_syncer(
+            &self.config,
+            db,
+            http_client,
+            self.conversation_listener.clone(),
+        )
+        .await?;
+        self.conversation_syncer = Some(conv_syncer);
 
-        // 初始化好友同步器
+        // 4) 初始化好友同步器
         self.init_friend_syncer().await?;
 
-        // 初始化消息存储
+        // 5) 初始化消息存储
         self.init_message_store().await?;
-
+        // 将已初始化的资源同步到 app_state
+        self.app_state.db = self.db.clone();
+        self.app_state.message_store = self.message_store.clone();
+        self.app_state.conversation_syncer = self.conversation_syncer.clone();
+        self.app_state.friend_syncer = self.friend_syncer.clone();
+        self.app_state.advanced_msg_listener = self.advanced_msg_listener.clone();
         Ok(())
     }
 
-    /// 连接到服务器并在内部启动消息处理（包含断线重连）
-    pub async fn connect(&mut self) -> Result<()> {
-        // 初始化所有资源（数据库、同步器、消息存储等）
-        self.initialize_resources().await?;
-        // 启动消息处理和重连任务
-        self.spawn_message_handler_and_reconnect(read);
-
-        Ok(())
+    /// 注册会话监听器
+    pub fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
+        self.conversation_listener = Some(listener.clone());
     }
 
+    /// 注册好友监听器
+    pub fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
+        self.friend_listener = Some(listener.clone());
+        // FriendSyncer 当前不再重建，沿用已有实例
+    }
+
+    /// 注册高级消息监听器（参考 Go 版本的 SetAdvancedMsgListener）
+    pub fn set_advanced_msg_listener(&mut self, listener: Arc<dyn AdvancedMsgListener>) {
+        self.advanced_msg_listener = Some(listener.clone());
+        self.app_state.advanced_msg_listener = Some(listener);
+    }
     /// 发送文本消息
     pub async fn send_text_message(
         &self,
@@ -2735,7 +3000,7 @@ mod tests {
 
                     let config = ClientConfig::new(user_id, im_token, 5);
                     let mut client = OpenIMClient::new(config);
-
+                    client.init().await.unwrap();
                     // client.set_conversation_listener(
                     //     Arc::new(TestConversationListener) as Arc<dyn ConversationListener>
                     // );
@@ -2745,7 +3010,7 @@ mod tests {
                     // );
 
                     // 连接到服务器（内部会自动启动消息处理）
-                    client.connect().await.unwrap_or_else(|e| {
+                    client.connect_with_reconnect().await.unwrap_or_else(|e| {
                         error!("连接失败: {}", e);
                         return;
                     });
@@ -2763,7 +3028,12 @@ mod tests {
             let _ = self;
         }
     }
-
+    #[test_context(AppCtx)]
+    #[tokio::test]
+    #[ignore]
+    async fn connect(ctx: &mut AppCtx) {
+        let client = ctx.api.clone();
+    }
     #[test_context(AppCtx)]
     #[tokio::test]
     #[ignore]

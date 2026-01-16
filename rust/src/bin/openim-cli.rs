@@ -188,7 +188,7 @@ async fn main() -> Result<()> {
     {
         let mut client_guard = client.lock().await;
         client_guard
-            .connect()
+            .connect_with_reconnect()
             .await
             .map_err(|e| anyhow::anyhow!("连接失败: {}", e))?;
     }

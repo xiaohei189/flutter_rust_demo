@@ -4,12 +4,12 @@
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
+use crate::im::client::client::AppState;
 use crate::im::conversation::service::ConversationSyncer;
 use crate::im::dao::MessageStore;
 use crate::im::listener::AdvancedMsgListener;
-use crate::im::model::ws::AppState;
 use crate::im::model::{msg_type, OpenIMResp};
 use crate::im::serialization::decompress_gzip;
 use crate::im::LocalChatLog;
@@ -126,7 +126,7 @@ impl MessageHandlerContext {
 /// 推送消息处理器上下文
 pub struct PushMessageHandlerContext {
     /// 消息处理器上下文
-    pub message_handler_ctx: MessageHandlerContext,
+    pub message_handler_ctx: Option<MessageHandlerContext>,
     /// 消息去重检查器
     pub is_duplicate_message: Box<dyn Fn(&str) -> bool + Send + Sync>,
     /// 会话同步器（用于触发增量同步）
@@ -155,107 +155,11 @@ pub struct BinaryMessageHandlerCallbacks {
 pub struct BinaryMessageHandler;
 
 impl BinaryMessageHandler {
-    /// 处理二进制消息
-    ///
-    /// 负责：
-    /// 1. 解压 gzip 数据（如果适用）
-    /// 2. 解析 JSON 响应
-    /// 3. 根据 req_identifier 分发到不同的处理函数
-    pub async fn handle_binary_message(
-        callbacks: &BinaryMessageHandlerCallbacks,
-        data: Vec<u8>,
-    ) -> Result<()> {
-        // 解压 gzip 数据
-        let decompressed = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
-            match decompress_gzip(&data) {
-                Ok(d) => d,
-                Err(e) => {
-                    return Err(anyhow::anyhow!("解压失败: {}", e));
-                }
-            }
-        } else {
-            data
-        };
 
-        // 解析 JSON 响应
-        let resp = serde_json::from_slice::<OpenIMResp>(&decompressed)?;
-
-        // 根据 req_identifier 分发处理
-        match resp.req_identifier {
-            msg_type::WS_GET_NEWEST_SEQ
-            | msg_type::WS_PULL_MSG_BY_RANGE
-            | msg_type::WS_PULL_MSG_BY_SEQ_LIST
-            | msg_type::WS_SEND_MSG
-            | msg_type::WS_SEND_MSG_NOT_OSS => {
-                // RPC 响应：调用 RPC 响应处理器
-                (callbacks.handle_rpc_response)(resp).await?;
-            }
-
-            msg_type::WS_PUSH_MSG => {
-                // 推送消息：使用消息处理器处理
-                let push_ctx = (callbacks.get_push_message_handler_context)()?;
-
-                let need_conv_sync = Self::handle_push_message(
-                    &push_ctx.message_handler_ctx,
-                    &resp.data,
-                    |msg_id| (push_ctx.is_duplicate_message)(msg_id),
-                )
-                .await?;
-
-                // 收到会话相关通知后，触发会话增量同步以覆盖本地占位数据（名称/头像/未读等）
-                if need_conv_sync {
-                    if let Some(syncer) = push_ctx.conversation_syncer {
-                        tokio::spawn(async move {
-                            if let Err(e) = syncer.incr_sync_conversations().await {
-                                error!("[Client] ❌ 会话增量同步失败: {e}");
-                            }
-                        });
-                    }
-                }
-            }
-
-            msg_type::WS_KICK_ONLINE_MSG => {
-                // 踢下线消息：触发监听器回调
-                warn!("[Client] ⚠️ 被踢下线");
-                let listener = (callbacks.advanced_msg_listener)();
-                if let Some(listener) = listener {
-                    tokio::spawn(async move {
-                        listener.on_kicked_offline().await;
-                    });
-                }
-            }
-
-            _ => {
-                debug!("[Client] 未知消息类型: {}", resp.req_identifier);
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn handle_binary_message_v2(app_state: AppState, data: Vec<u8>) -> Result<()> {
-        // 临时占位：创建空的 BinaryMessageHandlerCallbacks（重构中）
+    pub async fn handle_binary_message(app_state: AppState, data: &[u8]) -> Result<()> {
         use crate::im::model::OpenIMResp;
-        let callbacks = BinaryMessageHandlerCallbacks {
-            handle_rpc_response: Box::new(|_resp: OpenIMResp| Box::pin(async move { Ok(()) })),
-            get_push_message_handler_context: Box::new(|| Err(anyhow::anyhow!("未实现"))),
-            advanced_msg_listener: Box::new(|| None),
-        };
-
-        // 解压 gzip 数据
-        let decompressed = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
-            match decompress_gzip(&data) {
-                Ok(d) => d,
-                Err(e) => {
-                    return Err(anyhow::anyhow!("解压失败: {}", e));
-                }
-            }
-        } else {
-            data
-        };
-
         // 解析 JSON 响应
-        let resp = serde_json::from_slice::<OpenIMResp>(&decompressed)?;
+        let resp = serde_json::from_slice::<OpenIMResp>(data)?;
 
         // 根据 req_identifier 分发处理
         match resp.req_identifier {
@@ -265,41 +169,31 @@ impl BinaryMessageHandler {
             | msg_type::WS_SEND_MSG
             | msg_type::WS_SEND_MSG_NOT_OSS => {
                 // RPC 响应：调用 RPC 响应处理器
-                (callbacks.handle_rpc_response)(resp).await?;
             }
-
             msg_type::WS_PUSH_MSG => {
                 // 推送消息：使用消息处理器处理
-                let push_ctx = (callbacks.get_push_message_handler_context)()?;
-
-                let need_conv_sync = Self::handle_push_message(
-                    &push_ctx.message_handler_ctx,
-                    &resp.data,
-                    |msg_id| (push_ctx.is_duplicate_message)(msg_id),
-                )
-                .await?;
+                let need_conv_sync =
+                    Self::handle_push_message(&app_state, &resp.data, |msg_id| (true)).await?;
 
                 // 收到会话相关通知后，触发会话增量同步以覆盖本地占位数据（名称/头像/未读等）
-                if need_conv_sync {
-                    if let Some(syncer) = push_ctx.conversation_syncer {
-                        tokio::spawn(async move {
-                            if let Err(e) = syncer.incr_sync_conversations().await {
-                                error!("[Client] ❌ 会话增量同步失败: {e}");
-                            }
-                        });
-                    }
-                }
+                // if need_conv_sync {
+                //     if let Some(syncer) = push_ctx.conversation_syncer {
+                //         tokio::spawn(async move {
+                //             if let Err(e) = syncer.incr_sync_conversations().await {
+                //                 error!("[Client] ❌ 会话增量同步失败: {e}");
+                //             }
+                //         });
+                //     }
             }
-
             msg_type::WS_KICK_ONLINE_MSG => {
                 // 踢下线消息：触发监听器回调
                 warn!("[Client] ⚠️ 被踢下线");
-                let listener = (callbacks.advanced_msg_listener)();
-                if let Some(listener) = listener {
-                    tokio::spawn(async move {
-                        listener.on_kicked_offline().await;
-                    });
-                }
+                // let listener = (callbacks.advanced_msg_listener)();
+                // if let Some(listener) = listener {
+                //     tokio::spawn(async move {
+                //         listener.on_kicked_offline().await;
+                //     });
+                // }
             }
 
             _ => {
@@ -318,14 +212,13 @@ impl BinaryMessageHandler {
     /// - `is_duplicate_message`: 消息去重检查函数
     /// - 返回: 是否需要触发会话增量同步
     pub async fn handle_push_message(
-        ctx: &MessageHandlerContext,
+        app_state: &AppState,
         data: &[u8],
         is_duplicate_message: impl Fn(&str) -> bool,
     ) -> Result<bool> {
         if data.is_empty() {
             return Err(anyhow::anyhow!("推送消息为空"));
         }
-
         // 解析 protobuf PushMessages
         let push_msg = match sdkws::PushMessages::decode(data) {
             Ok(pm) => pm,
@@ -333,6 +226,7 @@ impl BinaryMessageHandler {
                 return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
             }
         };
+        info!("[BinaryMessageHandler] push_msg: {:?}", push_msg);
 
         // 收集消息并去重
         let mut all_msgs: HashMap<String, Vec<sdkws::MsgData>> = HashMap::new();
@@ -372,7 +266,7 @@ impl BinaryMessageHandler {
 
         // 委派给消息处理器处理业务逻辑
         if !all_msgs.is_empty() {
-            Self::handle_new_message(ctx, all_msgs).await?;
+            Self::handle_new_message(app_state, all_msgs).await?;
         }
 
         // 返回是否需要触发会话增量同步
@@ -381,7 +275,7 @@ impl BinaryMessageHandler {
 
     /// 处理推送消息，分类决定插入/更新/会话更新/回调
     async fn handle_new_message(
-        ctx: &MessageHandlerContext,
+        app_state: &AppState,
         all_msgs: HashMap<String, Vec<sdkws::MsgData>>,
     ) -> Result<MessageProcessingResult> {
         let mut processing_result = MessageProcessingResult::new();
@@ -392,7 +286,7 @@ impl BinaryMessageHandler {
                 continue;
             }
             let conversation_result =
-                Self::process_conversation_messages(ctx, &conversation_id, msgs).await?;
+                Self::process_conversation_messages(app_state, &conversation_id, msgs).await?;
             processing_result.conversation_set.insert(
                 conversation_id.to_string(),
                 conversation_result.conversation,
@@ -412,13 +306,13 @@ impl BinaryMessageHandler {
                 .extend(conversation_result.new_messages);
         }
         let result = processing_result.clone();
-        Self::persist_and_notify(ctx, processing_result).await?;
+        Self::persist_and_notify(app_state, processing_result).await?;
         Ok(result)
     }
 
     /// 处理单个会话的所有消息
     async fn process_conversation_messages(
-        ctx: &MessageHandlerContext,
+        app_state: &AppState,
         conversation_id: &str,
         msgs: Vec<sdkws::MsgData>,
     ) -> Result<ConversationProcessingResult> {
@@ -434,7 +328,7 @@ impl BinaryMessageHandler {
                 continue;
             }
             let conversation_result =
-                Self::process_message(ctx, conversation_id, &msg, &options).await?;
+                Self::process_message(app_state, conversation_id, &msg, &options).await?;
             result.insert_msg.extend(conversation_result.insert_msg);
             result.update_msg.extend(conversation_result.update_msg);
             result.new_messages.extend(conversation_result.new_messages);
@@ -446,16 +340,18 @@ impl BinaryMessageHandler {
 
     /// 处理消息（统一处理自己发送和他人发送的消息）
     async fn process_message(
-        ctx: &MessageHandlerContext,
+        app_state: &AppState,
         conversation_id: &str,
         msg: &sdkws::MsgData,
         options: &MessageOptions,
     ) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
-        let is_from_me = msg.send_id == ctx.user_id;
+        let is_from_me = msg.send_id == "1234567890";
 
-        if let Ok(Some(existing_msg)) = ctx
+        if let Ok(Some(existing_msg)) = app_state
             .message_store
+            .as_ref()
+            .unwrap()
             .get_by_client_msg_id(conversation_id, &msg.client_msg_id)
             .await
         {
@@ -607,14 +503,16 @@ impl BinaryMessageHandler {
 
     /// 持久化消息并触发回调
     async fn persist_and_notify(
-        ctx: &MessageHandlerContext,
+        app_state: &AppState,
         result: MessageProcessingResult,
     ) -> Result<()> {
         // 批量更新消息
         for (conversation_id, messages) in result.update_msg {
             for msg in messages {
-                if let Err(e) = ctx
+                if let Err(e) = app_state
                     .message_store
+                    .as_ref()
+                    .unwrap()
                     .update_message(&conversation_id, &msg)
                     .await
                 {
@@ -628,8 +526,10 @@ impl BinaryMessageHandler {
 
         // 批量插入消息
         for (conversation_id, messages) in result.insert_msg {
-            if let Err(e) = ctx
+            if let Err(e) = app_state
                 .message_store
+                .as_ref()
+                .unwrap()
                 .batch_insert_message_list(&conversation_id, &messages)
                 .await
             {
@@ -643,7 +543,7 @@ impl BinaryMessageHandler {
         // 触发新消息回调
         for msg in result.new_messages {
             let msg_json = serde_json::to_string(&msg).unwrap_or_default();
-            let listener = ctx.advanced_msg_listener.clone();
+            let listener = app_state.advanced_msg_listener.clone();
             tokio::spawn(async move {
                 if let Some(listener) = &listener {
                     listener.on_recv_new_message(msg_json).await;

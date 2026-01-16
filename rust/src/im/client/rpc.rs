@@ -10,7 +10,6 @@ use crate::im::model::OpenIMResp;
 use crate::im::serialization::compress_gzip;
 use crate::OpenIMClient;
 use anyhow::Result;
-use futures_util::SinkExt;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
@@ -98,8 +97,9 @@ impl OpenIMClient {
         };
 
         if let Some(tx) = tx {
-            tx.send(WsMessage::Binary(compressed))
-                .map_err(|_| anyhow::anyhow!("WebSocket 消息通道已关闭"))?;
+            // 使用 try_send 做非阻塞发送；若通道关闭或队列已满，返回错误
+            tx.try_send(WsMessage::Binary(compressed))
+                .map_err(|_| anyhow::anyhow!("WebSocket 消息通道已关闭或队列已满"))?;
             Ok(())
         } else {
             Err(anyhow::anyhow!("WebSocket 未连接"))
@@ -112,14 +112,14 @@ impl OpenIMClient {
             req_identifier,
             token: self.config.token.clone(),
             send_id: self.config.user_id.clone(),
-            operation_id: self.make_operation_id(),
+            operation_id: OpenIMClient::make_operation_id(),
             msg_incr: self.make_msg_incr(),
             data,
         }
     }
 
     /// 生成操作 ID（时间戳）
-    pub fn make_operation_id(&self) -> String {
+    pub fn make_operation_id() -> String {
         format!("{}", chrono::Utc::now().timestamp_millis())
     }
 

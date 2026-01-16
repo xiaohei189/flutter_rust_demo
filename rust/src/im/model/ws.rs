@@ -94,7 +94,3 @@ pub enum CommandMessage {
     Ping,
     Disconnect(String),
 }
-#[derive(Debug, Clone,Default)]
-pub struct AppState {
-    
-}
