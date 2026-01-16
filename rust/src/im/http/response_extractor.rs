@@ -60,7 +60,6 @@ impl HttpResponseExtractor {
             .map_err(|e| anyhow::anyhow!("read body failed: method={} url={} operation_id={} status={} err={}", method, uri, operation_id, status, e))?;
         let body_text = String::from_utf8_lossy(&body_bytes).to_string();
         
-        debug!(method = %method, uri = %uri, status = %status, headers = ?headers, body = ?body_text, "HttpResponseExtractor");
 
 
         if status != http::StatusCode::OK {
@@ -85,6 +84,17 @@ impl HttpResponseExtractor {
                 e
             )
         })?;
+        // body内容使用反序列化输出，并美化格式化 json
+        match serde_json::from_slice::<serde_json::Value>(&body_bytes)
+            .and_then(|v| serde_json::to_string_pretty(&v))
+        {
+            Ok(pretty_body) => {
+                debug!(method = %method, uri = %uri, status = %status, headers = ?headers, body = %pretty_body, "HttpResponseExtractor");
+            },
+            Err(_) => {
+                debug!(method = %method, uri = %uri, status = %status, headers = ?headers, body = ?body_text, "HttpResponseExtractor");
+            }
+        }
 
         if api_resp.err_code != 0 {
             // 已成功解析结构体，直接输出整个响应体，方便定位业务错误

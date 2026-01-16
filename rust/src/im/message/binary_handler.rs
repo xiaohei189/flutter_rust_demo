@@ -173,7 +173,7 @@ impl BinaryMessageHandler {
             msg_type::WS_PUSH_MSG => {
                 // 推送消息：使用消息处理器处理
                 let need_conv_sync =
-                    Self::handle_push_message(&app_state, &resp.data, |msg_id| (true)).await?;
+                    Self::handle_push_message(&app_state, &resp.data, |msg_id| (false)).await?;
 
                 // 收到会话相关通知后，触发会话增量同步以覆盖本地占位数据（名称/头像/未读等）
                 // if need_conv_sync {
@@ -226,12 +226,110 @@ impl BinaryMessageHandler {
                 return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
             }
         };
-        info!("[BinaryMessageHandler] push_msg: {:?}", push_msg);
+        info!(
+            "[BinaryMessageHandler] push_msg (pretty):\n{}",
+            serde_json::to_string_pretty(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
+        );
 
         // 收集消息并去重
         let mut all_msgs: HashMap<String, Vec<sdkws::MsgData>> = HashMap::new();
         let mut need_conv_sync = false;
+        // 遍历所有普通消息和通知消息，根据 contentType 输出中文含义（包含常见 IM 场景的详细枚举）
 
+        fn content_type_to_chinese(content_type: i32) -> &'static str {
+            match content_type {
+                // 基础类型
+                101 => "文本消息",
+                102 => "图片消息",
+                103 => "语音消息",
+                104 => "视频消息",
+                105 => "文件消息",
+                106 => "合并转发消息",
+                107 => "表情消息",
+                108 => "撤回消息",
+                109 => "引用消息",
+                110 => "自定义消息",
+                111 => "位置消息",
+                112 => "名片消息",
+                113 => "@消息",
+                114 => "音视频通话邀请",
+
+                // 群聊相关
+                115 => "群创建通知",
+                116 => "群资料变更通知",
+                117 => "群成员入群通知",
+                118 => "群成员退群通知",
+                119 => "群成员被踢通知",
+
+                // 系统及通知类型
+                120 => "系统通知",
+                121 => "频道变更通知",
+                122 => "应用扩展消息",
+
+                // 关系链/社交
+                1201 => "好友申请通知",
+                1202 => "好友通过通知",
+                1203 => "好友拒绝通知",
+                1204 => "好友删除通知",
+                1205 => "加入黑名单通知",
+                1206 => "移除黑名单通知",
+
+                // 群申请/邀请
+                1301 => "加群申请通知",
+                1302 => "加群审批通知",
+                1303 => "加群邀请通知",
+
+                // 阅读回执/状态
+                1401 => "消息已读回执",
+                1402 => "消息送达回执",
+                1403 => "消息撤回状态同步",
+
+                // 通讯录/会话变更
+                1501 => "会话置顶变更",
+                1502 => "会话免打扰变更",
+                1503 => "会话草稿变更",
+
+                // 其他预留/扩展
+                1601 => "红包消息",
+                1602 => "转账消息",
+                1603 => "收藏消息",
+                1604 => "投票消息",
+                1605 => "公告消息",
+
+                _ => "未知类型",
+            }
+        }
+
+        // 遍历普通消息
+        for (conv_id, pull_msgs) in &push_msg.msgs {
+            for msg in &pull_msgs.msgs {
+                let zh = content_type_to_chinese(msg.content_type);
+                info!(
+                    "[消息内容类型] conversationID={} client_msg_id={} contentType={} -> {}",
+                    conv_id,
+                    msg.client_msg_id,
+                    msg.content_type,
+                    zh
+                );
+            }
+        }
+
+        // 遍历通知消息
+        for (conv_id, pull_msgs) in &push_msg.notification_msgs {
+            for msg in &pull_msgs.msgs {
+                let zh = content_type_to_chinese(msg.content_type);
+                info!(
+                    "[通知消息内容类型] conversationID={} client_msg_id={} contentType={} -> {}",
+                    conv_id,
+                    msg.client_msg_id,
+                    msg.content_type,
+                    zh
+                );
+            }
+        }
+
+
+        
         // 处理普通消息
         for (conv_id, pull_msgs) in &push_msg.msgs {
             for msg in &pull_msgs.msgs {
@@ -317,22 +415,34 @@ impl BinaryMessageHandler {
         msgs: Vec<sdkws::MsgData>,
     ) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
+        let login_user_id = app_state
+            .message_store
+            .as_ref()
+            .map(|s| s.login_user_id.clone())
+            .unwrap_or_default();
 
         for msg in msgs {
             let options = MessageOptions::from_msg(&msg);
             // 处理删除消息
             if msg.status == constant::MSG_STATUS_HAS_DELETED {
                 let db_message = Self::msg_data_to_local_chat_log(&msg, conversation_id);
-                result.insert_msg.push(db_message.clone());
                 result.insert_msg.push(db_message);
                 continue;
             }
-            let conversation_result =
-                Self::process_message(app_state, conversation_id, &msg, &options).await?;
+            let conversation_result = Self::process_message(
+                app_state,
+                conversation_id,
+                &msg,
+                &options,
+                &login_user_id,
+            )
+            .await?;
             result.insert_msg.extend(conversation_result.insert_msg);
             result.update_msg.extend(conversation_result.update_msg);
             result.new_messages.extend(conversation_result.new_messages);
-            result.conversation = conversation_result.conversation;
+            if !conversation_result.conversation.latest_msg.is_empty() {
+                result.conversation = conversation_result.conversation;
+            }
         }
 
         Ok(result)
@@ -344,9 +454,10 @@ impl BinaryMessageHandler {
         conversation_id: &str,
         msg: &sdkws::MsgData,
         options: &MessageOptions,
+        login_user_id: &str,
     ) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
-        let is_from_me = msg.send_id == "1234567890";
+        let is_from_me = msg.send_id == login_user_id;
 
         if let Ok(Some(existing_msg)) = app_state
             .message_store
@@ -426,6 +537,11 @@ impl BinaryMessageHandler {
 
             // 历史消息单独存储
             if options.is_history {
+                result
+                    .insert_msg
+                    .push(Self::msg_data_to_local_chat_log(msg, conversation_id));
+            } else {
+                // 在线消息同样写入本地，保持与 Go 行为一致
                 result
                     .insert_msg
                     .push(Self::msg_data_to_local_chat_log(msg, conversation_id));
@@ -537,6 +653,17 @@ impl BinaryMessageHandler {
                     "[BinaryMessageHandler] 批量插入消息失败 conversationID={}: {}",
                     conversation_id, e
                 );
+            }
+        }
+
+        // 会话变更时触发一次会话增量同步，让名称/头像/未读由服务端兜底刷新
+        if !result.conversation_set.is_empty() {
+            if let Some(syncer) = app_state.conversation_syncer.clone() {
+                tokio::spawn(async move {
+                    if let Err(e) = syncer.incr_sync_conversations().await {
+                        error!("[BinaryMessageHandler] 会话增量同步失败: {}", e);
+                    }
+                });
             }
         }
 
