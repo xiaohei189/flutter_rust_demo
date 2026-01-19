@@ -1,7 +1,4 @@
 //! 消息同步器（参考 go/internal/interaction/msg_sync.go）
-//! 当前为骨架占位实现，后续补齐实际逻辑（拉取缺失消息、触发会话事件等）。
-
-use crate::im::ConversationDao;
 use crate::im::dao::repository::Repository;
 use crate::im::model::constant;
 use crate::im::model::message::SeqRange as SeqRangeModel;
@@ -9,11 +6,9 @@ use crate::im::model::ws;
 use anyhow::{anyhow, Result};
 use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
-use std::collections;
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::{mpsc, oneshot, Mutex};
-use tokio::time::{sleep, timeout, Duration};
+use tokio::sync::{mpsc, oneshot};
+use tokio::time::{timeout, Duration};
 use tracing::{debug, warn};
 
 const CONNECT_PULL_NUMS: i64 = 1;
@@ -34,28 +29,22 @@ pub enum MsgSyncCommand {
     Push(sdkws::PushMessages),
 }
 
-/// MsgSyncer 输出给上层的事件（可由 UI/监听器消费）
-#[derive(Debug)]
-pub enum MsgSyncTriggerEvent {
-    Conversation(HashMap<String, sdkws::PullMsgs>),
-    Reinstall { msgs: HashMap<String, sdkws::PullMsgs>, total: i32 },
-    Notification(HashMap<String, sdkws::PullMsgs>),
-}
 
 /// 消息同步器，actor 化：仅通过命令/事件通道与外界交互
-pub struct MsgSyncer {
+pub struct MessageSyncer {
     login_user_id: String,
-    trigger_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
-    synced_max_seqs: HashMap<String, i64>,
     reinstalled: bool,
     is_syncing: bool,
     repository: Repository,
+    synced_max_seqs: HashMap<String, i64>,
     /// 消息/事件输入通道
     cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
     ws_rpc_tx: mpsc::UnboundedSender<crate::im::model::ws::WsRpcEnvelope>,
+    trigger_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
+
 }
 
-impl MsgSyncer {
+impl MessageSyncer {
     pub fn new(
         login_user_id: String,
         ws_rpc_tx: mpsc::UnboundedSender<crate::im::model::ws::WsRpcEnvelope>,
@@ -484,4 +473,14 @@ impl MsgSyncer {
         }
         prost::Message::decode(resp.data.as_slice()).map_err(|e| anyhow!("decode ws resp failed: {e}"))
     }
+}
+
+
+
+/// MsgSyncer 输出给上层的事件（可由 UI/监听器消费）
+#[derive(Debug)]
+pub enum MsgSyncTriggerEvent {
+    Conversation(HashMap<String, sdkws::PullMsgs>),
+    Reinstall { msgs: HashMap<String, sdkws::PullMsgs>, total: i32 },
+    Notification(HashMap<String, sdkws::PullMsgs>),
 }

@@ -2,7 +2,7 @@ pub mod api;
 pub mod client;
 pub mod config;
 pub mod message_handler;
-pub mod msg_sync;
+pub mod message_syncer;
 pub mod reconnect;
 pub mod rpc;
 pub mod seq_cache;
