@@ -684,4 +684,3 @@ pub struct TypingStatus {
     #[serde(rename = "msgTip")]
     pub msg_tip: String,
 }
-

@@ -1,8 +1,8 @@
+pub mod conversation;
+pub mod notification;
 pub mod friend;
 pub mod message;
-pub mod conversation;
-
-pub use friend::FriendDao;
-pub use message::MessageStore;
+pub mod repository;
 pub use conversation::{ConversationDao, VersionSyncDao};
-
+pub use friend::FriendDao;
+pub use message::MessageRepo;

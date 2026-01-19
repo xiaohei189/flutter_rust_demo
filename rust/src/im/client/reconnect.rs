@@ -9,11 +9,7 @@ pub struct ConnectFatalError {
 
 impl std::fmt::Display for ConnectFatalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "fatal ws connect error code={}, msg={}",
-            self.code, self.message
-        )
+        write!(f, "fatal ws connect error code={}, msg={}", self.code, self.message)
     }
 }
 
@@ -49,4 +45,3 @@ impl ReconnectStrategy {
         *idx = -1;
     }
 }
-

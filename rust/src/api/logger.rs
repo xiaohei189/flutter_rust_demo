@@ -1,5 +1,5 @@
-use std::sync::Once;
 use std::fs;
+use std::sync::Once;
 
 /// 日志配置
 #[derive(Debug, Clone)]
@@ -26,7 +26,7 @@ impl Default for LoggerConfig {
 static INIT_LOGGER: Once = Once::new();
 
 /// 初始化日志
-/// 
+///
 /// 根据配置初始化日志系统，支持输出到控制台和文件
 /// 只能初始化一次，后续调用会被忽略
 #[flutter_rust_bridge::frb(sync)]
@@ -36,16 +36,12 @@ pub fn init_logger(config: LoggerConfig) -> Result<(), String> {
         use tracing_subscriber::EnvFilter;
 
         // 创建日志过滤器
-        let filter_layer = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new(&config.log_level));
+        let filter_layer = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&config.log_level));
 
         let registry = tracing_subscriber::registry().with(filter_layer);
 
         // 根据配置构建输出层
-        match (
-            config.is_log_standard_output,
-            !config.log_file_path.is_empty(),
-        ) {
+        match (config.is_log_standard_output, !config.log_file_path.is_empty()) {
             (true, true) => {
                 // 同时输出到控制台和文件
                 // 确保日志目录存在
@@ -53,11 +49,7 @@ pub fn init_logger(config: LoggerConfig) -> Result<(), String> {
                     let _ = fs::create_dir_all(parent);
                 }
 
-                match std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(&config.log_file_path)
-                {
+                match std::fs::OpenOptions::new().create(true).append(true).open(&config.log_file_path) {
                     Ok(file) => {
                         registry
                             .with(
@@ -114,11 +106,7 @@ pub fn init_logger(config: LoggerConfig) -> Result<(), String> {
                     let _ = fs::create_dir_all(parent);
                 }
 
-                match std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(&config.log_file_path)
-                {
+                match std::fs::OpenOptions::new().create(true).append(true).open(&config.log_file_path) {
                     Ok(file) => {
                         registry
                             .with(
@@ -135,13 +123,7 @@ pub fn init_logger(config: LoggerConfig) -> Result<(), String> {
                         eprintln!("无法打开日志文件 {}: {}", config.log_file_path, e);
                         // 回退到标准输出
                         registry
-                            .with(
-                                tracing_subscriber::fmt::layer()
-                                    .with_writer(std::io::stdout)
-                                    .with_file(true)
-                                    .with_line_number(true)
-                                    .with_target(false),
-                            )
+                            .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout).with_file(true).with_line_number(true).with_target(false))
                             .init();
                     }
                 }
@@ -149,13 +131,7 @@ pub fn init_logger(config: LoggerConfig) -> Result<(), String> {
             (false, false) => {
                 // 默认输出到控制台
                 registry
-                    .with(
-                        tracing_subscriber::fmt::layer()
-                            .with_writer(std::io::stdout)
-                            .with_file(true)
-                            .with_line_number(true)
-                            .with_target(false),
-                    )
+                    .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout).with_file(true).with_line_number(true).with_target(false))
                     .init();
             }
         }
@@ -165,7 +141,7 @@ pub fn init_logger(config: LoggerConfig) -> Result<(), String> {
 }
 
 /// 简化版日志初始化（使用默认配置）
-/// 
+///
 /// 默认配置：
 /// - 日志级别: "info"
 /// - 输出到标准输出: true
@@ -178,4 +154,3 @@ pub fn init_logger_simple(log_level: Option<String>) -> Result<(), String> {
     };
     init_logger(config)
 }
-

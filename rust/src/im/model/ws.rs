@@ -66,11 +66,16 @@ pub struct OpenIMResp {
     #[serde(rename = "errMsg")]
     pub err_msg: String,
     /// 业务二进制负载（protobuf bytes，Base64 传输），需根据 reqIdentifier 解码
-    #[serde(
-        default,
-        deserialize_with = "crate::im::serialization::deserialize_base64"
-    )]
+    #[serde(default, deserialize_with = "crate::im::serialization::deserialize_base64")]
     pub data: Vec<u8>,
+}
+
+/// 长连接 RPC 通用封装：请求 + 可选 oneshot 响应
+#[derive(Debug)]
+pub struct WsRpcEnvelope {
+    pub req: OpenIMReq,
+    /// None 表示 fire-and-forget，有值则等待响应
+    pub resp: Option<tokio::sync::oneshot::Sender<anyhow::Result<OpenIMResp>>>,
 }
 
 /// WebSocket 连接响应结构（文本消息）

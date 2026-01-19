@@ -3,8 +3,8 @@
 //! 负责所有好友相关的 HTTP 请求
 
 use crate::im::friend::AllFriendsResp;
-use crate::im::model::friend::{BlackList, FriendRequestsResp, IncrementalFriendsResp};
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::model::friend::{BlackList, FriendRequestsResp, IncrementalFriendsResp};
 use anyhow::Result;
 use serde::Deserialize;
 use tower::ServiceExt;
@@ -23,12 +23,7 @@ impl FriendApi {
     /// 创建新的好友 API 客户端
     ///
     /// `client` 应该已经在外部配置好认证拦截器
-    pub fn new(
-        client: reqwest::Client,
-        api_base_url: String,
-        user_id: String,
-        token: &str,
-    ) -> Self {
+    pub fn new(client: reqwest::Client, api_base_url: String, user_id: String, token: &str) -> Self {
         Self {
             client: make_client(client, token),
             api_base_url,
@@ -37,11 +32,7 @@ impl FriendApi {
     }
 
     /// 从服务器获取增量好友
-    pub async fn get_incremental_friends(
-        &self,
-        version: u64,
-        version_id: &str,
-    ) -> Result<IncrementalFriendsResp> {
+    pub async fn get_incremental_friends(&self, version: u64, version_id: &str) -> Result<IncrementalFriendsResp> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_incremental_friends", self.api_base_url);
 
@@ -111,8 +102,7 @@ impl FriendApi {
                 }
             }))?;
 
-        let data: crate::im::friend::types::AllFriendsResp =
-            HttpResponseExtractor::send_data(req).await?;
+        let data: crate::im::friend::types::AllFriendsResp = HttpResponseExtractor::send_data(req).await?;
 
         Ok(data)
     }
@@ -149,38 +139,32 @@ impl FriendApi {
     }
 
     /// 从服务器获取好友申请列表（全量）
-    pub async fn get_friend_requests(
-        &self,
-    ) -> Result<Vec<crate::im::friend::types::FriendRequest>> {
+    pub async fn get_friend_requests(&self) -> Result<Vec<crate::im::friend::types::FriendRequest>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_apply_list", self.api_base_url);
         let mut client = self.client.clone();
         let service = client.ready().await?;
-        let req = service
-            .post(&url)
-            .header("operationID", &operation_id)
-            .json(&serde_json::json!({
-                "userID": self.user_id,
-                "pagination": {
-                    "pageNumber": 1,
-                    "showNumber": 100
-                }
-            }))?;
+        let req = service.post(&url).header("operationID", &operation_id).json(&serde_json::json!({
+            "userID": self.user_id,
+            "pagination": {
+                "pageNumber": 1,
+                "showNumber": 100
+            }
+        }))?;
         let resp: FriendRequestsResp = HttpResponseExtractor::send_data(req).await?;
         Ok(resp.friend_requests)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::im::auth::login_async;
     use crate::im::logger::logger::init_logger;
-    use tokio::sync::OnceCell;
-    use tracing::info;
     use test_context::test_context;
     use test_context::AsyncTestContext;
+    use tokio::sync::OnceCell;
+    use tracing::info;
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 
@@ -199,16 +183,8 @@ mod tests {
                     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
                     let platform = 5;
 
-                    let token_info =
-                        login_async(area_code, "17764338283".to_string(), password, platform)
-                            .await
-                            .expect("登录失败");
-                    let api = FriendApi::new(
-                        reqwest::Client::new(),
-                        "http://localhost:10002".to_string(),
-                        token_info.user_id.clone(),
-                        &token_info.im_token,
-                    );
+                    let token_info = login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
+                    let api = FriendApi::new(reqwest::Client::new(), "http://localhost:10002".to_string(), token_info.user_id.clone(), &token_info.im_token);
                     AppCtx { api }
                 })
                 .await

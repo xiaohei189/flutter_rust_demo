@@ -1,7 +1,7 @@
 //! 消息事件监听器
 
 use crate::frb_generated::StreamSink;
-use crate::im::message::types::{MsgStruct, MessageRevoked, TypingStatus};
+use crate::im::message::types::{MessageRevoked, MsgStruct, TypingStatus};
 use serde::{Deserialize, Serialize};
 
 // 重新导出 Arc 和 Mutex，以便生成的代码通过 use crate::api::listeners::message::*; 可以访问
@@ -12,37 +12,25 @@ pub use std::sync::{Arc, Mutex};
 #[serde(tag = "type")]
 pub enum MessageEvent {
     /// 收到新消息（在线消息）
-    RecvNewMessage {
-        message: MsgStruct,
-    },
+    RecvNewMessage { message: MsgStruct },
     /// 收到 C2C 已读回执
     /// 参数 `msg_receipt_list` 是已读回执列表的 JSON 字符串表示（列表结构较复杂，暂用 String）
     RecvC2CReadReceipt {
         msg_receipt_list: String, // JSON 字符串，列表结构
     },
     /// 收到消息撤回通知
-    NewRecvMessageRevoked {
-        message_revoked: MessageRevoked,
-    },
+    NewRecvMessageRevoked { message_revoked: MessageRevoked },
     /// 收到离线新消息
-    RecvOfflineNewMessage {
-        message: MsgStruct,
-    },
+    RecvOfflineNewMessage { message: MsgStruct },
     /// 消息被删除
     /// 参数 `message` 是删除消息信息的 JSON 字符串表示（可能是 MsgStruct 或删除信息）
-    MsgDeleted {
-        message: MsgStruct,
-    },
+    MsgDeleted { message: MsgStruct },
     /// 收到仅在线消息（不存储到本地）
-    RecvOnlineOnlyMessage {
-        message: MsgStruct,
-    },
+    RecvOnlineOnlyMessage { message: MsgStruct },
     /// 被踢下线
     KickedOffline,
     /// 收到输入提示（typing）状态
-    RecvTypingStatus {
-        typing_status: TypingStatus,
-    },
+    RecvTypingStatus { typing_status: TypingStatus },
 }
 
 /// 消息事件监听器（桥接到 Dart）
@@ -52,9 +40,7 @@ pub struct DartMessageListener {
 
 impl DartMessageListener {
     pub fn new() -> Self {
-        Self {
-            sink: Arc::new(Mutex::new(None)),
-        }
+        Self { sink: Arc::new(Mutex::new(None)) }
     }
 
     /// 设置消息 sink
@@ -71,4 +57,3 @@ impl DartMessageListener {
         }
     }
 }
-

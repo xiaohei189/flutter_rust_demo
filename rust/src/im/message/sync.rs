@@ -1,23 +1,23 @@
 use std::sync::Arc;
 
-use anyhow::Result;
+use crate::im::dao::MessageRepo;
 use crate::im::message::api::MessageApi;
-use crate::im::dao::MessageStore;
-use crate::im::message::models::{PullMessageBySeqsReq, SeqRange};
-use crate::im::message::models::PullMessageBySeqsResp;
-use crate::im::message::types::MsgStruct;
 use crate::im::message::models::LocalChatLog;
+use crate::im::message::models::PullMessageBySeqsResp;
+use crate::im::message::models::{PullMessageBySeqsReq, SeqRange};
+use crate::im::message::types::MsgStruct;
+use anyhow::Result;
 
 /// 消息同步器（基于 HTTP 拉取），对齐 Go 版 MsgSyncer 的缺口补拉核心思路。
 pub struct MessageSyncer {
     api: MessageApi,
-    store: Arc<MessageStore>,
+    store: Arc<MessageRepo>,
     user_id: String,
 }
 
 impl MessageSyncer {
     /// 创建消息同步器
-    pub fn new(api: MessageApi, store: Arc<MessageStore>, user_id: String) -> Self {
+    pub fn new(api: MessageApi, store: Arc<MessageRepo>, user_id: String) -> Self {
         Self { api, store, user_id }
     }
 
@@ -89,5 +89,3 @@ impl MessageSyncer {
         }
     }
 }
-
-

@@ -91,10 +91,7 @@ impl FriendDao {
         .await
         .context("查询好友ID列表失败")?;
 
-        let ids = rows
-            .into_iter()
-            .map(|m| m.get::<String, _>("friend_user_id"))
-            .collect::<Vec<_>>();
+        let ids = rows.into_iter().map(|m| m.get::<String, _>("friend_user_id")).collect::<Vec<_>>();
         Ok(ids)
     }
 
@@ -144,21 +141,9 @@ impl FriendDao {
 
     /// 插入或更新好友到数据库
     pub async fn upsert_friend(&self, f: &sdkws::FriendInfo) -> Result<()> {
-        let friend_user_id = f
-            .friend_user
-            .as_ref()
-            .map(|u| u.user_id.as_str())
-            .unwrap_or("");
-        let nickname = f
-            .friend_user
-            .as_ref()
-            .map(|u| u.nickname.as_str())
-            .unwrap_or("");
-        let face_url = f
-            .friend_user
-            .as_ref()
-            .map(|u| u.face_url.as_str())
-            .unwrap_or("");
+        let friend_user_id = f.friend_user.as_ref().map(|u| u.user_id.as_str()).unwrap_or("");
+        let nickname = f.friend_user.as_ref().map(|u| u.nickname.as_str()).unwrap_or("");
+        let face_url = f.friend_user.as_ref().map(|u| u.face_url.as_str()).unwrap_or("");
 
         let sql = r#"
             INSERT INTO local_friends (
@@ -222,5 +207,3 @@ impl FriendDao {
         Ok(())
     }
 }
-
-

@@ -1,7 +1,7 @@
-use serde::Deserialize;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use serde::Deserialize;
 use std::io::{Read, Write};
 
 /// Base64 反序列化函数（支持 null 值）
@@ -19,9 +19,7 @@ where
     if s.is_empty() {
         return Ok(Vec::new());
     }
-    base64::engine::general_purpose::STANDARD
-        .decode(s)
-        .map_err(serde::de::Error::custom)
+    base64::engine::general_purpose::STANDARD.decode(s).map_err(serde::de::Error::custom)
 }
 
 /// 解压 gzip 数据
@@ -42,9 +40,6 @@ pub fn compress_gzip(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
 /// 生成消息 ID（参考 Go SDK 的 GetMsgID）
 pub fn generate_msg_id(user_id: &str) -> String {
     use std::time::SystemTime;
-    let nanos = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
     format!("{}{}", user_id, nanos)
 }

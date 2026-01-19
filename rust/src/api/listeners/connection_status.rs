@@ -20,9 +20,7 @@ pub struct DartConnectionStatusListener {
 
 impl DartConnectionStatusListener {
     pub fn new() -> Self {
-        Self {
-            sink: Arc::new(Mutex::new(None)),
-        }
+        Self { sink: Arc::new(Mutex::new(None)) }
     }
 
     /// 设置连接状态 sink
@@ -39,4 +37,3 @@ impl DartConnectionStatusListener {
         }
     }
 }
-

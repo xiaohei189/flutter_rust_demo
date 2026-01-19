@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use async_trait::async_trait;
 use anyhow::Result;
+use async_trait::async_trait;
+use std::collections::HashMap;
 
 use crate::im::message::api::MessageApi;
 use crate::im::message::models::{PullMessageBySeqsReq, PullMessageBySeqsResp, SeqRange};
@@ -46,4 +46,3 @@ impl LongConnRpc for HttpFallbackLongConn {
         self.api.pull_msg_by_seqs(req).await
     }
 }
-

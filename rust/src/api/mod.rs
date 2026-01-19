@@ -1,14 +1,14 @@
 pub mod bridge_client;
+pub mod listeners;
 pub mod logger;
 pub mod simple;
-pub mod listeners;
 
 // 重新导出主要类型（桥接客户端对外暴露）
 pub use bridge_client::{login_async, OpenIMBridgeClient};
 pub use listeners::{ConnectionStatusEvent, ConversationEvent, MessageEvent};
 pub use logger::{init_logger, init_logger_simple, LoggerConfig};
 // LoginResponse 和 LoginData 从 im::auth 模块导出
-pub use crate::im::auth::auth::{LoginResponse, LoginData};
+pub use crate::im::auth::auth::{LoginData, LoginResponse};
 // 重新导出 AdvancedMsgListener，以便 flutter_rust_bridge 可以生成 Dart 代码
 pub use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 // 重新导出 Arc 和 Mutex，以便生成的代码可以访问

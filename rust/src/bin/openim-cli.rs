@@ -6,10 +6,10 @@
 use anyhow::Result;
 use clap::Parser;
 use rust_lib_flutter_rust_demo::im::client::{ClientConfig, OpenIMClient};
-use rust_lib_flutter_rust_demo::im::listener::ConversationListener;
 use rust_lib_flutter_rust_demo::im::friend::FriendListener;
-use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::im::listener::AdvancedMsgListener;
+use rust_lib_flutter_rust_demo::im::listener::ConversationListener;
+use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::login_async;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -34,8 +34,6 @@ struct Args {
     log_level: String,
 }
 
-
-
 /// 设置监听器（输出所有接收到的信息）
 fn setup_listeners(client: &mut OpenIMClient) {
     // 会话监听器
@@ -43,17 +41,11 @@ fn setup_listeners(client: &mut OpenIMClient) {
     #[async_trait::async_trait]
     impl ConversationListener for CliConversationListener {
         async fn on_sync_server_start(&self, reinstalled: bool) {
-            info!(
-                "[CLI/Conversation] 🔄 同步开始: reinstalled={}",
-                reinstalled
-            );
+            info!("[CLI/Conversation] 🔄 同步开始: reinstalled={}", reinstalled);
         }
 
         async fn on_sync_server_finish(&self, reinstalled: bool) {
-            info!(
-                "[CLI/Conversation] ✅ 同步完成: reinstalled={}",
-                reinstalled
-            );
+            info!("[CLI/Conversation] ✅ 同步完成: reinstalled={}", reinstalled);
         }
 
         async fn on_sync_server_progress(&self, progress: i32) {
@@ -61,10 +53,7 @@ fn setup_listeners(client: &mut OpenIMClient) {
         }
 
         async fn on_sync_server_failed(&self, reinstalled: bool) {
-            error!(
-                "[CLI/Conversation] ❌ 同步失败: reinstalled={}",
-                reinstalled
-            );
+            error!("[CLI/Conversation] ❌ 同步失败: reinstalled={}", reinstalled);
         }
 
         async fn on_new_conversation(&self, conversation_list: String) {
@@ -166,9 +155,7 @@ async fn main() -> Result<()> {
     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string(); // 测试密码
     let platform = 5;
 
-    let token_info = login_async(area_code, args.phone.clone(), password, platform)
-        .await
-        .map_err(|e| anyhow::anyhow!("登录失败: {}", e))?;
+    let token_info = login_async(area_code, args.phone.clone(), password, platform).await.map_err(|e| anyhow::anyhow!("登录失败: {}", e))?;
 
     let (user_id, im_token) = (token_info.user_id.clone(), token_info.im_token.clone());
 
@@ -187,10 +174,7 @@ async fn main() -> Result<()> {
     info!("[CLI] 🔗 正在连接服务器...");
     {
         let mut client_guard = client.lock().await;
-        client_guard
-            .connect_with_reconnect()
-            .await
-            .map_err(|e| anyhow::anyhow!("连接失败: {}", e))?;
+        client_guard.connect_with_reconnect().await.map_err(|e| anyhow::anyhow!("连接失败: {}", e))?;
     }
     info!("[CLI] ✅ 连接成功！");
 
@@ -204,11 +188,7 @@ async fn main() -> Result<()> {
                     "[CLI]   - {} | 未读: {} | 最新: {}",
                     conv.show_name,
                     conv.unread_count,
-                    if conv.latest_msg.len() > 30 {
-                        &conv.latest_msg[..30]
-                    } else {
-                        &conv.latest_msg
-                    }
+                    if conv.latest_msg.len() > 30 { &conv.latest_msg[..30] } else { &conv.latest_msg }
                 );
             }
         }

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::im::model::common::deserialize_vec_or_null;
+use serde::{Deserialize, Serialize};
 /// 增量会话响应（业务逻辑层结构体，可直接从 API 响应反序列化）
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -126,10 +126,7 @@ pub struct RequestPagination {
 
 impl Default for RequestPagination {
     fn default() -> Self {
-        RequestPagination {
-            page_number: 1,
-            show_number: 20,
-        }
+        RequestPagination { page_number: 1, show_number: 20 }
     }
 }
 

@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Deserializer};
 
 /// 统一的 API 响应包装结构体（包含 errCode、errMsg、data）
@@ -12,8 +11,6 @@ pub struct ApiResponse<T> {
     pub err_msg: String,
     pub data: Option<T>,
 }
-
-
 
 /// 反序列化数组字段，处理 null 值
 pub fn deserialize_vec_or_null<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>

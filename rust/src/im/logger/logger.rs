@@ -15,12 +15,7 @@ pub fn init_logger(log_level: &str) {
             .with_target(false) // 不显示 target（可选，减少噪音）
             .with_ansi(true)
             .pretty()
-            .with_test_writer()
-            ;
-        tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(stdout_layer)
-            .init();
+            .with_test_writer();
+        tracing_subscriber::registry().with(filter_layer).with(stdout_layer).init();
     });
 }
-

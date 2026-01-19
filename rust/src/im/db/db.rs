@@ -10,10 +10,7 @@ use tracing::info;
 /// 创建 SQLite 连接池并执行所有未执行的迁移
 pub async fn create_sqlite_pool_with_migration(db_url: &str) -> Result<Pool<Sqlite>> {
     info!("创建 SQLite 连接池: {}", db_url);
-    let pool = SqlitePoolOptions::new()
-        .max_connections(5)
-        .connect(db_url)
-        .await?;
+    let pool = SqlitePoolOptions::new().max_connections(5).connect(db_url).await?;
 
     // 从 `rust/migrations/` 目录读取迁移并执行
     match sqlx::migrate!().run(&pool).await {
@@ -25,10 +22,7 @@ pub async fn create_sqlite_pool_with_migration(db_url: &str) -> Result<Pool<Sqli
                 log::warn!("检测到 migration 文件被修改，将删除旧的 migration 记录并重新应用");
 
                 // 删除所有 migration 记录
-                sqlx::query("DELETE FROM _sqlx_migrations")
-                    .execute(&pool)
-                    .await
-                    .context("删除 migration 记录失败")?;
+                sqlx::query("DELETE FROM _sqlx_migrations").execute(&pool).await.context("删除 migration 记录失败")?;
 
                 // 重新运行 migration
                 sqlx::migrate!().run(&pool).await?;

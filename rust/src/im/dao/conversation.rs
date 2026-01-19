@@ -57,10 +57,7 @@ impl ConversationDao {
                 msg_destruct_time INTEGER NOT NULL DEFAULT 0
             )
         "#;
-        sqlx::query(sql1)
-            .execute(db)
-            .await
-            .context("创建会话表失败")?;
+        sqlx::query(sql1).execute(db).await.context("创建会话表失败")?;
 
         let sql2 = r#"
             CREATE TABLE IF NOT EXISTS local_version_sync (
@@ -71,10 +68,7 @@ impl ConversationDao {
                 PRIMARY KEY (table_name, entity_id)
             )
         "#;
-        sqlx::query(sql2)
-            .execute(db)
-            .await
-            .context("创建版本同步表失败")?;
+        sqlx::query(sql2).execute(db).await.context("创建版本同步表失败")?;
 
         info!("[ConvDAO/DB] 数据库表初始化完成");
         Ok(())
@@ -153,10 +147,7 @@ impl ConversationDao {
             })
             .collect();
 
-        debug!(
-            "[ConvDAO] 获取本地会话列表，共 {} 个会话",
-            conversations.len()
-        );
+        debug!("[ConvDAO] 获取本地会话列表，共 {} 个会话", conversations.len());
         Ok(conversations)
     }
 
@@ -171,20 +162,14 @@ impl ConversationDao {
         .await
         .context("查询会话ID列表失败")?;
 
-        let ids: Vec<String> = rows
-            .into_iter()
-            .map(|row| row.get::<String, _>("conversation_id"))
-            .collect();
+        let ids: Vec<String> = rows.into_iter().map(|row| row.get::<String, _>("conversation_id")).collect();
 
         debug!("[ConvDAO] 获取本地会话ID列表，共 {} 个", ids.len());
         Ok(ids)
     }
 
     /// 根据会话ID查询单个会话
-    pub async fn get_conversation_by_id(
-        &self,
-        conversation_id: &str,
-    ) -> Result<Option<LocalConversation>> {
+    pub async fn get_conversation_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
         let row = sqlx::query(
             r#"
             SELECT
@@ -434,5 +419,3 @@ impl VersionSyncDao {
         Ok(())
     }
 }
-
-

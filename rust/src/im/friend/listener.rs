@@ -32,4 +32,3 @@ impl FriendListener for EmptyFriendListener {
         // 默认不做任何处理
     }
 }
-

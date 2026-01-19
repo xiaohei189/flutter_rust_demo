@@ -2,10 +2,10 @@
 //!
 //! 实现 OpenIM SDK 的好友增量同步逻辑，参考 Go 版本的实现
 
-use crate::im::model::conversation::LocalVersionSync;
-use crate::im::friend::api::FriendApi;
 use crate::im::dao::FriendDao;
+use crate::im::friend::api::FriendApi;
 use crate::im::friend::{EmptyFriendListener, FriendListener};
+use crate::im::model::conversation::LocalVersionSync;
 use crate::im::model::friend::FriendSyncerConfig;
 use anyhow::Result;
 use openim_protocol::sdkws;
@@ -28,32 +28,14 @@ pub struct FriendSyncer {
 
 impl FriendSyncer {
     /// 创建新的好友同步器（必须外部提供数据库；监听器可选）
-    pub async fn new(
-        config: FriendSyncerConfig,
-        db: Arc<Pool<Sqlite>>,
-        listener: Option<Arc<dyn FriendListener>>,
-    ) -> Result<Self> {
+    pub async fn new(config: FriendSyncerConfig, db: Arc<Pool<Sqlite>>, listener: Option<Arc<dyn FriendListener>>) -> Result<Self> {
         Self::build(config, listener, (*db).clone()).await
     }
 
-    async fn build(
-        config: FriendSyncerConfig,
-        listener: Option<Arc<dyn FriendListener>>,
-        db: Pool<Sqlite>,
-    ) -> Result<Self> {
-        let api = FriendApi::new(
-            reqwest::Client::new(),
-            config.api_base_url.clone(),
-            config.user_id.clone(),
-            &config.token,
-        );
+    async fn build(config: FriendSyncerConfig, listener: Option<Arc<dyn FriendListener>>, db: Pool<Sqlite>) -> Result<Self> {
+        let api = FriendApi::new(reqwest::Client::new(), config.api_base_url.clone(), config.user_id.clone(), &config.token);
         let friend_dao = FriendDao::new(db, config.user_id.clone());
-        Ok(Self {
-            api,
-            friend_dao,
-            listener,
-            config,
-        })
+        Ok(Self { api, friend_dao, listener, config })
     }
 
     /// 启动后台好友增量同步任务
@@ -97,32 +79,18 @@ impl FriendSyncer {
     }
 
     /// 同步好友列表（对比服务器和本地数据）
-    async fn sync_friends(
-        &self,
-        server_friends: Vec<sdkws::FriendInfo>,
-        local_friends: Vec<sdkws::FriendInfo>,
-        is_full: bool,
-    ) -> Result<()> {
-
+    async fn sync_friends(&self, server_friends: Vec<sdkws::FriendInfo>, local_friends: Vec<sdkws::FriendInfo>, is_full: bool) -> Result<()> {
         let local_map: HashMap<String, sdkws::FriendInfo> = local_friends
             .into_iter()
             .map(|f| {
-                let friend_user_id = f
-                    .friend_user
-                    .as_ref()
-                    .map(|u| u.user_id.clone())
-                    .unwrap_or_default();
+                let friend_user_id = f.friend_user.as_ref().map(|u| u.user_id.clone()).unwrap_or_default();
                 (friend_user_id, f)
             })
             .collect();
         let server_map: HashMap<String, sdkws::FriendInfo> = server_friends
             .into_iter()
             .map(|f| {
-                let friend_user_id = f
-                    .friend_user
-                    .as_ref()
-                    .map(|u| u.user_id.clone())
-                    .unwrap_or_default();
+                let friend_user_id = f.friend_user.as_ref().map(|u| u.user_id.clone()).unwrap_or_default();
                 (friend_user_id, f)
             })
             .collect();
@@ -150,10 +118,8 @@ impl FriendSyncer {
 
         // 删除：当 is_full=true 时，服务器列表视为权威，删除本地多余好友
         if is_full {
-            let local_ids: std::collections::HashSet<String> =
-                local_map.keys().cloned().collect();
-            let server_ids: std::collections::HashSet<String> =
-                server_map.keys().cloned().collect();
+            let local_ids: std::collections::HashSet<String> = local_map.keys().cloned().collect();
+            let server_ids: std::collections::HashSet<String> = server_map.keys().cloned().collect();
             for id in local_ids.difference(&server_ids) {
                 info!("[FriendSync]   删除本地多余好友: {}", id);
                 self.delete_friend(id).await?;
@@ -184,10 +150,7 @@ impl FriendSyncer {
             }
         }
 
-        info!(
-            "[FriendSync] 好友同步完成 - 新增: {}, 更新: {}, 删除: {}",
-            insert_count, update_count, delete_count
-        );
+        info!("[FriendSync] 好友同步完成 - 新增: {}, 更新: {}, 删除: {}", insert_count, update_count, delete_count);
         Ok(())
     }
 
@@ -198,22 +161,16 @@ impl FriendSyncer {
             && local.operator_user_id == server.operator_user_id
             && local.ex == server.ex
             && local.is_pinned == server.is_pinned
-            && local.friend_user.as_ref().map(|u| &u.nickname)
-                == server.friend_user.as_ref().map(|u| &u.nickname)
-            && local.friend_user.as_ref().map(|u| &u.face_url)
-                == server.friend_user.as_ref().map(|u| &u.face_url)
+            && local.friend_user.as_ref().map(|u| &u.nickname) == server.friend_user.as_ref().map(|u| &u.nickname)
+            && local.friend_user.as_ref().map(|u| &u.face_url) == server.friend_user.as_ref().map(|u| &u.face_url)
     }
 
     /// 增量同步好友列表
     pub async fn incr_sync_friends(&self) -> Result<()> {
-
         let version_sync = self.get_version_sync().await?;
 
         if let Some(ref vs) = version_sync {
-            info!(
-                "[FriendSync] 本地好友版本信息 - 版本: {}, 版本ID: {}",
-                vs.version, vs.version_id
-            );
+            info!("[FriendSync] 本地好友版本信息 - 版本: {}, 版本ID: {}", vs.version, vs.version_id);
         } else {
             debug!(user_id = self.config.user_id.clone(), "[FriendSync] 本地无好友版本信息");
         }
@@ -223,18 +180,12 @@ impl FriendSyncer {
 
         // 如果本地没有版本信息，先用全量好友ID列表与本地做一次对比，必要时执行全量同步
         if version_sync.is_none() {
-            if let Ok((srv_version, srv_version_id, server_ids)) =
-                self.api.get_full_friend_user_ids().await
-            {
-                let server_set: std::collections::HashSet<String> =
-                    server_ids.iter().cloned().collect();
-                let local_set: std::collections::HashSet<String> =
-                    local_ids.iter().cloned().collect();
+            if let Ok((srv_version, srv_version_id, server_ids)) = self.api.get_full_friend_user_ids().await {
+                let server_set: std::collections::HashSet<String> = server_ids.iter().cloned().collect();
+                let local_set: std::collections::HashSet<String> = local_ids.iter().cloned().collect();
 
                 if server_set != local_set {
-                    info!(
-                        "[FriendSync] 好友ID列表与服务器不一致，执行全量好友同步..."
-                    );
+                    info!("[FriendSync] 好友ID列表与服务器不一致，执行全量好友同步...");
 
                     // 全量拉取好友列表并对齐
                     let all_friends_resp = self.api.get_all_friends().await?;
@@ -275,18 +226,12 @@ impl FriendSyncer {
                     }
                 }
             } else {
-                debug!(
-                    "[FriendSync] 获取全量好友ID列表失败，将直接尝试增量同步"
-                );
+                debug!("[FriendSync] 获取全量好友ID列表失败，将直接尝试增量同步");
             }
         }
 
         // 继续增量同步路径
-        let (version, version_id) = if let Some(vs) = version_sync {
-            (vs.version, vs.version_id)
-        } else {
-            (0, "".to_string())
-        };
+        let (version, version_id) = if let Some(vs) = version_sync { (vs.version, vs.version_id) } else { (0, "".to_string()) };
 
         let resp = match self.api.get_incremental_friends(version, &version_id).await {
             Ok(resp) => resp,
@@ -304,11 +249,7 @@ impl FriendSyncer {
             self.sync_friends(server_friends, local_friends, true).await?;
 
             if !resp.version_id.is_empty() {
-                let new_version = if resp.version > 0 {
-                    resp.version
-                } else {
-                    version + 1
-                };
+                let new_version = if resp.version > 0 { resp.version } else { version + 1 };
                 let new_version_sync = LocalVersionSync {
                     table_name: "local_friends".to_string(),
                     entity_id: self.config.user_id.clone(),
@@ -340,10 +281,7 @@ impl FriendSyncer {
 
         // 处理删除
         if !resp.delete.is_empty() {
-            info!(
-                "[FriendSync] 处理删除好友，数量: {}",
-                resp.delete.len()
-            );
+            info!("[FriendSync] 处理删除好友，数量: {}", resp.delete.len());
             for id in resp.delete.iter() {
                 info!("[FriendSync]   删除好友: {}", id);
                 self.delete_friend(id).await?;
@@ -352,11 +290,7 @@ impl FriendSyncer {
 
         // 更新版本信息
         if !resp.version_id.is_empty() {
-            let new_version = if resp.version > 0 {
-                resp.version
-            } else {
-                version + 1
-            };
+            let new_version = if resp.version > 0 { resp.version } else { version + 1 };
             let new_version_sync = LocalVersionSync {
                 table_name: "local_friends".to_string(),
                 entity_id: self.config.user_id.clone(),
@@ -393,7 +327,10 @@ impl FriendSyncer {
 
 #[cfg(test)]
 mod tests {
-    use crate::{im::{db::db::create_sqlite_pool_with_migration, logger::logger::init_logger}, login_async};
+    use crate::{
+        im::{db::db::create_sqlite_pool_with_migration, logger::logger::init_logger},
+        login_async,
+    };
 
     use super::*;
     use test_context::{test_context, AsyncTestContext};
@@ -415,21 +352,10 @@ mod tests {
                     let area_code = "+86".to_string();
                     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
                     let platform = 5;
-                    let token_info =
-                        login_async(area_code, "17764338283".to_string(), password, platform)
-                            .await
-                            .expect("登录失败");
+                    let token_info = login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
 
-                    let db_path = format!(
-                        "sqlite://{}/friend_sync_{}.db?mode=rwc",
-                        std::env::temp_dir()
-                            .as_path()
-                            .to_string_lossy(),
-                        token_info.user_id.clone()
-                    );
-                    let pool = create_sqlite_pool_with_migration(&db_path)
-                        .await
-                        .expect("创建测试数据库失败");
+                    let db_path = format!("sqlite://{}/friend_sync_{}.db?mode=rwc", std::env::temp_dir().as_path().to_string_lossy(), token_info.user_id.clone());
+                    let pool = create_sqlite_pool_with_migration(&db_path).await.expect("创建测试数据库失败");
 
                     let cfg = FriendSyncerConfig {
                         user_id: token_info.user_id.clone(),
@@ -437,11 +363,7 @@ mod tests {
                         token: token_info.im_token.clone(),
                         db_path,
                     };
-                    let syncer = Arc::new(
-                        FriendSyncer::new(cfg, Arc::new(pool), None)
-                            .await
-                            .expect("创建好友同步器失败"),
-                    );
+                    let syncer = Arc::new(FriendSyncer::new(cfg, Arc::new(pool), None).await.expect("创建好友同步器失败"));
                     AppCtx { syncer }
                 })
                 .await
@@ -462,11 +384,7 @@ mod tests {
     #[test_context(AppCtx)]
     #[tokio::test]
     async fn test_friend_spawn_incr_sync(ctx: &mut AppCtx) {
-        let span = tracing::info_span!(
-            "task",
-            task_id = "test_friend_spawn_incr_sync"
-        );
+        let span = tracing::info_span!("task", task_id = "test_friend_spawn_incr_sync");
         ctx.syncer.clone().spawn_incr_sync().instrument(span).await.expect("spawn_incr_sync 任务失败");
     }
 }
-

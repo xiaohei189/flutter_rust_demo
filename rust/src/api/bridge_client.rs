@@ -1,12 +1,9 @@
+use crate::api::listeners::{conversation::ConversationEvent, ConnectionStatusEvent, DartConnectionStatusListener, DartConversationListener, DartMessageListener, MessageEvent};
 use crate::api::LoginData;
-use crate::api::listeners::{
-    ConnectionStatusEvent, conversation::ConversationEvent, DartConnectionStatusListener,
-    DartConversationListener, DartMessageListener, MessageEvent,
-};
 use crate::frb_generated::StreamSink;
 use crate::im::client::{ClientConfig, OpenIMClient};
 use crate::im::listener::AdvancedMsgListener;
-use crate::im::message::types::{MsgStruct, MessageRevoked, TypingStatus};
+use crate::im::message::types::{MessageRevoked, MsgStruct, TypingStatus};
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json;
@@ -31,18 +28,14 @@ impl AdvancedMsgListener for ListenerWrapper {
 
     async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
         if let Some(ref listener) = self.message_listener {
-            listener.send_event(MessageEvent::RecvC2CReadReceipt {
-                msg_receipt_list,
-            });
+            listener.send_event(MessageEvent::RecvC2CReadReceipt { msg_receipt_list });
         }
     }
 
     async fn on_new_recv_message_revoked(&self, message_revoked: String) {
         if let Some(ref listener) = self.message_listener {
             if let Ok(revoked) = serde_json::from_str::<MessageRevoked>(&message_revoked) {
-                listener.send_event(MessageEvent::NewRecvMessageRevoked {
-                    message_revoked: revoked,
-                });
+                listener.send_event(MessageEvent::NewRecvMessageRevoked { message_revoked: revoked });
             }
         }
     }
@@ -86,9 +79,7 @@ impl AdvancedMsgListener for ListenerWrapper {
     async fn on_recv_typing_status(&self, typing_info: String) {
         if let Some(ref listener) = self.message_listener {
             if let Ok(typing_status) = serde_json::from_str::<TypingStatus>(&typing_info) {
-                listener.send_event(MessageEvent::RecvTypingStatus {
-                    typing_status,
-                });
+                listener.send_event(MessageEvent::RecvTypingStatus { typing_status });
             }
         }
     }
@@ -144,10 +135,7 @@ impl OpenIMBridgeClient {
     /// 设置会话监听器
     ///
     /// 监听会话变更事件，通过 StreamSink 发送到 Dart
-    pub fn conversation_event(
-        &mut self,
-        #[allow(unused)] sink: StreamSink<ConversationEvent>,
-    ) {
+    pub fn conversation_event(&mut self, #[allow(unused)] sink: StreamSink<ConversationEvent>) {
         let listener = Arc::new(DartConversationListener::new(sink));
         self.inner.set_conversation_listener(listener);
     }
@@ -232,11 +220,6 @@ impl OpenIMBridgeClient {
 ///
 /// 参考 openim-cli.rs 的实现，先登录获取 token 信息
 /// 直接使用本地 im 模块的类型，无需包装
-pub async fn login_async(
-    area_code: String,
-    phone_number: String,
-    password: String,
-    platform: i32,
-) -> Result<LoginData> {
+pub async fn login_async(area_code: String, phone_number: String, password: String, platform: i32) -> Result<LoginData> {
     crate::im::auth::auth::login_async(area_code, phone_number, password, platform).await
 }

@@ -35,7 +35,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self,  req: Request<ReqB>) -> Self::Future {
+    fn call(&mut self, req: Request<ReqB>) -> Self::Future {
         let ctx = HttpRequestContext {
             method: req.method().clone(),
             uri: req.uri().clone(),
@@ -52,5 +52,3 @@ where
         })
     }
 }
-
-

@@ -9,11 +9,11 @@ use openim_protocol::{constant, sdkws};
 use serde_json;
 use tracing::{error, warn};
 
-use crate::im::dao::MessageStore;
+use crate::im::conversation::service::ConversationSyncer;
+use crate::im::dao::MessageRepo;
+use crate::im::listener::AdvancedMsgListener;
 use crate::im::LocalChatLog;
 use crate::LocalConversation;
-use crate::im::listener::AdvancedMsgListener;
-use crate::im::conversation::service::ConversationSyncer;
 use std::sync::Arc;
 
 /// 消息处理结果集合
@@ -80,14 +80,8 @@ impl MessageOptions {
         Self {
             is_history: Self::get_switch_from_options(&msg.options, "history"),
             is_unread_count: Self::get_switch_from_options(&msg.options, "unreadCount"),
-            is_conversation_update: Self::get_switch_from_options(
-                &msg.options,
-                "conversationUpdate",
-            ),
-            is_sender_conversation_update: Self::get_switch_from_options(
-                &msg.options,
-                "senderConversationUpdate",
-            ),
+            is_conversation_update: Self::get_switch_from_options(&msg.options, "conversationUpdate"),
+            is_sender_conversation_update: Self::get_switch_from_options(&msg.options, "senderConversationUpdate"),
         }
     }
 
@@ -99,18 +93,13 @@ impl MessageOptions {
 /// 消息处理器上下文
 pub struct MessageHandlerContext {
     pub user_id: String,
-    pub message_store: Arc<MessageStore>,
+    pub message_store: Arc<MessageRepo>,
     pub advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
     pub conversation_syncer: Option<Arc<ConversationSyncer>>,
 }
 
 impl MessageHandlerContext {
-    pub fn new(
-        user_id: String,
-        message_store: Arc<MessageStore>,
-        advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
-        conversation_syncer: Option<Arc<ConversationSyncer>>,
-    ) -> Self {
+    pub fn new(user_id: String, message_store: Arc<MessageRepo>, advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>, conversation_syncer: Option<Arc<ConversationSyncer>>) -> Self {
         Self {
             user_id,
             message_store,
@@ -131,10 +120,7 @@ impl MessageHandler {
     }
 
     /// 处理推送消息，分类决定插入/更新/会话更新/回调
-    pub async fn handle_new_message(
-        &self,
-        all_msgs: HashMap<String, Vec<sdkws::MsgData>>,
-    ) -> Result<MessageProcessingResult> {
+    pub async fn handle_new_message(&self, all_msgs: HashMap<String, Vec<sdkws::MsgData>>) -> Result<MessageProcessingResult> {
         let mut processing_result = MessageProcessingResult::new();
 
         for (conversation_id, msgs) in all_msgs {
@@ -142,25 +128,11 @@ impl MessageHandler {
                 warn!("[MessageHandler] conversationID 为空，跳过消息");
                 continue;
             }
-            let conversation_result = self
-                .process_conversation_messages(&conversation_id, msgs)
-                .await?;
-            processing_result
-                .conversation_set
-                .insert(conversation_id.to_string(), conversation_result.conversation);
-            processing_result
-                .insert_msg
-                .entry(conversation_id.to_string())
-                .or_default()
-                .extend(conversation_result.insert_msg);
-            processing_result
-                .update_msg
-                .entry(conversation_id.to_string())
-                .or_default()
-                .extend(conversation_result.update_msg);
-            processing_result
-                .new_messages
-                .extend(conversation_result.new_messages);
+            let conversation_result = self.process_conversation_messages(&conversation_id, msgs).await?;
+            processing_result.conversation_set.insert(conversation_id.to_string(), conversation_result.conversation);
+            processing_result.insert_msg.entry(conversation_id.to_string()).or_default().extend(conversation_result.insert_msg);
+            processing_result.update_msg.entry(conversation_id.to_string()).or_default().extend(conversation_result.update_msg);
+            processing_result.new_messages.extend(conversation_result.new_messages);
         }
         let result = processing_result.clone();
         self.persist_and_notify(processing_result).await?;
@@ -168,11 +140,7 @@ impl MessageHandler {
     }
 
     /// 处理单个会话的所有消息
-    async fn process_conversation_messages(
-        &self,
-        conversation_id: &str,
-        msgs: Vec<sdkws::MsgData>,
-    ) -> Result<ConversationProcessingResult> {
+    async fn process_conversation_messages(&self, conversation_id: &str, msgs: Vec<sdkws::MsgData>) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
 
         for msg in msgs {
@@ -184,9 +152,7 @@ impl MessageHandler {
                 result.insert_msg.push(db_message);
                 continue;
             }
-            let conversation_result = self
-                .process_message(conversation_id, &msg, &options)
-                .await?;
+            let conversation_result = self.process_message(conversation_id, &msg, &options).await?;
             result.insert_msg.extend(conversation_result.insert_msg);
             result.update_msg.extend(conversation_result.update_msg);
             result.new_messages.extend(conversation_result.new_messages);
@@ -197,38 +163,22 @@ impl MessageHandler {
     }
 
     /// 处理消息（统一处理自己发送和他人发送的消息）
-    async fn process_message(
-        &self,
-        conversation_id: &str,
-        msg: &sdkws::MsgData,
-        options: &MessageOptions,
-    ) -> Result<ConversationProcessingResult> {
+    async fn process_message(&self, conversation_id: &str, msg: &sdkws::MsgData, options: &MessageOptions) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
         let is_from_me = msg.send_id == self.ctx.user_id;
 
-        if let Ok(Some(existing_msg)) = self
-            .ctx
-            .message_store
-            .get_by_client_msg_id(conversation_id, &msg.client_msg_id)
-            .await
-        {
+        if let Ok(Some(existing_msg)) = self.ctx.message_store.get_by_client_msg_id(conversation_id, &msg.client_msg_id).await {
             // 已存在的消息处理
             if is_from_me {
                 // 自己发送的消息：seq==0 需要更新，否则插入
                 if existing_msg.seq == 0 {
-                    result
-                        .update_msg
-                        .push(Self::msg_data_to_local_chat_log(msg, conversation_id));
+                    result.update_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
                 } else {
-                    result
-                        .insert_msg
-                        .push(Self::msg_data_to_local_chat_log(msg, conversation_id));
+                    result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
                 }
             } else {
                 // 他人发送的消息：直接覆盖插入
-                result
-                    .insert_msg
-                    .push(Self::msg_data_to_local_chat_log(msg, conversation_id));
+                result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
             }
         } else {
             // 新消息：创建会话并处理回调
@@ -283,9 +233,7 @@ impl MessageHandler {
 
             // 历史消息单独存储
             if options.is_history {
-                result
-                    .insert_msg
-                    .push(Self::msg_data_to_local_chat_log(msg, conversation_id));
+                result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
             }
         }
 
@@ -293,10 +241,7 @@ impl MessageHandler {
     }
 
     /// 为自己发送的消息创建会话对象
-    fn create_conversation_for_self(
-        msg: &sdkws::MsgData,
-        conversation_id: &str,
-    ) -> LocalConversation {
+    fn create_conversation_for_self(msg: &sdkws::MsgData, conversation_id: &str) -> LocalConversation {
         LocalConversation {
             conversation_type: msg.session_type,
             latest_msg: serde_json::to_string(msg).unwrap_or_default(),
@@ -326,10 +271,7 @@ impl MessageHandler {
     }
 
     /// 为他人发送的消息创建会话对象
-    fn create_conversation_for_others(
-        msg: &sdkws::MsgData,
-        conversation_id: &str,
-    ) -> LocalConversation {
+    fn create_conversation_for_others(msg: &sdkws::MsgData, conversation_id: &str) -> LocalConversation {
         LocalConversation {
             conversation_type: msg.session_type,
             latest_msg: serde_json::to_string(msg).unwrap_or_default(),
@@ -363,32 +305,16 @@ impl MessageHandler {
         // 批量更新消息
         for (conversation_id, messages) in result.update_msg {
             for msg in messages {
-                if let Err(e) = self
-                    .ctx
-                    .message_store
-                    .update_message(&conversation_id, &msg)
-                    .await
-                {
-                    error!(
-                        "[MessageHandler] 更新消息失败 conversationID={} clientMsgID={}: {}",
-                        conversation_id, msg.client_msg_id, e
-                    );
+                if let Err(e) = self.ctx.message_store.update_message(&conversation_id, &msg).await {
+                    error!("[MessageHandler] 更新消息失败 conversationID={} clientMsgID={}: {}", conversation_id, msg.client_msg_id, e);
                 }
             }
         }
 
         // 批量插入消息
         for (conversation_id, messages) in result.insert_msg {
-            if let Err(e) = self
-                .ctx
-                .message_store
-                .batch_insert_message_list(&conversation_id, &messages)
-                .await
-            {
-                error!(
-                    "[MessageHandler] 批量插入消息失败 conversationID={}: {}",
-                    conversation_id, e
-                );
+            if let Err(e) = self.ctx.message_store.batch_insert_message_list(&conversation_id, &messages).await {
+                error!("[MessageHandler] 批量插入消息失败 conversationID={}: {}", conversation_id, e);
             }
         }
 
@@ -456,11 +382,7 @@ impl MessageHandler {
     /// - `data`: protobuf 编码的 PushMessages 数据
     /// - `is_duplicate_message`: 消息去重检查函数
     /// - 返回: 是否需要触发会话增量同步
-    pub async fn handle_push_message(
-        &self,
-        data: &[u8],
-        is_duplicate_message: impl Fn(&str) -> bool,
-    ) -> Result<bool> {
+    pub async fn handle_push_message(&self, data: &[u8], is_duplicate_message: impl Fn(&str) -> bool) -> Result<bool> {
         use openim_protocol::Message as ProtobufMessage;
 
         if data.is_empty() {
@@ -488,10 +410,7 @@ impl MessageHandler {
                 if Self::is_conversation_notification(msg) {
                     need_conv_sync = true;
                 }
-                all_msgs
-                    .entry(conv_id.clone())
-                    .or_default()
-                    .push(msg.clone());
+                all_msgs.entry(conv_id.clone()).or_default().push(msg.clone());
             }
         }
 
@@ -504,10 +423,7 @@ impl MessageHandler {
                 if Self::is_conversation_notification(msg) {
                     need_conv_sync = true;
                 }
-                all_msgs
-                    .entry(conv_id.clone())
-                    .or_default()
-                    .push(msg.clone());
+                all_msgs.entry(conv_id.clone()).or_default().push(msg.clone());
             }
         }
 
@@ -520,4 +436,3 @@ impl MessageHandler {
         Ok(need_conv_sync)
     }
 }
-

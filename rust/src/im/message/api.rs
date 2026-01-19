@@ -1,13 +1,10 @@
 //! 消息 HTTP API（P1 子集）
 //! 对齐 open-im-server `/msg` 路由：发送、撤回、已读、历史查询。
-use crate::im::http::{HttpClient, HttpResponseExtractor, make_client};
+use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
 use crate::im::message::models::{
-    BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq,
-    DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
-    GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
-    PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp,
-    SendBusinessNotificationReq, SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp,
-    SetConversationHasReadSeqReq, UserClearAllMsgReq,
+    BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
+    GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendBusinessNotificationReq,
+    SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
 };
 use anyhow::Result;
 use tower::ServiceExt;
@@ -34,10 +31,7 @@ impl MessageApi {
         let url = format!("{}/msg/send_msg", self.api_base_url);
         let mut client = self.client.clone();
         let svc = client.ready().await?;
-        let req = svc
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&req)?;
+        let req = svc.post(&url).header("Content-Type", "application/json").json(&req)?;
         HttpResponseExtractor::send_data(req).await
     }
 
@@ -63,9 +57,7 @@ impl MessageApi {
 
     /// /msg/newest_seq
     pub async fn get_newest_seq(&self) -> Result<GetNewestSeqResp> {
-        let payload = GetNewestSeqReq {
-            user_id: self.user_id.clone(),
-        };
+        let payload = GetNewestSeqReq { user_id: self.user_id.clone() };
         self.post_json("/msg/newest_seq", payload).await
     }
 
@@ -75,10 +67,7 @@ impl MessageApi {
     }
 
     /// /msg/set_conversation_has_read_seq
-    pub async fn set_conversation_has_read_seq(
-        &self,
-        payload: SetConversationHasReadSeqReq,
-    ) -> Result<EmptyResp> {
+    pub async fn set_conversation_has_read_seq(&self, payload: SetConversationHasReadSeqReq) -> Result<EmptyResp> {
         self.post_json("/msg/set_conversation_has_read_seq", payload).await
     }
 
@@ -118,18 +107,12 @@ impl MessageApi {
     }
 
     /// /msg/send_business_notification
-    pub async fn send_business_notification(
-        &self,
-        payload: SendBusinessNotificationReq,
-    ) -> Result<SendMsgResp> {
+    pub async fn send_business_notification(&self, payload: SendBusinessNotificationReq) -> Result<SendMsgResp> {
         self.post_json("/msg/send_business_notification", payload).await
     }
 
     /// /msg/check_msg_is_send_success
-    pub async fn check_msg_is_send_success(
-        &self,
-        payload: CheckMsgIsSendSuccessReq,
-    ) -> Result<CheckMsgIsSendSuccessResp> {
+    pub async fn check_msg_is_send_success(&self, payload: CheckMsgIsSendSuccessReq) -> Result<CheckMsgIsSendSuccessResp> {
         self.post_json("/msg/check_msg_is_send_success", payload).await
     }
 
@@ -138,18 +121,11 @@ impl MessageApi {
         self.post_json("/msg/get_server_time", serde_json::json!({})).await
     }
 
-    async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(
-        &self,
-        path: &str,
-        payload: T,
-    ) -> Result<R> {
+    async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {
         let url = format!("{}{}", self.api_base_url, path);
         let mut client = self.client.clone();
         let svc = client.ready().await?;
-        let req = svc
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&payload)?;
+        let req = svc.post(&url).header("Content-Type", "application/json").json(&payload)?;
         HttpResponseExtractor::send_data(req).await
     }
 }
@@ -160,11 +136,8 @@ mod tests {
     use crate::im::auth::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::message::models::{
-        BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq,
-        DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp,
-        MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, RevokeMsgReq,
-        SendBusinessNotificationReq, SendSimpleMsgReq, SetConversationHasReadSeqReq, SeqRange,
-        UserClearAllMsgReq,
+        BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp, MarkConversationAsReadReq,
+        MarkMsgsAsReadReq, PullMessageBySeqsReq, RevokeMsgReq, SendBusinessNotificationReq, SendSimpleMsgReq, SeqRange, SetConversationHasReadSeqReq, UserClearAllMsgReq,
     };
     use openim_protocol::constant;
     use serde_json::json;
@@ -188,20 +161,9 @@ mod tests {
                     let area_code = "+86".to_string();
                     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
                     let platform = 5;
-                    let token_info =
-                        login_async(area_code, "17764338283".to_string(), password, platform)
-                            .await
-                            .expect("登录失败");
-                    let api = MessageApi::new(
-                        reqwest::Client::new(),
-                        "http://localhost:10002".to_string(),
-                        token_info.user_id.clone(),
-                        &token_info.im_token,
-                    );
-                    AppCtx {
-                        api,
-                        self_user: token_info.user_id,
-                    }
+                    let token_info = login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
+                    let api = MessageApi::new(reqwest::Client::new(), "http://localhost:10002".to_string(), token_info.user_id.clone(), &token_info.im_token);
+                    AppCtx { api, self_user: token_info.user_id }
                 })
                 .await
                 .clone()

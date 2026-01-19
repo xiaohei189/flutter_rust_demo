@@ -2,13 +2,11 @@
 //!
 //! 负责所有会话相关的 HTTP 请求
 
-use crate::im::model::conversation::{
-    AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp,
-    GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
-    GetSortedConversationListResp, IncrementalConversationResp, OwnerConversationReq,
-    SetConversationsReq,
-};
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::model::conversation::{
+    AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
+    GetSortedConversationListResp, IncrementalConversationResp, OwnerConversationReq, SetConversationsReq,
+};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -29,12 +27,7 @@ impl ConversationApi {
     /// 创建新的会话 API 客户端
     ///
     /// `client` 应该已经在外部配置好认证拦截器
-    pub fn new(
-        client: reqwest::Client,
-        api_base_url: String,
-        user_id: String,
-        token: &str,
-    ) -> Self {
+    pub fn new(client: reqwest::Client, api_base_url: String, user_id: String, token: &str) -> Self {
         Self {
             client: make_client(client, token),
             api_base_url,
@@ -45,10 +38,7 @@ impl ConversationApi {
     /// 从服务器获取每个会话的 MaxSeq 和 HasReadSeq
     pub async fn get_has_read_and_max_seqs(&self) -> Result<HashMap<String, (i64, i64)>> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!(
-            "{}/msg/get_conversations_has_read_and_max_seq",
-            self.api_base_url
-        );
+        let url = format!("{}/msg/get_conversations_has_read_and_max_seq", self.api_base_url);
 
         let mut client = self.client.clone();
         let service = client.ready().await?;
@@ -89,16 +79,9 @@ impl ConversationApi {
     }
 
     /// 从服务器获取增量会话
-    pub async fn get_incremental_conversations(
-        &self,
-        version: u64,
-        version_id: &str,
-    ) -> Result<IncrementalConversationResp> {
+    pub async fn get_incremental_conversations(&self, version: u64, version_id: &str) -> Result<IncrementalConversationResp> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!(
-            "{}/conversation/get_incremental_conversations",
-            self.api_base_url
-        );
+        let url = format!("{}/conversation/get_incremental_conversations", self.api_base_url);
 
         let mut client = self.client.clone();
         let service = client.ready().await?;
@@ -140,10 +123,7 @@ impl ConversationApi {
     /// 从服务器获取所有会话 ID
     pub async fn get_all_conversation_ids(&self) -> Result<Vec<String>> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!(
-            "{}/conversation/get_full_conversation_ids",
-            self.api_base_url
-        );
+        let url = format!("{}/conversation/get_full_conversation_ids", self.api_base_url);
 
         let mut client = self.client.clone();
         let service = client.ready().await?;
@@ -167,10 +147,7 @@ impl ConversationApi {
     }
 
     /// /conversation/get_sorted_conversation_list
-    pub async fn get_sorted_conversation_list(
-        &self,
-        req: GetSortedConversationListReq,
-    ) -> Result<GetSortedConversationListResp> {
+    pub async fn get_sorted_conversation_list(&self, req: GetSortedConversationListReq) -> Result<GetSortedConversationListResp> {
         let url = format!("{}/conversation/get_sorted_conversation_list", self.api_base_url);
         let mut client = self.client.clone();
         let service = client.ready().await?;
@@ -216,18 +193,11 @@ impl ConversationApi {
         Ok(resp.conversation_ids.into_iter().collect())
     }
 
-    async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(
-        &self,
-        path: &str,
-        payload: T,
-    ) -> Result<R> {
+    async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {
         let url = format!("{}{}", self.api_base_url, path);
         let mut client = self.client.clone();
         let service = client.ready().await?;
-        let req = service
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&payload)?;
+        let req = service.post(&url).header("Content-Type", "application/json").json(&payload)?;
         HttpResponseExtractor::send_data(req).await
     }
 }
@@ -238,13 +208,10 @@ mod tests {
     use crate::im::auth::login_async;
     use crate::im::conversation::RequestPagination;
     use crate::im::logger::logger::init_logger;
-    use crate::im::model::conversation::{
-        GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq,
-        SetConversationsReq,
-    };
+    use crate::im::model::conversation::{GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq, SetConversationsReq};
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;
-    use tracing::{info, error};
+    use tracing::{error, info};
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 
@@ -262,17 +229,9 @@ mod tests {
                     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
                     let platform = 5;
 
-                    let token_info =
-                        login_async(area_code, "17764338283".to_string(), password, platform)
-                            .await
-                            .expect("登录失败");
+                    let token_info = login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
 
-                    let api = ConversationApi::new(
-                        reqwest::Client::new(),
-                        "http://localhost:10002".to_string(),
-                        token_info.user_id.clone(),
-                        &token_info.im_token,
-                    );
+                    let api = ConversationApi::new(reqwest::Client::new(), "http://localhost:10002".to_string(), token_info.user_id.clone(), &token_info.im_token);
                     AppCtx { api }
                 })
                 .await

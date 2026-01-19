@@ -10,6 +10,8 @@ use crate::im::model::OpenIMResp;
 use crate::im::serialization::compress_gzip;
 use crate::OpenIMClient;
 use anyhow::Result;
+use openim_protocol::prost;
+use openim_protocol::Message;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
@@ -25,12 +27,7 @@ impl OpenIMClient {
     /// 3. 通过 WebSocket 发送请求
     /// 4. 等待响应或超时
     /// 5. 清理 pending 请求
-    pub async fn send_request_and_wait(
-        &self,
-        req_identifier: i32,
-        data: Vec<u8>,
-        timeout_duration: Option<Duration>,
-    ) -> Result<OpenIMResp> {
+    pub async fn send_request_and_wait(&self, req_identifier: i32, data: Vec<u8>, timeout_duration: Option<Duration>) -> Result<OpenIMResp> {
         // 仅支持有回执的 reqIdentifier，其它类型直接返回错误
         match req_identifier {
             crate::im::model::msg_type::WS_GET_NEWEST_SEQ
@@ -38,21 +35,12 @@ impl OpenIMClient {
             | crate::im::model::msg_type::WS_PULL_MSG_BY_SEQ_LIST
             | crate::im::model::msg_type::WS_SEND_MSG
             | crate::im::model::msg_type::WS_SEND_MSG_NOT_OSS => {}
-            other => {
-                return Err(anyhow::anyhow!(
-                    "reqIdentifier={} 不支持等待回执，使用 send_raw_req 发送",
-                    other
-                ))
-            }
+            other => return Err(anyhow::anyhow!("reqIdentifier={} 不支持等待回执，使用 send_raw_req 发送", other)),
         }
         let req: OpenIMReq = self.make_req(req_identifier, data);
 
         let req_id = req.msg_incr.clone();
-        debug!(
-            req_id = req_id,
-            req_identifier = req_identifier,
-            "ws_rpc request sent"
-        );
+        debug!(req_id = req_id, req_identifier = req_identifier, "ws_rpc request sent");
 
         let (tx, rx) = oneshot::channel();
         let sent_at = Instant::now();
@@ -84,6 +72,27 @@ impl OpenIMClient {
         }
     }
 
+    /// 发送 RPC 请求并等待响应，m 为 Protobuf 消息体
+    /// 返回解包后的 OpenIMResp
+    pub async fn send_req_wait_resp<M: prost::Message>(&self, m: &M, req_identifier: i32) -> Result<OpenIMResp> {
+        // 1. 尝试序列化 Protobuf
+        let data = match prost::Message::encode_to_vec(m) {
+            v if !v.is_empty() => v,
+            _ => return Err(anyhow::anyhow!("SendReqWaitResp: Protobuf marshal失败")),
+        };
+
+        // 2. 创建 OpenIMReq
+        let req = self.make_req(req_identifier, data);
+
+        tracing::debug!("send message to send channel success, req_identifier={req_identifier}, msg_incr={}", req.msg_incr);
+
+        // 3. 发送请求并等待响应
+        let resp = self.send_request_and_wait(req_identifier, req.data.clone(), None).await?;
+
+        // 4. 返回响应（如需解反序列化可在调用方进行）
+        Ok(resp)
+    }
+
     /// 发送裸请求（无等待），调用方需自行管理 pending
     pub(crate) fn send_raw_req(&self, req: OpenIMReq) -> Result<()> {
         let json = serde_json::to_vec(&req)?;
@@ -98,8 +107,7 @@ impl OpenIMClient {
 
         if let Some(tx) = tx {
             // 使用 try_send 做非阻塞发送；若通道关闭或队列已满，返回错误
-            tx.try_send(WsMessage::Binary(compressed))
-                .map_err(|_| anyhow::anyhow!("WebSocket 消息通道已关闭或队列已满"))?;
+            tx.try_send(WsMessage::Binary(compressed)).map_err(|_| anyhow::anyhow!("WebSocket 消息通道已关闭或队列已满"))?;
             Ok(())
         } else {
             Err(anyhow::anyhow!("WebSocket 未连接"))

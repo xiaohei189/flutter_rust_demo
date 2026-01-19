@@ -9,5 +9,3 @@ pub struct HttpRequestContext {
     pub request_id: String,
     pub started_at: Instant,
 }
-
-

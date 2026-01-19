@@ -12,33 +12,19 @@ use serde_json;
 #[serde(tag = "type")]
 pub enum ConversationEvent {
     /// 同步服务器开始
-    SyncServerStart {
-        reinstalled: bool,
-    },
+    SyncServerStart { reinstalled: bool },
     /// 同步服务器完成
-    SyncServerFinish {
-        reinstalled: bool,
-    },
+    SyncServerFinish { reinstalled: bool },
     /// 同步服务器进度
-    SyncServerProgress {
-        progress: i32,
-    },
+    SyncServerProgress { progress: i32 },
     /// 同步服务器失败
-    SyncServerFailed {
-        reinstalled: bool,
-    },
+    SyncServerFailed { reinstalled: bool },
     /// 新会话
-    NewConversation {
-        conversation_list: Vec<LocalConversation>,
-    },
+    NewConversation { conversation_list: Vec<LocalConversation> },
     /// 会话变更
-    ConversationChanged {
-        conversation_list: Vec<LocalConversation>,
-    },
+    ConversationChanged { conversation_list: Vec<LocalConversation> },
     /// 总未读消息数变更
-    TotalUnreadMessageCountChanged {
-        total_unread_count: i32,
-    },
+    TotalUnreadMessageCountChanged { total_unread_count: i32 },
     /// 会话用户输入状态变更
     ConversationUserInputStatusChanged {
         change: String, // JSON 字符串
@@ -80,28 +66,20 @@ impl ConversationListener for DartConversationListener {
 
     async fn on_new_conversation(&self, conversation_list: String) {
         // 解析 JSON 字符串为 Vec<LocalConversation>
-        let conversations: Vec<LocalConversation> = serde_json::from_str(&conversation_list)
-            .unwrap_or_default();
-        let event = ConversationEvent::NewConversation {
-            conversation_list: conversations,
-        };
+        let conversations: Vec<LocalConversation> = serde_json::from_str(&conversation_list).unwrap_or_default();
+        let event = ConversationEvent::NewConversation { conversation_list: conversations };
         let _ = self.sink.add(event);
     }
 
     async fn on_conversation_changed(&self, conversation_list: String) {
         // 解析 JSON 字符串为 Vec<LocalConversation>
-        let conversations: Vec<LocalConversation> = serde_json::from_str(&conversation_list)
-            .unwrap_or_default();
-        let event = ConversationEvent::ConversationChanged {
-            conversation_list: conversations,
-        };
+        let conversations: Vec<LocalConversation> = serde_json::from_str(&conversation_list).unwrap_or_default();
+        let event = ConversationEvent::ConversationChanged { conversation_list: conversations };
         let _ = self.sink.add(event);
     }
 
     async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-        let event = ConversationEvent::TotalUnreadMessageCountChanged {
-            total_unread_count,
-        };
+        let event = ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count };
         let _ = self.sink.add(event);
     }
 
@@ -110,4 +88,3 @@ impl ConversationListener for DartConversationListener {
         let _ = self.sink.add(event);
     }
 }
-

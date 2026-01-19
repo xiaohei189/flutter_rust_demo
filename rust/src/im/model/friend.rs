@@ -116,4 +116,3 @@ pub struct FriendRequestsResp {
 }
 
 // 实体定义已迁移到 dao 层，保留文件用于兼容说明
-
