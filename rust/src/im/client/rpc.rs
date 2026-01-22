@@ -19,14 +19,6 @@ use tracing::debug;
 use uuid::Uuid;
 
 impl OpenIMClient {
-    /// 核心方法：发送请求并等待响应
-    ///
-    /// 这是 WebSocket RPC 的核心方法，负责：
-    /// 1. 创建请求并分配唯一 ID
-    /// 2. 注册 pending 请求
-    /// 3. 通过 WebSocket 发送请求
-    /// 4. 等待响应或超时
-    /// 5. 清理 pending 请求
     pub async fn send_request_and_wait(&self, req_identifier: i32, data: Vec<u8>, timeout_duration: Option<Duration>) -> Result<OpenIMResp> {
         // 仅支持有回执的 reqIdentifier，其它类型直接返回错误
         match req_identifier {

@@ -141,7 +141,7 @@ impl BinaryMessageHandler {
         // 解析 JSON 响应
         let resp = serde_json::from_slice::<OpenIMResp>(data)?;
 
-        // 根据 req_identifier 分发处理
+        // 根据 req_identifier 分发处理 
         match resp.req_identifier {
             msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
                 // RPC 响应：调用 RPC 响应处理器

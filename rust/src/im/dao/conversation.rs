@@ -10,6 +10,7 @@ use sqlx::{Pool, Row, Sqlite};
 use tracing::{debug, info};
 
 /// 会话 DAO（基于 sqlx）
+#[derive(Debug, Clone)]
 pub struct ConversationDao {
     db: Pool<Sqlite>,
 }

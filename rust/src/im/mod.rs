@@ -10,6 +10,7 @@ pub mod logger;
 pub mod message;
 pub mod model;
 pub mod serialization;
+pub mod util;
 
 // 重新导出认证相关函数
 pub use auth::login_async;
@@ -29,4 +30,3 @@ pub use dao::{ConversationDao, FriendDao, MessageRepo, VersionSyncDao};
 // 重新导出模型相关结构体和函数
 pub use model::{AllConversationsResp, ApiResponse, IncrementalConversationResp, LocalConversation, WebSocketConnectResp};
 // 重新导出客户端接口与类型
-pub use client::{ClientConfig, OpenIMClient, OpenIMClientApi};

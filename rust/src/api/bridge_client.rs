@@ -1,7 +1,8 @@
 use crate::api::listeners::{conversation::ConversationEvent, ConnectionStatusEvent, DartConnectionStatusListener, DartConversationListener, DartMessageListener, MessageEvent};
 use crate::api::LoginData;
 use crate::frb_generated::StreamSink;
-use crate::im::client::{ClientConfig, OpenIMClient};
+use crate::im::client::client::ClientConfig;
+use crate::im::client::client::OpenIMClient;
 use crate::im::listener::AdvancedMsgListener;
 use crate::im::message::types::{MessageRevoked, MsgStruct, TypingStatus};
 use anyhow::Result;

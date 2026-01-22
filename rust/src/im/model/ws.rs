@@ -1,4 +1,6 @@
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot;
 
 /// WebSocket 消息类型标识符
 pub mod msg_type {
@@ -93,7 +95,8 @@ pub struct WebSocketConnectResp {
     pub data: Option<serde_json::Value>,
 }
 
-pub enum CommandMessage {
+pub enum ConnectionCommand {
+    Rpc { req: Option<OpenIMReq>, resp: oneshot::Sender<OpenIMResp> },
     Text(String),
     Binary(Vec<u8>),
     Ping,

@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use clap::Parser;
-use rust_lib_flutter_rust_demo::im::client::{ClientConfig, OpenIMClient};
+use rust_lib_flutter_rust_demo::im::client::{client::ClientConfig, OpenIMClient};
 use rust_lib_flutter_rust_demo::im::friend::FriendListener;
 use rust_lib_flutter_rust_demo::im::listener::AdvancedMsgListener;
 use rust_lib_flutter_rust_demo::im::listener::ConversationListener;

@@ -13,7 +13,7 @@ pub mod types;
 pub mod ws_rpc;
 
 pub use crate::im::model::message::*;
-pub use binary_handler::{BinaryMessageHandler, BinaryMessageHandlerCallbacks};
+// pub use binary_handler::{BinaryMessageHandler, BinaryMessageHandlerCallbacks};
 pub use handler::{MessageHandler, MessageHandlerContext, MessageOptions};
 pub use longconn::{HttpFallbackLongConn, LongConnRpc};
 pub use sync::MessageSyncer;
