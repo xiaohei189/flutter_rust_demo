@@ -206,9 +206,8 @@ impl ConversationApi {
 mod tests {
     use super::*;
     use crate::im::auth::login_async;
-    use crate::im::conversation::RequestPagination;
     use crate::im::logger::logger::init_logger;
-    use crate::im::model::conversation::{GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq, SetConversationsReq};
+    use crate::im::model::conversation::{GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq, RequestPagination, SetConversationsReq};
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;
     use tracing::{error, info};

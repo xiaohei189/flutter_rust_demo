@@ -56,9 +56,9 @@ impl Client {
     }
 }
 
-use crate::im::client::api::OpenIMClientApi;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
+use crate::im::client::OpenIMClientApi;
 use crate::im::conversation::service::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::db::db::create_sqlite_pool_with_migration;
@@ -68,15 +68,13 @@ use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
 use crate::im::model::ws::ConnectionCommand;
 
-
-
 use crate::im::model::{LocalConversation, OpenIMResp};
 use crate::im::serialization::{decompress_gzip, generate_msg_id};
 use crate::im::WebSocketConnectResp;
 use anyhow::{Context, Result};
 use futures_util::future::select_all;
 use futures_util::stream::{SplitSink, SplitStream};
-use futures_util::StreamExt;
+use futures_util::{SinkExt, StreamExt};
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
@@ -185,7 +183,6 @@ impl OpenIMClient {
         Ok(())
     }
 
-
     async fn init_friend_syncer(&mut self) -> Result<()> {
         let friend_cfg = FriendSyncerConfig {
             user_id: self.config.user_id.clone(),
@@ -257,7 +254,141 @@ impl OpenIMClient {
         }
     }
 
-     /// 初始化所有资源（数据库、同步器、消息存储等）
+    /// 构建 WebSocket 连接 URL（对齐 Go SDK 参数）
+    fn connect_url(&self) -> String {
+        let compression_param = if self.config.compression.is_empty() {
+            String::new()
+        } else {
+            format!("&compression={}", self.config.compression)
+        };
+
+        format!(
+            "{}/?token={}&sendID={}&platformID={}&operationID={}{}&isBackground={}&isMsgResp={}&sdkType={}",
+            self.config.ws_url,
+            self.config.token,
+            self.config.user_id,
+            self.config.platform_id,
+            crate::im::util::make_operation_id(),
+            compression_param,
+            self.config.is_background,
+            self.config.is_msg_resp,
+            self.config.sdk_type
+        )
+    }
+
+    /// 建立一次 WebSocket 连接并进入消息循环（直到断开/报错）
+    ///
+    /// 说明：
+    /// - 该方法会阻塞直到连接断开（用于 `connect_with_reconnect` 的单次尝试）
+    /// - RPC 回执会交由 `handle_rpc_response` 处理
+    /// - Push 消息会交由 `BinaryMessageHandler` 处理（更新会话/触发回调）
+    pub async fn connect(&self) -> Result<()> {
+        let url = self.connect_url();
+        debug!("[Client] 🔗 WebSocket 连接 URL: {}", url);
+
+        let (ws_stream, response) = connect_async(&url).await?;
+        info!("[Client] ✅ WebSocket 连接成功, 状态: {}", response.status());
+
+        let (mut writer, mut reader) = ws_stream.split();
+
+        // 1) 鉴权握手：按 OpenIM WS 约定读取第一条 Text
+        if let Some(Ok(WsMessage::Text(text))) = reader.next().await {
+            match serde_json::from_str::<WebSocketConnectResp>(&text) {
+                Ok(resp) => {
+                    if resp.err_code == 0 {
+                        info!("[Client] ✅ 服务器连接鉴权成功");
+                    } else {
+                        let error_msg = if !resp.err_dlt.is_empty() {
+                            format!("{} (详情: {})", resp.err_msg, resp.err_dlt)
+                        } else {
+                            resp.err_msg.clone()
+                        };
+                        return Err(anyhow::anyhow!("WebSocket 鉴权失败 code={}, msg={}", resp.err_code, error_msg));
+                    }
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("WebSocket 响应解析失败: {}, 原始响应: {}", e, text));
+                }
+            }
+        } else {
+            return Err(anyhow::anyhow!("未收到 WebSocket 连接响应"));
+        }
+
+        // 连接成功后重置退避
+        self.reconnect_strategy.reset();
+
+        // 2) 初始化写入通道 + 写入任务
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<WsMessage>(100);
+        {
+            let mut guard = self.ws_message_tx.lock().await;
+            *guard = Some(tx);
+        }
+
+        let write_task = tokio::spawn(async move {
+            while let Some(msg) = rx.recv().await {
+                if let Err(e) = writer.send(msg).await {
+                    return Err(anyhow::anyhow!("ws 写入失败: {e}"));
+                }
+            }
+            Ok::<(), anyhow::Error>(())
+        });
+
+        // 3) 读循环：RPC 回执 / Push
+        let app_state = self.app_state.clone();
+        loop {
+            let msg = match reader.next().await {
+                Some(Ok(m)) => m,
+                Some(Err(e)) => {
+                    write_task.abort();
+                    return Err(anyhow::anyhow!("ws 读取失败: {e}"));
+                }
+                None => {
+                    write_task.abort();
+                    return Ok(());
+                }
+            };
+
+            match msg {
+                WsMessage::Binary(data) => {
+                    // gzip 解压
+                    let data = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b { decompress_gzip(&data)? } else { data };
+
+                    // OpenIM 二进制帧是 JSON(OpenIMResp)
+                    let resp = serde_json::from_slice::<OpenIMResp>(&data)?;
+                    match resp.req_identifier {
+                        crate::im::model::msg_type::WS_GET_NEWEST_SEQ
+                        | crate::im::model::msg_type::WS_PULL_MSG_BY_RANGE
+                        | crate::im::model::msg_type::WS_PULL_MSG_BY_SEQ_LIST
+                        | crate::im::model::msg_type::WS_SEND_MSG
+                        | crate::im::model::msg_type::WS_SEND_MSG_NOT_OSS => {
+                            self.handle_rpc_response(resp).await?;
+                        }
+                        crate::im::model::msg_type::WS_PUSH_MSG => {
+                            crate::im::message::binary_handler::BinaryMessageHandler::handle_binary_message(app_state.clone(), &data).await?;
+                        }
+                        _ => {
+                            debug!("[Client] 未处理的 ws 消息类型: {}", resp.req_identifier);
+                        }
+                    }
+                }
+                WsMessage::Close(frame) => {
+                    warn!("[Client] 👋 连接关闭: {:?}", frame);
+                    write_task.abort();
+                    return Ok(());
+                }
+                WsMessage::Ping(_) | WsMessage::Pong(_) => {}
+                WsMessage::Text(_) => {}
+                _ => {}
+            }
+        }
+    }
+
+    /// 将 MsgData 转为 JSON 字符串（复用消息处理器工具函数）
+    fn msg_data_to_json(&self, msg: &sdkws::MsgData) -> String {
+        crate::im::message::handler::MessageHandler::msg_data_to_json(msg)
+    }
+
+    /// 初始化所有资源（数据库、同步器、消息存储等）
     ///
     /// 使用当前客户端的配置 `self.config`，逐步完成：
     /// 1. 创建并缓存 SQLite 连接池
@@ -1882,7 +2013,7 @@ impl OpenIMClientApi for OpenIMClient {
     }
 
     fn connect(&mut self) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::connect(self).await })
+        tokio::runtime::Handle::current().block_on(OpenIMClient::connect(self))
     }
 
     fn send_text_message(&self, recv_id: String, text: String, session_type: i32) -> Result<()> {

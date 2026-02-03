@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use crate::im::dao::MessageRepo;
-use crate::im::message::api::MessageApi;
 use crate::im::message::models::LocalChatLog;
 use crate::im::message::models::PullMessageBySeqsResp;
 use crate::im::message::models::{PullMessageBySeqsReq, SeqRange};
 use crate::im::message::types::MsgStruct;
+use crate::im::message::MessageApi;
 use anyhow::Result;
 
 /// 消息同步器（基于 HTTP 拉取），对齐 Go 版 MsgSyncer 的缺口补拉核心思路。

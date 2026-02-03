@@ -2,10 +2,10 @@
 //!
 //! 实现 OpenIM SDK 的会话增量同步逻辑，参考 Go 版本的实现
 
-use crate::im::conversation::api::ConversationApi;
+use crate::im::api::conversation::ConversationApi;
 use crate::im::dao::{ConversationDao, VersionSyncDao};
 use crate::im::listener::{ConversationListener, EmptyConversationListener};
-use crate::im::message::api::MessageApi;
+use crate::im::message::MessageApi;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::LocalConversation;
 use anyhow::{Context, Result};

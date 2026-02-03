@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use openim_protocol::sdkws;
 
-use crate::im::friend::FriendListener;
+use crate::im::friend::listener::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::message::models::SeqRange as SeqRangeModel;
 use crate::im::message::types::MsgStruct;

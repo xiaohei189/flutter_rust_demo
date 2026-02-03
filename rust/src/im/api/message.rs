@@ -1,7 +1,7 @@
 //! 消息 HTTP API（P1 子集）
 //! 对齐 open-im-server `/msg` 路由：发送、撤回、已读、历史查询。
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
-use crate::im::message::models::{
+use crate::im::model::message::{
     BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
     GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendBusinessNotificationReq,
     SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
@@ -135,7 +135,7 @@ mod tests {
     use super::*;
     use crate::im::auth::login_async;
     use crate::im::logger::logger::init_logger;
-    use crate::im::message::models::{
+    use crate::im::model::message::{
         BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp, MarkConversationAsReadReq,
         MarkMsgsAsReadReq, PullMessageBySeqsReq, RevokeMsgReq, SendBusinessNotificationReq, SendSimpleMsgReq, SeqRange, SetConversationHasReadSeqReq, UserClearAllMsgReq,
     };
@@ -252,7 +252,7 @@ mod tests {
     #[tokio::test]
     async fn test_search_msg(ctx: &mut AppCtx) {
         let api = ctx.api.clone();
-        let req = crate::im::message::models::SearchMessageReq {
+        let req = SearchMessageReq {
             conversation_id: Some("dummy-conv-id".to_string()),
             keyword_list: vec!["hello".to_string()],
             keyword_list_match_type: 0,
@@ -481,3 +481,4 @@ mod tests {
         }
     }
 }
+

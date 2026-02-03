@@ -5,6 +5,9 @@
         },
         {
             "path": "../protocol"
+        },
+        {
+            "path": "../openim-sdk-core"
         }
     ]
 }

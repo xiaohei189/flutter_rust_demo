@@ -2,7 +2,7 @@
 //!
 //! 此模块包含 OpenIM 客户端的核心逻辑实现。
 
-use crate::im::client::api::OpenIMClientApi;
+use crate::im::client::OpenIMClientApi;
 use crate::im::client::client::ClientConfig;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;

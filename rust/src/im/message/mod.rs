@@ -2,7 +2,6 @@
 //!
 //! 实现 OpenIM SDK 的消息处理功能
 
-pub mod api;
 pub mod binary_handler;
 pub mod handler;
 pub mod longconn;
@@ -13,6 +12,7 @@ pub mod types;
 pub mod ws_rpc;
 
 pub use crate::im::model::message::*;
+pub use crate::im::api::message::MessageApi;
 // pub use binary_handler::{BinaryMessageHandler, BinaryMessageHandlerCallbacks};
 pub use handler::{MessageHandler, MessageHandlerContext, MessageOptions};
 pub use longconn::{HttpFallbackLongConn, LongConnRpc};

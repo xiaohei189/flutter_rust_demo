@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::collections::HashMap;
 
-use crate::im::message::api::MessageApi;
+use crate::im::message::MessageApi;
 use crate::im::message::models::{PullMessageBySeqsReq, PullMessageBySeqsResp, SeqRange};
 
 /// 长连接消息同步 RPC 抽象

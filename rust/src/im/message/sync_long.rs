@@ -39,7 +39,7 @@ impl LongConnMessageSyncer {
     }
 
     /// 使用 HTTP 回退 RPC 创建，便于过渡
-    pub fn with_http_fallback(api: crate::im::message::api::MessageApi, store: Arc<MessageRepo>, user_id: String) -> Self {
+    pub fn with_http_fallback(api: crate::im::message::MessageApi, store: Arc<MessageRepo>, user_id: String) -> Self {
         let rpc = Arc::new(crate::im::message::longconn::HttpFallbackLongConn::new(api, user_id.clone()));
         Self::new(rpc, store, user_id)
     }

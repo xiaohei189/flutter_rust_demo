@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod api;
 pub mod client;
 pub mod conversation;
 pub mod dao;

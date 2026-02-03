@@ -2,9 +2,8 @@
 //!
 //! 负责所有好友相关的 HTTP 请求
 
-use crate::im::friend::AllFriendsResp;
 use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
-use crate::im::model::friend::{BlackList, FriendRequestsResp, IncrementalFriendsResp};
+use crate::im::model::friend::{AllFriendsResp, BlackList, FriendRequest, FriendRequestsResp, IncrementalFriendsResp};
 use anyhow::Result;
 use serde::Deserialize;
 use tower::ServiceExt;
@@ -102,7 +101,7 @@ impl FriendApi {
                 }
             }))?;
 
-        let data: crate::im::friend::types::AllFriendsResp = HttpResponseExtractor::send_data(req).await?;
+        let data: AllFriendsResp = HttpResponseExtractor::send_data(req).await?;
 
         Ok(data)
     }
@@ -114,7 +113,7 @@ impl FriendApi {
         #[derive(Deserialize)]
         struct BlackListData {
             #[serde(rename = "blacks")]
-            #[serde(deserialize_with = "crate::im::friend::types::deserialize_vec_or_null")]
+            #[serde(deserialize_with = "crate::im::model::friend::deserialize_vec_or_null")]
             blacks: Vec<BlackList>,
             #[serde(default)]
             total: Option<i32>,
@@ -139,7 +138,7 @@ impl FriendApi {
     }
 
     /// 从服务器获取好友申请列表（全量）
-    pub async fn get_friend_requests(&self) -> Result<Vec<crate::im::friend::types::FriendRequest>> {
+    pub async fn get_friend_requests(&self) -> Result<Vec<FriendRequest>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_apply_list", self.api_base_url);
         let mut client = self.client.clone();
