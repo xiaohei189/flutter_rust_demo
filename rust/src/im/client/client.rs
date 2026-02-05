@@ -57,11 +57,10 @@ impl Client {
 }
 
 use crate::im::api::api::Api;
-use crate::im::client::connection::Connection;
-use crate::im::client::message_syncer::MessageSyncer;
+use crate::im::client::connection_handle::ConnectionHandle;
+use crate::im::client::message_handle::MessageHandle;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
-use crate::im::client::OpenIMClientApi;
 use crate::im::conversation::service::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::dao::repository::Repository;
@@ -188,7 +187,24 @@ impl OpenIMClient {
             token: self.config.token.clone(),
             db_path: self.config.conversation_db_url.clone(),
         };
-        let friend_syncer = Arc::new(FriendSyncer::new(friend_cfg, self.db.clone().unwrap(), self.friend_listener.clone()).await?);
+        let db = match self.db.as_ref() {
+            Some(db) => db.as_ref().clone(),
+            None => {
+                let db = Self::init_database(&self.config).await?;
+                self.db = Some(Arc::new(db.clone()));
+                db
+            }
+        };
+        let repository = Repository::new(db);
+        let http_client = Self::create_http_client(&self.config)?;
+        let api = Api::new(
+            http_client,
+            self.config.api_base_url.clone(),
+            self.config.user_id.clone(),
+            &self.config.token,
+        );
+        let friend_syncer: Arc<FriendSyncer> =
+            Arc::new(FriendSyncer::new(friend_cfg, api, repository, self.friend_listener.clone()));
         friend_syncer.clone().spawn_incr_sync();
         self.friend_syncer = Some(friend_syncer);
         Ok(())
@@ -222,7 +238,7 @@ impl OpenIMClient {
     /// 初始化会话同步器
     async fn init_conversation_syncer(
         config: &ClientConfig,
-        db: Arc<Pool<Sqlite>>,
+        db: Pool<Sqlite>,
         http_client: reqwest::Client,
         conversation_listener: Option<Arc<dyn ConversationListener>>,
     ) -> Result<Arc<ConversationSyncer>> {
@@ -232,7 +248,8 @@ impl OpenIMClient {
             token: config.token.clone(),
             db_path: config.conversation_db_url.clone(),
         };
-        let syncer = Arc::new(ConversationSyncer::with_listener_and_db_and_client(cfg, conversation_listener, db.clone(), http_client).await?);
+        let syncer =
+            Arc::new(ConversationSyncer::with_listener_and_db_and_client(cfg, conversation_listener, db, http_client).await?);
         Ok(syncer)
     }
 
@@ -244,7 +261,7 @@ impl OpenIMClient {
     /// 3. 初始化会话同步器并缓存
     /// 4. 初始化好友同步器并启动增量同步
     /// 5. 初始化消息存储
-    async fn initialize_resources(&mut self) -> Result<()> {
+    async fn init(&mut self) -> Result<()> {
         // 1) 初始化数据库连接池
         let db = Self::init_database(&self.config).await?;
         let repo = Repository::new(db.clone());
@@ -257,38 +274,46 @@ impl OpenIMClient {
 
         let (msg_tx, msg_rx) = tokio::sync::mpsc::unbounded_channel();
         let (connection_tx, connection_rx) = tokio::sync::mpsc::unbounded_channel();
-        let mut connection = Connection::new(self.config.clone(), connection_rx, msg_tx);
+        let cancel_token = CancellationToken::new();
+        let mut connection = ConnectionHandle::new(self.config.clone(), connection_rx, msg_tx, cancel_token.clone());
 
-       let connection_handle = tokio::spawn(async move {
+       let mut connection_handle = tokio::spawn(async move {
             if let Err(e) = connection.run().await {
                 error!("连接失败: {}", e);
             }
         });
 
-        let (message_syncer_tx, message_syncer_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (msg_sync_event_tx, msg_sync_event_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (msg_sync_cmd_tx, msg_sync_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
-        let mut message_syncer = MessageSyncer::new(self.config.user_id.clone(), repo.clone(), connection_tx.clone(), Some(message_syncer_tx), None);
+        let mut message_syncer = MessageHandle::new(
+            self.config.user_id.clone(),
+            repo.clone(),
+            connection_tx.clone(),
+            cancel_token.clone(),
+            msg_sync_event_tx,
+            msg_sync_cmd_rx,
+        );
 
-        let message_syncer_handle = tokio::spawn(async move {
-            message_syncer.load_seq().await;
-            message_syncer.run().await;
+         let mut message_syncer_handle = tokio::spawn(async move {
+            if let Err(e) = message_syncer.load_seq().await {
+                return Err(anyhow::anyhow!("运行消息同步器失败: {}", e));
+            }
+            if let Err(e) = message_syncer.run().await {
+                return Err(anyhow::anyhow!("运行消息同步器失败: {}", e));
+            }
+            Ok(())
         });
 
-
-        connection_handle.await.unwrap();
-        // // 3) 初始化会话同步器
-        // let conv_syncer = Self::init_conversation_syncer(&self.config, db, http_client, self.conversation_listener.clone()).await?;
-        // self.conversation_syncer = Some(conv_syncer);
-
-        // // 4) 初始化好友同步器
-        // self.init_friend_syncer().await?;
-
-        // // 将已初始化的资源同步到 app_state
-        // self.app_state.db = self.db.clone();
-        // self.app_state.message_store = self.message_store.clone();
-        // self.app_state.conversation_syncer = self.conversation_syncer.clone();
-        // self.app_state.friend_syncer = self.friend_syncer.clone();
-        // self.app_state.advanced_msg_listener = self.advanced_msg_listener.clone();
+        tokio::select! {
+            _ = &mut connection_handle => {
+                info!("连接器运行完成，退出客户端");
+            }
+            _ = &mut message_syncer_handle => {
+                info!("消息同步器运行完成，退出客户端");
+            }
+        }
+        cancel_token.cancel();
         Ok(())
     }
 
@@ -1911,102 +1936,6 @@ mod tests {
     async fn connect(ctx: &mut AppCtx) {
         let config = ClientConfig::new(ctx.user_id.clone(), ctx.im_token.clone(), 5);
         let mut client = OpenIMClient::new(config);
-        client.initialize_resources().await.unwrap();
-    }
-
-    struct TestConversationListener;
-    #[async_trait::async_trait]
-    impl ConversationListener for TestConversationListener {
-        async fn on_sync_server_start(&self, reinstalled: bool) {
-            info!("TestConversationListener 🔄 同步服务器开始: reinstalled={}", reinstalled);
-        }
-
-        async fn on_sync_server_finish(&self, reinstalled: bool) {
-            info!("TestConversationListener ✅ 同步服务器完成: reinstalled={}", reinstalled);
-        }
-
-        async fn on_sync_server_progress(&self, progress: i32) {
-            info!("TestConversationListener 📊 同步服务器进度: {}%", progress);
-        }
-
-        async fn on_sync_server_failed(&self, reinstalled: bool) {
-            error!("TestConversationListener ❌ 同步服务器失败: reinstalled={}", reinstalled);
-        }
-
-        async fn on_new_conversation(&self, conversation_list: String) {
-            info!("TestConversationListener 🆕 新会话: {}", conversation_list);
-        }
-
-        async fn on_conversation_changed(&self, conversation_list: String) {
-            info!("TestConversationListener 🔄 会话变更: {}", conversation_list);
-        }
-
-        async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-            info!("TestConversationListener 📬 总未读消息数变更: {} (同步未读数成功)", total_unread_count);
-        }
-
-        async fn on_conversation_user_input_status_changed(&self, change: String) {
-            info!("TestConversationListener ⌨️ 会话用户输入状态变更: {}", change);
-        }
-    }
-
-    struct TestFriendListener;
-    #[async_trait::async_trait]
-    impl FriendListener for TestFriendListener {
-        async fn on_friend_list_changed(&self, friends_json: String) {
-            info!("TestFriendListener 👥 好友列表变更: {}", friends_json);
-        }
-
-        async fn on_black_list_changed(&self, blacks_json: String) {
-            info!("TestFriendListener 🚫 黑名单列表变更: {}", blacks_json);
-        }
-
-        async fn on_friend_request_list_changed(&self, requests_json: String) {
-            info!("TestFriendListener 📝 好友申请列表变更: {}", requests_json);
-        }
-    }
-
-    struct TestAdvancedMsgListener;
-    #[async_trait::async_trait]
-    impl AdvancedMsgListener for TestAdvancedMsgListener {
-        async fn on_recv_new_message(&self, message: String) {
-            info!("TestAdvancedMsgListener 📨 OnRecvNewMessage: {}", message);
-        }
-
-        async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
-            info!("TestAdvancedMsgListener 📖 OnRecvC2CReadReceipt: {}", msg_receipt_list);
-        }
-
-        async fn on_new_recv_message_revoked(&self, message_revoked: String) {
-            info!("TestAdvancedMsgListener 🗑️ OnNewRecvMessageRevoked: {}", message_revoked);
-        }
-
-        async fn on_recv_offline_new_message(&self, message: String) {
-            info!("TestAdvancedMsgListener 📬 OnRecvOfflineNewMessage: {}", message);
-        }
-
-        async fn on_msg_deleted(&self, message: String) {
-            info!("TestAdvancedMsgListener 🗑️ OnMsgDeleted: {}", message);
-        }
-
-        async fn on_recv_online_only_message(&self, message: String) {
-            info!("TestAdvancedMsgListener 💬 OnRecvOnlineOnlyMessage: {}", message);
-        }
-
-        async fn on_kicked_offline(&self) {
-            warn!("TestAdvancedMsgListener ⚠️ OnKickedOffline: 被踢下线");
-        }
-
-        async fn on_connection_status_changed(&self, connected: bool, message: String) {
-            if connected {
-                info!("TestAdvancedMsgListener 🔗 OnConnectionStatusChanged: 已连接 - {}", message);
-            } else {
-                warn!("TestAdvancedMsgListener 🔗 OnConnectionStatusChanged: 断开 - {}", message);
-            }
-        }
-
-        async fn on_recv_typing_status(&self, typing_info: String) {
-            info!("TestAdvancedMsgListener ⌨️ OnRecvTypingStatus: {}", typing_info);
-        }
+        client.init().await.unwrap();
     }
 }

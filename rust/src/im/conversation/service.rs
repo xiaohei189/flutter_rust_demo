@@ -2,10 +2,9 @@
 //!
 //! 实现 OpenIM SDK 的会话增量同步逻辑，参考 Go 版本的实现
 
-use crate::im::api::ConversationApi;
-use crate::im::dao::{ConversationDao, VersionSyncDao};
+use crate::im::api::api::Api;
+use crate::im::dao::repository::Repository;
 use crate::im::listener::{ConversationListener, EmptyConversationListener};
-use crate::im::message::MessageApi;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::LocalConversation;
 use anyhow::{Context, Result};
@@ -22,14 +21,8 @@ use uuid::Uuid;
 pub struct ConversationSyncer {
     config: ConversationSyncerConfig,
     /// 会话 API 客户端
-    api: ConversationApi,
-    /// 消息 HTTP API 客户端
-    message_api: MessageApi,
-    /// 会话 DAO
-    conversation_dao: ConversationDao,
-    /// 版本同步 DAO
-    version_sync_dao: VersionSyncDao,
-    /// 会话监听器
+    api: Api,
+    repository: Repository,
     listener: Option<Arc<dyn ConversationListener>>,
 }
 
@@ -65,54 +58,48 @@ impl ConversationSyncer {
             .build()
             .context("创建 HTTP 客户端失败")?;
 
-        Self::with_listener_and_db_and_client(config, listener, Arc::new(pool), http_client).await
+        Self::with_listener_and_db_and_client(config, listener, pool, http_client).await
     }
 
     /// 创建新的会话同步器（使用共享连接池和 HTTP 客户端）
     pub async fn with_listener_and_db_and_client(
         config: ConversationSyncerConfig,
         listener: Option<Arc<dyn ConversationListener>>,
-        db: Arc<Pool<Sqlite>>,
+        db: Pool<Sqlite>,
         http_client: reqwest::Client,
     ) -> Result<Self> {
         // 创建带 base_url 的客户端（通过 URL 前缀实现）
         // 注意：reqwest 不支持动态 base_url，所以我们仍然需要在 API 方法中使用完整 URL
         // 但认证信息已经通过 default_headers 设置好了
-        let api = ConversationApi::new(http_client.clone(), config.api_base_url.clone(), config.user_id.clone(), &config.token);
+        let api = Api::new(http_client.clone(), config.api_base_url.clone(), config.user_id.clone(), &config.token);
 
-        Ok(Self {
-            api,
-            message_api: MessageApi::new(http_client, config.api_base_url.clone(), config.user_id.clone(), &config.token),
-            conversation_dao: ConversationDao::new((*db).clone()),
-            version_sync_dao: VersionSyncDao::new((*db).clone(), config.user_id.clone()),
-            listener,
-            config,
-        })
+        let repository = Repository::new(db);
+        Ok(Self { api, repository, listener, config })
     }
 
     /// 从数据库获取所有本地会话
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
-        self.conversation_dao.get_all_conversations().await
+        self.repository.conversation.get_all_conversations().await
     }
 
     /// 从数据库获取所有会话 ID
     pub async fn get_all_conversation_ids(&self) -> Result<Vec<String>> {
-        self.conversation_dao.get_all_conversation_ids().await
+        self.repository.conversation.get_all_conversation_ids().await
     }
 
     /// 从数据库获取版本同步信息
     async fn get_version_sync(&self) -> Result<Option<LocalVersionSync>> {
-        self.version_sync_dao.get_version_sync().await
+        self.repository.version_sync.get_version_sync().await
     }
 
     /// 保存版本同步信息到数据库
     async fn save_version_sync(&self, version_sync: &LocalVersionSync) -> Result<()> {
-        self.version_sync_dao.save_version_sync(version_sync).await
+        self.repository.version_sync.save_version_sync(version_sync).await
     }
 
     /// 插入或更新会话到数据库
     async fn upsert_conversation(&self, conv: &LocalConversation) -> Result<()> {
-        self.conversation_dao.upsert_conversation(conv).await
+        self.repository.conversation.upsert_conversation(conv).await
     }
 
     /// 根据消息内容生成 latestMsg 摘要（仿 Go 版 SDK 的简化实现）
@@ -189,7 +176,7 @@ impl ConversationSyncer {
         }
 
         // 查询现有会话
-        let existing_conv = self.conversation_dao.get_conversation_by_id(conversation_id).await?;
+        let existing_conv = self.repository.conversation.get_conversation_by_id(conversation_id).await?;
 
         // 从现有记录或默认值构建 LocalConversation
         let mut conv = if let Some(ref existing) = existing_conv {
@@ -283,12 +270,12 @@ impl ConversationSyncer {
 
     /// 从数据库删除会话
     async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
-        self.conversation_dao.delete_conversation(conversation_id).await
+        self.repository.conversation.delete_conversation(conversation_id).await
     }
 
     /// 获取总未读消息数（公开给上层调用）
     pub async fn get_total_unread_count(&self) -> Result<i32> {
-        self.conversation_dao.get_total_unread_count().await
+        self.repository.conversation.get_total_unread_count().await
     }
 
     /// 基于服务器的 MaxSeq / HasReadSeq 校正本地未读数
@@ -303,7 +290,7 @@ impl ConversationSyncer {
         }
 
         // 2. 从服务器获取每个会话的 MaxSeq/HasReadSeq
-        let seqs = self.api.get_has_read_and_max_seqs().await?;
+        let seqs = self.api.conversation.get_has_read_and_max_seqs().await?;
         if seqs.is_empty() {
             info!("[ConvSync/Seq] 服务器未返回会话 Seq 信息，跳过未读数校正");
             return Ok(());
@@ -357,7 +344,7 @@ impl ConversationSyncer {
         // 3.1 为本地缺失的会话从服务器补齐详情并按照 Seq 初始化未读数
         if !missing_convs.is_empty() {
             info!("[ConvSync/Seq] 发现本地缺失会话 {} 个，尝试从服务器补齐详情", missing_convs.len());
-            match self.api.get_all_conversations().await {
+            match self.api.conversation.get_all_conversations().await {
                 Ok(all_resp) => {
                     let server_map: HashMap<String, LocalConversation> = all_resp.conversations.iter().map(|c| (c.conversation_id.clone(), c.clone())).collect();
 
@@ -599,7 +586,7 @@ impl ConversationSyncer {
             (vs.version, vs.version_id)
         } else {
             // 如果没有版本信息，先获取全量会话 ID 列表
-            let server_ids_vec = self.api.get_all_conversation_ids().await?;
+            let server_ids_vec = self.api.conversation.get_all_conversation_ids().await?;
             let server_ids: std::collections::HashSet<String> = server_ids_vec.iter().cloned().collect();
             let local_ids_set: std::collections::HashSet<String> = local_ids.iter().cloned().collect();
 
@@ -619,11 +606,11 @@ impl ConversationSyncer {
             }
 
             // 否则从全量同步获取版本信息
-            let all_resp = self.api.get_all_conversations().await?;
+            let all_resp = self.api.conversation.get_all_conversations().await?;
             let server_convs: Vec<LocalConversation> = all_resp.conversations.clone();
 
             // 先获取 seqs 信息用于设置未读数
-            let seqs_map = match self.api.get_has_read_and_max_seqs().await {
+            let seqs_map = match self.api.conversation.get_has_read_and_max_seqs().await {
                 Ok(seqs) => {
                     info!("[ConvSync] 获取到 {} 个会话的 seqs 信息，用于设置未读数", seqs.len());
                     Some(seqs)
@@ -661,7 +648,7 @@ impl ConversationSyncer {
         }
 
         // 5. 调用增量同步接口
-        let resp = match self.api.get_incremental_conversations(version, &version_id).await {
+        let resp = match self.api.conversation.get_incremental_conversations(version, &version_id).await {
             Ok(resp) => resp,
             Err(e) => {
                 error!("[ConvSync] 增量同步失败: {:?}", e);
@@ -710,7 +697,7 @@ impl ConversationSyncer {
         }
 
         // 8. 先获取 seqs 信息用于设置未读数（参考 Go 版本的 SyncAllConversationHashReadSeqs）
-        let seqs_map = match self.api.get_has_read_and_max_seqs().await {
+        let seqs_map = match self.api.conversation.get_has_read_and_max_seqs().await {
             Ok(seqs) => {
                 info!("[ConvSync] 获取到 {} 个会话的 seqs 信息，用于设置未读数", seqs.len());
                 Some(seqs)
@@ -779,7 +766,7 @@ impl ConversationSyncer {
         }
 
         // 1. 获取服务器所有会话
-        let resp = match self.api.get_all_conversations().await {
+        let resp = match self.api.conversation.get_all_conversations().await {
             Ok(resp) => resp,
             Err(e) => {
                 error!("[ConvSync] 全量同步失败: {:?}", e);
@@ -808,7 +795,7 @@ impl ConversationSyncer {
         info!("[ConvSync] 本地已有 {} 个会话", local_conversations.len());
 
         // 4. 先获取 seqs 信息用于设置未读数（参考 Go 版本的 SyncAllConversationHashReadSeqs）
-        let seqs_map = match self.api.get_has_read_and_max_seqs().await {
+        let seqs_map = match self.api.conversation.get_has_read_and_max_seqs().await {
             Ok(seqs) => {
                 info!("[ConvSync] 获取到 {} 个会话的 seqs 信息，用于设置未读数", seqs.len());
                 Some(seqs)
@@ -926,7 +913,7 @@ mod tests {
                         db_path,
                     };
                     let syncer = Arc::new(
-                        ConversationSyncer::with_listener_and_db_and_client(cfg, None, Arc::new(pool), reqwest::Client::new())
+                        ConversationSyncer::with_listener_and_db_and_client(cfg, None, pool, reqwest::Client::new())
                             .await
                             .expect("创建会话同步器失败"),
                     );

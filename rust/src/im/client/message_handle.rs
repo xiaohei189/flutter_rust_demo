@@ -8,6 +8,7 @@ use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
+use tokio_util::sync::CancellationToken;
 use tokio::time::{timeout, Duration};
 use tracing::{debug, warn};
 
@@ -31,37 +32,39 @@ pub enum MsgSyncCommand {
 
 
 /// 消息同步器，actor 化：仅通过命令/事件通道与外界交互
-pub struct MessageSyncer {
+pub struct MessageHandle {
     login_user_id: String,
     reinstalled: bool,
     is_syncing: bool,
     repository: Repository,
     synced_max_seqs: HashMap<String, i64>,
     /// 消息/事件输入通道
-    msg_sync_cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
-    msg_sync_event_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
-    connection_msg_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
+    cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
+    event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
+    ws_rpc_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
+    cancel_token: CancellationToken,
 
 }
 
-impl MessageSyncer {
+impl MessageHandle {
     pub fn new(
         login_user_id: String,
         repository: Repository,
-        connection_msg_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
-        msg_sync_event_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
-
-        msg_sync_cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
+        ws_rpc_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
+        cancel_token: CancellationToken,
+        event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
+        cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
     ) -> Self {
         Self {
             login_user_id,
             repository,
-            msg_sync_event_tx,
-            msg_sync_cmd_rx,
+            event_tx,
+            cmd_rx,
             synced_max_seqs: HashMap::new(),
             reinstalled: false,
             is_syncing: false,
-            connection_msg_tx,
+            ws_rpc_tx,
+            cancel_token,
         }
     }
 
@@ -72,17 +75,17 @@ impl MessageSyncer {
     /// 从本地数据库装载已同步的 seq，参考 Go 的 LoadSeq
     pub async fn load_seq(&mut self) -> Result<()> {
         // 1) 取全部会话 ID
-        let ids = self.repository.conversation_dao.get_all_conversation_ids().await?;
+        let ids = self.repository.conversation.get_all_conversation_ids().await?;
         if ids.is_empty() {
             self.reinstalled = true;
-            debug!("[MsgSyncer] no local conversations, mark reinstalled=true");
+            debug!("[message_handle] no local conversations, mark reinstalled=true");
         }
 
         // 2) 逐会话读取消息表最大 seq（对等 Go 的 CheckConversationNormalMsgSeq）
         for conv_id in ids {
             let max_seq = self
                 .repository
-                .message_repo
+                .message
                 .check_conversation_normal_msg_seq(&conv_id)
                 .await
                 .unwrap_or(0);
@@ -97,51 +100,53 @@ impl MessageSyncer {
         }
 
         debug!(
-            "[MsgSyncer] load_seq done, synced_max_seqs size={}",
+            "[message_handle] load_seq done, synced_max_seqs size={}",
             self.synced_max_seqs.len()
         );
         Ok(())
     }
 
     /// 主循环：监听命令通道并分发（占位）
-    pub async fn run(&mut self) {
-        let mut cmd_rx = match self.cmd_rx.take() {
-            Some(rx) => rx,
-            None => {
-                warn!("[MsgSyncer] 未提供 cmd_rx，监听器退出");
-                return;
-            }
-        };
-
-        while let Some(cmd) = cmd_rx.recv().await {
+    pub async fn run(&mut self) -> Result<()> {
+        loop {
+            let cmd = tokio::select! {
+                _ = self.cancel_token.cancelled() => {
+                    warn!("[message_handle] 收到取消信号，退出监听器");
+                    return Ok(());
+                }
+                cmd = self.cmd_rx.recv() => cmd,
+            };
+            let Some(cmd) = cmd else {
+                debug!("[message_handle] cmd_rx 已关闭，监听器退出");
+                return Ok(());
+            };
             match cmd {
                 MsgSyncCommand::Connected => {
-                    debug!("[MsgSyncer] 收到 Connected 事件");
+                    debug!("[message_handle] 收到 Connected 事件");
                     if let Err(e) = self.do_connected().await {
-                        warn!("[MsgSyncer] do_connected 失败: {e}");
+                        warn!("[message_handle] do_connected 失败: {e}");
                     }
                 }
                 MsgSyncCommand::Wakeup => {
-                    debug!("[MsgSyncer] 收到 Wakeup 事件");
+                    debug!("[message_handle] 收到 Wakeup 事件");
                     if let Err(e) = self.do_wakeup_data_sync().await {
-                        warn!("[MsgSyncer] do_wakeup_data_sync 失败: {e}");
+                        warn!("[message_handle] do_wakeup_data_sync 失败: {e}");
                     }
                 }
                 MsgSyncCommand::ManualSync(conversation_ids) => {
-                    debug!("[MsgSyncer] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
+                    debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
                     if let Err(e) = self.do_im_message_sync(conversation_ids).await {
-                        warn!("[MsgSyncer] do_im_message_sync 失败: {e}");
+                        warn!("[message_handle] do_im_message_sync 失败: {e}");
                     }
                 }
                 MsgSyncCommand::Push(push) => {
-                    debug!("[MsgSyncer] 收到 Push 事件，msgs={} convs={}", push.msgs.len(), push.notification_msgs.len());
+                    debug!("[message_handle] 收到 Push 事件，msgs={} convs={}", push.msgs.len(), push.notification_msgs.len());
                     if let Err(e) = self.do_push_msg(&push).await {
-                        warn!("[MsgSyncer] 处理 Push 失败: {e}");
+                        warn!("[message_handle] 处理 Push 失败: {e}");
                     }
                 }
             }
         }
-        debug!("[MsgSyncer] cmd_rx 已关闭，监听器退出");
     }
 
     /// 简化版开始同步标记，避免并发同步
@@ -165,7 +170,7 @@ impl MessageSyncer {
 
     async fn do_connected(&mut self) -> Result<()> {
         if !self.start_sync().await {
-            debug!("[MsgSyncer] 正在同步，忽略 Connected 事件");
+            debug!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
         }
         let reinstalled = self.reinstalled;
@@ -176,7 +181,7 @@ impl MessageSyncer {
 
     async fn do_wakeup_data_sync(&mut self) -> Result<()> {
         if !self.start_sync().await {
-            debug!("[MsgSyncer] 正在同步，忽略 Wakeup 事件");
+            debug!("[message_handle] 正在同步，忽略 Wakeup 事件");
             return Ok(());
         }
         let resp = self.get_newest_seq().await?;
@@ -190,7 +195,7 @@ impl MessageSyncer {
         let resp = self.get_newest_seq().await?;
         let filtered = resp.into_iter().filter(|(id, _)| conversation_ids.contains(id)).collect::<HashMap<_, _>>();
         if filtered.is_empty() {
-            debug!("[MsgSyncer] ManualSync 无匹配会话，跳过");
+            debug!("[message_handle] ManualSync 无匹配会话，跳过");
             return Ok(());
         }
         let reinstalled = self.reinstalled;
@@ -261,11 +266,11 @@ impl MessageSyncer {
     }
     async fn sync_and_trigger_msgs(&mut self, seq_map: &HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<()> {
         if seq_map.is_empty() {
-            debug!("[MsgSyncer] nothing to sync, sync_msg_num={}", sync_msg_num);
+            debug!("[message_handle] nothing to sync, sync_msg_num={}", sync_msg_num);
             return Ok(());
         }
 
-        debug!("[MsgSyncer] current sync seq_map: {:?}", seq_map);
+        debug!("[message_handle] current sync seq_map: {:?}", seq_map);
 
         let mut temp_seq_map: HashMap<String, (i64, i64)> = HashMap::with_capacity(50);
         let mut msg_num: i64 = 0;
@@ -309,7 +314,7 @@ impl MessageSyncer {
     }
     /// 占位：触发会话/通知消息到上层
     async fn trigger_msgs(&self, conversation_id: &str, msgs: &[sdkws::MsgData], is_notification: bool) -> Result<()> {
-        debug!("[MsgSyncer] trigger_msgs conv={} len={} is_notification={}", conversation_id, msgs.len(), is_notification);
+        debug!("[message_handle] trigger_msgs conv={} len={} is_notification={}", conversation_id, msgs.len(), is_notification);
         // TODO: 分发到事件队列 / 存储
         Ok(())
     }
@@ -317,44 +322,32 @@ impl MessageSyncer {
     /// 触发有新消息的会话事件
     async fn trigger_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
-            debug!("[MsgSyncer] trigger_conversation empty");
+            debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
 
-        if let Some(tx) = &self.trigger_tx {
-            let _ = tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
-        } else {
-            debug!("[MsgSyncer] trigger_conversation (no listener): {:?}", msgs.keys());
-        }
+        let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
 
     /// 安装（例如重装）时同步会话消息
     async fn trigger_reinstall_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
         if msgs.is_empty() {
-            debug!("[MsgSyncer] trigger_reinstall_conversation empty");
+            debug!("[message_handle] trigger_reinstall_conversation empty");
             return Ok(());
         }
 
-        if let Some(tx) = &self.trigger_tx {
-            let _ = tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
-        } else {
-            debug!("[MsgSyncer] trigger_reinstall_conversation (no listener): len={}", msgs.len());
-        }
+        let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
         Ok(())
     }
 
     /// 触发通知消息事件
     async fn trigger_notification(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
-            debug!("[MsgSyncer] trigger_notification empty");
+            debug!("[message_handle] trigger_notification empty");
             return Ok(());
         }
-        if let Some(tx) = &self.trigger_tx {
-            let _ = tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
-        } else {
-            debug!("[MsgSyncer] trigger_notification (no listener): {:?}", msgs.keys());
-        }
+        let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())
     }
 
@@ -398,7 +391,7 @@ impl MessageSyncer {
     }
 
     pub async fn pull_msg_by_seq_range(&self, seq_map: &std::collections::HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<sdkws::PullMessageBySeqsResp> {
-        debug!("[MsgSyncer] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
+        debug!("[message_handle] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
 
         let ranges: Vec<SeqRangeModel> = seq_map
             .iter()
@@ -456,13 +449,14 @@ impl MessageSyncer {
 
     async fn send_ws_req_wait(&self, req: ws::OpenIMReq) -> Result<ws::OpenIMResp> {
         let (tx, rx) = oneshot::channel();
-        let envelope = crate::im::model::ws::WsRpcEnvelope { req, resp: Some(tx) };
+        let envelope: crate::im::model::ws::WsRpcEnvelope = (req, Some(tx));
 
-        self.connection_msg_tx.send(envelope).map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
+        self.ws_rpc_tx
+            .send(envelope)
+            .map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
 
         match timeout(Duration::from_secs(LONG_CONN_TIMEOUT_SECS), rx).await {
-            Ok(Ok(Ok(resp))) => Ok(resp),
-            Ok(Ok(Err(e))) => Err(e),
+            Ok(Ok(resp)) => Ok(resp),
             Ok(Err(_)) => Err(anyhow!("long_conn_mgr oneshot dropped")),
             Err(_) => Err(anyhow!("long_conn_mgr timeout")),
         }

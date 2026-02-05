@@ -1,7 +1,7 @@
 pub mod client;
 
-pub mod connection;
-pub mod message_syncer;
+pub mod connection_handle;
+pub mod message_handle;
 pub mod reconnect;
 pub mod rpc;
 pub mod seq_cache;

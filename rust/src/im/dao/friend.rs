@@ -9,7 +9,7 @@ use openim_protocol::sdkws;
 use sqlx::{Pool, Row, Sqlite};
 use tracing::info;
 
-/// 好友 DAO（基于 sqlx）
+#[derive( Clone)]
 pub struct FriendDao {
     db: Pool<Sqlite>,
     user_id: String,

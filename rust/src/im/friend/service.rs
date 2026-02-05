@@ -2,8 +2,9 @@
 //!
 //! 实现 OpenIM SDK 的好友增量同步逻辑，参考 Go 版本的实现
 
+use crate::im::api::api::Api;
 use crate::im::dao::FriendDao;
-use crate::im::friend::friend::FriendApi;
+use crate::im::dao::repository::Repository;
 use crate::im::friend::{EmptyFriendListener, FriendListener};
 use crate::im::model::conversation::LocalVersionSync;
 use crate::im::model::friend::FriendSyncerConfig;
@@ -18,26 +19,17 @@ use tracing::{debug, error, info};
 /// 好友同步器
 pub struct FriendSyncer {
     config: FriendSyncerConfig,
-    /// 好友 API 客户端
-    api: FriendApi,
-    /// 好友 DAO
-    friend_dao: FriendDao,
+    api: Api,
+    repository: Repository,
     /// 好友监听器
     listener: Option<Arc<dyn FriendListener>>,
 }
 
 impl FriendSyncer {
-    /// 创建新的好友同步器（必须外部提供数据库；监听器可选）
-    pub async fn new(config: FriendSyncerConfig, db: Arc<Pool<Sqlite>>, listener: Option<Arc<dyn FriendListener>>) -> Result<Self> {
-        Self::build(config, listener, (*db).clone()).await
-    }
 
-    async fn build(config: FriendSyncerConfig, listener: Option<Arc<dyn FriendListener>>, db: Pool<Sqlite>) -> Result<Self> {
-        let api = FriendApi::new(reqwest::Client::new(), config.api_base_url.clone(), config.user_id.clone(), &config.token);
-        let friend_dao = FriendDao::new(db, config.user_id.clone());
-        Ok(Self { api, friend_dao, listener, config })
+    pub fn new(config: FriendSyncerConfig, api: Api, repository: Repository, listener: Option<Arc<dyn FriendListener>>) -> Self {
+        Self { config, api, repository, listener }
     }
-
     /// 启动后台好友增量同步任务
     pub fn spawn_incr_sync(self: Arc<Self>) -> JoinHandle<()> {
         tokio::spawn(async move {
@@ -50,32 +42,32 @@ impl FriendSyncer {
 
     /// 从数据库获取所有好友
     pub async fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
-        self.friend_dao.get_all_friends().await
+        self.repository.friend.get_all_friends().await
     }
 
     /// 获取本地所有好友的 userID 列表
     async fn get_all_friend_ids(&self) -> Result<Vec<String>> {
-        self.friend_dao.get_all_friend_ids().await
+        self.repository.friend.get_all_friend_ids().await
     }
 
     /// 从数据库获取版本同步信息
     async fn get_version_sync(&self) -> Result<Option<LocalVersionSync>> {
-        self.friend_dao.get_version_sync().await
+        self.repository.friend.get_version_sync().await
     }
 
     /// 保存版本同步信息到数据库
     async fn save_version_sync(&self, version_sync: &LocalVersionSync) -> Result<()> {
-        self.friend_dao.save_version_sync(version_sync).await
+        self.repository.friend.save_version_sync(version_sync).await
     }
 
     /// 插入或更新好友到数据库
     async fn upsert_friend(&self, f: &sdkws::FriendInfo) -> Result<()> {
-        self.friend_dao.upsert_friend(f).await
+        self.repository.friend.upsert_friend(f).await
     }
 
     /// 从数据库删除好友
     async fn delete_friend(&self, friend_user_id: &str) -> Result<()> {
-        self.friend_dao.delete_friend(friend_user_id).await
+        self.repository.friend.delete_friend(friend_user_id).await
     }
 
     /// 同步好友列表（对比服务器和本地数据）
@@ -180,7 +172,7 @@ impl FriendSyncer {
 
         // 如果本地没有版本信息，先用全量好友ID列表与本地做一次对比，必要时执行全量同步
         if version_sync.is_none() {
-            if let Ok((srv_version, srv_version_id, server_ids)) = self.api.get_full_friend_user_ids().await {
+            if let Ok((srv_version, srv_version_id, server_ids)) = self.api.friend.get_full_friend_user_ids().await {
                 let server_set: std::collections::HashSet<String> = server_ids.iter().cloned().collect();
                 let local_set: std::collections::HashSet<String> = local_ids.iter().cloned().collect();
 
@@ -188,7 +180,7 @@ impl FriendSyncer {
                     info!("[FriendSync] 好友ID列表与服务器不一致，执行全量好友同步...");
 
                     // 全量拉取好友列表并对齐
-                    let all_friends_resp = self.api.get_all_friends().await?;
+                    let all_friends_resp = self.api.friend.get_all_friends().await?;
                     let server_friends = all_friends_resp.friends_info;
                     self.sync_friends(server_friends, local_friends, true).await?;
 
@@ -233,7 +225,7 @@ impl FriendSyncer {
         // 继续增量同步路径
         let (version, version_id) = if let Some(vs) = version_sync { (vs.version, vs.version_id) } else { (0, "".to_string()) };
 
-        let resp = match self.api.get_incremental_friends(version, &version_id).await {
+        let resp = match self.api.friend.get_incremental_friends(version, &version_id).await {
             Ok(resp) => resp,
             Err(e) => {
                 error!("[FriendSync] 增量好友同步失败: {:?}", e);
@@ -244,7 +236,7 @@ impl FriendSyncer {
         // 如果服务器标记 full=true，则以服务器为权威做一次全量对齐
         if resp.full {
             info!("[FriendSync] 服务器要求全量好友同步...");
-            let all_friends_resp = self.api.get_all_friends().await?;
+            let all_friends_resp = self.api.friend.get_all_friends().await?;
             let server_friends = all_friends_resp.friends_info;
             self.sync_friends(server_friends, local_friends, true).await?;
 
@@ -305,7 +297,7 @@ impl FriendSyncer {
         }
 
         // 增量好友同步完成后，顺带同步一次黑名单和好友申请列表，触发对应监听器
-        if let Ok(blacks) = self.api.get_black_list().await {
+        if let Ok(blacks) = self.api.friend.get_black_list().await {
             if let Ok(json) = serde_json::to_string(&blacks) {
                 if let Some(listener) = &self.listener {
                     listener.on_black_list_changed(json).await;
@@ -313,7 +305,7 @@ impl FriendSyncer {
             }
         }
 
-        if let Ok(requests) = self.api.get_friend_requests().await {
+        if let Ok(requests) = self.api.friend.get_friend_requests().await {
             if let Ok(json) = serde_json::to_string(&requests) {
                 if let Some(listener) = &self.listener {
                     listener.on_friend_request_list_changed(json).await;
@@ -363,7 +355,10 @@ mod tests {
                         token: token_info.im_token.clone(),
                         db_path,
                     };
-                    let syncer = Arc::new(FriendSyncer::new(cfg, Arc::new(pool), None).await.expect("创建好友同步器失败"));
+
+                    let api = Api::new(reqwest::Client::new(), "http://localhost:10002".to_string(), token_info.user_id.clone(), &token_info.im_token);
+                    let repository = Repository::new(pool);
+                    let syncer = Arc::new(FriendSyncer::new(cfg, api, repository, None));
                     AppCtx { syncer }
                 })
                 .await

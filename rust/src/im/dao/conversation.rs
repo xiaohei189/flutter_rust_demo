@@ -365,6 +365,7 @@ impl ConversationDao {
 }
 
 /// 版本同步 DAO（基于 sqlx）
+#[derive(Clone)]
 pub struct VersionSyncDao {
     db: Pool<Sqlite>,
     user_id: String,

@@ -41,26 +41,36 @@ pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMess
 
 /// WebSocket 读取端类型别名
 pub type WsReader = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
+
 /// 核心 IM 逻辑实现
-pub struct Connection {
+pub struct ConnectionHandle {
     config: ClientConfig,
     pending_rpc: HashMap<String, WsRpcEnvelope>,
     push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>,
-    cmd_rx: mpsc::UnboundedReceiver< (OpenIMReq, Option<oneshot::Sender<OpenIMResp>>)>,
+    cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
     reconnect_strategy: ReconnectStrategy,
+    cancel_token: CancellationToken,
 }
 
-impl Connection {
-    pub fn new(config: ClientConfig, cmd_rx: mpsc::UnboundedReceiver< (OpenIMReq, Option<oneshot::Sender<OpenIMResp>>)>, push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>) -> Self {
+impl ConnectionHandle {
+    pub fn new(
+        config: ClientConfig,
+        cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
+        push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>,
+        cancel_token: CancellationToken,
+    ) -> Self {
         let client = Self {
             config,
             reconnect_strategy: ReconnectStrategy::new(),
             pending_rpc: HashMap::new(),
             push_msg_tx,
             cmd_rx,
+            cancel_token,
         };
         client
     }
+
+ 
 
     /// 构建 WebSocket 连接 URL
     pub(crate) fn connect_url(&self) -> String {
@@ -88,20 +98,35 @@ impl Connection {
     pub async fn run(&mut self) -> Result<()> {
         let mut reconnect_count = 0;
         loop {
-            if let Err(e) = self.connect().await {
-                error!("[Client] 连接失败: {}", e);
+            let cancel = self.cancel_token.clone();
+            tokio::select! {
+                _ = cancel.cancelled() => {
+                    info!("[Client] 收到取消信号，退出连接循环");
+                    return Ok(());
+                }
+                res = self.connect() => {
+                    if let Err(e) = res {
+                        error!("[Client] 连接失败: {}", e);
+                    }
+                }
             }
             // 断线后按 Go 版逻辑进行带退避的重连
             let wait = self.reconnect_strategy.next_interval();
             reconnect_count += 1;
             info!("[Client] 尝试重连，等待 {:?} 后重试（指数退避），重连次数: {}", wait, reconnect_count);
-            tokio::time::sleep(wait).await;
+            tokio::select! {
+                _ = cancel.cancelled() => {
+                    info!("[Client] 收到取消信号，退出重连等待");
+                    return Ok(());
+                }
+                _ = tokio::time::sleep(wait) => {}
+            }
         }
     }
 
     async fn connect(&mut self) -> Result<()> {
         let url = self.connect_url();
-        debug!("[Client] 🔗 WebSocket 连接 URL: {}", url);
+        info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
         let (ws_stream, response) = connect_async(&url).await?;
         info!("[Client] ✅ WebSocket 连接成功, 状态: {}", response.status());
         self.reconnect_strategy.reset();
@@ -138,6 +163,10 @@ impl Connection {
 
         loop {
             tokio::select! {
+                _ = self.cancel_token.cancelled() => {
+                    info!("[Client] 收到取消信号，退出读写循环");
+                    return Ok(());
+                }
                 _ = hb.tick() => {
                     if let Err(e) = writer.send(WsMessage::Ping(vec![])).await {
                         error!("[Client] 心跳发送失败: {}", e);
@@ -277,9 +306,10 @@ impl Connection {
 mod tests {
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;
+    use tokio_util::sync::CancellationToken;
     use tracing::{error, info, warn};
 
-    use super::{ClientConfig, Connection};
+    use super::{ClientConfig, ConnectionHandle};
     use crate::im::auth::login_async;
     use crate::im::friend::FriendListener;
     use crate::im::listener::{AdvancedMsgListener, ConversationListener};
@@ -326,8 +356,8 @@ mod tests {
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let (push_msg_tx, push_msg_rx) = tokio::sync::mpsc::unbounded_channel();
-        let mut client = Connection::new(config, rx, push_msg_tx);
-
+        let cancel_token = CancellationToken::new();
+        let mut client = ConnectionHandle::new(config, rx, push_msg_tx, cancel_token.clone());
         // 连接到服务器（内部会自动启动消息处理）
         client.run().await.unwrap_or_else(|e| {
             error!("连接失败: {}", e);
