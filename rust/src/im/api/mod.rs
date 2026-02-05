@@ -1,4 +1,4 @@
-pub mod client;
+pub mod api;
+pub mod message;
 pub mod conversation;
 pub mod friend;
-pub mod message;

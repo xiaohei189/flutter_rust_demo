@@ -4,7 +4,7 @@ use sqlx::{Pool, Sqlite};
 use crate::im::model::notification::LocalNotificationSeq;
 
 
-
+#[derive(Clone)]
 pub struct NotificationDao {
     db: Pool<Sqlite>,
 }

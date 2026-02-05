@@ -72,13 +72,8 @@ pub struct OpenIMResp {
     pub data: Vec<u8>,
 }
 
-/// 长连接 RPC 通用封装：请求 + 可选 oneshot 响应
-#[derive(Debug)]
-pub struct WsRpcEnvelope {
-    pub req: OpenIMReq,
-    /// None 表示 fire-and-forget，有值则等待响应
-    pub resp: Option<tokio::sync::oneshot::Sender<anyhow::Result<OpenIMResp>>>,
-}
+pub type WsRpcEnvelope = (OpenIMReq, Option<oneshot::Sender<OpenIMResp>>);
+
 
 /// WebSocket 连接响应结构（文本消息）
 /// 用于 WebSocket 连接时的文本响应，包含 errDlt 字段
@@ -95,10 +90,4 @@ pub struct WebSocketConnectResp {
     pub data: Option<serde_json::Value>,
 }
 
-pub enum ConnectionCommand {
-    Rpc { req: Option<OpenIMReq>, resp: oneshot::Sender<OpenIMResp> },
-    Text(String),
-    Binary(Vec<u8>),
-    Ping,
-    Disconnect(String),
-}
+

@@ -2,6 +2,7 @@ use crate::im::{ConversationDao, FriendDao, MessageRepo, dao::notification::Noti
 
 use sqlx::{Pool, Sqlite};
 
+#[derive(Clone)]
 pub struct Repository  {
     pub conversation_dao: ConversationDao,
     pub notification_dao: NotificationDao,

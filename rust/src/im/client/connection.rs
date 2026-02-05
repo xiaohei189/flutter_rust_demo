@@ -2,7 +2,6 @@
 //!
 //! 此模块包含 OpenIM 客户端的核心逻辑实现。
 
-use crate::im::client::OpenIMClientApi;
 use crate::im::client::client::ClientConfig;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
@@ -13,8 +12,8 @@ use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
-use crate::im::model::ws::ConnectionCommand;
-use crate::im::model::{msg_type, LocalConversation, OpenIMResp};
+use crate::im::model::ws::WsRpcEnvelope;
+use crate::im::model::{msg_type, LocalConversation, OpenIMReq, OpenIMResp};
 use crate::im::serialization::{decompress_gzip, generate_msg_id};
 use crate::im::{util, WebSocketConnectResp};
 use anyhow::{Context, Result};
@@ -42,18 +41,17 @@ pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMess
 
 /// WebSocket 读取端类型别名
 pub type WsReader = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
-
 /// 核心 IM 逻辑实现
 pub struct Connection {
     config: ClientConfig,
-    pending_rpc: HashMap<String, ConnectionCommand>,
+    pending_rpc: HashMap<String, WsRpcEnvelope>,
     push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>,
-    cmd_rx: mpsc::UnboundedReceiver<ConnectionCommand>,
+    cmd_rx: mpsc::UnboundedReceiver< (OpenIMReq, Option<oneshot::Sender<OpenIMResp>>)>,
     reconnect_strategy: ReconnectStrategy,
 }
 
 impl Connection {
-    pub fn new(config: ClientConfig, cmd_rx: mpsc::UnboundedReceiver<ConnectionCommand>, push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>) -> Self {
+    pub fn new(config: ClientConfig, cmd_rx: mpsc::UnboundedReceiver< (OpenIMReq, Option<oneshot::Sender<OpenIMResp>>)>, push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>) -> Self {
         let client = Self {
             config,
             reconnect_strategy: ReconnectStrategy::new(),
@@ -147,25 +145,12 @@ impl Connection {
                     }
                 }
                 cmd = self.cmd_rx.recv() => {
-                    match cmd {
-                        Some(cmd) => {
-                            match cmd {
-                                ConnectionCommand::Text(t) => writer.send(WsMessage::Text(t)).await?,
-                                ConnectionCommand::Binary(b) => writer.send(WsMessage::Binary(b)).await?,
-                                ConnectionCommand::Ping => writer.send(WsMessage::Ping(vec![])).await?,
-                                ConnectionCommand::Disconnect(_) => return Ok(()),
-                                ConnectionCommand::Rpc { req, resp } => {
-                                    let req = req.unwrap();
-                                    // let resp = resp.send(Ok(OpenIMResp::default())).await?;
-                                }
-                            }
-                        }
-                        None => {
-                            debug!("[Client] ws消息mpsc通道已关闭，发送任务退出");
-                            return Ok(());
+                    if let Some((req, resp_tx)) = cmd {
+                        if let Err(e) = writer.send(WsMessage::Binary(serde_json::to_vec(&req)?)).await {
+                            error!("[Client] 发送ws消息失败: {}", e);
+                            return Err(anyhow::anyhow!("发送ws消息失败: {e}"));
                         }
                     }
-
                 }
                 msg = reader.next() => {
                     match msg {
@@ -191,6 +176,7 @@ impl Connection {
         match msg {
             WsMessage::Text(text) => {
                 info!("[Client] 收到文本消息: {}", text);
+                return Ok(());
             }
             WsMessage::Binary(data) => {
                 // 解压 gzip 数据
@@ -204,8 +190,6 @@ impl Connection {
                 } else {
                     data
                 };
-                // 将二进制消息尝试转为字符串后输出日志
-                info!("[Client] 收到二进制消息: {}", String::from_utf8_lossy(&data));
 
                 use crate::im::model::OpenIMResp;
                 // 解析 JSON 响应
@@ -215,46 +199,18 @@ impl Connection {
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
                         // RPC 响应：调用 RPC 响应处理器
-                        let cmd = self.pending_rpc.remove(&im_resp.operation_id);
-                        if let Some(cmd) = cmd {
-                            match cmd {
-                                ConnectionCommand::Rpc { req, resp } => {
-                                    if let Err(e) = resp.send(im_resp) {
-                                        error!("[Client] 发送RPC响应失败: {:?}", e);
-                                        return Err(anyhow::anyhow!("发送RPC响应失败: {:?}", e));
-                                    }
-                                }
-                                _ => {
-                                    warn!("[Client] 未知消息类型: {}", im_resp.req_identifier);
-                                    return Err(anyhow::anyhow!("未知消息类型: {}", im_resp.req_identifier));
-                                }
-                            }
-                        } else {
-                            warn!("[Client] 操作ID不存在: {}", im_resp.operation_id);
-
-                            return Ok(());
+                        if let Err(e) = self.handle_rpc_message(im_resp) {
+                            error!("[Client] 处理RPC消息失败: {}", e);
+                            return Err(anyhow::anyhow!("处理RPC消息失败: {}", e));
                         }
+                        return Ok(());
                     }
                     msg_type::WS_PUSH_MSG => {
-                        error!("[Client] 未知消息类型: {}", im_resp.req_identifier);
-                        if data.is_empty() {
-                            return Err(anyhow::anyhow!("推送消息为空"));
+                        if let Err(e) = self.handle_push_message(&im_resp) {
+                            error!("[Client] 处理推送消息失败: {}", e);
+                            return Err(anyhow::anyhow!("处理推送消息失败: {}", e));
                         }
-                        // 解析 protobuf PushMessages
-                        let push_msg = match sdkws::PushMessages::decode(im_resp.data.as_slice()) {
-                            Ok(pm) => pm,
-                            Err(e) => {
-                                return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
-                            }
-                        };
-                        info!(
-                            "[BinaryMessageHandler] push_msg (pretty):\n{}",
-                            serde_json::to_string_pretty(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
-                        );
-                        if let Err(e) = self.push_msg_tx.send(push_msg) {
-                            error!("[Client] 发送推送消息失败: {e}");
-                            return Err(anyhow::anyhow!("发送推送消息失败: {e}"));
-                        }
+                        return Ok(());
                     }
                     msg_type::WS_KICK_ONLINE_MSG => {
                         // 踢下线消息：触发监听器回调
@@ -262,24 +218,55 @@ impl Connection {
                         return Err(anyhow::anyhow!("被踢下线"));
                     }
                     _ => {
-                        error!("[Client] 未知消息类型: {}", im_resp.req_identifier);
-                        return Err(anyhow::anyhow!("未知消息类型: {}", im_resp.req_identifier));
+                        warn!("[Client] 未知消息类型: {}", im_resp.req_identifier);
+                        return Ok(());
                     }
                 }
-            }
-            WsMessage::Ping(_) => {
-                info!("[Client] 收到Ping消息");
-            }
-            WsMessage::Pong(_) => {
-                info!("[Client] 收到Pong消息");
             }
             WsMessage::Close(_) => {
                 warn!("[Client] 收到Close消息");
                 return Ok(());
             }
-            _ => {
-                warn!("[Client] 收到未知消息: {:?}", msg);
+            WsMessage::Ping(_) => {
+                return Ok(());
             }
+            WsMessage::Pong(_) => {
+                return Ok(());
+            }
+            WsMessage::Frame(frame) => {
+                warn!("[Client] 收到Frame消息: {:?}", frame);
+                return Ok(());
+            }
+        }
+    }
+
+    fn handle_rpc_message(&mut self, im_resp: OpenIMResp) -> Result<()> {
+        let cmd = self.pending_rpc.remove(&im_resp.operation_id);
+        if let Some((_, Some(resp_tx))) = cmd {
+            if let Err(e) = resp_tx.send(im_resp) {
+                error!("[Client] 发送RPC响应失败: {:?}", e);
+                return Err(anyhow::anyhow!("发送RPC响应失败: {:?}", e));
+            }
+        } else {
+            warn!("[Client] 操作ID不存在: {}", im_resp.operation_id);
+        }
+        Ok(())
+    }
+    fn handle_push_message(&mut self, im_resp: &OpenIMResp) -> Result<()> {
+        let push_msg = match sdkws::PushMessages::decode(im_resp.data.as_slice()) {
+            Ok(pm) => pm,
+            Err(e) => {
+                return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
+            }
+        };
+        info!(
+            "[BinaryMessageHandler] push_msg (pretty):\n{}",
+            serde_json::to_string_pretty(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
+        );
+        // 解析 protobuf PushMessages
+        if let Err(e) = self.push_msg_tx.send(push_msg) {
+            error!("[Client] 发送推送消息失败: {e}");
+            return Err(anyhow::anyhow!("发送推送消息失败: {e}"));
         }
         Ok(())
     }

@@ -2,7 +2,7 @@
 use crate::im::dao::repository::Repository;
 use crate::im::model::constant;
 use crate::im::model::message::SeqRange as SeqRangeModel;
-use crate::im::model::ws;
+use crate::im::model::ws::{self, WsRpcEnvelope};
 use anyhow::{anyhow, Result};
 use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
@@ -38,29 +38,30 @@ pub struct MessageSyncer {
     repository: Repository,
     synced_max_seqs: HashMap<String, i64>,
     /// 消息/事件输入通道
-    cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
-    ws_rpc_tx: mpsc::UnboundedSender<crate::im::model::ws::WsRpcEnvelope>,
-    trigger_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
+    msg_sync_cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
+    msg_sync_event_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
+    connection_msg_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
 
 }
 
 impl MessageSyncer {
     pub fn new(
         login_user_id: String,
-        ws_rpc_tx: mpsc::UnboundedSender<crate::im::model::ws::WsRpcEnvelope>,
-        trigger_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
-        cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
-        db: Pool<Sqlite>,
+        repository: Repository,
+        connection_msg_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
+        msg_sync_event_tx: Option<mpsc::UnboundedSender<MsgSyncTriggerEvent>>,
+
+        msg_sync_cmd_rx: Option<mpsc::UnboundedReceiver<MsgSyncCommand>>,
     ) -> Self {
         Self {
             login_user_id,
-            ws_rpc_tx,
-            trigger_tx,
+            repository,
+            msg_sync_event_tx,
+            msg_sync_cmd_rx,
             synced_max_seqs: HashMap::new(),
             reinstalled: false,
             is_syncing: false,
-            cmd_rx,
-            repository: Repository::new(db),
+            connection_msg_tx,
         }
     }
 
@@ -103,7 +104,7 @@ impl MessageSyncer {
     }
 
     /// 主循环：监听命令通道并分发（占位）
-    pub async fn do_listener(&mut self) {
+    pub async fn run(&mut self) {
         let mut cmd_rx = match self.cmd_rx.take() {
             Some(rx) => rx,
             None => {
@@ -457,7 +458,7 @@ impl MessageSyncer {
         let (tx, rx) = oneshot::channel();
         let envelope = crate::im::model::ws::WsRpcEnvelope { req, resp: Some(tx) };
 
-        self.ws_rpc_tx.send(envelope).map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
+        self.connection_msg_tx.send(envelope).map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
 
         match timeout(Duration::from_secs(LONG_CONN_TIMEOUT_SECS), rx).await {
             Ok(Ok(Ok(resp))) => Ok(resp),

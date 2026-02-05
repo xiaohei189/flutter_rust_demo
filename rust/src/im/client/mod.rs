@@ -6,7 +6,6 @@ pub mod reconnect;
 pub mod rpc;
 pub mod seq_cache;
 
-pub use crate::im::api::client::OpenIMClientApi;
 pub use client::OpenIMClient;
 pub use reconnect::{ConnectFatalError, ReconnectStrategy};
 pub use seq_cache::ConversationSeqContextCache;
