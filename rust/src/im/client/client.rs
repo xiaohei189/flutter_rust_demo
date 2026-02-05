@@ -56,19 +56,19 @@ impl Client {
     }
 }
 
-use crate::im::client::api::OpenIMClientApi;
+use crate::im::api::api::Api;
+use crate::im::client::connection::Connection;
+use crate::im::client::message_syncer::MessageSyncer;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
 use crate::im::conversation::service::ConversationSyncer;
 use crate::im::dao::MessageRepo;
+use crate::im::dao::repository::Repository;
 use crate::im::db::db::create_sqlite_pool_with_migration;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
-use crate::im::model::ws::ConnectionCommand;
-
-
 
 use crate::im::model::{LocalConversation, OpenIMResp};
 use crate::im::serialization::{decompress_gzip, generate_msg_id};
@@ -180,12 +180,6 @@ impl OpenIMClient {
         client
     }
 
-    async fn init(&mut self) -> Result<()> {
-        self.initialize_resources().await?;
-        Ok(())
-    }
-
-
     async fn init_friend_syncer(&mut self) -> Result<()> {
         let friend_cfg = FriendSyncerConfig {
             user_id: self.config.user_id.clone(),
@@ -203,11 +197,10 @@ impl OpenIMClient {
     // connect_ws_once 已迁移至 connection.rs
 
     /// 初始化数据库连接池
-    async fn init_database(config: &ClientConfig) -> Result<Arc<Pool<Sqlite>>> {
+    async fn init_database(config: &ClientConfig) -> Result<Pool<Sqlite>> {
         info!("[Client] 🔗 创建共享 SQLite 连接池并执行迁移: {}", config.conversation_db_url);
         let pool = create_sqlite_pool_with_migration(&config.conversation_db_url).await?;
-        let db = Arc::new(pool);
-        Ok(db)
+        Ok(pool)
     }
 
     /// 创建带认证的 HTTP 客户端
@@ -242,22 +235,7 @@ impl OpenIMClient {
         Ok(syncer)
     }
 
-    /// 启动消息处理和重连任务
-    pub async fn connect_with_reconnect(&self) -> Result<()> {
-        let mut reconnect_count = 0;
-        loop {
-            if let Err(e) = self.connect().await {
-                error!("[Client] 连接失败: {}", e);
-            }
-            // 断线后按 Go 版逻辑进行带退避的重连
-            let wait = self.reconnect_strategy.next_interval();
-            reconnect_count += 1;
-            info!("[Client] 尝试重连，等待 {:?} 后重试（指数退避），重连次数: {}", wait, reconnect_count);
-            tokio::time::sleep(wait).await;
-        }
-    }
-
-     /// 初始化所有资源（数据库、同步器、消息存储等）
+    /// 初始化所有资源（数据库、同步器、消息存储等）
     ///
     /// 使用当前客户端的配置 `self.config`，逐步完成：
     /// 1. 创建并缓存 SQLite 连接池
@@ -268,24 +246,48 @@ impl OpenIMClient {
     async fn initialize_resources(&mut self) -> Result<()> {
         // 1) 初始化数据库连接池
         let db = Self::init_database(&self.config).await?;
-        self.db = Some(db.clone());
+        let repo = Repository::new(db.clone());
 
         // 2) 创建 HTTP 客户端
         let http_client = Self::create_http_client(&self.config)?;
 
-        // 3) 初始化会话同步器
-        let conv_syncer = Self::init_conversation_syncer(&self.config, db, http_client, self.conversation_listener.clone()).await?;
-        self.conversation_syncer = Some(conv_syncer);
+        let api = Api::new(http_client, self.config.api_base_url.clone(), self.config.user_id.clone(), &self.config.token);
 
-        // 4) 初始化好友同步器
-        self.init_friend_syncer().await?;
 
-        // 将已初始化的资源同步到 app_state
-        self.app_state.db = self.db.clone();
-        self.app_state.message_store = self.message_store.clone();
-        self.app_state.conversation_syncer = self.conversation_syncer.clone();
-        self.app_state.friend_syncer = self.friend_syncer.clone();
-        self.app_state.advanced_msg_listener = self.advanced_msg_listener.clone();
+        let (msg_tx, msg_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (connection_tx, connection_rx) = tokio::sync::mpsc::unbounded_channel();
+        let mut connection = Connection::new(self.config.clone(), connection_rx, msg_tx);
+
+       let connection_handle = tokio::spawn(async move {
+            if let Err(e) = connection.run().await {
+                error!("连接失败: {}", e);
+            }
+        });
+
+        let (message_syncer_tx, message_syncer_rx) = tokio::sync::mpsc::unbounded_channel();
+
+        let mut message_syncer = MessageSyncer::new(self.config.user_id.clone(), repo.clone(), connection_tx.clone(), Some(message_syncer_tx), None);
+
+        let message_syncer_handle = tokio::spawn(async move {
+            message_syncer.load_seq().await;
+            message_syncer.run().await;
+        });
+
+
+        connection_handle.await.unwrap();
+        // // 3) 初始化会话同步器
+        // let conv_syncer = Self::init_conversation_syncer(&self.config, db, http_client, self.conversation_listener.clone()).await?;
+        // self.conversation_syncer = Some(conv_syncer);
+
+        // // 4) 初始化好友同步器
+        // self.init_friend_syncer().await?;
+
+        // // 将已初始化的资源同步到 app_state
+        // self.app_state.db = self.db.clone();
+        // self.app_state.message_store = self.message_store.clone();
+        // self.app_state.conversation_syncer = self.conversation_syncer.clone();
+        // self.app_state.friend_syncer = self.friend_syncer.clone();
+        // self.app_state.advanced_msg_listener = self.advanced_msg_listener.clone();
         Ok(())
     }
 
@@ -511,13 +513,6 @@ impl OpenIMClient {
 
         // 通用消息类型（COMMON, GROUP_MSG, SIGNAL_MSG, CUSTOM_NOTIFICATION）
         if msg.content_type == constant::COMMON || msg.content_type == constant::GROUP_MSG || msg.content_type == constant::SIGNAL_MSG || msg.content_type == constant::CUSTOM_NOTIFICATION {
-            let msg_json = self.msg_data_to_json(msg);
-            let listener = self.advanced_msg_listener.clone();
-            tokio::spawn(async move {
-                if let Some(listener) = &listener {
-                    listener.on_recv_new_message(msg_json).await;
-                }
-            });
             return true;
         }
 
@@ -526,13 +521,6 @@ impl OpenIMClient {
         if msg.content_type >= constant::NOTIFICATION_BEGIN && msg.content_type <= constant::NOTIFICATION_END {
             // 排除已特殊处理的通知类型（HAS_READ_RECEIPT）
             if msg.content_type != constant::HAS_READ_RECEIPT {
-                let msg_json = self.msg_data_to_json(msg);
-                let listener = self.advanced_msg_listener.clone();
-                tokio::spawn(async move {
-                    if let Some(listener) = &listener {
-                        listener.on_recv_new_message(msg_json).await;
-                    }
-                });
                 return true;
             }
         }
@@ -1867,85 +1855,6 @@ impl crate::im::message::ws_rpc::WsRpcClient for &OpenIMClient {
     }
 }
 
-// 对外特征接口实现
-impl OpenIMClientApi for OpenIMClient {
-    fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
-        OpenIMClient::set_conversation_listener(self, listener)
-    }
-
-    fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
-        OpenIMClient::set_friend_listener(self, listener)
-    }
-
-    fn set_advanced_msg_listener(&mut self, listener: Arc<dyn AdvancedMsgListener>) {
-        OpenIMClient::set_advanced_msg_listener(self, listener)
-    }
-
-    fn connect(&mut self) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::connect(self).await })
-    }
-
-    fn send_text_message(&self, recv_id: String, text: String, session_type: i32) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::send_text_message(self, recv_id, text, session_type).await })
-    }
-
-    fn send_message(&self, recv_id: String, group_id: String, message: MsgStruct, offline_push_info: Option<sdkws::OfflinePushInfo>, is_online_only: bool) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::send_message(self, recv_id, group_id, message, offline_push_info, is_online_only).await })
-    }
-
-    fn send_message_not_oss(&self, recv_id: String, group_id: String, message: MsgStruct, offline_push_info: Option<sdkws::OfflinePushInfo>, is_online_only: bool) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::send_message_not_oss(self, recv_id, group_id, message, offline_push_info, is_online_only).await })
-    }
-
-    fn ws_get_newest_seq(&self) -> Result<sdkws::GetMaxSeqResp> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::ws_get_newest_seq(self).await })
-    }
-
-    fn ws_pull_msg_by_range(&self, ranges: Vec<SeqRangeModel>, order: i32) -> Result<sdkws::PullMessageBySeqsResp> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::ws_pull_msg_by_range(self, ranges, order).await })
-    }
-
-    fn insert_single_message_to_local_storage(&self, message_json: String, recv_id: String, send_id: String) -> Result<MsgStruct> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::insert_single_message_to_local_storage(self, message_json, recv_id, send_id).await })
-    }
-
-    fn insert_group_message_to_local_storage(&self, message_json: String, group_id: String, send_id: String) -> Result<MsgStruct> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::insert_group_message_to_local_storage(self, message_json, group_id, send_id).await })
-    }
-
-    fn mark_messages_as_read_by_msg_id(&self, conversation_id: String, client_msg_ids: Vec<String>) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::mark_messages_as_read_by_msg_id(self, conversation_id, client_msg_ids).await })
-    }
-
-    fn mark_conversation_message_as_read_full(&self, conversation_id: String) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::mark_conversation_message_as_read_full(self, conversation_id).await })
-    }
-
-    fn revoke_message(&self, conversation_id: String, client_msg_id: String) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::revoke_message(self, conversation_id, client_msg_id).await })
-    }
-
-    fn delete_messages(&self, conversation_id: String, seqs: Vec<i64>) -> Result<()> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::delete_messages(self, conversation_id, seqs).await })
-    }
-
-    fn get_conversation_list(&self, offset: usize, count: usize) -> Result<Vec<LocalConversation>> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::get_conversation_list(self, offset, count).await })
-    }
-
-    fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::get_all_conversations(self).await })
-    }
-
-    fn get_total_unread_count(&self) -> Result<i32> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::get_total_unread_count(self).await })
-    }
-
-    fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
-        tokio::runtime::Handle::current().block_on(async { OpenIMClient::get_all_friends(self).await })
-    }
-}
-
 // 允许未使用的辅助方法（日志解析/调试）
 #[allow(dead_code, clippy::manual_range_contains, clippy::single_match)]
 #[cfg(test)]
@@ -1968,8 +1877,8 @@ mod tests {
 
     #[derive(Clone)]
     struct AppCtx {
-        api: Arc<OpenIMClient>,
-        self_user: String,
+        im_token: String,
+        user_id: String,
     }
 
     impl AsyncTestContext for AppCtx {
@@ -1985,27 +1894,7 @@ mod tests {
                     // 解析 token（如果登录成功）
                     let (user_id, im_token) = (token_info.user_id.clone(), token_info.im_token.clone());
 
-                    let config = ClientConfig::new(user_id, im_token, 5);
-                    let mut client = OpenIMClient::new(config);
-                    client.init().await.unwrap();
-                    // client.set_conversation_listener(
-                    //     Arc::new(TestConversationListener) as Arc<dyn ConversationListener>
-                    // );
-                    // client.set_friend_listener(Arc::new(TestFriendListener));
-                    // client.set_advanced_msg_listener(
-                    //     Arc::new(TestAdvancedMsgListener) as Arc<dyn AdvancedMsgListener>
-                    // );
-
-                    // 连接到服务器（内部会自动启动消息处理）
-                    client.connect_with_reconnect().await.unwrap_or_else(|e| {
-                        error!("连接失败: {}", e);
-                        return;
-                    });
-
-                    AppCtx {
-                        api: Arc::new(client),
-                        self_user: token_info.user_id,
-                    }
+                    AppCtx { im_token: im_token, user_id: user_id }
                 })
                 .await
                 .clone()
@@ -2019,41 +1908,9 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn connect(ctx: &mut AppCtx) {
-        let client = ctx.api.clone();
-    }
-    #[test_context(AppCtx)]
-    #[tokio::test]
-    #[ignore]
-    async fn run_openim_client(ctx: &mut AppCtx) {
-        // // 克隆 client 和 user_id 用于发送消息
-        let client = ctx.api.clone();
-
-        let resp = client.ws_get_newest_seq().await.unwrap();
-        info!("ws_get_newest_seq: {:?}", resp);
-        client
-            .send_text_message("1056224172".to_string(), chrono::Local::now().format("Hello from Rust client! %Y-%m-%d %H:%M:%S").to_string(), 1)
-            .await
-            .unwrap();
-
-        let resp = client.get_all_conversations().await.unwrap();
-        info!("get_all_conversations: {:?}", resp);
-
-        for ele in resp {
-            let resp = client
-                .ws_pull_msg_by_range(
-                    vec![SeqRange {
-                        conversation_id: ele.conversation_id.clone(),
-                        begin: 0,
-                        end: 100,
-                        num: 10,
-                    }],
-                    1,
-                )
-                .await
-                .unwrap();
-            info!("ws_pull_msg_by_range: {:?}", resp)
-        }
-        tokio::time::sleep(Duration::from_secs(300)).await;
+        let config = ClientConfig::new(ctx.user_id.clone(), ctx.im_token.clone(), 5);
+        let mut client = OpenIMClient::new(config);
+        client.initialize_resources().await.unwrap();
     }
 
     struct TestConversationListener;

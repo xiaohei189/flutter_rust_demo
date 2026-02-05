@@ -5,6 +5,7 @@ pub mod dao;
 pub mod db;
 pub mod friend;
 pub mod http;
+pub mod api;
 pub mod listener;
 pub mod logger;
 pub mod message;

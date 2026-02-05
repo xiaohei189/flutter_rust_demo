@@ -2,7 +2,6 @@
 //!
 //! 实现 OpenIM SDK 的好友同步功能
 
-pub mod api;
 pub mod listener;
 pub mod models;
 pub mod service;

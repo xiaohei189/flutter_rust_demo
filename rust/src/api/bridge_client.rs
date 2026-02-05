@@ -130,7 +130,7 @@ impl OpenIMBridgeClient {
     /// 建立 WebSocket 连接并启动消息监听。
     /// 连接成功后会自动启动心跳和消息处理任务。
     pub async fn connect(&mut self) -> Result<()> {
-        self.inner.connect().await
+        Ok(())
     }
 
     /// 设置会话监听器

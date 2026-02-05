@@ -11,6 +11,7 @@ use sqlx::{sqlite::SqlitePoolOptions, Pool, Row, Sqlite};
 ///
 /// Go 版会为每个会话动态建表；SeaORM 无法动态建表，因此这里用原生 SQLx
 /// 在运行时创建/访问按会话命名的表（msg_<conversation_id_sanitized>）。
+#[derive(Clone)]
 pub struct MessageRepo {
     pool: Pool<Sqlite>,
     /// 当前登录用户，用于过滤自发消息的已读逻辑

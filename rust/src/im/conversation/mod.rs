@@ -2,7 +2,6 @@
 //!
 //! 实现 OpenIM SDK 的会话同步功能
 
-pub mod api;
 pub mod models;
 pub mod service;
 pub mod types;
