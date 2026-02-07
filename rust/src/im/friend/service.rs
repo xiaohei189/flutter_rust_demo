@@ -320,7 +320,7 @@ impl FriendSyncer {
 #[cfg(test)]
 mod tests {
     use crate::{
-        im::{db::db::create_sqlite_pool_with_migration, logger::logger::init_logger},
+        im::{dao::Repository, logger::logger::init_logger},
         login_async,
     };
 
@@ -347,7 +347,7 @@ mod tests {
                     let token_info = login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
 
                     let db_path = format!("sqlite://{}/friend_sync_{}.db?mode=rwc", std::env::temp_dir().as_path().to_string_lossy(), token_info.user_id.clone());
-                    let pool = create_sqlite_pool_with_migration(&db_path).await.expect("创建测试数据库失败");
+                    let repository = Repository::create(&db_path).await.expect("创建测试数据库失败");
 
                     let cfg = FriendSyncerConfig {
                         user_id: token_info.user_id.clone(),
@@ -357,7 +357,6 @@ mod tests {
                     };
 
                     let api = Api::new(reqwest::Client::new(), "http://localhost:10002".to_string(), token_info.user_id.clone(), &token_info.im_token);
-                    let repository = Repository::new(pool);
                     let syncer = Arc::new(FriendSyncer::new(cfg, api, repository, None));
                     AppCtx { syncer }
                 })

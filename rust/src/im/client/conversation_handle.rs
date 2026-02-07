@@ -717,7 +717,8 @@ mod tests {
     use super::*;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::conversation::ConversationSyncerConfig;
-    use crate::im::{db::db::create_sqlite_pool_with_migration, login_async};
+    use crate::im::dao::Repository;
+    use crate::im::login_async;
     use test_context::{test_context, AsyncTestContext};
     use tokio::sync::OnceCell;
 
@@ -743,7 +744,7 @@ mod tests {
                         std::env::temp_dir().as_path().to_string_lossy(),
                         token_info.user_id
                     );
-                    let pool = create_sqlite_pool_with_migration(&db_path).await.expect("创建测试数据库失败");
+                    let repo = Repository::create(&db_path).await.expect("创建测试数据库失败");
                     let cfg = ConversationSyncerConfig {
                         user_id: token_info.user_id.clone(),
                         api_base_url: "http://localhost:10002".to_string(),
@@ -751,7 +752,7 @@ mod tests {
                         db_path,
                     };
                     let syncer = Arc::new(
-                        ConversationSyncer::with_listener_and_db_and_client(cfg, None, pool, reqwest::Client::new())
+                        ConversationSyncer::with_listener_and_db_and_client(cfg, None, repo.pool.clone(), reqwest::Client::new())
                             .await
                             .expect("创建会话同步器失败"),
                     );

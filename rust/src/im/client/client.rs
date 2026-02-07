@@ -64,7 +64,6 @@ use crate::im::client::seq_cache::ConversationSeqContextCache;
 use crate::im::client::conversation_handle::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::dao::repository::Repository;
-use crate::im::db::db::create_sqlite_pool_with_migration;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
@@ -187,15 +186,14 @@ impl OpenIMClient {
             token: self.config.token.clone(),
             db_path: self.config.conversation_db_url.clone(),
         };
-        let db = match self.db.as_ref() {
-            Some(db) => db.as_ref().clone(),
+        let repository = match self.db.as_ref() {
+            Some(pool) => Repository::new(pool.as_ref().clone()),
             None => {
-                let db = Self::init_database(&self.config).await?;
-                self.db = Some(Arc::new(db.clone()));
-                db
+                let repo = Repository::create(&self.config.conversation_db_url).await?;
+                self.db = Some(Arc::new(repo.pool.clone()));
+                repo
             }
         };
-        let repository = Repository::new(db);
         let http_client = Self::create_http_client(&self.config)?;
         let api = Api::new(
             http_client,
@@ -212,13 +210,6 @@ impl OpenIMClient {
 
     /// 建立一次 WebSocket 连接并完成鉴权握手（不包含 DB/同步器初始化）
     // connect_ws_once 已迁移至 connection.rs
-
-    /// 初始化数据库连接池
-    async fn init_database(config: &ClientConfig) -> Result<Pool<Sqlite>> {
-        info!("[Client] 🔗 创建共享 SQLite 连接池并执行迁移: {}", config.conversation_db_url);
-        let pool = create_sqlite_pool_with_migration(&config.conversation_db_url).await?;
-        Ok(pool)
-    }
 
     /// 创建带认证的 HTTP 客户端
     fn create_http_client(config: &ClientConfig) -> Result<reqwest::Client> {
@@ -262,9 +253,9 @@ impl OpenIMClient {
     /// 4. 初始化好友同步器并启动增量同步
     /// 5. 初始化消息存储
     async fn init(&mut self) -> Result<()> {
-        // 1) 初始化数据库连接池
-        let db = Self::init_database(&self.config).await?;
-        let repo = Repository::new(db.clone());
+        // 1) 创建 Repository（内部建池并立即执行迁移）
+        let repo = Repository::create(&self.config.conversation_db_url).await?;
+        self.db = Some(Arc::new(repo.pool.clone()));
 
         // 2) 创建 HTTP 客户端
         let http_client = Self::create_http_client(&self.config)?;
@@ -294,7 +285,7 @@ impl OpenIMClient {
         let http_client_for_conv = Self::create_http_client(&self.config)?;
         let conversation_syncer = Self::init_conversation_syncer(
             &self.config,
-            db.clone(),
+            repo.pool.clone(),
             http_client_for_conv,
             self.conversation_listener.clone(),
         )
