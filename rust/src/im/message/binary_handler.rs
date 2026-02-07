@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use tracing::{debug, error, info, warn};
 
 use crate::im::client::client::AppState;
-use crate::im::conversation::ConversationSyncer;
+use crate::im::client::conversation_handle::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::listener::AdvancedMsgListener;
 use crate::im::model::{msg_type, OpenIMResp};

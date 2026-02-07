@@ -1,9 +1,7 @@
 pub mod auth;
 pub mod api;
 pub mod client;
-pub mod conversation;
 pub mod dao;
-pub mod db;
 pub mod friend;
 pub mod http;
 
@@ -17,8 +15,9 @@ pub mod util;
 // 重新导出认证相关函数
 pub use auth::login_async;
 
-// 重新导出会话同步相关类型和函数
-pub use conversation::{ConversationSyncer, ConversationSyncerConfig, LocalVersionSync};
+// 重新导出会话同步相关类型和函数（ConversationSyncer 在 client::conversation_handle，配置与 LocalVersionSync 在 model）
+pub use client::conversation_handle::ConversationSyncer;
+pub use model::{ConversationSyncerConfig, LocalVersionSync};
 
 // 重新导出好友相关类型和函数
 pub use friend::{FriendSyncer, FriendSyncerConfig};

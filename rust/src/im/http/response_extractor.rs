@@ -48,19 +48,16 @@ impl HttpResponseExtractor {
             .body_reader()
             .bytes()
             .await
-            .map_err(|e| anyhow::anyhow!("read body failed: method={} url={} operation_id={} status={} err={}", method, uri, operation_id, status, e))?;
+            .map_err(|e| anyhow::anyhow!("read body failed: err={}", e))?;
         let body_text = String::from_utf8_lossy(&body_bytes).to_string();
 
         if status != http::StatusCode::OK {
-            anyhow::bail!("HTTP status not ok: method={} url={} operation_id={} status={} body={}", method, uri, operation_id, status, body_text);
+            anyhow::bail!("HTTP status not ok: status={} body={}", status, body_text);
         }
 
         let api_resp: ApiResponse<T> = serde_json::from_slice(&body_bytes).map_err(|e| {
             anyhow::anyhow!(
-                "Parse JSON failed: method={} url={} operation_id={} status={} body={} err={}",
-                method,
-                uri,
-                operation_id,
+                "Parse JSON failed: status={} body={} err={}",
                 status,
                 body_text,
                 e
@@ -68,17 +65,16 @@ impl HttpResponseExtractor {
         })?;
         // body内容使用反序列化输出，并美化格式化 json
         match serde_json::from_slice::<serde_json::Value>(&body_bytes).and_then(|v| serde_json::to_string_pretty(&v)) {
-            Ok(pretty_body) => {
-                debug!(method = %method, uri = %uri, status = %status, headers = ?headers, body = %pretty_body, "HttpResponseExtractor");
+            Ok(_) => {
+                debug!(method = %method, uri = %uri, status = %status, "HttpResponseExtractor");
             }
             Err(_) => {
-                debug!(method = %method, uri = %uri, status = %status, headers = ?headers, body = ?body_text, "HttpResponseExtractor");
+                debug!(method = %method, uri = %uri, status = %status, "HttpResponseExtractor");
             }
         }
 
         if api_resp.err_code != 0 {
-            // 已成功解析结构体，直接输出整个响应体，方便定位业务错误
-            anyhow::bail!("API biz error: method={} url={} operation_id={} status={} body={}", method, uri, operation_id, status, body_text);
+            anyhow::bail!("API biz error: status={} body={}", status, body_text);
         }
 
         Ok(api_resp)
