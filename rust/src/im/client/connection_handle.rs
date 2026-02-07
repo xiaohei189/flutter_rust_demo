@@ -5,7 +5,6 @@
 use crate::im::client::client::ClientConfig;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
-use crate::im::conversation::service::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::db::db::create_sqlite_pool_with_migration;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};

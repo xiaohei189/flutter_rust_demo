@@ -9,7 +9,7 @@ use openim_protocol::{constant, sdkws};
 use serde_json;
 use tracing::{error, warn};
 
-use crate::im::conversation::service::ConversationSyncer;
+use crate::im::conversation::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::listener::AdvancedMsgListener;
 use crate::im::LocalChatLog;

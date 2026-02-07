@@ -61,7 +61,7 @@ use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::message_handle::MessageHandle;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
-use crate::im::conversation::service::ConversationSyncer;
+use crate::im::client::conversation_handle::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::dao::repository::Repository;
 use crate::im::db::db::create_sqlite_pool_with_migration;
@@ -291,6 +291,16 @@ impl OpenIMClient {
         let (msg_sync_event_tx, msg_sync_event_rx) = tokio::sync::mpsc::unbounded_channel();
         let (conv_cmd_tx, conv_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
+        let http_client_for_conv = Self::create_http_client(&self.config)?;
+        let conversation_syncer = Self::init_conversation_syncer(
+            &self.config,
+            db.clone(),
+            http_client_for_conv,
+            self.conversation_listener.clone(),
+        )
+        .await?;
+        self.conversation_syncer = Some(conversation_syncer.clone());
+
         let mut message_syncer = MessageHandle::new(
             self.config.user_id.clone(),
             repo.clone(),
@@ -302,11 +312,9 @@ impl OpenIMClient {
         );
 
         let mut conversation_handle = crate::im::client::conversation_handle::ConversationHandle::new(
-            self.config.user_id.clone(),
-            repo.clone(),
+            conversation_syncer,
             conv_cmd_rx,
             cancel_token.clone(),
-            None,
         );
         let mut conversation_handle_task = tokio::spawn(async move {
             if let Err(e) = conversation_handle.run().await {
