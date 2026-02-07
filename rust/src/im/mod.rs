@@ -1,4 +1,3 @@
-pub mod auth;
 pub mod api;
 pub mod client;
 pub mod dao;
@@ -12,11 +11,11 @@ pub mod model;
 pub mod serialization;
 pub mod util;
 
-// 重新导出认证相关函数
-pub use auth::login_async;
+// 重新导出认证相关函数（从 http 模块）
+pub use http::login_async;
 
-// 重新导出会话同步相关类型和函数（ConversationSyncer 在 client::conversation_handle，配置与 LocalVersionSync 在 model）
-pub use client::conversation_handle::ConversationSyncer;
+// 重新导出会话相关类型（ConversationSyncer 已移除，逻辑并入 ConversationHandle）
+pub use client::conversation_handle::ConversationHandle;
 pub use model::{ConversationSyncerConfig, LocalVersionSync};
 
 // 重新导出好友相关类型和函数

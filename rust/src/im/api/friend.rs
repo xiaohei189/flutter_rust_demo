@@ -158,7 +158,7 @@ impl FriendApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::im::auth::login_async;
+    use crate::im::http::login_async;
     use crate::im::logger::logger::init_logger;
     use test_context::test_context;
     use test_context::AsyncTestContext;

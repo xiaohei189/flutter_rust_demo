@@ -205,7 +205,7 @@ impl ConversationApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::im::auth::login_async;
+    use crate::im::http::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::conversation::{GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq, RequestPagination, SetConversationsReq};
     use test_context::{test_context, AsyncTestContext};

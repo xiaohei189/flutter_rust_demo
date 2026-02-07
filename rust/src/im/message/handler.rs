@@ -9,7 +9,6 @@ use openim_protocol::{constant, sdkws};
 use serde_json;
 use tracing::{error, warn};
 
-use crate::im::client::conversation_handle::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::listener::AdvancedMsgListener;
 use crate::im::LocalChatLog;
@@ -95,16 +94,14 @@ pub struct MessageHandlerContext {
     pub user_id: String,
     pub message_store: Arc<MessageRepo>,
     pub advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
-    pub conversation_syncer: Option<Arc<ConversationSyncer>>,
 }
 
 impl MessageHandlerContext {
-    pub fn new(user_id: String, message_store: Arc<MessageRepo>, advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>, conversation_syncer: Option<Arc<ConversationSyncer>>) -> Self {
+    pub fn new(user_id: String, message_store: Arc<MessageRepo>, advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>) -> Self {
         Self {
             user_id,
             message_store,
             advanced_msg_listener,
-            conversation_syncer,
         }
     }
 }

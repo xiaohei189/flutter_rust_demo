@@ -4,7 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import '../im/auth/auth.dart';
+import '../im/http/auth.dart';
 import '../im/model/conversation.dart';
 import '../im/model/message.dart';
 import '../lib.dart';

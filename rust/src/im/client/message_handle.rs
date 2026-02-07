@@ -4,6 +4,7 @@ use crate::im::dao::repository::Repository;
 use crate::im::model::constant;
 use crate::im::model::message::SeqRange as SeqRangeModel;
 use crate::im::model::ws::{self, WsRpcEnvelope};
+use crate::im::util;
 use anyhow::{anyhow, Result};
 use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
@@ -452,8 +453,8 @@ impl MessageHandle {
             req_identifier,
             token: String::new(),
             send_id: self.login_user_id.clone(),
-            operation_id: crate::im::client::client::OpenIMClient::make_operation_id(),
-            msg_incr: crate::im::client::client::OpenIMClient::make_operation_id(),
+            operation_id: util::make_operation_id(),
+            msg_incr: util::make_operation_id(),
             data,
         })
     }

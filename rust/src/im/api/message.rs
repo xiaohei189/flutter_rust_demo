@@ -133,7 +133,7 @@ impl MessageApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::im::auth::login_async;
+    use crate::im::http::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::message::{
         BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp, MarkConversationAsReadReq,

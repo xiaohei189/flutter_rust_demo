@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use tracing::{debug, error, info, warn};
 
 use crate::im::client::client::AppState;
-use crate::im::client::conversation_handle::ConversationSyncer;
 use crate::im::dao::MessageRepo;
 use crate::im::listener::AdvancedMsgListener;
 use crate::im::model::{msg_type, OpenIMResp};
@@ -98,16 +97,14 @@ pub struct MessageHandlerContext {
     pub user_id: String,
     pub message_store: Arc<MessageRepo>,
     pub advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
-    pub conversation_syncer: Option<Arc<ConversationSyncer>>,
 }
 
 impl MessageHandlerContext {
-    pub fn new(user_id: String, message_store: Arc<MessageRepo>, advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>, conversation_syncer: Option<Arc<ConversationSyncer>>) -> Self {
+    pub fn new(user_id: String, message_store: Arc<MessageRepo>, advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>) -> Self {
         Self {
             user_id,
             message_store,
             advanced_msg_listener,
-            conversation_syncer,
         }
     }
 }
@@ -118,8 +115,6 @@ pub struct PushMessageHandlerContext {
     pub message_handler_ctx: Option<MessageHandlerContext>,
     /// 消息去重检查器
     pub is_duplicate_message: Box<dyn Fn(&str) -> bool + Send + Sync>,
-    /// 会话同步器（用于触发增量同步）
-    pub conversation_syncer: Option<Arc<ConversationSyncer>>,
 }
 
 /// 二进制消息处理器回调函数
@@ -532,16 +527,7 @@ impl BinaryMessageHandler {
             }
         }
 
-        // 会话变更时触发一次会话增量同步，让名称/头像/未读由服务端兜底刷新
-        if !result.conversation_set.is_empty() {
-            if let Some(syncer) = app_state.conversation_syncer.clone() {
-                tokio::spawn(async move {
-                    if let Err(e) = syncer.incr_sync_conversations().await {
-                        error!("[BinaryMessageHandler] 会话增量同步失败: {}", e);
-                    }
-                });
-            }
-        }
+        // 会话变更由 ConversationHandle 命令循环（ConvCmd）处理，此处不再持有 syncer 引用
 
         // 触发新消息回调
         for msg in result.new_messages {

@@ -61,7 +61,7 @@ use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::message_handle::MessageHandle;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::client::seq_cache::ConversationSeqContextCache;
-use crate::im::client::conversation_handle::ConversationSyncer;
+use crate::im::client::conversation_handle::ConversationHandle;
 use crate::im::dao::MessageRepo;
 use crate::im::dao::repository::Repository;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
@@ -111,8 +111,6 @@ pub struct AppState {
     db: Option<Arc<Pool<Sqlite>>>,
     // 消息存储（本地 SQLite，sqlx 驱动）
     pub(crate) message_store: Option<Arc<MessageRepo>>,
-    // 会话同步器（用于基于消息通知实时更新会话）
-    pub(crate) conversation_syncer: Option<Arc<ConversationSyncer>>,
     // 好友同步器（用于联系人列表增量同步）
     pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
     // 高级消息监听器（可由调用方注册，参考 Go 版本的 OnAdvancedMsgListener）
@@ -132,8 +130,6 @@ pub struct OpenIMClient {
     // 共享数据库连接池（用于会话和好友同步器）
     db: Option<Arc<Pool<Sqlite>>>,
 
-    // 会话同步器（用于基于消息通知实时更新会话）
-    pub(crate) conversation_syncer: Option<Arc<ConversationSyncer>>,
     // 好友同步器（用于联系人列表增量同步）
     pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
 
@@ -163,7 +159,6 @@ impl OpenIMClient {
             config,
             ws_message_tx: Arc::new(Mutex::new(None)),
             received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
-            conversation_syncer: None,
             friend_syncer: None,
             conversation_listener: None,
             friend_listener: None,
@@ -226,24 +221,6 @@ impl OpenIMClient {
             .context("创建 HTTP 客户端失败")
     }
 
-    /// 初始化会话同步器
-    async fn init_conversation_syncer(
-        config: &ClientConfig,
-        db: Pool<Sqlite>,
-        http_client: reqwest::Client,
-        conversation_listener: Option<Arc<dyn ConversationListener>>,
-    ) -> Result<Arc<ConversationSyncer>> {
-        let cfg = ConversationSyncerConfig {
-            user_id: config.user_id.clone(),
-            api_base_url: config.api_base_url.clone(),
-            token: config.token.clone(),
-            db_path: config.conversation_db_url.clone(),
-        };
-        let syncer =
-            Arc::new(ConversationSyncer::with_listener_and_db_and_client(cfg, conversation_listener, db, http_client).await?);
-        Ok(syncer)
-    }
-
     /// 初始化所有资源（数据库、同步器、消息存储等）
     ///
     /// 使用当前客户端的配置 `self.config`，逐步完成：
@@ -283,14 +260,21 @@ impl OpenIMClient {
         let (conv_cmd_tx, conv_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
         let http_client_for_conv = Self::create_http_client(&self.config)?;
-        let conversation_syncer = Self::init_conversation_syncer(
-            &self.config,
+        let conv_cfg = ConversationSyncerConfig {
+            user_id: self.config.user_id.clone(),
+            api_base_url: self.config.api_base_url.clone(),
+            token: self.config.token.clone(),
+            db_path: self.config.conversation_db_url.clone(),
+        };
+        let mut conversation_handle = ConversationHandle::with_listener_and_db_and_client(
+            conv_cfg,
+            self.conversation_listener.clone(),
             repo.pool.clone(),
             http_client_for_conv,
-            self.conversation_listener.clone(),
+            conv_cmd_rx,
+            cancel_token.clone(),
         )
         .await?;
-        self.conversation_syncer = Some(conversation_syncer.clone());
 
         let mut message_syncer = MessageHandle::new(
             self.config.user_id.clone(),
@@ -302,11 +286,6 @@ impl OpenIMClient {
             Some(conv_cmd_tx),
         );
 
-        let mut conversation_handle = crate::im::client::conversation_handle::ConversationHandle::new(
-            conversation_syncer,
-            conv_cmd_rx,
-            cancel_token.clone(),
-        );
         let mut conversation_handle_task = tokio::spawn(async move {
             if let Err(e) = conversation_handle.run().await {
                 error!("会话处理器运行失败: {}", e);
@@ -485,18 +464,6 @@ impl OpenIMClient {
 
         // 未处理的消息类型（会触发 warn 日志）
         false
-    }
-
-    /// 获取会话列表（分页）
-    pub async fn get_conversation_list(&self, offset: usize, count: usize) -> Result<Vec<LocalConversation>> {
-        let syncer = self.conversation_syncer.as_ref().ok_or_else(|| anyhow::anyhow!("会话同步器未初始化"))?;
-        syncer.get_conversation_list_split(offset, count).await
-    }
-
-    /// 获取所有会话列表
-    pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
-        let syncer = self.conversation_syncer.as_ref().ok_or_else(|| anyhow::anyhow!("会话同步器未初始化"))?;
-        syncer.get_all_conversation_list().await
     }
 
     /// 获取消息列表的最大和最小序列号（完全参考 Go SDK 的 getMaxAndMinHaveSeqList）
@@ -773,15 +740,9 @@ impl OpenIMClient {
         1 // 默认返回 1
     }
 
-    /// 获取会话（通过会话同步器）
-    async fn get_conversation_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
-        if let Some(syncer) = &self.conversation_syncer {
-            // 使用会话同步器的公开方法
-            let conversations = syncer.get_all_conversations().await?;
-            Ok(conversations.into_iter().find(|c| c.conversation_id == conversation_id))
-        } else {
-            Ok(None)
-        }
+    /// 获取会话（会话逻辑已并入 ConversationHandle，客户端不再持有引用，始终返回 None）
+    async fn get_conversation_by_id(&self, _conversation_id: &str) -> Result<Option<LocalConversation>> {
+        Ok(None)
     }
 
     /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList 实现）
@@ -975,12 +936,6 @@ impl OpenIMClient {
     pub async fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
         let syncer = self.friend_syncer.as_ref().ok_or_else(|| anyhow::anyhow!("好友同步器未初始化"))?;
         syncer.get_all_friends().await
-    }
-
-    /// 获取总未读消息数（来自会话同步器的本地聚合）
-    pub async fn get_total_unread_count(&self) -> Result<i32> {
-        let syncer = self.conversation_syncer.as_ref().ok_or_else(|| anyhow::anyhow!("会话同步器未初始化"))?;
-        syncer.get_total_unread_count().await
     }
 
     /// 标记所有会话为已读
@@ -1809,7 +1764,7 @@ mod tests {
     use tracing::{error, info, warn};
 
     use super::{ClientConfig, OpenIMClient};
-    use crate::im::auth::login_async;
+    use crate::im::http::login_async;
     use crate::im::friend::FriendListener;
     use crate::im::listener::{AdvancedMsgListener, ConversationListener};
     use crate::im::logger::logger::init_logger;

@@ -355,7 +355,7 @@ mod tests {
     use tracing::{error, info, warn};
 
     use super::{ClientConfig, ConnectionHandle};
-    use crate::im::auth::login_async;
+    use crate::im::http::login_async;
     use crate::im::friend::FriendListener;
     use crate::im::listener::{AdvancedMsgListener, ConversationListener};
     use crate::im::logger::logger::init_logger;

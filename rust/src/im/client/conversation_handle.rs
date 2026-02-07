@@ -53,55 +53,30 @@ pub enum UpdateConArgs {
     Json(String),
 }
 
-// ---------- 会话同步器（原 conversation/service 全部逻辑） ----------
+// ---------- 会话处理器（原 ConversationSyncer 逻辑已全部并入，不再单独存在） ----------
 
-/// 会话同步器（由 ConversationHandle 持有，对外也可单独用于 get_all_conversations 等）
-pub struct ConversationSyncer {
-    pub(crate) config: ConversationSyncerConfig,
-    pub(crate) api: Api,
-    pub(crate) repository: Repository,
-    pub(crate) listener: Option<Arc<dyn ConversationListener>>,
+pub struct ConversationHandle {
+    config: ConversationSyncerConfig,
+    api: Api,
+    repository: Repository,
+    listener: Option<Arc<dyn ConversationListener>>,
+    cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
+    cancel_token: CancellationToken,
 }
 
-impl ConversationSyncer {
-    /// 创建新的会话同步器（使用默认空监听器）
-    pub async fn new(config: ConversationSyncerConfig) -> Result<Self> {
-        Self::with_listener(config, None).await
-    }
-
-    /// 创建新的会话同步器（带自定义监听器，内部自行创建连接池并执行迁移）
-    pub async fn with_listener(config: ConversationSyncerConfig, listener: Option<Arc<dyn ConversationListener>>) -> Result<Self> {
-        let db_url = config.db_path.clone();
-        info!("[ConvSync] 创建会话同步器，用户ID: {}, SQLite数据库: {}", config.user_id, db_url);
-        let pool = sqlx::sqlite::SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect(&db_url)
-            .await
-            .context(format!("连接SQLite数据库失败: {}", db_url))?;
-        let http_client = reqwest::ClientBuilder::new()
-            .default_headers({
-                let mut headers = reqwest::header::HeaderMap::new();
-                headers.insert(
-                    reqwest::header::HeaderName::from_static("token"),
-                    reqwest::header::HeaderValue::from_str(&config.token).context("无效的 token")?,
-                );
-                headers
-            })
-            .build()
-            .context("创建 HTTP 客户端失败")?;
-        Self::with_listener_and_db_and_client(config, listener, pool, http_client).await
-    }
-
-    /// 创建新的会话同步器（使用共享连接池和 HTTP 客户端）
+impl ConversationHandle {
+    /// 使用共享连接池与 HTTP 客户端创建（供 client 初始化时调用）
     pub async fn with_listener_and_db_and_client(
         config: ConversationSyncerConfig,
         listener: Option<Arc<dyn ConversationListener>>,
         db: Pool<Sqlite>,
         http_client: reqwest::Client,
+        cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
+        cancel_token: CancellationToken,
     ) -> Result<Self> {
         let api = Api::new(http_client.clone(), config.api_base_url.clone(), config.user_id.clone(), &config.token);
         let repository = Repository::new(db);
-        Ok(Self { config, api, repository, listener })
+        Ok(Self { config, api, repository, listener, cmd_rx, cancel_token })
     }
 
     /// 从数据库获取所有本地会话
@@ -670,25 +645,6 @@ impl ConversationSyncer {
     pub async fn do_msg_sync_by_reinstalled(&self, msgs: HashMap<String, sdkws::PullMsgs>, _total: i32) -> Result<()> {
         self.do_msg_new(msgs).await
     }
-}
-
-// ---------- 会话处理器（命令循环） ----------
-
-pub struct ConversationHandle {
-    syncer: Arc<ConversationSyncer>,
-    cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
-    cancel_token: CancellationToken,
-}
-
-impl ConversationHandle {
-    /// 使用已创建的 ConversationSyncer 与命令通道创建处理器
-    pub fn new(
-        syncer: Arc<ConversationSyncer>,
-        cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
-        cancel_token: CancellationToken,
-    ) -> Self {
-        Self { syncer, cmd_rx, cancel_token }
-    }
 
     /// 主循环：接收命令并分发（对齐 Go Conversation.Work）
     pub async fn run(&mut self) -> Result<()> {
@@ -712,20 +668,12 @@ impl ConversationHandle {
 
     async fn work(&mut self, cmd: ConvCmd) -> Result<()> {
         match cmd {
-            ConvCmd::NewMsgCome(msgs) => self.syncer.do_msg_new(msgs).await,
-            ConvCmd::UpdateConversation(node) => self.syncer.do_update_conversation(node).await,
-            ConvCmd::Notification(msgs) => self.syncer.do_notification_manager(msgs).await,
-            ConvCmd::SyncFlag(flag) => self.syncer.sync_flag(flag).await,
-            ConvCmd::SyncData => {
-                let syncer = self.syncer.clone();
-                tokio::spawn(async move {
-                    if let Err(e) = syncer.sync_data().await {
-                        warn!("[conversation_handle] SyncData 后台任务失败: {}", e);
-                    }
-                });
-                Ok(())
-            }
-            ConvCmd::MsgSyncInReinstall { msgs, total } => self.syncer.do_msg_sync_by_reinstalled(msgs, total).await,
+            ConvCmd::NewMsgCome(msgs) => self.do_msg_new(msgs).await,
+            ConvCmd::UpdateConversation(node) => self.do_update_conversation(node).await,
+            ConvCmd::Notification(msgs) => self.do_notification_manager(msgs).await,
+            ConvCmd::SyncFlag(flag) => self.sync_flag(flag).await,
+            ConvCmd::SyncData => self.sync_data().await,
+            ConvCmd::MsgSyncInReinstall { msgs, total } => self.do_msg_sync_by_reinstalled(msgs, total).await,
         }
     }
 }
@@ -733,51 +681,50 @@ impl ConversationHandle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::im::dao::Repository;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::conversation::ConversationSyncerConfig;
-    use crate::im::dao::Repository;
     use crate::im::login_async;
     use test_context::{test_context, AsyncTestContext};
-    use tokio::sync::OnceCell;
+    use tokio_util::sync::CancellationToken;
 
-    static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
-
-    #[derive(Clone)]
     struct AppCtx {
-        syncer: Arc<ConversationSyncer>,
+        handle: ConversationHandle,
     }
 
     impl AsyncTestContext for AppCtx {
         async fn setup() -> Self {
-            APP_CTX
-                .get_or_init(|| async {
-                    init_logger("rust_lib_flutter_rust_demo=debug,hyper_util::client=info,reqwest=info");
-                    let area_code = "+86".to_string();
-                    let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
-                    let platform = 5;
-                    let token_info =
-                        login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
-                    let db_path = format!(
-                        "sqlite://{}/conv_sync_{}.db?mode=rwc",
-                        std::env::temp_dir().as_path().to_string_lossy(),
-                        token_info.user_id
-                    );
-                    let repo = Repository::create(&db_path).await.expect("创建测试数据库失败");
-                    let cfg = ConversationSyncerConfig {
-                        user_id: token_info.user_id.clone(),
-                        api_base_url: "http://localhost:10002".to_string(),
-                        token: token_info.im_token.clone(),
-                        db_path,
-                    };
-                    let syncer = Arc::new(
-                        ConversationSyncer::with_listener_and_db_and_client(cfg, None, repo.pool.clone(), reqwest::Client::new())
-                            .await
-                            .expect("创建会话同步器失败"),
-                    );
-                    AppCtx { syncer }
-                })
-                .await
-                .clone()
+            init_logger("rust_lib_flutter_rust_demo=debug,hyper_util::client=info,reqwest=info");
+            let area_code = "+86".to_string();
+            let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
+            let platform = 5;
+            let token_info =
+                login_async(area_code, "17764338283".to_string(), password, platform).await.expect("登录失败");
+            let db_path = format!(
+                "sqlite://{}/conv_sync_{}.db?mode=rwc",
+                std::env::temp_dir().as_path().to_string_lossy(),
+                token_info.user_id
+            );
+            let repo = Repository::create(&db_path).await.expect("创建测试数据库失败");
+            let cfg = ConversationSyncerConfig {
+                user_id: token_info.user_id.clone(),
+                api_base_url: "http://localhost:10002".to_string(),
+                token: token_info.im_token.clone(),
+                db_path,
+            };
+            let (_tx, rx) = mpsc::unbounded_channel();
+            let cancel = CancellationToken::new();
+            let handle = ConversationHandle::with_listener_and_db_and_client(
+                cfg,
+                None,
+                repo.pool.clone(),
+                reqwest::Client::new(),
+                rx,
+                cancel,
+            )
+            .await
+            .expect("创建 ConversationHandle 失败");
+            AppCtx { handle }
         }
 
         async fn teardown(self) {
@@ -788,14 +735,14 @@ mod tests {
     #[test_context(AppCtx)]
     #[tokio::test]
     async fn test_conversation_incr_sync(ctx: &mut AppCtx) {
-        ctx.syncer.incr_sync_conversations().await.expect("增量同步失败");
+        ctx.handle.incr_sync_conversations().await.expect("增量同步失败");
     }
 
     #[test_context(AppCtx)]
     #[tokio::test]
     async fn test_conversation_full_sync(ctx: &mut AppCtx) {
-        ctx.syncer.full_sync().await.expect("全量同步失败");
-        let conversations = ctx.syncer.get_all_conversations().await.expect("获取会话失败");
+        ctx.handle.full_sync().await.expect("全量同步失败");
+        let conversations = ctx.handle.get_all_conversations().await.expect("获取会话失败");
         println!("数据库中当前会话信息数量: {}", conversations.len());
         for (i, conv) in conversations.iter().enumerate() {
             println!("会话#{}: {:?}", i + 1, conv);
