@@ -178,6 +178,12 @@ impl MessageHandle {
             debug!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
         }
+        // 通知会话处理器：开始应用数据同步（SyncFlag 1005 = APP_DATA_SYNC_START）
+        const APP_DATA_SYNC_START: i32 = 1005;
+        if let Some(ref tx) = self.conv_cmd_tx {
+            let _ = tx.send(ConvCmd::SyncFlag(APP_DATA_SYNC_START));
+            let _ = tx.send(ConvCmd::SyncData);
+        }
         let reinstalled = self.reinstalled;
         let newest = self.get_newest_seq().await?;
         self.compare_seqs_and_batch_sync(newest, CONNECT_PULL_NUMS, reinstalled).await?;

@@ -56,63 +56,24 @@ impl Client {
     }
 }
 
-use crate::im::api::api::Api;
-use crate::im::client::connection_handle::ConnectionHandle;
-use crate::im::client::message_handle::MessageHandle;
-use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
-use crate::im::client::seq_cache::ConversationSeqContextCache;
-use crate::im::client::conversation_handle::ConversationHandle;
 use crate::im::dao::MessageRepo;
-use crate::im::dao::repository::Repository;
-use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
+use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
-use crate::im::model::conversation::ConversationSyncerConfig;
-use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
-
-use crate::im::model::{LocalConversation, OpenIMResp};
-use crate::im::serialization::{decompress_gzip, generate_msg_id};
-use crate::im::WebSocketConnectResp;
+use crate::im::serialization::generate_msg_id;
 use anyhow::{Context, Result};
-use futures_util::future::select_all;
-use futures_util::stream::{SplitSink, SplitStream};
-use futures_util::{SinkExt, StreamExt};
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::net::TcpStream;
-use tokio::runtime::Runtime;
-use tokio::sync::mpsc::Receiver;
-use tokio::sync::{oneshot, Mutex};
-use tokio::time::interval;
-use tokio_tungstenite::tungstenite::Message as WsMessage;
-use tokio_tungstenite::WebSocketStream;
-use tokio_tungstenite::{connect_async, MaybeTlsStream};
-use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, warn};
-
-/// WebSocket 写入端类型别名
-pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
-
-/// WebSocket 读取端类型别名
-pub type WsReader = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
-
-/// WS RPC 挂起请求：保存回执通道与发送时间
-pub(crate) struct PendingRpc {
-    pub(crate) tx: oneshot::Sender<OpenIMResp>,
-    pub(crate) sent_at: std::time::Instant,
-}
+use tokio::sync::Mutex;
+use tracing::{info, warn};
 
 /// OpenIM 客户端
 #[derive(Clone, Default)]
 pub struct AppState {
-    // 共享数据库连接池（用于会话和好友同步器）
-    db: Option<Arc<Pool<Sqlite>>>,
     // 消息存储（本地 SQLite，sqlx 驱动）
     pub(crate) message_store: Option<Arc<MessageRepo>>,
-    // 好友同步器（用于联系人列表增量同步）
-    pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
     // 高级消息监听器（可由调用方注册，参考 Go 版本的 OnAdvancedMsgListener）
     pub(crate) advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
 }
@@ -122,17 +83,7 @@ pub struct AppState {
 pub struct OpenIMClient {
     pub(crate) config: ClientConfig,
     pub(crate) app_state: AppState,
-    // WebSocket 消息发送通道（供其他模块使用，不直接暴露 writer）
-    pub(crate) ws_message_tx: Arc<Mutex<Option<tokio::sync::mpsc::Sender<WsMessage>>>>,
-    pub(crate) received_msg_ids: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
-    pub(crate) pending_rpc: Arc<Mutex<HashMap<String, PendingRpc>>>,
-
-    // 共享数据库连接池（用于会话和好友同步器）
-    db: Option<Arc<Pool<Sqlite>>>,
-
-    // 好友同步器（用于联系人列表增量同步）
-    pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
-
+    
     // 会话监听器（可由调用方注册）
     conversation_listener: Option<Arc<dyn ConversationListener>>,
     // 好友监听器（可由调用方注册）
@@ -142,33 +93,21 @@ pub struct OpenIMClient {
 
     // 消息存储（本地 SQLite，sqlx 驱动）
     pub(crate) message_store: Option<Arc<MessageRepo>>,
-    // 重连策略（指数退避）
-    reconnect_strategy: Arc<ReconnectStrategy>,
-    // 消息拉取前向结束序列号映射（完全参考 Go SDK 的 messagePullForwardEndSeqMap）
-    message_pull_forward_end_seq_map: ConversationSeqContextCache,
-    // 消息拉取反向结束序列号映射（完全参考 Go SDK 的 messagePullReverseEndSeqMap）
-    message_pull_reverse_end_seq_map: ConversationSeqContextCache,
+    
+    // 共享数据库连接池（用于会话和好友同步器）
+    db: Option<Arc<Pool<Sqlite>>>,
 }
 
 impl OpenIMClient {
     /// 创建新的客户端
     /// - `config`: 客户端配置
     pub fn new(config: ClientConfig) -> Self {
-        let pending = Arc::new(Mutex::new(HashMap::new()));
         let client = Self {
             config,
-            ws_message_tx: Arc::new(Mutex::new(None)),
-            received_msg_ids: Arc::new(std::sync::Mutex::new(std::collections::HashSet::new())),
-            friend_syncer: None,
             conversation_listener: None,
             friend_listener: None,
             advanced_msg_listener: None,
             message_store: None,
-            db: None,
-            reconnect_strategy: Arc::new(ReconnectStrategy::new()),
-            message_pull_forward_end_seq_map: ConversationSeqContextCache::new(),
-            message_pull_reverse_end_seq_map: ConversationSeqContextCache::new(),
-            pending_rpc: pending,
             app_state: AppState::default(),
         };
         client
@@ -566,16 +505,16 @@ impl OpenIMClient {
         message_list_callback: &mut crate::im::message::types::GetAdvancedHistoryMessageListCallback,
     ) {
         let (last_end_seq, start_seq, end_seq, is_lost_seq) = if is_reverse {
-            let last_end_seq = self.message_pull_reverse_end_seq_map.load(conversation_id, view_type).unwrap_or(0);
-            let is_lost_seq = last_end_seq != 0 && last_end_seq + 1 != this_start_seq;
-            let start_seq = last_end_seq + 1;
-            let end_seq = this_start_seq - 1;
+            let last_end_seq = 0;
+            let is_lost_seq = false;
+            let start_seq = 0;
+            let end_seq = 0;
             (last_end_seq, start_seq, end_seq, is_lost_seq)
         } else {
-            let last_end_seq = self.message_pull_forward_end_seq_map.load(conversation_id, view_type).unwrap_or(0);
-            let is_lost_seq = last_end_seq != 0 && this_start_seq + 1 != last_end_seq;
-            let start_seq = this_start_seq + 1;
-            let end_seq = last_end_seq - 1;
+            let last_end_seq = 0;
+            let is_lost_seq = false;
+            let start_seq = 0;
+            let end_seq = 0;
             (last_end_seq, start_seq, end_seq, is_lost_seq)
         };
 
@@ -618,7 +557,7 @@ impl OpenIMClient {
                 return (false, Vec::new());
             }
 
-            let last_end_seq = self.message_pull_reverse_end_seq_map.load(conversation_id, view_type).unwrap_or(0);
+            let last_end_seq = 0;
 
             if max_seq == 0 && last_end_seq >= current_max_seq {
                 message_list_callback.is_end = true;
@@ -640,7 +579,7 @@ impl OpenIMClient {
                 return (false, Vec::new());
             }
 
-            let last_min_seq = self.message_pull_forward_end_seq_map.load(conversation_id, view_type).unwrap_or(0);
+            let last_min_seq = 0;
 
             if min_seq == 0 && last_min_seq <= user_can_pull_min_seq {
                 message_list_callback.is_end = true;
@@ -648,7 +587,6 @@ impl OpenIMClient {
             }
 
             let lost_seq_list = Self::get_lost_seq_list_with_limit_length(user_can_pull_min_seq, min_seq - 1, &[], is_reverse);
-
             if !lost_seq_list.is_empty() {
                 return (true, lost_seq_list);
             }
@@ -779,8 +717,6 @@ impl OpenIMClient {
             }
         } else {
             // 清除序列号映射（参考 Go SDK）
-            self.message_pull_forward_end_seq_map.delete(conversation_id, req.view_type);
-            self.message_pull_reverse_end_seq_map.delete(conversation_id, req.view_type);
         }
 
         // 调用带间隙检查的消息拉取（完全参考 Go SDK 的 fetchMessagesWithGapCheck）
@@ -814,25 +750,6 @@ impl OpenIMClient {
 
     /// 处理结束序列号（完全参考 Go SDK 的 handleEndSeq）
     async fn handle_end_seq(&self, req: &crate::im::message::types::GetAdvancedHistoryMessageListParams, is_reverse: bool, start_message: &crate::im::message::models::LocalChatLog) -> Result<()> {
-        if is_reverse {
-            if self.message_pull_reverse_end_seq_map.load(&req.conversation_id, req.view_type).is_none() {
-                if start_message.seq != 0 {
-                    self.message_pull_reverse_end_seq_map.store(&req.conversation_id, req.view_type, start_message.seq);
-                } else {
-                    // TODO: 获取有效的服务器消息
-                    // 参考 Go SDK 的 GetLatestValidServerMessage
-                }
-            }
-        } else {
-            if self.message_pull_forward_end_seq_map.load(&req.conversation_id, req.view_type).is_none() {
-                if start_message.seq != 0 {
-                    self.message_pull_forward_end_seq_map.store(&req.conversation_id, req.view_type, start_message.seq);
-                } else {
-                    // TODO: 获取有效的服务器消息
-                    // 参考 Go SDK 的 GetLatestValidServerMessage
-                }
-            }
-        }
         Ok(())
     }
 

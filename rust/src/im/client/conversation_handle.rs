@@ -7,7 +7,7 @@ use crate::im::dao::repository::Repository;
 use crate::im::listener::ConversationListener;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::LocalConversation;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 // ---------- 命令类型（对齐 Go pkg/constant Cmd* 与 common.Cmd2Value） ----------
@@ -141,9 +141,9 @@ impl ConversationHandle {
                 | constant::CONVERSATION_UNREAD_NOTIFICATION
                 | constant::CONVERSATION_DELETE_NOTIFICATION
                 | constant::HAS_READ_RECEIPT => {
-                    info!("[ConvSync] 收到会话通知，contentType={}，触发增量会话同步", msg.content_type);
+                    info!("[ConvSync] 收到会话通知 contentType={} 触发增量会话同步", msg.content_type);
                     if let Err(e) = self.incr_sync_conversations().await {
-                        warn!("[ConvSync] 会话通知触发增量同步失败: {}", e);
+                        warn!("[ConvSync] 会话通知触发增量同步失败 err={}", e);
                     }
                     return Ok(());
                 }
@@ -233,7 +233,7 @@ impl ConversationHandle {
 
     /// 基于服务器的 MaxSeq / HasReadSeq 校正本地未读数
     pub async fn sync_unread_by_seq(&self) -> Result<()> {
-        info!("[ConvSync/Seq] 🔄 开始按 Seq 校正未读数...");
+        info!("[ConvSync] Seq 开始按 Seq 校正未读数");
         let mut local_conversations = self.get_all_conversations().await?;
         let mut local_map: HashMap<String, LocalConversation> = HashMap::new();
         for conv in local_conversations.drain(..) {
@@ -241,19 +241,19 @@ impl ConversationHandle {
         }
         let seqs = self.api.conversation.get_has_read_and_max_seqs().await?;
         if seqs.is_empty() {
-            info!("[ConvSync/Seq] 服务器未返回会话 Seq 信息，跳过未读数校正");
+            info!("[ConvSync] Seq 服务器未返回会话 Seq 信息 跳过未读数校正");
             return Ok(());
         }
         let mut changed_conversations: Vec<LocalConversation> = Vec::new();
         let mut new_conversations: Vec<LocalConversation> = Vec::new();
         let mut missing_convs: Vec<(String, (i64, i64))> = Vec::new();
-        info!("[ConvSync/Seq] 🔄 开始校正未读数，服务器返回 {} 个会话的 Seq 信息", seqs.len());
+        info!("[ConvSync] Seq 开始校正未读数 服务器返回 {} 个会话的 Seq 信息", seqs.len());
         for (conv_id, (max_seq, has_read_seq)) in seqs.into_iter() {
             let unread = (max_seq - has_read_seq).max(0) as i32;
             if let Some(mut local) = local_map.remove(&conv_id) {
                 if local.unread_count != unread || local.max_seq != max_seq {
                     info!(
-                        "[ConvSync/Seq] 📝 校正会话未读数: conversationID={}, 本地未读数: {} -> {}, maxSeq: {} -> {}, hasReadSeq: {}",
+                        "[ConvSync] Seq 校正会话未读数 conversationID={} 本地未读数 {}->{} maxSeq {}->{} hasReadSeq={}",
                         conv_id, local.unread_count, unread, local.max_seq, max_seq, has_read_seq
                     );
                     local.unread_count = unread;
@@ -263,14 +263,14 @@ impl ConversationHandle {
                 }
             } else {
                 info!(
-                    "[ConvSync/Seq] ⚠️ 按 Seq 校正未读数时发现本地不存在的会话: conversationID={}, maxSeq={}, hasReadSeq={}, unreadCount={}",
+                    "[ConvSync] Seq 按 Seq 校正未读数时发现本地不存在的会话 conversationID={} maxSeq={} hasReadSeq={} unreadCount={}",
                     conv_id, max_seq, has_read_seq, unread
                 );
                 missing_convs.push((conv_id, (max_seq, has_read_seq)));
             }
         }
         if !missing_convs.is_empty() {
-            info!("[ConvSync/Seq] 发现本地缺失会话 {} 个，尝试从服务器补齐详情", missing_convs.len());
+            info!("[ConvSync] Seq 发现本地缺失会话 {} 个 尝试从服务器补齐详情", missing_convs.len());
             if let Ok(all_resp) = self.api.conversation.get_all_conversations().await {
                 let server_map: HashMap<String, LocalConversation> =
                     all_resp.conversations.iter().map(|c| (c.conversation_id.clone(), c.clone())).collect();
@@ -306,7 +306,7 @@ impl ConversationHandle {
                 }
             }
         }
-        info!("[ConvSync/Seq] ✅ 按 Seq 校正未读数完成");
+        info!("[ConvSync] Seq 按 Seq 校正未读数完成");
         Ok(())
     }
 
@@ -317,7 +317,7 @@ impl ConversationHandle {
         seqs_map: Option<&HashMap<String, (i64, i64)>>,
     ) -> Result<()> {
         info!(
-            "[ConvSync] 开始同步会话，服务器会话数: {}, 本地会话数: {}",
+            "[ConvSync] 开始同步会话 服务器会话数={} 本地会话数={}",
             server_conversations.len(),
             local_conversations.len()
         );
@@ -383,7 +383,7 @@ impl ConversationHandle {
                 }
             }
         }
-        info!("[ConvSync] 会话同步完成 - 新增: {}, 更新: {}, 删除: {}", insert_count, update_count, delete_count);
+        info!("[ConvSync] 会话同步完成 新增={} 更新={} 删除={}", insert_count, update_count, delete_count);
         Ok(())
     }
 
@@ -581,7 +581,7 @@ impl ConversationHandle {
         for (conversation_id, pull) in msgs {
             for msg in pull.msgs {
                 if let Err(e) = self.on_new_message(&conversation_id, &msg, false).await {
-                    warn!("[ConvSync] do_msg_new on_new_message failed conv={} err={}", conversation_id, e);
+                    warn!("[ConvSync] 新消息处理失败 conv={} err={}", conversation_id, e);
                 }
             }
         }
@@ -590,7 +590,7 @@ impl ConversationHandle {
 
     /// 更新会话（Go doUpdateConversation）
     pub async fn do_update_conversation(&self, node: UpdateConNode) -> Result<()> {
-        debug!("[conversation_handle] do_update_conversation action={} con_id={}", node.action, node.con_id);
+        debug!("[ConvSync] 更新会话 action={} con_id={}", node.action, node.con_id);
         // TODO: 按 node.action 分支：删除/更新/置顶/未读清零/通知变更等
         let _ = node;
         Ok(())
@@ -601,7 +601,7 @@ impl ConversationHandle {
         for (conversation_id, pull) in msgs {
             for msg in pull.msgs {
                 if let Err(e) = self.on_new_message(&conversation_id, &msg, true).await {
-                    warn!("[ConvSync] do_notification_manager on_new_message failed conv={} err={}", conversation_id, e);
+                    warn!("[ConvSync] 通知消息处理失败 conv={} err={}", conversation_id, e);
                 }
             }
         }
@@ -633,9 +633,10 @@ impl ConversationHandle {
     ///
     /// Go 中还有 user/relation/group 等异步任务，当前仅实现会话相关。
     pub async fn sync_data(&self) -> Result<()> {
+        info!("[ConvSync] 开始 SyncData");
         // 1. 同步：拉取服务器 HasRead/MaxSeq，校正本地未读数
         if let Err(e) = self.sync_unread_by_seq().await {
-            warn!("[ConvSync] SyncData: sync_unread_by_seq 失败: {}", e);
+            warn!("[ConvSync] SyncData 中 sync_unread_by_seq 失败 err={}", e);
         }
         // 2. 增量同步会话列表
         self.incr_sync_conversations().await
@@ -657,11 +658,12 @@ impl ConversationHandle {
                 cmd = self.cmd_rx.recv() => cmd,
             };
             let Some(cmd) = cmd else {
-                debug!("[conversation_handle] cmd_rx 已关闭，退出");
+                debug!("[ConvSync] cmd_rx 已关闭 退出");
                 return Ok(());
             };
+            debug!("[ConvSync] 收到命令 {:?}", cmd);
             if let Err(e) = self.work(cmd).await {
-                warn!("[conversation_handle] 处理命令失败: {e}");
+                warn!("[ConvSync] 处理命令失败 err={}", e);
             }
         }
     }

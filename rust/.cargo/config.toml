@@ -1,0 +1,3 @@
+# 检查/构建时只输出 error，不输出 warning
+[build]
+rustflags = ["-A", "warnings"]

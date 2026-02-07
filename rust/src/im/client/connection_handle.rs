@@ -4,7 +4,6 @@
 
 use crate::im::client::client::ClientConfig;
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
-use crate::im::client::seq_cache::ConversationSeqContextCache;
 use crate::im::dao::MessageRepo;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
@@ -140,6 +139,10 @@ impl ConnectionHandle {
                 Ok(resp) => {
                     if resp.err_code == 0 {
                         info!("[Client] ✅ 服务器连接鉴权成功");
+                        // 通知消息同步器：长连已建立，触发消息同步与会话同步
+                        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Connected) {
+                            warn!("[Client] 发送 Connected 到 message_handle 失败: {e}");
+                        }
                     } else {
                         let error_msg = if !resp.err_dlt.is_empty() {
                             format!("{} (详情: {})", resp.err_msg, resp.err_dlt)

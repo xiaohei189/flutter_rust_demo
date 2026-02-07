@@ -49,5 +49,7 @@ clap = { version = "4.5", features = ["derive"] }
 [dev-dependencies]
 test-context = "0.5.4"
 tokio = { version = "1", features = ["full"] }
+# 只输出 error，不输出 warning（与 .cargo/config.toml rustflags 二选一或同时保留均可）
 [lints.rust]
+warnings = "allow"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
