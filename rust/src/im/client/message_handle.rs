@@ -1,4 +1,5 @@
 //! 消息同步器（参考 go/internal/interaction/msg_sync.go）
+use crate::im::client::conversation_handle::ConvCmd;
 use crate::im::dao::repository::Repository;
 use crate::im::model::constant;
 use crate::im::model::message::SeqRange as SeqRangeModel;
@@ -41,9 +42,10 @@ pub struct MessageHandle {
     /// 消息/事件输入通道
     cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
     event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
+    /// 会话命令通道：将新消息/通知/重装同步命令传递给 conversation_handle
+    conv_cmd_tx: Option<mpsc::UnboundedSender<ConvCmd>>,
     ws_rpc_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
     cancel_token: CancellationToken,
-
 }
 
 impl MessageHandle {
@@ -54,12 +56,14 @@ impl MessageHandle {
         cancel_token: CancellationToken,
         event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
         cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
+        conv_cmd_tx: Option<mpsc::UnboundedSender<ConvCmd>>,
     ) -> Self {
         Self {
             login_user_id,
             repository,
             event_tx,
             cmd_rx,
+            conv_cmd_tx,
             synced_max_seqs: HashMap::new(),
             reinstalled: false,
             is_syncing: false,
@@ -319,13 +323,15 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 触发有新消息的会话事件
+    /// 触发有新消息的会话事件（下发到 conversation_handle 与 事件通道）
     async fn trigger_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
-
+        if let Some(ref tx) = self.conv_cmd_tx {
+            let _ = tx.send(ConvCmd::NewMsgCome(msgs.clone()));
+        }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
@@ -336,7 +342,9 @@ impl MessageHandle {
             debug!("[message_handle] trigger_reinstall_conversation empty");
             return Ok(());
         }
-
+        if let Some(ref tx) = self.conv_cmd_tx {
+            let _ = tx.send(ConvCmd::MsgSyncInReinstall { msgs: msgs.clone(), total });
+        }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
         Ok(())
     }
@@ -346,6 +354,9 @@ impl MessageHandle {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_notification empty");
             return Ok(());
+        }
+        if let Some(ref tx) = self.conv_cmd_tx {
+            let _ = tx.send(ConvCmd::Notification(msgs.clone()));
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())

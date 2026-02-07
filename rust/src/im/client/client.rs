@@ -289,6 +289,7 @@ impl OpenIMClient {
         });
 
         let (msg_sync_event_tx, msg_sync_event_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (conv_cmd_tx, conv_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
         let mut message_syncer = MessageHandle::new(
             self.config.user_id.clone(),
@@ -297,9 +298,23 @@ impl OpenIMClient {
             cancel_token.clone(),
             msg_sync_event_tx,
             msg_sync_cmd_rx,
+            Some(conv_cmd_tx),
         );
 
-         let mut message_syncer_handle = tokio::spawn(async move {
+        let mut conversation_handle = crate::im::client::conversation_handle::ConversationHandle::new(
+            self.config.user_id.clone(),
+            repo.clone(),
+            conv_cmd_rx,
+            cancel_token.clone(),
+            None,
+        );
+        let mut conversation_handle_task = tokio::spawn(async move {
+            if let Err(e) = conversation_handle.run().await {
+                error!("会话处理器运行失败: {}", e);
+            }
+        });
+
+        let mut message_syncer_handle = tokio::spawn(async move {
             if let Err(e) = message_syncer.load_seq().await {
                 return Err(anyhow::anyhow!("运行消息同步器失败: {}", e));
             }
@@ -315,6 +330,9 @@ impl OpenIMClient {
             }
             _ = &mut message_syncer_handle => {
                 info!("消息同步器运行完成，退出客户端");
+            }
+            _ = &mut conversation_handle_task => {
+                info!("会话处理器运行完成，退出客户端");
             }
         }
         cancel_token.cancel();

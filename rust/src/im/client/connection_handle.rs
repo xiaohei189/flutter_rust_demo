@@ -318,6 +318,7 @@ mod tests {
     use crate::im::model::SeqRange;
     use std::sync::Arc;
     use std::time::{self, Duration};
+    use crate::im::client::message_handle::MsgSyncCommand;
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 
