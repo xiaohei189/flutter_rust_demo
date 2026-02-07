@@ -651,8 +651,18 @@ impl ConversationSyncer {
         Ok(())
     }
 
-    /// 同步数据（Go syncData）
+    /// 同步数据（对齐 Go syncData，notification.go）
+    ///
+    /// 1. 同步步骤（syncWait）：校正会话已读/未读 Seq（SyncAllConversationHashReadSeqs）
+    /// 2. 异步步骤（asyncNoWait）：增量同步会话（IncrSyncConversationsWithLock）
+    ///
+    /// Go 中还有 user/relation/group 等异步任务，当前仅实现会话相关。
     pub async fn sync_data(&self) -> Result<()> {
+        // 1. 同步：拉取服务器 HasRead/MaxSeq，校正本地未读数
+        if let Err(e) = self.sync_unread_by_seq().await {
+            warn!("[ConvSync] SyncData: sync_unread_by_seq 失败: {}", e);
+        }
+        // 2. 增量同步会话列表
         self.incr_sync_conversations().await
     }
 
@@ -706,7 +716,15 @@ impl ConversationHandle {
             ConvCmd::UpdateConversation(node) => self.syncer.do_update_conversation(node).await,
             ConvCmd::Notification(msgs) => self.syncer.do_notification_manager(msgs).await,
             ConvCmd::SyncFlag(flag) => self.syncer.sync_flag(flag).await,
-            ConvCmd::SyncData => self.syncer.sync_data().await,
+            ConvCmd::SyncData => {
+                let syncer = self.syncer.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = syncer.sync_data().await {
+                        warn!("[conversation_handle] SyncData 后台任务失败: {}", e);
+                    }
+                });
+                Ok(())
+            }
             ConvCmd::MsgSyncInReinstall { msgs, total } => self.syncer.do_msg_sync_by_reinstalled(msgs, total).await,
         }
     }
