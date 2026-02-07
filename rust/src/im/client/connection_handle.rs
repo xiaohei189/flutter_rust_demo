@@ -12,6 +12,7 @@ use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
+use crate::im::client::message_handle::MsgSyncCommand;
 use crate::im::model::ws::WsRpcEnvelope;
 use crate::im::model::{msg_type, LocalConversation, OpenIMReq, OpenIMResp};
 use crate::im::serialization::{decompress_gzip, generate_msg_id};
@@ -46,7 +47,7 @@ pub type WsReader = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
 pub struct ConnectionHandle {
     config: ClientConfig,
     pending_rpc: HashMap<String, WsRpcEnvelope>,
-    push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>,
+    msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>,
     cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
     reconnect_strategy: ReconnectStrategy,
     cancel_token: CancellationToken,
@@ -56,14 +57,14 @@ impl ConnectionHandle {
     pub fn new(
         config: ClientConfig,
         cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
-        push_msg_tx: mpsc::UnboundedSender<sdkws::PushMessages>,
+        msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>,
         cancel_token: CancellationToken,
     ) -> Self {
         let client = Self {
             config,
             reconnect_strategy: ReconnectStrategy::new(),
             pending_rpc: HashMap::new(),
-            push_msg_tx,
+            msg_sync_cmd_tx,
             cmd_rx,
             cancel_token,
         };
@@ -292,10 +293,10 @@ impl ConnectionHandle {
             "[ConnectionHandle] handle_push_message push_msg: {}",
             serde_json::to_string(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
         );
-        // 解析 protobuf PushMessages
-        if let Err(e) = self.push_msg_tx.send(push_msg) {
-            error!("[Client] 发送推送消息失败: {e}");
-            return Err(anyhow::anyhow!("发送推送消息失败: {e}"));
+        // 按 message_handle 的命令类型传递：MsgSyncCommand::Push
+        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Push(push_msg)) {
+            error!("[Client] 发送推送命令到 message_handle 失败: {e}");
+            return Err(anyhow::anyhow!("发送推送命令失败: {e}"));
         }
         Ok(())
     }
@@ -355,9 +356,9 @@ mod tests {
         let config = ClientConfig::new(ctx.user_id.clone(), ctx.im_token.clone(), 5);
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        let (push_msg_tx, push_msg_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (msg_sync_cmd_tx, _msg_sync_cmd_rx) = tokio::sync::mpsc::unbounded_channel::<MsgSyncCommand>();
         let cancel_token = CancellationToken::new();
-        let mut client = ConnectionHandle::new(config, rx, push_msg_tx, cancel_token.clone());
+        let mut client = ConnectionHandle::new(config, rx, msg_sync_cmd_tx, cancel_token.clone());
         // 连接到服务器（内部会自动启动消息处理）
         client.run().await.unwrap_or_else(|e| {
             error!("连接失败: {}", e);

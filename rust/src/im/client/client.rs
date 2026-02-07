@@ -272,19 +272,23 @@ impl OpenIMClient {
         let api = Api::new(http_client, self.config.api_base_url.clone(), self.config.user_id.clone(), &self.config.token);
 
 
-        let (msg_tx, msg_rx) = tokio::sync::mpsc::unbounded_channel();
         let (connection_tx, connection_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (msg_sync_cmd_tx, msg_sync_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
         let cancel_token = CancellationToken::new();
-        let mut connection = ConnectionHandle::new(self.config.clone(), connection_rx, msg_tx, cancel_token.clone());
+        let mut connection = ConnectionHandle::new(
+            self.config.clone(),
+            connection_rx,
+            msg_sync_cmd_tx.clone(),
+            cancel_token.clone(),
+        );
 
-       let mut connection_handle = tokio::spawn(async move {
+        let mut connection_handle = tokio::spawn(async move {
             if let Err(e) = connection.run().await {
                 error!("连接失败: {}", e);
             }
         });
 
         let (msg_sync_event_tx, msg_sync_event_rx) = tokio::sync::mpsc::unbounded_channel();
-        let (msg_sync_cmd_tx, msg_sync_cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
         let mut message_syncer = MessageHandle::new(
             self.config.user_id.clone(),
