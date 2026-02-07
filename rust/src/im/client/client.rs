@@ -56,9 +56,28 @@ impl Client {
     }
 }
 
+use crate::im::AtElem;
+use crate::im::AtInfo;
+use crate::im::CustomElem;
+use crate::im::FileElem;
+use crate::im::FriendSyncerConfig;
+use crate::im::LocalConversation;
+use crate::im::LocationElem;
+use crate::im::MarkdownTextElem;
+use crate::im::MsgStruct;
+use crate::im::PictureElem;
+use crate::im::QuoteElem;
+use crate::im::SoundElem;
+use crate::im::VideoElem;
+use crate::im::api::api::Api;
+use crate::im::client::connection_handle::ConnectionHandle;
+use crate::im::client::message_handle::MessageHandle;
+use crate::im::client::conversation_handle::ConversationHandle;
 use crate::im::dao::MessageRepo;
-use crate::im::friend::FriendListener;
+use crate::im::dao::repository::Repository;
+use crate::im::friend::{FriendListener, FriendSyncer};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
+use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::serialization::generate_msg_id;
 use anyhow::{Context, Result};
 use openim_protocol::constant;
@@ -67,7 +86,8 @@ use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tokio_util::sync::CancellationToken;
+use tracing::{debug, error, info, warn};
 
 /// OpenIM 客户端
 #[derive(Clone, Default)]
@@ -93,9 +113,10 @@ pub struct OpenIMClient {
 
     // 消息存储（本地 SQLite，sqlx 驱动）
     pub(crate) message_store: Option<Arc<MessageRepo>>,
-    
     // 共享数据库连接池（用于会话和好友同步器）
     db: Option<Arc<Pool<Sqlite>>>,
+    // 好友同步器（用于联系人列表增量同步）
+    pub(crate) friend_syncer: Option<Arc<FriendSyncer>>,
 }
 
 impl OpenIMClient {
@@ -108,6 +129,8 @@ impl OpenIMClient {
             friend_listener: None,
             advanced_msg_listener: None,
             message_store: None,
+            db: None,
+            friend_syncer: None,
             app_state: AppState::default(),
         };
         client
