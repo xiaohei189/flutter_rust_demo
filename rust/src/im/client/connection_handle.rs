@@ -289,8 +289,8 @@ impl ConnectionHandle {
             }
         };
         info!(
-            "[BinaryMessageHandler] push_msg (pretty):\n{}",
-            serde_json::to_string_pretty(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
+            "[ConnectionHandle] handle_push_message push_msg: {}",
+            serde_json::to_string(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
         );
         // 解析 protobuf PushMessages
         if let Err(e) = self.push_msg_tx.send(push_msg) {

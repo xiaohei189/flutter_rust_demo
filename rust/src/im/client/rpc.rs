@@ -2,89 +2,17 @@
 //!
 //! 提供核心的 WebSocket RPC 交互逻辑，包括请求发送、响应处理和超时管理
 
-use std::time::{Duration, Instant};
-
 use crate::im::client::client::PendingRpc;
 use crate::im::model::OpenIMReq;
 use crate::im::model::OpenIMResp;
 use crate::im::serialization::compress_gzip;
 use crate::OpenIMClient;
 use anyhow::Result;
-use openim_protocol::prost;
-use openim_protocol::Message;
-use tokio::sync::oneshot;
-use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tracing::debug;
 use uuid::Uuid;
 
 impl OpenIMClient {
-    pub async fn send_request_and_wait(&self, req_identifier: i32, data: Vec<u8>, timeout_duration: Option<Duration>) -> Result<OpenIMResp> {
-        // 仅支持有回执的 reqIdentifier，其它类型直接返回错误
-        match req_identifier {
-            crate::im::model::msg_type::WS_GET_NEWEST_SEQ
-            | crate::im::model::msg_type::WS_PULL_MSG_BY_RANGE
-            | crate::im::model::msg_type::WS_PULL_MSG_BY_SEQ_LIST
-            | crate::im::model::msg_type::WS_SEND_MSG
-            | crate::im::model::msg_type::WS_SEND_MSG_NOT_OSS => {}
-            other => return Err(anyhow::anyhow!("reqIdentifier={} 不支持等待回执，使用 send_raw_req 发送", other)),
-        }
-        let req: OpenIMReq = self.make_req(req_identifier, data);
-
-        let req_id = req.msg_incr.clone();
-        debug!(req_id = req_id, req_identifier = req_identifier, "ws_rpc request sent");
-
-        let (tx, rx) = oneshot::channel();
-        let sent_at = Instant::now();
-        {
-            let mut pending = self.pending_rpc.lock().await;
-            pending.insert(req_id.clone(), PendingRpc { tx, sent_at });
-        }
-
-        if let Err(e) = self.send_raw_req(req) {
-            let mut pending = self.pending_rpc.lock().await;
-            pending.remove(&req_id);
-            return Err(e);
-        }
-
-        let timeout_duration = timeout_duration.unwrap_or(self.config.msg_resp_timeout);
-        // 等待回执：超时或通道关闭时清理 pending，避免残留
-        match timeout(timeout_duration, rx).await {
-            Ok(Ok(resp)) => Ok(resp),
-            Ok(Err(e)) => {
-                let mut pending = self.pending_rpc.lock().await;
-                pending.remove(&req_id);
-                Err(anyhow::anyhow!("ws rpc 通道已关闭: {e}"))
-            }
-            Err(e_timeout) => {
-                let mut pending = self.pending_rpc.lock().await;
-                pending.remove(&req_id);
-                Err(anyhow::anyhow!("ws rpc 超时: {e_timeout}"))
-            }
-        }
-    }
-
-    /// 发送 RPC 请求并等待响应，m 为 Protobuf 消息体
-    /// 返回解包后的 OpenIMResp
-    pub async fn send_req_wait_resp<M: prost::Message>(&self, m: &M, req_identifier: i32) -> Result<OpenIMResp> {
-        // 1. 尝试序列化 Protobuf
-        let data = match prost::Message::encode_to_vec(m) {
-            v if !v.is_empty() => v,
-            _ => return Err(anyhow::anyhow!("SendReqWaitResp: Protobuf marshal失败")),
-        };
-
-        // 2. 创建 OpenIMReq
-        let req = self.make_req(req_identifier, data);
-
-        tracing::debug!("send message to send channel success, req_identifier={req_identifier}, msg_incr={}", req.msg_incr);
-
-        // 3. 发送请求并等待响应
-        let resp = self.send_request_and_wait(req_identifier, req.data.clone(), None).await?;
-
-        // 4. 返回响应（如需解反序列化可在调用方进行）
-        Ok(resp)
-    }
-
     /// 发送裸请求（无等待），调用方需自行管理 pending
     pub(crate) fn send_raw_req(&self, req: OpenIMReq) -> Result<()> {
         let json = serde_json::to_vec(&req)?;

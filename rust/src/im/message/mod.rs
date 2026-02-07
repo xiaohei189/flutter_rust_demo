@@ -17,4 +17,3 @@ pub use crate::im::api::message::MessageApi;
 pub use handler::{MessageHandler, MessageHandlerContext, MessageOptions};
 pub use longconn::{HttpFallbackLongConn, LongConnRpc};
 pub use sync_long::{LongConnMessageSyncer, PushBatch};
-pub use ws_rpc::{WsMessageRpc, WsRpcClient};

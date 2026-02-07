@@ -333,95 +333,6 @@ impl OpenIMClient {
         self.advanced_msg_listener = Some(listener.clone());
         self.app_state.advanced_msg_listener = Some(listener);
     }
-    /// 发送文本消息
-    pub async fn send_text_message(
-        &self,
-        recv_id: String,
-        text: String,
-        session_type: i32, // 1=单聊, 2=群聊
-    ) -> Result<()> {
-        self.get_message_rpc_for_send().send_text_message(recv_id, text, session_type).await
-    }
-
-    /// 发送图片消息
-    pub async fn send_picture_message(&self, recv_id: String, picture: PictureElem, session_type: i32) -> Result<()> {
-        self.get_message_rpc_for_send().send_picture_message(recv_id, picture, session_type).await
-    }
-
-    /// 发送语音消息
-    pub async fn send_sound_message(&self, recv_id: String, sound: SoundElem, session_type: i32) -> Result<()> {
-        self.get_message_rpc_for_send().send_sound_message(recv_id, sound, session_type).await
-    }
-
-    /// 发送视频消息
-    pub async fn send_video_message(&self, recv_id: String, video: VideoElem, session_type: i32) -> Result<()> {
-        self.get_message_rpc_for_send().send_video_message(recv_id, video, session_type).await
-    }
-
-    /// 发送文件消息
-    pub async fn send_file_message(&self, recv_id: String, file: FileElem, session_type: i32) -> Result<()> {
-        self.get_message_rpc_for_send().send_file_message(recv_id, file, session_type).await
-    }
-
-    /// SendMessage NotOss
-    pub async fn send_message_not_oss(
-        &self,
-        recv_id: String,
-        group_id: String,
-        message: MsgStruct,
-        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
-        is_online_only: bool,
-    ) -> Result<()> {
-        self.get_message_rpc_for_send().send_message(recv_id, group_id, message, offline_push_info, is_online_only, true).await
-    }
-
-    /// SendMessage（默认支持 oss）
-    pub async fn send_message(&self, recv_id: String, group_id: String, message: MsgStruct, offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>, is_online_only: bool) -> Result<()> {
-        self.get_message_rpc_for_send().send_message(recv_id, group_id, message, offline_push_info, is_online_only, false).await
-    }
-
-    /// SendMessage（允许自定义 options 覆盖）
-    pub async fn send_message_with_options(
-        &self,
-        recv_id: String,
-        group_id: String,
-        message: MsgStruct,
-        offline_push_info: Option<openim_protocol::sdkws::OfflinePushInfo>,
-        is_online_only: bool,
-        _options_override: Option<HashMap<String, bool>>,
-    ) -> Result<()> {
-        // 注意：options_override 在当前实现中暂未使用，保留参数以保持 API 兼容性
-        self.get_message_rpc_for_send().send_message(recv_id, group_id, message, offline_push_info, is_online_only, false).await
-    }
-
-    /// 获取消息 RPC 实例（用于查询操作）
-    fn get_message_rpc(&self) -> crate::im::message::ws_rpc::WsMessageRpc<'_, Self> {
-        use crate::im::message::ws_rpc::WsMessageRpc;
-        WsMessageRpc::new(self, self.config.user_id.clone())
-    }
-
-    /// 获取消息 RPC 实例（用于发送操作）
-    fn get_message_rpc_for_send(&self) -> crate::im::message::ws_rpc::WsMessageRpc<'_, Self> {
-        use crate::im::message::ws_rpc::WsMessageRpc;
-        WsMessageRpc::with_send_context(self, self.config.user_id.clone(), self.config.platform_id)
-    }
-
-    /// WebSocket：获取各会话最新 seq（reqIdentifier=1001）
-    /// WebSocket：获取最新序列号（reqIdentifier=1001）
-    pub async fn ws_get_newest_seq(&self) -> Result<sdkws::GetMaxSeqResp> {
-        self.get_message_rpc().get_newest_seq().await
-    }
-
-    /// WebSocket：按区间拉取消息（reqIdentifier=1002）
-    pub async fn ws_pull_msg_by_range(&self, ranges: Vec<SeqRangeModel>, order: i32) -> Result<sdkws::PullMessageBySeqsResp> {
-        self.get_message_rpc().pull_msg_by_range(ranges, order).await
-    }
-
-    /// WebSocket：按序列号列表拉取消息（reqIdentifier=1003）
-    pub async fn ws_pull_msg_by_seq_list(&self, conversation_id: String, seq_list: Vec<i64>) -> Result<sdkws::PullMessageBySeqsResp> {
-        self.get_message_rpc().pull_msg_by_seq_list(conversation_id, seq_list).await
-    }
-
     /// 处理接收消息（事件循环） -> ws_handlers 模块实现
 
     // handle_binary_message 迁移至 ws_handlers
@@ -1865,19 +1776,6 @@ impl OpenIMClient {
             _ if content_type >= constant::CONTENT_TYPE_BEGIN && content_type < constant::NOTIFICATION_BEGIN => "[MESSAGE]",
             _ => "[UNKNOWN]",
         }
-    }
-}
-
-// 实现 WsRpcClient trait（为 OpenIMClient 和 &OpenIMClient）
-impl crate::im::message::ws_rpc::WsRpcClient for OpenIMClient {
-    async fn send_request_and_wait(&self, req_identifier: i32, data: Vec<u8>, timeout_duration: Option<tokio::time::Duration>) -> Result<crate::im::model::OpenIMResp> {
-        OpenIMClient::send_request_and_wait(self, req_identifier, data, timeout_duration).await
-    }
-}
-
-impl crate::im::message::ws_rpc::WsRpcClient for &OpenIMClient {
-    async fn send_request_and_wait(&self, req_identifier: i32, data: Vec<u8>, timeout_duration: Option<tokio::time::Duration>) -> Result<crate::im::model::OpenIMResp> {
-        OpenIMClient::send_request_and_wait(self, req_identifier, data, timeout_duration).await
     }
 }
 
