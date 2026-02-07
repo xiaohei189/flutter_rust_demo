@@ -468,7 +468,7 @@ impl MessageHandle {
 
         match timeout(Duration::from_secs(LONG_CONN_TIMEOUT_SECS), rx).await {
             Ok(Ok(resp)) => Ok(resp),
-            Ok(Err(_)) => Err(anyhow!("long_conn_mgr oneshot dropped")),
+            Ok(Err(e)) => Err(anyhow!("long_conn_mgr oneshot dropped: {:?}", e  )),
             Err(_) => Err(anyhow!("long_conn_mgr timeout")),
         }
     }

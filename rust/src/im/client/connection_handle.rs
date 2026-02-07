@@ -14,8 +14,9 @@ use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationEl
 use crate::im::client::message_handle::MsgSyncCommand;
 use crate::im::model::ws::WsRpcEnvelope;
 use crate::im::model::{msg_type, LocalConversation, OpenIMReq, OpenIMResp};
-use crate::im::serialization::{decompress_gzip, generate_msg_id};
-use crate::im::{util, WebSocketConnectResp};
+use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
+use crate::im::util::{self, content_type_name};
+use crate::im::WebSocketConnectResp;
 use anyhow::{Context, Result};
 use futures_util::future::select_all;
 use futures_util::stream::{SplitSink, SplitStream};
@@ -175,8 +176,19 @@ impl ConnectionHandle {
                 }
                 cmd = self.cmd_rx.recv() => {
                     if let Some((req, resp_tx)) = cmd {
-                        if let Err(e) = writer.send(WsMessage::Binary(serde_json::to_vec(&req)?)).await {
+                        let key = req.msg_incr.clone();
+                        let json = serde_json::to_vec(&req).map_err(anyhow::Error::from)?;
+                        let data = if self.config.compression.eq_ignore_ascii_case("gzip") {
+                            compress_gzip(&json).map_err(anyhow::Error::from)?
+                        } else {
+                            json
+                        };
+                        if let Some(tx) = resp_tx {
+                            self.pending_rpc.insert(key.clone(), (req, Some(tx)));
+                        }
+                        if let Err(e) = writer.send(WsMessage::Binary(data)).await {
                             error!("[Client] 发送ws消息失败: {}", e);
+                            self.pending_rpc.remove(&key);
                             return Err(anyhow::anyhow!("发送ws消息失败: {e}"));
                         }
                     }
@@ -190,7 +202,13 @@ impl ConnectionHandle {
                          }
                         },
                         Some(Err(e)) => {
-                            error!("[Client] 接收ws消息失败: {}", e);
+                            let msg = e.to_string();
+                            if msg.contains("Connection reset without closing handshake") {
+                                warn!("[Client] 连接被服务端重置（未关闭握手），将重连");
+                            } else {
+                                error!("[Client] 接收ws消息失败: {}", e);
+                            }
+                            self.pending_rpc.clear();
                             return Err(anyhow::anyhow!("接收ws消息失败: {e}"));
                         },
                         None => {},
@@ -270,14 +288,15 @@ impl ConnectionHandle {
     }
 
     fn handle_rpc_message(&mut self, im_resp: OpenIMResp) -> Result<()> {
-        let cmd = self.pending_rpc.remove(&im_resp.operation_id);
+        // 服务端回包用 msgIncr 匹配请求，与发送时 pending_rpc 的 key 一致
+        let cmd = self.pending_rpc.remove(&im_resp.msg_incr);
         if let Some((_, Some(resp_tx))) = cmd {
             if let Err(e) = resp_tx.send(im_resp) {
                 error!("[Client] 发送RPC响应失败: {:?}", e);
                 return Err(anyhow::anyhow!("发送RPC响应失败: {:?}", e));
             }
         } else {
-            warn!("[Client] 操作ID不存在: {}", im_resp.operation_id);
+            warn!("[Client] msgIncr 不存在于 pending_rpc: {}", im_resp.msg_incr);
         }
         Ok(())
     }
@@ -288,9 +307,36 @@ impl ConnectionHandle {
                 return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
             }
         };
+        let new_msg_convs = push_msg.msgs.len();
+        let new_msg_count: usize = push_msg.msgs.values().map(|p| p.msgs.len()).sum();
+        let notif_convs = push_msg.notification_msgs.len();
+        let notif_count: usize = push_msg.notification_msgs.values().map(|p| p.msgs.len()).sum();
+        let new_msg_types: String = {
+            let mut counts: HashMap<&'static str, usize> = HashMap::new();
+            for pull in push_msg.msgs.values() {
+                for m in &pull.msgs {
+                    *counts.entry(content_type_name(m.content_type)).or_insert(0) += 1;
+                }
+            }
+            let mut v: Vec<_> = counts.into_iter().collect();
+            v.sort_by(|a, b| b.1.cmp(&a.1));
+            v.into_iter().map(|(name, n)| format!("{}x{}", name, n)).collect::<Vec<_>>().join(", ")
+        };
+        let notif_types: String = {
+            let mut counts: HashMap<&'static str, usize> = HashMap::new();
+            for pull in push_msg.notification_msgs.values() {
+                for m in &pull.msgs {
+                    *counts.entry(content_type_name(m.content_type)).or_insert(0) += 1;
+                }
+            }
+            let mut v: Vec<_> = counts.into_iter().collect();
+            v.sort_by(|a, b| b.1.cmp(&a.1));
+            v.into_iter().map(|(name, n)| format!("{}x{}", name, n)).collect::<Vec<_>>().join(", ")
+        };
         info!(
-            "[ConnectionHandle] handle_push_message push_msg: {}",
-            serde_json::to_string(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
+            "[ConnectionHandle] 收到推送 类型=PushMessages 新消息={}个会话/{}条({}) 通知={}个会话/{}条({})",
+            new_msg_convs, new_msg_count, if new_msg_types.is_empty() { "—" } else { &new_msg_types },
+            notif_convs, notif_count, if notif_types.is_empty() { "—" } else { &notif_types }
         );
         // 按 message_handle 的命令类型传递：MsgSyncCommand::Push
         if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Push(push_msg)) {
