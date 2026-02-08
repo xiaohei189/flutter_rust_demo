@@ -11,7 +11,7 @@ static INIT_LOGGER: Once = Once::new();
 /// 当前项目目录下的日志文件名
 const LOG_FILE_NAME: &str = "rust.log";
 
-/// 中国时区 (UTC+8) 时间格式
+/// 中国时区 (UTC+8) 时间格式，精度到微秒
 struct ChinaTime;
 
 impl FormatTime for ChinaTime {
@@ -19,7 +19,7 @@ impl FormatTime for ChinaTime {
         let now = chrono::Utc::now();
         let china = chrono::FixedOffset::east_opt(8 * 3600).unwrap();
         let t = now.with_timezone(&china);
-        write!(w, "{}", t.format("%Y-%m-%d %H:%M:%S%.3f"))
+        write!(w, "{}", t.format("%Y-%m-%d %H:%M:%S%.6f"))
     }
 }
 

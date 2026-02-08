@@ -1,6 +1,7 @@
 //! 消息同步器（参考 go/internal/interaction/msg_sync.go）
 use crate::im::client::conversation_handle::ConvCmd;
 use crate::im::dao::repository::Repository;
+use crate::im::model::constant::sync_flag;
 use crate::im::model::constant;
 use crate::im::model::message::SeqRange as SeqRangeModel;
 use crate::im::model::ws::{self, WsRpcEnvelope};
@@ -145,7 +146,6 @@ impl MessageHandle {
                     }
                 }
                 MsgSyncCommand::Push(push) => {
-                    debug!("[message_handle] 收到 Push 事件，msgs={} convs={}", push.msgs.len(), push.notification_msgs.len());
                     if let Err(e) = self.do_push_msg(&push).await {
                         warn!("[message_handle] 处理 Push 失败: {e}");
                     }
@@ -178,10 +178,11 @@ impl MessageHandle {
             debug!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
         }
-        // 通知会话处理器：开始应用数据同步（SyncFlag 1005 = APP_DATA_SYNC_START）
-        const APP_DATA_SYNC_START: i32 = 1005;
+        // 通知会话处理器：开始应用数据同步（SyncFlag AppDataSyncStart）
         if let Some(ref tx) = self.conv_cmd_tx {
-            let _ = tx.send(ConvCmd::SyncFlag(APP_DATA_SYNC_START));
+            debug!("[ConvSync] 发送 SyncFlag({})", sync_flag::APP_DATA_SYNC_START);
+            let _ = tx.send(ConvCmd::SyncFlag(sync_flag::APP_DATA_SYNC_START));
+            debug!("[ConvSync] 发送 SyncData");
             let _ = tx.send(ConvCmd::SyncData);
         }
         let reinstalled = self.reinstalled;
@@ -337,6 +338,7 @@ impl MessageHandle {
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
+            debug!("[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
             let _ = tx.send(ConvCmd::NewMsgCome(msgs.clone()));
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
@@ -350,6 +352,7 @@ impl MessageHandle {
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
+            debug!("[ConvSync] 发送 MsgSyncInReinstall total={}", total);
             let _ = tx.send(ConvCmd::MsgSyncInReinstall { msgs: msgs.clone(), total });
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
@@ -363,6 +366,7 @@ impl MessageHandle {
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
+            debug!("[ConvSync] 发送 Notification 会话数={}", msgs.len());
             let _ = tx.send(ConvCmd::Notification(msgs.clone()));
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));

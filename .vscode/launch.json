@@ -14,7 +14,7 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}/rust",
-            "console": "internalConsole"
+            "console": "integratedTerminal"
         },
         {
             "name": "Flutter (Android)",

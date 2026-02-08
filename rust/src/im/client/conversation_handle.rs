@@ -5,6 +5,7 @@
 use crate::im::api::api::Api;
 use crate::im::dao::repository::Repository;
 use crate::im::listener::ConversationListener;
+use crate::im::model::constant::sync_flag;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::LocalConversation;
 use anyhow::Result;
@@ -29,7 +30,7 @@ pub enum ConvCmd {
     UpdateConversation(UpdateConNode),
     /// 通知消息（constant.CmdNotification）
     Notification(HashMap<String, sdkws::PullMsgs>),
-    /// 同步阶段标记（constant.CmdSyncFlag）
+    /// 同步阶段标记（constant.CmdSyncFlag），取值为 sync_flag::*：MsgSyncBegin(1001)/MsgSyncProcessing(1002)/MsgSyncEnd(1003)/MsgSyncFailed(1004)/AppDataSyncStart(1005)/AppDataSyncFinish(1006)
     SyncFlag(i32),
     /// 同步数据（constant.CmdSyncData）
     SyncData,
@@ -610,16 +611,13 @@ impl ConversationHandle {
 
     /// 同步阶段标记（Go syncFlag）
     pub async fn sync_flag(&self, flag: i32) -> Result<()> {
-        const MSG_SYNC_BEGIN: i32 = 1001;
-        const MSG_SYNC_END: i32 = 1003;
-        const APP_DATA_SYNC_START: i32 = 1005;
-        const APP_DATA_SYNC_FINISH: i32 = 1006;
         if let Some(listener) = &self.listener {
             match flag {
-                APP_DATA_SYNC_START => listener.on_sync_server_start(true).await,
-                APP_DATA_SYNC_FINISH => listener.on_sync_server_finish(true).await,
-                MSG_SYNC_BEGIN => listener.on_sync_server_start(false).await,
-                MSG_SYNC_END => listener.on_sync_server_finish(false).await,
+                sync_flag::APP_DATA_SYNC_START => listener.on_sync_server_start(true).await,
+                sync_flag::APP_DATA_SYNC_FINISH => listener.on_sync_server_finish(true).await,
+                sync_flag::MSG_SYNC_BEGIN => listener.on_sync_server_start(false).await,
+                sync_flag::MSG_SYNC_END => listener.on_sync_server_finish(false).await,
+                sync_flag::MSG_SYNC_PROCESSING | sync_flag::MSG_SYNC_FAILED => {}
                 _ => {}
             }
         }
