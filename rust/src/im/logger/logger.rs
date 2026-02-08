@@ -33,35 +33,64 @@ pub fn init_logger(log_level: &str) {
         let _ = std::fs::remove_file(&log_path);
 
         // 控制台：JSON 结构化输出，便于解析与日志采集
-        let console_layer = tracing_subscriber::fmt::layer()
+        let fmt_layer = tracing_subscriber::fmt::layer()
             .with_file(true)
             .with_line_number(true)
             .with_target(true)
             .with_thread_ids(true)
             .with_thread_names(true)
-            .pretty() // 自动层级 + 彩色
+            .pretty()
             .with_writer(|| FlushWriter(io::stdout()));
 
-        let registry = tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(console_layer);
-
-        match File::create(&log_path) {
-            Ok(file) => {
-                let file_layer = tracing_subscriber::fmt::layer()
-                    .with_file(true)
-                    .with_line_number(true)
-                    .with_target(true)
-                    .with_thread_ids(true)
-                    .with_thread_names(true)
-                    .with_ansi(false)
-                    .pretty() // 自动层级 + 彩色
-                    .with_writer(file);
-                registry.with(file_layer).init();
+        #[cfg(tokio_unstable)]
+        {
+            let console_layer = console_subscriber::spawn();
+            let registry = tracing_subscriber::registry()
+                .with(filter_layer)
+                .with(console_layer)
+                .with(fmt_layer);
+            match File::create(&log_path) {
+                Ok(file) => {
+                    let file_layer = tracing_subscriber::fmt::layer()
+                        .with_file(true)
+                        .with_line_number(true)
+                        .with_target(true)
+                        .with_thread_ids(true)
+                        .with_thread_names(true)
+                        .with_ansi(false)
+                        .pretty()
+                        .with_writer(file);
+                    registry.with(file_layer).init();
+                }
+                Err(e) => {
+                    eprintln!("[logger] 无法创建日志文件 {}: {}", log_path.display(), e);
+                    registry.init();
+                }
             }
-            Err(e) => {
-                eprintln!("[logger] 无法创建日志文件 {}: {}", log_path.display(), e);
-                registry.init();
+        }
+
+        #[cfg(not(tokio_unstable))]
+        {
+            let registry = tracing_subscriber::registry()
+                .with(filter_layer)
+                .with(fmt_layer);
+            match File::create(&log_path) {
+                Ok(file) => {
+                    let file_layer = tracing_subscriber::fmt::layer()
+                        .with_file(true)
+                        .with_line_number(true)
+                        .with_target(true)
+                        .with_thread_ids(true)
+                        .with_thread_names(true)
+                        .with_ansi(false)
+                        .pretty()
+                        .with_writer(file);
+                    registry.with(file_layer).init();
+                }
+                Err(e) => {
+                    eprintln!("[logger] 无法创建日志文件 {}: {}", log_path.display(), e);
+                    registry.init();
+                }
             }
         }
     });
