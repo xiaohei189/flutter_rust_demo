@@ -6,6 +6,10 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "staticlib", "rlib"]
 
+[[bin]]
+name = "im_client"
+path = "src/bin/im_client.rs"
+
 [dependencies]
 flutter_rust_bridge = "=2.11.1"
 openim-protocol = { path = "../../protocol" }

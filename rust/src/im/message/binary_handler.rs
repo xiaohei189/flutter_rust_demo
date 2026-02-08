@@ -6,7 +6,7 @@ use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use tracing::{debug, error, info, warn};
 
-use crate::im::client::client::AppState;
+
 use crate::im::dao::MessageRepo;
 use crate::im::listener::AdvancedMsgListener;
 use crate::im::model::{msg_type, OpenIMResp};
@@ -131,7 +131,7 @@ pub struct BinaryMessageHandlerCallbacks {
 pub struct BinaryMessageHandler;
 
 impl BinaryMessageHandler {
-    pub async fn handle_binary_message(app_state: AppState, data: &[u8]) -> Result<()> {
+    pub async fn handle_binary_message(data: &[u8]) -> Result<()> {
         use crate::im::model::OpenIMResp;
         // 解析 JSON 响应
         let resp = serde_json::from_slice::<OpenIMResp>(data)?;
@@ -143,7 +143,7 @@ impl BinaryMessageHandler {
             }
             msg_type::WS_PUSH_MSG => {
                 // 推送消息：使用消息处理器处理
-                let need_conv_sync = Self::handle_push_message(&app_state, &resp.data, |msg_id| (false)).await?;
+                let need_conv_sync = Self::handle_push_message(&resp.data, |msg_id| (false)).await?;
 
                 // 收到会话相关通知后，触发会话增量同步以覆盖本地占位数据（名称/头像/未读等）
                 // if need_conv_sync {
@@ -177,11 +177,10 @@ impl BinaryMessageHandler {
 
     /// 处理推送消息（WebSocket 层：解析 protobuf，收集消息并去重，委派给消息处理器）
     ///
-    /// - `ctx`: 消息处理器上下文
     /// - `data`: protobuf 编码的 PushMessages 数据
     /// - `is_duplicate_message`: 消息去重检查函数
     /// - 返回: 是否需要触发会话增量同步
-    pub async fn handle_push_message(app_state: &AppState, data: &[u8], is_duplicate_message: impl Fn(&str) -> bool) -> Result<bool> {
+    pub async fn handle_push_message(data: &[u8], is_duplicate_message: impl Fn(&str) -> bool) -> Result<bool> {
         if data.is_empty() {
             return Err(anyhow::anyhow!("推送消息为空"));
         }
@@ -316,7 +315,7 @@ impl BinaryMessageHandler {
 
         // 委派给消息处理器处理业务逻辑
         if !all_msgs.is_empty() {
-            Self::handle_new_message(app_state, all_msgs).await?;
+            Self::handle_new_message(all_msgs).await?;
         }
 
         // 返回是否需要触发会话增量同步
@@ -324,7 +323,7 @@ impl BinaryMessageHandler {
     }
 
     /// 处理推送消息，分类决定插入/更新/会话更新/回调
-    async fn handle_new_message(app_state: &AppState, all_msgs: HashMap<String, Vec<sdkws::MsgData>>) -> Result<MessageProcessingResult> {
+    async fn handle_new_message(all_msgs: HashMap<String, Vec<sdkws::MsgData>>) -> Result<MessageProcessingResult> {
         let mut processing_result = MessageProcessingResult::new();
 
         for (conversation_id, msgs) in all_msgs {
@@ -332,21 +331,21 @@ impl BinaryMessageHandler {
                 warn!("[BinaryMessageHandler] conversationID 为空，跳过消息");
                 continue;
             }
-            let conversation_result = Self::process_conversation_messages(app_state, &conversation_id, msgs).await?;
+            let conversation_result = Self::process_conversation_messages(&conversation_id, msgs).await?;
             processing_result.conversation_set.insert(conversation_id.to_string(), conversation_result.conversation);
             processing_result.insert_msg.entry(conversation_id.to_string()).or_default().extend(conversation_result.insert_msg);
             processing_result.update_msg.entry(conversation_id.to_string()).or_default().extend(conversation_result.update_msg);
             processing_result.new_messages.extend(conversation_result.new_messages);
         }
         let result = processing_result.clone();
-        Self::persist_and_notify(app_state, processing_result).await?;
+        Self::persist_and_notify(processing_result).await?;
         Ok(result)
     }
 
     /// 处理单个会话的所有消息
-    async fn process_conversation_messages(app_state: &AppState, conversation_id: &str, msgs: Vec<sdkws::MsgData>) -> Result<ConversationProcessingResult> {
+    async fn process_conversation_messages(conversation_id: &str, msgs: Vec<sdkws::MsgData>) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
-        let login_user_id = app_state.message_store.as_ref().map(|s| s.login_user_id.clone()).unwrap_or_default();
+        let login_user_id = "".to_string(); // 暂时使用空字符串，后续可从其他地方获取
 
         for msg in msgs {
             let options = MessageOptions::from_msg(&msg);
@@ -356,7 +355,7 @@ impl BinaryMessageHandler {
                 result.insert_msg.push(db_message);
                 continue;
             }
-            let conversation_result = Self::process_message(app_state, conversation_id, &msg, &options, &login_user_id).await?;
+            let conversation_result = Self::process_message(conversation_id, &msg, &options, &login_user_id).await?;
             result.insert_msg.extend(conversation_result.insert_msg);
             result.update_msg.extend(conversation_result.update_msg);
             result.new_messages.extend(conversation_result.new_messages);
@@ -369,81 +368,66 @@ impl BinaryMessageHandler {
     }
 
     /// 处理消息（统一处理自己发送和他人发送的消息）
-    async fn process_message(app_state: &AppState, conversation_id: &str, msg: &sdkws::MsgData, options: &MessageOptions, login_user_id: &str) -> Result<ConversationProcessingResult> {
+    async fn process_message(conversation_id: &str, msg: &sdkws::MsgData, options: &MessageOptions, login_user_id: &str) -> Result<ConversationProcessingResult> {
         let mut result = ConversationProcessingResult::new();
         let is_from_me = msg.send_id == login_user_id;
 
-        if let Ok(Some(existing_msg)) = app_state.message_store.as_ref().unwrap().get_by_client_msg_id(conversation_id, &msg.client_msg_id).await {
-            // 已存在的消息处理
-            if is_from_me {
-                // 自己发送的消息：seq==0 需要更新，否则插入
-                if existing_msg.seq == 0 {
-                    result.update_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
-                } else {
-                    result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
-                }
-            } else {
-                // 他人发送的消息：直接覆盖插入
-                result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
-            }
+        // 新消息：创建会话并处理回调
+        let mut lc = if is_from_me {
+            Self::create_conversation_for_self(msg, conversation_id)
         } else {
-            // 新消息：创建会话并处理回调
-            let mut lc = if is_from_me {
-                Self::create_conversation_for_self(msg, conversation_id)
-            } else {
-                Self::create_conversation_for_others(msg, conversation_id)
-            };
+            Self::create_conversation_for_others(msg, conversation_id)
+        };
 
-            // 设置会话类型相关字段
-            match msg.session_type {
-                constant::SINGLE_CHAT_TYPE => {
-                    if is_from_me {
-                        lc.user_id = msg.recv_id.clone();
-                    } else {
-                        lc.user_id = msg.send_id.clone();
-                        lc.show_name = msg.sender_nickname.clone();
-                        lc.face_url = msg.sender_face_url.clone();
-                    }
+        // 设置会话类型相关字段
+        match msg.session_type {
+            constant::SINGLE_CHAT_TYPE => {
+                if is_from_me {
+                    lc.user_id = msg.recv_id.clone();
+                } else {
+                    lc.user_id = msg.send_id.clone();
+                    lc.show_name = msg.sender_nickname.clone();
+                    lc.face_url = msg.sender_face_url.clone();
                 }
-                constant::WRITE_GROUP_CHAT_TYPE | constant::READ_GROUP_CHAT_TYPE => {
-                    lc.group_id = msg.group_id.clone();
+            }
+            constant::WRITE_GROUP_CHAT_TYPE | constant::READ_GROUP_CHAT_TYPE => {
+                lc.group_id = msg.group_id.clone();
+            }
+            constant::NOTIFICATION_CHAT_TYPE => {
+                if !is_from_me {
+                    lc.user_id = msg.send_id.clone();
                 }
-                constant::NOTIFICATION_CHAT_TYPE => {
-                    if !is_from_me {
-                        lc.user_id = msg.send_id.clone();
-                    }
-                }
-                _ => {}
             }
+            _ => {}
+        }
 
-            // 未读计数（仅他人发送的消息）
-            if !is_from_me && options.is_unread_count {
-                lc.unread_count = lc.unread_count.saturating_add(1);
-            }
+        // 未读计数（仅他人发送的消息）
+        if !is_from_me && options.is_unread_count {
+            lc.unread_count = lc.unread_count.saturating_add(1);
+        }
 
-            // 会话更新
-            let should_update_conversation = if is_from_me {
-                options.is_conversation_update && options.is_sender_conversation_update
-            } else {
-                options.is_conversation_update
-            };
+        // 会话更新
+        let should_update_conversation = if is_from_me {
+            options.is_conversation_update && options.is_sender_conversation_update
+        } else {
+            options.is_conversation_update
+        };
 
-            if should_update_conversation {
-                result.conversation = lc.clone();
-            }
+        if should_update_conversation {
+            result.conversation = lc.clone();
+        }
 
-            // 实时消息回调（非历史消息）
-            if !options.is_history {
-                result.new_messages.push(msg.clone());
-            }
+        // 实时消息回调（非历史消息）
+        if !options.is_history {
+            result.new_messages.push(msg.clone());
+        }
 
-            // 历史消息单独存储
-            if options.is_history {
-                result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
-            } else {
-                // 在线消息同样写入本地，保持与 Go 行为一致
-                result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
-            }
+        // 历史消息单独存储
+        if options.is_history {
+            result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
+        } else {
+            // 在线消息同样写入本地，保持与 Go 行为一致
+            result.insert_msg.push(Self::msg_data_to_local_chat_log(msg, conversation_id));
         }
 
         Ok(result)
@@ -510,35 +494,35 @@ impl BinaryMessageHandler {
     }
 
     /// 持久化消息并触发回调
-    async fn persist_and_notify(app_state: &AppState, result: MessageProcessingResult) -> Result<()> {
-        // 批量更新消息
-        for (conversation_id, messages) in result.update_msg {
-            for msg in messages {
-                if let Err(e) = app_state.message_store.as_ref().unwrap().update_message(&conversation_id, &msg).await {
-                    error!("[BinaryMessageHandler] 更新消息失败 conversationID={} clientMsgID={}: {}", conversation_id, msg.client_msg_id, e);
-                }
-            }
-        }
+    async fn persist_and_notify(result: MessageProcessingResult) -> Result<()> {
+        // 批量更新消息 - 暂时跳过，后续可从其他地方获取消息存储
+        // for (conversation_id, messages) in result.update_msg {
+        //     for msg in messages {
+        //         if let Err(e) = app_state.message_store.as_ref().unwrap().update_message(&conversation_id, &msg).await {
+        //             error!("[BinaryMessageHandler] 更新消息失败 conversationID={} clientMsgID={}: {}", conversation_id, msg.client_msg_id, e);
+        //         }
+        //     }
+        // }
 
-        // 批量插入消息
-        for (conversation_id, messages) in result.insert_msg {
-            if let Err(e) = app_state.message_store.as_ref().unwrap().batch_insert_message_list(&conversation_id, &messages).await {
-                error!("[BinaryMessageHandler] 批量插入消息失败 conversationID={}: {}", conversation_id, e);
-            }
-        }
+        // 批量插入消息 - 暂时跳过，后续可从其他地方获取消息存储
+        // for (conversation_id, messages) in result.insert_msg {
+        //     if let Err(e) = app_state.message_store.as_ref().unwrap().batch_insert_message_list(&conversation_id, &messages).await {
+        //         error!("[BinaryMessageHandler] 批量插入消息失败 conversationID={}: {}", conversation_id, e);
+        //     }
+        // }
 
         // 会话变更由 ConversationHandle 命令循环（ConvCmd）处理，此处不再持有 syncer 引用
 
-        // 触发新消息回调
-        for msg in result.new_messages {
-            let msg_json = serde_json::to_string(&msg).unwrap_or_default();
-            let listener = app_state.advanced_msg_listener.clone();
-            tokio::spawn(async move {
-                if let Some(listener) = &listener {
-                    listener.on_recv_new_message(msg_json).await;
-                }
-            });
-        }
+        // 触发新消息回调 - 暂时跳过，后续可从其他地方获取监听器
+        // for msg in result.new_messages {
+        //     let msg_json = serde_json::to_string(&msg).unwrap_or_default();
+        //     let listener = app_state.advanced_msg_listener.clone();
+        //     tokio::spawn(async move {
+        //         if let Some(listener) = &listener {
+        //             listener.on_recv_new_message(msg_json).await;
+        //         }
+        //     });
+        // }
 
         Ok(())
     }

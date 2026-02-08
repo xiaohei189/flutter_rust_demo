@@ -1,5 +1,8 @@
 use std::fs::File;
+use std::io::{self, Write};
 use std::sync::Once;
+use tracing_subscriber::fmt::format::Writer;
+use tracing_subscriber::fmt::time::FormatTime;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
@@ -8,33 +11,60 @@ static INIT_LOGGER: Once = Once::new();
 /// 当前项目目录下的日志文件名
 const LOG_FILE_NAME: &str = "rust.log";
 
+/// 中国时区 (UTC+8) 时间格式
+struct ChinaTime;
+
+impl FormatTime for ChinaTime {
+    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
+        let now = chrono::Utc::now();
+        let china = chrono::FixedOffset::east_opt(8 * 3600).unwrap();
+        let t = now.with_timezone(&china);
+        write!(w, "{}", t.format("%Y-%m-%d %H:%M:%S%.3f"))
+    }
+}
+
+/// 每次 write 后立即 flush，确保控制台 / Debug Console 能看到输出
+struct FlushWriter<W: Write>(W);
+
+impl<W: Write> Write for FlushWriter<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let n = self.0.write(buf)?;
+        self.0.flush()?;
+        Ok(n)
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
+    }
+}
+
 pub fn init_logger(log_level: &str) {
     INIT_LOGGER.call_once(|| {
         let filter_layer = EnvFilter::new(log_level);
+        let timer = ChinaTime;
 
-        // 项目目录：当前工作目录，失败时 fallback 到临时目录
         let log_path = std::env::current_dir()
             .unwrap_or_else(|_| std::env::temp_dir())
             .join(LOG_FILE_NAME);
-
-        // 删除之前的日志文件，本次运行重新写入
         let _ = std::fs::remove_file(&log_path);
 
-        // 控制台：带文件名、行号，测试时用 test_writer 便于断言
-        let stdout_layer = tracing_subscriber::fmt::layer()
+        // 控制台：stdout + 中国时区 + 每次 flush
+        let console_layer = tracing_subscriber::fmt::layer()
+            .with_timer(timer)
             .with_file(true)
             .with_line_number(true)
             .with_target(false)
             .with_ansi(true)
             .pretty()
-            .with_test_writer();
+            .with_writer(|| FlushWriter(io::stdout()));
 
-        let registry = tracing_subscriber::registry().with(filter_layer).with(stdout_layer);
+        let registry = tracing_subscriber::registry()
+            .with(filter_layer)
+            .with(console_layer);
 
         match File::create(&log_path) {
             Ok(file) => {
-                // 文件：同样格式，不启用 ansi 颜色
                 let file_layer = tracing_subscriber::fmt::layer()
+                    .with_timer(ChinaTime)
                     .with_file(true)
                     .with_line_number(true)
                     .with_target(false)
