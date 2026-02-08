@@ -1,8 +1,8 @@
 //! 消息同步器（参考 go/internal/interaction/msg_sync.go）
 use crate::im::client::conversation_handle::ConvCmd;
 use crate::im::dao::repository::Repository;
-use crate::im::model::constant::sync_flag;
 use crate::im::model::constant;
+use crate::im::model::constant::sync_flag;
 use crate::im::model::message::SeqRange as SeqRangeModel;
 use crate::im::model::ws::{self, WsRpcEnvelope};
 use crate::im::util;
@@ -11,8 +11,8 @@ use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
-use tokio_util::sync::CancellationToken;
 use tokio::time::{timeout, Duration};
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, warn};
 
 const CONNECT_PULL_NUMS: i64 = 1;
@@ -32,7 +32,6 @@ pub enum MsgSyncCommand {
     /// 推送消息
     Push(sdkws::PushMessages),
 }
-
 
 /// 消息同步器，actor 化：仅通过命令/事件通道与外界交互
 pub struct MessageHandle {
@@ -89,12 +88,7 @@ impl MessageHandle {
 
         // 2) 逐会话读取消息表最大 seq（对等 Go 的 CheckConversationNormalMsgSeq）
         for conv_id in ids {
-            let max_seq = self
-                .repository
-                .message
-                .check_conversation_normal_msg_seq(&conv_id)
-                .await
-                .unwrap_or(0);
+            let max_seq = self.repository.message.check_conversation_normal_msg_seq(&conv_id).await.unwrap_or(0);
             self.synced_max_seqs.insert(conv_id, max_seq);
         }
 
@@ -105,10 +99,7 @@ impl MessageHandle {
             }
         }
 
-        debug!(
-            "[message_handle] load_seq done, synced_max_seqs size={}",
-            self.synced_max_seqs.len()
-        );
+        debug!("[message_handle] load_seq done, synced_max_seqs size={}", self.synced_max_seqs.len());
         Ok(())
     }
 
@@ -172,7 +163,7 @@ impl MessageHandle {
     fn is_notification(conv_id: &str) -> bool {
         conv_id.starts_with("n_")
     }
-
+    #[tracing::instrument(skip(self))]
     async fn do_connected(&mut self) -> Result<()> {
         if !self.start_sync().await {
             debug!("[message_handle] 正在同步，忽略 Connected 事件");
@@ -187,6 +178,7 @@ impl MessageHandle {
         }
         let reinstalled = self.reinstalled;
         let newest = self.get_newest_seq().await?;
+        debug!("[message_handle] newest: {:?}", newest);
         self.compare_seqs_and_batch_sync(newest, CONNECT_PULL_NUMS, reinstalled).await?;
         Ok(())
     }
@@ -231,7 +223,6 @@ impl MessageHandle {
         let mut last_seq: i64 = 0;
         let mut storage_msgs: Vec<sdkws::MsgData> = Vec::new();
 
-
         for (conversation_id, pull) in push_messages {
             if pull.msgs.is_empty() {
                 continue;
@@ -251,7 +242,7 @@ impl MessageHandle {
             }
 
             let synced_seq = *self.synced_max_seqs.get(conversation_id).unwrap_or(&0);
-            
+
             if last_seq != 0 && last_seq == synced_seq + storage_msgs.len() as i64 && !storage_msgs.is_empty() {
                 self.trigger_msgs(conversation_id, &storage_msgs, is_notification).await?;
 
@@ -272,7 +263,11 @@ impl MessageHandle {
     fn create_pull_msgs(&self, conversation_id: &str, msgs: &[sdkws::MsgData]) -> HashMap<String, sdkws::PullMsgs> {
         let pull_msgs = HashMap::from([(
             conversation_id.clone().to_string(),
-            sdkws::PullMsgs { msgs: msgs.to_vec(), is_end: false, end_seq: 0 },
+            sdkws::PullMsgs {
+                msgs: msgs.to_vec(),
+                is_end: false,
+                end_seq: 0,
+            },
         )]);
         pull_msgs
     }
@@ -473,13 +468,11 @@ impl MessageHandle {
         let (tx, rx) = oneshot::channel();
         let envelope: crate::im::model::ws::WsRpcEnvelope = (req, Some(tx));
 
-        self.ws_rpc_tx
-            .send(envelope)
-            .map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
+        self.ws_rpc_tx.send(envelope).map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
 
         match timeout(Duration::from_secs(LONG_CONN_TIMEOUT_SECS), rx).await {
             Ok(Ok(resp)) => Ok(resp),
-            Ok(Err(e)) => Err(anyhow!("long_conn_mgr oneshot dropped: {:?}", e  )),
+            Ok(Err(e)) => Err(anyhow!("long_conn_mgr oneshot dropped: {:?}", e)),
             Err(_) => Err(anyhow!("long_conn_mgr timeout")),
         }
     }
@@ -491,8 +484,6 @@ impl MessageHandle {
         prost::Message::decode(resp.data.as_slice()).map_err(|e| anyhow!("decode ws resp failed: {e}"))
     }
 }
-
-
 
 /// MsgSyncer 输出给上层的事件（可由 UI/监听器消费）
 #[derive(Debug)]
