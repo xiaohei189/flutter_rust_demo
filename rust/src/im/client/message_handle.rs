@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout, Duration};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, warn};
+use tracing::{debug, info_span, warn, Instrument};
 
 const CONNECT_PULL_NUMS: i64 = 1;
 const DEFAULT_PULL_NUMS: i64 = 10;
@@ -29,8 +29,8 @@ pub enum MsgSyncCommand {
     Wakeup,
     /// 手动触发指定会话的同步
     ManualSync(Vec<String>),
-    /// 推送消息
-    Push(sdkws::PushMessages),
+    /// 推送消息（msg_id 用于串联整条处理链路的日志/追踪）
+    Push { msg_id: String, push: sdkws::PushMessages },
 }
 
 /// 消息同步器，actor 化：仅通过命令/事件通道与外界交互
@@ -136,8 +136,9 @@ impl MessageHandle {
                         warn!("[message_handle] do_im_message_sync 失败: {e}");
                     }
                 }
-                MsgSyncCommand::Push(push) => {
-                    if let Err(e) = self.do_push_msg(&push).await {
+                MsgSyncCommand::Push { msg_id, push } => {
+                    let span = info_span!("push_msg", msg_id = %msg_id);
+                    if let Err(e) = self.do_push_msg(&msg_id, &push).instrument(span).await {
                         warn!("[message_handle] 处理 Push 失败: {e}");
                     }
                 }
@@ -207,15 +208,15 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 处理推送消息（对齐 go 的 doPushMsg，精简为占位版）
-    async fn do_push_msg(&mut self, push: &sdkws::PushMessages) -> Result<()> {
-        self.push_trigger_and_sync(&push.msgs, false).await?;
-        self.push_trigger_and_sync(&push.notification_msgs, true).await?;
+    /// 处理推送消息（对齐 go 的 doPushMsg）；msg_id 用于 tracing 串联整条处理链路
+    async fn do_push_msg(&mut self, msg_id: &str, push: &sdkws::PushMessages) -> Result<()> {
+        self.push_trigger_and_sync(Some(msg_id), &push.msgs, false).await?;
+        self.push_trigger_and_sync(Some(msg_id), &push.notification_msgs, true).await?;
         Ok(())
     }
 
-    /// 核心触发与判定逻辑（对齐 Go pushTriggerAndSync，保持精简版）
-    async fn push_trigger_and_sync(&mut self, push_messages: &HashMap<String, sdkws::PullMsgs>, is_notification: bool) -> Result<()> {
+    /// 核心触发与判定逻辑（对齐 Go pushTriggerAndSync）；msg_id 为 None 时表示非单条 Push 链路（如 sync 补拉）
+    async fn push_trigger_and_sync(&mut self, msg_id: Option<&str>, push_messages: &HashMap<String, sdkws::PullMsgs>, is_notification: bool) -> Result<()> {
         if push_messages.is_empty() {
             return Ok(());
         }
@@ -230,9 +231,9 @@ impl MessageHandle {
             for msg in &pull.msgs {
                 if msg.seq == 0 {
                     if is_notification {
-                        self.trigger_notification(&self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
+                        self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
                     } else {
-                        self.trigger_conversation(&self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
+                        self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
                     }
                     continue;
                 }
@@ -247,9 +248,9 @@ impl MessageHandle {
                 self.trigger_msgs(conversation_id, &storage_msgs, is_notification).await?;
 
                 if is_notification {
-                    self.trigger_notification(&self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
+                    self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
                 } else {
-                    self.trigger_conversation(&self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
+                    self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
                 }
                 self.synced_max_seqs.insert(conversation_id.clone(), last_seq);
             } else if last_seq > synced_seq && last_seq != 0 {
@@ -296,8 +297,8 @@ impl MessageHandle {
             // 达到分批推拉的数量后拉取一批
             if msg_num >= SPLIT_PULL_MSG_NUM {
                 let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-                self.trigger_conversation(&resp.msgs).await?;
-                self.trigger_notification(&resp.notification_msgs).await?;
+                self.trigger_conversation(None, &resp.msgs).await?;
+                self.trigger_notification(None, &resp.notification_msgs).await?;
                 // 同步最大seqs
                 for (conversation_id, seqs) in &temp_seq_map {
                     self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
@@ -311,8 +312,8 @@ impl MessageHandle {
         // 拉最后一批剩余的map
         if !temp_seq_map.is_empty() {
             let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-            self.trigger_conversation(&resp.msgs).await?;
-            self.trigger_notification(&resp.notification_msgs).await?;
+            self.trigger_conversation(None, &resp.msgs).await?;
+            self.trigger_notification(None, &resp.notification_msgs).await?;
             for (conversation_id, seqs) in &temp_seq_map {
                 self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
             }
@@ -326,43 +327,43 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 触发有新消息的会话事件（下发到 conversation_handle 与 事件通道）
-    async fn trigger_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
+    /// 触发有新消息的会话事件（msg_id 用于 tracing 串联，非 Push 链路传 None）
+    async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
-            debug!("[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
-            let _ = tx.send(ConvCmd::NewMsgCome(msgs.clone()));
+            debug!(msg_id = ?msg_id, "[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
+            let _ = tx.send(ConvCmd::NewMsgCome { msg_id: msg_id.map(String::from), msgs: msgs.clone() });
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
 
     /// 安装（例如重装）时同步会话消息
-    async fn trigger_reinstall_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
+    async fn trigger_reinstall_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_reinstall_conversation empty");
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
-            debug!("[ConvSync] 发送 MsgSyncInReinstall total={}", total);
-            let _ = tx.send(ConvCmd::MsgSyncInReinstall { msgs: msgs.clone(), total });
+            debug!(msg_id = ?msg_id, "[ConvSync] 发送 MsgSyncInReinstall total={}", total);
+            let _ = tx.send(ConvCmd::MsgSyncInReinstall { msg_id: msg_id.map(String::from), msgs: msgs.clone(), total });
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
         Ok(())
     }
 
-    /// 触发通知消息事件
-    async fn trigger_notification(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
+    /// 触发通知消息事件（msg_id 用于 tracing 串联）
+    async fn trigger_notification(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_notification empty");
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
-            debug!("[ConvSync] 发送 Notification 会话数={}", msgs.len());
-            let _ = tx.send(ConvCmd::Notification(msgs.clone()));
+            debug!(msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
+            let _ = tx.send(ConvCmd::Notification { msg_id: msg_id.map(String::from), msgs: msgs.clone() });
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())

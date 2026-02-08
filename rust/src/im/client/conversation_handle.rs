@@ -24,18 +24,18 @@ use uuid::Uuid;
 /// 会话侧命令（对应 Go 的 conversationEventQueue 收到的 Cmd2Value）
 #[derive(Debug)]
 pub enum ConvCmd {
-    /// 新消息到达会话（constant.CmdNewMsgCome）
-    NewMsgCome(HashMap<String, sdkws::PullMsgs>),
+    /// 新消息到达会话（constant.CmdNewMsgCome）；msg_id 为下行推送唯一 ID，用于串联处理链路
+    NewMsgCome { msg_id: Option<String>, msgs: HashMap<String, sdkws::PullMsgs> },
     /// 更新会话（constant.CmdUpdateConversation）
     UpdateConversation(UpdateConNode),
-    /// 通知消息（constant.CmdNotification）
-    Notification(HashMap<String, sdkws::PullMsgs>),
+    /// 通知消息（constant.CmdNotification）；msg_id 为下行推送唯一 ID
+    Notification { msg_id: Option<String>, msgs: HashMap<String, sdkws::PullMsgs> },
     /// 同步阶段标记（constant.CmdSyncFlag），取值为 sync_flag::*：MsgSyncBegin(1001)/MsgSyncProcessing(1002)/MsgSyncEnd(1003)/MsgSyncFailed(1004)/AppDataSyncStart(1005)/AppDataSyncFinish(1006)
     SyncFlag(i32),
     /// 同步数据（constant.CmdSyncData）
     SyncData,
-    /// 重装后消息同步（constant.CmdMsgSyncInReinstall）
-    MsgSyncInReinstall { msgs: HashMap<String, sdkws::PullMsgs>, total: i32 },
+    /// 重装后消息同步（constant.CmdMsgSyncInReinstall）；msg_id 为下行推送唯一 ID
+    MsgSyncInReinstall { msg_id: Option<String>, msgs: HashMap<String, sdkws::PullMsgs>, total: i32 },
 }
 
 /// 更新会话节点（对齐 Go common.UpdateConNode）
@@ -668,12 +668,27 @@ impl ConversationHandle {
 
     async fn work(&mut self, cmd: ConvCmd) -> Result<()> {
         match cmd {
-            ConvCmd::NewMsgCome(msgs) => self.do_msg_new(msgs).await,
+            ConvCmd::NewMsgCome { msg_id, msgs } => {
+                if let Some(ref id) = msg_id {
+                    debug!(msg_id = %id, "[ConvSync] 处理 NewMsgCome 会话数={}", msgs.len());
+                }
+                self.do_msg_new(msgs).await
+            }
             ConvCmd::UpdateConversation(node) => self.do_update_conversation(node).await,
-            ConvCmd::Notification(msgs) => self.do_notification_manager(msgs).await,
+            ConvCmd::Notification { msg_id, msgs } => {
+                if let Some(ref id) = msg_id {
+                    debug!(msg_id = %id, "[ConvSync] 处理 Notification 会话数={}", msgs.len());
+                }
+                self.do_notification_manager(msgs).await
+            }
             ConvCmd::SyncFlag(flag) => self.sync_flag(flag).await,
             ConvCmd::SyncData => self.sync_data().await,
-            ConvCmd::MsgSyncInReinstall { msgs, total } => self.do_msg_sync_by_reinstalled(msgs, total).await,
+            ConvCmd::MsgSyncInReinstall { msg_id, msgs, total } => {
+                if let Some(ref id) = msg_id {
+                    debug!(msg_id = %id, "[ConvSync] 处理 MsgSyncInReinstall total={}", total);
+                }
+                self.do_msg_sync_by_reinstalled(msgs, total).await
+            }
         }
     }
 }

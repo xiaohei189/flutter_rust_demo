@@ -35,6 +35,7 @@ use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
+use uuid::Uuid;
 /// WebSocket 写入端类型别名
 pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -335,13 +336,14 @@ impl ConnectionHandle {
             v.sort_by(|a, b| b.1.cmp(&a.1));
             v.into_iter().map(|(name, n)| format!("{}x{}", name, n)).collect::<Vec<_>>().join(", ")
         };
+        let msg_id = Uuid::new_v4().to_string();
         info!(
+            msg_id = %msg_id,
             "[ConnectionHandle] 收到推送 类型=PushMessages 新消息={}个会话/{}条({}) 通知={}个会话/{}条({})",
             new_msg_convs, new_msg_count, if new_msg_types.is_empty() { "—" } else { &new_msg_types },
             notif_convs, notif_count, if notif_types.is_empty() { "—" } else { &notif_types }
         );
-        // 按 message_handle 的命令类型传递：MsgSyncCommand::Push
-        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Push(push_msg)) {
+        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Push { msg_id, push: push_msg }) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
             return Err(anyhow::anyhow!("发送推送命令失败: {e}"));
         }
