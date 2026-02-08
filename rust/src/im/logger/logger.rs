@@ -1,10 +1,42 @@
+use std::fmt;
 use std::fs::File;
 use std::io::{self, Write};
 use std::sync::Once;
+use tracing_core::{Event, Subscriber};
+use tracing_subscriber::fmt::format::{FormatEvent, Writer};
+use tracing_subscriber::fmt::FmtContext;
 use tracing_subscriber::prelude::*;
+use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::EnvFilter;
 
 static INIT_LOGGER: Once = Once::new();
+
+/// 包装原有 Format，在每行日志前输出从根到当前的 span_id 链（含父 span id），便于串联整条处理链
+struct WithSpanId<F>(F);
+
+impl<S, N, F> FormatEvent<S, N> for WithSpanId<F>
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+    N: for<'a> tracing_subscriber::fmt::format::FormatFields<'a> + 'static,
+    F: FormatEvent<S, N>,
+{
+    fn format_event(
+        &self,
+        ctx: &FmtContext<'_, S, N>,
+        mut writer: Writer<'_>,
+        event: &Event<'_>,
+    ) -> fmt::Result {
+        if let Some(scope) = ctx.event_scope() {
+            let ids: Vec<u64> = scope.from_root().map(|s| s.id().into_u64()).collect();
+            if !ids.is_empty() {
+                // 从根到当前：第一个为根 span_id，最后一个为当前 span_id，中间为各层父 span_id
+                let ids_str = ids.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(":");
+                write!(writer, "span_ids={} ", ids_str)?;
+            }
+        }
+        self.0.format_event(ctx, writer, event)
+    }
+}
 
 /// 当前项目目录下的日志文件名
 const LOG_FILE_NAME: &str = "rust.log";
@@ -32,14 +64,18 @@ pub fn init_logger(log_level: &str) {
             .join(LOG_FILE_NAME);
         let _ = std::fs::remove_file(&log_path);
 
-        // 控制台：JSON 结构化输出，便于解析与日志采集
+        // 控制台：带 span_id 的 pretty 输出，便于按 span 串联整条处理链
+        let console_fmt = WithSpanId(
+            tracing_subscriber::fmt::format()
+                .with_file(true)
+                .with_line_number(true)
+                .with_target(true)
+                .with_thread_ids(true)
+                .with_thread_names(true)
+                .pretty(),
+        );
         let fmt_layer = tracing_subscriber::fmt::layer()
-            .with_file(true)
-            .with_line_number(true)
-            .with_target(true)
-            .with_thread_ids(true)
-            .with_thread_names(true)
-            .pretty()
+            .event_format(console_fmt)
             .with_writer(|| FlushWriter(io::stdout()));
 
         #[cfg(tokio_unstable)]
@@ -51,14 +87,18 @@ pub fn init_logger(log_level: &str) {
                 .with(fmt_layer);
             match File::create(&log_path) {
                 Ok(file) => {
+                    let file_fmt = WithSpanId(
+                        tracing_subscriber::fmt::format()
+                            .with_file(true)
+                            .with_line_number(true)
+                            .with_target(true)
+                            .with_thread_ids(true)
+                            .with_thread_names(true)
+                            .with_ansi(false)
+                            .pretty(),
+                    );
                     let file_layer = tracing_subscriber::fmt::layer()
-                        .with_file(true)
-                        .with_line_number(true)
-                        .with_target(true)
-                        .with_thread_ids(true)
-                        .with_thread_names(true)
-                        .with_ansi(false)
-                        .pretty()
+                        .event_format(file_fmt)
                         .with_writer(file);
                     registry.with(file_layer).init();
                 }
@@ -76,14 +116,18 @@ pub fn init_logger(log_level: &str) {
                 .with(fmt_layer);
             match File::create(&log_path) {
                 Ok(file) => {
+                    let file_fmt = WithSpanId(
+                        tracing_subscriber::fmt::format()
+                            .with_file(true)
+                            .with_line_number(true)
+                            .with_target(true)
+                            .with_thread_ids(true)
+                            .with_thread_names(true)
+                            .with_ansi(false)
+                            .pretty(),
+                    );
                     let file_layer = tracing_subscriber::fmt::layer()
-                        .with_file(true)
-                        .with_line_number(true)
-                        .with_target(true)
-                        .with_thread_ids(true)
-                        .with_thread_names(true)
-                        .with_ansi(false)
-                        .pretty()
+                        .event_format(file_fmt)
                         .with_writer(file);
                     registry.with(file_layer).init();
                 }

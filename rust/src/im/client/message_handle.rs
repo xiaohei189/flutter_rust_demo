@@ -179,7 +179,6 @@ impl MessageHandle {
         }
         let reinstalled = self.reinstalled;
         let newest = self.get_newest_seq().await?;
-        debug!("[message_handle] newest: {:?}", newest);
         self.compare_seqs_and_batch_sync(newest, CONNECT_PULL_NUMS, reinstalled).await?;
         Ok(())
     }
@@ -424,11 +423,20 @@ impl MessageHandle {
         self.pull_msg_by_range(ranges).await
     }
 
+    /// 拉取各会话最新 seq；用 span 测量耗时，内部打印结果
+    #[tracing::instrument(skip(self), name = "get_newest_seq")]
     async fn get_newest_seq(&self) -> Result<HashMap<String, i64>> {
         let req = self.make_ws_req(constant::GET_NEWEST_SEQ, sdkws::GetMaxSeqReq { user_id: self.login_user_id.clone() })?;
         let resp = self.send_ws_req_wait(req).await?;
         let decoded: sdkws::GetMaxSeqResp = self.decode_ws_resp(&resp)?;
-        Ok(decoded.max_seqs)
+        let max_seqs = decoded.max_seqs;
+        tracing::event!(
+            tracing::Level::DEBUG,
+            len = max_seqs.len(),
+            entries = ?max_seqs,
+            "[message_handle] get_newest_seq 结果"
+        );
+        Ok(max_seqs)
     }
 
     async fn pull_msg_by_range(&self, ranges: Vec<SeqRangeModel>) -> Result<sdkws::PullMessageBySeqsResp> {
