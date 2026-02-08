@@ -3,11 +3,58 @@
 //! 负责所有好友相关的数据库操作，将数据访问逻辑与业务逻辑分离。
 //! 本模块已从 SeaORM 完全迁移到 sqlx。
 
+use super::conversation::VersionSyncRow;
 use crate::im::model::conversation::LocalVersionSync;
 use anyhow::{Context, Result};
 use openim_protocol::sdkws;
-use sqlx::{Pool, Row, Sqlite};
+use sqlx::{FromRow, Pool, Sqlite};
 use tracing::info;
+
+/// 好友表行映射（DB 中 is_pinned 为 INTEGER 0/1）
+#[derive(Debug, FromRow)]
+struct LocalFriendRow {
+    owner_user_id: String,
+    friend_user_id: String,
+    remark: String,
+    create_time: i64,
+    add_source: i32,
+    operator_user_id: String,
+    nickname: String,
+    face_url: String,
+    ex: String,
+    attached_info: String,
+    is_pinned: i64,
+}
+
+impl From<LocalFriendRow> for sdkws::FriendInfo {
+    fn from(r: LocalFriendRow) -> Self {
+        let ex = r.ex.clone();
+        sdkws::FriendInfo {
+            owner_user_id: r.owner_user_id,
+            remark: r.remark,
+            create_time: r.create_time,
+            friend_user: Some(sdkws::UserInfo {
+                user_id: r.friend_user_id,
+                nickname: r.nickname,
+                face_url: r.face_url,
+                ex: r.ex,
+                create_time: 0,
+                app_manger_level: 0,
+                global_recv_msg_opt: 0,
+            }),
+            add_source: r.add_source,
+            operator_user_id: r.operator_user_id,
+            ex,
+            is_pinned: r.is_pinned != 0,
+        }
+    }
+}
+
+/// 好友 ID 查询结果
+#[derive(FromRow)]
+struct FriendIdRow {
+    friend_user_id: String,
+}
 
 #[derive( Clone)]
 pub struct FriendDao {
@@ -29,7 +76,7 @@ impl FriendDao {
 
     /// 从数据库获取所有好友
     pub async fn get_all_friends(&self) -> Result<Vec<sdkws::FriendInfo>> {
-        let rows = sqlx::query(
+        let rows: Vec<LocalFriendRow> = sqlx::query_as(
             r#"
             SELECT
                 owner_user_id,
@@ -52,69 +99,33 @@ impl FriendDao {
         .await
         .context("查询好友列表失败")?;
 
-        let friends: Vec<sdkws::FriendInfo> = rows
-            .into_iter()
-            .map(|m| {
-                let is_pinned: i64 = m.get("is_pinned");
-                sdkws::FriendInfo {
-                    owner_user_id: m.get("owner_user_id"),
-                    remark: m.get("remark"),
-                    create_time: m.get("create_time"),
-                    friend_user: Some(sdkws::UserInfo {
-                        user_id: m.get("friend_user_id"),
-                        nickname: m.get("nickname"),
-                        face_url: m.get("face_url"),
-                        ex: m.get("ex"),
-                        create_time: 0,
-                        app_manger_level: 0,
-                        global_recv_msg_opt: 0,
-                    }),
-                    add_source: m.get("add_source"),
-                    operator_user_id: m.get("operator_user_id"),
-                    ex: m.get("ex"),
-                    is_pinned: is_pinned != 0,
-                }
-            })
-            .collect();
-        Ok(friends)
+        Ok(rows.into_iter().map(Into::into).collect())
     }
 
     /// 获取本地所有好友的 userID 列表
     pub async fn get_all_friend_ids(&self) -> Result<Vec<String>> {
-        let rows = sqlx::query(
-            r#"
-            SELECT friend_user_id FROM local_friends WHERE owner_user_id = ?
-            "#,
+        let rows: Vec<FriendIdRow> = sqlx::query_as(
+            "SELECT friend_user_id FROM local_friends WHERE owner_user_id = ?",
         )
         .bind(&self.user_id)
         .fetch_all(&self.db)
         .await
         .context("查询好友ID列表失败")?;
 
-        let ids = rows.into_iter().map(|m| m.get::<String, _>("friend_user_id")).collect::<Vec<_>>();
-        Ok(ids)
+        Ok(rows.into_iter().map(|r| r.friend_user_id).collect())
     }
 
     /// 从数据库获取版本同步信息（tableName = local_friends）
     pub async fn get_version_sync(&self) -> Result<Option<LocalVersionSync>> {
-        let row = sqlx::query(
-            r#"
-            SELECT table_name, entity_id, version, version_id
-            FROM local_version_sync
-            WHERE table_name = 'local_friends' AND entity_id = ?
-            "#,
+        let row: Option<VersionSyncRow> = sqlx::query_as(
+            "SELECT table_name, entity_id, version, version_id FROM local_version_sync WHERE table_name = 'local_friends' AND entity_id = ?",
         )
         .bind(&self.user_id)
         .fetch_optional(&self.db)
         .await
         .context("查询好友版本同步信息失败")?;
         info!(user_id = self.user_id.clone(), "[FriendDAO] 查询好友版本同步信息");
-        Ok(row.map(|m| LocalVersionSync {
-            table_name: m.get("table_name"),
-            entity_id: m.get("entity_id"),
-            version: m.get::<i64, _>("version") as u64,
-            version_id: m.get("version_id"),
-        }))
+        Ok(row.map(Into::into))
     }
 
     /// 保存版本同步信息到数据库

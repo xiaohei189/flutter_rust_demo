@@ -11,8 +11,7 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}",
-            "terminal": "integrated",
-            "sourceLanguages": ["rust"]
+            "console": "integratedTerminal"
         }
     ]
 }

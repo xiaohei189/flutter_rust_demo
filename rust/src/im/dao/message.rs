@@ -5,7 +5,64 @@
 use crate::im::message::models::LocalChatLog;
 use anyhow::Result;
 use chrono::Utc;
-use sqlx::{sqlite::SqlitePoolOptions, Pool, Row, Sqlite};
+use sqlx::{sqlite::SqlitePoolOptions, FromRow, Pool, Sqlite};
+
+/// 消息表行映射（按会话分表，表内无 conversation_id；is_read 为 INTEGER 0/1）
+#[derive(Debug, FromRow)]
+struct LocalChatLogRow {
+    client_msg_id: String,
+    server_msg_id: String,
+    send_id: String,
+    recv_id: String,
+    sender_platform_id: i32,
+    sender_nickname: String,
+    sender_face_url: String,
+    session_type: i32,
+    msg_from: i32,
+    content_type: i32,
+    content: String,
+    is_read: i32,
+    status: i32,
+    seq: i64,
+    send_time: i64,
+    create_time: i64,
+    attached_info: String,
+    ex: String,
+    local_ex: String,
+    group_id: String,
+}
+
+fn row_to_log(conversation_id: &str, r: LocalChatLogRow) -> LocalChatLog {
+    LocalChatLog {
+        conversation_id: conversation_id.to_string(),
+        client_msg_id: r.client_msg_id,
+        server_msg_id: r.server_msg_id,
+        send_id: r.send_id,
+        recv_id: r.recv_id,
+        sender_platform_id: r.sender_platform_id,
+        sender_nickname: r.sender_nickname,
+        sender_face_url: r.sender_face_url,
+        session_type: r.session_type,
+        msg_from: r.msg_from,
+        content_type: r.content_type,
+        content: r.content,
+        is_read: r.is_read != 0,
+        status: r.status,
+        seq: r.seq,
+        send_time: r.send_time,
+        create_time: if r.create_time != 0 { r.create_time } else { Utc::now().timestamp_millis() },
+        attached_info: r.attached_info,
+        ex: r.ex,
+        local_ex: r.local_ex,
+        group_id: r.group_id,
+    }
+}
+
+/// 标量 max_seq 查询结果
+#[derive(FromRow)]
+struct MaxSeqRow {
+    max_seq: i64,
+}
 
 /// 本地消息存储（使用 sqlx / SQLite，仿 Go 版按会话建表）
 ///
@@ -257,16 +314,9 @@ impl MessageRepo {
 
     pub async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
         let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(
-            r#"
-        SELECT * FROM {table}
-        WHERE client_msg_id = ?
-        LIMIT 1;
-        "#,
-            table = table
-        );
-        let row = sqlx::query(&sql).bind(client_msg_id).fetch_optional(&self.pool).await?;
-        Ok(row.map(Self::row_to_log))
+        let sql = format!("SELECT * FROM {table} WHERE client_msg_id = ? LIMIT 1", table = table);
+        let row: Option<LocalChatLogRow> = sqlx::query_as(&sql).bind(client_msg_id).fetch_optional(&self.pool).await?;
+        Ok(row.map(|r| row_to_log(conversation_id, r)))
     }
 
     pub async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
@@ -317,16 +367,9 @@ impl MessageRepo {
 
     pub async fn get_unread_by_conversation(&self, conversation_id: &str) -> Result<Vec<LocalChatLog>> {
         let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(
-            r#"
-        SELECT * FROM {table}
-        WHERE is_read = 0 AND send_id != ?
-        ORDER BY send_time DESC;
-        "#,
-            table = table
-        );
-        let rows = sqlx::query(&sql).bind(&self.login_user_id).fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(Self::row_to_log).collect())
+        let sql = format!("SELECT * FROM {table} WHERE is_read = 0 AND send_id != ? ORDER BY send_time DESC", table = table);
+        let rows: Vec<LocalChatLogRow> = sqlx::query_as(&sql).bind(&self.login_user_id).fetch_all(&self.pool).await?;
+        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
     }
 
     pub async fn get_messages_by_seq(&self, conversation_id: &str, seqs: &[i64]) -> Result<Vec<LocalChatLog>> {
@@ -336,12 +379,12 @@ impl MessageRepo {
         let table = self.ensure_table(conversation_id).await?;
         let placeholders = Self::placeholders(seqs.len());
         let sql = format!("SELECT * FROM {table} WHERE seq IN ({}) ORDER BY send_time DESC", placeholders, table = table);
-        let mut query = sqlx::query(&sql);
+        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql);
         for s in seqs {
             query = query.bind(s);
         }
         let rows = query.fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(Self::row_to_log).collect())
+        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
     }
 
     pub async fn get_messages_by_client_msg_ids(&self, conversation_id: &str, ids: &[String]) -> Result<Vec<LocalChatLog>> {
@@ -351,34 +394,34 @@ impl MessageRepo {
         let table = self.ensure_table(conversation_id).await?;
         let placeholders = Self::placeholders(ids.len());
         let sql = format!("SELECT * FROM {table} WHERE client_msg_id IN ({}) ORDER BY send_time DESC", placeholders, table = table);
-        let mut query = sqlx::query(&sql);
+        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql);
         for id in ids {
             query = query.bind(id);
         }
         let rows = query.fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(Self::row_to_log).collect())
+        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
     }
 
     pub async fn max_seq(&self, conversation_id: &str) -> Result<i64> {
         let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(r#"SELECT IFNULL(MAX(seq),0) as max_seq FROM {table}"#, table = table);
-        let row = sqlx::query(&sql).fetch_one(&self.pool).await?;
-        Ok(row.try_get::<i64, _>("max_seq")?)
+        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {table}", table = table);
+        let row: MaxSeqRow = sqlx::query_as(&sql).fetch_one(&self.pool).await?;
+        Ok(row.max_seq)
     }
 
     /// 对等 Go 的 CheckConversationNormalMsgSeq：查询会话消息表的最大 seq（若无记录返回 0）
     pub async fn check_conversation_normal_msg_seq(&self, conversation_id: &str) -> Result<i64> {
         let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(r#"SELECT IFNULL(MAX(seq),0) as max_seq FROM {table}"#, table = table);
-        let row = sqlx::query(&sql).fetch_one(&self.pool).await?;
-        Ok(row.try_get::<i64, _>("max_seq")?)
+        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {table}", table = table);
+        let row: MaxSeqRow = sqlx::query_as(&sql).fetch_one(&self.pool).await?;
+        Ok(row.max_seq)
     }
 
     pub async fn peer_max_seq(&self, conversation_id: &str) -> Result<i64> {
         let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(r#"SELECT IFNULL(MAX(seq),0) as max_seq FROM {table} WHERE send_id != ?"#, table = table);
-        let row = sqlx::query(&sql).bind(&self.login_user_id).fetch_one(&self.pool).await?;
-        Ok(row.try_get::<i64, _>("max_seq")?)
+        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {table} WHERE send_id != ?", table = table);
+        let row: MaxSeqRow = sqlx::query_as(&sql).bind(&self.login_user_id).fetch_one(&self.pool).await?;
+        Ok(row.max_seq)
     }
 
     pub async fn update_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<u64> {
@@ -405,12 +448,10 @@ impl MessageRepo {
         // 确定排序方式和比较符号（完全匹配 Go SDK）
         let (time_order, time_symbol) = if is_reverse { ("send_time ASC, seq ASC", ">") } else { ("send_time DESC, seq DESC", "<") };
 
-        let rows = if start_time > 0 {
-            // 复杂查询条件（完全匹配 Go SDK）
-            // send_time < startTime OR (send_time = startTime AND (seq < startSeq OR (seq = 0 AND client_msg_id != startClientMsgID)))
+        let rows: Vec<LocalChatLogRow> = if start_time > 0 {
             let condition = format!("send_time {} ? OR (send_time = ? AND (seq {} ? OR (seq = 0 AND client_msg_id != ?)))", time_symbol, time_symbol);
             let sql = format!("SELECT * FROM {table} WHERE {} ORDER BY {} LIMIT ?", condition, time_order, table = table);
-            sqlx::query(&sql)
+            sqlx::query_as(&sql)
                 .bind(start_time)
                 .bind(start_time)
                 .bind(start_seq)
@@ -419,12 +460,11 @@ impl MessageRepo {
                 .fetch_all(&self.pool)
                 .await?
         } else {
-            // 没有起始条件，直接查询
             let sql = format!("SELECT * FROM {table} ORDER BY {} LIMIT ?", time_order, table = table);
-            sqlx::query(&sql).bind(count).fetch_all(&self.pool).await?
+            sqlx::query_as(&sql).bind(count).fetch_all(&self.pool).await?
         };
 
-        Ok(rows.into_iter().map(Self::row_to_log).collect())
+        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
     }
 
     pub async fn search_local_messages(
@@ -474,7 +514,7 @@ impl MessageRepo {
 
         let sql = format!("SELECT * FROM {table} {where_sql} ORDER BY send_time DESC LIMIT 200", table = table, where_sql = where_sql);
 
-        let mut query = sqlx::query(&sql);
+        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql);
         for val in binds {
             match val {
                 Bind::Str(s) => query = query.bind(s),
@@ -483,35 +523,7 @@ impl MessageRepo {
             }
         }
 
-        let rows = query.fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(Self::row_to_log).collect())
-    }
-
-
-    
-    fn row_to_log(row: sqlx::sqlite::SqliteRow) -> LocalChatLog {
-        LocalChatLog {
-            conversation_id: row.try_get::<String, _>("conversation_id").unwrap_or_default(),
-            client_msg_id: row.try_get::<String, _>("client_msg_id").unwrap_or_default(),
-            server_msg_id: row.try_get::<String, _>("server_msg_id").unwrap_or_default(),
-            send_id: row.try_get::<String, _>("send_id").unwrap_or_default(),
-            recv_id: row.try_get::<String, _>("recv_id").unwrap_or_default(),
-            sender_platform_id: row.try_get::<i32, _>("sender_platform_id").unwrap_or_default(),
-            sender_nickname: row.try_get::<String, _>("sender_nickname").unwrap_or_default(),
-            sender_face_url: row.try_get::<String, _>("sender_face_url").unwrap_or_default(),
-            session_type: row.try_get::<i32, _>("session_type").unwrap_or_default(),
-            msg_from: row.try_get::<i32, _>("msg_from").unwrap_or_default(),
-            content_type: row.try_get::<i32, _>("content_type").unwrap_or_default(),
-            content: row.try_get::<String, _>("content").unwrap_or_default(),
-            is_read: row.try_get::<i32, _>("is_read").unwrap_or_default() != 0,
-            status: row.try_get::<i32, _>("status").unwrap_or_default(),
-            seq: row.try_get::<i64, _>("seq").unwrap_or_default(),
-            send_time: row.try_get::<i64, _>("send_time").unwrap_or_default(),
-            create_time: row.try_get::<i64, _>("create_time").unwrap_or_else(|_| Utc::now().timestamp_millis()),
-            attached_info: row.try_get::<String, _>("attached_info").unwrap_or_default(),
-            ex: row.try_get::<String, _>("ex").unwrap_or_default(),
-            local_ex: row.try_get::<String, _>("local_ex").unwrap_or_default(),
-            group_id: String::new(),
-        }
+        let rows: Vec<LocalChatLogRow> = query.fetch_all(&self.pool).await?;
+        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
     }
 }
