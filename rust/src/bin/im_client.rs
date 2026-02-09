@@ -4,7 +4,7 @@
 
 use clap::Parser;
 use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, OpenIMClient};
-use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
+use rust_lib_flutter_rust_demo::im::logger::logger::{flush_tracer_provider, init_logger};
 use rust_lib_flutter_rust_demo::login_async;
 use tracing::info;
 
@@ -51,5 +51,8 @@ async fn main() -> anyhow::Result<()> {
 
     let mut client = OpenIMClient::new(config);
     client.init().await?;
+
+    // 退出前刷新 trace 到 Tempo，否则 batch 可能尚未发送即进程退出
+    flush_tracer_provider();
     Ok(())
 }
