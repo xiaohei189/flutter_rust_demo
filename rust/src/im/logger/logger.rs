@@ -3,8 +3,13 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::sync::Once;
 use opentelemetry::trace::{TraceContextExt, TracerProvider};
+use opentelemetry::KeyValue;
+use opentelemetry_otlp::Protocol;
+use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::error::OTelSdkResult;
 use opentelemetry_sdk::trace::{SpanData, SpanExporter as OtelSpanExporter};
+use opentelemetry_sdk::Resource;
+use tracing::info;
 use tracing_core::{Event, Subscriber};
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::fmt::format::{FormatEvent, Writer};
@@ -86,11 +91,36 @@ pub fn init_logger(log_level: &str) {
             .join(LOG_FILE_NAME);
         let _ = std::fs::remove_file(&log_path);
 
-        // OpenTelemetry tracer（生成 trace_id/span_id 并输出到日志；不导出到后端）
-        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
-            .with_simple_exporter(NoopSpanExporter)
-            .build();
-        let tracer = provider.tracer("rust_lib");
+        // OpenTelemetry tracer：优先上报到 Tempo（OTLP HTTP），失败则仅本地日志带 trace_id
+        let tracer = {
+            let endpoint = std::env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+                .unwrap_or_else(|_| "http://localhost:4318/v1/traces".to_string());
+            let service_name = std::env::var("OTEL_SERVICE_NAME").unwrap_or_else(|_| "rust_lib".to_string());
+            match opentelemetry_otlp::SpanExporter::builder()
+                .with_http()
+                .with_protocol(Protocol::HttpBinary)
+                .with_endpoint(endpoint.clone())
+                .build()
+            {
+                Ok(otlp_exporter) => {
+                    info!("[logger] Trace 上报到 Tempo: endpoint={}", endpoint);
+                    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+                        .with_batch_exporter(otlp_exporter)
+                        .with_resource(
+                            Resource::builder_empty().with_attributes([KeyValue::new("service.name", service_name)]).build(),
+                        )
+                        .build();
+                    provider.tracer("rust_lib")
+                }
+                Err(e) => {
+                    info!("[logger] OTLP/Tempo 未配置或不可用 ({})，仅本地日志带 trace_id", e);
+                    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+                        .with_simple_exporter(NoopSpanExporter)
+                        .build();
+                    provider.tracer("rust_lib")
+                }
+            }
+        };
         let otel_layer = OpenTelemetryLayer::new(tracer);
 
         // 控制台：保持原有格式（含 level 位置），最后追加 trace_id/span_id
