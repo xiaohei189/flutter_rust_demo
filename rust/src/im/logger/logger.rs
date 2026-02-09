@@ -2,19 +2,34 @@ use std::fmt;
 use std::fs::File;
 use std::io::{self, Write};
 use std::sync::Once;
+use opentelemetry::trace::{TraceContextExt, TracerProvider};
+use opentelemetry_sdk::error::OTelSdkResult;
+use opentelemetry_sdk::trace::{SpanData, SpanExporter as OtelSpanExporter};
 use tracing_core::{Event, Subscriber};
+use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::fmt::format::{FormatEvent, Writer};
 use tracing_subscriber::fmt::FmtContext;
+use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::EnvFilter;
 
 static INIT_LOGGER: Once = Once::new();
 
-/// 包装原有 Format，在每行日志前输出从根到当前的 span_id 链（含父 span id），便于串联整条处理链
-struct WithSpanId<F>(F);
+/// 不导出到后端的 SpanExporter，仅用于让 SdkTracerProvider 生成有效 trace_id/span_id
+#[derive(Debug)]
+struct NoopSpanExporter;
 
-impl<S, N, F> FormatEvent<S, N> for WithSpanId<F>
+impl OtelSpanExporter for NoopSpanExporter {
+    fn export(&self, _batch: Vec<SpanData>) -> std::pin::Pin<Box<dyn std::future::Future<Output = OTelSdkResult> + Send>> {
+        Box::pin(async { Ok(()) })
+    }
+}
+
+/// 包装原有 Format：先输出级别与事件内容，最后追加 OpenTelemetry trace_id/span_id
+struct WithTraceId<F>(F);
+
+impl<S, N, F> FormatEvent<S, N> for WithTraceId<F>
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> tracing_subscriber::fmt::format::FormatFields<'a> + 'static,
@@ -26,15 +41,22 @@ where
         mut writer: Writer<'_>,
         event: &Event<'_>,
     ) -> fmt::Result {
-        if let Some(scope) = ctx.event_scope() {
-            let ids: Vec<u64> = scope.from_root().map(|s| s.id().into_u64()).collect();
-            if !ids.is_empty() {
-                // 从根到当前：第一个为根 span_id，最后一个为当前 span_id，中间为各层父 span_id
-                let ids_str = ids.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(":");
-                write!(writer, "span_ids={} ", ids_str)?;
-            }
+        // 将事件内容（含 level，保持原有顺序）格式到 buffer，再在最后面追加 trace_id/span_id
+        let otel_ctx = opentelemetry::Context::current();
+        let span = otel_ctx.span();
+        let span_ctx = span.span_context();
+        let suffix = if span_ctx.is_valid() {
+            format!(" trace_id={} span_id={}\n", span_ctx.trace_id(), span_ctx.span_id())
+        } else {
+            String::new()
+        };
+        let mut buf = String::new();
+        self.0.format_event(ctx, Writer::new(&mut buf), event)?;
+        write!(writer, "{}", buf)?;
+        if !suffix.is_empty() {
+            write!(writer, "{}", suffix)?;
         }
-        self.0.format_event(ctx, writer, event)
+        Ok(())
     }
 }
 
@@ -64,8 +86,15 @@ pub fn init_logger(log_level: &str) {
             .join(LOG_FILE_NAME);
         let _ = std::fs::remove_file(&log_path);
 
-        // 控制台：带 span_id 的 pretty 输出，便于按 span 串联整条处理链
-        let console_fmt = WithSpanId(
+        // OpenTelemetry tracer（生成 trace_id/span_id 并输出到日志；不导出到后端）
+        let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+            .with_simple_exporter(NoopSpanExporter)
+            .build();
+        let tracer = provider.tracer("rust_lib");
+        let otel_layer = OpenTelemetryLayer::new(tracer);
+
+        // 控制台：保持原有格式（含 level 位置），最后追加 trace_id/span_id
+        let console_fmt = WithTraceId(
             tracing_subscriber::fmt::format()
                 .with_file(true)
                 .with_line_number(true)
@@ -83,11 +112,12 @@ pub fn init_logger(log_level: &str) {
             let console_layer = console_subscriber::spawn();
             let registry = tracing_subscriber::registry()
                 .with(filter_layer)
+                .with(otel_layer)
                 .with(console_layer)
                 .with(fmt_layer);
             match File::create(&log_path) {
                 Ok(file) => {
-                    let file_fmt = WithSpanId(
+                    let file_fmt = WithTraceId(
                         tracing_subscriber::fmt::format()
                             .with_file(true)
                             .with_line_number(true)
@@ -113,10 +143,11 @@ pub fn init_logger(log_level: &str) {
         {
             let registry = tracing_subscriber::registry()
                 .with(filter_layer)
+                .with(otel_layer)
                 .with(fmt_layer);
             match File::create(&log_path) {
                 Ok(file) => {
-                    let file_fmt = WithSpanId(
+                    let file_fmt = WithTraceId(
                         tracing_subscriber::fmt::format()
                             .with_file(true)
                             .with_line_number(true)
