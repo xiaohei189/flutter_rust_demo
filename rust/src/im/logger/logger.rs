@@ -182,15 +182,15 @@ pub fn init_logger(log_level: &str) {
         let console_layer = tracing_subscriber::fmt::layer()
         .with_file(true)
                 .with_line_number(true)
-                .pretty() 
+                .compact() 
                ; // 或 compact()
 
 
         // 文件：JSON
-        let file_layer = tracing_subscriber::fmt::layer().json()
+        let file_layer = tracing_subscriber::fmt::layer()
         .with_writer(file_writer)
-        .with_current_span(true)
-        .with_span_list(true);
+        .with_ansi(false)
+        .compact();
 
         #[cfg(tokio_unstable)]
         {
