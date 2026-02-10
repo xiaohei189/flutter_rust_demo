@@ -144,6 +144,7 @@ impl MessageHandle {
                     otel_span_kind = "CONSUMER",
                 ),
                 None => info_span!(
+                    parent: None,
                     "msg_sync.command",
                     kind = command_kind_name(&envelope.kind),
                     messaging_operation = "process",

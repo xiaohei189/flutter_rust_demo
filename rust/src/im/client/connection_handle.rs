@@ -21,8 +21,6 @@ use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
 use openim_protocol::Message as ProtobufMessage;
 use openim_protocol::{constant, sdkws};
-use opentelemetry::propagation::TextMapPropagator;
-use opentelemetry_sdk::propagation::TraceContextPropagator;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -38,6 +36,7 @@ use tokio_tungstenite::{connect_async, MaybeTlsStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, event, info, info_span, instrument, span, trace, warn, Level};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+
 /// WebSocket 写入端类型别名
 pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -102,6 +101,7 @@ impl ConnectionHandle {
     }
 
     /// 启动消息处理和重连任务
+    #[instrument(skip(self),parent= None)]
     pub async fn run(&mut self) -> Result<()> {
         let mut reconnect_count = 0;
         loop {
@@ -136,8 +136,7 @@ impl ConnectionHandle {
         let url = self.connect_url();
         info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
 
-        let connect_span = span!(Level::DEBUG, "ws.connect_async");
-        let (ws_stream, response) = connect_async(&url).instrument(connect_span).await?;
+        let (ws_stream, response) = connect_async(&url).await?;
         info!("[Client] ✅ WebSocket 连接成功, 状态: {}", response.status());
         self.reconnect_strategy.reset();
 
@@ -145,8 +144,7 @@ impl ConnectionHandle {
 
         let mut hb = tokio::time::interval(std::time::Duration::from_secs(25));
 
-        let auth_span = span!(Level::DEBUG, "ws.auth_response");
-        if let Some(Ok(WsMessage::Text(text))) = reader.next().instrument(auth_span).await {
+        if let Some(Ok(WsMessage::Text(text))) = reader.next().await {
             trace!(response_len = text.len(), "收到鉴权响应");
             match serde_json::from_str::<WebSocketConnectResp>(&text) {
                 Ok(resp) => {
@@ -242,12 +240,12 @@ impl ConnectionHandle {
     }
 
     fn handle_message(&mut self, msg: WsMessage) -> Result<()> {
-        let handle_message_span = info_span!(
-            "ws.handle_message",
-            message_kind = %message_kind(&msg),
-        );
-        let span_for_parent = handle_message_span.clone();
-        let _guard = handle_message_span.entered();
+        // let handle_message_span = info_span!(
+        //     "ws.handle_message",
+        //     message_kind = %message_kind(&msg),
+        // );
+        // let span_for_parent = handle_message_span.clone();
+        // let _guard = handle_message_span.entered();
 
         match msg {
             WsMessage::Text(text) => {
@@ -278,22 +276,17 @@ impl ConnectionHandle {
                 let im_resp = serde_json::from_slice::<OpenIMResp>(&data)?;
 
                 trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "解析 OpenIM 响应");
-                // // Propagator can be swapped with b3 propagator, jaeger propagator, etc.
-                // let propagator = TraceContextPropagator::new();
 
-                // // Extract otel parent context via the chosen propagator
-                // let parent_context = propagator.extract(&carrier);
-                //                 if !im_resp.operation_id.is_empty() {
-                //                     if let Some(parent_ctx) = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id) {
-                //                         trace!(operation_id = %im_resp.operation_id, "设置父 span");
-                //                         let _ = span_for_parent.set_parent(parent_ctx);
-                //                     } else {
-                //                         span_for_parent.set_parent(cx)
-                //                         trace!(operation_id = %im_resp.operation_id, "无法还原父 span，当前节点为 root");
-                //                     }
-                //                 } else {
-                //                     trace!("无 operation_id，当前节点为 root");
-                //                 }
+                // if !im_resp.operation_id.is_empty() {
+                //     if let Some(parent_ctx) = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id) {
+                //         trace!(operation_id = %im_resp.operation_id, "设置父 span");
+                //         let _ = span_for_parent.set_parent(parent_ctx);
+                //     } else {
+                //         trace!(operation_id = %im_resp.operation_id, "无法还原父 span，当前节点为 root");
+                //     }
+                // } else {
+                //     trace!("无 operation_id，当前节点为 root");
+                // }
 
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
