@@ -25,14 +25,24 @@ pub fn operation_id_from_otel() -> String {
 
 /// 从 operation_id 解析出 OTel 父上下文（格式须为 "trace_id_32hex:span_id_16hex"）。
 /// 用于响应处理时以该 context 为父创建新 span（`span.set_parent(...)`）。
-pub fn otel_context_from_operation_id(operation_id: &str) -> Option<opentelemetry::Context> {
-    let parts: [&str; 2] = operation_id.splitn(2, TRACE_SPAN_SEP).collect::<Vec<_>>().try_into().ok()?;
+/// 解析失败或无效时返回当前上下文（无有效 remote span），调用方视为 root。
+pub fn otel_context_from_operation_id(operation_id: &str) -> opentelemetry::Context {
+    let parts: [&str; 2] = match operation_id.splitn(2, TRACE_SPAN_SEP).collect::<Vec<_>>().try_into() {
+        Ok(p) => p,
+        Err(_) => return opentelemetry::Context::current(),
+    };
     let (trace_id_str, span_id_str) = (parts[0].trim(), parts[1].trim());
     if trace_id_str.len() != 32 || span_id_str.len() != 16 {
-        return None;
+        return opentelemetry::Context::current();
     }
-    let trace_id = opentelemetry::trace::TraceId::from_hex(trace_id_str).ok()?;
-    let span_id = opentelemetry::trace::SpanId::from_hex(span_id_str).ok()?;
+    let trace_id = match opentelemetry::trace::TraceId::from_hex(trace_id_str) {
+        Ok(id) => id,
+        Err(_) => return opentelemetry::Context::current(),
+    };
+    let span_id = match opentelemetry::trace::SpanId::from_hex(span_id_str) {
+        Ok(id) => id,
+        Err(_) => return opentelemetry::Context::current(),
+    };
     let span_ctx = SpanContext::new(
         trace_id,
         span_id,
@@ -41,7 +51,7 @@ pub fn otel_context_from_operation_id(operation_id: &str) -> Option<opentelemetr
         TraceState::default(),
     );
     if !span_ctx.is_valid() {
-        return None;
+        return opentelemetry::Context::current();
     }
-    Some(opentelemetry::Context::current().with_remote_span_context(span_ctx))
+    opentelemetry::Context::current().with_remote_span_context(span_ctx)
 }

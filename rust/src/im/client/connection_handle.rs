@@ -240,12 +240,13 @@ impl ConnectionHandle {
     }
 
     fn handle_message(&mut self, msg: WsMessage) -> Result<()> {
-        // let handle_message_span = info_span!(
-        //     "ws.handle_message",
-        //     message_kind = %message_kind(&msg),
-        // );
-        // let span_for_parent = handle_message_span.clone();
-        // let _guard = handle_message_span.entered();
+        let handle_message_span = info_span!(
+            parent: None,
+            "ws.handle_message",
+            message_kind = %message_kind(&msg),
+        );
+        let span_for_parent = handle_message_span.clone();
+        let _guard = handle_message_span.entered();
 
         match msg {
             WsMessage::Text(text) => {
@@ -277,16 +278,8 @@ impl ConnectionHandle {
 
                 trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "解析 OpenIM 响应");
 
-                // if !im_resp.operation_id.is_empty() {
-                //     if let Some(parent_ctx) = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id) {
-                //         trace!(operation_id = %im_resp.operation_id, "设置父 span");
-                //         let _ = span_for_parent.set_parent(parent_ctx);
-                //     } else {
-                //         trace!(operation_id = %im_resp.operation_id, "无法还原父 span，当前节点为 root");
-                //     }
-                // } else {
-                //     trace!("无 operation_id，当前节点为 root");
-                // }
+                let parent_ctx = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id);
+                let _ = span_for_parent.set_parent(parent_ctx);
 
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
