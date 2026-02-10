@@ -5,12 +5,8 @@
 use chrono::Utc;
 use opentelemetry::trace::{TraceContextExt, TracerProvider};
 use opentelemetry::KeyValue;
-use opentelemetry_otlp::Protocol;
-use opentelemetry_otlp::WithHttpConfig;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::error::OTelSdkResult;
-use opentelemetry_sdk::runtime;
-use opentelemetry_sdk::trace::span_processor_with_async_runtime::BatchSpanProcessor;
 use opentelemetry_sdk::trace::{Sampler, SdkTracerProvider};
 use opentelemetry_sdk::trace::{SpanData, SpanExporter as OtelSpanExporter};
 use opentelemetry_sdk::Resource;
@@ -148,28 +144,22 @@ pub fn init_logger(log_level: &str) {
         let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
         let _ = FILE_APPENDER_GUARD.set(guard);
 
-        // OpenTelemetry tracer：优先上报到 Tempo（OTLP HTTP），失败则仅本地日志带 trace_id
-        let endpoint = std::env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT").unwrap_or_else(|_| "http://localhost:4318/v1/traces".to_string());
+        // OpenTelemetry tracer：优先上报到 Tempo（OTLP gRPC/tonic），失败则仅本地日志带 trace_id
+        // 注意：gRPC 默认端口通常是 4317；HTTP/protobuf 默认端口通常是 4318。
+        let endpoint = std::env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+            .unwrap_or_else(|_| "http://localhost:4317".to_string());
         let service_name = std::env::var("OTEL_SERVICE_NAME").unwrap_or_else(|_| "rust_lib".to_string());
         let resource = otel_resource(service_name.clone());
         let provider = match opentelemetry_otlp::SpanExporter::builder()
-            .with_http().with_http_client(reqwest::Client::new())
-            .with_protocol(Protocol::HttpBinary)
+            .with_tonic()
             .with_endpoint(endpoint.clone())
             .build()
         {
             Ok(otlp_exporter) => {
                 eprintln!("[logger] Trace 上报到 Tempo: endpoint={}", endpoint);
-                // 关键点：不要用 opentelemetry_sdk::trace::BatchSpanProcessor（专用线程版）
-                // 该版本不支持 async exporter（例如 reqwest-client），会在后台线程里因缺少 tokio reactor 而 panic。
-                // 这里改用 async runtime 版 BatchSpanProcessor，并显式选择 TokioCurrentThread runtime，
-                // 这样即使 init_logger 在非 tokio runtime 上下文里被调用也不会崩溃。
-                let batch_processor =
-                    BatchSpanProcessor::builder(otlp_exporter, runtime::TokioCurrentThread).build();
-
                 opentelemetry_sdk::trace::SdkTracerProvider::builder()
                     .with_sampler(Sampler::ParentBased(Box::new(Sampler::TraceIdRatioBased(1.0))))
-                    .with_span_processor(batch_processor)
+                    .with_batch_exporter(otlp_exporter)
                     .with_resource(resource)
                     .build()
             }

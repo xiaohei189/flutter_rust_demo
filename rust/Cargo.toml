@@ -53,8 +53,8 @@ http-body = "1.0"
 http-body-util = "0.1"
 clap = { version = "4.5", features = ["derive"] }
 opentelemetry = "0.31.0"
-opentelemetry_sdk = { version = "0.31.0", features = ["experimental_async_runtime", "experimental_trace_batch_span_processor_with_async_runtime", "rt-tokio-current-thread"] }
-opentelemetry-otlp = { version = "0.31", features = ["trace", "http-proto", "reqwest-client"] }
+opentelemetry_sdk = { version = "0.31.0", default-features = false, features = ["trace"] }
+opentelemetry-otlp = { version = "0.31", features = ["trace", "grpc-tonic"] }
 tracing-opentelemetry = "0.32.1"
 
 [dev-dependencies]
