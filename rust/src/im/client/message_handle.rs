@@ -166,6 +166,7 @@ impl MessageHandle {
     }
     #[tracing::instrument(skip(self))]
     async fn do_connected(&mut self) -> Result<()> {
+        
         if !self.start_sync().await {
             debug!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
