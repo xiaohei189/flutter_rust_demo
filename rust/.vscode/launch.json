@@ -14,7 +14,7 @@
                 "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4318/v1/traces",
                 "OTEL_SERVICE_NAME": "rust_lib"
             },
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/rust",
             "console": "integratedTerminal"
         }
     ]
