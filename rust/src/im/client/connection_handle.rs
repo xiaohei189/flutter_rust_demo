@@ -278,22 +278,22 @@ impl ConnectionHandle {
                 let im_resp = serde_json::from_slice::<OpenIMResp>(&data)?;
 
                 trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "解析 OpenIM 响应");
-// Propagator can be swapped with b3 propagator, jaeger propagator, etc.
-let propagator = TraceContextPropagator::new();
+                // // Propagator can be swapped with b3 propagator, jaeger propagator, etc.
+                // let propagator = TraceContextPropagator::new();
 
-// Extract otel parent context via the chosen propagator
-let parent_context = propagator.extract(&carrier);
-                if !im_resp.operation_id.is_empty() {
-                    if let Some(parent_ctx) = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id) {
-                        trace!(operation_id = %im_resp.operation_id, "设置父 span");
-                        let _ = span_for_parent.set_parent(parent_ctx);
-                    } else {
-                        span_for_parent.set_parent(cx)
-                        trace!(operation_id = %im_resp.operation_id, "无法还原父 span，当前节点为 root");
-                    }
-                } else {
-                    trace!("无 operation_id，当前节点为 root");
-                }
+                // // Extract otel parent context via the chosen propagator
+                // let parent_context = propagator.extract(&carrier);
+                //                 if !im_resp.operation_id.is_empty() {
+                //                     if let Some(parent_ctx) = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id) {
+                //                         trace!(operation_id = %im_resp.operation_id, "设置父 span");
+                //                         let _ = span_for_parent.set_parent(parent_ctx);
+                //                     } else {
+                //                         span_for_parent.set_parent(cx)
+                //                         trace!(operation_id = %im_resp.operation_id, "无法还原父 span，当前节点为 root");
+                //                     }
+                //                 } else {
+                //                     trace!("无 operation_id，当前节点为 root");
+                //                 }
 
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
@@ -343,8 +343,6 @@ let parent_context = propagator.extract(&carrier);
             }
         }
     }
-
-   
 
     #[instrument(skip(self, im_resp), fields(msg_incr = im_resp.msg_incr,
         req_identifier = im_resp.req_identifier,
