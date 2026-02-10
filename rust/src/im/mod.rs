@@ -9,6 +9,7 @@ pub mod logger;
 pub mod message;
 pub mod model;
 pub mod serialization;
+pub mod trace_context;
 pub mod util;
 
 // 重新导出认证相关函数（从 http 模块）

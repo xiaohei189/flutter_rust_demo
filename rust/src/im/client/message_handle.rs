@@ -13,24 +13,41 @@ use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout, Duration};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info_span, warn, Instrument};
+use tracing::{Instrument, Level, debug, event, info_span, warn};
 
 const CONNECT_PULL_NUMS: i64 = 1;
 const DEFAULT_PULL_NUMS: i64 = 10;
 const SPLIT_PULL_MSG_NUM: i64 = 100;
 const LONG_CONN_TIMEOUT_SECS: u64 = 5;
 
-/// 上行给 MsgSyncer 的控制命令（对齐 Go 的 Cmd2Value）
+/// 具体命令类型（不含 tracing 上下文）
 #[derive(Debug)]
-pub enum MsgSyncCommand {
+pub enum MsgSyncCommandKind {
     /// 长连已连接
     Connected,
     /// App 唤醒触发同步
     Wakeup,
     /// 手动触发指定会话的同步
     ManualSync(Vec<String>),
-    /// 推送消息（msg_id 用于串联整条处理链路的日志/追踪）
-    Push { msg_id: String, push: sdkws::PushMessages },
+    /// 推送消息
+    Push { push: sdkws::PushMessages },
+}
+
+/// 命令信封：具体命令 + span，用于与调用方 tracing 串起来（接收端先取命令再按 kind 处理逻辑）
+#[derive(Debug)]
+pub struct MsgSyncCommand {
+    pub kind: MsgSyncCommandKind,
+    pub span: Option<tracing::Span>,
+}
+
+#[inline]
+fn command_kind_name(kind: &MsgSyncCommandKind) -> &'static str {
+    match kind {
+        MsgSyncCommandKind::Connected => "Connected",
+        MsgSyncCommandKind::Wakeup => "Wakeup",
+        MsgSyncCommandKind::ManualSync(_) => "ManualSync",
+        MsgSyncCommandKind::Push { .. } => "Push",
+    }
 }
 
 /// 消息同步器，actor 化：仅通过命令/事件通道与外界交互
@@ -113,32 +130,47 @@ impl MessageHandle {
                 }
                 cmd = self.cmd_rx.recv() => cmd,
             };
-            let Some(cmd) = cmd else {
+            let Some(envelope) = cmd else {
                 debug!("[message_handle] cmd_rx 已关闭，监听器退出");
                 return Ok(());
             };
-            match cmd {
-                MsgSyncCommand::Connected => {
+            // 异步消费 span，附加 OTel/Jaeger 语义：CONSUMER + messaging.operation=process
+            let common_span = match &envelope.span {
+                Some(p) => info_span!(
+                    parent: p,
+                    "msg_sync.command",
+                    kind = command_kind_name(&envelope.kind),
+                    messaging_operation = "process",
+                    otel_span_kind = "CONSUMER",
+                ),
+                None => info_span!(
+                    "msg_sync.command",
+                    kind = command_kind_name(&envelope.kind),
+                    messaging_operation = "process",
+                    otel_span_kind = "CONSUMER",
+                ),
+            };
+            match envelope.kind {
+                MsgSyncCommandKind::Connected => {
                     debug!("[message_handle] 收到 Connected 事件");
-                    if let Err(e) = self.do_connected().await {
+                    if let Err(e) = self.do_connected().instrument(common_span).await {
                         warn!("[message_handle] do_connected 失败: {e}");
                     }
                 }
-                MsgSyncCommand::Wakeup => {
+                MsgSyncCommandKind::Wakeup => {
                     debug!("[message_handle] 收到 Wakeup 事件");
-                    if let Err(e) = self.do_wakeup_data_sync().await {
+                    if let Err(e) = self.do_wakeup_data_sync().instrument(common_span).await {
                         warn!("[message_handle] do_wakeup_data_sync 失败: {e}");
                     }
                 }
-                MsgSyncCommand::ManualSync(conversation_ids) => {
+                MsgSyncCommandKind::ManualSync(conversation_ids) => {
                     debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
-                    if let Err(e) = self.do_im_message_sync(conversation_ids).await {
+                    if let Err(e) = self.do_im_message_sync(conversation_ids).instrument(common_span).await {
                         warn!("[message_handle] do_im_message_sync 失败: {e}");
                     }
                 }
-                MsgSyncCommand::Push { msg_id, push } => {
-                    let span = info_span!("push_msg", msg_id = %msg_id);
-                    if let Err(e) = self.do_push_msg(&msg_id, &push).instrument(span).await {
+                MsgSyncCommandKind::Push { push } => {
+                    if let Err(e) = self.do_push_msg(None, &push).instrument(common_span).await {
                         warn!("[message_handle] 处理 Push 失败: {e}");
                     }
                 }
@@ -164,7 +196,7 @@ impl MessageHandle {
     fn is_notification(conv_id: &str) -> bool {
         conv_id.starts_with("n_")
     }
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self), name = "msg_sync.connected")]
     async fn do_connected(&mut self) -> Result<()> {
         
         if !self.start_sync().await {
@@ -184,6 +216,7 @@ impl MessageHandle {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self), name = "msg_sync.wakeup")]
     async fn do_wakeup_data_sync(&mut self) -> Result<()> {
         if !self.start_sync().await {
             debug!("[message_handle] 正在同步，忽略 Wakeup 事件");
@@ -195,6 +228,7 @@ impl MessageHandle {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self), name = "msg_sync.manual", fields(n = conversation_ids.len()))]
     async fn do_im_message_sync(&mut self, conversation_ids: Vec<String>) -> Result<()> {
         // 兜底策略：暂缺 GetConversationsHasReadAndMaxSeq 接口，先用最新 maxSeq 过滤
         let resp = self.get_newest_seq().await?;
@@ -208,14 +242,16 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 处理推送消息（对齐 go 的 doPushMsg）；msg_id 用于 tracing 串联整条处理链路
-    async fn do_push_msg(&mut self, msg_id: &str, push: &sdkws::PushMessages) -> Result<()> {
-        self.push_trigger_and_sync(Some(msg_id), &push.msgs, false).await?;
-        self.push_trigger_and_sync(Some(msg_id), &push.notification_msgs, true).await?;
+    /// 处理推送消息（对齐 go 的 doPushMsg）；msg_id 为 None 时表示不串联单条 Push 链路
+    #[tracing::instrument(skip(self, push), name = "push_msg")]
+    async fn do_push_msg(&mut self, msg_id: Option<&str>, push: &sdkws::PushMessages) -> Result<()> {
+        self.push_trigger_and_sync(msg_id, &push.msgs, false).await?;
+        self.push_trigger_and_sync(msg_id, &push.notification_msgs, true).await?;
         Ok(())
     }
 
     /// 核心触发与判定逻辑（对齐 Go pushTriggerAndSync）；msg_id 为 None 时表示非单条 Push 链路（如 sync 补拉）
+    #[tracing::instrument(skip(self, push_messages), name = "push_trigger_and_sync", fields(is_notification = is_notification, convs = push_messages.len()))]
     async fn push_trigger_and_sync(&mut self, msg_id: Option<&str>, push_messages: &HashMap<String, sdkws::PullMsgs>, is_notification: bool) -> Result<()> {
         if push_messages.is_empty() {
             return Ok(());
@@ -261,6 +297,7 @@ impl MessageHandle {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self, msgs), name = "create_pull_msgs", fields(conversation_id = %conversation_id, n = msgs.len()))]
     fn create_pull_msgs(&self, conversation_id: &str, msgs: &[sdkws::MsgData]) -> HashMap<String, sdkws::PullMsgs> {
         let pull_msgs = HashMap::from([(
             conversation_id.clone().to_string(),
@@ -272,6 +309,7 @@ impl MessageHandle {
         )]);
         pull_msgs
     }
+    #[tracing::instrument(skip(self, seq_map), name = "sync_and_trigger_msgs", fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     async fn sync_and_trigger_msgs(&mut self, seq_map: &HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<()> {
         if seq_map.is_empty() {
             debug!("[message_handle] nothing to sync, sync_msg_num={}", sync_msg_num);
@@ -321,6 +359,7 @@ impl MessageHandle {
         Ok(())
     }
     /// 占位：触发会话/通知消息到上层
+    #[tracing::instrument(skip(self, msgs), name = "trigger_msgs", fields(conversation_id = %conversation_id, n = msgs.len(), is_notification = is_notification))]
     async fn trigger_msgs(&self, conversation_id: &str, msgs: &[sdkws::MsgData], is_notification: bool) -> Result<()> {
         debug!("[message_handle] trigger_msgs conv={} len={} is_notification={}", conversation_id, msgs.len(), is_notification);
         // TODO: 分发到事件队列 / 存储
@@ -328,6 +367,7 @@ impl MessageHandle {
     }
 
     /// 触发有新消息的会话事件（msg_id 用于 tracing 串联，非 Push 链路传 None）
+    #[tracing::instrument(skip(self, msgs), name = "trigger_conversation", fields(msg_id = ?msg_id, convs = msgs.len()))]
     async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
@@ -342,6 +382,7 @@ impl MessageHandle {
     }
 
     /// 安装（例如重装）时同步会话消息
+    #[tracing::instrument(skip(self, msgs), name = "trigger_reinstall_conversation", fields(msg_id = ?msg_id, convs = msgs.len(), total = total))]
     async fn trigger_reinstall_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_reinstall_conversation empty");
@@ -356,13 +397,14 @@ impl MessageHandle {
     }
 
     /// 触发通知消息事件（msg_id 用于 tracing 串联）
+    #[tracing::instrument(skip(self, msgs), name = "trigger_notification", fields(msg_id = ?msg_id, convs = msgs.len()))]
     async fn trigger_notification(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
-            debug!("[message_handle] trigger_notification empty");
+            event!(Level::TRACE, "[message_handle] trigger_notification empty");
             return Ok(());
         }
         if let Some(ref tx) = self.conv_cmd_tx {
-            debug!(msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
+            event!(Level::TRACE, msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
             let _ = tx.send(ConvCmd::Notification { msg_id: msg_id.map(String::from), msgs: msgs.clone() });
         }
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
@@ -408,6 +450,7 @@ impl MessageHandle {
         }
     }
 
+    #[tracing::instrument(skip(self, seq_map), name = "pull_msg_by_seq_range", fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     pub async fn pull_msg_by_seq_range(&self, seq_map: &std::collections::HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<sdkws::PullMessageBySeqsResp> {
         debug!("[message_handle] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
 
@@ -440,6 +483,7 @@ impl MessageHandle {
         Ok(max_seqs)
     }
 
+    #[tracing::instrument(skip(self, ranges), name = "pull_msg_by_range", fields(n = ranges.len()))]
     async fn pull_msg_by_range(&self, ranges: Vec<SeqRangeModel>) -> Result<sdkws::PullMessageBySeqsResp> {
         let req = self.make_ws_req(
             constant::PULL_MSG_BY_RANGE,
@@ -461,15 +505,15 @@ impl MessageHandle {
         let decoded: sdkws::PullMessageBySeqsResp = self.decode_ws_resp(&resp)?;
         Ok(decoded)
     }
-    /// 构造通用 WS 请求（protobuf -> bytes）
+    /// 构造通用 WS 请求（protobuf -> bytes）；operation_id 使用当前 OTel trace_id:span_id 便于响应端通过 trace_id 建子 span
     fn make_ws_req<M: prost::Message>(&self, req_identifier: i32, msg: M) -> Result<ws::OpenIMReq> {
         let data = msg.encode_to_vec();
         Ok(crate::im::model::ws::OpenIMReq {
             req_identifier,
             token: String::new(),
             send_id: self.login_user_id.clone(),
-            operation_id: util::make_operation_id(),
-            msg_incr: util::make_operation_id(),
+            operation_id: crate::im::trace_context::operation_id_from_otel(),
+            msg_incr: crate::im::util::make_msg_incr(),
             data,
         })
     }

@@ -3,16 +3,16 @@
 //! 此模块包含 OpenIM 客户端的核心逻辑实现。
 
 use crate::im::client::client::ClientConfig;
+use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::dao::MessageRepo;
 use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
-use crate::im::client::message_handle::MsgSyncCommand;
 use crate::im::model::ws::WsRpcEnvelope;
 use crate::im::model::{msg_type, LocalConversation, OpenIMReq, OpenIMResp};
-use crate::im::serialization::{compress_gzip, decompress_gzip, generate_msg_id};
+use crate::im::serialization::{compress_gzip, decompress_gzip};
 use crate::im::util::{self, content_type_name};
 use crate::im::WebSocketConnectResp;
 use anyhow::{Context, Result};
@@ -21,6 +21,8 @@ use futures_util::stream::{SplitSink, SplitStream};
 use futures_util::StreamExt;
 use openim_protocol::Message as ProtobufMessage;
 use openim_protocol::{constant, sdkws};
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -34,13 +36,25 @@ use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, warn};
-use uuid::Uuid;
+use tracing::{debug, error, event, info, info_span, instrument, span, trace, warn, Level};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 /// WebSocket 写入端类型别名
 pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
 /// WebSocket 读取端类型别名
 pub type WsReader = SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>;
+
+#[inline]
+fn message_kind(msg: &WsMessage) -> &'static str {
+    match msg {
+        WsMessage::Text(_) => "text",
+        WsMessage::Binary(_) => "binary",
+        WsMessage::Close(_) => "close",
+        WsMessage::Ping(_) => "ping",
+        WsMessage::Pong(_) => "pong",
+        WsMessage::Frame(_) => "frame",
+    }
+}
 
 /// 核心 IM 逻辑实现
 pub struct ConnectionHandle {
@@ -53,12 +67,7 @@ pub struct ConnectionHandle {
 }
 
 impl ConnectionHandle {
-    pub fn new(
-        config: ClientConfig,
-        cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
-        msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>,
-        cancel_token: CancellationToken,
-    ) -> Self {
+    pub fn new(config: ClientConfig, cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>, msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>, cancel_token: CancellationToken) -> Self {
         let client = Self {
             config,
             reconnect_strategy: ReconnectStrategy::new(),
@@ -69,8 +78,6 @@ impl ConnectionHandle {
         };
         client
     }
-
- 
 
     /// 构建 WebSocket 连接 URL
     pub(crate) fn connect_url(&self) -> String {
@@ -124,10 +131,13 @@ impl ConnectionHandle {
         }
     }
 
+    #[instrument(skip(self))]
     async fn connect(&mut self) -> Result<()> {
         let url = self.connect_url();
         info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
-        let (ws_stream, response) = connect_async(&url).await?;
+
+        let connect_span = span!(Level::DEBUG, "ws.connect_async");
+        let (ws_stream, response) = connect_async(&url).instrument(connect_span).await?;
         info!("[Client] ✅ WebSocket 连接成功, 状态: {}", response.status());
         self.reconnect_strategy.reset();
 
@@ -135,13 +145,17 @@ impl ConnectionHandle {
 
         let mut hb = tokio::time::interval(std::time::Duration::from_secs(25));
 
-        if let Some(Ok(WsMessage::Text(text))) = reader.next().await {
+        let auth_span = span!(Level::DEBUG, "ws.auth_response");
+        if let Some(Ok(WsMessage::Text(text))) = reader.next().instrument(auth_span).await {
+            trace!(response_len = text.len(), "收到鉴权响应");
             match serde_json::from_str::<WebSocketConnectResp>(&text) {
                 Ok(resp) => {
                     if resp.err_code == 0 {
                         info!("[Client] ✅ 服务器连接鉴权成功");
-                        // 通知消息同步器：长连已建立，触发消息同步与会话同步
-                        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Connected) {
+                        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand {
+                            kind: MsgSyncCommandKind::Connected,
+                            span: Some(tracing::Span::current().clone()),
+                        }) {
                             warn!("[Client] 发送 Connected 到 message_handle 失败: {e}");
                         }
                     } else {
@@ -163,7 +177,9 @@ impl ConnectionHandle {
             error!("[Client] ❌ 未收到 WebSocket 连接响应");
             return Err(anyhow::anyhow!("未收到 WebSocket 连接响应"));
         }
+
         use futures_util::SinkExt;
+        use tracing::Instrument;
 
         loop {
             tokio::select! {
@@ -172,6 +188,7 @@ impl ConnectionHandle {
                     return Ok(());
                 }
                 _ = hb.tick() => {
+                    trace!("发送心跳 Ping");
                     if let Err(e) = writer.send(WsMessage::Ping(vec![])).await {
                         error!("[Client] 心跳发送失败: {}", e);
                         return Err(anyhow::anyhow!("心跳发送失败: {e}"));
@@ -180,6 +197,7 @@ impl ConnectionHandle {
                 cmd = self.cmd_rx.recv() => {
                     if let Some((req, resp_tx)) = cmd {
                         let key = req.msg_incr.clone();
+                        trace!(msg_incr = %key, req_identifier = req.req_identifier, "发送 RPC 请求");
                         let json = serde_json::to_vec(&req).map_err(anyhow::Error::from)?;
                         let data = if self.config.compression.eq_ignore_ascii_case("gzip") {
                             compress_gzip(&json).map_err(anyhow::Error::from)?
@@ -199,10 +217,10 @@ impl ConnectionHandle {
                 msg = reader.next() => {
                     match msg {
                         Some(Ok(msg)) => {
-                         if let Err(e) = self.handle_message(msg) {
-                            error!("[Client] 处理ws消息失败: {}", e);
-                            return Err(anyhow::anyhow!("处理ws消息失败: {e}"));
-                         }
+                            if let Err(e) = self.handle_message(msg) {
+                                error!("[Client] 处理ws消息失败: {}", e);
+                                return Err(anyhow::anyhow!("处理ws消息失败: {e}"));
+                            }
                         },
                         Some(Err(e)) => {
                             let msg = e.to_string();
@@ -214,44 +232,79 @@ impl ConnectionHandle {
                             self.pending_rpc.clear();
                             return Err(anyhow::anyhow!("接收ws消息失败: {e}"));
                         },
-                        None => {},
+                        None => {
+                            trace!("WebSocket 读端关闭");
+                        },
                     }
-
                 }
             }
         }
     }
 
     fn handle_message(&mut self, msg: WsMessage) -> Result<()> {
+        let handle_message_span = info_span!(
+            "ws.handle_message",
+            message_kind = %message_kind(&msg),
+        );
+        let span_for_parent = handle_message_span.clone();
+        let _guard = handle_message_span.entered();
+
         match msg {
             WsMessage::Text(text) => {
-                info!("[Client] 收到文本消息: {}", text);
+                event!(Level::DEBUG, len = text.len(), "处理文本消息");
                 return Ok(());
             }
             WsMessage::Binary(data) => {
-                // 解压 gzip 数据
+                debug!(len = data.len(), "处理二进制消息");
+                let original_len = data.len();
                 let data = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+                    trace!(compressed_len = original_len, "解压压缩的二进制消息");
                     match decompress_gzip(&data) {
-                        Ok(d) => d,
+                        Ok(d) => {
+                            trace!(decompressed_len = d.len(), "解压完成");
+                            d
+                        }
                         Err(e) => {
+                            error!(error = %e, "解压失败");
                             return Err(anyhow::anyhow!("解压失败: {}", e));
                         }
                     }
                 } else {
+                    trace!(original_len = original_len, "未压缩的二进制消息");
                     data
                 };
 
                 use crate::im::model::OpenIMResp;
-                // 解析 JSON 响应
                 let im_resp = serde_json::from_slice::<OpenIMResp>(&data)?;
 
-                // 根据 req_identifier 分发处理
+                trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "解析 OpenIM 响应");
+// Propagator can be swapped with b3 propagator, jaeger propagator, etc.
+let propagator = TraceContextPropagator::new();
+
+// Extract otel parent context via the chosen propagator
+let parent_context = propagator.extract(&carrier);
+                if !im_resp.operation_id.is_empty() {
+                    if let Some(parent_ctx) = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id) {
+                        trace!(operation_id = %im_resp.operation_id, "设置父 span");
+                        let _ = span_for_parent.set_parent(parent_ctx);
+                    } else {
+                        span_for_parent.set_parent(cx)
+                        trace!(operation_id = %im_resp.operation_id, "无法还原父 span，当前节点为 root");
+                    }
+                } else {
+                    trace!("无 operation_id，当前节点为 root");
+                }
+
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
-                        // RPC 响应：调用 RPC 响应处理器
-                        if let Err(e) = self.handle_rpc_message(im_resp) {
-                            error!("[Client] 处理RPC消息失败: {}", e);
-                            return Err(anyhow::anyhow!("处理RPC消息失败: {}", e));
+                        match self.pending_rpc.remove(&im_resp.msg_incr) {
+                            Some((_, Some(resp_tx))) => {
+                                trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "发送RPC响应");
+                                resp_tx.send(im_resp).map_err(|_| anyhow::anyhow!("向 RPC 等待方发送响应失败（接收端已关闭）"))?;
+                            }
+                            _ => {
+                                warn!(msg_incr = %im_resp.msg_incr, "msgIncr 不存在于 pending_rpc");
+                            }
                         }
                         return Ok(());
                     }
@@ -263,7 +316,6 @@ impl ConnectionHandle {
                         return Ok(());
                     }
                     msg_type::WS_KICK_ONLINE_MSG => {
-                        // 踢下线消息：触发监听器回调
                         warn!("[Client] ⚠️ 被踢下线");
                         return Err(anyhow::anyhow!("被踢下线"));
                     }
@@ -274,13 +326,15 @@ impl ConnectionHandle {
                 }
             }
             WsMessage::Close(_) => {
-                warn!("[Client] 收到Close消息");
+                debug!("处理 Close 帧");
                 return Ok(());
             }
             WsMessage::Ping(_) => {
+                trace!("处理 Ping 帧");
                 return Ok(());
             }
             WsMessage::Pong(_) => {
+                trace!("处理 Pong 帧");
                 return Ok(());
             }
             WsMessage::Frame(frame) => {
@@ -290,19 +344,14 @@ impl ConnectionHandle {
         }
     }
 
-    fn handle_rpc_message(&mut self, im_resp: OpenIMResp) -> Result<()> {
-        // 服务端回包用 msgIncr 匹配请求，与发送时 pending_rpc 的 key 一致
-        let cmd = self.pending_rpc.remove(&im_resp.msg_incr);
-        if let Some((_, Some(resp_tx))) = cmd {
-            if let Err(e) = resp_tx.send(im_resp) {
-                error!("[Client] 发送RPC响应失败: {:?}", e);
-                return Err(anyhow::anyhow!("发送RPC响应失败: {:?}", e));
-            }
-        } else {
-            warn!("[Client] msgIncr 不存在于 pending_rpc: {}", im_resp.msg_incr);
-        }
-        Ok(())
-    }
+   
+
+    #[instrument(skip(self, im_resp), fields(msg_incr = im_resp.msg_incr,
+        req_identifier = im_resp.req_identifier,
+        operation_id = im_resp.operation_id,
+        err_code = im_resp.err_code,
+        data_len = im_resp.data.len(),
+    ))]
     fn handle_push_message(&mut self, im_resp: &OpenIMResp) -> Result<()> {
         let push_msg = match sdkws::PushMessages::decode(im_resp.data.as_slice()) {
             Ok(pm) => pm,
@@ -336,14 +385,20 @@ impl ConnectionHandle {
             v.sort_by(|a, b| b.1.cmp(&a.1));
             v.into_iter().map(|(name, n)| format!("{}x{}", name, n)).collect::<Vec<_>>().join(", ")
         };
-        let msg_id = Uuid::new_v4().to_string();
         info!(
-            msg_id = %msg_id,
             "[ConnectionHandle] 收到推送 类型=PushMessages 新消息={}个会话/{}条({}) 通知={}个会话/{}条({})",
-            new_msg_convs, new_msg_count, if new_msg_types.is_empty() { "—" } else { &new_msg_types },
-            notif_convs, notif_count, if notif_types.is_empty() { "—" } else { &notif_types }
+            new_msg_convs,
+            new_msg_count,
+            if new_msg_types.is_empty() { "—" } else { &new_msg_types },
+            notif_convs,
+            notif_count,
+            if notif_types.is_empty() { "—" } else { &notif_types }
         );
-        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::Push { msg_id, push: push_msg }) {
+        let current_span = tracing::Span::current();
+        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand {
+            kind: MsgSyncCommandKind::Push { push: push_msg },
+            span: Some(current_span.clone()),
+        }) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
             return Err(anyhow::anyhow!("发送推送命令失败: {e}"));
         }
@@ -360,14 +415,14 @@ mod tests {
     use tracing::{error, info, warn};
 
     use super::{ClientConfig, ConnectionHandle};
-    use crate::im::http::login_async;
+    use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
     use crate::im::friend::FriendListener;
+    use crate::im::http::login_async;
     use crate::im::listener::{AdvancedMsgListener, ConversationListener};
     use crate::im::logger::logger::init_logger;
     use crate::im::model::SeqRange;
     use std::sync::Arc;
     use std::time::{self, Duration};
-    use crate::im::client::message_handle::MsgSyncCommand;
 
     static APP_CTX: OnceCell<AppCtx> = OnceCell::const_new();
 
