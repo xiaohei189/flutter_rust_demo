@@ -1,5 +1,5 @@
 //! 消息同步器（参考 go/internal/interaction/msg_sync.go）
-use crate::im::client::conversation_handle::ConvCmd;
+use crate::im::client::conversation_handle::{ConvCmd, ConvCmdKind};
 use crate::im::dao::repository::Repository;
 use crate::im::model::constant;
 use crate::im::model::constant::sync_flag;
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout, Duration};
 use tokio_util::sync::CancellationToken;
-use tracing::{Instrument, Level, debug, event, info_span, warn};
+use tracing::{debug, event, info_span, instrument, warn, Instrument, Level};
 
 const CONNECT_PULL_NUMS: i64 = 1;
 const DEFAULT_PULL_NUMS: i64 = 10;
@@ -61,7 +61,7 @@ pub struct MessageHandle {
     cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
     event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
     /// 会话命令通道：将新消息/通知/重装同步命令传递给 conversation_handle
-    conv_cmd_tx: Option<mpsc::UnboundedSender<ConvCmd>>,
+    conv_cmd_tx: mpsc::UnboundedSender<ConvCmd>,
     ws_rpc_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
     cancel_token: CancellationToken,
 }
@@ -74,7 +74,7 @@ impl MessageHandle {
         cancel_token: CancellationToken,
         event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
         cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
-        conv_cmd_tx: Option<mpsc::UnboundedSender<ConvCmd>>,
+        conv_cmd_tx: mpsc::UnboundedSender<ConvCmd>,
     ) -> Self {
         Self {
             login_user_id,
@@ -197,20 +197,21 @@ impl MessageHandle {
     fn is_notification(conv_id: &str) -> bool {
         conv_id.starts_with("n_")
     }
-    #[tracing::instrument(skip(self), name = "msg_sync.connected")]
+    #[tracing::instrument(skip(self))]
     async fn do_connected(&mut self) -> Result<()> {
-        
         if !self.start_sync().await {
             debug!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
         }
         // 通知会话处理器：开始应用数据同步（SyncFlag AppDataSyncStart）
-        if let Some(ref tx) = self.conv_cmd_tx {
-            debug!("[ConvSync] 发送 SyncFlag({})", sync_flag::APP_DATA_SYNC_START);
-            let _ = tx.send(ConvCmd::SyncFlag(sync_flag::APP_DATA_SYNC_START));
-            debug!("[ConvSync] 发送 SyncData");
-            let _ = tx.send(ConvCmd::SyncData);
-        }
+        let _ = self.conv_cmd_tx.send(ConvCmd {
+            kind: ConvCmdKind::SyncFlag(sync_flag::APP_DATA_SYNC_START),
+            span: Some(tracing::Span::current().clone()),
+        });
+        let _ = self.conv_cmd_tx.send(ConvCmd {
+            kind: ConvCmdKind::SyncData,
+            span: Some(tracing::Span::current().clone()),
+        });
         let reinstalled = self.reinstalled;
         let newest = self.get_newest_seq().await?;
         self.compare_seqs_and_batch_sync(newest, CONNECT_PULL_NUMS, reinstalled).await?;
@@ -374,10 +375,14 @@ impl MessageHandle {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
-        if let Some(ref tx) = self.conv_cmd_tx {
-            debug!(msg_id = ?msg_id, "[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
-            let _ = tx.send(ConvCmd::NewMsgCome { msg_id: msg_id.map(String::from), msgs: msgs.clone() });
-        }
+        debug!(msg_id = ?msg_id, "[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
+        let _ = self.conv_cmd_tx.send(ConvCmd {
+            kind: ConvCmdKind::NewMsgCome {
+                msg_id: msg_id.map(String::from),
+                msgs: msgs.clone(),
+            },
+            span: Some(tracing::Span::current().clone()),
+        });
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
@@ -389,10 +394,15 @@ impl MessageHandle {
             debug!("[message_handle] trigger_reinstall_conversation empty");
             return Ok(());
         }
-        if let Some(ref tx) = self.conv_cmd_tx {
-            debug!(msg_id = ?msg_id, "[ConvSync] 发送 MsgSyncInReinstall total={}", total);
-            let _ = tx.send(ConvCmd::MsgSyncInReinstall { msg_id: msg_id.map(String::from), msgs: msgs.clone(), total });
-        }
+        debug!(msg_id = ?msg_id, "[ConvSync] 发送 MsgSyncInReinstall total={}", total);
+        let _ = self.conv_cmd_tx.send(ConvCmd {
+            kind: ConvCmdKind::MsgSyncInReinstall {
+                msg_id: msg_id.map(String::from),
+                msgs: msgs.clone(),
+                total,
+            },
+            span: Some(tracing::Span::current().clone()),
+        });
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
         Ok(())
     }
@@ -404,14 +414,18 @@ impl MessageHandle {
             event!(Level::TRACE, "[message_handle] trigger_notification empty");
             return Ok(());
         }
-        if let Some(ref tx) = self.conv_cmd_tx {
-            event!(Level::TRACE, msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
-            let _ = tx.send(ConvCmd::Notification { msg_id: msg_id.map(String::from), msgs: msgs.clone() });
-        }
+        event!(Level::TRACE, msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
+        let _ = self.conv_cmd_tx.send(ConvCmd {
+            kind: ConvCmdKind::Notification {
+                msg_id: msg_id.map(String::from),
+                msgs: msgs.clone(),
+            },
+            span: Some(tracing::Span::current().clone()),
+        });
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())
     }
-
+    #[instrument(skip(self),fields(max_seq_to_sync.len = max_seq_to_sync.len(), pull_nums = pull_nums, reinstalled = reinstalled))]
     async fn compare_seqs_and_batch_sync(&mut self, max_seq_to_sync: HashMap<String, i64>, pull_nums: i64, reinstalled: bool) -> Result<()> {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
@@ -468,8 +482,7 @@ impl MessageHandle {
         self.pull_msg_by_range(ranges).await
     }
 
-    /// 拉取各会话最新 seq；用 span 测量耗时，内部打印结果
-    #[tracing::instrument(skip(self), name = "get_newest_seq")]
+    #[tracing::instrument(skip(self))]
     async fn get_newest_seq(&self) -> Result<HashMap<String, i64>> {
         let req = self.make_ws_req(constant::GET_NEWEST_SEQ, sdkws::GetMaxSeqReq { user_id: self.login_user_id.clone() })?;
         let resp = self.send_ws_req_wait(req).await?;

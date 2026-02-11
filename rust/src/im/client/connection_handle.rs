@@ -100,9 +100,20 @@ impl ConnectionHandle {
         )
     }
 
-    /// 启动消息处理和重连任务
-    #[instrument(skip(self),parent= None)]
-    pub async fn run(&mut self) -> Result<()> {
+    /// 通知 message_handle 长连已连接
+    fn connected(&mut self) {
+        let _guard = info_span!("ws.connected", "长连已连接").entered();
+        
+        let cmd = MsgSyncCommand {
+            kind: MsgSyncCommandKind::Connected,
+            span: Some(tracing::Span::current().clone()),
+        };
+        if let Err(e) = self.msg_sync_cmd_tx.send(cmd) {
+            warn!("[Client] 发送 Connected 到 message_handle 失败: {e}");
+        }
+    }
+
+    pub async fn auto_connect(&mut self) -> Result<()> {
         let mut reconnect_count = 0;
         loop {
             let cancel = self.cancel_token.clone();
@@ -111,7 +122,7 @@ impl ConnectionHandle {
                     info!("[Client] 收到取消信号，退出连接循环");
                     return Ok(());
                 }
-                res = self.connect() => {
+                res = self.do_connect() => {
                     if let Err(e) = res {
                         error!("[Client] 连接失败: {}", e);
                     }
@@ -131,8 +142,7 @@ impl ConnectionHandle {
         }
     }
 
-    #[instrument(skip(self))]
-    async fn connect(&mut self) -> Result<()> {
+    async fn do_connect(&mut self) -> Result<()> {
         let url = self.connect_url();
         info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
 
@@ -150,12 +160,7 @@ impl ConnectionHandle {
                 Ok(resp) => {
                     if resp.err_code == 0 {
                         info!("[Client] ✅ 服务器连接鉴权成功");
-                        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand {
-                            kind: MsgSyncCommandKind::Connected,
-                            span: Some(tracing::Span::current().clone()),
-                        }) {
-                            warn!("[Client] 发送 Connected 到 message_handle 失败: {e}");
-                        }
+                        self.connected();
                     } else {
                         let error_msg = if !resp.err_dlt.is_empty() {
                             format!("{} (详情: {})", resp.err_msg, resp.err_dlt)
@@ -240,14 +245,6 @@ impl ConnectionHandle {
     }
 
     fn handle_message(&mut self, msg: WsMessage) -> Result<()> {
-        let handle_message_span = info_span!(
-            parent: None,
-            "ws.handle_message",
-            message_kind = %message_kind(&msg),
-        );
-        let span_for_parent = handle_message_span.clone();
-        let _guard = handle_message_span.entered();
-
         match msg {
             WsMessage::Text(text) => {
                 event!(Level::DEBUG, len = text.len(), "处理文本消息");
@@ -277,9 +274,6 @@ impl ConnectionHandle {
                 let im_resp = serde_json::from_slice::<OpenIMResp>(&data)?;
 
                 trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "解析 OpenIM 响应");
-
-                let parent_ctx = crate::im::trace_context::otel_context_from_operation_id(&im_resp.operation_id);
-                let _ = span_for_parent.set_parent(parent_ctx);
 
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
@@ -449,7 +443,7 @@ mod tests {
         let cancel_token = CancellationToken::new();
         let mut client = ConnectionHandle::new(config, rx, msg_sync_cmd_tx, cancel_token.clone());
         // 连接到服务器（内部会自动启动消息处理）
-        client.run().await.unwrap_or_else(|e| {
+        client.auto_connect().await.unwrap_or_else(|e| {
             error!("连接失败: {}", e);
             return;
         });

@@ -131,7 +131,7 @@ impl OpenIMClient {
             cancel_token.clone(),
         );
         let mut connection_handle = tokio::spawn(async move {
-            if let Err(e) = connection.run().await {
+            if let Err(e) = connection.auto_connect().await {
                 error!("连接失败: {}", e);
             }
         });
@@ -165,7 +165,7 @@ impl OpenIMClient {
             cancel_token.clone(),
             msg_sync_event_tx,
             msg_sync_cmd_rx,
-            Some(conv_cmd_tx),
+            conv_cmd_tx,
         );
         let mut message_syncer_handle = tokio::spawn(async move {
             if let Err(e) = message_syncer.load_seq().await {
