@@ -103,7 +103,7 @@ impl ConnectionHandle {
     /// 通知 message_handle 长连已连接
     fn connected(&mut self) {
         let _guard = info_span!("ws.connected", "长连已连接").entered();
-        
+        info!("✅ 服务器连接鉴权成功");
         let cmd = MsgSyncCommand {
             kind: MsgSyncCommandKind::Connected,
             span: Some(tracing::Span::current().clone()),
@@ -147,7 +147,7 @@ impl ConnectionHandle {
         info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
 
         let (ws_stream, response) = connect_async(&url).await?;
-        info!("[Client] ✅ WebSocket 连接成功, 状态: {}", response.status());
+        info!("✅ WebSocket 连接成功, 状态: {}", response.status());
         self.reconnect_strategy.reset();
 
         let (mut writer, mut reader) = ws_stream.split();
@@ -159,7 +159,7 @@ impl ConnectionHandle {
             match serde_json::from_str::<WebSocketConnectResp>(&text) {
                 Ok(resp) => {
                     if resp.err_code == 0 {
-                        info!("[Client] ✅ 服务器连接鉴权成功");
+                       
                         self.connected();
                     } else {
                         let error_msg = if !resp.err_dlt.is_empty() {

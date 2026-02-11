@@ -135,6 +135,7 @@ impl MessageHandle {
                 return Ok(());
             };
             // 异步消费 span，附加 OTel/Jaeger 语义：CONSUMER + messaging.operation=process
+            // 收到消息后开启 trace 测量后续处理流程
             let common_span = match &envelope.span {
                 Some(p) => info_span!(
                     parent: p,
@@ -151,31 +152,35 @@ impl MessageHandle {
                     otel_span_kind = "CONSUMER",
                 ),
             };
-            match envelope.kind {
-                MsgSyncCommandKind::Connected => {
-                    debug!("[message_handle] 收到 Connected 事件");
-                    if let Err(e) = self.do_connected().instrument(common_span).await {
-                        warn!("[message_handle] do_connected 失败: {e}");
+            // 将整个 match 包在 instrument 内，使 debug/match/await 全在 span 范围内
+            let process_fut = async {
+                match envelope.kind {
+                    MsgSyncCommandKind::Connected => {
+                        debug!("[message_handle] 收到 Connected 事件");
+                        if let Err(e) = self.do_connected().await {
+                            warn!("[message_handle] do_connected 失败: {e}");
+                        }
+                    }
+                    MsgSyncCommandKind::Wakeup => {
+                        debug!("[message_handle] 收到 Wakeup 事件");
+                        if let Err(e) = self.do_wakeup_data_sync().await {
+                            warn!("[message_handle] do_wakeup_data_sync 失败: {e}");
+                        }
+                    }
+                    MsgSyncCommandKind::ManualSync(conversation_ids) => {
+                        debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
+                        if let Err(e) = self.do_im_message_sync(conversation_ids).await {
+                            warn!("[message_handle] do_im_message_sync 失败: {e}");
+                        }
+                    }
+                    MsgSyncCommandKind::Push { push } => {
+                        if let Err(e) = self.do_push_msg(None, &push).await {
+                            warn!("[message_handle] 处理 Push 失败: {e}");
+                        }
                     }
                 }
-                MsgSyncCommandKind::Wakeup => {
-                    debug!("[message_handle] 收到 Wakeup 事件");
-                    if let Err(e) = self.do_wakeup_data_sync().instrument(common_span).await {
-                        warn!("[message_handle] do_wakeup_data_sync 失败: {e}");
-                    }
-                }
-                MsgSyncCommandKind::ManualSync(conversation_ids) => {
-                    debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
-                    if let Err(e) = self.do_im_message_sync(conversation_ids).instrument(common_span).await {
-                        warn!("[message_handle] do_im_message_sync 失败: {e}");
-                    }
-                }
-                MsgSyncCommandKind::Push { push } => {
-                    if let Err(e) = self.do_push_msg(None, &push).instrument(common_span).await {
-                        warn!("[message_handle] 处理 Push 失败: {e}");
-                    }
-                }
-            }
+            };
+            process_fut.instrument(common_span).await;
         }
     }
 
