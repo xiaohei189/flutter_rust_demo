@@ -2,17 +2,17 @@
 //!
 //! 负责所有会话相关的 HTTP 请求
 
-use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::http::{make_client, HttpClient, HttpResponseExtractor, RequestBuilderJsonExt};
 use crate::im::model::conversation::{
     AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
     GetSortedConversationListResp, IncrementalConversationResp, OwnerConversationReq, SetConversationsReq,
 };
 use anyhow::Result;
+use http::Method;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
-use tower::ServiceExt;
-use tower_http_client::ServiceExt as _;
+use tracing::trace;
 use uuid::Uuid;
 
 /// 会话相关的 HTTP API 客户端
@@ -20,7 +20,7 @@ use uuid::Uuid;
 pub struct ConversationApi {
     client: HttpClient,
     api_base_url: String,
-    user_id: String,
+    pub user_id: String,
 }
 
 impl ConversationApi {
@@ -37,12 +37,12 @@ impl ConversationApi {
 
     /// 从服务器获取每个会话的 MaxSeq 和 HasReadSeq
     pub async fn get_has_read_and_max_seqs(&self) -> Result<HashMap<String, (i64, i64)>> {
+        trace!("开始获取每个会话的 MaxSeq 和 HasReadSeq");
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/msg/get_conversations_has_read_and_max_seq", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -65,7 +65,8 @@ impl ConversationApi {
             seqs: HashMap<String, SeqInfo>,
         }
 
-        let data: SeqsData = HttpResponseExtractor::send_data(req).await?;
+        let data: SeqsData =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
 
         let mut result = HashMap::new();
 
@@ -83,9 +84,8 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_incremental_conversations", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -95,7 +95,8 @@ impl ConversationApi {
                 "versionID": version_id
             }))?;
 
-        let resp: IncrementalConversationResp = HttpResponseExtractor::send_data(req).await?;
+        let resp: IncrementalConversationResp =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
 
         Ok(resp)
     }
@@ -105,9 +106,8 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_all_conversations", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -115,7 +115,8 @@ impl ConversationApi {
                 "ownerUserID": self.user_id
             }))?;
 
-        let resp: AllConversationsResp = HttpResponseExtractor::send_data(req).await?;
+        let resp: AllConversationsResp =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
 
         Ok(resp)
     }
@@ -125,9 +126,8 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_full_conversation_ids", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -141,22 +141,23 @@ impl ConversationApi {
             conversation_ids: Vec<String>,
         }
 
-        let data: ConversationIdsData = HttpResponseExtractor::send_data(req).await?;
+        let data: ConversationIdsData =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
 
         Ok(data.conversation_ids)
     }
 
     /// /conversation/get_sorted_conversation_list
-    pub async fn get_sorted_conversation_list(&self, req: GetSortedConversationListReq) -> Result<GetSortedConversationListResp> {
+    pub async fn get_sorted_conversation_list(&self, payload: GetSortedConversationListReq) -> Result<GetSortedConversationListResp> {
+        let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_sorted_conversation_list", self.api_base_url);
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
-            .header("operationID", Uuid::new_v4().to_string())
-            .json(&req)?;
-        HttpResponseExtractor::send_data(req).await
+            .header("operationID", &operation_id)
+            .json(&payload)?;
+        HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await
     }
 
     /// /conversation/get_conversation
@@ -194,11 +195,15 @@ impl ConversationApi {
     }
 
     async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {
+        let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}{}", self.api_base_url, path);
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service.post(&url).header("Content-Type", "application/json").json(&payload)?;
-        HttpResponseExtractor::send_data(req).await
+        let req = self
+            .client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .json(&payload)?;
+        HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await
     }
 }
 
@@ -285,12 +290,12 @@ mod tests {
     #[tokio::test]
     async fn test_get_sorted_conversation_list(ctx: &mut AppCtx) {
         let api = ctx.api.clone();
-        let req = GetSortedConversationListReq {
+        let payload = GetSortedConversationListReq {
             user_id: api.user_id.clone(),
             conversation_ids: vec![],
             pagination: RequestPagination::default(),
         };
-        match api.get_sorted_conversation_list(req).await {
+        match api.get_sorted_conversation_list(payload).await {
             Ok(resp) => info!("get_sorted_conversation_list total: {}", resp.conversation_total),
             Err(e) => error!("get_sorted_conversation_list error: {:?}", e),
         }

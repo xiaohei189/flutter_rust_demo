@@ -2,12 +2,11 @@
 //!
 //! 负责所有好友相关的 HTTP 请求
 
-use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::http::{make_client, HttpClient, HttpResponseExtractor, RequestBuilderJsonExt};
 use crate::im::model::friend::{AllFriendsResp, BlackList, FriendRequest, FriendRequestsResp, IncrementalFriendsResp};
 use anyhow::Result;
+use http::Method;
 use serde::Deserialize;
-use tower::ServiceExt;
-use tower_http_client::ServiceExt as _;
 use uuid::Uuid;
 
 /// 好友相关的 HTTP API 客户端
@@ -35,10 +34,8 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_incremental_friends", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -48,7 +45,8 @@ impl FriendApi {
                 "versionID": version_id,
             }))?;
 
-        let resp: IncrementalFriendsResp = HttpResponseExtractor::send_data(req).await?;
+        let resp: IncrementalFriendsResp =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
         Ok(resp)
     }
 
@@ -66,9 +64,8 @@ impl FriendApi {
             user_ids: Vec<String>,
         }
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -77,7 +74,8 @@ impl FriendApi {
                 "idHash": 0u64,
             }))?;
 
-        let data: FriendIdsData = HttpResponseExtractor::send_data(req).await?;
+        let data: FriendIdsData =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
 
         Ok((data.version, data.version_id, data.user_ids))
     }
@@ -87,9 +85,8 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_list", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -101,7 +98,8 @@ impl FriendApi {
                 }
             }))?;
 
-        let data: AllFriendsResp = HttpResponseExtractor::send_data(req).await?;
+        let data: AllFriendsResp =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
 
         Ok(data)
     }
@@ -119,9 +117,8 @@ impl FriendApi {
             total: Option<i32>,
         }
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let req = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -133,7 +130,8 @@ impl FriendApi {
                 }
             }))?;
 
-        let data: BlackListData = HttpResponseExtractor::send_data(req).await?;
+        let data: BlackListData =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
         Ok(data.blacks)
     }
 
@@ -141,16 +139,19 @@ impl FriendApi {
     pub async fn get_friend_requests(&self) -> Result<Vec<FriendRequest>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_apply_list", self.api_base_url);
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service.post(&url).header("operationID", &operation_id).json(&serde_json::json!({
-            "userID": self.user_id,
-            "pagination": {
-                "pageNumber": 1,
-                "showNumber": 100
-            }
-        }))?;
-        let resp: FriendRequestsResp = HttpResponseExtractor::send_data(req).await?;
+        let req = self
+            .client
+            .post(&url)
+            .header("operationID", &operation_id)
+            .json(&serde_json::json!({
+                "userID": self.user_id,
+                "pagination": {
+                    "pageNumber": 1,
+                    "showNumber": 100
+                }
+            }))?;
+        let resp: FriendRequestsResp =
+            HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await?;
         Ok(resp.friend_requests)
     }
 }
