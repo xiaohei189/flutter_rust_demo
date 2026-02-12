@@ -1,13 +1,15 @@
-use crate::im::http::middleware::RequestHeadersMiddleware;
+use crate::im::http::middleware::{LoggingMiddleware, RequestIdMiddleware, TokenMiddleware};
 use reqwest_middleware::ClientBuilder;
 
-/// 基于 reqwest-middleware 的 HTTP 客户端（带 x-request-id、operationid、token 等中间件）
+/// 基于 reqwest-middleware 的 HTTP 客户端（带 request-id、token、logging 等中间件）
 pub type HttpClient = reqwest_middleware::ClientWithMiddleware;
 
 /// 创建带 token 的 HTTP 客户端
 pub fn make_client(client: reqwest::Client, token: &str) -> HttpClient {
     ClientBuilder::new(client)
-        .with(RequestHeadersMiddleware::new(token))
+        .with(RequestIdMiddleware)
+        .with(TokenMiddleware::new(token))
+        .with(LoggingMiddleware)
         .build()
 }
 

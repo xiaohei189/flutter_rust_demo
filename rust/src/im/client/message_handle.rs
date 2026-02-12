@@ -139,7 +139,7 @@ impl MessageHandle {
             };
             // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
             let _guard = envelope.span.enter();
-            debug!("[message_handle] 收到命令 {:?}", envelope.kind);
+            info!("[message_handle] 收到命令 {:?}", envelope.kind);
             let result = match envelope.kind {
                 MsgSyncCommandKind::Connected => {
                     debug!("[message_handle] 收到 Connected 事件");
@@ -287,15 +287,12 @@ impl MessageHandle {
         )]);
         pull_msgs
     }
-    #[tracing::instrument(skip(self, seq_map), name = "sync_and_trigger_msgs", fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
+    #[tracing::instrument(skip(self, seq_map),  fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     async fn sync_and_trigger_msgs(&mut self, seq_map: &HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<()> {
         if seq_map.is_empty() {
             debug!("[message_handle] nothing to sync, sync_msg_num={}", sync_msg_num);
             return Ok(());
         }
-
-        debug!("[message_handle] current sync seq_map: {:?}", seq_map);
-
         let mut temp_seq_map: HashMap<String, (i64, i64)> = HashMap::with_capacity(50);
         let mut msg_num: i64 = 0;
 
@@ -337,7 +334,7 @@ impl MessageHandle {
         Ok(())
     }
     /// 占位：触发会话/通知消息到上层
-    #[tracing::instrument(skip(self, msgs), name = "trigger_msgs", fields(conversation_id = %conversation_id, n = msgs.len(), is_notification = is_notification))]
+    #[tracing::instrument(skip(self, msgs),  fields(conversation_id = %conversation_id, n = msgs.len(), is_notification = is_notification))]
     async fn trigger_msgs(&self, conversation_id: &str, msgs: &[sdkws::MsgData], is_notification: bool) -> Result<()> {
         debug!("[message_handle] trigger_msgs conv={} len={} is_notification={}", conversation_id, msgs.len(), is_notification);
         // TODO: 分发到事件队列 / 存储
@@ -345,13 +342,12 @@ impl MessageHandle {
     }
 
     /// 触发有新消息的会话事件（msg_id 用于 tracing 串联，非 Push 链路传 None）
-    #[tracing::instrument(skip(self, msgs), name = "trigger_conversation", fields(msg_id = ?msg_id, convs = msgs.len()))]
+    #[tracing::instrument(skip(self, msgs), fields(msg_id = ?msg_id, convs = msgs.len()))]
     async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
-        debug!(msg_id = ?msg_id, "[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
         let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome {
             msg_id: msg_id.map(String::from),
             msgs: msgs.clone(),
@@ -434,7 +430,7 @@ impl MessageHandle {
 
     #[tracing::instrument(skip(self, seq_map), name = "pull_msg_by_seq_range", fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     pub async fn pull_msg_by_seq_range(&self, seq_map: &std::collections::HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<sdkws::PullMessageBySeqsResp> {
-        trace!("[Rpc] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
+        trace!("[ws] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
 
         let ranges: Vec<SeqRangeModel> = seq_map
             .iter()
@@ -459,12 +455,12 @@ impl MessageHandle {
             tracing::Level::DEBUG,
             len = max_seqs.len(),
             entries = ?max_seqs,
-            "[message_handle] get_newest_seq 结果"
+            "[ws] get_newest_seq 结果"
         );
         Ok(max_seqs)
     }
 
-    #[tracing::instrument(skip(self, ranges), name = "pull_msg_by_range", fields(n = ranges.len()))]
+    #[tracing::instrument(skip(self, ranges))]
     async fn pull_msg_by_range(&self, ranges: Vec<SeqRangeModel>) -> Result<sdkws::PullMessageBySeqsResp> {
         let req = self.make_ws_req(
             constant::PULL_MSG_BY_RANGE,

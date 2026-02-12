@@ -699,7 +699,7 @@ impl ConversationHandle {
             };
             // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
             let _guard = envelope.span.enter();
-            debug!("[ConvSync] 收到命令 {:?}", envelope.kind);
+            info!("[ConvSync] 收到命令 {:?}", envelope.kind);
             let result = match envelope.kind {
                 ConvCmdKind::NewMsgCome { msg_id, msgs } => {
                     if let Some(ref id) = msg_id {
