@@ -154,17 +154,18 @@ where
             write!(&mut writer, "{:>5} ", level.as_str())?;
         }
 
-        // trace_id（放在 LEVEL 后面，添加中括号，移除宽度限制和省略号）
+        // trace_id:span_id（放在 LEVEL 后面，添加中括号）
         let otel_ctx = opentelemetry::Context::current();
         let span = otel_ctx.span();
         let span_ctx = span.span_context();
         if span_ctx.is_valid() {
             write!(
                 writer,
-                "{}{}[{}]{} ",
+                "{}{}[{}:{}]{} ",
                 dim_start,
                 "",
                 span_ctx.trace_id(),
+                span_ctx.span_id(),
                 dim_end
             )?;
         }

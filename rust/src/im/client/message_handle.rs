@@ -33,11 +33,25 @@ pub enum MsgSyncCommandKind {
     Push { push: sdkws::PushMessages },
 }
 
-/// 命令信封：具体命令 + span，用于与调用方 tracing 串起来（接收端先取命令再按 kind 处理逻辑）
+/// 命令信封：具体命令 + span，用于与调用方 tracing 串起来（接收端只对传入 span instrument）
 #[derive(Debug)]
 pub struct MsgSyncCommand {
     pub kind: MsgSyncCommandKind,
-    pub span: Option<tracing::Span>,
+    pub span: tracing::Span,
+}
+
+impl MsgSyncCommand {
+    /// 在传递位置创建 span，处理处只 instrument
+    pub fn with_span(kind: MsgSyncCommandKind) -> Self {
+        let span = info_span!(
+            parent: tracing::Span::current(),
+            "msg_sync.command",
+            kind = command_kind_name(&kind),
+            messaging_operation = "process",
+            otel_span_kind = "CONSUMER",
+        );
+        Self { kind, span }
+    }
 }
 
 #[inline]
@@ -134,25 +148,7 @@ impl MessageHandle {
                 debug!("[message_handle] cmd_rx 已关闭，监听器退出");
                 return Ok(());
             };
-            // 异步消费 span，附加 OTel/Jaeger 语义：CONSUMER + messaging.operation=process
-            // 收到消息后开启 trace 测量后续处理流程
-            let common_span = match &envelope.span {
-                Some(p) => info_span!(
-                    parent: p,
-                    "msg_sync.command",
-                    kind = command_kind_name(&envelope.kind),
-                    messaging_operation = "process",
-                    otel_span_kind = "CONSUMER",
-                ),
-                None => info_span!(
-                    parent: None,
-                    "msg_sync.command",
-                    kind = command_kind_name(&envelope.kind),
-                    messaging_operation = "process",
-                    otel_span_kind = "CONSUMER",
-                ),
-            };
-            // 将整个 match 包在 instrument 内，使 debug/match/await 全在 span 范围内
+            // 使用传递位置创建的 span，instrument 覆盖整次处理
             let process_fut = async {
                 match envelope.kind {
                     MsgSyncCommandKind::Connected => {
@@ -180,7 +176,7 @@ impl MessageHandle {
                     }
                 }
             };
-            process_fut.instrument(common_span).await;
+            process_fut.instrument(envelope.span.clone()).await;
         }
     }
 
@@ -209,14 +205,8 @@ impl MessageHandle {
             return Ok(());
         }
         // 通知会话处理器：开始应用数据同步（SyncFlag AppDataSyncStart）
-        let _ = self.conv_cmd_tx.send(ConvCmd {
-            kind: ConvCmdKind::SyncFlag(sync_flag::APP_DATA_SYNC_START),
-            span: Some(tracing::Span::current().clone()),
-        });
-        let _ = self.conv_cmd_tx.send(ConvCmd {
-            kind: ConvCmdKind::SyncData,
-            span: Some(tracing::Span::current().clone()),
-        });
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::APP_DATA_SYNC_START)));
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncData));
         let reinstalled = self.reinstalled;
         let newest = self.get_newest_seq().await?;
         self.compare_seqs_and_batch_sync(newest, CONNECT_PULL_NUMS, reinstalled).await?;
@@ -381,13 +371,10 @@ impl MessageHandle {
             return Ok(());
         }
         debug!(msg_id = ?msg_id, "[ConvSync] 发送 NewMsgCome 会话数={}", msgs.len());
-        let _ = self.conv_cmd_tx.send(ConvCmd {
-            kind: ConvCmdKind::NewMsgCome {
-                msg_id: msg_id.map(String::from),
-                msgs: msgs.clone(),
-            },
-            span: Some(tracing::Span::current().clone()),
-        });
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome {
+            msg_id: msg_id.map(String::from),
+            msgs: msgs.clone(),
+        }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
@@ -400,14 +387,11 @@ impl MessageHandle {
             return Ok(());
         }
         debug!(msg_id = ?msg_id, "[ConvSync] 发送 MsgSyncInReinstall total={}", total);
-        let _ = self.conv_cmd_tx.send(ConvCmd {
-            kind: ConvCmdKind::MsgSyncInReinstall {
-                msg_id: msg_id.map(String::from),
-                msgs: msgs.clone(),
-                total,
-            },
-            span: Some(tracing::Span::current().clone()),
-        });
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::MsgSyncInReinstall {
+            msg_id: msg_id.map(String::from),
+            msgs: msgs.clone(),
+            total,
+        }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
         Ok(())
     }
@@ -420,13 +404,10 @@ impl MessageHandle {
             return Ok(());
         }
         event!(Level::TRACE, msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
-        let _ = self.conv_cmd_tx.send(ConvCmd {
-            kind: ConvCmdKind::Notification {
-                msg_id: msg_id.map(String::from),
-                msgs: msgs.clone(),
-            },
-            span: Some(tracing::Span::current().clone()),
-        });
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::Notification {
+            msg_id: msg_id.map(String::from),
+            msgs: msgs.clone(),
+        }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())
     }

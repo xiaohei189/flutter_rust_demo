@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
-use tracing::{Instrument, debug, info, info_span, instrument, warn};
+use tracing::{debug, info, info_span, instrument, trace, warn};
 use uuid::Uuid;
 
 // ---------- 命令类型（对齐 Go pkg/constant Cmd* 与 common.Cmd2Value） ----------
@@ -38,22 +38,25 @@ pub enum ConvCmdKind {
     MsgSyncInReinstall { msg_id: Option<String>, msgs: HashMap<String, sdkws::PullMsgs>, total: i32 },
 }
 
-/// 命令信封：具体命令 + span，用于与调用方 tracing 串起来（接收端先取命令再按 kind 处理逻辑）
+/// 命令信封：具体命令 + span，用于与调用方 tracing 串起来（接收端只对传入 span enter/instrument）
 #[derive(Debug)]
 pub struct ConvCmd {
     pub kind: ConvCmdKind,
-    pub span: Option<tracing::Span>,
+    pub span: tracing::Span,
 }
 
-#[inline]
-fn conv_cmd_kind_name(kind: &ConvCmdKind) -> &'static str {
-    match kind {
-        ConvCmdKind::NewMsgCome { .. } => "NewMsgCome",
-        ConvCmdKind::UpdateConversation(_) => "UpdateConversation",
-        ConvCmdKind::Notification { .. } => "Notification",
-        ConvCmdKind::SyncFlag(_) => "SyncFlag",
-        ConvCmdKind::SyncData => "SyncData",
-        ConvCmdKind::MsgSyncInReinstall { .. } => "MsgSyncInReinstall",
+impl ConvCmd {
+    /// 在传递位置创建 span，处理处只 enter/instrument
+    pub fn with_span(kind: ConvCmdKind) -> Self {
+        let span = match &kind {
+            ConvCmdKind::NewMsgCome { .. } => info_span!(parent: tracing::Span::current(), "conv_sync.command:NewMsgCome"),
+            ConvCmdKind::UpdateConversation(_) => info_span!(parent: tracing::Span::current(), "conv_sync.command:UpdateConversation"),
+            ConvCmdKind::Notification { .. } => info_span!(parent: tracing::Span::current(), "conv_sync.command:Notification"),
+            ConvCmdKind::SyncFlag(_) => info_span!(parent: tracing::Span::current(), "conv_sync.command:SyncFlag"),
+            ConvCmdKind::SyncData => info_span!(parent: tracing::Span::current(), "conv_sync.command:SyncData"),
+            ConvCmdKind::MsgSyncInReinstall { .. } => info_span!(parent: tracing::Span::current(), "conv_sync.command:MsgSyncInReinstall"),
+        };
+        Self { kind, span }
     }
 }
 
@@ -256,7 +259,7 @@ impl ConversationHandle {
     /// 基于服务器的 MaxSeq / HasReadSeq 校正本地未读数
     #[instrument(skip(self), )]
     pub async fn sync_unread_by_seq(&self) -> Result<()> {
-        info!("开始按 Seq 校正未读数");
+        trace!("开始按 Seq 校正未读数");
         let mut local_conversations = self.get_all_conversations().await?;
         let mut local_map: HashMap<String, LocalConversation> = HashMap::new();
         for conv in local_conversations.drain(..) {
@@ -264,19 +267,19 @@ impl ConversationHandle {
         }
         let seqs = self.api.conversation.get_has_read_and_max_seqs().await?;
         if seqs.is_empty() {
-            info!("服务器未返回会话 Seq 信息 跳过未读数校正");
+            trace!("服务器未返回会话 Seq 信息 跳过未读数校正");
             return Ok(());
         }
         let mut changed_conversations: Vec<LocalConversation> = Vec::new();
         let mut new_conversations: Vec<LocalConversation> = Vec::new();
         let mut missing_convs: Vec<(String, (i64, i64))> = Vec::new();
-        info!("开始校正未读数 服务器返回 {} 个会话的 Seq 信息", seqs.len());
+        trace!("开始校正未读数 服务器返回 {} 个会话的 Seq 信息", seqs.len());
         for (conv_id, (max_seq, has_read_seq)) in seqs.into_iter() {
             let unread = (max_seq - has_read_seq).max(0) as i32;
             if let Some(mut local) = local_map.remove(&conv_id) {
                 if local.unread_count != unread || local.max_seq != max_seq {
-                    info!(
-                        "[ConvSync] Seq 校正会话未读数 conversationID={} 本地未读数 {}->{} maxSeq {}->{} hasReadSeq={}",
+                    trace!(
+                        "校正会话未读数 conversationID={} 本地未读数 {}->{} maxSeq {}->{} hasReadSeq={}",
                         conv_id, local.unread_count, unread, local.max_seq, max_seq, has_read_seq
                     );
                     local.unread_count = unread;
@@ -285,8 +288,8 @@ impl ConversationHandle {
                     changed_conversations.push(local);
                 }
             } else {
-                info!(
-                    "[ConvSync] Seq 按 Seq 校正未读数时发现本地不存在的会话 conversationID={} maxSeq={} hasReadSeq={} unreadCount={}",
+                trace!(
+                    "Seq 按 Seq 校正未读数时发现本地不存在的会话 conversationID={} maxSeq={} hasReadSeq={} unreadCount={}",
                     conv_id, max_seq, has_read_seq, unread
                 );
                 missing_convs.push((conv_id, (max_seq, has_read_seq)));
@@ -294,7 +297,7 @@ impl ConversationHandle {
         }
        
         if !missing_convs.is_empty() {
-            info!("[ConvSync] Seq 发现本地缺失会话 {} 个 尝试从服务器补齐详情", missing_convs.len());
+            trace!("Seq 发现本地缺失会话 {} 个 尝试从服务器补齐详情", missing_convs.len());
             if let Ok(all_resp) = self.api.conversation.get_all_conversations().await {
                 let server_map: HashMap<String, LocalConversation> =
                     all_resp.conversations.iter().map(|c| (c.conversation_id.clone(), c.clone())).collect();
@@ -306,7 +309,7 @@ impl ConversationHandle {
                         self.upsert_conversation(&conv).await?;
                         new_conversations.push(conv);
                     } else {
-                        warn!("[ConvSync/Seq] 按 Seq 校正时服务器会话列表中也不存在会话: {} (maxSeq={}, hasReadSeq={})", conv_id, max_seq, has_read_seq);
+                        warn!("按 Seq 校正时服务器会话列表中也不存在会话: {} (maxSeq={}, hasReadSeq={})", conv_id, max_seq, has_read_seq);
                     }
                 }
             }
@@ -334,7 +337,7 @@ impl ConversationHandle {
                 }
             }
         }
-        info!("[ConvSync] Seq 按 Seq 校正未读数完成");
+        trace!("Seq 按 Seq 校正未读数完成");
         Ok(())
     }
 
@@ -694,56 +697,34 @@ impl ConversationHandle {
                 debug!("[ConvSync] cmd_rx 已关闭 退出");
                 return Ok(());
             };
-            // 取出透传的 span，后续处理步骤接入 trace
-            let common_span = match &envelope.span {
-                Some(p) => info_span!(
-                    parent: p,
-                    "conv_sync.command",
-                    kind = conv_cmd_kind_name(&envelope.kind),
-                    messaging_operation = "process",
-                    otel_span_kind = "CONSUMER",
-                ),
-                None => info_span!(
-                    parent: None,
-                    "conv_sync.command",
-                    kind = conv_cmd_kind_name(&envelope.kind),
-                    messaging_operation = "process",
-                    otel_span_kind = "CONSUMER",
-                ),
-            };
-            // 将整个处理包在 instrument 内，使 debug/work 全在 span 范围内
-            let process_fut = async {
-                debug!("[ConvSync] 收到命令 {:?}", envelope.kind);
-                if let Err(e) = self.work(envelope).await {
-                    warn!("[ConvSync] 处理命令失败 err={}", e);
+            // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
+            let _guard = envelope.span.enter();
+            debug!("[ConvSync] 收到命令 {:?}", envelope.kind);
+            let result = match envelope.kind {
+                ConvCmdKind::NewMsgCome { msg_id, msgs } => {
+                    if let Some(ref id) = msg_id {
+                        debug!(msg_id = %id, "[ConvSync] 处理 NewMsgCome 会话数={}", msgs.len());
+                    }
+                    self.do_msg_new(msgs).await
+                }
+                ConvCmdKind::UpdateConversation(node) => self.do_update_conversation(node).await,
+                ConvCmdKind::Notification { msg_id, msgs } => {
+                    if let Some(ref id) = msg_id {
+                        debug!(msg_id = %id, "[ConvSync] 处理 Notification 会话数={}", msgs.len());
+                    }
+                    self.do_notification_manager(msgs).await
+                }
+                ConvCmdKind::SyncFlag(flag) => self.sync_flag(flag).await,
+                ConvCmdKind::SyncData => self.sync_data().await,
+                ConvCmdKind::MsgSyncInReinstall { msg_id, msgs, total } => {
+                    if let Some(ref id) = msg_id {
+                        debug!(msg_id = %id, "[ConvSync] 处理 MsgSyncInReinstall total={}", total);
+                    }
+                    self.do_msg_sync_by_reinstalled(msgs, total).await
                 }
             };
-            process_fut.instrument(common_span).await;
-        }
-    }
-
-    async fn work(&mut self, envelope: ConvCmd) -> Result<()> {
-        match envelope.kind {
-            ConvCmdKind::NewMsgCome { msg_id, msgs } => {
-                if let Some(ref id) = msg_id {
-                    debug!(msg_id = %id, "[ConvSync] 处理 NewMsgCome 会话数={}", msgs.len());
-                }
-                self.do_msg_new(msgs).await
-            }
-            ConvCmdKind::UpdateConversation(node) => self.do_update_conversation(node).await,
-            ConvCmdKind::Notification { msg_id, msgs } => {
-                if let Some(ref id) = msg_id {
-                    debug!(msg_id = %id, "[ConvSync] 处理 Notification 会话数={}", msgs.len());
-                }
-                self.do_notification_manager(msgs).await
-            }
-            ConvCmdKind::SyncFlag(flag) => self.sync_flag(flag).await,
-            ConvCmdKind::SyncData => self.sync_data().await,
-            ConvCmdKind::MsgSyncInReinstall { msg_id, msgs, total } => {
-                if let Some(ref id) = msg_id {
-                    debug!(msg_id = %id, "[ConvSync] 处理 MsgSyncInReinstall total={}", total);
-                }
-                self.do_msg_sync_by_reinstalled(msgs, total).await
+            if let Err(e) = result {
+                warn!("[ConvSync] 处理命令失败 err={}", e);
             }
         }
     }

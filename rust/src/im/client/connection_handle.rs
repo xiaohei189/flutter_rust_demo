@@ -104,10 +104,7 @@ impl ConnectionHandle {
     fn connected(&mut self) {
         let _guard = info_span!("ws.connected", "长连已连接").entered();
         info!("✅ 服务器连接鉴权成功");
-        let cmd = MsgSyncCommand {
-            kind: MsgSyncCommandKind::Connected,
-            span: Some(tracing::Span::current().clone()),
-        };
+        let cmd = MsgSyncCommand::with_span(MsgSyncCommandKind::Connected);
         if let Err(e) = self.msg_sync_cmd_tx.send(cmd) {
             warn!("[Client] 发送 Connected 到 message_handle 失败: {e}");
         }
@@ -371,11 +368,9 @@ impl ConnectionHandle {
             notif_count,
             if notif_types.is_empty() { "—" } else { &notif_types }
         );
-        let current_span = tracing::Span::current();
-        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand {
-            kind: MsgSyncCommandKind::Push { push: push_msg },
-            span: Some(current_span.clone()),
-        }) {
+        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::with_span(MsgSyncCommandKind::Push {
+            push: push_msg,
+        })) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
             return Err(anyhow::anyhow!("发送推送命令失败: {e}"));
         }
