@@ -223,7 +223,7 @@ mod tests {
         async fn setup() -> Self {
             APP_CTX
                 .get_or_init(|| async {
-                    init_logger("debug,sqlx=debug,hyper_util::client=info,reqwest=info");
+                    init_logger("debug,sqlx=trace,hyper_util::client=info,reqwest=info");
                     let area_code = "+86".to_string();
                     let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
                     let platform = 5;

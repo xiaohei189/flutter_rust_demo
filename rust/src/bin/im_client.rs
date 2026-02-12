@@ -31,7 +31,7 @@ struct Args {
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    init_logger("info,rust_lib_flutter_rust_demo=debug,hyper_util::client=info,reqwest=info");
+    init_logger("info,rust_lib_flutter_rust_demo=debug,sqlx=trace,hyper_util::client=info,reqwest=info");
 
     info!("登录中: {} {}", args.area_code, args.phone);
     let token_info = login_async(

@@ -292,6 +292,7 @@ impl ConversationHandle {
                 missing_convs.push((conv_id, (max_seq, has_read_seq)));
             }
         }
+       
         if !missing_convs.is_empty() {
             info!("[ConvSync] Seq 发现本地缺失会话 {} 个 尝试从服务器补齐详情", missing_convs.len());
             if let Ok(all_resp) = self.api.conversation.get_all_conversations().await {
@@ -310,18 +311,22 @@ impl ConversationHandle {
                 }
             }
         }
+
+
         if !new_conversations.is_empty() {
             let json = serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
             if let Some(listener) = &self.listener {
                 listener.on_new_conversation(json).await;
             }
         }
+
         if !changed_conversations.is_empty() {
             let json = serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
             if let Some(listener) = &self.listener {
                 listener.on_conversation_changed(json).await;
             }
         }
+
         if !new_conversations.is_empty() || !changed_conversations.is_empty() {
             if let Ok(total_unread) = self.get_total_unread_count().await {
                 if let Some(listener) = &self.listener {
@@ -760,7 +765,7 @@ mod tests {
 
     impl AsyncTestContext for AppCtx {
         async fn setup() -> Self {
-            init_logger("rust_lib_flutter_rust_demo=debug,hyper_util::client=info,reqwest=info");
+            init_logger("rust_lib_flutter_rust_demo=debug,sqlx=trace,hyper_util::client=info,reqwest=info");
             let area_code = "+86".to_string();
             let password = "284f3d09ea0695538e4ded1c1766d73a".to_string();
             let platform = 5;
