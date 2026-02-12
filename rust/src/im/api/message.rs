@@ -7,8 +7,6 @@ use crate::im::model::message::{
     SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
 };
 use anyhow::Result;
-use tower::ServiceExt;
-use tower_http_client::ServiceExt as _;
 
 #[derive(Clone)]
 pub struct MessageApi {
@@ -29,10 +27,15 @@ impl MessageApi {
     /// /msg/send_msg
     pub async fn send_message(&self, req: SendMsgReq) -> Result<SendMsgResp> {
         let url = format!("{}/msg/send_msg", self.api_base_url);
-        let mut client = self.client.clone();
-        let svc = client.ready().await?;
-        let req = svc.post(&url).header("Content-Type", "application/json").json(&req)?;
-        HttpResponseExtractor::send_data(req).await
+        let resp = self
+            .client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&req)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+        HttpResponseExtractor::extract_data(resp).await
     }
 
     /// /msg/revoke_msg
@@ -123,10 +126,15 @@ impl MessageApi {
 
     async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {
         let url = format!("{}{}", self.api_base_url, path);
-        let mut client = self.client.clone();
-        let svc = client.ready().await?;
-        let req = svc.post(&url).header("Content-Type", "application/json").json(&payload)?;
-        HttpResponseExtractor::send_data(req).await
+        let resp = self
+            .client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+        HttpResponseExtractor::extract_data(resp).await
     }
 }
 

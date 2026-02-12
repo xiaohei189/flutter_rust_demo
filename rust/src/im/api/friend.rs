@@ -6,8 +6,6 @@ use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
 use crate::im::model::friend::{AllFriendsResp, BlackList, FriendRequest, FriendRequestsResp, IncrementalFriendsResp};
 use anyhow::Result;
 use serde::Deserialize;
-use tower::ServiceExt;
-use tower_http_client::ServiceExt as _;
 use uuid::Uuid;
 
 /// 好友相关的 HTTP API 客户端
@@ -35,10 +33,8 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_incremental_friends", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -46,10 +42,12 @@ impl FriendApi {
                 "userID": self.user_id,
                 "version": version,
                 "versionID": version_id,
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let resp: IncrementalFriendsResp = HttpResponseExtractor::send_data(req).await?;
-        Ok(resp)
+        HttpResponseExtractor::extract_data(resp).await
     }
 
     /// 从服务器获取全量好友 userID 列表
@@ -66,18 +64,20 @@ impl FriendApi {
             user_ids: Vec<String>,
         }
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
                 "idHash": 0u64,
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let data: FriendIdsData = HttpResponseExtractor::send_data(req).await?;
+        let data: FriendIdsData = HttpResponseExtractor::extract_data(resp).await?;
 
         Ok((data.version, data.version_id, data.user_ids))
     }
@@ -87,9 +87,8 @@ impl FriendApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_list", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -99,11 +98,12 @@ impl FriendApi {
                     "pageNumber": 1,
                     "showNumber": 1000
                 }
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let data: AllFriendsResp = HttpResponseExtractor::send_data(req).await?;
-
-        Ok(data)
+        HttpResponseExtractor::extract_data(resp).await
     }
 
     /// 从服务器获取黑名单列表（全量）
@@ -119,9 +119,8 @@ impl FriendApi {
             total: Option<i32>,
         }
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -131,9 +130,12 @@ impl FriendApi {
                     "pageNumber": 1,
                     "showNumber": 1000
                 }
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let data: BlackListData = HttpResponseExtractor::send_data(req).await?;
+        let data: BlackListData = HttpResponseExtractor::extract_data(resp).await?;
         Ok(data.blacks)
     }
 
@@ -141,16 +143,21 @@ impl FriendApi {
     pub async fn get_friend_requests(&self) -> Result<Vec<FriendRequest>> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/friend/get_friend_apply_list", self.api_base_url);
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service.post(&url).header("operationID", &operation_id).json(&serde_json::json!({
-            "userID": self.user_id,
-            "pagination": {
-                "pageNumber": 1,
-                "showNumber": 100
-            }
-        }))?;
-        let resp: FriendRequestsResp = HttpResponseExtractor::send_data(req).await?;
+        let resp = self
+            .client
+            .post(&url)
+            .header("operationID", &operation_id)
+            .json(&serde_json::json!({
+                "userID": self.user_id,
+                "pagination": {
+                    "pageNumber": 1,
+                    "showNumber": 100
+                }
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+        let resp: FriendRequestsResp = HttpResponseExtractor::extract_data(resp).await?;
         Ok(resp.friend_requests)
     }
 }

@@ -11,8 +11,6 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
-use tower::ServiceExt;
-use tower_http_client::ServiceExt as _;
 use uuid::Uuid;
 
 /// 会话相关的 HTTP API 客户端
@@ -40,15 +38,17 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/msg/get_conversations_has_read_and_max_seq", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
         #[derive(Deserialize, Serialize)]
         struct SeqInfo {
@@ -65,7 +65,7 @@ impl ConversationApi {
             seqs: HashMap<String, SeqInfo>,
         }
 
-        let data: SeqsData = HttpResponseExtractor::send_data(req).await?;
+        let data: SeqsData = HttpResponseExtractor::extract_data(resp).await?;
 
         let mut result = HashMap::new();
 
@@ -83,9 +83,8 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_incremental_conversations", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
@@ -93,11 +92,12 @@ impl ConversationApi {
                 "userID": self.user_id,
                 "version": version,
                 "versionID": version_id
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let resp: IncrementalConversationResp = HttpResponseExtractor::send_data(req).await?;
-
-        Ok(resp)
+        HttpResponseExtractor::extract_data(resp).await
     }
 
     /// 从服务器获取所有会话
@@ -105,19 +105,19 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_all_conversations", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "ownerUserID": self.user_id
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let resp: AllConversationsResp = HttpResponseExtractor::send_data(req).await?;
-
-        Ok(resp)
+        HttpResponseExtractor::extract_data(resp).await
     }
 
     /// 从服务器获取所有会话 ID
@@ -125,15 +125,17 @@ impl ConversationApi {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_full_conversation_ids", self.api_base_url);
 
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id
-            }))?;
+            }))
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
         #[derive(Deserialize)]
         struct ConversationIdsData {
@@ -141,7 +143,7 @@ impl ConversationApi {
             conversation_ids: Vec<String>,
         }
 
-        let data: ConversationIdsData = HttpResponseExtractor::send_data(req).await?;
+        let data: ConversationIdsData = HttpResponseExtractor::extract_data(resp).await?;
 
         Ok(data.conversation_ids)
     }
@@ -149,14 +151,16 @@ impl ConversationApi {
     /// /conversation/get_sorted_conversation_list
     pub async fn get_sorted_conversation_list(&self, req: GetSortedConversationListReq) -> Result<GetSortedConversationListResp> {
         let url = format!("{}/conversation/get_sorted_conversation_list", self.api_base_url);
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service
+        let resp = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json")
             .header("operationID", Uuid::new_v4().to_string())
-            .json(&req)?;
-        HttpResponseExtractor::send_data(req).await
+            .json(&req)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+        HttpResponseExtractor::extract_data(resp).await
     }
 
     /// /conversation/get_conversation
@@ -195,10 +199,15 @@ impl ConversationApi {
 
     async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {
         let url = format!("{}{}", self.api_base_url, path);
-        let mut client = self.client.clone();
-        let service = client.ready().await?;
-        let req = service.post(&url).header("Content-Type", "application/json").json(&payload)?;
-        HttpResponseExtractor::send_data(req).await
+        let resp = self
+            .client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
+        HttpResponseExtractor::extract_data(resp).await
     }
 }
 

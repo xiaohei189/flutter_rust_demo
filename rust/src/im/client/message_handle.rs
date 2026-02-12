@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout, Duration};
 use tokio_util::sync::CancellationToken;
-use tracing::{Instrument, Level, debug, event, info, info_span, instrument, warn};
+use tracing::*;
 
 const CONNECT_PULL_NUMS: i64 = 1;
 const DEFAULT_PULL_NUMS: i64 = 10;
@@ -41,26 +41,15 @@ pub struct MsgSyncCommand {
 }
 
 impl MsgSyncCommand {
-    /// 在传递位置创建 span，处理处只 instrument
+    /// 在传递位置创建 span，处理处只 enter/instrument
     pub fn with_span(kind: MsgSyncCommandKind) -> Self {
-        let span = info_span!(
-            parent: tracing::Span::current(),
-            "msg_sync.command",
-            kind = command_kind_name(&kind),
-            messaging_operation = "process",
-            otel_span_kind = "CONSUMER",
-        );
+        let span = match &kind {
+            MsgSyncCommandKind::Connected => info_span!(parent: tracing::Span::current(), "msg_sync.command:Connected"),
+            MsgSyncCommandKind::Wakeup => info_span!(parent: tracing::Span::current(), "msg_sync.command:Wakeup"),
+            MsgSyncCommandKind::ManualSync(_) => info_span!(parent: tracing::Span::current(), "msg_sync.command:ManualSync"),
+            MsgSyncCommandKind::Push { .. } => info_span!(parent: tracing::Span::current(), "msg_sync.command:Push"),
+        };
         Self { kind, span }
-    }
-}
-
-#[inline]
-fn command_kind_name(kind: &MsgSyncCommandKind) -> &'static str {
-    match kind {
-        MsgSyncCommandKind::Connected => "Connected",
-        MsgSyncCommandKind::Wakeup => "Wakeup",
-        MsgSyncCommandKind::ManualSync(_) => "ManualSync",
-        MsgSyncCommandKind::Push { .. } => "Push",
     }
 }
 
@@ -148,35 +137,27 @@ impl MessageHandle {
                 debug!("[message_handle] cmd_rx 已关闭，监听器退出");
                 return Ok(());
             };
-            // 使用传递位置创建的 span，instrument 覆盖整次处理
-            let process_fut = async {
-                match envelope.kind {
-                    MsgSyncCommandKind::Connected => {
-                        debug!("[message_handle] 收到 Connected 事件");
-                        if let Err(e) = self.do_connected().await {
-                            warn!("[message_handle] do_connected 失败: {e}");
-                        }
-                    }
-                    MsgSyncCommandKind::Wakeup => {
-                        debug!("[message_handle] 收到 Wakeup 事件");
-                        if let Err(e) = self.do_wakeup_data_sync().await {
-                            warn!("[message_handle] do_wakeup_data_sync 失败: {e}");
-                        }
-                    }
-                    MsgSyncCommandKind::ManualSync(conversation_ids) => {
-                        debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
-                        if let Err(e) = self.do_im_message_sync(conversation_ids).await {
-                            warn!("[message_handle] do_im_message_sync 失败: {e}");
-                        }
-                    }
-                    MsgSyncCommandKind::Push { push } => {
-                        if let Err(e) = self.do_push_msg(None, &push).await {
-                            warn!("[message_handle] 处理 Push 失败: {e}");
-                        }
-                    }
+            // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
+            let _guard = envelope.span.enter();
+            debug!("[message_handle] 收到命令 {:?}", envelope.kind);
+            let result = match envelope.kind {
+                MsgSyncCommandKind::Connected => {
+                    debug!("[message_handle] 收到 Connected 事件");
+                    self.do_connected().await
                 }
+                MsgSyncCommandKind::Wakeup => {
+                    debug!("[message_handle] 收到 Wakeup 事件");
+                    self.do_wakeup_data_sync().await
+                }
+                MsgSyncCommandKind::ManualSync(conversation_ids) => {
+                    debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
+                    self.do_im_message_sync(conversation_ids).await
+                }
+                MsgSyncCommandKind::Push { push } => self.do_push_msg(None, &push).await,
             };
-            process_fut.instrument(envelope.span.clone()).await;
+            if let Err(e) = result {
+                warn!("[message_handle] 处理命令失败: {e}");
+            }
         }
     }
 
@@ -453,7 +434,7 @@ impl MessageHandle {
 
     #[tracing::instrument(skip(self, seq_map), name = "pull_msg_by_seq_range", fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     pub async fn pull_msg_by_seq_range(&self, seq_map: &std::collections::HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<sdkws::PullMessageBySeqsResp> {
-        debug!("[message_handle] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
+        trace!("[Rpc] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
 
         let ranges: Vec<SeqRangeModel> = seq_map
             .iter()
