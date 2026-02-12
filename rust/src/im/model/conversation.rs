@@ -1,5 +1,6 @@
 use crate::im::model::common::deserialize_vec_or_null;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 /// 增量会话响应（业务逻辑层结构体，可直接从 API 响应反序列化）
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +26,8 @@ pub struct AllConversationsResp {
 
 /// 本地会话数据结构
 /// 可以直接从服务器返回的 JSON 反序列化，缺失的字段使用默认值
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+/// 同时实现 FromRow 用于 sqlx 直接映射数据库行（SQLite INTEGER 0/1 自动转为 bool）
+#[derive(Debug, Clone, Serialize, Deserialize, Default, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalConversation {
     /// 会话 ID

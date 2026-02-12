@@ -9,66 +9,6 @@ use anyhow::{Context, Result};
 use sqlx::{FromRow, Pool, Sqlite};
 use tracing::{debug, info};
 
-/// 会话表行映射（DB 中 bool 存为 INTEGER 0/1）
-#[derive(Debug, FromRow)]
-struct LocalConversationRow {
-    conversation_id: String,
-    conversation_type: i32,
-    user_id: String,
-    group_id: String,
-    show_name: String,
-    face_url: String,
-    latest_msg: String,
-    latest_msg_send_time: i64,
-    unread_count: i32,
-    recv_msg_opt: i32,
-    is_pinned: i64,
-    is_private_chat: i64,
-    burn_duration: i32,
-    group_at_type: i32,
-    is_not_in_group: i64,
-    update_unread_count_time: i64,
-    attached_info: String,
-    ex: String,
-    draft_text: String,
-    draft_text_time: i64,
-    max_seq: i64,
-    min_seq: i64,
-    is_msg_destruct: i64,
-    msg_destruct_time: i64,
-}
-
-impl From<LocalConversationRow> for LocalConversation {
-    fn from(r: LocalConversationRow) -> Self {
-        LocalConversation {
-            conversation_id: r.conversation_id,
-            conversation_type: r.conversation_type,
-            user_id: r.user_id,
-            group_id: r.group_id,
-            show_name: r.show_name,
-            face_url: r.face_url,
-            latest_msg: r.latest_msg,
-            latest_msg_send_time: r.latest_msg_send_time,
-            unread_count: r.unread_count,
-            recv_msg_opt: r.recv_msg_opt,
-            is_pinned: r.is_pinned != 0,
-            is_private_chat: r.is_private_chat != 0,
-            burn_duration: r.burn_duration,
-            group_at_type: r.group_at_type,
-            is_not_in_group: r.is_not_in_group != 0,
-            update_unread_count_time: r.update_unread_count_time,
-            attached_info: r.attached_info,
-            ex: r.ex,
-            draft_text: r.draft_text,
-            draft_text_time: r.draft_text_time,
-            max_seq: r.max_seq,
-            min_seq: r.min_seq,
-            is_msg_destruct: r.is_msg_destruct != 0,
-            msg_destruct_time: r.msg_destruct_time,
-        }
-    }
-}
-
 /// 版本同步表行映射（DB version 为 INTEGER），供 conversation / friend 等 dao 复用
 #[derive(Debug, FromRow)]
 pub struct VersionSyncRow {
@@ -163,7 +103,7 @@ impl ConversationDao {
 
     /// 从数据库获取所有本地会话
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
-        let rows: Vec<LocalConversationRow> = sqlx::query_as(
+        let rows: Vec<LocalConversation> = sqlx::query_as(
             r#"
             SELECT
                 conversation_id,
@@ -197,8 +137,7 @@ impl ConversationDao {
         .await
         .context("查询会话列表失败")?;
 
-        let conversations: Vec<LocalConversation> = rows.into_iter().map(Into::into).collect();
-        Ok(conversations)
+        Ok(rows)
     }
 
     /// 从数据库获取所有会话 ID
@@ -218,7 +157,7 @@ impl ConversationDao {
 
     /// 根据会话ID查询单个会话
     pub async fn get_conversation_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
-        let row: Option<LocalConversationRow> = sqlx::query_as(
+        let row: Option<LocalConversation> = sqlx::query_as(
             r#"
             SELECT
                 conversation_id,
@@ -254,7 +193,7 @@ impl ConversationDao {
         .await
         .context("查询单个会话失败")?;
 
-        Ok(row.map(Into::into))
+        Ok(row)
     }
 
     /// 插入或更新会话到数据库

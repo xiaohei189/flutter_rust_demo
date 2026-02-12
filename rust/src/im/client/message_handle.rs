@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout, Duration};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, event, info_span, instrument, warn, Instrument, Level};
+use tracing::{Instrument, Level, debug, event, info, info_span, instrument, warn};
 
 const CONNECT_PULL_NUMS: i64 = 1;
 const DEFAULT_PULL_NUMS: i64 = 10;
@@ -205,7 +205,7 @@ impl MessageHandle {
     #[tracing::instrument(skip(self))]
     async fn do_connected(&mut self) -> Result<()> {
         if !self.start_sync().await {
-            debug!("[message_handle] 正在同步，忽略 Connected 事件");
+            info!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
         }
         // 通知会话处理器：开始应用数据同步（SyncFlag AppDataSyncStart）
