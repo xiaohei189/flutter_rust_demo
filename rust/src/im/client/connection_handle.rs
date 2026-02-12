@@ -251,7 +251,6 @@ impl ConnectionHandle {
                 return Ok(());
             }
             WsMessage::Binary(data) => {
-                debug!(len = data.len(), "处理二进制消息");
                 let original_len = data.len();
                 let data = if data.len() >= 2 && data[0] == 0x1f && data[1] == 0x8b {
                     trace!(compressed_len = original_len, "解压压缩的二进制消息");

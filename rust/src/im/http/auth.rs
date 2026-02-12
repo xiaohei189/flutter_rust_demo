@@ -1,7 +1,8 @@
-use crate::im::http::{make_client_without_token, HttpResponseExtractor, RequestBuilderJsonExt};
+use crate::im::http::{make_client_without_token, HttpResponseExtractor};
 use anyhow::Result;
-use http::Method;
 use serde::{Deserialize, Serialize};
+use tower::ServiceExt;
+use tower_http_client::ServiceExt as _;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     #[serde(rename = "areaCode")]
@@ -51,14 +52,13 @@ pub async fn login_async(area_code: String, phone_number: String, password: Stri
     let base_client = reqwest::Client::builder().build()?;
     let http_client = make_client_without_token(base_client);
 
-    let req = http_client.post(url.as_str()).json(&login_req)?;
-    let data: LoginData = HttpResponseExtractor::send_data(
-        req,
-        Method::POST,
-        url.as_str(),
-        &uuid::Uuid::new_v4().to_string(),
-    )
-    .await?;
+    // 使用新的客户端封装发送请求
+    let mut client = http_client.clone();
+    let service = client.ready().await?;
+
+    let req = service.post(url.as_str()).json(&login_req)?;
+
+    let data: LoginData = HttpResponseExtractor::send_data(req).await?;
 
     Ok(data)
 }

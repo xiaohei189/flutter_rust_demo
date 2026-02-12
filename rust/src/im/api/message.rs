@@ -1,13 +1,14 @@
 //! 消息 HTTP API（P1 子集）
 //! 对齐 open-im-server `/msg` 路由：发送、撤回、已读、历史查询。
-use crate::im::http::{make_client, HttpClient, HttpResponseExtractor, RequestBuilderJsonExt};
+use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
 use crate::im::model::message::{
     BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
     GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendBusinessNotificationReq,
     SendMsgReq, SendMsgResp, SendSimpleMsgReq, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
 };
 use anyhow::Result;
-use http::Method;
+use tower::ServiceExt;
+use tower_http_client::ServiceExt as _;
 
 #[derive(Clone)]
 pub struct MessageApi {
@@ -26,15 +27,12 @@ impl MessageApi {
     }
 
     /// /msg/send_msg
-    pub async fn send_message(&self, payload: SendMsgReq) -> Result<SendMsgResp> {
-        let operation_id = uuid::Uuid::new_v4().to_string();
+    pub async fn send_message(&self, req: SendMsgReq) -> Result<SendMsgResp> {
         let url = format!("{}/msg/send_msg", self.api_base_url);
-        let req = self
-            .client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&payload)?;
-        HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await
+        let mut client = self.client.clone();
+        let svc = client.ready().await?;
+        let req = svc.post(&url).header("Content-Type", "application/json").json(&req)?;
+        HttpResponseExtractor::send_data(req).await
     }
 
     /// /msg/revoke_msg
@@ -124,14 +122,11 @@ impl MessageApi {
     }
 
     async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {
-        let operation_id = uuid::Uuid::new_v4().to_string();
         let url = format!("{}{}", self.api_base_url, path);
-        let req = self
-            .client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&payload)?;
-        HttpResponseExtractor::send_data(req, Method::POST, &url, &operation_id).await
+        let mut client = self.client.clone();
+        let svc = client.ready().await?;
+        let req = svc.post(&url).header("Content-Type", "application/json").json(&payload)?;
+        HttpResponseExtractor::send_data(req).await
     }
 }
 
