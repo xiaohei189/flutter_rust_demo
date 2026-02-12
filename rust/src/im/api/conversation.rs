@@ -2,7 +2,7 @@
 //!
 //! 负责所有会话相关的 HTTP 请求
 
-use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::http::{extract_data, make_client, HttpClient};
 use crate::im::model::conversation::{
     AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
     GetSortedConversationListResp, IncrementalConversationResp, OwnerConversationReq, SetConversationsReq,
@@ -65,7 +65,7 @@ impl ConversationApi {
             seqs: HashMap<String, SeqInfo>,
         }
 
-        let data: SeqsData = HttpResponseExtractor::extract_data(resp).await?;
+        let data: SeqsData = extract_data(resp).await?;
 
         let mut result = HashMap::new();
 
@@ -97,7 +97,7 @@ impl ConversationApi {
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 
     /// 从服务器获取所有会话
@@ -117,7 +117,7 @@ impl ConversationApi {
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 
     /// 从服务器获取所有会话 ID
@@ -143,7 +143,7 @@ impl ConversationApi {
             conversation_ids: Vec<String>,
         }
 
-        let data: ConversationIdsData = HttpResponseExtractor::extract_data(resp).await?;
+        let data: ConversationIdsData = extract_data(resp).await?;
 
         Ok(data.conversation_ids)
     }
@@ -160,7 +160,7 @@ impl ConversationApi {
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 
     /// /conversation/get_conversation
@@ -207,7 +207,7 @@ impl ConversationApi {
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 }
 

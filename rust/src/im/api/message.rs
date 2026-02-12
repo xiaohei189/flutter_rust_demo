@@ -1,6 +1,6 @@
 //! 消息 HTTP API（P1 子集）
 //! 对齐 open-im-server `/msg` 路由：发送、撤回、已读、历史查询。
-use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::http::{extract_data, make_client, HttpClient};
 use crate::im::model::message::{
     BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
     GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendBusinessNotificationReq,
@@ -35,7 +35,7 @@ impl MessageApi {
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 
     /// /msg/revoke_msg
@@ -134,7 +134,7 @@ impl MessageApi {
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 }
 

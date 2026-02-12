@@ -2,7 +2,7 @@
 //!
 //! 负责所有好友相关的 HTTP 请求
 
-use crate::im::http::{make_client, HttpClient, HttpResponseExtractor};
+use crate::im::http::{extract_data, make_client, HttpClient};
 use crate::im::model::friend::{AllFriendsResp, BlackList, FriendRequest, FriendRequestsResp, IncrementalFriendsResp};
 use anyhow::Result;
 use serde::Deserialize;
@@ -47,7 +47,7 @@ impl FriendApi {
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 
     /// 从服务器获取全量好友 userID 列表
@@ -77,7 +77,7 @@ impl FriendApi {
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let data: FriendIdsData = HttpResponseExtractor::extract_data(resp).await?;
+        let data: FriendIdsData = extract_data(resp).await?;
 
         Ok((data.version, data.version_id, data.user_ids))
     }
@@ -103,7 +103,7 @@ impl FriendApi {
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        HttpResponseExtractor::extract_data(resp).await
+        extract_data(resp).await
     }
 
     /// 从服务器获取黑名单列表（全量）
@@ -135,7 +135,7 @@ impl FriendApi {
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-        let data: BlackListData = HttpResponseExtractor::extract_data(resp).await?;
+        let data: BlackListData = extract_data(resp).await?;
         Ok(data.blacks)
     }
 
@@ -157,7 +157,7 @@ impl FriendApi {
             .send()
             .await
             .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
-        let resp: FriendRequestsResp = HttpResponseExtractor::extract_data(resp).await?;
+        let resp: FriendRequestsResp = extract_data(resp).await?;
         Ok(resp.friend_requests)
     }
 }

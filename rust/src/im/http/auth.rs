@@ -1,4 +1,4 @@
-use crate::im::http::{make_client_without_token, HttpResponseExtractor};
+use crate::im::http::{extract_data, make_client_without_token};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,7 +57,7 @@ pub async fn login_async(area_code: String, phone_number: String, password: Stri
         .await
         .map_err(|e| anyhow::anyhow!("HTTP request failed: {}", e))?;
 
-    let data: LoginData = HttpResponseExtractor::extract_data(resp).await?;
+    let data: LoginData = extract_data(resp).await?;
 
     Ok(data)
 }
