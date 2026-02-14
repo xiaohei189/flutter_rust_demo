@@ -27,9 +27,10 @@ pub use listener::{AdvancedMsgListener, EmptyAdvancedMsgListener};
 pub use message::{AtElem, AtInfo, CustomElem, FileElem, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem};
 // DAO 统一出口
 pub use dao::{
-    AppVersionDao, BlackDao, ConversationDao, FriendDao, GroupDao, GroupMemberDao, LocalAppSDKVersion,
-    LocalBlack, LocalGroup, LocalGroupMember, LocalSendingMessage, LocalStranger, LocalUpload, LocalUser,
-    MessageRepo, SendingMessagesDao, StrangerDao, UploadDao, UserDao, VersionSyncDao,
+    AppVersionDao, BlackDao, ChatLogReactionExtensionsDao, ConversationDao, FriendDao, GroupDao,
+    GroupMemberDao, LocalAppSDKVersion, LocalBlack, LocalChatLogReactionExtensions, LocalGroup,
+    LocalGroupMember, LocalSendingMessage, LocalStranger, LocalUpload, LocalUser, MessageRepo,
+    SendingMessagesDao, StrangerDao, UploadDao, UserDao, VersionSyncDao,
 };
 
 // 重新导出模型相关结构体和函数

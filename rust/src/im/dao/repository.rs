@@ -1,8 +1,8 @@
 use crate::im::dao::migration;
 use crate::im::dao::notification::NotificationDao;
 use crate::im::{
-    AppVersionDao, BlackDao, ConversationDao, FriendDao, GroupDao, GroupMemberDao, MessageRepo,
-    SendingMessagesDao, StrangerDao, UploadDao, UserDao, VersionSyncDao,
+    AppVersionDao, BlackDao, ChatLogReactionExtensionsDao, ConversationDao, FriendDao, GroupDao,
+    GroupMemberDao, MessageRepo, SendingMessagesDao, StrangerDao, UploadDao, UserDao, VersionSyncDao,
 };
 use anyhow::Result;
 use sqlx::{Pool, Sqlite};
@@ -23,6 +23,7 @@ pub struct Repository {
     pub stranger: StrangerDao,
     pub upload: UploadDao,
     pub black: BlackDao,
+    pub chat_log_reaction_extensions: ChatLogReactionExtensionsDao,
 }
 
 impl Repository {
@@ -52,6 +53,7 @@ impl Repository {
             stranger: StrangerDao::new(db.clone()),
             upload: UploadDao::new(db.clone()),
             black: BlackDao::new(db.clone(), uid),
+            chat_log_reaction_extensions: ChatLogReactionExtensionsDao::new(db.clone()),
         }
     }
 }

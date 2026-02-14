@@ -1,5 +1,6 @@
 pub mod app_version;
 pub mod black;
+pub mod chat_log_reaction_extensions;
 pub mod conversation;
 pub mod friend;
 pub mod group;
@@ -15,6 +16,7 @@ pub mod user;
 
 pub use app_version::{AppVersionDao, LocalAppSDKVersion};
 pub use black::{BlackDao, LocalBlack};
+pub use chat_log_reaction_extensions::{ChatLogReactionExtensionsDao, LocalChatLogReactionExtensions};
 pub use conversation::{ConversationDao, VersionSyncDao};
 pub use friend::FriendDao;
 pub use group::{GroupDao, LocalGroup};
