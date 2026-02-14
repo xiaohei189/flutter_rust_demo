@@ -401,12 +401,16 @@ impl MessageHandle {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
         if reinstalled {
-            // 重装：通知会话直接写入最大 seq，不再拉取；消息会话拉全量或增量
+            // 重装：通知会话直接写入最大 seq，不再拉取；消息会话拉全量或增量（与 Go compareSeqsAndBatchSync 一致）
+            let mut notification_seqs = Vec::new();
             for (conversation_id, max_seq) in max_seq_to_sync {
                 if Self::is_notification(&conversation_id) {
                     if max_seq != 0 {
-                        self.synced_max_seqs.insert(conversation_id, max_seq);
-                        // TODO: 持久化通知 seq（参考 Go 的 BatchInsertNotificationSeq）
+                        self.synced_max_seqs.insert(conversation_id.clone(), max_seq);
+                        notification_seqs.push(crate::im::model::notification::LocalNotificationSeq {
+                            conversation_id: conversation_id.clone(),
+                            seq: max_seq,
+                        });
                     }
                     continue;
                 }
@@ -415,6 +419,11 @@ impl MessageHandle {
                 if max_seq > synced {
                     let begin = if synced == 0 { 0 } else { synced + 1 };
                     need_sync_seq_map.insert(conversation_id.clone(), (begin, max_seq));
+                }
+            }
+            if !notification_seqs.is_empty() {
+                if let Err(e) = self.repository.notification_dao.batch_insert_notification_seq(&notification_seqs).await {
+                    tracing::warn!("[message_handle] batch_insert_notification_seq err: {}", e);
                 }
             }
 
