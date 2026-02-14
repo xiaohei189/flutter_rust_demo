@@ -13,7 +13,7 @@ use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationEl
 use crate::im::model::ws::WsRpcEnvelope;
 use crate::im::model::{msg_type, LocalConversation, OpenIMReq, OpenIMResp};
 use crate::im::serialization::{compress_gzip, decompress_gzip};
-use crate::im::util::{self, content_type_name};
+use crate::im::util;
 use crate::im::WebSocketConnectResp;
 use anyhow::{Context, Result};
 use futures_util::future::select_all;
@@ -104,7 +104,7 @@ impl ConnectionHandle {
     fn connected(&mut self) {
         let _guard = info_span!("ws.connected", "长连已连接").entered();
         info!("✅ 服务器连接鉴权成功");
-        let cmd = MsgSyncCommand::with_span(MsgSyncCommandKind::Connected);
+        let cmd = MsgSyncCommand::new(MsgSyncCommandKind::Connected);
         if let Err(e) = self.msg_sync_cmd_tx.send(cmd) {
             warn!("[Client] 发送 Connected 到 message_handle 失败: {e}");
         }
@@ -156,7 +156,6 @@ impl ConnectionHandle {
             match serde_json::from_str::<WebSocketConnectResp>(&text) {
                 Ok(resp) => {
                     if resp.err_code == 0 {
-                       
                         self.connected();
                     } else {
                         let error_msg = if !resp.err_dlt.is_empty() {
@@ -333,44 +332,10 @@ impl ConnectionHandle {
                 return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
             }
         };
-        let new_msg_convs = push_msg.msgs.len();
-        let new_msg_count: usize = push_msg.msgs.values().map(|p| p.msgs.len()).sum();
-        let notif_convs = push_msg.notification_msgs.len();
-        let notif_count: usize = push_msg.notification_msgs.values().map(|p| p.msgs.len()).sum();
-        let new_msg_types: String = {
-            let mut counts: HashMap<&'static str, usize> = HashMap::new();
-            for pull in push_msg.msgs.values() {
-                for m in &pull.msgs {
-                    *counts.entry(content_type_name(m.content_type)).or_insert(0) += 1;
-                }
-            }
-            let mut v: Vec<_> = counts.into_iter().collect();
-            v.sort_by(|a, b| b.1.cmp(&a.1));
-            v.into_iter().map(|(name, n)| format!("{}x{}", name, n)).collect::<Vec<_>>().join(", ")
-        };
-        let notif_types: String = {
-            let mut counts: HashMap<&'static str, usize> = HashMap::new();
-            for pull in push_msg.notification_msgs.values() {
-                for m in &pull.msgs {
-                    *counts.entry(content_type_name(m.content_type)).or_insert(0) += 1;
-                }
-            }
-            let mut v: Vec<_> = counts.into_iter().collect();
-            v.sort_by(|a, b| b.1.cmp(&a.1));
-            v.into_iter().map(|(name, n)| format!("{}x{}", name, n)).collect::<Vec<_>>().join(", ")
-        };
-        info!(
-            "[ConnectionHandle] 收到推送 类型=PushMessages 新消息={}个会话/{}条({}) 通知={}个会话/{}条({})",
-            new_msg_convs,
-            new_msg_count,
-            if new_msg_types.is_empty() { "—" } else { &new_msg_types },
-            notif_convs,
-            notif_count,
-            if notif_types.is_empty() { "—" } else { &notif_types }
-        );
-        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::with_span(MsgSyncCommandKind::Push {
-            push: push_msg,
-        })) {
+
+        debug!("[Client] 收到 Push 原始消息: {:?}", push_msg);
+
+        if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::new(MsgSyncCommandKind::Push { push: push_msg })) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
             return Err(anyhow::anyhow!("发送推送命令失败: {e}"));
         }

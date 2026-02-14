@@ -37,19 +37,19 @@ pub enum MsgSyncCommandKind {
 #[derive(Debug)]
 pub struct MsgSyncCommand {
     pub kind: MsgSyncCommandKind,
-    pub span: tracing::Span,
+    pub parent: tracing::Span,
 }
 
 impl MsgSyncCommand {
     /// 在传递位置创建 span，处理处只 enter/instrument
-    pub fn with_span(kind: MsgSyncCommandKind) -> Self {
+    pub fn new(kind: MsgSyncCommandKind) -> Self {
         let span = match &kind {
             MsgSyncCommandKind::Connected => info_span!(parent: tracing::Span::current(), "msg_sync.command:Connected"),
             MsgSyncCommandKind::Wakeup => info_span!(parent: tracing::Span::current(), "msg_sync.command:Wakeup"),
             MsgSyncCommandKind::ManualSync(_) => info_span!(parent: tracing::Span::current(), "msg_sync.command:ManualSync"),
             MsgSyncCommandKind::Push { .. } => info_span!(parent: tracing::Span::current(), "msg_sync.command:Push"),
         };
-        Self { kind, span }
+        Self { kind, parent: span }
     }
 }
 
@@ -144,21 +144,12 @@ impl MessageHandle {
                 return Ok(());
             };
             // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
-            let _guard = envelope.span.enter();
-            info!("[message_handle] 收到命令 {:?}", envelope.kind);
+            let _guard = envelope.parent.enter();
+            info!("[message_handle] 收到命令: {:?}", envelope.kind);
             let result = match envelope.kind {
-                MsgSyncCommandKind::Connected => {
-                    debug!("[message_handle] 收到 Connected 事件");
-                    self.do_connected().await
-                }
-                MsgSyncCommandKind::Wakeup => {
-                    debug!("[message_handle] 收到 Wakeup 事件");
-                    self.do_wakeup_data_sync().await
-                }
-                MsgSyncCommandKind::ManualSync(conversation_ids) => {
-                    debug!("[message_handle] 收到 ManualSync 事件, conversations={:?}", conversation_ids);
-                    self.do_im_message_sync(conversation_ids).await
-                }
+                MsgSyncCommandKind::Connected => self.do_connected().await,
+                MsgSyncCommandKind::Wakeup => self.do_wakeup_data_sync().await,
+                MsgSyncCommandKind::ManualSync(conversation_ids) => self.do_im_message_sync(conversation_ids).await,
                 MsgSyncCommandKind::Push { push } => self.do_push_msg(None, &push).await,
             };
             if let Err(e) = result {
@@ -265,8 +256,6 @@ impl MessageHandle {
             let synced_seq = *self.synced_max_seqs.get(conversation_id).unwrap_or(&0);
 
             if last_seq != 0 && last_seq == synced_seq + storage_msgs.len() as i64 && !storage_msgs.is_empty() {
-                self.trigger_msgs(conversation_id, &storage_msgs, is_notification).await?;
-
                 if is_notification {
                     self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
                 } else {
@@ -295,12 +284,13 @@ impl MessageHandle {
     }
 
     /// 与 Go 一致：sync 拉取后仅 trigger（do_msg_new），是否落库由 options.history 决定，不在此处单独落库
-    #[tracing::instrument(skip(self, seq_map),  fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
+    #[tracing::instrument(skip(self, seq_map))]
     async fn sync_and_trigger_msgs(&mut self, seq_map: &HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<()> {
         if seq_map.is_empty() {
-            debug!("[message_handle] nothing to sync, sync_msg_num={}", sync_msg_num);
+            debug!("[message_handle] 没有需要同步的消息");
             return Ok(());
         }
+        info!("[message_handle] 开始同步消息，seq_map: {:?}, sync_msg_num: {}", seq_map, sync_msg_num);
         let mut temp_seq_map: HashMap<String, (i64, i64)> = HashMap::with_capacity(50);
         let mut msg_num: i64 = 0;
 
@@ -341,14 +331,6 @@ impl MessageHandle {
         }
         Ok(())
     }
-    /// 占位：触发会话/通知消息到上层
-    #[tracing::instrument(skip(self, msgs),  fields(conversation_id = %conversation_id, n = msgs.len(), is_notification = is_notification))]
-    async fn trigger_msgs(&self, conversation_id: &str, msgs: &[sdkws::MsgData], is_notification: bool) -> Result<()> {
-        debug!("[message_handle] trigger_msgs conv={} len={} is_notification={}", conversation_id, msgs.len(), is_notification);
-        // TODO: 分发到事件队列 / 存储
-        Ok(())
-    }
-
     /// 触发有新消息的会话事件（msg_id 用于 tracing 串联，非 Push 链路传 None）
     #[tracing::instrument(skip(self, msgs), fields(msg_id = ?msg_id, convs = msgs.len()))]
     async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
@@ -356,9 +338,7 @@ impl MessageHandle {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome {
-            msgs: msgs.clone(),
-        }));
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome { msgs: msgs.clone() }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
@@ -371,10 +351,7 @@ impl MessageHandle {
             return Ok(());
         }
         debug!("[ConvSync] 发送 MsgSyncInReinstall total={}", total);
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::MsgSyncInReinstall {
-            msgs: msgs.clone(),
-            total,
-        }));
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::MsgSyncInReinstall { msgs: msgs.clone(), total }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Reinstall { msgs: msgs.clone(), total });
         Ok(())
     }
@@ -387,9 +364,7 @@ impl MessageHandle {
             return Ok(());
         }
         event!(Level::TRACE, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::Notification {
-            msgs: msgs.clone(),
-        }));
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::Notification { msgs: msgs.clone() }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())
     }
