@@ -7,7 +7,7 @@ use anyhow::Result;
 use chrono::Utc;
 use sqlx::{sqlite::SqlitePoolOptions, FromRow, Pool, Sqlite};
 
-/// 消息表行映射（按会话分表，表内无 conversation_id；is_read 为 INTEGER 0/1）
+/// 消息表行映射（按会话分表，与 Go 一致：表名 chat_logs_<conversation_id>，列名 sender_nick_name）
 #[derive(Debug, FromRow)]
 struct LocalChatLogRow {
     client_msg_id: String,
@@ -15,6 +15,7 @@ struct LocalChatLogRow {
     send_id: String,
     recv_id: String,
     sender_platform_id: i32,
+    #[sqlx(rename = "sender_nick_name")]
     sender_nickname: String,
     sender_face_url: String,
     session_type: i32,
@@ -64,10 +65,9 @@ struct MaxSeqRow {
     max_seq: i64,
 }
 
-/// 本地消息存储（使用 sqlx / SQLite，仿 Go 版按会话建表）
+/// 本地消息存储（使用 sqlx / SQLite，与 Go 一致：表名 chat_logs_<conversation_id>）
 ///
-/// Go 版会为每个会话动态建表；SeaORM 无法动态建表，因此这里用原生 SQLx
-/// 在运行时创建/访问按会话命名的表（msg_<conversation_id_sanitized>）。
+/// 表名与列名与 openim-sdk-core Go 版保持一致，便于数据目录共用或迁移。
 #[derive(Clone)]
 pub struct MessageRepo {
     pool: Pool<Sqlite>,
@@ -82,24 +82,23 @@ impl MessageRepo {
         Self { pool, login_user_id }
     }
 
-    /// 将会话 ID 转为表名（去掉非法字符，前缀 msg_）
+    /// 表名与 Go 一致：constant.ChatLogsTableNamePre + conversationID => "chat_logs_" + conversation_id
     fn table_name(&self, conversation_id: &str) -> String {
-        let sanitized: String = conversation_id.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).collect();
-        format!("msg_{}", sanitized)
+        format!("chat_logs_{}", conversation_id)
     }
 
-    /// 确保表存在，仿 Go 版 schema
+    /// 确保表存在，schema 与 Go pkg/db/chat_log_model.go initChatLog 对齐（含 sender_nick_name、group_id 等）
     async fn ensure_table(&self, conversation_id: &str) -> Result<String> {
         let table = self.table_name(conversation_id);
         let sql = format!(
             r#"
-            CREATE TABLE IF NOT EXISTS {table} (
+            CREATE TABLE IF NOT EXISTS "{table}" (
                 client_msg_id         TEXT PRIMARY KEY,
                 server_msg_id         TEXT,
                 send_id               TEXT,
                 recv_id               TEXT,
                 sender_platform_id    INTEGER,
-                sender_nickname       TEXT,
+                sender_nick_name      TEXT,
                 sender_face_url       TEXT,
                 session_type          INTEGER,
                 msg_from              INTEGER,
@@ -115,10 +114,10 @@ impl MessageRepo {
                 local_ex              TEXT,
                 group_id              TEXT
             );
-            CREATE INDEX IF NOT EXISTS idx_{table}_seq ON {table}(seq);
-            CREATE INDEX IF NOT EXISTS idx_{table}_send_time ON {table}(send_time);
-            CREATE INDEX IF NOT EXISTS idx_{table}_content_type ON {table}(content_type);
-            CREATE INDEX IF NOT EXISTS idx_{table}_group_id ON {table}(group_id);
+            CREATE INDEX IF NOT EXISTS idx_{table}_seq ON "{table}"(seq);
+            CREATE INDEX IF NOT EXISTS idx_{table}_send_time ON "{table}"(send_time);
+            CREATE INDEX IF NOT EXISTS idx_{table}_content_type ON "{table}"(content_type);
+            CREATE INDEX IF NOT EXISTS idx_{table}_group_id ON "{table}"(group_id);
             "#,
             table = table
         );
@@ -139,7 +138,7 @@ impl MessageRepo {
         let sql = r#"
         INSERT OR REPLACE INTO {table} (
             client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
-            sender_nickname, sender_face_url, session_type, msg_from, content_type, content,
+            sender_nick_name, sender_face_url, session_type, msg_from, content_type, content,
             is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
         ) VALUES (
             ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
@@ -190,7 +189,7 @@ impl MessageRepo {
             let sql = r#"
             INSERT OR REPLACE INTO {table} (
                 client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
-                sender_nickname, sender_face_url, session_type, msg_from, content_type, content,
+                sender_nick_name, sender_face_url, session_type, msg_from, content_type, content,
                 is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
             ) VALUES (
                 ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
@@ -239,7 +238,7 @@ impl MessageRepo {
                 send_id = ?,
                 recv_id = ?,
                 sender_platform_id = ?,
-                sender_nickname = ?,
+                sender_nick_name = ?,
                 sender_face_url = ?,
                 session_type = ?,
                 msg_from = ?,
