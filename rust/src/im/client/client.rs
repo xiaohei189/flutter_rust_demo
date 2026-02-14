@@ -118,9 +118,21 @@ impl OpenIMClient {
             .context("创建 HTTP 客户端失败")
     }
 
+    /// 与 Go 一致的 SDK 版本号，用于 local_app_sdk_version 表
+    const SDK_VERSION: &str = "3.8.0";
+
     /// 初始化并运行客户端（WebSocket 连接、消息/会话同步），阻塞直到退出或取消
     pub async fn init(&mut self) -> Result<()> {
         let repo = Repository::create(&self.config.conversation_db_url).await?;
+        // 与 Go versionDataMigrate 一致：首次无记录时写入 SDK 版本
+        if repo.app_version.get_app_sdk_version().await?.is_none() {
+            repo.app_version
+                .set_app_sdk_version(&crate::im::LocalAppSDKVersion {
+                    version: Self::SDK_VERSION.to_string(),
+                    installed: false,
+                })
+                .await?;
+        }
         let (connection_tx, connection_rx) = mpsc::unbounded_channel();
         let (msg_sync_cmd_tx, msg_sync_cmd_rx) = mpsc::unbounded_channel();
         let cancel_token = CancellationToken::new();

@@ -102,8 +102,14 @@ impl MessageHandle {
         // 1) 取全部会话 ID
         let ids = self.repository.conversation.get_all_conversation_ids().await?;
         if ids.is_empty() {
-            self.reinstalled = true;
-            debug!("[message_handle] no local conversations, mark reinstalled=true");
+            // 与 Go 一致：无会话时查 local_app_sdk_version，无记录或 !installed 则视为重装
+            let version = self.repository.app_version.get_app_sdk_version().await?;
+            self.reinstalled = version.as_ref().map_or(true, |v| !v.installed);
+            debug!(
+                "[message_handle] no local conversations, version={:?}, reinstalled={}",
+                version.as_ref().map(|v| (&v.version, v.installed)),
+                self.reinstalled
+            );
         }
 
         // 2) 逐会话读取消息表最大 seq（对等 Go 的 CheckConversationNormalMsgSeq）
@@ -412,9 +418,19 @@ impl MessageHandle {
                 }
             }
 
-            // TODO: 对齐 Go 的 syncAndTriggerReinstallMsgs（当前复用普通路径）
+            // 与 Go 一致：重装同步完成后写回 local_app_sdk_version.installed = true
             self.sync_and_trigger_msgs(&need_sync_seq_map, pull_nums).await?;
-
+            if let Err(e) = self
+                .repository
+                .app_version
+                .set_app_sdk_version(&crate::im::LocalAppSDKVersion {
+                    version: String::new(),
+                    installed: true,
+                })
+                .await
+            {
+                tracing::warn!("[message_handle] set_app_sdk_version(installed=true) err: {}", e);
+            }
             self.reinstalled = false;
             Ok(())
         } else {
