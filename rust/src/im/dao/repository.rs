@@ -1,6 +1,6 @@
 use crate::im::dao::migration;
 use crate::im::dao::notification::NotificationDao;
-use crate::im::{AppVersionDao, ConversationDao, FriendDao, MessageRepo, VersionSyncDao};
+use crate::im::{AppVersionDao, ConversationDao, FriendDao, MessageRepo, UserDao, VersionSyncDao};
 use anyhow::Result;
 use sqlx::{Pool, Sqlite};
 
@@ -13,6 +13,7 @@ pub struct Repository {
     pub notification_dao: NotificationDao,
     pub message: MessageRepo,
     pub app_version: AppVersionDao,
+    pub user: UserDao,
 }
 
 impl Repository {
@@ -32,6 +33,7 @@ impl Repository {
             message: MessageRepo::new(db.clone(), "test_user_id".to_string()),
             friend: FriendDao::new(db.clone(), "test_user_id".to_string()),
             app_version: AppVersionDao::new(db.clone()),
+            user: UserDao::new(db.clone()),
         }
     }
 }

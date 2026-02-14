@@ -26,7 +26,7 @@ pub use friend::{FriendSyncer, FriendSyncerConfig};
 pub use listener::{AdvancedMsgListener, EmptyAdvancedMsgListener};
 pub use message::{AtElem, AtInfo, CustomElem, FileElem, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem};
 // DAO 统一出口
-pub use dao::{AppVersionDao, ConversationDao, FriendDao, LocalAppSDKVersion, MessageRepo, VersionSyncDao};
+pub use dao::{AppVersionDao, ConversationDao, FriendDao, LocalAppSDKVersion, LocalUser, MessageRepo, UserDao, VersionSyncDao};
 
 // 重新导出模型相关结构体和函数
 pub use model::{AllConversationsResp, ApiResponse, IncrementalConversationResp, LocalConversation, WebSocketConnectResp};

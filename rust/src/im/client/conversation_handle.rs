@@ -182,7 +182,7 @@ impl ConversationHandle {
         let mut conv = if let Some(ref existing) = existing_conv {
             existing.clone()
         } else {
-            LocalConversation {
+            let mut conv = LocalConversation {
                 conversation_id: conversation_id.to_string(),
                 conversation_type: msg.session_type,
                 user_id: msg.send_id.clone(),
@@ -207,7 +207,17 @@ impl ConversationHandle {
                 min_seq: msg.seq,
                 is_msg_destruct: false,
                 msg_destruct_time: 0,
+            };
+            // 与 Go batchGetUserNameAndFaceURL 一致：从 local_users 补全 show_name/face_url
+            if let Ok(Some(u)) = self.repository.user.get_login_user(&conv.user_id).await {
+                if !u.nickname.is_empty() {
+                    conv.show_name = u.nickname;
+                }
+                if !u.face_url.is_empty() {
+                    conv.face_url = u.face_url.clone();
+                }
             }
+            conv
         };
 
         let is_new = existing_conv.is_none();

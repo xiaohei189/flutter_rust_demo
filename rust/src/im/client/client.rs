@@ -133,6 +133,19 @@ impl OpenIMClient {
                 })
                 .await?;
         }
+        // 与 Go 一致：确保当前登录用户在 local_users 中有记录（后续用户同步会更新 nickname/face_url）
+        if repo.user.get_login_user(&self.config.user_id).await?.is_none() {
+            let _ = repo.user.insert_login_user(&crate::im::LocalUser {
+                user_id: self.config.user_id.clone(),
+                nickname: String::new(),
+                face_url: String::new(),
+                create_time: 0,
+                app_manger_level: 0,
+                ex: String::new(),
+                attached_info: String::new(),
+                global_recv_msg_opt: 0,
+            }).await;
+        }
         let (connection_tx, connection_rx) = mpsc::unbounded_channel();
         let (msg_sync_cmd_tx, msg_sync_cmd_rx) = mpsc::unbounded_channel();
         let cancel_token = CancellationToken::new();
