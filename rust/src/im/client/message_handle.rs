@@ -145,7 +145,13 @@ impl MessageHandle {
             };
             // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
             let _guard = envelope.parent.enter();
-            info!("[message_handle] 收到命令: {:?}", envelope.kind);
+            let cmd_brief = match &envelope.kind {
+                MsgSyncCommandKind::Connected => "Connected".to_string(),
+                MsgSyncCommandKind::Wakeup => "Wakeup".to_string(),
+                MsgSyncCommandKind::ManualSync(ids) => format!("ManualSync({})", ids.len()),
+                MsgSyncCommandKind::Push { .. } => "Push".to_string(),
+            };
+            info!("[message_handle] 收到命令: {}", cmd_brief);
             let result = match envelope.kind {
                 MsgSyncCommandKind::Connected => self.do_connected().await,
                 MsgSyncCommandKind::Wakeup => self.do_wakeup_data_sync().await,
@@ -290,7 +296,7 @@ impl MessageHandle {
             debug!("[message_handle] 没有需要同步的消息");
             return Ok(());
         }
-        info!("[message_handle] 开始同步消息，seq_map: {:?}, sync_msg_num: {}", seq_map, sync_msg_num);
+        info!("[message_handle] 开始同步消息 会话数={} sync_msg_num={}", seq_map.len(), sync_msg_num);
         let mut temp_seq_map: HashMap<String, (i64, i64)> = HashMap::with_capacity(50);
         let mut msg_num: i64 = 0;
 
@@ -429,7 +435,7 @@ impl MessageHandle {
 
     #[tracing::instrument(skip(self, seq_map), name = "pull_msg_by_seq_range", fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     pub async fn pull_msg_by_seq_range(&self, seq_map: &std::collections::HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<sdkws::PullMessageBySeqsResp> {
-        trace!("[ws] pull_msg_by_seq_range seq_map={:?}, sync_msg_num={}", seq_map, sync_msg_num);
+        trace!("[ws] pull_msg_by_seq_range 会话数={} sync_msg_num={}", seq_map.len(), sync_msg_num);
 
         let ranges: Vec<SeqRangeModel> = seq_map
             .iter()

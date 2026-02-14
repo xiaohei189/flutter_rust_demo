@@ -56,21 +56,25 @@ impl Client {
     }
 }
 
+use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;
 use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
 use crate::im::dao::repository::Repository;
 use crate::im::friend::FriendListener;
-use crate::im::listener::{AdvancedMsgListener, ConversationListener};
+use crate::im::listener::{
+    AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener,
+    EmptyConnListener, EmptyConversationListener,
+};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::ws::WsRpcEnvelope;
 use anyhow::{Context, Result};
 use openim_protocol::constant;
 use openim_protocol::sdkws;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info};
+use tracing::{error, info, trace};
 
 
 
@@ -78,24 +82,24 @@ use tracing::{error, info};
 #[derive(Clone)]
 pub struct OpenIMClient {
     pub(crate) config: ClientConfig,
-    
-    // 会话监听器（可由调用方注册）
-    conversation_listener: Option<Arc<dyn ConversationListener>>,
-    // 好友监听器（可由调用方注册）
-    friend_listener: Option<Arc<dyn FriendListener>>,
-    // 高级消息监听器（可由调用方注册，参考 Go 版本的 OnAdvancedMsgListener）
-    pub(crate) advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
+    /// 全局回调（连接、会话、消息、好友等），统一由此结构体管理
+    callbacks: Arc<RwLock<ClientCallbacks>>,
 }
 
 impl OpenIMClient {
     /// 创建新的客户端
     /// - `config`: 客户端配置
+    /// - 回调默认为空实现（会输出日志），可通过 set_*_listener 覆盖
     pub fn new(config: ClientConfig) -> Self {
+        let callbacks = ClientCallbacks {
+            conn_listener: Some(Arc::new(EmptyConnListener)),
+            conversation_listener: Some(Arc::new(EmptyConversationListener)),
+            advanced_msg_listener: Some(Arc::new(EmptyAdvancedMsgListener)),
+            friend_listener: None,
+        };
         let client = Self {
             config,
-            conversation_listener: None,
-            friend_listener: None,
-            advanced_msg_listener: None,
+            callbacks: Arc::new(RwLock::new(callbacks)),
         };
         client
     }
@@ -149,11 +153,16 @@ impl OpenIMClient {
         let (connection_tx, connection_rx) = mpsc::unbounded_channel();
         let (msg_sync_cmd_tx, msg_sync_cmd_rx) = mpsc::unbounded_channel();
         let cancel_token = CancellationToken::new();
+
+        let callbacks_snap = self.callbacks.read().unwrap().clone();
+        let callbacks = Arc::new(callbacks_snap);
+
         let mut connection = ConnectionHandle::new(
             self.config.clone(),
             connection_rx,
             msg_sync_cmd_tx.clone(),
             cancel_token.clone(),
+            Some(callbacks.clone()),
         );
         let mut connection_handle = tokio::spawn(async move {
             if let Err(e) = connection.auto_connect().await {
@@ -171,7 +180,7 @@ impl OpenIMClient {
         };
         let mut conversation_handle = ConversationHandle::with_listener_and_db_and_client(
             conv_cfg,
-            self.conversation_listener.clone(),
+            Some(callbacks),
             repo.pool.clone(),
             http_client_for_conv,
             conv_cmd_rx,
@@ -216,20 +225,24 @@ impl OpenIMClient {
         Ok(())
     }
 
+    /// 注册连接监听器（对应 Go 的 SetConnListener / OnConnListener）
+    pub fn set_conn_listener(&mut self, listener: Arc<dyn ConnListener>) {
+        self.callbacks.write().unwrap().conn_listener = Some(listener);
+    }
+
     /// 注册会话监听器
     pub fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
-        self.conversation_listener = Some(listener.clone());
+        self.callbacks.write().unwrap().conversation_listener = Some(listener);
     }
 
     /// 注册好友监听器
     pub fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
-        self.friend_listener = Some(listener.clone());
-        // FriendSyncer 当前不再重建，沿用已有实例
+        self.callbacks.write().unwrap().friend_listener = Some(listener);
     }
 
     /// 注册高级消息监听器（参考 Go 版本的 SetAdvancedMsgListener）
     pub fn set_advanced_msg_listener(&mut self, listener: Arc<dyn AdvancedMsgListener>) {
-        self.advanced_msg_listener = Some(listener.clone());
+        self.callbacks.write().unwrap().advanced_msg_listener = Some(listener);
     }
     /// 处理接收消息（事件循环） -> ws_handlers 模块实现
 
@@ -254,9 +267,9 @@ impl OpenIMClient {
                 "conversationID": conv_id,
             });
 
-            info!("receive message: revoked_json: {:?}", revoked_json);
+            trace!("receive message: revoked conv_id={} client_msg_id={}", conv_id, msg.client_msg_id);
             let revoked_json_str = serde_json::to_string(&revoked_json).unwrap_or_default();
-            let listener = self.advanced_msg_listener.clone();
+            let listener = self.callbacks.read().unwrap().advanced_msg_listener.clone();
             tokio::spawn(async move {
                 if let Some(listener) = &listener {
                     listener.on_new_recv_message_revoked(revoked_json_str).await;
@@ -283,7 +296,7 @@ impl OpenIMClient {
                 }));
             }
             let receipt_json_str = serde_json::to_string(&receipt_list).unwrap_or_default();
-            let listener = self.advanced_msg_listener.clone();
+            let listener = self.callbacks.read().unwrap().advanced_msg_listener.clone();
             tokio::spawn(async move {
                 if let Some(listener) = &listener {
                     listener.on_recv_c2c_read_receipt(receipt_json_str).await;
@@ -298,7 +311,7 @@ impl OpenIMClient {
             return true;
         }
 
-        // 输入提示（typing）
+        // 输入提示（typing），对应 Go 的 OnConversationUserInputStatusChanged + OnAdvancedMsgListener.OnRecvTyping
         if msg.content_type == constant::TYPING {
             let mut msg_tip = String::new();
             if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
@@ -311,12 +324,16 @@ impl OpenIMClient {
                 "sendID": msg.send_id,
                 "msgTip": msg_tip,
             });
-            info!("receive message: typing: {:?}", msg);
+            trace!("receive message: typing conv_id={} send_id={}", conv_id, msg.send_id);
             let typing_json_str = serde_json::to_string(&typing_json).unwrap_or_default();
-            let listener = self.advanced_msg_listener.clone();
+            let msg_listener = self.callbacks.read().unwrap().advanced_msg_listener.clone();
+            let conv_listener = self.callbacks.read().unwrap().conversation_listener.clone();
             tokio::spawn(async move {
-                if let Some(listener) = &listener {
-                    listener.on_recv_typing_status(typing_json_str).await;
+                if let Some(l) = &msg_listener {
+                    l.on_recv_typing_status(typing_json_str.clone()).await;
+                }
+                if let Some(l) = &conv_listener {
+                    l.on_conversation_user_input_status_changed(typing_json_str).await;
                 }
             });
             return true;
@@ -385,15 +402,15 @@ impl OpenIMClient {
         let status = resp.status();
         let text = resp.text().await?;
         if !status.is_success() {
-            error!("[Client] 标记所有会话已读请求失败，HTTP状态: {}, 响应: {}", status, text);
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+            error!("[Client] 标记所有会话已读请求失败 HTTP status={}", status);
+            return Err(anyhow::anyhow!("HTTP 错误 {}", status));
         }
 
         let json_value: serde_json::Value = serde_json::from_str(&text)?;
         if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
             if err_code != 0 {
                 let err_msg = json_value.get("errMsg").and_then(|v| v.as_str()).unwrap_or("未知错误");
-                error!("[Client] 标记所有会话已读服务器错误，错误码: {}, 错误信息: {}", err_code, err_msg);
+                error!("[Client] 标记所有会话已读失败 err_code={} err_msg={}", err_code, err_msg);
                 return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
             }
         }
@@ -429,15 +446,15 @@ impl OpenIMClient {
         let status = resp.status();
         let text = resp.text().await?;
         if !status.is_success() {
-            error!("[Client] 删除消息请求失败，HTTP状态: {}, 响应: {}", status, text);
-            return Err(anyhow::anyhow!("HTTP 错误 {}: {}", status, text));
+            error!("[Client] 删除消息请求失败 HTTP status={}", status);
+            return Err(anyhow::anyhow!("HTTP 错误 {}", status));
         }
 
         let json_value: serde_json::Value = serde_json::from_str(&text)?;
         if let Some(err_code) = json_value.get("errCode").and_then(|v| v.as_i64()) {
             if err_code != 0 {
                 let err_msg = json_value.get("errMsg").and_then(|v| v.as_str()).unwrap_or("未知错误");
-                error!("[Client] 删除消息服务器错误，错误码: {}, 错误信息: {}", err_code, err_msg);
+                error!("[Client] 删除消息失败 err_code={} err_msg={}", err_code, err_msg);
                 return Err(anyhow::anyhow!("服务器错误 {}: {}", err_code, err_msg));
             }
         }

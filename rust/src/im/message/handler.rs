@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use anyhow::Result;
 use openim_protocol::{constant, sdkws};
 use serde_json;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 
 use crate::im::dao::MessageRepo;
 use crate::im::listener::AdvancedMsgListener;
@@ -315,9 +315,10 @@ impl MessageHandler {
             }
         }
 
-        // 触发新消息回调
+        // 触发新消息回调（仅此处打印完整消息内容，传递过程中其他日志已省略）
         for msg in result.new_messages {
             let msg_json = serde_json::to_string(&msg).unwrap_or_default();
+            info!("[收到消息] {}", msg_json);
             let listener = self.ctx.advanced_msg_listener.clone();
             tokio::spawn(async move {
                 if let Some(listener) = &listener {

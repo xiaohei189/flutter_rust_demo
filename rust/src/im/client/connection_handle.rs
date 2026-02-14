@@ -2,6 +2,7 @@
 //!
 //! 此模块包含 OpenIM 客户端的核心逻辑实现。
 
+use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::client::ClientConfig;
 use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
@@ -63,10 +64,18 @@ pub struct ConnectionHandle {
     cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
     reconnect_strategy: ReconnectStrategy,
     cancel_token: CancellationToken,
+    /// 全局回调，直接调用各类型监听器，便于扩展
+    callbacks: Option<Arc<ClientCallbacks>>,
 }
 
 impl ConnectionHandle {
-    pub fn new(config: ClientConfig, cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>, msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>, cancel_token: CancellationToken) -> Self {
+    pub fn new(
+        config: ClientConfig,
+        cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
+        msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>,
+        cancel_token: CancellationToken,
+        callbacks: Option<Arc<ClientCallbacks>>,
+    ) -> Self {
         let client = Self {
             config,
             reconnect_strategy: ReconnectStrategy::new(),
@@ -74,6 +83,7 @@ impl ConnectionHandle {
             msg_sync_cmd_tx,
             cmd_rx,
             cancel_token,
+            callbacks,
         };
         client
     }
@@ -143,7 +153,24 @@ impl ConnectionHandle {
         let url = self.connect_url();
         info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
 
-        let (ws_stream, response) = connect_async(&url).await?;
+        if let Some(ref cb) = self.callbacks {
+            if let Some(ref l) = cb.conn_listener {
+                l.on_connecting().await;
+            }
+        }
+
+        let (ws_stream, response) = match connect_async(&url).await {
+            Ok(ws) => ws,
+            Err(e) => {
+                let err_msg = e.to_string();
+                if let Some(ref cb) = self.callbacks {
+                    if let Some(ref l) = cb.conn_listener {
+                        l.on_connect_failed(-1, err_msg.clone()).await;
+                    }
+                }
+                return Err(anyhow::anyhow!("{}", err_msg));
+            }
+        };
         info!("✅ WebSocket 连接成功, 状态: {}", response.status());
         self.reconnect_strategy.reset();
 
@@ -156,6 +183,11 @@ impl ConnectionHandle {
             match serde_json::from_str::<WebSocketConnectResp>(&text) {
                 Ok(resp) => {
                     if resp.err_code == 0 {
+                        if let Some(ref cb) = self.callbacks {
+                            if let Some(ref l) = cb.conn_listener {
+                                l.on_connect_success().await;
+                            }
+                        }
                         self.connected();
                     } else {
                         let error_msg = if !resp.err_dlt.is_empty() {
@@ -163,18 +195,35 @@ impl ConnectionHandle {
                         } else {
                             resp.err_msg.clone()
                         };
+                        if let Some(ref cb) = self.callbacks {
+                            if let Some(ref l) = cb.conn_listener {
+                                l.on_connect_failed(resp.err_code, error_msg.clone()).await;
+                            }
+                        }
                         error!("[Client] ❌ WebSocket 连接失败，错误码: {}, 错误信息: {}", resp.err_code, error_msg);
                         return Err(anyhow::anyhow!(error_msg));
                     }
                 }
                 Err(e) => {
-                    error!("[Client] ❌ WebSocket 响应解析失败: {}, 原始响应: {}", e, text);
-                    return Err(anyhow::anyhow!("WebSocket 响应解析失败: {}, 原始响应: {}", e, text));
+                    let err_msg = format!("WebSocket 响应解析失败: {}", e);
+                    if let Some(ref cb) = self.callbacks {
+                        if let Some(ref l) = cb.conn_listener {
+                            l.on_connect_failed(-1, err_msg.clone()).await;
+                        }
+                    }
+                    error!("[Client] ❌ {}", err_msg);
+                    return Err(anyhow::anyhow!("{}", err_msg));
                 }
             }
         } else {
-            error!("[Client] ❌ 未收到 WebSocket 连接响应");
-            return Err(anyhow::anyhow!("未收到 WebSocket 连接响应"));
+            let err_msg = "未收到 WebSocket 连接响应".to_string();
+            if let Some(ref cb) = self.callbacks {
+                if let Some(ref l) = cb.conn_listener {
+                    l.on_connect_failed(-1, err_msg.clone()).await;
+                }
+            }
+            error!("[Client] ❌ {}", err_msg);
+            return Err(anyhow::anyhow!("{}", err_msg));
         }
 
         use futures_util::SinkExt;
@@ -313,7 +362,7 @@ impl ConnectionHandle {
                 return Ok(());
             }
             WsMessage::Frame(frame) => {
-                warn!("[Client] 收到Frame消息: {:?}", frame);
+                warn!("[Client] 收到 Frame 消息");
                 return Ok(());
             }
         }
@@ -333,7 +382,11 @@ impl ConnectionHandle {
             }
         };
 
-        debug!("[Client] 收到 Push 原始消息: {:?}", push_msg);
+        info!("[Client] 收到 Push 原始消息: {:?}", push_msg);
+
+        let n_msgs: usize = push_msg.msgs.values().map(|p| p.msgs.len()).sum();
+        let n_notif: usize = push_msg.notification_msgs.values().map(|p| p.msgs.len()).sum();
+        debug!("[Client] 收到 Push 消息数={} 通知数={}", n_msgs, n_notif);
 
         if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::new(MsgSyncCommandKind::Push { push: push_msg })) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
@@ -400,7 +453,7 @@ mod tests {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let (msg_sync_cmd_tx, _msg_sync_cmd_rx) = tokio::sync::mpsc::unbounded_channel::<MsgSyncCommand>();
         let cancel_token = CancellationToken::new();
-        let mut client = ConnectionHandle::new(config, rx, msg_sync_cmd_tx, cancel_token.clone());
+        let mut client = ConnectionHandle::new(config, rx, msg_sync_cmd_tx, cancel_token.clone(), None);
         // 连接到服务器（内部会自动启动消息处理）
         client.auto_connect().await.unwrap_or_else(|e| {
             error!("连接失败: {}", e);

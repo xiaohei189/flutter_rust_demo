@@ -1,6 +1,7 @@
 //! 消息监听器回调接口
 
 use async_trait::async_trait;
+use tracing::info;
 
 /// 高级消息监听器（参考 Go 版本的 OnAdvancedMsgListener）
 ///
@@ -55,18 +56,36 @@ pub trait AdvancedMsgListener: Send + Sync {
     async fn on_recv_typing_status(&self, typing_info: String);
 }
 
-/// 空的消息监听器实现（默认实现）
+/// 空的消息监听器实现（默认实现），仅输出日志
 pub struct EmptyAdvancedMsgListener;
 
 #[async_trait]
 impl AdvancedMsgListener for EmptyAdvancedMsgListener {
-    async fn on_recv_new_message(&self, _message: String) {}
-    async fn on_recv_c2c_read_receipt(&self, _msg_receipt_list: String) {}
-    async fn on_new_recv_message_revoked(&self, _message_revoked: String) {}
-    async fn on_recv_offline_new_message(&self, _message: String) {}
-    async fn on_msg_deleted(&self, _message: String) {}
-    async fn on_recv_online_only_message(&self, _message: String) {}
-    async fn on_kicked_offline(&self) {}
-    async fn on_connection_status_changed(&self, _connected: bool, _message: String) {}
-    async fn on_recv_typing_status(&self, _typing_info: String) {}
+    async fn on_recv_new_message(&self, message: String) {
+        info!("[AdvancedMsgListener] on_recv_new_message len={} (空实现)", message.len());
+    }
+    async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
+        info!("[AdvancedMsgListener] on_recv_c2c_read_receipt len={} (空实现)", msg_receipt_list.len());
+    }
+    async fn on_new_recv_message_revoked(&self, message_revoked: String) {
+        info!("[AdvancedMsgListener] on_new_recv_message_revoked len={} (空实现)", message_revoked.len());
+    }
+    async fn on_recv_offline_new_message(&self, message: String) {
+        info!("[AdvancedMsgListener] on_recv_offline_new_message len={} (空实现)", message.len());
+    }
+    async fn on_msg_deleted(&self, message: String) {
+        info!("[AdvancedMsgListener] on_msg_deleted len={} (空实现)", message.len());
+    }
+    async fn on_recv_online_only_message(&self, message: String) {
+        info!("[AdvancedMsgListener] on_recv_online_only_message len={} (空实现)", message.len());
+    }
+    async fn on_kicked_offline(&self) {
+        info!("[AdvancedMsgListener] on_kicked_offline (空实现)");
+    }
+    async fn on_connection_status_changed(&self, connected: bool, message: String) {
+        info!("[AdvancedMsgListener] on_connection_status_changed connected={} len={} (空实现)", connected, message.len());
+    }
+    async fn on_recv_typing_status(&self, typing_info: String) {
+        info!("[AdvancedMsgListener] on_recv_typing_status len={} (空实现)", typing_info.len());
+    }
 }

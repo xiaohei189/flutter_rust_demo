@@ -3,8 +3,9 @@
 //! 合并原 conversation/service 的会话同步逻辑，通过命令通道接收消息同步器下发的会话命令。
 
 use crate::im::api::api::Api;
+use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::dao::repository::Repository;
-use crate::im::listener::ConversationListener;
+use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::constant::sync_flag;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::LocalConversation;
@@ -83,7 +84,8 @@ pub struct ConversationHandle {
     config: ConversationSyncerConfig,
     api: Api,
     repository: Repository,
-    listener: Option<Arc<dyn ConversationListener>>,
+    /// 直接引用 client 的全局回调，从其中取 conversation_listener / advanced_msg_listener
+    callbacks: Option<Arc<ClientCallbacks>>,
     cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
     cancel_token: CancellationToken,
 }
@@ -92,7 +94,7 @@ impl ConversationHandle {
     /// 使用共享连接池与 HTTP 客户端创建（供 client 初始化时调用）
     pub async fn with_listener_and_db_and_client(
         config: ConversationSyncerConfig,
-        listener: Option<Arc<dyn ConversationListener>>,
+        callbacks: Option<Arc<ClientCallbacks>>,
         db: Pool<Sqlite>,
         http_client: reqwest::Client,
         cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
@@ -104,10 +106,20 @@ impl ConversationHandle {
             config,
             api,
             repository,
-            listener,
+            callbacks,
             cmd_rx,
             cancel_token,
         })
+    }
+
+    #[inline]
+    fn conversation_listener(&self) -> Option<Arc<dyn ConversationListener>> {
+        self.callbacks.as_ref().and_then(|c| c.conversation_listener.clone())
+    }
+
+    #[inline]
+    fn advanced_msg_listener(&self) -> Option<Arc<dyn AdvancedMsgListener>> {
+        self.callbacks.as_ref().and_then(|c| c.advanced_msg_listener.clone())
     }
 
     /// 从数据库获取所有本地会话
@@ -249,16 +261,16 @@ impl ConversationHandle {
         self.upsert_conversation(&conv).await?;
         let json = serde_json::to_string(&vec![conv.clone()]).unwrap_or_else(|_| "[]".to_string());
         if is_new {
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_new_conversation(json).await;
             }
         } else {
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_conversation_changed(json).await;
             }
         }
         if let Ok(total_unread) = self.get_total_unread_count().await {
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_total_unread_message_count_changed(total_unread).await;
             }
         }
@@ -342,21 +354,21 @@ impl ConversationHandle {
 
         if !new_conversations.is_empty() {
             let json = serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_new_conversation(json).await;
             }
         }
 
         if !changed_conversations.is_empty() {
             let json = serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_conversation_changed(json).await;
             }
         }
 
         if !new_conversations.is_empty() || !changed_conversations.is_empty() {
             if let Ok(total_unread) = self.get_total_unread_count().await {
-                if let Some(listener) = &self.listener {
+                if let Some(listener) = self.conversation_listener() {
                     listener.on_total_unread_message_count_changed(total_unread).await;
                 }
             }
@@ -414,19 +426,19 @@ impl ConversationHandle {
         }
         if !new_conversations.is_empty() {
             let json = serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_new_conversation(json).await;
             }
         }
         if !changed_conversations.is_empty() {
             let json = serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_conversation_changed(json).await;
             }
         }
         if insert_count > 0 || update_count > 0 || delete_count > 0 {
             if let Ok(total_unread) = self.get_total_unread_count().await {
-                if let Some(listener) = &self.listener {
+                if let Some(listener) = self.conversation_listener() {
                     listener.on_total_unread_message_count_changed(total_unread).await;
                 }
             }
@@ -465,7 +477,7 @@ impl ConversationHandle {
         let local_ids = self.get_all_conversation_ids().await?;
         let reinstalled = local_ids.is_empty();
         if reinstalled {
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_sync_server_start(true).await;
             }
             return self.full_sync().await;
@@ -474,7 +486,7 @@ impl ConversationHandle {
             .iter()
             .all(|c| c.show_name.is_empty() && c.face_url.is_empty() && c.latest_msg.is_empty() && c.latest_msg_send_time == 0);
         if all_placeholder {
-            if let Some(listener) = &self.listener {
+            if let Some(listener) = self.conversation_listener() {
                 listener.on_sync_server_start(true).await;
             }
             return self.full_sync().await;
@@ -501,16 +513,16 @@ impl ConversationHandle {
             self.save_version_sync(&new_version).await?;
             return Ok(());
         };
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_start(false).await;
         }
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(10).await;
         }
         let resp = match self.api.conversation.get_incremental_conversations(version, &version_id).await {
             Ok(r) => r,
             Err(e) => {
-                if let Some(listener) = &self.listener {
+                if let Some(listener) = self.conversation_listener() {
                     listener.on_sync_server_failed(false).await;
                 }
                 return Err(e);
@@ -528,7 +540,7 @@ impl ConversationHandle {
         }
         let seqs_map = self.api.conversation.get_has_read_and_max_seqs().await.ok();
         self.sync_conversations(server_conversations, local_conversations, seqs_map.as_ref()).await?;
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(80).await;
         }
         for id in resp.delete.iter() {
@@ -544,10 +556,10 @@ impl ConversationHandle {
             };
             self.save_version_sync(&new_version_sync).await?;
         }
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(100).await;
         }
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_finish(false).await;
         }
         let _ = self.sync_unread_by_seq().await;
@@ -558,29 +570,29 @@ impl ConversationHandle {
     #[instrument(skip(self), name = "conv.full_sync")]
     pub async fn full_sync(&self) -> Result<()> {
         let reinstalled = self.get_all_conversation_ids().await?.is_empty();
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_start(reinstalled).await;
         }
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(10).await;
         }
         let resp = match self.api.conversation.get_all_conversations().await {
             Ok(r) => r,
             Err(e) => {
-                if let Some(listener) = &self.listener {
+                if let Some(listener) = self.conversation_listener() {
                     listener.on_sync_server_failed(reinstalled).await;
                 }
                 return Err(e);
             }
         };
         let server_conversations: Vec<LocalConversation> = resp.conversations.clone();
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(30).await;
         }
         let local_conversations = self.get_all_conversations().await?;
         let seqs_map = self.api.conversation.get_has_read_and_max_seqs().await.ok();
         self.sync_conversations(server_conversations, local_conversations, seqs_map.as_ref()).await?;
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(80).await;
         }
         let new_version = LocalVersionSync {
@@ -590,10 +602,10 @@ impl ConversationHandle {
             version_id: Uuid::new_v4().to_string(),
         };
         self.save_version_sync(&new_version).await?;
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_progress(100).await;
         }
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             listener.on_sync_server_finish(reinstalled).await;
         }
         let _ = self.sync_unread_by_seq().await;
@@ -629,10 +641,12 @@ impl ConversationHandle {
     /// 流程与 Go 一致：
     /// 1. 按会话收集需落库的消息：status==MSG_STATUS_HAS_DELETED 仅落库；否则根据 options.history 决定（与 Go 一致：缺省 true，仅 options["history"]==false 时不落库）
     /// 2. batch_insert_message_list 写入本地 message 表
-    /// 3. 对非“已删除”消息做会话更新与未读、并触发 listener（on_new_message）
+    /// 3. 对“已删除”消息触发 AdvancedMsgListener.on_msg_deleted
+    /// 4. 对非“已删除”消息做会话更新与未读、并触发 ConversationListener；同时触发 AdvancedMsgListener.on_recv_offline_new_message（离线同步）
     #[instrument(skip(self, msgs), fields(convs = msgs.len()))]
     pub async fn do_msg_new(&self, msgs: HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         let mut insert_msg: HashMap<String, Vec<LocalChatLog>> = HashMap::new();
+        let mut deleted_msg_jsons: Vec<String> = Vec::new();
 
         for (conversation_id, pull) in &msgs {
             for msg in &pull.msgs {
@@ -647,10 +661,12 @@ impl ConversationHandle {
                     log.status = status;
                     insert_msg.entry(conversation_id.clone()).or_default().push(log);
                 }
+                if msg.status == constant::MSG_STATUS_HAS_DELETED {
+                    let msg_json = serde_json::to_string(msg).unwrap_or_else(|_| "{}".to_string());
+                    deleted_msg_jsons.push(msg_json);
+                }
             }
         }
-
-        let total_to_insert: usize = insert_msg.values().map(|v| v.len()).sum();
 
         for (conversation_id, list) in &insert_msg {
             if let Err(e) = self.repository.message.batch_insert_message_list(conversation_id, list).await {
@@ -665,6 +681,13 @@ impl ConversationHandle {
             }
         }
 
+        // 已删除消息回调（对应 Go OnAdvancedMsgListener.OnMsgDeleted）
+        if let Some(listener) = self.advanced_msg_listener() {
+            for msg_json in &deleted_msg_jsons {
+                listener.on_msg_deleted(msg_json.clone()).await;
+            }
+        }
+
         for (conversation_id, pull) in msgs {
             for msg in pull.msgs {
                 if msg.status == constant::MSG_STATUS_HAS_DELETED {
@@ -672,6 +695,11 @@ impl ConversationHandle {
                 }
                 if let Err(e) = self.on_new_message(&conversation_id, &msg, false).await {
                     warn!("[conversation_handle] 新消息处理失败 conv={} err={}", conversation_id, e);
+                }
+                // 离线新消息回调（对应 Go OnRecvOfflineNewMessage）
+                if let Some(listener) = self.advanced_msg_listener() {
+                    let msg_json = serde_json::to_string(&msg).unwrap_or_else(|_| "{}".to_string());
+                    listener.on_recv_offline_new_message(msg_json).await;
                 }
             }
         }
@@ -703,7 +731,7 @@ impl ConversationHandle {
     /// 同步阶段标记（Go syncFlag）
     #[instrument(skip(self), fields(flag = flag))]
     pub async fn sync_flag(&self, flag: i32) -> Result<()> {
-        if let Some(listener) = &self.listener {
+        if let Some(listener) = self.conversation_listener() {
             match flag {
                 sync_flag::APP_DATA_SYNC_START => listener.on_sync_server_start(true).await,
                 sync_flag::APP_DATA_SYNC_FINISH => listener.on_sync_server_finish(true).await,
@@ -754,7 +782,6 @@ impl ConversationHandle {
             };
             // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
             let _guard = envelope.span.enter();
-            info!("[conversation_handle] 收到命令: {:?}", envelope.kind);
             let result = match envelope.kind {
                 ConvCmdKind::NewMsgCome { msgs } => self.do_msg_new(msgs).await,
                 ConvCmdKind::UpdateConversation(node) => self.do_update_conversation(node).await,

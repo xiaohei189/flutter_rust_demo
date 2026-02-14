@@ -4,7 +4,7 @@
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info, trace, warn};
 
 
 use crate::im::dao::MessageRepo;
@@ -191,9 +191,13 @@ impl BinaryMessageHandler {
                 return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
             }
         };
+        let msg_count: usize = push_msg.msgs.values().map(|p| p.msgs.len()).sum();
+        let notif_count: usize = push_msg.notification_msgs.values().map(|p| p.msgs.len()).sum();
         info!(
-            "[BinaryMessageHandler] push_msg (pretty):\n{}",
-            serde_json::to_string_pretty(&push_msg).unwrap_or_else(|e| format!("JSON序列化失败: {}", e))
+            "[BinaryMessageHandler] 收到推送 普通消息={} 条 通知消息={} 条 会话数={}",
+            msg_count,
+            notif_count,
+            push_msg.msgs.len() + push_msg.notification_msgs.len()
         );
 
         // 收集消息并去重
@@ -265,11 +269,11 @@ impl BinaryMessageHandler {
             }
         }
 
-        // 遍历普通消息
+        // 遍历普通消息（仅 trace 级别记录类型，不打印完整消息）
         for (conv_id, pull_msgs) in &push_msg.msgs {
             for msg in &pull_msgs.msgs {
                 let zh = content_type_to_chinese(msg.content_type);
-                info!(
+                trace!(
                     "[消息内容类型] conversationID={} client_msg_id={} contentType={} -> {}",
                     conv_id, msg.client_msg_id, msg.content_type, zh
                 );
@@ -280,7 +284,7 @@ impl BinaryMessageHandler {
         for (conv_id, pull_msgs) in &push_msg.notification_msgs {
             for msg in &pull_msgs.msgs {
                 let zh = content_type_to_chinese(msg.content_type);
-                info!(
+                trace!(
                     "[通知消息内容类型] conversationID={} client_msg_id={} contentType={} -> {}",
                     conv_id, msg.client_msg_id, msg.content_type, zh
                 );
