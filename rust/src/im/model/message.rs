@@ -1,12 +1,16 @@
 //! 消息相关模型与类型，合并自 `im/message/models.rs` 与 `im/message/types.rs`
 
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use std::collections::HashMap;
 
 // ---------- 本地存储模型 ----------
 
 /// 本地聊天记录结构体
-#[derive(Debug, Clone, Serialize, Deserialize)]
+///
+/// 实现 `FromRow` 用于从按会话分表的 message 表查询；查询时需包含 conversation_id（如 `SELECT ? as conversation_id, * FROM msg_xxx`）。
+/// SQLite 中 is_read 存为 INTEGER 0/1，sqlx 会映射为 bool。
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct LocalChatLog {
     pub conversation_id: String,
     pub client_msg_id: String,

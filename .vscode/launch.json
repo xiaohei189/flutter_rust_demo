@@ -44,6 +44,7 @@
             "program": "lib/main.dart",
             "flutterMode": "profile",
             "deviceId": "android"
+        },{
         }
     ]
 }

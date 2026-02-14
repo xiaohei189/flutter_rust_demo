@@ -342,31 +342,9 @@ impl MessageHandler {
         )
     }
 
-    /// 将 MsgData 转换为 LocalChatLog
+    /// 将 MsgData 转换为 LocalChatLog（委托给 `LocalChatLog::from`）
     pub fn msg_data_to_local_chat_log(msg: &sdkws::MsgData, conversation_id: &str) -> LocalChatLog {
-        LocalChatLog {
-            conversation_id: conversation_id.to_string(),
-            client_msg_id: msg.client_msg_id.clone(),
-            server_msg_id: msg.server_msg_id.clone(),
-            send_id: msg.send_id.clone(),
-            recv_id: msg.recv_id.clone(),
-            sender_platform_id: msg.sender_platform_id,
-            sender_nickname: msg.sender_nickname.clone(),
-            sender_face_url: msg.sender_face_url.clone(),
-            session_type: msg.session_type,
-            msg_from: msg.msg_from,
-            content_type: msg.content_type,
-            content: String::from_utf8_lossy(&msg.content).to_string(),
-            is_read: msg.is_read,
-            status: msg.status,
-            seq: msg.seq,
-            send_time: msg.send_time,
-            create_time: msg.create_time,
-            attached_info: msg.attached_info.clone(),
-            ex: msg.ex.clone(),
-            local_ex: String::new(),
-            group_id: msg.group_id.clone(),
-        }
+        LocalChatLog::from((msg, conversation_id.to_string()))
     }
 
     /// 将 MsgData 转换为 JSON 字符串
@@ -431,5 +409,34 @@ impl MessageHandler {
 
         // 返回是否需要触发会话增量同步
         Ok(need_conv_sync)
+    }
+}
+
+/// 从 `(sdkws::MsgData, conversation_id)` 转换为 `LocalChatLog`，用于落库与展示
+impl From<(&sdkws::MsgData, String)> for LocalChatLog {
+    fn from((msg, conversation_id): (&sdkws::MsgData, String)) -> Self {
+        LocalChatLog {
+            conversation_id,
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: String::from_utf8_lossy(&msg.content).to_string(),
+            is_read: msg.is_read,
+            status: msg.status,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
     }
 }

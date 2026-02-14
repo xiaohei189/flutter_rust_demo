@@ -5,9 +5,11 @@
 use crate::im::api::api::Api;
 use crate::im::dao::repository::Repository;
 use crate::im::listener::ConversationListener;
+use crate::im::message::handler::MessageHandler;
 use crate::im::model::constant::sync_flag;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::LocalConversation;
+use crate::im::LocalChatLog;
 use anyhow::Result;
 use openim_protocol::constant;
 use openim_protocol::sdkws;
@@ -156,7 +158,7 @@ impl ConversationHandle {
     }
 
     /// 基于新消息/通知实时更新会话（未读数、最新消息等）
-    #[instrument(skip(self, msg), name = "conv.on_new_message", fields(conv_id = %conversation_id, is_notification = is_notification))]
+    #[instrument(skip(self, msg), fields(conv_id = %conversation_id, is_notification = is_notification))]
     pub async fn on_new_message(&self, conversation_id: &str, msg: &sdkws::MsgData, is_notification: bool) -> Result<()> {
         if is_notification {
             match msg.content_type {
@@ -610,11 +612,83 @@ impl ConversationHandle {
 
     // ---------- 命令处理（由 ConversationHandle 调用） ----------
 
-    /// 新消息到达会话（Go doMsgNew）
-    #[instrument(skip(self, msgs), name = "conv.do_msg_new", fields(convs = msgs.len()))]
+    /// 从 msg.options 读取布尔开关（与 Go utils.GetSwitchFromOptions 一致）
+    /// - Go 逻辑：key 不存在或值为 true 时返回 true，仅当 key 存在且为 false 时返回 false
+    fn get_switch_from_options(options: &std::collections::HashMap<String, bool>, key: &str) -> bool {
+        options.get(key).copied().unwrap_or(true)
+    }
+
+    /// 新消息到达会话（对齐 Go doMsgNew）
+    ///
+    /// 流程与 Go 一致：
+    /// 1. 按会话收集需落库的消息：status==MSG_STATUS_HAS_DELETED 仅落库；否则根据 options.history 决定（与 Go 一致：缺省 true，仅 options["history"]==false 时不落库）
+    /// 2. batch_insert_message_list 写入本地 message 表
+    /// 3. 对非“已删除”消息做会话更新与未读、并触发 listener（on_new_message）
+    #[instrument(skip(self, msgs), fields(convs = msgs.len()))]
     pub async fn do_msg_new(&self, msgs: HashMap<String, sdkws::PullMsgs>) -> Result<()> {
+        let mut insert_msg: HashMap<String, Vec<LocalChatLog>> = HashMap::new();
+
+        for (conversation_id, pull) in &msgs {
+            for msg in &pull.msgs {
+                let is_history = Self::get_switch_from_options(&msg.options, constant::IS_HISTORY);
+                let need_insert = msg.status == constant::MSG_STATUS_HAS_DELETED || is_history;
+                // [ConfigCompare] 与 Go 对比：推送消息的 options 与落库决策（与 Go 一致：缺省落库，仅 options["history"]==false 时不落库）
+                info!(
+                    "[ConfigCompare] do_msg_new msg conversation_id={} client_msg_id={} options={:?} is_history={} need_insert={}",
+                    conversation_id,
+                    msg.client_msg_id,
+                    msg.options,
+                    is_history,
+                    need_insert
+                );
+                if need_insert {
+                    let log = MessageHandler::msg_data_to_local_chat_log(msg, conversation_id);
+                    let status = if msg.status == constant::MSG_STATUS_HAS_DELETED {
+                        msg.status
+                    } else {
+                        constant::MSG_STATUS_SEND_SUCCESS
+                    };
+                    let mut log = log;
+                    log.status = status;
+                    insert_msg
+                        .entry(conversation_id.clone())
+                        .or_default()
+                        .push(log);
+                }
+            }
+        }
+
+        let total_to_insert: usize = insert_msg.values().map(|v| v.len()).sum();
+        // [ConfigCompare] 落库前汇总：各会话即将写入 chat_logs_xx 的消息条数
+        for (cid, list) in &insert_msg {
+            info!("[ConfigCompare] do_msg_new insert summary conversation_id={} insert_count={}", cid, list.len());
+        }
+        if total_to_insert > 0 {
+            debug!("[ConvSync] do_msg_new 准备落库 会话数={} 消息数={}", insert_msg.len(), total_to_insert);
+        } else {
+            debug!("[ConvSync] do_msg_new 无消息需落库（与 Go 一致：仅当 options.history==false 时不落库，或 status=已删除 时落库）");
+        }
+        for (conversation_id, list) in &insert_msg {
+            if let Err(e) = self
+                .repository
+                .message
+                .batch_insert_message_list(conversation_id, list)
+                .await
+            {
+                warn!(
+                    "[ConvSync] do_msg_new batch_insert_message_list failed conv={} count={} err={}",
+                    conversation_id, list.len(), e
+                );
+            } else {
+                debug!("[ConvSync] do_msg_new 落库成功 conv={} count={}", conversation_id, list.len());
+            }
+        }
+
         for (conversation_id, pull) in msgs {
             for msg in pull.msgs {
+                if msg.status == constant::MSG_STATUS_HAS_DELETED {
+                    continue;
+                }
                 if let Err(e) = self.on_new_message(&conversation_id, &msg, false).await {
                     warn!("[ConvSync] 新消息处理失败 conv={} err={}", conversation_id, e);
                 }

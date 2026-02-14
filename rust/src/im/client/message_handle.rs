@@ -235,13 +235,13 @@ impl MessageHandle {
             return Ok(());
         }
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
-        let mut last_seq: i64 = 0;
-        let mut storage_msgs: Vec<sdkws::MsgData> = Vec::new();
 
         for (conversation_id, pull) in push_messages {
             if pull.msgs.is_empty() {
                 continue;
             }
+            let mut last_seq: i64 = 0;
+            let mut storage_msgs: Vec<sdkws::MsgData> = Vec::new();
             for msg in &pull.msgs {
                 if msg.seq == 0 {
                     if is_notification {
@@ -287,6 +287,8 @@ impl MessageHandle {
         )]);
         pull_msgs
     }
+
+    /// 与 Go 一致：sync 拉取后仅 trigger（do_msg_new），是否落库由 options.history 决定，不在此处单独落库
     #[tracing::instrument(skip(self, seq_map),  fields(convs = seq_map.len(), sync_msg_num = sync_msg_num))]
     async fn sync_and_trigger_msgs(&mut self, seq_map: &HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<()> {
         if seq_map.is_empty() {
