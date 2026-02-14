@@ -28,15 +28,6 @@ CREATE TABLE IF NOT EXISTS local_conversations (
     msg_destruct_time INTEGER NOT NULL DEFAULT 0
 );
 
--- 版本同步表
-CREATE TABLE IF NOT EXISTS local_version_sync (
-    table_name TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
-    version INTEGER NOT NULL DEFAULT 0,
-    version_id TEXT NOT NULL DEFAULT '',
-    PRIMARY KEY (table_name, entity_id)
-);
-
 -- 好友表
 CREATE TABLE IF NOT EXISTS local_friends (
     owner_user_id TEXT NOT NULL,

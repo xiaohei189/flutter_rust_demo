@@ -115,11 +115,13 @@ impl FriendDao {
         Ok(rows.into_iter().map(|r| r.friend_user_id).collect())
     }
 
-    /// 从数据库获取版本同步信息（tableName = local_friends）
+    /// 与 Go GetVersionSync 一致：按 table_name + entity_id 查询（此处为 local_friends + user_id）
     pub async fn get_version_sync(&self) -> Result<Option<LocalVersionSync>> {
-        let row: Option<VersionSyncRow> = sqlx::query_as(
-            "SELECT table_name, entity_id, version, version_id FROM local_version_sync WHERE table_name = 'local_friends' AND entity_id = ?",
-        )
+        const TABLE: &str = "local_sync_version";
+        let row: Option<VersionSyncRow> = sqlx::query_as(&format!(
+            "SELECT table_name, entity_id, version, version_id FROM {} WHERE table_name = 'local_friends' AND entity_id = ?",
+            TABLE
+        ))
         .bind(&self.user_id)
         .fetch_optional(&self.db)
         .await
@@ -128,18 +130,15 @@ impl FriendDao {
         Ok(row.map(Into::into))
     }
 
-    /// 保存版本同步信息到数据库
+    /// 与 Go SetVersionSync 一致：有则更新，无则插入
     pub async fn save_version_sync(&self, version_sync: &LocalVersionSync) -> Result<()> {
-        let sql = r#"
-            INSERT INTO local_version_sync (
-                table_name, entity_id, version, version_id
-            ) VALUES (?, ?, ?, ?)
-            ON CONFLICT(table_name, entity_id) DO UPDATE SET
-                version = excluded.version,
-                version_id = excluded.version_id
-        "#;
-
-        sqlx::query(sql)
+        const TABLE: &str = "local_sync_version";
+        let sql = format!(
+            r#"INSERT INTO {} (table_name, entity_id, version, version_id) VALUES (?, ?, ?, ?)
+            ON CONFLICT(table_name, entity_id) DO UPDATE SET version = excluded.version, version_id = excluded.version_id"#,
+            TABLE
+        );
+        sqlx::query(&sql)
             .bind(&version_sync.table_name)
             .bind(&version_sync.entity_id)
             .bind(version_sync.version as i64)
