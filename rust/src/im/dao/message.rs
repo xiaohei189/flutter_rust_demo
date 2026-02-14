@@ -7,9 +7,10 @@ use anyhow::Result;
 use chrono::Utc;
 use sqlx::{sqlite::SqlitePoolOptions, FromRow, Pool, Sqlite};
 
-/// 消息表行映射（按会话分表，与 Go 一致：表名 chat_logs_<conversation_id>，列名 sender_nick_name）
+/// 消息表行映射（单表 local_chat_logs，列名 sender_nick_name）
 #[derive(Debug, FromRow)]
 struct LocalChatLogRow {
+    conversation_id: String,
     client_msg_id: String,
     server_msg_id: String,
     send_id: String,
@@ -33,9 +34,9 @@ struct LocalChatLogRow {
     group_id: String,
 }
 
-fn row_to_log(conversation_id: &str, r: LocalChatLogRow) -> LocalChatLog {
+fn row_to_log(r: LocalChatLogRow) -> LocalChatLog {
     LocalChatLog {
-        conversation_id: conversation_id.to_string(),
+        conversation_id: r.conversation_id,
         client_msg_id: r.client_msg_id,
         server_msg_id: r.server_msg_id,
         send_id: r.send_id,
@@ -65,9 +66,9 @@ struct MaxSeqRow {
     max_seq: i64,
 }
 
-/// 本地消息存储（使用 sqlx / SQLite，与 Go 一致：表名 chat_logs_<conversation_id>）
+/// 本地消息存储（使用 sqlx / SQLite，单表 local_chat_logs，主键 (conversation_id, client_msg_id)）
 ///
-/// 表名与列名与 openim-sdk-core Go 版保持一致，便于数据目录共用或迁移。
+/// 表结构由迁移 20250216000000_local_chat_logs.sql 创建。
 #[derive(Clone)]
 pub struct MessageRepo {
     pool: Pool<Sqlite>,
@@ -75,54 +76,16 @@ pub struct MessageRepo {
     pub login_user_id: String,
 }
 
-impl MessageRepo {
+const TABLE_LOCAL_CHAT_LOGS: &str = "local_chat_logs";
 
-     /// 创建新的会话 DAO
-     pub fn new(pool: Pool<Sqlite>, login_user_id: String) -> Self {
+impl MessageRepo {
+    pub fn new(pool: Pool<Sqlite>, login_user_id: String) -> Self {
         Self { pool, login_user_id }
     }
 
-    /// 表名与 Go 一致：constant.ChatLogsTableNamePre + conversationID => "chat_logs_" + conversation_id
-    fn table_name(&self, conversation_id: &str) -> String {
-        format!("chat_logs_{}", conversation_id)
-    }
-
-    /// 确保表存在，schema 与 Go pkg/db/chat_log_model.go initChatLog 对齐（含 sender_nick_name、group_id 等）
-    async fn ensure_table(&self, conversation_id: &str) -> Result<String> {
-        let table = self.table_name(conversation_id);
-        let sql = format!(
-            r#"
-            CREATE TABLE IF NOT EXISTS "{table}" (
-                client_msg_id         TEXT PRIMARY KEY,
-                server_msg_id         TEXT,
-                send_id               TEXT,
-                recv_id               TEXT,
-                sender_platform_id    INTEGER,
-                sender_nick_name      TEXT,
-                sender_face_url       TEXT,
-                session_type          INTEGER,
-                msg_from              INTEGER,
-                content_type          INTEGER,
-                content               TEXT,
-                is_read               INTEGER DEFAULT 0,
-                status                INTEGER,
-                seq                   INTEGER DEFAULT 0,
-                send_time             INTEGER,
-                create_time           INTEGER,
-                attached_info         TEXT,
-                ex                    TEXT,
-                local_ex              TEXT,
-                group_id              TEXT
-            );
-            CREATE INDEX IF NOT EXISTS idx_{table}_seq ON "{table}"(seq);
-            CREATE INDEX IF NOT EXISTS idx_{table}_send_time ON "{table}"(send_time);
-            CREATE INDEX IF NOT EXISTS idx_{table}_content_type ON "{table}"(content_type);
-            CREATE INDEX IF NOT EXISTS idx_{table}_group_id ON "{table}"(group_id);
-            "#,
-            table = table
-        );
-        sqlx::query(&sql).execute(&self.pool).await?;
-        Ok(table)
+    /// 表由迁移创建，此处仅返回表名
+    fn table(&self) -> &'static str {
+        TABLE_LOCAL_CHAT_LOGS
     }
 
     fn placeholders(n: usize) -> String {
@@ -134,18 +97,17 @@ impl MessageRepo {
     }
 
     pub async fn insert_message(&self, msg: &LocalChatLog) -> Result<()> {
-        let table = self.ensure_table(&msg.conversation_id).await?;
-        let sql = r#"
-        INSERT OR REPLACE INTO {table} (
-            client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
+        let table = self.table();
+        let sql = format!(
+            r#"INSERT OR REPLACE INTO {} (
+            conversation_id, client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
             sender_nick_name, sender_face_url, session_type, msg_from, content_type, content,
             is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
-        ) VALUES (
-            ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"#,
+            table
         );
-        "#;
-        let sql = sql.replace("{table}", &table);
         sqlx::query(&sql)
+            .bind(&msg.conversation_id)
             .bind(&msg.client_msg_id)
             .bind(&msg.server_msg_id)
             .bind(&msg.send_id)
@@ -180,23 +142,20 @@ impl MessageRepo {
             return Ok(());
         }
 
-        let table = self.ensure_table(conversation_id).await?;
-
-        // 使用事务批量插入
+        let table = self.table();
         let mut tx = self.pool.begin().await?;
 
         for msg in messages {
-            let sql = r#"
-            INSERT OR REPLACE INTO {table} (
-                client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
+            let sql = format!(
+                r#"INSERT OR REPLACE INTO {} (
+                conversation_id, client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id,
                 sender_nick_name, sender_face_url, session_type, msg_from, content_type, content,
                 is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id
-            ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"#,
+                table
             );
-            "#;
-            let sql = sql.replace("{table}", &table);
             sqlx::query(&sql)
+                .bind(&msg.conversation_id)
                 .bind(&msg.client_msg_id)
                 .bind(&msg.server_msg_id)
                 .bind(&msg.send_id)
@@ -230,32 +189,10 @@ impl MessageRepo {
     /// - `conversation_id`: 会话 ID
     /// - `msg`: 要更新的消息
     pub async fn update_message(&self, conversation_id: &str, msg: &LocalChatLog) -> Result<()> {
-        let table = self.ensure_table(conversation_id).await?;
+        let table = self.table();
         let sql = format!(
-            r#"
-            UPDATE {table} SET
-                server_msg_id = ?,
-                send_id = ?,
-                recv_id = ?,
-                sender_platform_id = ?,
-                sender_nick_name = ?,
-                sender_face_url = ?,
-                session_type = ?,
-                msg_from = ?,
-                content_type = ?,
-                content = ?,
-                is_read = ?,
-                status = ?,
-                seq = ?,
-                send_time = ?,
-                create_time = ?,
-                attached_info = ?,
-                ex = ?,
-                local_ex = ?,
-                group_id = ?
-            WHERE client_msg_id = ?
-            "#,
-            table = table
+            r#"UPDATE {} SET server_msg_id = ?, send_id = ?, recv_id = ?, sender_platform_id = ?, sender_nick_name = ?, sender_face_url = ?, session_type = ?, msg_from = ?, content_type = ?, content = ?, is_read = ?, status = ?, seq = ?, send_time = ?, create_time = ?, attached_info = ?, ex = ?, local_ex = ?, group_id = ? WHERE conversation_id = ? AND client_msg_id = ?"#,
+            table
         );
         let rows_affected = sqlx::query(&sql)
             .bind(&msg.server_msg_id)
@@ -277,6 +214,7 @@ impl MessageRepo {
             .bind(&msg.ex)
             .bind(&msg.local_ex)
             .bind(&msg.group_id)
+            .bind(conversation_id)
             .bind(&msg.client_msg_id)
             .execute(&self.pool)
             .await?
@@ -296,39 +234,30 @@ impl MessageRepo {
     /// - `send_time`: 发送时间
     /// - `status`: 消息状态
     pub async fn update_message_time_and_status(&self, conversation_id: &str, client_msg_id: &str, server_msg_id: &str, send_time: i64, status: i32) -> Result<()> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(
-            r#"
-            UPDATE {table} SET
-                server_msg_id = ?,
-                send_time = ?,
-                status = ?
-            WHERE client_msg_id = ?
-            "#,
-            table = table
-        );
-        sqlx::query(&sql).bind(server_msg_id).bind(send_time).bind(status).bind(client_msg_id).execute(&self.pool).await?;
+        let table = self.table();
+        let sql = format!(r#"UPDATE {} SET server_msg_id = ?, send_time = ?, status = ? WHERE conversation_id = ? AND client_msg_id = ?"#, table);
+        sqlx::query(&sql).bind(server_msg_id).bind(send_time).bind(status).bind(conversation_id).bind(client_msg_id).execute(&self.pool).await?;
         Ok(())
     }
 
     pub async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("SELECT * FROM {table} WHERE client_msg_id = ? LIMIT 1", table = table);
-        let row: Option<LocalChatLogRow> = sqlx::query_as(&sql).bind(client_msg_id).fetch_optional(&self.pool).await?;
-        Ok(row.map(|r| row_to_log(conversation_id, r)))
+        let table = self.table();
+        let sql = format!("SELECT * FROM {} WHERE conversation_id = ? AND client_msg_id = ? LIMIT 1", table);
+        let row: Option<LocalChatLogRow> = sqlx::query_as(&sql).bind(conversation_id).bind(client_msg_id).fetch_optional(&self.pool).await?;
+        Ok(row.map(row_to_log))
     }
 
     pub async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("DELETE FROM {table} WHERE client_msg_id = ?;", table = table);
-        sqlx::query(&sql).bind(client_msg_id).execute(&self.pool).await?;
+        let table = self.table();
+        let sql = format!("DELETE FROM {} WHERE conversation_id = ? AND client_msg_id = ?", table);
+        sqlx::query(&sql).bind(conversation_id).bind(client_msg_id).execute(&self.pool).await?;
         Ok(())
     }
 
     pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("DROP TABLE IF EXISTS {table};", table = table);
-        sqlx::query(&sql).execute(&self.pool).await?;
+        let table = self.table();
+        let sql = format!("DELETE FROM {} WHERE conversation_id = ?", table);
+        sqlx::query(&sql).bind(conversation_id).execute(&self.pool).await?;
         Ok(())
     }
 
@@ -336,10 +265,10 @@ impl MessageRepo {
         if msg_ids.is_empty() {
             return Ok(0);
         }
-        let table = self.ensure_table(conversation_id).await?;
+        let table = self.table();
         let placeholders = Self::placeholders(msg_ids.len());
-        let sql = format!("UPDATE {table} SET is_read = 1 WHERE client_msg_id IN ({}) AND send_id != ?", placeholders, table = table);
-        let mut query = sqlx::query(&sql);
+        let sql = format!("UPDATE {} SET is_read = 1 WHERE conversation_id = ? AND client_msg_id IN ({}) AND send_id != ?", table, placeholders);
+        let mut query = sqlx::query(&sql).bind(conversation_id);
         for id in msg_ids {
             query = query.bind(id);
         }
@@ -352,10 +281,10 @@ impl MessageRepo {
         if seqs.is_empty() {
             return Ok(0);
         }
-        let table = self.ensure_table(conversation_id).await?;
+        let table = self.table();
         let placeholders = Self::placeholders(seqs.len());
-        let sql = format!("UPDATE {table} SET is_read = 1 WHERE seq IN ({}) AND send_id != ?", placeholders, table = table);
-        let mut query = sqlx::query(&sql);
+        let sql = format!("UPDATE {} SET is_read = 1 WHERE conversation_id = ? AND seq IN ({}) AND send_id != ?", table, placeholders);
+        let mut query = sqlx::query(&sql).bind(conversation_id);
         for s in seqs {
             query = query.bind(s);
         }
@@ -365,68 +294,64 @@ impl MessageRepo {
     }
 
     pub async fn get_unread_by_conversation(&self, conversation_id: &str) -> Result<Vec<LocalChatLog>> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("SELECT * FROM {table} WHERE is_read = 0 AND send_id != ? ORDER BY send_time DESC", table = table);
-        let rows: Vec<LocalChatLogRow> = sqlx::query_as(&sql).bind(&self.login_user_id).fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
+        let table = self.table();
+        let sql = format!("SELECT * FROM {} WHERE conversation_id = ? AND is_read = 0 AND send_id != ? ORDER BY send_time DESC", table);
+        let rows: Vec<LocalChatLogRow> = sqlx::query_as(&sql).bind(conversation_id).bind(&self.login_user_id).fetch_all(&self.pool).await?;
+        Ok(rows.into_iter().map(row_to_log).collect())
     }
 
     pub async fn get_messages_by_seq(&self, conversation_id: &str, seqs: &[i64]) -> Result<Vec<LocalChatLog>> {
         if seqs.is_empty() {
             return Ok(vec![]);
         }
-        let table = self.ensure_table(conversation_id).await?;
+        let table = self.table();
         let placeholders = Self::placeholders(seqs.len());
-        let sql = format!("SELECT * FROM {table} WHERE seq IN ({}) ORDER BY send_time DESC", placeholders, table = table);
-        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql);
+        let sql = format!("SELECT * FROM {} WHERE conversation_id = ? AND seq IN ({}) ORDER BY send_time DESC", table, placeholders);
+        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql).bind(conversation_id);
         for s in seqs {
             query = query.bind(s);
         }
         let rows = query.fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
+        Ok(rows.into_iter().map(row_to_log).collect())
     }
 
     pub async fn get_messages_by_client_msg_ids(&self, conversation_id: &str, ids: &[String]) -> Result<Vec<LocalChatLog>> {
         if ids.is_empty() {
             return Ok(vec![]);
         }
-        let table = self.ensure_table(conversation_id).await?;
+        let table = self.table();
         let placeholders = Self::placeholders(ids.len());
-        let sql = format!("SELECT * FROM {table} WHERE client_msg_id IN ({}) ORDER BY send_time DESC", placeholders, table = table);
-        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql);
+        let sql = format!("SELECT * FROM {} WHERE conversation_id = ? AND client_msg_id IN ({}) ORDER BY send_time DESC", table, placeholders);
+        let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql).bind(conversation_id);
         for id in ids {
             query = query.bind(id);
         }
         let rows = query.fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
+        Ok(rows.into_iter().map(row_to_log).collect())
     }
 
     pub async fn max_seq(&self, conversation_id: &str) -> Result<i64> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {table}", table = table);
-        let row: MaxSeqRow = sqlx::query_as(&sql).fetch_one(&self.pool).await?;
+        let table = self.table();
+        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {} WHERE conversation_id = ?", table);
+        let row: MaxSeqRow = sqlx::query_as(&sql).bind(conversation_id).fetch_one(&self.pool).await?;
         Ok(row.max_seq)
     }
 
-    /// 对等 Go 的 CheckConversationNormalMsgSeq：查询会话消息表的最大 seq（若无记录返回 0）
     pub async fn check_conversation_normal_msg_seq(&self, conversation_id: &str) -> Result<i64> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {table}", table = table);
-        let row: MaxSeqRow = sqlx::query_as(&sql).fetch_one(&self.pool).await?;
-        Ok(row.max_seq)
+        self.max_seq(conversation_id).await
     }
 
     pub async fn peer_max_seq(&self, conversation_id: &str) -> Result<i64> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {table} WHERE send_id != ?", table = table);
-        let row: MaxSeqRow = sqlx::query_as(&sql).bind(&self.login_user_id).fetch_one(&self.pool).await?;
+        let table = self.table();
+        let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {} WHERE conversation_id = ? AND send_id != ?", table);
+        let row: MaxSeqRow = sqlx::query_as(&sql).bind(conversation_id).bind(&self.login_user_id).fetch_one(&self.pool).await?;
         Ok(row.max_seq)
     }
 
     pub async fn update_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<u64> {
-        let table = self.ensure_table(conversation_id).await?;
-        let sql = format!(r#"UPDATE {table} SET local_ex = ? WHERE client_msg_id = ?"#, table = table);
-        let res = sqlx::query(&sql).bind(local_ex).bind(client_msg_id).execute(&self.pool).await?;
+        let table = self.table();
+        let sql = format!(r#"UPDATE {} SET local_ex = ? WHERE conversation_id = ? AND client_msg_id = ?"#, table);
+        let res = sqlx::query(&sql).bind(local_ex).bind(conversation_id).bind(client_msg_id).execute(&self.pool).await?;
         Ok(res.rows_affected())
     }
 
@@ -442,15 +367,14 @@ impl MessageRepo {
     ///
     /// 返回: 消息列表
     pub async fn get_message_list(&self, conversation_id: &str, count: i32, start_time: i64, start_seq: i64, start_client_msg_id: &str, is_reverse: bool) -> Result<Vec<LocalChatLog>> {
-        let table = self.ensure_table(conversation_id).await?;
-
-        // 确定排序方式和比较符号（完全匹配 Go SDK）
+        let table = self.table();
         let (time_order, time_symbol) = if is_reverse { ("send_time ASC, seq ASC", ">") } else { ("send_time DESC, seq DESC", "<") };
 
         let rows: Vec<LocalChatLogRow> = if start_time > 0 {
-            let condition = format!("send_time {} ? OR (send_time = ? AND (seq {} ? OR (seq = 0 AND client_msg_id != ?)))", time_symbol, time_symbol);
-            let sql = format!("SELECT * FROM {table} WHERE {} ORDER BY {} LIMIT ?", condition, time_order, table = table);
+            let condition = format!("conversation_id = ? AND (send_time {} ? OR (send_time = ? AND (seq {} ? OR (seq = 0 AND client_msg_id != ?))))", time_symbol, time_symbol);
+            let sql = format!("SELECT * FROM {} WHERE {} ORDER BY {} LIMIT ?", table, condition, time_order);
             sqlx::query_as(&sql)
+                .bind(conversation_id)
                 .bind(start_time)
                 .bind(start_time)
                 .bind(start_seq)
@@ -459,11 +383,11 @@ impl MessageRepo {
                 .fetch_all(&self.pool)
                 .await?
         } else {
-            let sql = format!("SELECT * FROM {table} ORDER BY {} LIMIT ?", time_order, table = table);
-            sqlx::query_as(&sql).bind(count).fetch_all(&self.pool).await?
+            let sql = format!("SELECT * FROM {} WHERE conversation_id = ? ORDER BY {} LIMIT ?", table, time_order);
+            sqlx::query_as(&sql).bind(conversation_id).bind(count).fetch_all(&self.pool).await?
         };
 
-        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
+        Ok(rows.into_iter().map(row_to_log).collect())
     }
 
     pub async fn search_local_messages(
@@ -474,17 +398,15 @@ impl MessageRepo {
         send_time_begin: Option<i64>,
         send_time_end: Option<i64>,
     ) -> Result<Vec<LocalChatLog>> {
-        let conversation_id = conversation_id.ok_or_else(|| anyhow::anyhow!("search_local_messages 需要指定 conversation_id（按会话分表）"))?;
-        let table = self.ensure_table(conversation_id).await?;
-        let mut clauses = Vec::new();
+        let conversation_id = conversation_id.ok_or_else(|| anyhow::anyhow!("search_local_messages 需要指定 conversation_id"))?;
+        let table = self.table();
+        let mut clauses = vec!["conversation_id = ?".to_string()];
         enum Bind {
             Str(String),
             I64(i64),
             I32(i32),
         }
-        let mut binds: Vec<Bind> = Vec::new();
-
-        clauses.push("1=1".to_string()); // 起始占位
+        let mut binds: Vec<Bind> = vec![Bind::Str(conversation_id.to_string())];
         if let Some(kw) = keyword {
             clauses.push("content LIKE ?".to_string());
             binds.push(Bind::Str(format!("%{}%", kw)));
@@ -492,9 +414,7 @@ impl MessageRepo {
         if let Some(cts) = content_types {
             if !cts.is_empty() {
                 let placeholders = Self::placeholders(cts.len());
-                // 需持有字符串，避免临时字符串悬垂
-                let cond = format!("content_type IN ({})", placeholders);
-                clauses.push(cond);
+                clauses.push(format!("content_type IN ({})", placeholders));
                 for ct in cts {
                     binds.push(Bind::I32(*ct));
                 }
@@ -508,11 +428,8 @@ impl MessageRepo {
             clauses.push("send_time <= ?".to_string());
             binds.push(Bind::I64(end));
         }
-
-        let where_sql = if clauses.is_empty() { String::new() } else { format!("WHERE {}", clauses.join(" AND ")) };
-
-        let sql = format!("SELECT * FROM {table} {where_sql} ORDER BY send_time DESC LIMIT 200", table = table, where_sql = where_sql);
-
+        let where_sql = format!("WHERE {}", clauses.join(" AND "));
+        let sql = format!("SELECT * FROM {} {} ORDER BY send_time DESC LIMIT 200", table, where_sql);
         let mut query = sqlx::query_as::<_, LocalChatLogRow>(&sql);
         for val in binds {
             match val {
@@ -521,8 +438,7 @@ impl MessageRepo {
                 Bind::I32(i) => query = query.bind(i),
             }
         }
-
         let rows: Vec<LocalChatLogRow> = query.fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().map(|r| row_to_log(conversation_id, r)).collect())
+        Ok(rows.into_iter().map(row_to_log).collect())
     }
 }

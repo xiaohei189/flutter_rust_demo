@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS local_groups (
+    group_id                   TEXT PRIMARY KEY,
+    name                       TEXT NOT NULL DEFAULT '',
+    notification               TEXT NOT NULL DEFAULT '',
+    introduction               TEXT NOT NULL DEFAULT '',
+    face_url                   TEXT NOT NULL DEFAULT '',
+    create_time                INTEGER NOT NULL DEFAULT 0,
+    status                     INTEGER NOT NULL DEFAULT 0,
+    creator_user_id            TEXT NOT NULL DEFAULT '',
+    group_type                 INTEGER NOT NULL DEFAULT 0,
+    owner_user_id              TEXT NOT NULL DEFAULT '',
+    member_count               INTEGER NOT NULL DEFAULT 0,
+    ex                         TEXT NOT NULL DEFAULT '',
+    attached_info              TEXT NOT NULL DEFAULT '',
+    need_verification          INTEGER NOT NULL DEFAULT 0,
+    look_member_info           INTEGER NOT NULL DEFAULT 0,
+    apply_member_friend        INTEGER NOT NULL DEFAULT 0,
+    notification_update_time  INTEGER NOT NULL DEFAULT 0,
+    notification_user_id       TEXT NOT NULL DEFAULT ''
+);

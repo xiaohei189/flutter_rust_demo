@@ -357,7 +357,6 @@ impl MessageHandle {
             return Ok(());
         }
         let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome {
-            msg_id: msg_id.map(String::from),
             msgs: msgs.clone(),
         }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
@@ -371,9 +370,8 @@ impl MessageHandle {
             debug!("[message_handle] trigger_reinstall_conversation empty");
             return Ok(());
         }
-        debug!(msg_id = ?msg_id, "[ConvSync] 发送 MsgSyncInReinstall total={}", total);
+        debug!("[ConvSync] 发送 MsgSyncInReinstall total={}", total);
         let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::MsgSyncInReinstall {
-            msg_id: msg_id.map(String::from),
             msgs: msgs.clone(),
             total,
         }));
@@ -388,9 +386,8 @@ impl MessageHandle {
             event!(Level::TRACE, "[message_handle] trigger_notification empty");
             return Ok(());
         }
-        event!(Level::TRACE, msg_id = ?msg_id, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
+        event!(Level::TRACE, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
         let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::Notification {
-            msg_id: msg_id.map(String::from),
             msgs: msgs.clone(),
         }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
