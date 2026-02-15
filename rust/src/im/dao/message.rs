@@ -330,6 +330,12 @@ impl MessageRepo {
         Ok(rows.into_iter().map(row_to_log).collect())
     }
 
+    /// 按会话与 client_msg_id 查单条（对齐 Go GetMessage）
+    pub async fn get_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
+        let list = self.get_messages_by_client_msg_ids(conversation_id, &[client_msg_id.to_string()]).await?;
+        Ok(list.into_iter().next())
+    }
+
     pub async fn max_seq(&self, conversation_id: &str) -> Result<i64> {
         let table = self.table();
         let sql = format!("SELECT IFNULL(MAX(seq),0) as max_seq FROM {} WHERE conversation_id = ?", table);

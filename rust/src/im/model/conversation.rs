@@ -237,6 +237,8 @@ pub struct ConversationSyncerConfig {
     /// - 绝对路径：如 "/path/to/db.db" 会转换为 "sqlite:///path/to/db.db"
     /// - 完整URL：如 "sqlite://conversations.db" 直接使用
     pub db_path: String,
+    /// 与 Go GetBackground 对齐：是否处于后台；None 表示默认 false
+    pub get_background: Option<std::sync::Arc<dyn Fn() -> bool + Send + Sync>>,
 }
 
 impl ConversationSyncerConfig {}

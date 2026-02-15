@@ -8,6 +8,9 @@
         },
         {
             "path": "../openim-sdk-core"
+        },
+        {
+            "path": "../tools"
         }
     ]
 }

@@ -1,5 +1,5 @@
 //! 消息同步器（参考 go/internal/interaction/msg_sync.go）
-use crate::im::client::conversation_handle::{ConvCmd, ConvCmdKind};
+use crate::im::client::conversation_handle::{CmdNewMsgComeToConversation, ConvCmd, ConvCmdKind};
 use crate::im::dao::repository::Repository;
 use crate::im::model::constant;
 use crate::im::model::constant::sync_flag;
@@ -250,7 +250,7 @@ impl MessageHandle {
                     if is_notification {
                         self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
                     } else {
-                        self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
+                        self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()]), true).await?;
                     }
                     continue;
                 }
@@ -265,7 +265,7 @@ impl MessageHandle {
                 if is_notification {
                     self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
                 } else {
-                    self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
+                    self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs), true).await?;
                 }
                 self.synced_max_seqs.insert(conversation_id.clone(), last_seq);
             } else if last_seq > synced_seq && last_seq != 0 {
@@ -314,7 +314,7 @@ impl MessageHandle {
             // 达到分批推拉的数量后拉取一批
             if msg_num >= SPLIT_PULL_MSG_NUM {
                 let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-                self.trigger_conversation(None, &resp.msgs).await?;
+                self.trigger_conversation(None, &resp.msgs, false).await?;
                 self.trigger_notification(None, &resp.notification_msgs).await?;
                 // 同步最大seqs
                 for (conversation_id, seqs) in &temp_seq_map {
@@ -329,7 +329,7 @@ impl MessageHandle {
         // 拉最后一批剩余的map
         if !temp_seq_map.is_empty() {
             let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-            self.trigger_conversation(None, &resp.msgs).await?;
+            self.trigger_conversation(None, &resp.msgs, false).await?;
             self.trigger_notification(None, &resp.notification_msgs).await?;
             for (conversation_id, seqs) in &temp_seq_map {
                 self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
@@ -337,14 +337,21 @@ impl MessageHandle {
         }
         Ok(())
     }
-    /// 触发有新消息的会话事件（msg_id 用于 tracing 串联，非 Push 链路传 None）
+    /// 触发有新消息的会话事件（msg_id 用于 tracing 串联；from_push true=在线推送，false=离线/同步）
     #[tracing::instrument(skip(self, msgs), fields(msg_id = ?msg_id, convs = msgs.len()))]
-    async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
+    async fn trigger_conversation(
+        &self,
+        msg_id: Option<&str>,
+        msgs: &std::collections::HashMap<String, sdkws::PullMsgs>,
+        _from_push: bool,
+    ) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome { msgs: msgs.clone() }));
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome(
+            CmdNewMsgComeToConversation { msgs: msgs.clone() },
+        )));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }

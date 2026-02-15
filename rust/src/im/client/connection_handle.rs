@@ -384,10 +384,6 @@ impl ConnectionHandle {
 
         info!("[Client] 收到 Push 原始消息: {:?}", push_msg);
 
-        let n_msgs: usize = push_msg.msgs.values().map(|p| p.msgs.len()).sum();
-        let n_notif: usize = push_msg.notification_msgs.values().map(|p| p.msgs.len()).sum();
-        debug!("[Client] 收到 Push 消息数={} 通知数={}", n_msgs, n_notif);
-
         if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::new(MsgSyncCommandKind::Push { push: push_msg })) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
             return Err(anyhow::anyhow!("发送推送命令失败: {e}"));

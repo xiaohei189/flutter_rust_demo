@@ -1,8 +1,11 @@
 //! 消息相关模型与类型，合并自 `im/message/models.rs` 与 `im/message/types.rs`
 
+use anyhow::Result;
+use openim_protocol::constant;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use std::collections::HashMap;
+use tracing::warn;
 
 // ---------- 本地存储模型 ----------
 
@@ -687,4 +690,81 @@ pub struct TypingStatus {
     pub send_id: Option<String>,
     #[serde(rename = "msgTip")]
     pub msg_tip: String,
+}
+
+/// 解析 attached_info JSON，当 is_not_private 为 false 时设置 isPrivateChat=true 并写回（对齐 Go !isNotPrivate -> AttachedInfoElem.IsPrivateChat = true）
+fn attached_info_apply_is_private_impl(attached_info: &str, is_not_private: bool) -> String {
+    let mut obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(attached_info).unwrap_or_default();
+    if !is_not_private {
+        obj.insert("isPrivateChat".to_string(), serde_json::Value::Bool(true));
+    }
+    serde_json::to_string(&obj).unwrap_or_else(|_| attached_info.to_string())
+}
+
+/// 按 contentType 解析消息 content（对齐 Go msgHandleByContentType）：反序列化后再序列化回 JSON 存库，解析失败则保留原 content。
+pub fn msg_handle_by_content_type(content: &[u8], content_type: i32) -> String {
+    let raw = String::from_utf8_lossy(content);
+    let normalized = match content_type {
+        constant::TEXT => serde_json::from_str::<TextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::PICTURE => serde_json::from_str::<PictureElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::VOICE => serde_json::from_str::<SoundElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::VIDEO => serde_json::from_str::<VideoElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::FILE => serde_json::from_str::<FileElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::AT_TEXT => serde_json::from_str::<AtElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::LOCATION => serde_json::from_str::<LocationElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::CUSTOM | constant::CUSTOM_NOT_TRIGGER_CONVERSATION | constant::CUSTOM_ONLINE_ONLY => {
+            serde_json::from_str::<CustomElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok())
+        }
+        constant::TYPING => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::QUOTE => serde_json::from_str::<QuoteElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::MERGER => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::CARD => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::MARKDOWN_TEXT => serde_json::from_str::<MarkdownTextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        _ => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+    };
+    match normalized {
+        Some(s) => s,
+        None => {
+            if !raw.is_empty() && serde_json::from_str::<serde_json::Value>(&raw).is_err() {
+                warn!("[msg_handle_by_content_type] parse error contentType={} content_len={}", content_type, content.len());
+            }
+            raw.into_owned()
+        }
+    }
+}
+
+/// 与 Go msgHandleByContentType 对齐的 Result 版本：解析失败时返回 Err，供 do_msg_new 跳过该条消息
+pub fn msg_handle_by_content_type_result(content: &[u8], content_type: i32) -> Result<String> {
+    let raw = String::from_utf8_lossy(content);
+    let normalized = match content_type {
+        constant::TEXT => serde_json::from_str::<TextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::PICTURE => serde_json::from_str::<PictureElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::VOICE => serde_json::from_str::<SoundElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::VIDEO => serde_json::from_str::<VideoElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::FILE => serde_json::from_str::<FileElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::AT_TEXT => serde_json::from_str::<AtElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::LOCATION => serde_json::from_str::<LocationElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::CUSTOM | constant::CUSTOM_NOT_TRIGGER_CONVERSATION | constant::CUSTOM_ONLINE_ONLY => {
+            serde_json::from_str::<CustomElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok())
+        }
+        constant::TYPING => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::QUOTE => serde_json::from_str::<QuoteElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::MERGER => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::CARD => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::MARKDOWN_TEXT => serde_json::from_str::<MarkdownTextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        _ => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+    };
+    match normalized {
+        Some(s) => Ok(s),
+        None => Err(anyhow::anyhow!(
+            "msg_handle_by_content_type parse error contentType={} content_len={}",
+            content_type,
+            content.len()
+        )),
+    }
+}
+
+/// 解析 attached_info，当 is_not_private 为 false 时设置 isPrivateChat=true 并写回 JSON（对齐 Go !isNotPrivate -> AttachedInfoElem.IsPrivateChat = true）
+pub fn attached_info_apply_is_private(attached_info: &str, is_not_private: bool) -> String {
+    attached_info_apply_is_private_impl(attached_info, is_not_private)
 }

@@ -102,6 +102,22 @@ impl FriendDao {
         Ok(rows.into_iter().map(Into::into).collect())
     }
 
+    /// 与 Go batchGetUserNameAndFaceURL 对齐：按好友 user_id 查单条，用于补全会话 face/name
+    pub async fn get_friend_by_friend_user_id(&self, friend_user_id: &str) -> Result<Option<sdkws::FriendInfo>> {
+        let row: Option<LocalFriendRow> = sqlx::query_as(
+            r#"
+            SELECT owner_user_id, friend_user_id, remark, create_time, add_source, operator_user_id, nickname, face_url, ex, attached_info, is_pinned
+            FROM local_friends WHERE owner_user_id = ? AND friend_user_id = ? LIMIT 1
+            "#,
+        )
+        .bind(&self.user_id)
+        .bind(friend_user_id)
+        .fetch_optional(&self.db)
+        .await
+        .context("查询好友失败")?;
+        Ok(row.map(Into::into))
+    }
+
     /// 获取本地所有好友的 userID 列表
     pub async fn get_all_friend_ids(&self) -> Result<Vec<String>> {
         let rows: Vec<FriendIdRow> = sqlx::query_as(

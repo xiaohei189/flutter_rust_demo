@@ -177,6 +177,7 @@ impl OpenIMClient {
             api_base_url: self.config.api_base_url.clone(),
             token: self.config.token.clone(),
             db_path: self.config.conversation_db_url.clone(),
+            get_background: None,
         };
         let mut conversation_handle = ConversationHandle::with_listener_and_db_and_client(
             conv_cfg,
@@ -326,12 +327,8 @@ impl OpenIMClient {
             });
             trace!("receive message: typing conv_id={} send_id={}", conv_id, msg.send_id);
             let typing_json_str = serde_json::to_string(&typing_json).unwrap_or_default();
-            let msg_listener = self.callbacks.read().unwrap().advanced_msg_listener.clone();
             let conv_listener = self.callbacks.read().unwrap().conversation_listener.clone();
             tokio::spawn(async move {
-                if let Some(l) = &msg_listener {
-                    l.on_recv_typing_status(typing_json_str.clone()).await;
-                }
                 if let Some(l) = &conv_listener {
                     l.on_conversation_user_input_status_changed(typing_json_str).await;
                 }

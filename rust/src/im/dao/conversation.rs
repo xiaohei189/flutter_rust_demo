@@ -140,17 +140,55 @@ impl ConversationDao {
         Ok(rows)
     }
 
+    /// 与 Go GetHiddenConversationList 对齐：latest_msg_send_time = 0 的会话视为隐藏
+    pub async fn get_hidden_conversation_list(&self) -> Result<Vec<LocalConversation>> {
+        let rows: Vec<LocalConversation> = sqlx::query_as(
+            r#"
+            SELECT
+                conversation_id,
+                conversation_type,
+                user_id,
+                group_id,
+                show_name,
+                face_url,
+                latest_msg,
+                latest_msg_send_time,
+                unread_count,
+                recv_msg_opt,
+                is_pinned,
+                is_private_chat,
+                burn_duration,
+                group_at_type,
+                is_not_in_group,
+                update_unread_count_time,
+                attached_info,
+                ex,
+                draft_text,
+                draft_text_time,
+                max_seq,
+                min_seq,
+                is_msg_destruct,
+                msg_destruct_time
+            FROM local_conversations
+            WHERE latest_msg_send_time = 0
+            "#,
+        )
+        .fetch_all(&self.db)
+        .await
+        .context("查询隐藏会话列表失败")?;
+        Ok(rows)
+    }
+
     /// 从数据库获取所有会话 ID
     pub async fn get_all_conversation_ids(&self) -> Result<Vec<String>> {
         #[derive(FromRow)]
         struct IdRow {
             conversation_id: String,
         }
-        let rows: Vec<IdRow> =
-            sqlx::query_as("SELECT conversation_id FROM local_conversations")
-                .fetch_all(&self.db)
-                .await
-                .context("查询会话ID列表失败")?;
+        let rows: Vec<IdRow> = sqlx::query_as("SELECT conversation_id FROM local_conversations")
+            .fetch_all(&self.db)
+            .await
+            .context("查询会话ID列表失败")?;
         let ids: Vec<String> = rows.into_iter().map(|r| r.conversation_id).collect();
         Ok(ids)
     }
@@ -285,6 +323,139 @@ impl ConversationDao {
             .await
             .context("插入或更新会话失败")?;
 
+        Ok(())
+    }
+
+    /// 批量插入或更新会话（对齐 Go BatchUpdateConversationList + BatchInsertConversationList，此处统一用 upsert）
+    pub async fn batch_upsert_conversation_list(&self, list: &[LocalConversation]) -> Result<()> {
+        for conv in list {
+            self.upsert_conversation(conv).await?;
+        }
+        Ok(())
+    }
+
+    /// 与 Go BatchUpdateConversationList 对齐：仅 UPDATE，用于已存在的会话（cc + phChanged）
+    pub async fn batch_update_conversation_list(&self, list: &[LocalConversation]) -> Result<()> {
+        for conv in list {
+            let n = sqlx::query(
+                r#"
+                UPDATE local_conversations SET
+                    conversation_type = ?, user_id = ?, group_id = ?, show_name = ?, face_url = ?,
+                    latest_msg = ?, latest_msg_send_time = ?, unread_count = ?, recv_msg_opt = ?,
+                    is_pinned = ?, is_private_chat = ?, burn_duration = ?, group_at_type = ?,
+                    is_not_in_group = ?, update_unread_count_time = ?, attached_info = ?, ex = ?,
+                    draft_text = ?, draft_text_time = ?, max_seq = ?, min_seq = ?,
+                    is_msg_destruct = ?, msg_destruct_time = ?
+                WHERE conversation_id = ?
+                "#,
+            )
+            .bind(conv.conversation_type)
+            .bind(&conv.user_id)
+            .bind(&conv.group_id)
+            .bind(&conv.show_name)
+            .bind(&conv.face_url)
+            .bind(&conv.latest_msg)
+            .bind(conv.latest_msg_send_time)
+            .bind(conv.unread_count)
+            .bind(conv.recv_msg_opt)
+            .bind(if conv.is_pinned { 1 } else { 0 })
+            .bind(if conv.is_private_chat { 1 } else { 0 })
+            .bind(conv.burn_duration)
+            .bind(conv.group_at_type)
+            .bind(if conv.is_not_in_group { 1 } else { 0 })
+            .bind(conv.update_unread_count_time)
+            .bind(&conv.attached_info)
+            .bind(&conv.ex)
+            .bind(&conv.draft_text)
+            .bind(conv.draft_text_time)
+            .bind(conv.max_seq)
+            .bind(conv.min_seq)
+            .bind(if conv.is_msg_destruct { 1 } else { 0 })
+            .bind(conv.msg_destruct_time)
+            .bind(&conv.conversation_id)
+            .execute(&self.db)
+            .await
+            .context("批量更新会话失败")?;
+            // 与 Go UpdateConversation 一致：RowsAffected == 0 时返回错误（会话在库中不存在）
+            if n.rows_affected() == 0 {
+                return Err(anyhow::anyhow!(
+                    "BatchUpdateConversationList: no update, conversation_id={}",
+                    conv.conversation_id
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// 与 Go BatchInsertConversationList 对齐：仅 INSERT 新会话（phNew），主键冲突时返回错误
+    pub async fn batch_insert_conversation_list(&self, list: &[LocalConversation]) -> Result<()> {
+        for conv in list {
+            sqlx::query(
+                r#"
+                INSERT INTO local_conversations (
+                    conversation_id, conversation_type, user_id, group_id, show_name, face_url,
+                    latest_msg, latest_msg_send_time, unread_count, recv_msg_opt,
+                    is_pinned, is_private_chat, burn_duration, group_at_type, is_not_in_group,
+                    update_unread_count_time, attached_info, ex, draft_text, draft_text_time,
+                    max_seq, min_seq, is_msg_destruct, msg_destruct_time
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                "#,
+            )
+            .bind(&conv.conversation_id)
+            .bind(conv.conversation_type)
+            .bind(&conv.user_id)
+            .bind(&conv.group_id)
+            .bind(&conv.show_name)
+            .bind(&conv.face_url)
+            .bind(&conv.latest_msg)
+            .bind(conv.latest_msg_send_time)
+            .bind(conv.unread_count)
+            .bind(conv.recv_msg_opt)
+            .bind(if conv.is_pinned { 1 } else { 0 })
+            .bind(if conv.is_private_chat { 1 } else { 0 })
+            .bind(conv.burn_duration)
+            .bind(conv.group_at_type)
+            .bind(if conv.is_not_in_group { 1 } else { 0 })
+            .bind(conv.update_unread_count_time)
+            .bind(&conv.attached_info)
+            .bind(&conv.ex)
+            .bind(&conv.draft_text)
+            .bind(conv.draft_text_time)
+            .bind(conv.max_seq)
+            .bind(conv.min_seq)
+            .bind(if conv.is_msg_destruct { 1 } else { 0 })
+            .bind(conv.msg_destruct_time)
+            .execute(&self.db)
+            .await
+            .context("批量插入会话失败")?;
+        }
+        Ok(())
+    }
+
+    /// 与 Go UpdateColumnsConversation 对齐：仅更新 latest_msg 与 latest_msg_send_time（用于 batchUpdateMessageList seq 回填后）
+    pub async fn update_conversation_latest_msg(
+        &self,
+        conversation_id: &str,
+        latest_msg: &str,
+        latest_msg_send_time: i64,
+    ) -> Result<()> {
+        let n = sqlx::query(
+            r#"
+            UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ? WHERE conversation_id = ?
+            "#,
+        )
+        .bind(latest_msg)
+        .bind(latest_msg_send_time)
+        .bind(conversation_id)
+        .execute(&self.db)
+        .await
+        .context("更新会话最新消息失败")?;
+        if n.rows_affected() == 0 {
+            return Err(anyhow::anyhow!(
+                "update_conversation_latest_msg: no update, conversation_id={}",
+                conversation_id
+            ));
+        }
         Ok(())
     }
 
