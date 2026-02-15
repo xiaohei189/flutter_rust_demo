@@ -11,6 +11,8 @@ pub const SEND_MSG_NOT_OSS: i32 = 3001;
 /// 收件选项（对齐 Go pkg/constant RecvMsgOpt）
 pub const RECEIVE_MESSAGE: i32 = 0;
 pub const NOT_RECEIVE_MESSAGE: i32 = 1;
+/// 不接收消息（Go ReceiveNotNotifyMessage = 2）；总未读数只统计 recv_msg_opt < 2 的会话
+pub const RECEIVE_NOT_NOTIFY_MESSAGE: i32 = 2;
 
 /// 更新会话动作（对齐 Go pkg/constant UpdateConNode Action）
 pub mod update_con_action {

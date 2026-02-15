@@ -312,12 +312,13 @@ impl ConversationHandle {
 
     /// 从新消息构建会话条目（用于 do_msg_new 的 conversation_set，对齐 Go 中 build lc）
     /// LatestMsg 与 Go 一致存整条消息 JSON（StructToJsonString(msg)）
+    /// unread_count 只存本批增量（unread_delta），diff 时会与 local 的 unread 相加，若存 existing+delta 会导致重复累加
     fn build_lc_from_msg(
         conversation_id: &str,
         msg: &sdkws::MsgData,
         is_self: bool,
         unread_delta: i32,
-        existing_unread: i32,
+        _existing_unread: i32,
     ) -> LocalConversation {
         let latest = serde_json::to_string(msg).unwrap_or_else(|_| String::new());
         let send_time = if msg.send_time > 0 { msg.send_time } else { msg.create_time };
@@ -335,7 +336,7 @@ impl ConversationHandle {
             face_url,
             latest_msg: latest,
             latest_msg_send_time: send_time,
-            unread_count: (existing_unread + unread_delta).max(0),
+            unread_count: unread_delta.max(0),
             recv_msg_opt: 0,
             is_pinned: false,
             is_private_chat: false,

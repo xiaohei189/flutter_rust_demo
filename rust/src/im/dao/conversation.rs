@@ -3,6 +3,7 @@
 //! 负责所有会话相关的数据库操作，将数据访问逻辑与业务逻辑分离。
 //! 本模块已从 SeaORM 完全迁移到 sqlx。
 
+use crate::im::model::constant::RECEIVE_NOT_NOTIFY_MESSAGE;
 use crate::im::model::conversation::LocalVersionSync;
 use crate::im::model::LocalConversation;
 use anyhow::{Context, Result};
@@ -473,12 +474,16 @@ impl ConversationDao {
         Ok(())
     }
 
-    /// 获取总未读消息数
+    /// 获取总未读消息数（与 Go GetTotalUnreadMsgCountDB 一致：仅统计 recv_msg_opt < 2 且 latest_msg_send_time > 0 的会话，排除隐藏会话与“不接收”会话）
     pub async fn get_total_unread_count(&self) -> Result<i32> {
-        let row: UnreadTotalRow = sqlx::query_as("SELECT SUM(unread_count) as total FROM local_conversations")
-            .fetch_one(&self.db)
-            .await
-            .context("查询总未读数失败")?;
+        let row: UnreadTotalRow = sqlx::query_as(
+            "SELECT SUM(unread_count) as total FROM local_conversations WHERE recv_msg_opt < ? AND latest_msg_send_time > ?",
+        )
+        .bind(RECEIVE_NOT_NOTIFY_MESSAGE)
+        .bind(0i64)
+        .fetch_one(&self.db)
+        .await
+        .context("查询总未读数失败")?;
         Ok(row.total.unwrap_or(0) as i32)
     }
 }
