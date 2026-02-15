@@ -7,7 +7,7 @@ use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::dao::repository::Repository;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::constant::sync_flag;
-use crate::im::model::constant::{update_con_action, RECEIVE_MESSAGE};
+use crate::im::model::constant::RECEIVE_MESSAGE;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::message::{attached_info_apply_is_private, msg_handle_by_content_type_result};
 use crate::im::model::LocalConversation;
@@ -82,8 +82,6 @@ pub struct CmdNewMsgComeToConversation {
 pub enum ConvCmdKind {
     /// 新消息到达会话（constant.CmdNewMsgCome），参数与 Go doMsgNew(c2v) 中 c2v.Value 一致
     NewMsgCome(CmdNewMsgComeToConversation),
-    /// 更新会话（constant.CmdUpdateConversation）
-    UpdateConversation(UpdateConNode),
     /// 通知消息（constant.CmdNotification）
     Notification { msgs: HashMap<String, sdkws::PullMsgs> },
     /// 同步阶段标记（constant.CmdSyncFlag），取值为 sync_flag::*：MsgSyncBegin(1001)/MsgSyncProcessing(1002)/MsgSyncEnd(1003)/MsgSyncFailed(1004)/AppDataSyncStart(1005)/AppDataSyncFinish(1006)
@@ -106,7 +104,6 @@ impl ConvCmd {
     pub fn with_span(kind: ConvCmdKind) -> Self {
         let span = match &kind {
             ConvCmdKind::NewMsgCome(ref c2v) => info_span!(parent: tracing::Span::current(), "conv_sync.command:NewMsgCome", convs = c2v.msgs.len()),
-            ConvCmdKind::UpdateConversation(_) => info_span!(parent: tracing::Span::current(), "conv_sync.command:UpdateConversation"),
             ConvCmdKind::Notification { .. } => info_span!(parent: tracing::Span::current(), "conv_sync.command:Notification"),
             ConvCmdKind::SyncFlag(_) => info_span!(parent: tracing::Span::current(), "conv_sync.command:SyncFlag"),
             ConvCmdKind::SyncData => info_span!(parent: tracing::Span::current(), "conv_sync.command:SyncData"),
@@ -114,22 +111,6 @@ impl ConvCmd {
         };
         Self { kind, span }
     }
-}
-
-/// 更新会话节点（对齐 Go common.UpdateConNode）
-#[derive(Debug)]
-pub struct UpdateConNode {
-    pub con_id: String,
-    /// 1=删除会话 2=更新/新增会话 3=置顶 4=取消置顶 5=未读清零 6=会话变更 8=会话直接变更 9=新会话直接
-    pub action: i32,
-    pub args: Option<UpdateConArgs>,
-}
-
-#[derive(Debug)]
-pub enum UpdateConArgs {
-    ConversationIds(Vec<String>),
-    Conversation(Box<LocalConversation>),
-    Json(String),
 }
 
 // ---------- 会话处理器（原 ConversationSyncer 逻辑已全部并入，不再单独存在） ----------
@@ -368,108 +349,7 @@ impl ConversationHandle {
         }
     }
 
-    /// 基于新消息/通知实时更新会话（未读数、最新消息等）
-    #[instrument(skip(self, msg), fields(conv_id = %conversation_id, is_notification = is_notification))]
-    pub async fn on_new_message(&self, conversation_id: &str, msg: &sdkws::MsgData, is_notification: bool) -> Result<()> {
-        if is_notification {
-            match msg.content_type {
-                constant::CONVERSATION_CHANGE_NOTIFICATION
-                | constant::CONVERSATION_PRIVATE_CHAT_NOTIFICATION
-                | constant::CLEAR_CONVERSATION_NOTIFICATION
-                | constant::CONVERSATION_UNREAD_NOTIFICATION
-                | constant::CONVERSATION_DELETE_NOTIFICATION
-                | constant::HAS_READ_RECEIPT => {
-                    info!("[conversation_handle] 收到会话通知 contentType={} 触发增量会话同步", msg.content_type);
-                    if let Err(e) = self.incr_sync_conversations().await {
-                        warn!("[conversation_handle] 会话通知触发增量同步失败 err={}", e);
-                    }
-                    return Ok(());
-                }
-                _ => {}
-            }
-        }
-
-        let existing_conv = self.repository.conversation.get_conversation_by_id(conversation_id).await?;
-        let mut conv = if let Some(ref existing) = existing_conv {
-            existing.clone()
-        } else {
-            let mut conv = LocalConversation {
-                conversation_id: conversation_id.to_string(),
-                conversation_type: msg.session_type,
-                user_id: msg.send_id.clone(),
-                group_id: msg.group_id.clone(),
-                show_name: String::new(),
-                face_url: String::new(),
-                latest_msg: String::new(),
-                latest_msg_send_time: 0,
-                unread_count: 0,
-                recv_msg_opt: 0,
-                is_pinned: false,
-                is_private_chat: false,
-                burn_duration: 0,
-                group_at_type: 0,
-                is_not_in_group: false,
-                update_unread_count_time: 0,
-                attached_info: String::new(),
-                ex: String::new(),
-                draft_text: String::new(),
-                draft_text_time: 0,
-                max_seq: msg.seq,
-                min_seq: msg.seq,
-                is_msg_destruct: false,
-                msg_destruct_time: 0,
-            };
-            // 与 Go batchGetUserNameAndFaceURL 一致：从 local_users 补全 show_name/face_url
-            if let Ok(Some(u)) = self.repository.user.get_login_user(&conv.user_id).await {
-                if !u.nickname.is_empty() {
-                    conv.show_name = u.nickname;
-                }
-                if !u.face_url.is_empty() {
-                    conv.face_url = u.face_url.clone();
-                }
-            }
-            conv
-        };
-
-        let is_new = existing_conv.is_none();
-        let latest = Self::build_latest_msg_summary(msg);
-        let send_time = if msg.send_time > 0 { msg.send_time } else { msg.create_time };
-        conv.latest_msg = latest;
-        conv.latest_msg_send_time = send_time;
-        conv.max_seq = conv.max_seq.max(msg.seq);
-
-        let should_count_unread = if msg.send_id == self.config.user_id || is_notification {
-            false
-        } else {
-            msg.options.get("unreadCount").copied().unwrap_or(true)
-        };
-
-        if should_count_unread {
-            let is_new_msg = msg.seq > conv.max_seq.saturating_sub(1);
-            if is_new_msg {
-                conv.unread_count += 1;
-            }
-        }
-
-        self.upsert_conversation(&conv).await?;
-        let json = serde_json::to_string(&vec![conv.clone()]).unwrap_or_else(|_| "[]".to_string());
-        if is_new {
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_new_conversation(json).await;
-            }
-        } else {
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_conversation_changed(json).await;
-            }
-        }
-        if let Ok(total_unread) = self.get_total_unread_count().await {
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_total_unread_message_count_changed(total_unread).await;
-            }
-        }
-        Ok(())
-    }
-
+   
     async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
         self.repository.conversation.delete_conversation(conversation_id).await
     }
@@ -1048,13 +928,10 @@ impl ConversationHandle {
                     } else {
                         conv.latest_msg = new_latest_msg;
                         conv.latest_msg_send_time = log.send_time;
-                        let _ = self
-                            .do_update_conversation(UpdateConNode {
-                                con_id: conv.conversation_id.clone(),
-                                action: update_con_action::ADD_CON_OR_UP_LAT_MSG,
-                                args: Some(UpdateConArgs::Conversation(Box::new(conv.clone()))),
-                            })
-                            .await;
+                        if let Some(l) = self.conversation_listener() {
+                            let args = serde_json::to_string(&[conv.clone()]).unwrap_or_else(|_| "[]".to_string());
+                            l.on_conversation_changed(args).await;
+                        }
                     }
                 }
             }
@@ -1164,31 +1041,22 @@ impl ConversationHandle {
         }
 
         if !new_list.is_empty() {
-            let args = serde_json::to_string(&new_list).unwrap_or_default();
-            let _ = self
-                .do_update_conversation(UpdateConNode {
-                    con_id: String::new(),
-                    action: update_con_action::NEW_CON_DIRECT,
-                    args: Some(UpdateConArgs::Json(args)),
-                })
-                .await;
+            if let Some(l) = self.conversation_listener() {
+                let args = serde_json::to_string(&new_list).unwrap_or_default();
+                l.on_new_conversation(args).await;
+            }
         }
         if !changed_list.is_empty() {
-            let args = serde_json::to_string(&changed_list).unwrap_or_default();
-            let _ = self
-                .do_update_conversation(UpdateConNode {
-                    con_id: String::new(),
-                    action: update_con_action::CON_CHANGE_DIRECT,
-                    args: Some(UpdateConArgs::Json(args)),
-                })
-                .await;
+            if let Some(l) = self.conversation_listener() {
+                let args = serde_json::to_string(&changed_list).unwrap_or_default();
+                l.on_conversation_changed(args).await;
+            }
         }
         if is_trigger_unread_count {
-            let _ = self.do_update_conversation(UpdateConNode {
-                con_id: String::new(),
-                action: update_con_action::TOTAL_UNREAD_MESSAGE_CHANGED,
-                args: None,
-            }).await;
+            if let Some(l) = self.conversation_listener() {
+                let total = self.get_total_unread_count().await.unwrap_or(0);
+                l.on_total_unread_message_count_changed(total).await;
+            }
         }
 
         for (conv_id, pull) in all_msg {
@@ -1312,82 +1180,6 @@ impl ConversationHandle {
             }
         }
         (cc, nc)
-    }
-
-    /// 更新会话（Go doUpdateConversation）：按 action 触发 listener 通知 UI
-    #[instrument(skip(self), name = "conv.do_update_conversation", fields(action = node.action, con_id = %node.con_id))]
-    pub async fn do_update_conversation(&self, node: UpdateConNode) -> Result<()> {
-        info!("[conversation_handle] 更新会话 action={} con_id={}", node.action, node.con_id);
-        let listener = match self.conversation_listener() {
-            Some(l) => l,
-            None => return Ok(()),
-        };
-        match node.action {
-            x if x == update_con_action::ADD_CON_OR_UP_LAT_MSG => {
-                let lc = match &node.args {
-                    Some(UpdateConArgs::Conversation(c)) => c.as_ref().clone(),
-                    _ => return Ok(()),
-                };
-                let oc = self.repository.conversation.get_conversation_by_id(&lc.conversation_id).await.ok().flatten();
-                if let Some(mut oc) = oc {
-                    let lc_time = lc.latest_msg_send_time;
-                    let oc_time = oc.latest_msg_send_time;
-                    let lc_client_id: Option<String> = serde_json::from_str::<serde_json::Value>(&lc.latest_msg)
-                        .ok()
-                        .and_then(|root| {
-                            root.get("clientMsgID")
-                                .or_else(|| root.get("client_msg_id"))
-                                .and_then(|v| v.as_str().map(String::from))
-                        });
-                    let oc_client_id: Option<String> = serde_json::from_str::<serde_json::Value>(&oc.latest_msg)
-                        .ok()
-                        .and_then(|root| {
-                            root.get("clientMsgID")
-                                .or_else(|| root.get("client_msg_id"))
-                                .and_then(|v| v.as_str().map(String::from))
-                        });
-                    if lc_time >= oc_time || lc_client_id == oc_client_id {
-                        if self
-                            .repository
-                            .conversation
-                            .update_conversation_latest_msg(&lc.conversation_id, &lc.latest_msg, lc.latest_msg_send_time)
-                            .await
-                            .is_ok()
-                        {
-                            oc.latest_msg_send_time = lc.latest_msg_send_time;
-                            oc.latest_msg = lc.latest_msg.clone();
-                            let args = serde_json::to_string(&[oc]).unwrap_or_else(|_| "[]".to_string());
-                            listener.on_conversation_changed(args).await;
-                        }
-                    }
-                } else {
-                    if self.repository.conversation.upsert_conversation(&lc).await.is_ok() {
-                        let args = serde_json::to_string(&[lc]).unwrap_or_else(|_| "[]".to_string());
-                        listener.on_new_conversation(args).await;
-                    }
-                }
-            }
-            x if x == update_con_action::NEW_CON_DIRECT => {
-                let args = match &node.args {
-                    Some(UpdateConArgs::Json(s)) => s.clone(),
-                    _ => "[]".to_string(),
-                };
-                listener.on_new_conversation(args).await;
-            }
-            x if x == update_con_action::CON_CHANGE_DIRECT => {
-                let args = match &node.args {
-                    Some(UpdateConArgs::Json(s)) => s.clone(),
-                    _ => "[]".to_string(),
-                };
-                listener.on_conversation_changed(args).await;
-            }
-            x if x == update_con_action::TOTAL_UNREAD_MESSAGE_CHANGED => {
-                let total = self.get_total_unread_count().await.unwrap_or(0);
-                listener.on_total_unread_message_count_changed(total).await;
-            }
-            _ => {}
-        }
-        Ok(())
     }
 
     /// 通知消息处理（Go doNotificationManager）：按 ContentType 分发，与 doNotification 一致
@@ -1584,7 +1376,6 @@ impl ConversationHandle {
             let _guard = envelope.span.enter();
             let result = match envelope.kind {
                 ConvCmdKind::NewMsgCome(c2v) => self.do_msg_new(c2v).await,
-                ConvCmdKind::UpdateConversation(node) => self.do_update_conversation(node).await,
                 ConvCmdKind::Notification { msgs } => self.do_notification_manager(msgs).await,
                 ConvCmdKind::SyncFlag(flag) => self.sync_flag(flag).await,
                 ConvCmdKind::SyncData => self.sync_data().await,
