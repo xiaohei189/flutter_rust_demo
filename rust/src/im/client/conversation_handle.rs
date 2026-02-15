@@ -1067,7 +1067,7 @@ impl ConversationHandle {
                     e
                 );
             } else {
-                debug!("[conversation_handle] do_msg_new 落库成功 conv={} count={}", conversation_id, list.len());
+                info!("[conversation_handle] do_msg_new 落库成功 conv={} count={}", conversation_id, list.len());
             }
         }
 
@@ -1316,7 +1316,7 @@ impl ConversationHandle {
     /// 更新会话（Go doUpdateConversation）：按 action 触发 listener 通知 UI
     #[instrument(skip(self), name = "conv.do_update_conversation", fields(action = node.action, con_id = %node.con_id))]
     pub async fn do_update_conversation(&self, node: UpdateConNode) -> Result<()> {
-        debug!("[conversation_handle] 更新会话 action={} con_id={}", node.action, node.con_id);
+        info!("[conversation_handle] 更新会话 action={} con_id={}", node.action, node.con_id);
         let listener = match self.conversation_listener() {
             Some(l) => l,
             None => return Ok(()),

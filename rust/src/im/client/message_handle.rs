@@ -151,7 +151,7 @@ impl MessageHandle {
                 MsgSyncCommandKind::ManualSync(ids) => format!("ManualSync({})", ids.len()),
                 MsgSyncCommandKind::Push { .. } => "Push".to_string(),
             };
-            info!("[message_handle] 收到命令: {}", cmd_brief);
+            debug!("[message_handle] 收到命令: {}", cmd_brief);
             let result = match envelope.kind {
                 MsgSyncCommandKind::Connected => self.do_connected().await,
                 MsgSyncCommandKind::Wakeup => self.do_wakeup_data_sync().await,
