@@ -6,7 +6,6 @@ pub mod http;
 
 pub mod listener;
 pub mod logger;
-pub mod message;
 pub mod model;
 pub mod serialization;
 pub mod trace_context;
@@ -24,7 +23,7 @@ pub use friend::{FriendSyncer, FriendSyncerConfig};
 
 // 重新导出消息相关类型和函数
 pub use listener::{AdvancedMsgListener, ConnListener, EmptyAdvancedMsgListener, EmptyConnListener};
-pub use message::{AtElem, AtInfo, CustomElem, FileElem, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem};
+pub use model::message::{AtElem, AtInfo, CustomElem, FileElem, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem};
 // DAO 统一出口
 pub use dao::{
     AppVersionDao, BlackDao, ChatLogReactionExtensionsDao, ConversationDao, FriendDao, GroupDao,

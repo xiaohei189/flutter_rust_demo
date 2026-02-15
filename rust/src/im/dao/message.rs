@@ -2,7 +2,7 @@
 //!
 //! 负责所有消息相关的数据库操作，将数据访问逻辑与业务逻辑分离
 
-use crate::im::message::models::LocalChatLog;
+use crate::im::model::message::LocalChatLog;
 use anyhow::Result;
 use chrono::Utc;
 use sqlx::{sqlite::SqlitePoolOptions, FromRow, Pool, Sqlite};
@@ -236,7 +236,14 @@ impl MessageRepo {
     pub async fn update_message_time_and_status(&self, conversation_id: &str, client_msg_id: &str, server_msg_id: &str, send_time: i64, status: i32) -> Result<()> {
         let table = self.table();
         let sql = format!(r#"UPDATE {} SET server_msg_id = ?, send_time = ?, status = ? WHERE conversation_id = ? AND client_msg_id = ?"#, table);
-        sqlx::query(&sql).bind(server_msg_id).bind(send_time).bind(status).bind(conversation_id).bind(client_msg_id).execute(&self.pool).await?;
+        sqlx::query(&sql)
+            .bind(server_msg_id)
+            .bind(send_time)
+            .bind(status)
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
@@ -332,7 +339,7 @@ impl MessageRepo {
 
     /// 按会话与 client_msg_id 查单条（对齐 Go GetMessage）
     pub async fn get_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
-        let list = self.get_messages_by_client_msg_ids(conversation_id, &[client_msg_id.to_string()]).await?;
+        let list: Vec<LocalChatLog> = self.get_messages_by_client_msg_ids(conversation_id, &[client_msg_id.to_string()]).await?;
         Ok(list.into_iter().next())
     }
 
@@ -377,7 +384,10 @@ impl MessageRepo {
         let (time_order, time_symbol) = if is_reverse { ("send_time ASC, seq ASC", ">") } else { ("send_time DESC, seq DESC", "<") };
 
         let rows: Vec<LocalChatLogRow> = if start_time > 0 {
-            let condition = format!("conversation_id = ? AND (send_time {} ? OR (send_time = ? AND (seq {} ? OR (seq = 0 AND client_msg_id != ?))))", time_symbol, time_symbol);
+            let condition = format!(
+                "conversation_id = ? AND (send_time {} ? OR (send_time = ? AND (seq {} ? OR (seq = 0 AND client_msg_id != ?))))",
+                time_symbol, time_symbol
+            );
             let sql = format!("SELECT * FROM {} WHERE {} ORDER BY {} LIMIT ?", table, condition, time_order);
             sqlx::query_as(&sql)
                 .bind(conversation_id)

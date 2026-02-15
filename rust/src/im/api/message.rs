@@ -359,7 +359,7 @@ mod tests {
         let api = ctx.api.clone();
         let payload = BatchSendMsgReq {
             recv_id_list: vec![ctx.self_user.clone()],
-            msg_data: crate::im::message::types::MsgStruct {
+            msg_data: crate::im::model::message::MsgStruct {
                 content: Some(json!({"text":{"content":"hello batch"}}).to_string()),
                 send_id: Some(ctx.self_user.clone()),
                 recv_id: Some(ctx.self_user.clone()),
@@ -453,7 +453,7 @@ mod tests {
     #[tokio::test]
     async fn test_send_simple_message(ctx: &mut AppCtx) {
         let api = ctx.api.clone();
-        let msg = crate::im::message::types::MsgStruct {
+        let msg = crate::im::model::message::MsgStruct {
             content: Some(json!({"text":{"content":"simple"}}).to_string()),
             send_id: Some(ctx.self_user.clone()),
             recv_id: Some(ctx.self_user.clone()),

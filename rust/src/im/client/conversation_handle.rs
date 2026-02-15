@@ -122,7 +122,9 @@ pub struct MaxSeqRecorder {
 
 impl MaxSeqRecorder {
     pub fn new() -> Self {
-        Self { seqs: Arc::new(RwLock::new(HashMap::new())) }
+        Self {
+            seqs: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
     pub async fn get(&self, conversation_id: &str) -> i64 {
         self.seqs.read().await.get(conversation_id).copied().unwrap_or(0)
@@ -210,7 +212,7 @@ impl ConversationHandle {
     fn build_latest_msg_summary(msg: &sdkws::MsgData) -> String {
         if msg.content_type == constant::TEXT {
             if let Ok(s) = String::from_utf8(msg.content.clone()) {
-                if let Ok(text_elem) = serde_json::from_str::<crate::im::message::types::TextElem>(&s) {
+                if let Ok(text_elem) = serde_json::from_str::<crate::im::model::message::TextElem>(&s) {
                     if !text_elem.content.is_empty() {
                         return text_elem.content;
                     }
@@ -257,11 +259,7 @@ impl ConversationHandle {
     }
 
     /// 与 Go handleExceptionMessages 对齐：分类并改写 exception 消息的 client_msg_id（前缀+随机后缀），避免主键冲突
-    fn handle_exception_messages(
-        existing: Option<&LocalChatLog>,
-        log: &mut LocalChatLog,
-        _user_id: &str,
-    ) {
+    fn handle_exception_messages(existing: Option<&LocalChatLog>, log: &mut LocalChatLog, _user_id: &str) {
         let prefix = match existing {
             None => {
                 if log.status == constant::MSG_STATUS_HAS_DELETED {
@@ -283,10 +281,7 @@ impl ConversationHandle {
                 }
             }
         };
-        let random_suffix = format!(
-            "_{}",
-            Uuid::new_v4().to_string().replace('-', "").chars().take(8).collect::<String>()
-        );
+        let random_suffix = format!("_{}", Uuid::new_v4().to_string().replace('-', "").chars().take(8).collect::<String>());
         log.status = constant::MSG_STATUS_HAS_DELETED;
         log.client_msg_id = format!("{}{}{}", prefix, log.client_msg_id, random_suffix);
     }
@@ -294,13 +289,7 @@ impl ConversationHandle {
     /// 从新消息构建会话条目（用于 do_msg_new 的 conversation_set，对齐 Go 中 build lc）
     /// LatestMsg 与 Go 一致存整条消息 JSON（StructToJsonString(msg)）
     /// unread_count 只存本批增量（unread_delta），diff 时会与 local 的 unread 相加，若存 existing+delta 会导致重复累加
-    fn build_lc_from_msg(
-        conversation_id: &str,
-        msg: &sdkws::MsgData,
-        is_self: bool,
-        unread_delta: i32,
-        _existing_unread: i32,
-    ) -> LocalConversation {
+    fn build_lc_from_msg(conversation_id: &str, msg: &sdkws::MsgData, is_self: bool, unread_delta: i32, _existing_unread: i32) -> LocalConversation {
         let latest = serde_json::to_string(msg).unwrap_or_else(|_| String::new());
         let send_time = if msg.send_time > 0 { msg.send_time } else { msg.create_time };
         let (user_id, show_name, face_url) = if is_self {
@@ -349,7 +338,6 @@ impl ConversationHandle {
         }
     }
 
-   
     async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
         self.repository.conversation.delete_conversation(conversation_id).await
     }
@@ -780,13 +768,7 @@ impl ConversationHandle {
                     new_messages.push((conversation_id.clone(), v.clone(), true));
                 }
 
-                let existing_msg = self
-                    .repository
-                    .message
-                    .get_message(conversation_id, &v.client_msg_id)
-                    .await
-                    .ok()
-                    .flatten();
+                let existing_msg: Option<LocalChatLog> = self.repository.message.get_message(conversation_id, &v.client_msg_id).await.ok().flatten();
 
                 if v.send_id == self.config.user_id {
                     if let Some(ref existing) = existing_msg {
@@ -840,9 +822,7 @@ impl ConversationHandle {
                 }
             }
 
-            let handled = self
-                .face_url_and_nickname_handle(self_insert_message, others_insert_message, conversation_id)
-                .await;
+            let handled = self.face_url_and_nickname_handle(self_insert_message, others_insert_message, conversation_id).await;
             let mut merged = insert_message;
             merged.extend(handled);
             if !merged.is_empty() {
@@ -866,13 +846,9 @@ impl ConversationHandle {
         for c in list {
             local_map.insert(c.conversation_id.clone(), c);
         }
-        let (conversation_changed_set, mut new_conversation_set) =
-            Self::diff_conversations(&local_map, &conversation_set);
+        let (conversation_changed_set, mut new_conversation_set) = Self::diff_conversations(&local_map, &conversation_set);
         // 与 Go 一致：batchAddFaceURLAndName 失败则 nc 不填入，新会话不写入
-        let batch_face_ok = self
-            .batch_add_face_url_and_name(&mut new_conversation_set)
-            .await
-            .is_ok();
+        let batch_face_ok = self.batch_add_face_url_and_name(&mut new_conversation_set).await.is_ok();
         let new_list: Vec<LocalConversation> = if batch_face_ok {
             new_conversation_set.values().cloned().collect()
         } else {
@@ -896,11 +872,7 @@ impl ConversationHandle {
             };
             let latest_client_msg_id: Option<String> = serde_json::from_str::<serde_json::Value>(&conv.latest_msg)
                 .ok()
-                .and_then(|root| {
-                    root.get("clientMsgID")
-                        .or_else(|| root.get("client_msg_id"))
-                        .and_then(|v| v.as_str().map(String::from))
-                });
+                .and_then(|root| root.get("clientMsgID").or_else(|| root.get("client_msg_id")).and_then(|v| v.as_str().map(String::from)));
             for log in list {
                 if let Err(e) = self.repository.message.update_message(conversation_id, log).await {
                     warn!("[conversation_handle] do_msg_new update_message err: {}", e);
@@ -918,12 +890,7 @@ impl ConversationHandle {
                         obj.insert("status".to_string(), serde_json::Value::Number(serde_json::Number::from(log.status)));
                     }
                     let new_latest_msg = serde_json::to_string(&latest_value).unwrap_or_else(|_| conv.latest_msg.clone());
-                    if let Err(e) = self
-                        .repository
-                        .conversation
-                        .update_conversation_latest_msg(conversation_id, &new_latest_msg, log.send_time)
-                        .await
-                    {
+                    if let Err(e) = self.repository.conversation.update_conversation_latest_msg(conversation_id, &new_latest_msg, log.send_time).await {
                         warn!("[conversation_handle] update_conversation_latest_msg err: {}", e);
                     } else {
                         conv.latest_msg = new_latest_msg;
@@ -997,17 +964,8 @@ impl ConversationHandle {
 
         // newMessage：与 Go 一致，含 GetBackground/RecvMsgOpt 分支，且对 self 消息也回调
         new_messages.sort_by(|a, b| a.1.send_time.cmp(&b.1.send_time));
-        let recv_opt_map: HashMap<String, i32> = changed_list
-            .iter()
-            .chain(new_list.iter())
-            .map(|c| (c.conversation_id.clone(), c.recv_msg_opt))
-            .collect();
-        let get_background = self
-            .config
-            .get_background
-            .as_ref()
-            .map(|f| f())
-            .unwrap_or(false);
+        let recv_opt_map: HashMap<String, i32> = changed_list.iter().chain(new_list.iter()).map(|c| (c.conversation_id.clone(), c.recv_msg_opt)).collect();
+        let get_background = self.config.get_background.as_ref().map(|f| f()).unwrap_or(false);
         if get_background {
             if let Ok(Some(u)) = self.repository.user.get_login_user(&self.config.user_id).await {
                 if u.global_recv_msg_opt != RECEIVE_MESSAGE {
@@ -1076,15 +1034,10 @@ impl ConversationHandle {
 
     /// 与 Go batchAddFaceURLAndName 对齐：对新会话补 face_url/show_name；返回 Err 时调用方不写入 nc（新会话不落库）。
     /// 与 Go 一致：仅远程/关键步骤失败才返回 Err；本地 DB 查不到（None）或查询出错不导致整段失败，避免因本地无好友/用户/群数据就跳过新会话写入。
-    async fn batch_add_face_url_and_name(
-        &self,
-        new_conversation_set: &mut HashMap<String, LocalConversation>,
-    ) -> Result<()> {
+    async fn batch_add_face_url_and_name(&self, new_conversation_set: &mut HashMap<String, LocalConversation>) -> Result<()> {
         for conv_id in new_conversation_set.keys().cloned().collect::<Vec<_>>() {
             let Some(nc) = new_conversation_set.get_mut(&conv_id) else { continue };
-            if nc.conversation_type == constant::SINGLE_CHAT_TYPE
-                || nc.conversation_type == constant::NOTIFICATION_CHAT_TYPE
-            {
+            if nc.conversation_type == constant::SINGLE_CHAT_TYPE || nc.conversation_type == constant::NOTIFICATION_CHAT_TYPE {
                 if let Ok(Some(f)) = self.repository.friend.get_friend_by_friend_user_id(&nc.user_id).await {
                     if let Some(u) = f.friend_user {
                         if !u.face_url.is_empty() {
@@ -1133,12 +1086,7 @@ impl ConversationHandle {
     }
 
     /// 与 Go faceURLAndNicknameHandle 对齐：合并 self + others，并从会话补 others 的头像/昵称
-    async fn face_url_and_nickname_handle(
-        &self,
-        self_insert: Vec<LocalChatLog>,
-        others_insert: Vec<LocalChatLog>,
-        conversation_id: &str,
-    ) -> Vec<LocalChatLog> {
+    async fn face_url_and_nickname_handle(&self, self_insert: Vec<LocalChatLog>, others_insert: Vec<LocalChatLog>, conversation_id: &str) -> Vec<LocalChatLog> {
         let mut out = self_insert;
         if let Ok(Some(lc)) = self.repository.conversation.get_conversation_by_id(conversation_id).await {
             if !lc.face_url.is_empty() || !lc.show_name.is_empty() {
@@ -1160,10 +1108,7 @@ impl ConversationHandle {
     }
 
     /// 与 Go diff 对齐：local 为当前库中会话，generated 为本批产生的会话集；输出 cc（变更）、nc（新）
-    fn diff_conversations(
-        local: &HashMap<String, LocalConversation>,
-        generated: &HashMap<String, LocalConversation>,
-    ) -> (HashMap<String, LocalConversation>, HashMap<String, LocalConversation>) {
+    fn diff_conversations(local: &HashMap<String, LocalConversation>, generated: &HashMap<String, LocalConversation>) -> (HashMap<String, LocalConversation>, HashMap<String, LocalConversation>) {
         let mut cc: HashMap<String, LocalConversation> = HashMap::new();
         let mut nc: HashMap<String, LocalConversation> = HashMap::new();
         for (id, v) in generated {
@@ -1231,8 +1176,11 @@ impl ConversationHandle {
     async fn do_revoke_msg(&self, conversation_id: &str, msg: &sdkws::MsgData) -> Result<()> {
         let tips: RevokeTips = serde_json::from_slice(&msg.content).map_err(|e| anyhow::anyhow!("parse RevokeMsgTips: {}", e))?;
         let seq = tips.seq;
-        let msgs = self.repository.message.get_messages_by_seq(conversation_id, &[seq]).await?;
-        let revoked_msg = msgs.into_iter().next().ok_or_else(|| anyhow::anyhow!("GetMessageBySeq not found conv={} seq={}", conversation_id, seq))?;
+        let msgs: Vec<LocalChatLog> = self.repository.message.get_messages_by_seq(conversation_id, &[seq]).await?;
+        let revoked_msg = msgs
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("GetMessageBySeq not found conv={} seq={}", conversation_id, seq))?;
         let revoker_nickname = String::new();
         let n = serde_json::json!({
             "detail": serde_json::json!({
@@ -1312,7 +1260,7 @@ impl ConversationHandle {
     async fn do_delete_msgs(&self, conversation_id: &str, msg: &sdkws::MsgData) -> Result<()> {
         let tips: DeleteMsgsTipsRust = serde_json::from_slice(&msg.content).map_err(|e| anyhow::anyhow!("parse DeleteMsgsTips: {}", e))?;
         for seq in &tips.seqs {
-            let msgs = self.repository.message.get_messages_by_seq(conversation_id, &[*seq]).await?;
+            let msgs: Vec<LocalChatLog> = self.repository.message.get_messages_by_seq(conversation_id, &[*seq]).await?;
             if let Some(m) = msgs.into_iter().next() {
                 let _ = self.repository.message.delete_by_client_msg_id(conversation_id, &m.client_msg_id).await;
             }

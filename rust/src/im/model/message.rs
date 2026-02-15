@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use openim_protocol::constant;
+use openim_protocol::sdkws;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use std::collections::HashMap;
@@ -36,6 +37,34 @@ pub struct LocalChatLog {
     pub ex: String,
     pub local_ex: String,
     pub group_id: String,
+}
+
+impl From<(&sdkws::MsgData, String)> for LocalChatLog {
+    fn from((msg, conversation_id): (&sdkws::MsgData, String)) -> Self {
+        Self {
+            conversation_id,
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: String::from_utf8_lossy(&msg.content).to_string(),
+            is_read: msg.is_read,
+            status: msg.status,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
+    }
 }
 
 // ---------- 请求体 ----------
