@@ -1,7 +1,7 @@
 //! 与 open_im_sdk_callback/callback_client.go 对齐的监听器回调（合并 conn / conversation / message，并补齐缺失）
 
 use async_trait::async_trait;
-use tracing::info;
+use tracing::{info, warn};
 
 // ============== OnConnListener ==============
 
@@ -21,22 +21,22 @@ pub struct EmptyConnListener;
 #[async_trait]
 impl ConnListener for EmptyConnListener {
     async fn on_connecting(&self) {
-        info!("[ConnListener] on_connecting (空实现)");
+        warn!("[ConnListener] on_connecting (空实现)");
     }
     async fn on_connect_success(&self) {
-        info!("[ConnListener] on_connect_success (空实现)");
+        warn!("[ConnListener] on_connect_success (空实现)");
     }
     async fn on_connect_failed(&self, err_code: i32, err_msg: String) {
-        info!("[ConnListener] on_connect_failed err_code={} err_msg={} (空实现)", err_code, err_msg);
+        warn!("[ConnListener] on_connect_failed err_code={} err_msg={} (空实现)", err_code, err_msg);
     }
     async fn on_kicked_offline(&self) {
-        info!("[ConnListener] on_kicked_offline (空实现)");
+        warn!("[ConnListener] on_kicked_offline (空实现)");
     }
     async fn on_user_token_expired(&self) {
-        info!("[ConnListener] on_user_token_expired (空实现)");
+        warn!("[ConnListener] on_user_token_expired (空实现)");
     }
     async fn on_user_token_invalid(&self, err_msg: String) {
-        info!("[ConnListener] on_user_token_invalid err_msg={} (空实现)", err_msg);
+        warn!("[ConnListener] on_user_token_invalid err_msg={} (空实现)", err_msg);
     }
 }
 
@@ -60,31 +60,31 @@ pub struct EmptyConversationListener;
 #[async_trait]
 impl ConversationListener for EmptyConversationListener {
     async fn on_sync_server_start(&self, reinstalled: bool) {
-        info!("[EmptyConversationListener] on_sync_server_start reinstalled={}", reinstalled);
+        warn!("[EmptyConversationListener] on_sync_server_start reinstalled={}", reinstalled);
     }
     async fn on_sync_server_finish(&self, reinstalled: bool) {
-        info!("[EmptyConversationListener] on_sync_server_finish reinstalled={}", reinstalled);
+        warn!("[EmptyConversationListener] on_sync_server_finish reinstalled={}", reinstalled);
     }
     async fn on_sync_server_progress(&self, progress: i32) {
-        info!("[EmptyConversationListener] on_sync_server_progress progress={}", progress);
+        warn!("[EmptyConversationListener] on_sync_server_progress progress={}", progress);
     }
     async fn on_sync_server_failed(&self, reinstalled: bool) {
-        info!("[EmptyConversationListener] on_sync_server_failed reinstalled={}", reinstalled);
+        warn!("[EmptyConversationListener] on_sync_server_failed reinstalled={}", reinstalled);
     }
     async fn on_new_conversation(&self, conversation_list: String) {
-        info!("[EmptyConversationListener] on_new_conversation {:?}", conversation_list);
+        warn!("[EmptyConversationListener] on_new_conversation {:?}", conversation_list);
     }
     async fn on_conversation_changed(&self, conversation_list: String) {
-        info!("[EmptyConversationListener] on_conversation_changed {:?}", conversation_list);
+        warn!("[EmptyConversationListener] on_conversation_changed {:?}", conversation_list);
     }
     async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-        info!(
+        warn!(
             "[EmptyConversationListener] on_total_unread_message_count_changed total_unread_count={}",
             total_unread_count
         );
     }
     async fn on_conversation_user_input_status_changed(&self, change: String) {
-        info!("[EmptyConversationListener] on_conversation_user_input_status_changed {:?}", change);
+        warn!("[EmptyConversationListener] on_conversation_user_input_status_changed {:?}", change);
     }
 }
 
@@ -106,22 +106,22 @@ pub struct EmptyAdvancedMsgListener;
 #[async_trait]
 impl AdvancedMsgListener for EmptyAdvancedMsgListener {
     async fn on_recv_new_message(&self, message: String) {
-        info!("[EmptyAdvancedMsgListener] on_recv_new_message {:?}", message);
+        warn!("[EmptyAdvancedMsgListener] on_recv_new_message {:?}", message);
     }
     async fn on_recv_c2c_read_receipt(&self, msg_receipt_list: String) {
-        info!("[EmptyAdvancedMsgListener] on_recv_c2c_read_receipt {:?}", msg_receipt_list);
+        warn!("[EmptyAdvancedMsgListener] on_recv_c2c_read_receipt {:?}", msg_receipt_list);
     }
     async fn on_new_recv_message_revoked(&self, message_revoked: String) {
-        info!("[EmptyAdvancedMsgListener] on_new_recv_message_revoked {:?}", message_revoked);
+        warn!("[EmptyAdvancedMsgListener] on_new_recv_message_revoked {:?}", message_revoked);
     }
     async fn on_recv_offline_new_message(&self, message: String) {
-        info!("[EmptyAdvancedMsgListener] on_recv_offline_new_message {:?}", message);
+        warn!("[EmptyAdvancedMsgListener] on_recv_offline_new_message {:?}", message);
     }
     async fn on_msg_deleted(&self, message: String) {
-        info!("[EmptyAdvancedMsgListener] on_msg_deleted {:?}", message);
+        warn!("[EmptyAdvancedMsgListener] on_msg_deleted {:?}", message);
     }
     async fn on_recv_online_only_message(&self, message: String) {
-        info!("[EmptyAdvancedMsgListener] on_recv_online_only_message {:?}", message);
+        warn!("[EmptyAdvancedMsgListener] on_recv_online_only_message {:?}", message);
     }
 }
 
