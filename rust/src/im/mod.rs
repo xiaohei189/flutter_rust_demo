@@ -5,6 +5,7 @@ pub mod friend;
 pub mod http;
 
 pub mod listener;
+pub mod ws_rpc;
 pub mod logger;
 pub mod model;
 pub mod serialization;

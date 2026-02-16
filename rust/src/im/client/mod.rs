@@ -7,6 +7,6 @@ pub mod message_handle;
 pub mod reconnect;
 
 pub use callbacks::ClientCallbacks;
-pub use client::OpenIMClient;
+pub use client::IMClient;
 pub use conversation_handle::{ConvCmd, ConvCmdKind, ConversationHandle};
 pub use reconnect::{ConnectFatalError, ReconnectStrategy};

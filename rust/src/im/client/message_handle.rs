@@ -6,12 +6,14 @@ use crate::im::model::constant::sync_flag;
 use crate::im::model::message::SeqRange as SeqRangeModel;
 use crate::im::model::ws::{self, WsRpcEnvelope};
 use crate::im::util;
+use crate::im::ws_rpc;
 use anyhow::{anyhow, Result};
 use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
-use tokio::sync::{mpsc, oneshot};
-use tokio::time::{timeout, Duration};
+use std::sync::{Arc, RwLock};
+use tokio::sync::mpsc;
+use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
 use tracing::*;
 
@@ -54,18 +56,18 @@ impl MsgSyncCommand {
 }
 
 /// 消息同步器，actor 化：仅通过命令/事件通道与外界交互
+/// WebSocket 发送通道直接使用变量（与 client 共享同一 Arc），不通过参数传递
 pub struct MessageHandle {
     login_user_id: String,
     reinstalled: bool,
     is_syncing: bool,
     repository: Repository,
     synced_max_seqs: HashMap<String, i64>,
-    /// 消息/事件输入通道
     cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
     event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
-    /// 会话命令通道：将新消息/通知/重装同步命令传递给 conversation_handle
     conv_cmd_tx: mpsc::UnboundedSender<ConvCmd>,
-    ws_rpc_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
+    /// 与 IMClient 共享的 WS RPC 发送端（直接使用变量）
+    ws_send_tx: Arc<RwLock<Option<mpsc::UnboundedSender<WsRpcEnvelope>>>>,
     cancel_token: CancellationToken,
 }
 
@@ -73,7 +75,7 @@ impl MessageHandle {
     pub fn new(
         login_user_id: String,
         repository: Repository,
-        ws_rpc_tx: mpsc::UnboundedSender<WsRpcEnvelope>,
+        ws_send_tx: Arc<RwLock<Option<mpsc::UnboundedSender<WsRpcEnvelope>>>>,
         cancel_token: CancellationToken,
         event_tx: mpsc::UnboundedSender<MsgSyncTriggerEvent>,
         cmd_rx: mpsc::UnboundedReceiver<MsgSyncCommand>,
@@ -88,7 +90,7 @@ impl MessageHandle {
             synced_max_seqs: HashMap::new(),
             reinstalled: false,
             is_syncing: false,
-            ws_rpc_tx,
+            ws_send_tx,
             cancel_token,
         }
     }
@@ -507,24 +509,19 @@ impl MessageHandle {
         })
     }
 
+    /// 通过共享的 ws_send_tx 发送请求并等待响应（使用公共 ws_rpc 工具）
     async fn send_ws_req_wait(&self, req: ws::OpenIMReq) -> Result<ws::OpenIMResp> {
-        let (tx, rx) = oneshot::channel();
-        let envelope: crate::im::model::ws::WsRpcEnvelope = (req, Some(tx));
-
-        self.ws_rpc_tx.send(envelope).map_err(|_| anyhow!("long_conn_mgr channel closed"))?;
-
-        match timeout(Duration::from_secs(LONG_CONN_TIMEOUT_SECS), rx).await {
-            Ok(Ok(resp)) => Ok(resp),
-            Ok(Err(e)) => Err(anyhow!("long_conn_mgr oneshot dropped: {:?}", e)),
-            Err(_) => Err(anyhow!("long_conn_mgr timeout")),
-        }
+        let tx = self
+            .ws_send_tx
+            .read()
+            .map_err(|e| anyhow!("ws_send_tx lock: {}", e))?
+            .clone()
+            .ok_or_else(|| anyhow!("ws rpc channel not set"))?;
+        ws_rpc::send_ws_req_wait(&tx, req, Duration::from_secs(LONG_CONN_TIMEOUT_SECS)).await
     }
 
     fn decode_ws_resp<T: prost::Message + Default>(&self, resp: &crate::im::model::ws::OpenIMResp) -> Result<T> {
-        if resp.err_code != 0 {
-            return Err(anyhow!("ws rpc err code={}, msg={}", resp.err_code, resp.err_msg));
-        }
-        prost::Message::decode(resp.data.as_slice()).map_err(|e| anyhow!("decode ws resp failed: {e}"))
+        ws_rpc::decode_ws_resp(resp)
     }
 }
 

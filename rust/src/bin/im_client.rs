@@ -3,7 +3,7 @@
 //! 认证与测试一致，默认账号/密码，可直接：cargo run --bin im_client
 
 use clap::Parser;
-use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, OpenIMClient};
+use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, IMClient};
 use rust_lib_flutter_rust_demo::im::logger::logger::{flush_tracer_provider, init_logger};
 use rust_lib_flutter_rust_demo::login_async;
 use tracing::info;
@@ -34,25 +34,16 @@ async fn main() -> anyhow::Result<()> {
     init_logger("info,rust_lib_flutter_rust_demo=debug");
 
     info!("登录中: {} {}", args.area_code, args.phone);
-    let token_info = login_async(
-        args.area_code.clone(),
-        args.phone.clone(),
-        args.password,
-        args.platform,
-    )
-    .await?;
+    let token_info = login_async(args.area_code.clone(), args.phone.clone(), args.password, args.platform).await?;
 
-    let config = ClientConfig::new(
-        token_info.user_id.clone(),
-        token_info.im_token.clone(),
-        args.platform,
-    );
+    let config = ClientConfig::new(token_info.user_id.clone(), token_info.im_token.clone(), args.platform);
     info!("已创建配置，user_id={}", config.user_id);
 
-    let mut client = OpenIMClient::new(config);
-    client.init().await?;
+    let mut client = IMClient::new(config);
+    client.start().await?;
+    // 阻塞等待客户端运行循环退出（不调用则不会阻塞）
+    client.wait_for_exit().await?;
 
-    // 退出前刷新 trace 到 Tempo，否则 batch 可能尚未发送即进程退出
     flush_tracer_provider();
     Ok(())
 }

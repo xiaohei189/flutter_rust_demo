@@ -69,6 +69,46 @@ impl From<(&sdkws::MsgData, String)> for LocalChatLog {
 
 // ---------- 请求体 ----------
 
+/// 发送消息入口参数，与 Go SendMessage(operationID, message, recvID, groupID, offlinePushInfo, isOnlineOnly) 一致
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SendMessageParams {
+    pub operation_id: String,
+    /// 消息内容 JSON 字符串
+    pub message: String,
+    pub recv_id: String,
+    pub group_id: String,
+    pub offline_push_info: String,
+    pub is_online_only: bool,
+    /// 可选，默认 TEXT(101)
+    #[serde(default = "default_content_type")]
+    pub content_type: i32,
+    /// 可选，默认单聊 SINGLE_CHAT_TYPE(1)，有 group_id 时通常为 READ_GROUP_CHAT_TYPE
+    #[serde(default = "default_session_type")]
+    pub session_type: i32,
+}
+
+fn default_content_type() -> i32 {
+    constant::TEXT
+}
+fn default_session_type() -> i32 {
+    constant::SINGLE_CHAT_TYPE
+}
+
+impl Default for SendMessageParams {
+    fn default() -> Self {
+        Self {
+            operation_id: String::new(),
+            message: String::new(),
+            recv_id: String::new(),
+            group_id: String::new(),
+            offline_push_info: String::new(),
+            is_online_only: false,
+            content_type: constant::TEXT,
+            session_type: constant::SINGLE_CHAT_TYPE,
+        }
+    }
+}
+
 /// /msg/send_msg 请求体，对齐 open-im-server pkg/apistruct/manage.go::SendMsgReq
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SendMsgReq {
@@ -100,6 +140,67 @@ pub struct SendMsgReq {
     pub offline_push_info: Option<serde_json::Value>,
     #[serde(rename = "ex", skip_serializing_if = "Option::is_none")]
     pub ex: Option<String>,
+}
+
+impl Default for SendMsgReq {
+    fn default() -> Self {
+        Self {
+            recv_id: None,
+            group_id: None,
+            send_id: String::new(),
+            sender_nickname: None,
+            sender_face_url: None,
+            sender_platform_id: None,
+            content: serde_json::Value::Null,
+            content_type: constant::TEXT,
+            session_type: constant::SINGLE_CHAT_TYPE,
+            is_online_only: false,
+            not_offline_push: false,
+            send_time: None,
+            offline_push_info: None,
+            ex: None,
+        }
+    }
+}
+
+/// 将 Go 风格 SendMessageParams 转为 SendMsgReq（需传入 send_id）
+pub fn send_message_params_to_req(params: &SendMessageParams, send_id: String) -> SendMsgReq {
+    let content = if params.message.is_empty() {
+        serde_json::Value::Null
+    } else {
+        serde_json::from_str(&params.message).unwrap_or(serde_json::Value::Null)
+    };
+    let recv_id = if params.recv_id.is_empty() {
+        None
+    } else {
+        Some(params.recv_id.clone())
+    };
+    let group_id = if params.group_id.is_empty() {
+        None
+    } else {
+        Some(params.group_id.clone())
+    };
+    let offline_push_info = if params.offline_push_info.is_empty() {
+        None
+    } else {
+        serde_json::from_str(&params.offline_push_info).ok()
+    };
+    SendMsgReq {
+        recv_id,
+        group_id,
+        send_id,
+        sender_nickname: None,
+        sender_face_url: None,
+        sender_platform_id: None,
+        content,
+        content_type: params.content_type,
+        session_type: params.session_type,
+        is_online_only: params.is_online_only,
+        not_offline_push: false,
+        send_time: None,
+        offline_push_info,
+        ex: None,
+    }
 }
 
 /// /msg/revoke_msg 请求体，对齐 apistruct.RevokeElem + 必要的上下文字段
