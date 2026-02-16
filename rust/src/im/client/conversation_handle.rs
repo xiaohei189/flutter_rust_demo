@@ -217,6 +217,23 @@ impl ConversationHandle {
                         return text_elem.content;
                     }
                 }
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) {
+                    let content_str = v
+                        .get("content")
+                        .and_then(|c| c.as_str())
+                        .map(String::from)
+                        .or_else(|| {
+                            v.get("text")
+                                .and_then(|t| t.get("content"))
+                                .and_then(|c| c.as_str())
+                                .map(String::from)
+                        });
+                    if let Some(c) = content_str {
+                        if !c.is_empty() {
+                            return c;
+                        }
+                    }
+                }
                 if !s.is_empty() {
                     return s;
                 }
@@ -237,6 +254,21 @@ impl ConversationHandle {
             2200 => "[已读回执]".to_string(),
             _ => "[新消息]".to_string(),
         }
+    }
+
+    /// 构建供 on_recv_new_message / on_recv_online_only_message 回调使用的消息 JSON。
+    /// 对 TEXT 类型将 content 转为已解析的字符串，避免前端收到字节数组时显示为空。
+    fn build_msg_json_for_listener(msg: &sdkws::MsgData) -> String {
+        let mut value = match serde_json::to_value(msg) {
+            Ok(v) => v,
+            Err(_) => return "{}".to_string(),
+        };
+        if msg.content_type == constant::TEXT {
+            if let Ok(content_str) = msg_handle_by_content_type_result(&msg.content, msg.content_type) {
+                value["content"] = serde_json::Value::String(content_str);
+            }
+        }
+        serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string())
     }
 
     /// TYPING 消息专用回调：OnRecvTypingStatus + OnConversationUserInputStatusChanged（与 client.handle_single_message 一致）
@@ -988,7 +1020,7 @@ impl ConversationHandle {
                     if msg.content_type == constant::TYPING {
                         continue;
                     }
-                    let msg_json = serde_json::to_string(msg).unwrap_or_else(|_| "{}".to_string());
+                    let msg_json = Self::build_msg_json_for_listener(msg);
                     if *in_online_map {
                         listener.on_recv_online_only_message(msg_json).await;
                     } else {

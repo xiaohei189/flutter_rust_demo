@@ -56,6 +56,7 @@ impl Client {
     }
 }
 
+use crate::im::api::conversation::ConversationApi;
 use crate::im::api::message::MessageApi;
 use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
@@ -64,7 +65,7 @@ use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
 use crate::im::dao::repository::Repository;
 use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener};
-use crate::im::model::conversation::ConversationSyncerConfig;
+use crate::im::model::conversation::{AllConversationsResp, ConversationSyncerConfig};
 use crate::im::model::message::{send_message_params_to_req, SendMessageParams, SendMsgReq, SendMsgResp};
 use crate::im::model::ws::{msg_type, OpenIMReq, WsRpcEnvelope};
 use crate::im::util;
@@ -278,6 +279,18 @@ impl IMClient {
         self.callbacks.write().unwrap().advanced_msg_listener = Some(listener);
     }
 
+    /// 从服务器获取会话列表（HTTP API，不依赖运行中的长连）
+    pub async fn get_all_conversations(&self) -> Result<AllConversationsResp> {
+        let raw = IMClient::create_http_client(&self.config)?;
+        let api = ConversationApi::new(
+            raw,
+            self.config.api_base_url.clone(),
+            self.config.user_id.clone(),
+            &self.config.token,
+        );
+        api.get_all_conversations().await
+    }
+
     /// 发送消息（入口与 Go SendMessage 一致：先 Default 再显式填值）；优先 WebSocket，否则 HTTP
     pub async fn send_message(&self, params: SendMessageParams) -> Result<SendMsgResp> {
         let req = send_message_params_to_req(&params, self.config.user_id.clone());
@@ -320,10 +333,11 @@ impl IMClient {
     }
 
     /// 单聊发送文本消息（Default + 显式填值）
+    /// 与 Go SDK 一致：TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`，其他端才能正确解析
     pub async fn send_text_message(&self, recv_id: String, text: String) -> Result<SendMsgResp> {
         let mut params = SendMessageParams::default();
         params.operation_id = util::make_operation_id();
-        params.message = json!({ "text": { "content": text } }).to_string();
+        params.message = json!({ "content": text }).to_string();
         params.recv_id = recv_id;
         params.content_type = constant::TEXT;
         params.session_type = constant::SINGLE_CHAT_TYPE;
@@ -331,10 +345,11 @@ impl IMClient {
     }
 
     /// 群聊发送文本消息（Default + 显式填值）
+    /// 与 Go SDK 一致：TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`
     pub async fn send_text_to_group(&self, group_id: String, text: String) -> Result<SendMsgResp> {
         let mut params = SendMessageParams::default();
         params.operation_id = util::make_operation_id();
-        params.message = json!({ "text": { "content": text } }).to_string();
+        params.message = json!({ "content": text }).to_string();
         params.group_id = group_id;
         params.content_type = constant::TEXT;
         params.session_type = constant::READ_GROUP_CHAT_TYPE;

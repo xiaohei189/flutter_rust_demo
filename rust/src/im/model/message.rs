@@ -835,7 +835,21 @@ fn attached_info_apply_is_private_impl(attached_info: &str, is_not_private: bool
 pub fn msg_handle_by_content_type(content: &[u8], content_type: i32) -> String {
     let raw = String::from_utf8_lossy(content);
     let normalized = match content_type {
-        constant::TEXT => serde_json::from_str::<TextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::TEXT => {
+            serde_json::from_str::<TextElem>(&raw)
+                .ok()
+                .and_then(|e| serde_json::to_string(&e).ok())
+                .or_else(|| {
+                    let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
+                    let content_str = v.get("content").and_then(|c| c.as_str()).map(String::from).or_else(|| {
+                        v.get("text")
+                            .and_then(|t| t.get("content"))
+                            .and_then(|c| c.as_str())
+                            .map(String::from)
+                    })?;
+                    serde_json::to_string(&TextElem { content: content_str }).ok()
+                })
+        }
         constant::PICTURE => serde_json::from_str::<PictureElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VOICE => serde_json::from_str::<SoundElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VIDEO => serde_json::from_str::<VideoElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
@@ -867,7 +881,21 @@ pub fn msg_handle_by_content_type(content: &[u8], content_type: i32) -> String {
 pub fn msg_handle_by_content_type_result(content: &[u8], content_type: i32) -> Result<String> {
     let raw = String::from_utf8_lossy(content);
     let normalized = match content_type {
-        constant::TEXT => serde_json::from_str::<TextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
+        constant::TEXT => {
+            serde_json::from_str::<TextElem>(&raw)
+                .ok()
+                .and_then(|e| serde_json::to_string(&e).ok())
+                .or_else(|| {
+                    let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
+                    let content_str = v.get("content").and_then(|c| c.as_str()).map(String::from).or_else(|| {
+                        v.get("text")
+                            .and_then(|t| t.get("content"))
+                            .and_then(|c| c.as_str())
+                            .map(String::from)
+                    })?;
+                    serde_json::to_string(&TextElem { content: content_str }).ok()
+                })
+        }
         constant::PICTURE => serde_json::from_str::<PictureElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VOICE => serde_json::from_str::<SoundElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VIDEO => serde_json::from_str::<VideoElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
