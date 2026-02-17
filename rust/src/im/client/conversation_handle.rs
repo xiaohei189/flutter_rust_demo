@@ -8,7 +8,7 @@ use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
 use crate::im::friend::FriendListener;
-use crate::im::listener::{AdvancedMsgListener, ConversationListener, UserListener};
+use crate::im::listener::{AdvancedMsgListener, ConversationListener, GroupListener, UserListener};
 use crate::im::model::friend::BlackList;
 use crate::im::api::group::GetIncrementalGroupMemberReq;
 use crate::im::model::constant::sync_flag;
@@ -211,6 +211,11 @@ impl ConversationHandle {
     #[inline]
     fn friend_listener(&self) -> Option<Arc<dyn FriendListener>> {
         self.callbacks.as_ref().and_then(|c| c.friend_listener.clone())
+    }
+
+    #[inline]
+    fn group_listener(&self) -> Option<Arc<dyn GroupListener>> {
+        self.callbacks.as_ref().and_then(|c| c.group_listener.clone())
     }
 
     /// 与 Go getConversationIDBySessionType 对齐：单聊 si_排序双ID、群 sg_/g_、通知 sn_
@@ -1273,12 +1278,16 @@ impl ConversationHandle {
             constant::USER_INFO_UPDATED_NOTIFICATION => self.do_user_info_updated_notification(msg).await,
             constant::BUSINESS_NOTIFICATION => Ok(()),
             _ => {
-                if msg.content_type >= constant::NOTIFICATION_BEGIN && msg.content_type <= constant::NOTIFICATION_END {
+                if msg.content_type >= constant::GROUP_NOTIFICATION_BEGIN && msg.content_type < constant::SUPER_GROUP_NOTIFICATION_BEGIN {
+                    self.do_group_notification(msg).await
+                } else if msg.content_type >= constant::NOTIFICATION_BEGIN && msg.content_type <= constant::NOTIFICATION_END {
                     if let Err(e) = self.incr_sync_conversations().await {
                         warn!("[conversation_handle] 通知触发增量同步失败 err={}", e);
                     }
+                    Ok(())
+                } else {
+                    Ok(())
                 }
-                Ok(())
             }
         }
     }
@@ -1330,6 +1339,18 @@ impl ConversationHandle {
         }
         if let Err(e) = self.sync_login_user_info(true).await {
             warn!("[conversation_handle] UserInfoUpdatedNotification sync_login_user_info 失败 err={}", e);
+        }
+        Ok(())
+    }
+
+    /// 群组相关通知（Go: Group.DoNotification）：刷新群数据并回调 GroupListener
+    async fn do_group_notification(&self, msg: &sdkws::MsgData) -> Result<()> {
+        if let Err(e) = self.sync_all_joined_groups_and_members().await {
+            warn!("[conversation_handle] 群通知后 sync_all_joined_groups_and_members 失败 err={}", e);
+        }
+        let content_str = String::from_utf8_lossy(&msg.content).to_string();
+        if let Some(l) = self.group_listener() {
+            l.on_group_info_changed(content_str).await;
         }
         Ok(())
     }

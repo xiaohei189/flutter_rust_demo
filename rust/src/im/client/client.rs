@@ -66,6 +66,7 @@ use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
 use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
+use crate::im::listener::GroupListener;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
@@ -133,6 +134,7 @@ impl IMClient {
             advanced_msg_listener: Some(Arc::new(EmptyAdvancedMsgListener)),
             friend_listener: None,
             user_listener: Some(Arc::new(EmptyUserListener)),
+            group_listener: None,
         };
         let http_client = Self::create_http_client(&config)?;
         let api = Api::new(http_client, config.api_base_url.clone(), config.user_id.clone(), &config.token);
@@ -311,9 +313,98 @@ impl IMClient {
         self.callbacks.write().unwrap().user_listener = Some(listener);
     }
 
+    /// 注册群组监听器（Go: SetGroupListener）
+    pub fn set_group_listener(&mut self, listener: Arc<dyn GroupListener>) {
+        self.callbacks.write().unwrap().group_listener = Some(listener);
+    }
+
+    /// 获取当前登录用户 ID（Go: GetLoginUserID）
+    pub fn get_login_user_id(&self) -> String {
+        self.config.user_id.clone()
+    }
+
+    /// 获取登录状态（Go: GetLoginStatus）。1=未登录，2=登录中，3=已登录
+    pub fn get_login_status(&self) -> i32 {
+        if self.run_handle.read().unwrap().is_some() {
+            3
+        } else if !self.config.user_id.is_empty() && !self.config.token.is_empty() {
+            2
+        } else {
+            1
+        }
+    }
+
+    /// 获取 SDK 版本号（Go: GetSdkVersion）
+    pub fn get_sdk_version() -> &'static str {
+        Self::SDK_VERSION
+    }
+
     /// 获取会话列表（从本地 DB 读取，与 Go GetAllConversationList 一致）
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
         self.local_repo.conversation.get_all_conversations().await
+    }
+
+    /// 分页获取会话列表（与 Go GetConversationListSplit 一致）
+    pub async fn get_conversation_list_split(&self, offset: i32, count: i32) -> Result<Vec<LocalConversation>> {
+        self.local_repo.conversation.get_conversations_split(offset, count).await
+    }
+
+    /// 根据会话类型与对方 ID 获取单个会话（与 Go GetOneConversation 一致）。若本地不存在返回 None。
+    pub async fn get_one_conversation(&self, session_type: i32, source_id: &str) -> Result<Option<LocalConversation>> {
+        let cid = self.conversation_id_by_session_type(source_id, session_type);
+        self.local_repo.conversation.get_conversation_by_id(&cid).await
+    }
+
+    /// 批量获取会话（与 Go GetMultipleConversation 一致）
+    pub async fn get_multiple_conversations(&self, conversation_id_list: &[String]) -> Result<Vec<LocalConversation>> {
+        let mut out = Vec::with_capacity(conversation_id_list.len());
+        for id in conversation_id_list {
+            if let Ok(Some(c)) = self.local_repo.conversation.get_conversation_by_id(id).await {
+                out.push(c);
+            }
+        }
+        Ok(out)
+    }
+
+    /// 设置会话（与 Go SetConversation 一致）：置顶、免打扰等，None 表示不更新该字段
+    pub async fn set_conversation(
+        &self,
+        conversation_id: &str,
+        is_pinned: Option<bool>,
+        recv_msg_opt: Option<i32>,
+    ) -> Result<()> {
+        self.local_repo
+            .conversation
+            .update_conversation_partial(conversation_id, is_pinned, recv_msg_opt)
+            .await
+    }
+
+    /// 隐藏会话（与 Go HideConversation 一致）
+    pub async fn hide_conversation(&self, conversation_id: &str) -> Result<()> {
+        self.local_repo.conversation.hide_conversation(conversation_id).await
+    }
+
+    /// 设置会话草稿（与 Go SetConversationDraft 一致）
+    pub async fn set_conversation_draft(&self, conversation_id: &str, draft_text: &str) -> Result<()> {
+        self.local_repo.conversation.set_draft(conversation_id, draft_text).await
+    }
+
+    /// 获取总未读消息数（与 Go GetTotalUnreadMsgCount 一致）
+    pub async fn get_total_unread_msg_count(&self) -> Result<i32> {
+        self.local_repo.conversation.get_total_unread_count().await
+    }
+
+    fn conversation_id_by_session_type(&self, source_id: &str, session_type: i32) -> String {
+        match session_type {
+            constant::SINGLE_CHAT_TYPE => {
+                let mut v = vec![self.config.user_id.as_str(), source_id];
+                v.sort();
+                format!("si_{}_{}", v[0], v[1])
+            }
+            constant::READ_GROUP_CHAT_TYPE => format!("sg_{}", source_id),
+            constant::NOTIFICATION_CHAT_TYPE => format!("sn_{}_{}", source_id, self.config.user_id),
+            _ => format!("g_{}", source_id),
+        }
     }
 
     /// 从本地 DB 查询单条消息（推送落库后可用）

@@ -141,6 +141,49 @@ impl ConversationDao {
         Ok(rows)
     }
 
+    /// 分页获取会话列表（与 Go GetConversationListSplit 对齐）：排除隐藏会话，按最新消息时间倒序
+    pub async fn get_conversations_split(&self, offset: i32, count: i32) -> Result<Vec<LocalConversation>> {
+        let rows: Vec<LocalConversation> = sqlx::query_as(
+            r#"
+            SELECT
+                conversation_id,
+                conversation_type,
+                user_id,
+                group_id,
+                show_name,
+                face_url,
+                latest_msg,
+                latest_msg_send_time,
+                unread_count,
+                recv_msg_opt,
+                is_pinned,
+                is_private_chat,
+                burn_duration,
+                group_at_type,
+                is_not_in_group,
+                update_unread_count_time,
+                attached_info,
+                ex,
+                draft_text,
+                draft_text_time,
+                max_seq,
+                min_seq,
+                is_msg_destruct,
+                msg_destruct_time
+            FROM local_conversations
+            WHERE latest_msg_send_time > 0
+            ORDER BY latest_msg_send_time DESC
+            LIMIT ? OFFSET ?
+            "#,
+        )
+        .bind(count)
+        .bind(offset)
+        .fetch_all(&self.db)
+        .await
+        .context("get_conversations_split 失败")?;
+        Ok(rows)
+    }
+
     /// 与 Go GetHiddenConversationList 对齐：latest_msg_send_time = 0 的会话视为隐藏
     pub async fn get_hidden_conversation_list(&self) -> Result<Vec<LocalConversation>> {
         let rows: Vec<LocalConversation> = sqlx::query_as(
@@ -515,6 +558,54 @@ impl ConversationDao {
         .await
         .context("查询总未读数失败")?;
         Ok(row.total.unwrap_or(0) as i32)
+    }
+
+    /// 设置会话草稿（与 Go SetConversationDraft 对齐）
+    pub async fn set_draft(&self, conversation_id: &str, draft_text: &str) -> Result<()> {
+        let draft_text_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        sqlx::query(
+            "UPDATE local_conversations SET draft_text = ?, draft_text_time = ? WHERE conversation_id = ?",
+        )
+        .bind(draft_text)
+        .bind(draft_text_time)
+        .bind(conversation_id)
+        .execute(&self.db)
+        .await
+        .context("set_draft 失败")?;
+        Ok(())
+    }
+
+    /// 隐藏会话（与 Go HideConversation 对齐：latest_msg_send_time 置 0）
+    pub async fn hide_conversation(&self, conversation_id: &str) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET latest_msg_send_time = 0 WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .execute(&self.db)
+            .await
+            .context("hide_conversation 失败")?;
+        Ok(())
+    }
+
+    /// 部分更新会话（与 Go SetConversation 对齐：仅更新传入的字段）
+    pub async fn update_conversation_partial(
+        &self,
+        conversation_id: &str,
+        is_pinned: Option<bool>,
+        recv_msg_opt: Option<i32>,
+    ) -> Result<()> {
+        let mut conv = match self.get_conversation_by_id(conversation_id).await? {
+            Some(c) => c,
+            None => return Ok(()),
+        };
+        if let Some(p) = is_pinned {
+            conv.is_pinned = p;
+        }
+        if let Some(r) = recv_msg_opt {
+            conv.recv_msg_opt = r;
+        }
+        self.upsert_conversation(&conv).await
     }
 }
 

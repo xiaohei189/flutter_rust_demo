@@ -3,10 +3,10 @@
 //! 将连接、会话、消息等各类监听器集中在一个结构体中，便于传递和扩展。
 
 use crate::im::friend::FriendListener;
-use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, UserListener};
+use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, GroupListener, UserListener};
 use std::sync::Arc;
 
-/// 客户端全局回调（连接、会话、消息、好友、用户等），各字段代表一种类型，后续扩展时新增字段即可
+/// 客户端全局回调（连接、会话、消息、好友、用户、群组等），各字段代表一种类型，后续扩展时新增字段即可
 #[derive(Clone, Default)]
 pub struct ClientCallbacks {
     /// 连接状态回调
@@ -19,4 +19,6 @@ pub struct ClientCallbacks {
     pub friend_listener: Option<Arc<dyn FriendListener>>,
     /// 用户信息回调（Go: OnUserListener，含 OnSelfInfoUpdated）
     pub user_listener: Option<Arc<dyn UserListener>>,
+    /// 群组变更回调（Go: OnGroupListener）
+    pub group_listener: Option<Arc<dyn GroupListener>>,
 }
