@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
     let config = ClientConfig::new(token_info.user_id.clone(), token_info.im_token.clone(), args.platform);
     info!("已创建配置，user_id={}", config.user_id);
 
-    let mut client = IMClient::new(config);
+    let mut client = IMClient::new(config).await?;
     client.start().await?;
     // 阻塞等待客户端运行循环退出（不调用则不会阻塞）
     client.wait_for_exit().await?;

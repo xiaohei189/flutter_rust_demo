@@ -57,7 +57,7 @@ impl Client {
 }
 
 use crate::im::api::conversation::ConversationApi;
-use crate::im::api::message::MessageApi;
+use crate::im::api::friend::FriendApi;
 use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;
@@ -65,23 +65,24 @@ use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
 use crate::im::dao::repository::Repository;
 use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener};
-use crate::im::model::conversation::{AllConversationsResp, ConversationSyncerConfig};
-use crate::im::model::message::{send_message_params_to_req, SendMessageParams, SendMsgReq, SendMsgResp};
-use crate::im::model::ws::{msg_type, OpenIMReq, WsRpcEnvelope};
+use crate::im::model::conversation::{AllConversationsResp, ConversationSyncerConfig, LocalConversation};
+use crate::im::model::friend::AllFriendsResp;
+use crate::im::model::message::LocalChatLog;
+use crate::im::model::ws::{msg_type, OpenIMReq, OpenIMResp, WsRpcEnvelope};
 use crate::im::util;
-use crate::im::ws_rpc;
-use anyhow::{Context, Result};
-use chrono;
+use anyhow::{anyhow, Context, Result};
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use serde_json::json;
 use std::sync::{Arc, RwLock};
+use chrono;
 use openim_protocol::prost::Message;
-use tokio::sync::mpsc;
+use uuid::Uuid;
+use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
+use tokio::time::timeout;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
-use uuid::Uuid;
 
 /// 发送消息 WS 等待响应超时（秒）
 const SEND_MSG_WS_TIMEOUT_SECS: u64 = 10;
@@ -96,27 +97,54 @@ pub struct IMClient {
     ws_send_tx: Arc<RwLock<Option<mpsc::UnboundedSender<WsRpcEnvelope>>>>,
     /// start() 内运行循环的 JoinHandle，用于 wait_for_exit() 阻塞等待退出
     run_handle: Arc<RwLock<Option<JoinHandle<Result<()>>>>>,
+    /// 本地 DB 副本，new 时初始化，用于查询本地消息/会话及发送人信息
+    local_repo: Repository,
 }
 
 impl IMClient {
     /// 与 Go 一致的 SDK 版本号，用于 local_app_sdk_version 表
     const SDK_VERSION: &str = "3.8.0";
-    /// 创建新的客户端
+    /// 创建新的客户端并初始化本地资源（DB 连接池、迁移、登录用户占位）
     /// - `config`: 客户端配置
     /// - 回调默认为空实现（会输出日志），可通过 set_*_listener 覆盖
-    pub fn new(config: ClientConfig) -> Self {
+    pub async fn new(config: ClientConfig) -> Result<Self> {
+        let repo = Repository::create(&config.conversation_db_url).await?;
+        if repo.app_version.get_app_sdk_version().await?.is_none() {
+            repo.app_version
+                .set_app_sdk_version(&crate::im::LocalAppSDKVersion {
+                    version: Self::SDK_VERSION.to_string(),
+                    installed: false,
+                })
+                .await?;
+        }
+        if repo.user.get_login_user(&config.user_id).await?.is_none() {
+            let _ = repo
+                .user
+                .insert_login_user(&crate::im::LocalUser {
+                    user_id: config.user_id.clone(),
+                    nickname: String::new(),
+                    face_url: String::new(),
+                    create_time: 0,
+                    app_manger_level: 0,
+                    ex: String::new(),
+                    attached_info: String::new(),
+                    global_recv_msg_opt: 0,
+                })
+                .await;
+        }
         let callbacks = ClientCallbacks {
             conn_listener: Some(Arc::new(EmptyConnListener)),
             conversation_listener: Some(Arc::new(EmptyConversationListener)),
             advanced_msg_listener: Some(Arc::new(EmptyAdvancedMsgListener)),
             friend_listener: None,
         };
-        Self {
+        Ok(Self {
             config,
             callbacks: Arc::new(RwLock::new(callbacks)),
             ws_send_tx: Arc::new(RwLock::new(None)),
             run_handle: Arc::new(RwLock::new(None)),
-        }
+            local_repo: repo,
+        })
     }
 }
 
@@ -139,32 +167,9 @@ impl IMClient {
             .context("创建 HTTP 客户端失败")
     }
 
-    /// 启动客户端（WebSocket 连接、消息/会话同步），非阻塞；运行循环在后台执行
+    /// 启动客户端（WebSocket 连接、消息/会话同步），非阻塞；运行循环在后台执行。需先通过 new 完成资源初始化。
     pub async fn start(&mut self) -> Result<()> {
-        let repo = Repository::create(&self.config.conversation_db_url).await?;
-        if repo.app_version.get_app_sdk_version().await?.is_none() {
-            repo.app_version
-                .set_app_sdk_version(&crate::im::LocalAppSDKVersion {
-                    version: Self::SDK_VERSION.to_string(),
-                    installed: false,
-                })
-                .await?;
-        }
-        if repo.user.get_login_user(&self.config.user_id).await?.is_none() {
-            let _ = repo
-                .user
-                .insert_login_user(&crate::im::LocalUser {
-                    user_id: self.config.user_id.clone(),
-                    nickname: String::new(),
-                    face_url: String::new(),
-                    create_time: 0,
-                    app_manger_level: 0,
-                    ex: String::new(),
-                    attached_info: String::new(),
-                    global_recv_msg_opt: 0,
-                })
-                .await;
-        }
+        let repo = self.local_repo.clone();
         let (ws_tx, connection_rx) = mpsc::unbounded_channel();
         let _ = self.ws_send_tx.write().unwrap().insert(ws_tx.clone());
         let (msg_sync_cmd_tx, msg_sync_cmd_rx) = mpsc::unbounded_channel();
@@ -291,104 +296,121 @@ impl IMClient {
         api.get_all_conversations().await
     }
 
-    /// 发送消息（入口与 Go SendMessage 一致：先 Default 再显式填值）；优先 WebSocket，否则 HTTP
-    pub async fn send_message(&self, params: SendMessageParams) -> Result<SendMsgResp> {
-        let req = send_message_params_to_req(&params, self.config.user_id.clone());
-        if let Some(tx) = self.ws_send_tx.read().unwrap().as_ref() {
-            if let Ok(resp) = self.send_message_via_ws(tx.clone(), &req).await {
-                return Ok(resp);
-            }
-            trace!("WS 发送失败或超时，回退 HTTP");
-        }
+    /// 从本地 DB 查询单条消息（推送落库后可用）
+    pub async fn get_local_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
+        self.local_repo.message.get_message(conversation_id, client_msg_id).await
+    }
+
+    /// 从本地 DB 获取会话列表（含未读数等，推送落库后与服务器一致）
+    pub async fn get_local_conversations(&self) -> Result<Vec<LocalConversation>> {
+        self.local_repo.conversation.get_all_conversations().await
+    }
+
+    /// 从服务器获取好友列表（HTTP API）
+    pub async fn get_all_friends(&self) -> Result<AllFriendsResp> {
         let raw = IMClient::create_http_client(&self.config)?;
-        let api = MessageApi::new(
+        let api = FriendApi::new(
             raw,
             self.config.api_base_url.clone(),
             self.config.user_id.clone(),
             &self.config.token,
         );
-        api.send_message(req).await
+        api.get_all_friends().await
     }
 
-    /// 通过 WebSocket 发送消息（req_identifier=1003），使用公共 ws_rpc 工具
-    async fn send_message_via_ws(&self, tx: mpsc::UnboundedSender<WsRpcEnvelope>, req: &SendMsgReq) -> Result<SendMsgResp> {
-        let msg_data = send_msg_req_to_ws_msg_data(req)?;
-        let data = msg_data.encode_to_vec();
+    /// 通用 WS 请求：入参为 pb 请求体 + req_identifier，出参为 pb 响应体；需先 start()。
+    pub async fn send_ws_req<Req, Resp>(&self, req_identifier: i32, req: &Req) -> Result<Resp>
+    where
+        Req: Message,
+        Resp: Message + Default,
+    {
+        let tx = self
+            .ws_send_tx
+            .read()
+            .unwrap()
+            .clone()
+            .ok_or_else(|| anyhow::anyhow!("WS 请求需先 start() 建立 WebSocket 连接"))?;
+        let data = req.encode_to_vec();
         let open_req = OpenIMReq {
-            req_identifier: msg_type::WS_SEND_MSG,
+            req_identifier,
             token: self.config.token.clone(),
             send_id: self.config.user_id.clone(),
             operation_id: util::make_operation_id(),
             msg_incr: util::make_msg_incr(),
             data,
         };
-        let ws_resp = ws_rpc::send_ws_req_wait(&tx, open_req, Duration::from_secs(SEND_MSG_WS_TIMEOUT_SECS)).await?;
-        let pb = ws_rpc::decode_ws_resp::<openim_protocol::msg::SendMsgResp>(&ws_resp)?;
-        Ok(SendMsgResp {
-            server_msg_id: pb.server_msg_id,
-            client_msg_id: pb.client_msg_id,
-            send_time: pb.send_time,
-            modify: None,
-        })
+        let (resp_tx, resp_rx) = oneshot::channel();
+        tx.send((open_req, Some(resp_tx))).map_err(|_| anyhow!("ws rpc channel closed"))?;
+        let ws_resp = match timeout(Duration::from_secs(SEND_MSG_WS_TIMEOUT_SECS), resp_rx).await {
+            Ok(Ok(resp)) => resp,
+            Ok(Err(e)) => return Err(anyhow!("ws response channel dropped: {:?}", e)),
+            Err(_) => return Err(anyhow!("ws rpc timeout")),
+        };
+        if ws_resp.err_code != 0 {
+            return Err(anyhow!("ws rpc err code={}, msg={}", ws_resp.err_code, ws_resp.err_msg));
+        }
+        Resp::decode(ws_resp.data.as_slice()).map_err(|e| anyhow!("decode ws resp: {}", e))
     }
 
-    /// 单聊发送文本消息（Default + 显式填值）
-    /// 与 Go SDK 一致：TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`，其他端才能正确解析
-    pub async fn send_text_message(&self, recv_id: String, text: String) -> Result<SendMsgResp> {
-        let mut params = SendMessageParams::default();
-        params.operation_id = util::make_operation_id();
-        params.message = json!({ "content": text }).to_string();
-        params.recv_id = recv_id;
-        params.content_type = constant::TEXT;
-        params.session_type = constant::SINGLE_CHAT_TYPE;
-        self.send_message(params).await
+  
+    /// 发送消息：入参 MsgData，内部补齐公共字段（client_msg_id、create_time、msg_from）及个人信息（send_id、sender_platform_id、sender_nickname、sender_face_url）后发送；仅通过 WebSocket，需先 start()。
+    /// 与 open-im-server msggateway 一致：WS 请求的 Data 为 MsgData 的 protobuf 编码，非 SendMsgReq。
+    pub async fn send_message(&self, mut msg_data: sdkws::MsgData) -> Result<openim_protocol::msg::SendMsgResp> {
+        if msg_data.client_msg_id.is_empty() {
+            msg_data.client_msg_id = Uuid::new_v4().to_string();
+        }
+        if msg_data.create_time == 0 {
+            msg_data.create_time = chrono::Utc::now().timestamp_millis();
+        }
+        msg_data.msg_from = constant::USER_MSG_TYPE;
+
+        let (nickname, face_url) = self
+            .local_repo
+            .user
+            .get_login_user(&self.config.user_id)
+            .await
+            .ok()
+            .flatten()
+            .map(|u| (u.nickname, u.face_url))
+            .unwrap_or_else(|| (String::new(), String::new()));
+        if msg_data.send_id.is_empty() {
+            msg_data.send_id = self.config.user_id.clone();
+        }
+        if msg_data.sender_platform_id == 0 {
+            msg_data.sender_platform_id = self.config.platform_id;
+        }
+        if msg_data.sender_nickname.is_empty() {
+            msg_data.sender_nickname = nickname;
+        }
+        if msg_data.sender_face_url.is_empty() {
+            msg_data.sender_face_url = face_url;
+        }
+
+        self
+            .send_ws_req::<sdkws::MsgData, openim_protocol::msg::SendMsgResp>(
+                msg_type::WS_SEND_MSG,
+                &msg_data,
+            )
+            .await
     }
 
-    /// 群聊发送文本消息（Default + 显式填值）
-    /// 与 Go SDK 一致：TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`
-    pub async fn send_text_to_group(&self, group_id: String, text: String) -> Result<SendMsgResp> {
-        let mut params = SendMessageParams::default();
-        params.operation_id = util::make_operation_id();
-        params.message = json!({ "content": text }).to_string();
-        params.group_id = group_id;
-        params.content_type = constant::TEXT;
-        params.session_type = constant::READ_GROUP_CHAT_TYPE;
-        self.send_message(params).await
+    /// 单聊发送文本消息；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`，与 Go SDK 一致。
+    pub async fn send_text_message(&self, recv_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg_data = sdkws::MsgData::default();
+        msg_data.recv_id = recv_id;
+        msg_data.content_type = constant::TEXT;
+        msg_data.session_type = constant::SINGLE_CHAT_TYPE;
+        msg_data.content = serde_json::to_vec(&json!({ "content": text })).unwrap_or_default();
+        self.send_message(msg_data).await
     }
-}
 
-/// 将 HTTP 风格的 SendMsgReq 转为 WS 使用的 sdkws::MsgData（protobuf）
-fn send_msg_req_to_ws_msg_data(req: &SendMsgReq) -> Result<sdkws::MsgData> {
-    let client_msg_id = Uuid::new_v4().to_string();
-    let content = serde_json::to_vec(&req.content).unwrap_or_default();
-    let create_time = chrono::Utc::now().timestamp_millis();
-    let mut options = std::collections::HashMap::new();
-    if req.is_online_only {
-        options.insert("isHistory".to_string(), false);
-        options.insert("isPersistent".to_string(), false);
+    /// 群聊发送文本消息；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`。
+    pub async fn send_text_to_group(&self, group_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg_data = sdkws::MsgData::default();
+        msg_data.group_id = group_id;
+        msg_data.content_type = constant::TEXT;
+        msg_data.session_type = constant::READ_GROUP_CHAT_TYPE;
+        msg_data.content = serde_json::to_vec(&json!({ "content": text })).unwrap_or_default();
+        self.send_message(msg_data).await
     }
-    Ok(sdkws::MsgData {
-        send_id: req.send_id.clone(),
-        recv_id: req.recv_id.clone().unwrap_or_default(),
-        group_id: req.group_id.clone().unwrap_or_default(),
-        client_msg_id,
-        server_msg_id: String::new(),
-        sender_platform_id: req.sender_platform_id.unwrap_or(0),
-        sender_nickname: req.sender_nickname.clone().unwrap_or_default(),
-        sender_face_url: req.sender_face_url.clone().unwrap_or_default(),
-        session_type: req.session_type,
-        msg_from: constant::USER_MSG_TYPE,
-        content_type: req.content_type,
-        content,
-        seq: 0,
-        send_time: req.send_time.unwrap_or(0),
-        create_time,
-        status: 0,
-        is_read: false,
-        options,
-        offline_push_info: None,
-        at_user_id_list: vec![],
-        attached_info: String::new(),
-        ex: req.ex.clone().unwrap_or_default(),
-    })
 }

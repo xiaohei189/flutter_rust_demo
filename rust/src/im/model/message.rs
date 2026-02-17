@@ -1,12 +1,15 @@
 //! 消息相关模型与类型，合并自 `im/message/models.rs` 与 `im/message/types.rs`
 
 use anyhow::Result;
+use chrono;
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::FromRow;
 use std::collections::HashMap;
 use tracing::warn;
+use uuid::Uuid;
 
 // ---------- 本地存储模型 ----------
 
@@ -163,7 +166,54 @@ impl Default for SendMsgReq {
     }
 }
 
-/// 将 Go 风格 SendMessageParams 转为 SendMsgReq（需传入 send_id）
+/// 将 SendMessageParams 转为 WS 实际发送的 sdkws::MsgData（集中补全发送人信息）
+pub fn params_to_ws_msg_data(
+    params: &SendMessageParams,
+    send_id: &str,
+    sender_platform_id: i32,
+    sender_nickname: &str,
+    sender_face_url: &str,
+) -> sdkws::MsgData {
+    let content = if params.message.is_empty() {
+        vec![]
+    } else {
+        serde_json::from_str::<Value>(&params.message)
+            .map(|v| serde_json::to_vec(&v).unwrap_or_default())
+            .unwrap_or_default()
+    };
+    let create_time = chrono::Utc::now().timestamp_millis();
+    let mut options = std::collections::HashMap::new();
+    if params.is_online_only {
+        options.insert("isHistory".to_string(), false);
+        options.insert("isPersistent".to_string(), false);
+    }
+    sdkws::MsgData {
+        send_id: send_id.to_string(),
+        recv_id: params.recv_id.clone(),
+        group_id: params.group_id.clone(),
+        client_msg_id: Uuid::new_v4().to_string(),
+        server_msg_id: String::new(),
+        sender_platform_id,
+        sender_nickname: sender_nickname.to_string(),
+        sender_face_url: sender_face_url.to_string(),
+        session_type: params.session_type,
+        msg_from: constant::USER_MSG_TYPE,
+        content_type: params.content_type,
+        content,
+        seq: 0,
+        send_time: 0,
+        create_time,
+        status: 0,
+        is_read: false,
+        options,
+        offline_push_info: None,
+        at_user_id_list: vec![],
+        attached_info: String::new(),
+        ex: String::new(),
+    }
+}
+
+/// 将 Go 风格 SendMessageParams 转为 SendMsgReq（需传入 send_id），供 HTTP 等仍使用 Req 的路径
 pub fn send_message_params_to_req(params: &SendMessageParams, send_id: String) -> SendMsgReq {
     let content = if params.message.is_empty() {
         serde_json::Value::Null
@@ -442,19 +492,6 @@ fn default_page_size() -> i32 {
 }
 
 // ---------- 响应体 ----------
-
-/// /msg/send_msg
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct SendMsgResp {
-    #[serde(rename = "serverMsgID")]
-    pub server_msg_id: String,
-    #[serde(rename = "clientMsgID")]
-    pub client_msg_id: String,
-    #[serde(rename = "sendTime")]
-    pub send_time: i64,
-    #[serde(rename = "modify", skip_serializing_if = "Option::is_none")]
-    pub modify: Option<MsgStruct>,
-}
 
 /// /msg/get_server_time
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
