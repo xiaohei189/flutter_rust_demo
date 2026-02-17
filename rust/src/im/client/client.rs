@@ -56,7 +56,6 @@ impl Client {
     }
 }
 
-use crate::im::api::conversation::ConversationApi;
 use crate::im::api::friend::FriendApi;
 use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
@@ -65,7 +64,7 @@ use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
 use crate::im::dao::repository::Repository;
 use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener};
-use crate::im::model::conversation::{AllConversationsResp, ConversationSyncerConfig, LocalConversation};
+use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
 use crate::im::model::message::LocalChatLog;
 use crate::im::model::ws::{msg_type, OpenIMReq, OpenIMResp, WsRpcEnvelope};
@@ -284,26 +283,14 @@ impl IMClient {
         self.callbacks.write().unwrap().advanced_msg_listener = Some(listener);
     }
 
-    /// 从服务器获取会话列表（HTTP API，不依赖运行中的长连）
-    pub async fn get_all_conversations(&self) -> Result<AllConversationsResp> {
-        let raw = IMClient::create_http_client(&self.config)?;
-        let api = ConversationApi::new(
-            raw,
-            self.config.api_base_url.clone(),
-            self.config.user_id.clone(),
-            &self.config.token,
-        );
-        api.get_all_conversations().await
+    /// 获取会话列表（从本地 DB 读取，与 Go GetAllConversationList 一致）
+    pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
+        self.local_repo.conversation.get_all_conversations().await
     }
 
     /// 从本地 DB 查询单条消息（推送落库后可用）
     pub async fn get_local_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
         self.local_repo.message.get_message(conversation_id, client_msg_id).await
-    }
-
-    /// 从本地 DB 获取会话列表（含未读数等，推送落库后与服务器一致）
-    pub async fn get_local_conversations(&self) -> Result<Vec<LocalConversation>> {
-        self.local_repo.conversation.get_all_conversations().await
     }
 
     /// 从服务器获取好友列表（HTTP API）

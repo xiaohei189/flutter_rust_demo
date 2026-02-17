@@ -41,8 +41,8 @@ async fn get_conversations() -> anyhow::Result<()> {
     setup_logger();
     let (client, _) = create_and_start_client("conv").await?;
     let list = client.get_all_conversations().await?;
-    eprintln!("[集成测试-会话] 会话总数: {}", list.conversations.len());
-    for (i, c) in list.conversations.iter().enumerate() {
+    eprintln!("[集成测试-会话] 会话总数: {}", list.len());
+    for (i, c) in list.iter().enumerate() {
         eprintln!(
             "  [{}] id={} type={} user_id={:?} group_id={:?}",
             i, c.conversation_id, c.conversation_type, c.user_id, c.group_id
@@ -60,7 +60,7 @@ async fn send_text_to_first_conversation() -> anyhow::Result<()> {
     let (mut client, self_user_id) = create_and_start_client("msg_text").await?;
     let list = client.get_all_conversations().await?;
     let self_user_id = self_user_id.as_str();
-    if let Some(conv) = list.conversations.first() {
+    if let Some(conv) = list.first() {
         let msg = test_message_with_time("给第一个会话发一条文本");
         let send = match conv.conversation_type {
             CONVERSATION_TYPE_SINGLE => {
@@ -151,7 +151,7 @@ async fn group_send_text_message() -> anyhow::Result<()> {
         "群最新消息应包含发送人昵称或头像(sender_nickname/sender_face_url)以便会话列表展示"
     );
 
-    let convs = client.get_local_conversations().await?;
+    let convs = client.get_all_conversations().await?;
     let conv = convs
         .iter()
         .find(|c| c.conversation_id == conversation_id)
@@ -213,7 +213,7 @@ async fn group_send_custom_message() -> anyhow::Result<()> {
         eprintln!("[集成测试-群自定义] 自定义消息未落库（已知现象）");
     }
 
-    let convs = client.get_local_conversations().await?;
+    let convs = client.get_all_conversations().await?;
     let conv = convs
         .iter()
         .find(|c| c.conversation_id == conversation_id)

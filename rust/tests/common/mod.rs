@@ -146,8 +146,8 @@ pub fn parse_group_id(conversation_id: &str) -> Option<String> {
 
 /// 从会话列表中取第一个群会话，返回 (conversation_id, group_id, conversation_type)。
 /// 若无群会话返回 None。
-pub fn first_group_from_list(list: &rust_lib_flutter_rust_demo::AllConversationsResp) -> Option<(String, String, i32)> {
-    let first = list.conversations.iter().find(|c| {
+pub fn first_group_from_list(list: &[rust_lib_flutter_rust_demo::LocalConversation]) -> Option<(String, String, i32)> {
+    let first = list.iter().find(|c| {
         c.conversation_type == CONVERSATION_TYPE_GROUP || c.conversation_type == CONVERSATION_TYPE_SUPER_GROUP
     })?;
     let group_id = first
