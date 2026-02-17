@@ -23,7 +23,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info, info_span, instrument, trace, warn};
+use tracing::{debug, error, info, info_span, instrument, trace, warn};
 use uuid::Uuid;
 
 // ---------- 通知 body 解析（与 Go UnmarshalNotificationElem 对齐，服务端下发的为 JSON） ----------
@@ -1460,10 +1460,10 @@ impl ConversationHandle {
     pub async fn sync_data(&self) -> Result<()> {
         // 1. 同步：拉取服务器 HasRead/MaxSeq，校正本地未读数
         if let Err(e) = self.sync_unread_by_seq().await {
-            warn!("[conversation_handle] SyncData 中 sync_unread_by_seq 失败 err={}", e);
+            error!("[conversation_handle] SyncData 中 sync_unread_by_seq 失败 err={}", e);
         }
         if let Err(e) = self.sync_login_user_info(true).await {
-            warn!("[conversation_handle] SyncData 中 sync_login_user_info 失败 err={}", e);
+            error!("[conversation_handle] SyncData 中 sync_login_user_info 失败 err={}", e);
         }
         // 2. 增量同步会话列表
         self.incr_sync_conversations().await

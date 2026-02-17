@@ -19,8 +19,10 @@ struct GetUsersInfoReq {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInfoItem {
+    #[serde(rename = "userID")]
     pub user_id: String,
     pub nickname: String,
+    #[serde(rename = "faceURL")]
     pub face_url: String,
     #[serde(default)]
     pub create_time: i64,
