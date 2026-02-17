@@ -194,6 +194,21 @@ impl ConversationDao {
         Ok(ids)
     }
 
+    /// 与 Go GetAllSingleConversationIDList 对齐：conversation_type = SingleChatType 的会话 ID 列表
+    pub async fn get_all_single_conversation_ids(&self) -> Result<Vec<String>> {
+        #[derive(FromRow)]
+        struct IdRow {
+            conversation_id: String,
+        }
+        const SINGLE_CHAT_TYPE: i32 = 1;
+        let rows: Vec<IdRow> = sqlx::query_as("SELECT conversation_id FROM local_conversations WHERE conversation_type = ?")
+            .bind(SINGLE_CHAT_TYPE)
+            .fetch_all(&self.db)
+            .await
+            .context("get_all_single_conversation_ids 失败")?;
+        Ok(rows.into_iter().map(|r| r.conversation_id).collect())
+    }
+
     /// 根据会话ID查询单个会话
     pub async fn get_conversation_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
         let row: Option<LocalConversation> = sqlx::query_as(
@@ -331,6 +346,21 @@ impl ConversationDao {
     pub async fn batch_upsert_conversation_list(&self, list: &[LocalConversation]) -> Result<()> {
         for conv in list {
             self.upsert_conversation(conv).await?;
+        }
+        Ok(())
+    }
+
+    /// 与 Go UpdateConversation 对齐：仅更新 show_name、face_url（用于 UpdateConFaceUrlAndNickName）
+    pub async fn update_show_name_and_face_url(&self, conversation_id: &str, show_name: &str, face_url: &str) -> Result<()> {
+        let n = sqlx::query("UPDATE local_conversations SET show_name = ?, face_url = ? WHERE conversation_id = ?")
+            .bind(show_name)
+            .bind(face_url)
+            .bind(conversation_id)
+            .execute(&self.db)
+            .await
+            .context("update_show_name_and_face_url 失败")?;
+        if n.rows_affected() == 0 {
+            return Ok(());
         }
         Ok(())
     }

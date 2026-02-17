@@ -368,6 +368,29 @@ impl MessageRepo {
         Ok(res.rows_affected())
     }
 
+    /// 与 Go UpdateMsgSenderFaceURLAndSenderNickname 对齐：按 send_id 批量更新昵称/头像
+    pub async fn update_sender_face_url_and_nickname(
+        &self,
+        conversation_id: &str,
+        send_id: &str,
+        face_url: &str,
+        nickname: &str,
+    ) -> Result<u64> {
+        let table = self.table();
+        let sql = format!(
+            r#"UPDATE {} SET sender_nick_name = ?, sender_face_url = ? WHERE conversation_id = ? AND send_id = ?"#,
+            table
+        );
+        let res = sqlx::query(&sql)
+            .bind(nickname)
+            .bind(face_url)
+            .bind(conversation_id)
+            .bind(send_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(res.rows_affected())
+    }
+
     /// 获取历史消息列表（完全参考 Go SDK 的 GetMessageList 实现）
     ///
     /// 参数完全匹配 Go SDK：

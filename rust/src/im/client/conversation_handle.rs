@@ -5,7 +5,8 @@
 use crate::im::api::api::Api;
 use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::dao::repository::Repository;
-use crate::im::listener::{AdvancedMsgListener, ConversationListener};
+use crate::im::dao::user::LocalUser;
+use crate::im::listener::{AdvancedMsgListener, ConversationListener, UserListener};
 use crate::im::model::constant::sync_flag;
 use crate::im::model::constant::RECEIVE_MESSAGE;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
@@ -67,6 +68,13 @@ struct DeleteMsgsTipsRust {
     conversation_id: String,
     #[serde(rename = "seqs", default)]
     seqs: Vec<i64>,
+}
+
+/// 用户信息变更通知 body（与 Go sdkws.UserInfoUpdatedTips、internal/user/notification.go userInfoUpdatedNotification 对齐）
+#[derive(serde::Deserialize)]
+struct UserInfoUpdatedTipsRust {
+    #[serde(rename = "userID", default)]
+    user_id: String,
 }
 
 // ---------- 命令类型（对齐 Go pkg/constant Cmd* 与 common.Cmd2Value） ----------
@@ -184,6 +192,25 @@ impl ConversationHandle {
     #[inline]
     fn advanced_msg_listener(&self) -> Option<Arc<dyn AdvancedMsgListener>> {
         self.callbacks.as_ref().and_then(|c| c.advanced_msg_listener.clone())
+    }
+
+    #[inline]
+    fn user_listener(&self) -> Option<Arc<dyn UserListener>> {
+        self.callbacks.as_ref().and_then(|c| c.user_listener.clone())
+    }
+
+    /// 与 Go getConversationIDBySessionType 对齐：单聊 si_排序双ID、群 sg_/g_、通知 sn_
+    fn get_conversation_id_by_session_type(&self, source_id: &str, session_type: i32) -> String {
+        match session_type {
+            constant::SINGLE_CHAT_TYPE => {
+                let mut v = vec![self.config.user_id.as_str(), source_id];
+                v.sort();
+                format!("si_{}_{}", v[0], v[1])
+            }
+            constant::READ_GROUP_CHAT_TYPE => format!("sg_{}", source_id),
+            constant::NOTIFICATION_CHAT_TYPE => format!("sn_{}_{}", source_id, self.config.user_id),
+            _ => format!("g_{}", source_id),
+        }
     }
 
     /// 从数据库获取所有本地会话
@@ -377,6 +404,66 @@ impl ConversationHandle {
     /// 获取总未读消息数
     pub async fn get_total_unread_count(&self) -> Result<i32> {
         self.repository.conversation.get_total_unread_count().await
+    }
+
+    /// 与 Go SyncLoginUserInfo / SyncLoginUserInfoWithoutNotice 对齐：拉取当前登录用户并落库；with_notice 时若昵称/头像变化则 OnSelfInfoUpdated + 会话/消息更新
+    #[instrument(skip(self), fields(with_notice = with_notice))]
+    pub async fn sync_login_user_info(&self, with_notice: bool) -> Result<()> {
+        let Some(remote) = self.api.user.get_login_user_from_server().await? else {
+            trace!("sync_login_user_info: 服务端未返回当前用户");
+            return Ok(());
+        };
+        let old_local = self.repository.user.get_login_user(&self.config.user_id).await?;
+        let new_local = LocalUser {
+            user_id: remote.user_id.clone(),
+            nickname: remote.nickname.clone(),
+            face_url: remote.face_url.clone(),
+            create_time: remote.create_time,
+            app_manger_level: remote.app_manger_level,
+            ex: remote.ex.clone(),
+            attached_info: remote.attached_info.clone(),
+            global_recv_msg_opt: remote.global_recv_msg_opt,
+        };
+        self.repository.user.upsert_login_user(&new_local).await?;
+
+        if !with_notice {
+            return Ok(());
+        }
+        let changed = old_local.as_ref().map_or(true, |o| o.nickname != new_local.nickname || o.face_url != new_local.face_url);
+        if !changed {
+            return Ok(());
+        }
+        let server_json = serde_json::json!({
+            "userID": new_local.user_id,
+            "nickname": new_local.nickname,
+            "faceURL": new_local.face_url,
+            "createTime": new_local.create_time,
+            "appMangerLevel": new_local.app_manger_level,
+            "ex": new_local.ex,
+            "attachedInfo": new_local.attached_info,
+            "globalRecvMsgOpt": new_local.global_recv_msg_opt,
+        });
+        if let Some(l) = self.user_listener() {
+            l.on_self_info_updated(server_json.to_string()).await;
+        }
+        let conv_id = self.get_conversation_id_by_session_type(&self.config.user_id, constant::SINGLE_CHAT_TYPE);
+        let _ = self.repository.conversation.update_show_name_and_face_url(&conv_id, &new_local.nickname, &new_local.face_url).await;
+        if let Ok(ids) = self.repository.conversation.get_all_single_conversation_ids().await {
+            for cid in ids {
+                let _ = self.repository.message.update_sender_face_url_and_nickname(&cid, &self.config.user_id, &new_local.face_url, &new_local.nickname).await;
+            }
+        }
+        if let Ok(convs) = self.repository.conversation.get_all_conversations().await {
+            let changed_list: Vec<&LocalConversation> = convs.iter().filter(|c| c.conversation_id == conv_id).collect();
+            if let Some(conv) = changed_list.first() {
+                if let Ok(json) = serde_json::to_string(&conv) {
+                    if let Some(l) = self.conversation_listener() {
+                        l.on_conversation_changed(json).await;
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     /// 基于服务器的 MaxSeq / HasReadSeq 校正本地未读数
@@ -1064,6 +1151,33 @@ impl ConversationHandle {
         Ok(())
     }
 
+    /// 与 Go GetUserInfoWithCache 对齐：先本地，缺或昵称/头像为空则拉服务端并落库后返回
+    async fn get_user_info_with_cache(&self, user_id: &str) -> Result<Option<LocalUser>> {
+        let local = self.repository.user.get_login_user(user_id).await?;
+        if let Some(ref u) = local {
+            if !u.nickname.is_empty() && !u.face_url.is_empty() {
+                return Ok(local);
+            }
+        }
+        if let Ok(resp) = self.api.user.get_users_info(vec![user_id.to_string()]).await {
+            for remote in resp.users_info {
+                let local_user = LocalUser {
+                    user_id: remote.user_id,
+                    nickname: remote.nickname,
+                    face_url: remote.face_url,
+                    create_time: remote.create_time,
+                    app_manger_level: remote.app_manger_level,
+                    ex: remote.ex,
+                    attached_info: remote.attached_info,
+                    global_recv_msg_opt: remote.global_recv_msg_opt,
+                };
+                let _ = self.repository.user.upsert_login_user(&local_user).await;
+                return Ok(Some(local_user));
+            }
+        }
+        Ok(local)
+    }
+
     /// 与 Go batchAddFaceURLAndName 对齐：对新会话补 face_url/show_name；返回 Err 时调用方不写入 nc（新会话不落库）。
     /// 与 Go 一致：仅远程/关键步骤失败才返回 Err；本地 DB 查不到（None）或查询出错不导致整段失败，避免因本地无好友/用户/群数据就跳过新会话写入。
     async fn batch_add_face_url_and_name(&self, new_conversation_set: &mut HashMap<String, LocalConversation>) -> Result<()> {
@@ -1081,7 +1195,7 @@ impl ConversationHandle {
                     }
                 }
                 if nc.face_url.is_empty() || nc.show_name.is_empty() {
-                    if let Ok(Some(u)) = self.repository.user.get_login_user(&nc.user_id).await {
+                    if let Ok(Some(u)) = self.get_user_info_with_cache(&nc.user_id).await {
                         if nc.face_url.is_empty() && !u.face_url.is_empty() {
                             nc.face_url = u.face_url.clone();
                         }
@@ -1192,6 +1306,7 @@ impl ConversationHandle {
             }
             constant::CLEAR_CONVERSATION_NOTIFICATION => self.do_clear_conversations(msg).await,
             constant::DELETE_MSGS_NOTIFICATION => self.do_delete_msgs(conversation_id, msg).await,
+            constant::USER_INFO_UPDATED_NOTIFICATION => self.do_user_info_updated_notification(msg).await,
             constant::BUSINESS_NOTIFICATION => Ok(()),
             _ => {
                 if msg.content_type >= constant::NOTIFICATION_BEGIN && msg.content_type <= constant::NOTIFICATION_END {
@@ -1237,6 +1352,20 @@ impl ConversationHandle {
         self.repository.message.update_message(conversation_id, &updated).await?;
         if let Some(listener) = self.advanced_msg_listener() {
             listener.on_new_recv_message_revoked(revoke_content).await;
+        }
+        Ok(())
+    }
+
+    /// 用户信息变更通知（对齐 Go internal/user/notification.go userInfoUpdatedNotification）：若为当前登录用户则 SyncLoginUserInfo
+    async fn do_user_info_updated_notification(&self, msg: &sdkws::MsgData) -> Result<()> {
+        let tips: UserInfoUpdatedTipsRust = serde_json::from_slice(&msg.content)
+            .map_err(|e| anyhow::anyhow!("parse UserInfoUpdatedTips: {}", e))?;
+        if tips.user_id != self.config.user_id {
+            trace!("UserInfoUpdatedTips userID != loginUserID, skip sync_login_user_info");
+            return Ok(());
+        }
+        if let Err(e) = self.sync_login_user_info(true).await {
+            warn!("[conversation_handle] UserInfoUpdatedNotification sync_login_user_info 失败 err={}", e);
         }
         Ok(())
     }
@@ -1305,7 +1434,12 @@ impl ConversationHandle {
     pub async fn sync_flag(&self, flag: i32) -> Result<()> {
         if let Some(listener) = self.conversation_listener() {
             match flag {
-                sync_flag::APP_DATA_SYNC_START => listener.on_sync_server_start(true).await,
+                sync_flag::APP_DATA_SYNC_START => {
+                    if let Err(e) = self.sync_login_user_info(false).await {
+                        warn!("[conversation_handle] SyncFlag(APP_DATA_SYNC_START) sync_login_user_info 失败 err={}", e);
+                    }
+                    listener.on_sync_server_start(true).await
+                }
                 sync_flag::APP_DATA_SYNC_FINISH => listener.on_sync_server_finish(true).await,
                 sync_flag::MSG_SYNC_BEGIN => listener.on_sync_server_start(false).await,
                 sync_flag::MSG_SYNC_END => listener.on_sync_server_finish(false).await,
@@ -1327,6 +1461,9 @@ impl ConversationHandle {
         // 1. 同步：拉取服务器 HasRead/MaxSeq，校正本地未读数
         if let Err(e) = self.sync_unread_by_seq().await {
             warn!("[conversation_handle] SyncData 中 sync_unread_by_seq 失败 err={}", e);
+        }
+        if let Err(e) = self.sync_login_user_info(true).await {
+            warn!("[conversation_handle] SyncData 中 sync_login_user_info 失败 err={}", e);
         }
         // 2. 增量同步会话列表
         self.incr_sync_conversations().await

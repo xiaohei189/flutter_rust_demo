@@ -56,14 +56,16 @@ impl Client {
     }
 }
 
+use crate::im::api::api::Api;
 use crate::im::api::friend::FriendApi;
 use crate::im::client::callbacks::ClientCallbacks;
+use crate::im::dao::user::LocalUser;
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;
 use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
 use crate::im::dao::repository::Repository;
 use crate::im::friend::FriendListener;
-use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener};
+use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
 use crate::im::model::message::LocalChatLog;
@@ -98,6 +100,8 @@ pub struct IMClient {
     run_handle: Arc<RwLock<Option<JoinHandle<Result<()>>>>>,
     /// 本地 DB 副本，new 时初始化，用于查询本地消息/会话及发送人信息
     local_repo: Repository,
+    /// HTTP API（与 Go 一致，供 GetUserInfoWithCache / 发消息等使用）
+    api: Api,
 }
 
 impl IMClient {
@@ -116,34 +120,53 @@ impl IMClient {
                 })
                 .await?;
         }
-        if repo.user.get_login_user(&config.user_id).await?.is_none() {
-            let _ = repo
-                .user
-                .insert_login_user(&crate::im::LocalUser {
-                    user_id: config.user_id.clone(),
-                    nickname: String::new(),
-                    face_url: String::new(),
-                    create_time: 0,
-                    app_manger_level: 0,
-                    ex: String::new(),
-                    attached_info: String::new(),
-                    global_recv_msg_opt: 0,
-                })
-                .await;
-        }
+   
         let callbacks = ClientCallbacks {
             conn_listener: Some(Arc::new(EmptyConnListener)),
             conversation_listener: Some(Arc::new(EmptyConversationListener)),
             advanced_msg_listener: Some(Arc::new(EmptyAdvancedMsgListener)),
             friend_listener: None,
+            user_listener: Some(Arc::new(EmptyUserListener)),
         };
+        let http_client = Self::create_http_client(&config)?;
+        let api = Api::new(http_client, config.api_base_url.clone(), config.user_id.clone(), &config.token);
         Ok(Self {
             config,
             callbacks: Arc::new(RwLock::new(callbacks)),
             ws_send_tx: Arc::new(RwLock::new(None)),
             run_handle: Arc::new(RwLock::new(None)),
             local_repo: repo,
+            api,
         })
+    }
+
+    /// 与 Go GetUserInfoWithCache 一致：先本地，缺或昵称/头像为空则拉服务端并落库后返回
+    async fn get_login_user_info_with_cache(&self) -> Result<(String, String)> {
+        let (nickname, face_url) = self
+            .local_repo
+            .user
+            .get_login_user(&self.config.user_id)
+            .await?
+            .map(|u| (u.nickname, u.face_url))
+            .unwrap_or_else(|| (String::new(), String::new()));
+        if !nickname.is_empty() && !face_url.is_empty() {
+            return Ok((nickname, face_url));
+        }
+        if let Some(remote) = self.api.user.get_login_user_from_server().await? {
+            let local = LocalUser {
+                user_id: remote.user_id,
+                nickname: remote.nickname.clone(),
+                face_url: remote.face_url.clone(),
+                create_time: remote.create_time,
+                app_manger_level: remote.app_manger_level,
+                ex: remote.ex,
+                attached_info: remote.attached_info,
+                global_recv_msg_opt: remote.global_recv_msg_opt,
+            };
+            self.local_repo.user.upsert_login_user(&local).await?;
+            return Ok((remote.nickname, remote.face_url));
+        }
+        Ok((nickname, face_url))
     }
 }
 
@@ -283,6 +306,11 @@ impl IMClient {
         self.callbacks.write().unwrap().advanced_msg_listener = Some(listener);
     }
 
+    /// 注册用户监听器（Go: SetUserListener，含 OnSelfInfoUpdated）
+    pub fn set_user_listener(&mut self, listener: Arc<dyn UserListener>) {
+        self.callbacks.write().unwrap().user_listener = Some(listener);
+    }
+
     /// 获取会话列表（从本地 DB 读取，与 Go GetAllConversationList 一致）
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
         self.local_repo.conversation.get_all_conversations().await
@@ -303,6 +331,83 @@ impl IMClient {
             &self.config.token,
         );
         api.get_all_friends().await
+    }
+
+    /// 与 Go GetUserInfoWithCache 对齐：任意 userID，先本地，缺或昵称/头像为空则拉服务端并落库后返回
+    pub async fn get_user_info_with_cache(&self, user_id: &str) -> Result<Option<LocalUser>> {
+        let local = self.local_repo.user.get_login_user(user_id).await?;
+        if let Some(ref u) = local {
+            if !u.nickname.is_empty() && !u.face_url.is_empty() {
+                return Ok(local);
+            }
+        }
+        if let Ok(resp) = self.api.user.get_users_info(vec![user_id.to_string()]).await {
+            for remote in resp.users_info {
+                let local_user = LocalUser {
+                    user_id: remote.user_id,
+                    nickname: remote.nickname,
+                    face_url: remote.face_url,
+                    create_time: remote.create_time,
+                    app_manger_level: remote.app_manger_level,
+                    ex: remote.ex,
+                    attached_info: remote.attached_info,
+                    global_recv_msg_opt: remote.global_recv_msg_opt,
+                };
+                let _ = self.local_repo.user.upsert_login_user(&local_user).await;
+                return Ok(Some(local_user));
+            }
+        }
+        Ok(local)
+    }
+
+    /// 与 Go GetUsersInfoWithCache 对齐：按 user_ids 顺序返回 LocalUser，缺或空的先批量拉远程并落库
+    pub async fn get_users_info_with_cache(&self, user_ids: Vec<String>) -> Result<Vec<LocalUser>> {
+        let mut result: Vec<LocalUser> = Vec::with_capacity(user_ids.len());
+        let mut need_fetch: Vec<String> = Vec::new();
+        for id in &user_ids {
+            if let Ok(Some(u)) = self.local_repo.user.get_login_user(id).await {
+                if !u.nickname.is_empty() && !u.face_url.is_empty() {
+                    result.push(u);
+                    continue;
+                }
+            }
+            result.push(LocalUser {
+                user_id: id.clone(),
+                nickname: String::new(),
+                face_url: String::new(),
+                create_time: 0,
+                app_manger_level: 0,
+                ex: String::new(),
+                attached_info: String::new(),
+                global_recv_msg_opt: 0,
+            });
+            need_fetch.push(id.clone());
+        }
+        if need_fetch.is_empty() {
+            return Ok(result);
+        }
+        if let Ok(resp) = self.api.user.get_users_info(need_fetch.clone()).await {
+            for remote in resp.users_info {
+                let local_user = LocalUser {
+                    user_id: remote.user_id.clone(),
+                    nickname: remote.nickname,
+                    face_url: remote.face_url,
+                    create_time: remote.create_time,
+                    app_manger_level: remote.app_manger_level,
+                    ex: remote.ex,
+                    attached_info: remote.attached_info,
+                    global_recv_msg_opt: remote.global_recv_msg_opt,
+                };
+                let _ = self.local_repo.user.upsert_login_user(&local_user).await;
+                for r in &mut result {
+                    if r.user_id == remote.user_id {
+                        *r = local_user.clone();
+                        break;
+                    }
+                }
+            }
+        }
+        Ok(result)
     }
 
     /// 通用 WS 请求：入参为 pb 请求体 + req_identifier，出参为 pb 响应体；需先 start()。
@@ -351,15 +456,8 @@ impl IMClient {
         }
         msg_data.msg_from = constant::USER_MSG_TYPE;
 
-        let (nickname, face_url) = self
-            .local_repo
-            .user
-            .get_login_user(&self.config.user_id)
-            .await
-            .ok()
-            .flatten()
-            .map(|u| (u.nickname, u.face_url))
-            .unwrap_or_else(|| (String::new(), String::new()));
+        let (nickname, face_url) = self.get_login_user_info_with_cache().await.unwrap_or_else(|_| (String::new(), String::new()));
+
         if msg_data.send_id.is_empty() {
             msg_data.send_id = self.config.user_id.clone();
         }

@@ -116,4 +116,13 @@ impl UserDao {
         .await?;
         Ok(())
     }
+
+    /// 若存在则 update，否则 insert；与 Go 侧“先查再写”的 upsert 行为一致
+    pub async fn upsert_login_user(&self, user: &LocalUser) -> Result<()> {
+        if self.get_login_user(&user.user_id).await?.is_some() {
+            self.update_login_user(user).await
+        } else {
+            self.insert_login_user(user).await
+        }
+    }
 }
