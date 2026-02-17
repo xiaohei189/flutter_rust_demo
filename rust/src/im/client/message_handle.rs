@@ -184,27 +184,45 @@ impl MessageHandle {
     fn is_notification(conv_id: &str) -> bool {
         conv_id.starts_with("n_")
     }
+    /// 与 Go doConnected 对齐：reinstalled 发 AppDataSyncStart → GetMaxSeq → compareSeqs → AppDataSyncFinish；
+    /// 非 reinstalled 发 MsgSyncBegin（会话侧会调 syncData）→ GetMaxSeq → compareSeqs → MsgSyncEnd。GetMaxSeq 失败时发 MsgSyncFailed。
     #[tracing::instrument(skip(self))]
     async fn do_connected(&mut self) -> Result<()> {
         if !self.start_sync().await {
             info!("[message_handle] 正在同步，忽略 Connected 事件");
             return Ok(());
         }
-        // 通知会话处理器：开始应用数据同步（SyncFlag AppDataSyncStart）
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::APP_DATA_SYNC_START)));
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncData));
         let reinstalled = self.reinstalled;
-        let newest = self.get_newest_seq().await?;
+        if reinstalled {
+            let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::APP_DATA_SYNC_START)));
+        } else {
+            let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::MSG_SYNC_BEGIN)));
+        }
+        let newest = match self.get_newest_seq().await {
+            Ok(n) => n,
+            Err(e) => {
+                warn!("[message_handle] get_newest_seq 失败 err={}", e);
+                let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::MSG_SYNC_FAILED)));
+                return Err(e);
+            }
+        };
         self.compare_seqs_and_batch_sync(newest, CONNECT_PULL_NUMS, reinstalled).await?;
+        if reinstalled {
+            let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::APP_DATA_SYNC_FINISH)));
+        } else {
+            let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncFlag(sync_flag::MSG_SYNC_END)));
+        }
         Ok(())
     }
 
+    /// 与 Go doWakeupDataSync 对齐：先 DispatchSyncData，再 GetMaxSeq，再 compareSeqs
     #[tracing::instrument(skip(self), name = "msg_sync.wakeup")]
     async fn do_wakeup_data_sync(&mut self) -> Result<()> {
         if !self.start_sync().await {
             debug!("[message_handle] 正在同步，忽略 Wakeup 事件");
             return Ok(());
         }
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::SyncData));
         let resp = self.get_newest_seq().await?;
         let reinstalled = self.reinstalled;
         self.compare_seqs_and_batch_sync(resp, DEFAULT_PULL_NUMS, reinstalled).await?;

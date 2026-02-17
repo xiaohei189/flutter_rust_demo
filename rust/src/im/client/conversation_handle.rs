@@ -1429,7 +1429,7 @@ impl ConversationHandle {
         Ok(())
     }
 
-    /// 同步阶段标记（Go syncFlag）
+    /// 同步阶段标记（Go syncFlag）：MsgSyncBegin 时与 Go 一致在会话侧执行 syncData
     #[instrument(skip(self), fields(flag = flag))]
     pub async fn sync_flag(&self, flag: i32) -> Result<()> {
         if let Some(listener) = self.conversation_listener() {
@@ -1441,9 +1441,15 @@ impl ConversationHandle {
                     listener.on_sync_server_start(true).await
                 }
                 sync_flag::APP_DATA_SYNC_FINISH => listener.on_sync_server_finish(true).await,
-                sync_flag::MSG_SYNC_BEGIN => listener.on_sync_server_start(false).await,
+                sync_flag::MSG_SYNC_BEGIN => {
+                    listener.on_sync_server_start(false).await;
+                    if let Err(e) = self.sync_data().await {
+                        error!("[conversation_handle] SyncFlag(MSG_SYNC_BEGIN) sync_data 失败 err={}", e);
+                    }
+                }
                 sync_flag::MSG_SYNC_END => listener.on_sync_server_finish(false).await,
-                sync_flag::MSG_SYNC_PROCESSING | sync_flag::MSG_SYNC_FAILED => {}
+                sync_flag::MSG_SYNC_FAILED => listener.on_sync_server_failed(false).await,
+                sync_flag::MSG_SYNC_PROCESSING => {}
                 _ => {}
             }
         }
