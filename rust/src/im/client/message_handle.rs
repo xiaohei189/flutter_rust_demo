@@ -357,6 +357,53 @@ impl MessageHandle {
         }
         Ok(())
     }
+
+    /// 重装时同步消息并触发 MsgSyncInReinstall（与 Go syncAndTriggerReinstallMsgs 一致，带 total 供会话侧上报 progress 10→100）
+    #[tracing::instrument(skip(self, seq_map))]
+    async fn sync_and_trigger_reinstall_msgs(&mut self, seq_map: &HashMap<String, (i64, i64)>, sync_msg_num: i64) -> Result<()> {
+        if seq_map.is_empty() {
+            debug!("[message_handle] 没有需要同步的消息");
+            return Ok(());
+        }
+        let total = seq_map.len() as i32;
+        info!("[message_handle] 开始重装同步消息 会话数={} sync_msg_num={} total={}", seq_map.len(), sync_msg_num, total);
+        let mut temp_seq_map: HashMap<String, (i64, i64)> = HashMap::with_capacity(50);
+        let mut msg_num: i64 = 0;
+
+        for (conv_id, range) in seq_map {
+            let one_conversation_sync_num = range.1 - range.0 + 1;
+            temp_seq_map.insert(conv_id.clone(), *range);
+
+            let is_notification = Self::is_notification(conv_id);
+            msg_num += if is_notification {
+                one_conversation_sync_num
+            } else {
+                one_conversation_sync_num.min(sync_msg_num)
+            };
+
+            if msg_num >= SPLIT_PULL_MSG_NUM {
+                let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
+                self.trigger_reinstall_conversation(None, &resp.msgs, total).await?;
+                self.trigger_notification(None, &resp.notification_msgs).await?;
+                for (conversation_id, seqs) in &temp_seq_map {
+                    self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
+                }
+                temp_seq_map = HashMap::with_capacity(50);
+                msg_num = 0;
+            }
+        }
+
+        if !temp_seq_map.is_empty() {
+            let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
+            self.trigger_reinstall_conversation(None, &resp.msgs, total).await?;
+            self.trigger_notification(None, &resp.notification_msgs).await?;
+            for (conversation_id, seqs) in &temp_seq_map {
+                self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
+            }
+        }
+        Ok(())
+    }
+
     /// 触发有新消息的会话事件（msg_id 用于 tracing 串联；from_push true=在线推送，false=离线/同步）
     #[tracing::instrument(skip(self, msgs), fields(msg_id = ?msg_id, convs = msgs.len()))]
     async fn trigger_conversation(
@@ -432,8 +479,8 @@ impl MessageHandle {
                 }
             }
 
-            // 与 Go 一致：重装同步完成后写回 local_app_sdk_version.installed = true
-            self.sync_and_trigger_msgs(&need_sync_seq_map, pull_nums).await?;
+            // 与 Go 一致：重装使用 syncAndTriggerReinstallMsgs，带 total 供会话侧 OnSyncServerProgress 10→100
+            self.sync_and_trigger_reinstall_msgs(&need_sync_seq_map, pull_nums).await?;
             if let Err(e) = self
                 .repository
                 .app_version

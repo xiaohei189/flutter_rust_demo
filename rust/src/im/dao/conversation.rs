@@ -533,12 +533,18 @@ impl VersionSyncDao {
 
     /// 与 Go GetVersionSync 一致：按 table_name + entity_id 查询（此处为 local_conversations + user_id）
     pub async fn get_version_sync(&self) -> Result<Option<LocalVersionSync>> {
+        self.get_version_sync_for("local_conversations", &self.user_id).await
+    }
+
+    /// 通用版本查询：任意 table_name + entity_id（供 local_groups、local_group_entities_version 等复用）
+    pub async fn get_version_sync_for(&self, table_name: &str, entity_id: &str) -> Result<Option<LocalVersionSync>> {
         const TABLE: &str = "local_sync_version";
         let row: Option<VersionSyncRow> = sqlx::query_as(&format!(
-            "SELECT table_name, entity_id, version, version_id FROM {} WHERE table_name = 'local_conversations' AND entity_id = ?",
+            "SELECT table_name, entity_id, version, version_id FROM {} WHERE table_name = ? AND entity_id = ?",
             TABLE
         ))
-        .bind(&self.user_id)
+        .bind(table_name)
+        .bind(entity_id)
         .fetch_optional(&self.db)
         .await
         .context("查询版本同步信息失败")?;

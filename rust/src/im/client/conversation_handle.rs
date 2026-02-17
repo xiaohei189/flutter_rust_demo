@@ -4,12 +4,17 @@
 
 use crate::im::api::api::Api;
 use crate::im::client::callbacks::ClientCallbacks;
+use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
+use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener, UserListener};
+use crate::im::model::friend::BlackList;
+use crate::im::api::group::GetIncrementalGroupMemberReq;
 use crate::im::model::constant::sync_flag;
 use crate::im::model::constant::RECEIVE_MESSAGE;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
+use crate::im::model::group::{server_group_to_local, server_group_member_to_local};
 use crate::im::model::message::{attached_info_apply_is_private, msg_handle_by_content_type_result};
 use crate::im::model::LocalConversation;
 use crate::im::LocalChatLog;
@@ -19,6 +24,7 @@ use openim_protocol::sdkws;
 use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
@@ -158,6 +164,8 @@ pub struct ConversationHandle {
     conversation_sync_mutex: Arc<tokio::sync::Mutex<()>>,
     /// 与 Go maxSeqRecorder 对齐：判未读用
     max_seq_recorder: Arc<MaxSeqRecorder>,
+    /// 重装消息同步已处理批数（与 Go c.msgOffset 对齐，用于 OnSyncServerProgress 10→100）
+    msg_sync_offset: Arc<AtomicI32>,
 }
 
 impl ConversationHandle {
@@ -181,6 +189,7 @@ impl ConversationHandle {
             cancel_token,
             conversation_sync_mutex: Arc::new(tokio::sync::Mutex::new(())),
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
+            msg_sync_offset: Arc::new(AtomicI32::new(0)),
         })
     }
 
@@ -197,6 +206,11 @@ impl ConversationHandle {
     #[inline]
     fn user_listener(&self) -> Option<Arc<dyn UserListener>> {
         self.callbacks.as_ref().and_then(|c| c.user_listener.clone())
+    }
+
+    #[inline]
+    fn friend_listener(&self) -> Option<Arc<dyn FriendListener>> {
+        self.callbacks.as_ref().and_then(|c| c.friend_listener.clone())
     }
 
     /// 与 Go getConversationIDBySessionType 对齐：单聊 si_排序双ID、群 sg_/g_、通知 sn_
@@ -657,18 +671,12 @@ impl ConversationHandle {
         let local_ids = self.get_all_conversation_ids().await?;
         let reinstalled = local_ids.is_empty();
         if reinstalled {
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_sync_server_start(true).await;
-            }
             return self.full_sync().await;
         }
         let all_placeholder = local_conversations
             .iter()
             .all(|c| c.show_name.is_empty() && c.face_url.is_empty() && c.latest_msg.is_empty() && c.latest_msg_send_time == 0);
         if all_placeholder {
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_sync_server_start(true).await;
-            }
             return self.full_sync().await;
         }
         let (version, version_id) = if let Some(vs) = version_sync {
@@ -693,20 +701,9 @@ impl ConversationHandle {
             self.save_version_sync(&new_version).await?;
             return Ok(());
         };
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_start(false).await;
-        }
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(10).await;
-        }
         let resp = match self.api.conversation.get_incremental_conversations(version, &version_id).await {
             Ok(r) => r,
-            Err(e) => {
-                if let Some(listener) = self.conversation_listener() {
-                    listener.on_sync_server_failed(false).await;
-                }
-                return Err(e);
-            }
+            Err(e) => return Err(e),
         };
         if resp.full {
             return self.full_sync().await;
@@ -720,9 +717,6 @@ impl ConversationHandle {
         }
         let seqs_map = self.api.conversation.get_has_read_and_max_seqs().await.ok();
         self.sync_conversations(server_conversations, local_conversations, seqs_map.as_ref()).await?;
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(80).await;
-        }
         for id in resp.delete.iter() {
             self.delete_conversation(id).await?;
         }
@@ -736,45 +730,21 @@ impl ConversationHandle {
             };
             self.save_version_sync(&new_version_sync).await?;
         }
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(100).await;
-        }
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_finish(false).await;
-        }
         let _ = self.sync_unread_by_seq().await;
         Ok(())
     }
 
-    /// 全量同步会话（供测试与内部调用）
+    /// 全量同步会话（供测试与内部调用）。同步进度/开始/结束仅由 sync_flag() 触发，此处不再调用 listener。
     #[instrument(skip(self), name = "conv.full_sync")]
     pub async fn full_sync(&self) -> Result<()> {
-        let reinstalled = self.get_all_conversation_ids().await?.is_empty();
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_start(reinstalled).await;
-        }
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(10).await;
-        }
         let resp = match self.api.conversation.get_all_conversations().await {
             Ok(r) => r,
-            Err(e) => {
-                if let Some(listener) = self.conversation_listener() {
-                    listener.on_sync_server_failed(reinstalled).await;
-                }
-                return Err(e);
-            }
+            Err(e) => return Err(e),
         };
         let server_conversations: Vec<LocalConversation> = resp.conversations.clone();
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(30).await;
-        }
         let local_conversations = self.get_all_conversations().await?;
         let seqs_map = self.api.conversation.get_has_read_and_max_seqs().await.ok();
         self.sync_conversations(server_conversations, local_conversations, seqs_map.as_ref()).await?;
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(80).await;
-        }
         let new_version = LocalVersionSync {
             table_name: "local_conversations".to_string(),
             entity_id: self.config.user_id.clone(),
@@ -782,12 +752,6 @@ impl ConversationHandle {
             version_id: Uuid::new_v4().to_string(),
         };
         self.save_version_sync(&new_version).await?;
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_progress(100).await;
-        }
-        if let Some(listener) = self.conversation_listener() {
-            listener.on_sync_server_finish(reinstalled).await;
-        }
         let _ = self.sync_unread_by_seq().await;
         Ok(())
     }
@@ -1429,6 +1393,271 @@ impl ConversationHandle {
         Ok(())
     }
 
+    /// 与 Go SyncAllBlackList / SyncAllBlackListWithoutNotice 对齐：全量拉取服务端黑名单，与本地 diff 后落库；with_notice 时回调 on_black_list_changed
+    #[instrument(skip(self), fields(with_notice = with_notice))]
+    pub async fn sync_black_list(&self, with_notice: bool) -> Result<()> {
+        let server_list = self.api.friend.get_black_list().await?;
+        let local_list = self.repository.black.get_black_list().await?;
+        let owner = self.config.user_id.clone();
+        let server_ids: HashSet<String> = server_list.iter().map(|b| b.block_user_id.clone()).collect();
+        let local_map: HashMap<String, LocalBlack> = local_list.into_iter().map(|b| (b.block_user_id.clone(), b)).collect();
+        for b in &server_list {
+            let row = LocalBlack {
+                owner_user_id: owner.clone(),
+                block_user_id: b.block_user_id.clone(),
+                nickname: b.nickname.clone(),
+                face_url: b.face_url.clone(),
+                create_time: b.create_time,
+                add_source: b.add_source,
+                operator_user_id: b.operator_user_id.clone(),
+                ex: b.ex.clone(),
+                attached_info: b.attached_info.clone(),
+            };
+            if local_map.contains_key(&b.block_user_id) {
+                let _ = self.repository.black.update(&row).await;
+            } else {
+                let _ = self.repository.black.insert(&row).await;
+            }
+        }
+        for (block_id, _) in &local_map {
+            if !server_ids.contains(block_id) {
+                let _ = self.repository.black.delete(block_id).await;
+            }
+        }
+        if with_notice {
+            if let Some(l) = self.friend_listener() {
+                if let Ok(json) = serde_json::to_string(&server_list) {
+                    l.on_black_list_changed(json).await;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// 与 Go IncrSyncFriends 对齐：增量同步好友并落库；完成后可选触发 on_friend_list_changed
+    #[instrument(skip(self))]
+    pub async fn incr_sync_friends(&self) -> Result<()> {
+        use crate::im::model::conversation::LocalVersionSync;
+        let version_sync = self.repository.friend.get_version_sync().await?;
+        let (version, version_id) = version_sync.as_ref().map(|v| (v.version, v.version_id.as_str())).unwrap_or((0, ""));
+        let local_friends = self.repository.friend.get_all_friends().await?;
+        if version_sync.is_none() {
+            if let Ok((srv_version, srv_version_id, server_ids)) = self.api.friend.get_full_friend_user_ids().await {
+                let server_set: HashSet<String> = server_ids.iter().cloned().collect();
+                let local_ids = self.repository.friend.get_all_friend_ids().await?;
+                let local_set: HashSet<String> = local_ids.into_iter().collect();
+                if server_set != local_set {
+                    let all_resp = self.api.friend.get_all_friends().await?;
+                    self.apply_friends_full_sync(&all_resp.friends_info, &local_friends, true).await?;
+                    let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
+                        table_name: "local_friends".to_string(),
+                        entity_id: self.config.user_id.clone(),
+                        version: srv_version,
+                        version_id: srv_version_id,
+                    }).await;
+                    return Ok(());
+                }
+                if srv_version > 0 && !srv_version_id.is_empty() {
+                    let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
+                        table_name: "local_friends".to_string(),
+                        entity_id: self.config.user_id.clone(),
+                        version: srv_version,
+                        version_id: srv_version_id,
+                    }).await;
+                }
+            }
+        }
+        let resp = self.api.friend.get_incremental_friends(version, version_id).await?;
+        if resp.full {
+            let all_resp = self.api.friend.get_all_friends().await?;
+            self.apply_friends_full_sync(&all_resp.friends_info, &local_friends, true).await?;
+            if !resp.version_id.is_empty() {
+                let new_v = if resp.version > 0 { resp.version } else { version + 1 };
+                let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
+                    table_name: "local_friends".to_string(),
+                    entity_id: self.config.user_id.clone(),
+                    version: new_v,
+                    version_id: resp.version_id.clone(),
+                }).await;
+            }
+            return Ok(());
+        }
+        let mut server_friends = Vec::new();
+        server_friends.extend(resp.insert.into_iter());
+        server_friends.extend(resp.update.into_iter());
+        self.apply_friends_full_sync(&server_friends, &local_friends, false).await?;
+        for id in &resp.delete {
+            let _ = self.repository.friend.delete_friend(id).await;
+        }
+        if !resp.version_id.is_empty() {
+            let new_v = if resp.version > 0 { resp.version } else { version + 1 };
+            let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
+                table_name: "local_friends".to_string(),
+                entity_id: self.config.user_id.clone(),
+                version: new_v,
+                version_id: resp.version_id,
+            }).await;
+        }
+        if let Some(l) = self.friend_listener() {
+            if let Ok(updated) = self.repository.friend.get_all_friends().await {
+                if let Ok(json) = serde_json::to_string(&updated) {
+                    l.on_friend_list_changed(json).await;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// 与 Go SyncAllJoinedGroupsAndMembersWithLock 对齐：先增量同步加入的群列表，再对每个群增量同步成员（复用 friend 的版本+增量模式）
+    async fn sync_all_joined_groups_and_members(&self) -> Result<()> {
+        const LOCAL_GROUPS_TABLE: &str = "local_groups";
+        const LOCAL_GROUP_ENTITIES_VERSION_TABLE: &str = "local_group_entities_version";
+        const MAX_SYNC_PULL_NUMBER: usize = 20;
+
+        let user_id = &self.config.user_id;
+
+        // 1) 增量同步加入的群列表（与 Go IncrSyncJoinGroup 一致）
+        let version_sync = self
+            .repository
+            .version_sync
+            .get_version_sync_for(LOCAL_GROUPS_TABLE, user_id)
+            .await?;
+        let (version, version_id) = version_sync
+            .as_ref()
+            .map(|v| (v.version, v.version_id.as_str()))
+            .unwrap_or((0, ""));
+
+        let resp = self
+            .api
+            .group
+            .get_incremental_join_groups(version, version_id)
+            .await?;
+
+        if resp.full {
+            let local = self.repository.group.get_joined_group_list().await?;
+            for g in &local {
+                let _ = self.repository.group.delete(&g.group_id).await;
+            }
+            for g in &resp.insert {
+                let local_group = server_group_to_local(g);
+                let _ = self.repository.group.insert(&local_group).await;
+            }
+        } else {
+            for group_id in &resp.delete {
+                let _ = self.repository.group.delete(group_id).await;
+            }
+            for g in &resp.insert {
+                let _ = self.repository.group.insert(&server_group_to_local(g)).await;
+            }
+            for g in &resp.update {
+                let local_group = server_group_to_local(g);
+                if self.repository.group.get_group_info_by_group_id(&local_group.group_id).await?.is_some() {
+                    let _ = self.repository.group.update(&local_group).await;
+                } else {
+                    let _ = self.repository.group.insert(&local_group).await;
+                }
+            }
+        }
+
+        let new_group_version = LocalVersionSync {
+            table_name: LOCAL_GROUPS_TABLE.to_string(),
+            entity_id: user_id.to_string(),
+            version: resp.version,
+            version_id: resp.version_id.clone(),
+        };
+        self.repository.version_sync.save_version_sync(&new_group_version).await?;
+
+        // 2) 对已加入的每个群增量同步成员（与 Go syncGroupAndMember 一致，分批拉取）
+        let joined = self.repository.group.get_joined_group_list().await?;
+        let group_ids: Vec<String> = joined.into_iter().map(|g| g.group_id).collect();
+
+        for chunk in group_ids.chunks(MAX_SYNC_PULL_NUMBER) {
+            let mut req_list: Vec<GetIncrementalGroupMemberReq> = Vec::with_capacity(chunk.len());
+            for group_id in chunk {
+                let lvs = self
+                    .repository
+                    .version_sync
+                    .get_version_sync_for(LOCAL_GROUP_ENTITIES_VERSION_TABLE, group_id)
+                    .await?;
+                req_list.push(GetIncrementalGroupMemberReq {
+                    group_id: group_id.clone(),
+                    version_id: lvs.as_ref().map(|v| v.version_id.as_str()).unwrap_or("").to_string(),
+                    version: lvs.as_ref().map(|v| v.version),
+                });
+            }
+
+            let batch = self.api.group.get_incremental_group_members_batch(&req_list).await?;
+            for (gid, member_resp) in batch {
+                if let Some(grp) = &member_resp.group {
+                    let local_group = server_group_to_local(grp);
+                    if self.repository.group.get_group_info_by_group_id(&local_group.group_id).await?.is_some() {
+                        let _ = self.repository.group.update(&local_group).await;
+                    } else {
+                        let _ = self.repository.group.insert(&local_group).await;
+                    }
+                }
+
+                if member_resp.full {
+                    let _ = self.repository.group_member.delete_all_members(&gid).await;
+                    for m in &member_resp.insert {
+                        let local_m = server_group_member_to_local(m);
+                        let _ = self.repository.group_member.insert(&local_m).await;
+                    }
+                } else {
+                    for uid in &member_resp.delete {
+                        let _ = self.repository.group_member.delete(&gid, uid).await;
+                    }
+                    for m in member_resp.insert.iter().chain(member_resp.update.iter()) {
+                        let local_m = server_group_member_to_local(m);
+                        if self.repository.group_member.get_by_group_id_user_id(&gid, &local_m.user_id).await?.is_some() {
+                            let _ = self.repository.group_member.update(&local_m).await;
+                        } else {
+                            let _ = self.repository.group_member.insert(&local_m).await;
+                        }
+                    }
+                }
+
+                let member_version = LocalVersionSync {
+                    table_name: LOCAL_GROUP_ENTITIES_VERSION_TABLE.to_string(),
+                    entity_id: gid.clone(),
+                    version: member_resp.version,
+                    version_id: member_resp.version_id.clone(),
+                };
+                let _ = self.repository.version_sync.save_version_sync(&member_version).await;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn apply_friends_full_sync(
+        &self,
+        server_friends: &[sdkws::FriendInfo],
+        local_friends: &[sdkws::FriendInfo],
+        is_full: bool,
+    ) -> Result<()> {
+        let local_map: HashMap<String, sdkws::FriendInfo> = local_friends
+            .iter()
+            .filter_map(|f| f.friend_user.as_ref().map(|u| (u.user_id.clone(), f.clone())))
+            .collect();
+        let server_map: HashMap<String, sdkws::FriendInfo> = server_friends
+            .iter()
+            .filter_map(|f| f.friend_user.as_ref().map(|u| (u.user_id.clone(), f.clone())))
+            .collect();
+        for (_, server_f) in server_map.iter() {
+            self.repository.friend.upsert_friend(server_f).await?;
+        }
+        if is_full {
+            let server_ids: HashSet<String> = server_map.keys().cloned().collect();
+            for (id, _) in local_map.iter() {
+                if !server_ids.contains(id) {
+                    self.repository.friend.delete_friend(id).await?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// 与 Go InitSyncProgress 一致（reinstalled 时进度起点）
     const INIT_SYNC_PROGRESS: i32 = 10;
 
@@ -1438,10 +1667,17 @@ impl ConversationHandle {
         if let Some(listener) = self.conversation_listener() {
             match flag {
                 sync_flag::APP_DATA_SYNC_START => {
+                    self.msg_sync_offset.store(0, Ordering::SeqCst);
                     listener.on_sync_server_start(true).await;
                     listener.on_sync_server_progress(1).await;
-                    // Go asyncWait: SyncAllJoinedGroupsAndMembersWithLock, IncrSyncFriends — 当前无群组/好友同步器，跳过
-                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 4 / 10).await; // 40%
+                    // Go asyncWait: SyncAllJoinedGroupsAndMembersWithLock, IncrSyncFriends
+                    if let Err(e) = self.sync_all_joined_groups_and_members().await {
+                        warn!("[conversation_handle] AppDataSyncStart sync_all_joined_groups_and_members 失败 err={}", e);
+                    }
+                    if let Err(e) = self.incr_sync_friends().await {
+                        warn!("[conversation_handle] AppDataSyncStart incr_sync_friends 失败 err={}", e);
+                    }
+                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 4 / 10).await; // 4，与 Go addInitProgress(4) 后 c.progress 一致
                     // Go syncWait: IncrSyncConversations, SyncAllConversationHashReadSeqs
                     if let Err(e) = self.incr_sync_conversations().await {
                         warn!("[conversation_handle] AppDataSyncStart incr_sync_conversations 失败 err={}", e);
@@ -1449,10 +1685,13 @@ impl ConversationHandle {
                     if let Err(e) = self.sync_unread_by_seq().await {
                         warn!("[conversation_handle] AppDataSyncStart sync_unread_by_seq 失败 err={}", e);
                     }
-                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 6 / 10).await; // 60%
-                    // Go asyncNoWait: SyncLoginUserInfoWithoutNotice, SyncAllBlackListWithoutNotice — 黑名单未实现
+                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS).await; // 10，与 Go addInitProgress(6) 后 c.progress=4+6 一致
+                    // Go asyncNoWait: SyncLoginUserInfoWithoutNotice, SyncAllBlackListWithoutNotice
                     if let Err(e) = self.sync_login_user_info(false).await {
                         warn!("[conversation_handle] SyncFlag(APP_DATA_SYNC_START) sync_login_user_info 失败 err={}", e);
+                    }
+                    if let Err(e) = self.sync_black_list(false).await {
+                        warn!("[conversation_handle] AppDataSyncStart sync_black_list 失败 err={}", e);
                     }
                 }
                 sync_flag::APP_DATA_SYNC_FINISH => {
@@ -1476,23 +1715,46 @@ impl ConversationHandle {
 
     /// 同步数据（对齐 Go syncData，notification.go）
     ///
-    /// 1. syncWait：SyncAllConversationHashReadSeqs（校正已读/未读 Seq）
-    /// 2. asyncNoWait：SyncLoginUserInfo、IncrSyncConversationsWithLock；Go 另有 SyncAllBlackList、SyncAllJoinedGroupsAndMembersWithLock、IncrSyncFriendsWithLock，当前未接入。
+    /// syncWait: SyncAllConversationHashReadSeqs；asyncNoWait 五项并发：SyncLoginUserInfo、SyncAllBlackList、SyncAllJoinedGroupsAndMembersWithLock、IncrSyncFriendsWithLock、IncrSyncConversationsWithLock
     #[instrument(skip(self))]
     pub async fn sync_data(&self) -> Result<()> {
         if let Err(e) = self.sync_unread_by_seq().await {
             error!("[conversation_handle] SyncData 中 sync_unread_by_seq 失败 err={}", e);
         }
-        if let Err(e) = self.sync_login_user_info(true).await {
+        let (r1, r2, r3, r4, r5) = tokio::join!(
+            self.sync_login_user_info(true),
+            self.sync_black_list(true),
+            self.sync_all_joined_groups_and_members(),
+            self.incr_sync_friends(),
+            self.incr_sync_conversations(),
+        );
+        if let Err(e) = r1 {
             error!("[conversation_handle] SyncData 中 sync_login_user_info 失败 err={}", e);
         }
-        self.incr_sync_conversations().await
+        if let Err(e) = r2 {
+            error!("[conversation_handle] SyncData 中 sync_black_list 失败 err={}", e);
+        }
+        if let Err(e) = r3 {
+            error!("[conversation_handle] SyncData 中 sync_all_joined_groups_and_members 失败 err={}", e);
+        }
+        if let Err(e) = r4 {
+            error!("[conversation_handle] SyncData 中 incr_sync_friends 失败 err={}", e);
+        }
+        r5
     }
 
-    /// 重装后消息同步（Go doMsgSyncByReinstalled）
-    #[instrument(skip(self, msgs), fields(convs = msgs.len(), total = _total))]
-    pub async fn do_msg_sync_by_reinstalled(&self, msgs: HashMap<String, sdkws::PullMsgs>, _total: i32) -> Result<()> {
-        self.do_msg_new(CmdNewMsgComeToConversation { msgs }).await
+    /// 重装后消息同步（Go doMsgSyncByReinstalled）：落库后按批上报 progress 10→100
+    #[instrument(skip(self, msgs), fields(convs = msgs.len(), total = total))]
+    pub async fn do_msg_sync_by_reinstalled(&self, msgs: HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
+        self.do_msg_new(CmdNewMsgComeToConversation { msgs: msgs.clone() }).await?;
+        let msg_len = msgs.len() as i32;
+        let new_offset = self.msg_sync_offset.fetch_add(msg_len, Ordering::SeqCst) + msg_len;
+        let total = total.max(1);
+        let progress = (new_offset * (100 - Self::INIT_SYNC_PROGRESS) / total + Self::INIT_SYNC_PROGRESS).min(100);
+        if let Some(l) = self.conversation_listener() {
+            l.on_sync_server_progress(progress).await;
+        }
+        Ok(())
     }
 
     /// 主循环：接收命令并分发（对齐 Go Conversation.Work）

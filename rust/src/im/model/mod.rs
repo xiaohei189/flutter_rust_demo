@@ -3,6 +3,7 @@ pub mod constant;
 pub mod conversation;
 pub mod notification;
 pub mod friend;
+pub mod group;
 pub mod message;
 pub mod ws;
 
