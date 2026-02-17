@@ -70,7 +70,10 @@ use crate::im::listener::GroupListener;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
-use crate::im::model::message::{local_chat_log_to_msg_struct, msg_handle_by_content_type_result, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog};
+use crate::im::model::message::{
+    local_chat_log_to_msg_struct, msg_handle_by_content_type_result, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, MarkConversationAsReadReq,
+    RevokeMsgReq,
+};
 use crate::im::model::ws::{msg_type, OpenIMReq, OpenIMResp, WsRpcEnvelope};
 use crate::im::util;
 use anyhow::{anyhow, Context, Result};
@@ -405,6 +408,75 @@ impl IMClient {
             constant::NOTIFICATION_CHAT_TYPE => format!("sn_{}_{}", source_id, self.config.user_id),
             _ => format!("g_{}", source_id),
         }
+    }
+
+    /// 标记会话消息已读（与 Go MarkConversationMessageAsRead 一致）：先取未读 seq，上报服务端，再本地标已读并会话未读清零
+    pub async fn mark_conversation_message_as_read(&self, conversation_id: &str) -> Result<()> {
+        let unread = self.local_repo.message.get_unread_by_conversation(conversation_id).await?;
+        let has_read_seq = unread.iter().map(|m| m.seq).max().unwrap_or(0);
+        let seqs: Vec<i64> = unread.iter().map(|m| m.seq).collect();
+        let req = MarkConversationAsReadReq {
+            conversation_id: conversation_id.to_string(),
+            user_id: self.config.user_id.clone(),
+            has_read_seq,
+            seqs: seqs.clone(),
+        };
+        let _ = self.api.message.mark_conversation_as_read(req).await;
+        let _ = self.local_repo.message.mark_conversation_as_read(conversation_id).await?;
+        if let Some(mut conv) = self.local_repo.conversation.get_conversation_by_id(conversation_id).await? {
+            conv.unread_count = 0;
+            let _ = self.local_repo.conversation.upsert_conversation(&conv).await;
+        }
+        Ok(())
+    }
+
+    /// 全部会话标记已读（与 Go MarkAllConversationMessageAsRead 一致）
+    pub async fn mark_all_conversation_message_as_read(&self) -> Result<()> {
+        let list = self.local_repo.conversation.get_all_conversations().await?;
+        for c in list {
+            if c.unread_count > 0 {
+                let _ = self.mark_conversation_message_as_read(&c.conversation_id).await;
+            }
+        }
+        Ok(())
+    }
+
+    /// 撤回消息（与 Go RevokeMessage 一致）：调用服务端撤回并依赖推送更新本地
+    pub async fn revoke_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        let msg = self.local_repo.message.get_message(conversation_id, client_msg_id).await?.ok_or_else(|| anyhow::anyhow!("message not found"))?;
+        let conv = self.local_repo.conversation.get_conversation_by_id(conversation_id).await?.ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
+        let req = RevokeMsgReq {
+            revoke_msg_client_id: client_msg_id.to_string(),
+            conversation_id: Some(conversation_id.to_string()),
+            user_id: Some(self.config.user_id.clone()),
+            seq: Some(msg.seq as u32),
+            session_type: Some(conv.conversation_type),
+        };
+        self.api.message.revoke_message(req).await?;
+        Ok(())
+    }
+
+    /// 仅从本地存储删除消息（与 Go DeleteMessageFromLocalStorage 一致）
+    pub async fn delete_message_from_local_storage(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        self.local_repo.message.delete_by_client_msg_id(conversation_id, client_msg_id).await
+    }
+
+    /// 删除消息：服务端删除并删本地（与 Go DeleteMessage 一致）
+    pub async fn delete_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        let msg = self
+            .local_repo
+            .message
+            .get_message(conversation_id, client_msg_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("message not found"))?;
+        let req = crate::im::model::message::DeleteMsgsReq {
+            conversation_id: conversation_id.to_string(),
+            seqs: vec![msg.seq],
+            user_id: self.config.user_id.clone(),
+            delete_sync_opt: None,
+        };
+        self.api.message.delete_msgs(req).await?;
+        self.local_repo.message.delete_by_client_msg_id(conversation_id, client_msg_id).await
     }
 
     /// 从本地 DB 查询单条消息（推送落库后可用）

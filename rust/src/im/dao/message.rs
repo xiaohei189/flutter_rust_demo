@@ -307,6 +307,20 @@ impl MessageRepo {
         Ok(rows.into_iter().map(row_to_log).collect())
     }
 
+    /// 将会话内所有他人消息标为已读（与 Go MarkConversationMessageAsRead 本地部分一致）
+    pub async fn mark_conversation_as_read(&self, conversation_id: &str) -> Result<i64> {
+        let table = self.table();
+        let res = sqlx::query(&format!(
+            "UPDATE {} SET is_read = 1 WHERE conversation_id = ? AND send_id != ?",
+            table
+        ))
+        .bind(conversation_id)
+        .bind(&self.login_user_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(res.rows_affected() as i64)
+    }
+
     pub async fn get_messages_by_seq(&self, conversation_id: &str, seqs: &[i64]) -> Result<Vec<LocalChatLog>> {
         if seqs.is_empty() {
             return Ok(vec![]);
