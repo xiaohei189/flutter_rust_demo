@@ -1429,18 +1429,36 @@ impl ConversationHandle {
         Ok(())
     }
 
-    /// 同步阶段标记（Go syncFlag）：MsgSyncBegin 时与 Go 一致在会话侧执行 syncData
+    /// 与 Go InitSyncProgress 一致（reinstalled 时进度起点）
+    const INIT_SYNC_PROGRESS: i32 = 10;
+
+    /// 同步阶段标记（Go syncFlag）：AppDataSyncStart 内容与 Go 对齐（进度 + syncWait 会话/已读 + asyncNoWait 用户/黑名单）；MsgSyncBegin 时执行 syncData
     #[instrument(skip(self), fields(flag = flag))]
     pub async fn sync_flag(&self, flag: i32) -> Result<()> {
         if let Some(listener) = self.conversation_listener() {
             match flag {
                 sync_flag::APP_DATA_SYNC_START => {
+                    listener.on_sync_server_start(true).await;
+                    listener.on_sync_server_progress(1).await;
+                    // Go asyncWait: SyncAllJoinedGroupsAndMembersWithLock, IncrSyncFriends — 当前无群组/好友同步器，跳过
+                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 4 / 10).await; // 40%
+                    // Go syncWait: IncrSyncConversations, SyncAllConversationHashReadSeqs
+                    if let Err(e) = self.incr_sync_conversations().await {
+                        warn!("[conversation_handle] AppDataSyncStart incr_sync_conversations 失败 err={}", e);
+                    }
+                    if let Err(e) = self.sync_unread_by_seq().await {
+                        warn!("[conversation_handle] AppDataSyncStart sync_unread_by_seq 失败 err={}", e);
+                    }
+                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 6 / 10).await; // 60%
+                    // Go asyncNoWait: SyncLoginUserInfoWithoutNotice, SyncAllBlackListWithoutNotice — 黑名单未实现
                     if let Err(e) = self.sync_login_user_info(false).await {
                         warn!("[conversation_handle] SyncFlag(APP_DATA_SYNC_START) sync_login_user_info 失败 err={}", e);
                     }
-                    listener.on_sync_server_start(true).await
                 }
-                sync_flag::APP_DATA_SYNC_FINISH => listener.on_sync_server_finish(true).await,
+                sync_flag::APP_DATA_SYNC_FINISH => {
+                    listener.on_sync_server_progress(100).await;
+                    listener.on_sync_server_finish(true).await
+                }
                 sync_flag::MSG_SYNC_BEGIN => {
                     listener.on_sync_server_start(false).await;
                     if let Err(e) = self.sync_data().await {
@@ -1458,20 +1476,16 @@ impl ConversationHandle {
 
     /// 同步数据（对齐 Go syncData，notification.go）
     ///
-    /// 1. 同步步骤（syncWait）：校正会话已读/未读 Seq（SyncAllConversationHashReadSeqs）
-    /// 2. 异步步骤（asyncNoWait）：增量同步会话（IncrSyncConversationsWithLock）
-    ///
-    /// Go 中还有 user/relation/group 等异步任务，当前仅实现会话相关。
+    /// 1. syncWait：SyncAllConversationHashReadSeqs（校正已读/未读 Seq）
+    /// 2. asyncNoWait：SyncLoginUserInfo、IncrSyncConversationsWithLock；Go 另有 SyncAllBlackList、SyncAllJoinedGroupsAndMembersWithLock、IncrSyncFriendsWithLock，当前未接入。
     #[instrument(skip(self))]
     pub async fn sync_data(&self) -> Result<()> {
-        // 1. 同步：拉取服务器 HasRead/MaxSeq，校正本地未读数
         if let Err(e) = self.sync_unread_by_seq().await {
             error!("[conversation_handle] SyncData 中 sync_unread_by_seq 失败 err={}", e);
         }
         if let Err(e) = self.sync_login_user_info(true).await {
             error!("[conversation_handle] SyncData 中 sync_login_user_info 失败 err={}", e);
         }
-        // 2. 增量同步会话列表
         self.incr_sync_conversations().await
     }
 
