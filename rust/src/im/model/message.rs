@@ -167,19 +167,11 @@ impl Default for SendMsgReq {
 }
 
 /// 将 SendMessageParams 转为 WS 实际发送的 sdkws::MsgData（集中补全发送人信息）
-pub fn params_to_ws_msg_data(
-    params: &SendMessageParams,
-    send_id: &str,
-    sender_platform_id: i32,
-    sender_nickname: &str,
-    sender_face_url: &str,
-) -> sdkws::MsgData {
+pub fn params_to_ws_msg_data(params: &SendMessageParams, send_id: &str, sender_platform_id: i32, sender_nickname: &str, sender_face_url: &str) -> sdkws::MsgData {
     let content = if params.message.is_empty() {
         vec![]
     } else {
-        serde_json::from_str::<Value>(&params.message)
-            .map(|v| serde_json::to_vec(&v).unwrap_or_default())
-            .unwrap_or_default()
+        serde_json::from_str::<Value>(&params.message).map(|v| serde_json::to_vec(&v).unwrap_or_default()).unwrap_or_default()
     };
     let create_time = chrono::Utc::now().timestamp_millis();
     let mut options = std::collections::HashMap::new();
@@ -220,16 +212,8 @@ pub fn send_message_params_to_req(params: &SendMessageParams, send_id: String) -
     } else {
         serde_json::from_str(&params.message).unwrap_or(serde_json::Value::Null)
     };
-    let recv_id = if params.recv_id.is_empty() {
-        None
-    } else {
-        Some(params.recv_id.clone())
-    };
-    let group_id = if params.group_id.is_empty() {
-        None
-    } else {
-        Some(params.group_id.clone())
-    };
+    let recv_id = if params.recv_id.is_empty() { None } else { Some(params.recv_id.clone()) };
+    let group_id = if params.group_id.is_empty() { None } else { Some(params.group_id.clone()) };
     let offline_push_info = if params.offline_push_info.is_empty() {
         None
     } else {
@@ -859,6 +843,33 @@ pub struct TypingStatus {
     pub msg_tip: String,
 }
 
+/// LocalChatLog 转 MsgStruct（对齐 Go LocalChatLogToMsgStruct），用于历史消息列表返回
+pub fn local_chat_log_to_msg_struct(log: &LocalChatLog) -> MsgStruct {
+    MsgStruct {
+        client_msg_id: Some(log.client_msg_id.clone()),
+        server_msg_id: Some(log.server_msg_id.clone()),
+        create_time: log.create_time,
+        send_time: log.send_time,
+        session_type: log.session_type,
+        send_id: Some(log.send_id.clone()),
+        recv_id: Some(log.recv_id.clone()),
+        msg_from: log.msg_from,
+        content_type: log.content_type,
+        sender_platform_id: log.sender_platform_id,
+        sender_nickname: Some(log.sender_nickname.clone()),
+        sender_face_url: Some(log.sender_face_url.clone()),
+        group_id: Some(log.group_id.clone()),
+        content: Some(log.content.clone()),
+        seq: log.seq,
+        is_read: log.is_read,
+        status: log.status,
+        attached_info: if log.attached_info.is_empty() { None } else { Some(log.attached_info.clone()) },
+        ex: if log.ex.is_empty() { None } else { Some(log.ex.clone()) },
+        local_ex: if log.local_ex.is_empty() { None } else { Some(log.local_ex.clone()) },
+        ..Default::default()
+    }
+}
+
 /// 解析 attached_info JSON，当 is_not_private 为 false 时设置 isPrivateChat=true 并写回（对齐 Go !isNotPrivate -> AttachedInfoElem.IsPrivateChat = true）
 fn attached_info_apply_is_private_impl(attached_info: &str, is_not_private: bool) -> String {
     let mut obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(attached_info).unwrap_or_default();
@@ -872,30 +883,22 @@ fn attached_info_apply_is_private_impl(attached_info: &str, is_not_private: bool
 pub fn msg_handle_by_content_type(content: &[u8], content_type: i32) -> String {
     let raw = String::from_utf8_lossy(content);
     let normalized = match content_type {
-        constant::TEXT => {
-            serde_json::from_str::<TextElem>(&raw)
-                .ok()
-                .and_then(|e| serde_json::to_string(&e).ok())
-                .or_else(|| {
-                    let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
-                    let content_str = v.get("content").and_then(|c| c.as_str()).map(String::from).or_else(|| {
-                        v.get("text")
-                            .and_then(|t| t.get("content"))
-                            .and_then(|c| c.as_str())
-                            .map(String::from)
-                    })?;
-                    serde_json::to_string(&TextElem { content: content_str }).ok()
-                })
-        }
+        constant::TEXT => serde_json::from_str::<TextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()).or_else(|| {
+            let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
+            let content_str = v
+                .get("content")
+                .and_then(|c| c.as_str())
+                .map(String::from)
+                .or_else(|| v.get("text").and_then(|t| t.get("content")).and_then(|c| c.as_str()).map(String::from))?;
+            serde_json::to_string(&TextElem { content: content_str }).ok()
+        }),
         constant::PICTURE => serde_json::from_str::<PictureElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VOICE => serde_json::from_str::<SoundElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VIDEO => serde_json::from_str::<VideoElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::FILE => serde_json::from_str::<FileElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::AT_TEXT => serde_json::from_str::<AtElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::LOCATION => serde_json::from_str::<LocationElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
-        constant::CUSTOM | constant::CUSTOM_NOT_TRIGGER_CONVERSATION | constant::CUSTOM_ONLINE_ONLY => {
-            serde_json::from_str::<CustomElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok())
-        }
+        constant::CUSTOM | constant::CUSTOM_NOT_TRIGGER_CONVERSATION | constant::CUSTOM_ONLINE_ONLY => serde_json::from_str::<CustomElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::TYPING => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::QUOTE => serde_json::from_str::<QuoteElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::MERGER => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
@@ -918,30 +921,22 @@ pub fn msg_handle_by_content_type(content: &[u8], content_type: i32) -> String {
 pub fn msg_handle_by_content_type_result(content: &[u8], content_type: i32) -> Result<String> {
     let raw = String::from_utf8_lossy(content);
     let normalized = match content_type {
-        constant::TEXT => {
-            serde_json::from_str::<TextElem>(&raw)
-                .ok()
-                .and_then(|e| serde_json::to_string(&e).ok())
-                .or_else(|| {
-                    let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
-                    let content_str = v.get("content").and_then(|c| c.as_str()).map(String::from).or_else(|| {
-                        v.get("text")
-                            .and_then(|t| t.get("content"))
-                            .and_then(|c| c.as_str())
-                            .map(String::from)
-                    })?;
-                    serde_json::to_string(&TextElem { content: content_str }).ok()
-                })
-        }
+        constant::TEXT => serde_json::from_str::<TextElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()).or_else(|| {
+            let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
+            let content_str = v
+                .get("content")
+                .and_then(|c| c.as_str())
+                .map(String::from)
+                .or_else(|| v.get("text").and_then(|t| t.get("content")).and_then(|c| c.as_str()).map(String::from))?;
+            serde_json::to_string(&TextElem { content: content_str }).ok()
+        }),
         constant::PICTURE => serde_json::from_str::<PictureElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VOICE => serde_json::from_str::<SoundElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::VIDEO => serde_json::from_str::<VideoElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::FILE => serde_json::from_str::<FileElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::AT_TEXT => serde_json::from_str::<AtElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::LOCATION => serde_json::from_str::<LocationElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
-        constant::CUSTOM | constant::CUSTOM_NOT_TRIGGER_CONVERSATION | constant::CUSTOM_ONLINE_ONLY => {
-            serde_json::from_str::<CustomElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok())
-        }
+        constant::CUSTOM | constant::CUSTOM_NOT_TRIGGER_CONVERSATION | constant::CUSTOM_ONLINE_ONLY => serde_json::from_str::<CustomElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::TYPING => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::QUOTE => serde_json::from_str::<QuoteElem>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
         constant::MERGER => serde_json::from_str::<serde_json::Value>(&raw).ok().and_then(|e| serde_json::to_string(&e).ok()),
@@ -951,11 +946,7 @@ pub fn msg_handle_by_content_type_result(content: &[u8], content_type: i32) -> R
     };
     match normalized {
         Some(s) => Ok(s),
-        None => Err(anyhow::anyhow!(
-            "msg_handle_by_content_type parse error contentType={} content_len={}",
-            content_type,
-            content.len()
-        )),
+        None => Err(anyhow::anyhow!("msg_handle_by_content_type parse error contentType={} content_len={}", content_type, content.len())),
     }
 }
 

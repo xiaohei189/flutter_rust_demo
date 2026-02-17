@@ -2,6 +2,9 @@
 pub const GET_NEWEST_SEQ: i32 = 1001;
 pub const PULL_MSG_BY_RANGE: i32 = 1002;
 pub const PULL_MSG_BY_SEQ_LIST: i32 = 1005;
+
+/// 单次按 seq 拉取补齐时最多请求的 seq 数量（对齐 Go PullMsgNumForReadDiffusion）
+pub const PULL_MSG_NUM_FOR_READ_DIFFUSION: usize = 50;
 pub const SEND_MSG: i32 = 1003;
 pub const PUSH_MSG: i32 = 2001;
 pub const KICK_ONLINE_MSG: i32 = 2002;

@@ -5,12 +5,12 @@ pub mod friend;
 pub mod http;
 
 pub mod listener;
-pub mod ws_rpc;
 pub mod logger;
 pub mod model;
 pub mod serialization;
 pub mod trace_context;
 pub mod util;
+pub mod ws_rpc;
 
 // 重新导出认证相关函数（从 http 模块）
 pub use http::login_async;
@@ -23,14 +23,15 @@ pub use model::{ConversationSyncerConfig, LocalVersionSync};
 pub use friend::{FriendSyncer, FriendSyncerConfig};
 
 // 重新导出消息相关类型和函数
-pub use listener::{AdvancedMsgListener, ConnListener, EmptyAdvancedMsgListener, EmptyConversationListener, EmptyUserListener, ConversationListener, UserListener};
-pub use model::message::{AtElem, AtInfo, CustomElem, FileElem, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem};
+pub use listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConversationListener, EmptyUserListener, UserListener};
+pub use model::message::{
+    AtElem, AtInfo, CustomElem, FileElem, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct,
+    PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem,
+};
 // DAO 统一出口
 pub use dao::{
-    AppVersionDao, BlackDao, ChatLogReactionExtensionsDao, ConversationDao, FriendDao, GroupDao,
-    GroupMemberDao, LocalAppSDKVersion, LocalBlack, LocalChatLogReactionExtensions, LocalGroup,
-    LocalGroupMember, LocalSendingMessage, LocalStranger, LocalUpload, LocalUser, MessageRepo,
-    SendingMessagesDao, StrangerDao, UploadDao, UserDao, VersionSyncDao,
+    AppVersionDao, BlackDao, ChatLogReactionExtensionsDao, ConversationDao, FriendDao, GroupDao, GroupMemberDao, LocalAppSDKVersion, LocalBlack, LocalChatLogReactionExtensions, LocalGroup,
+    LocalGroupMember, LocalSendingMessage, LocalStranger, LocalUpload, LocalUser, MessageRepo, SendingMessagesDao, StrangerDao, UploadDao, UserDao, VersionSyncDao,
 };
 
 // 重新导出模型相关结构体和函数

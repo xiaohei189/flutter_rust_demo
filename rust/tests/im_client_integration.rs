@@ -16,6 +16,7 @@
 //! cargo test --test im_client_integration send_text_to_first -- --nocapture
 //! cargo test --test im_client_integration send_multiple_message_types -- --nocapture
 //! cargo test --test im_client_integration get_friends -- --nocapture
+//! cargo test --test im_client_integration get_group_history_messages -- --nocapture
 //! ```
 
 mod common;
@@ -23,6 +24,7 @@ mod common;
 use anyhow::anyhow;
 use openim_protocol::constant;
 use openim_protocol::sdkws;
+use rust_lib_flutter_rust_demo::im::GetAdvancedHistoryMessageListParams;
 use std::time::Duration;
 use tokio::time::timeout;
 use tracing::{error, info};
@@ -257,3 +259,72 @@ async fn get_groups_placeholder() -> anyhow::Result<()> {
     let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
     Ok(())
 }
+
+// ---------- 历史消息：加载第一个群的所有历史消息 ----------
+
+#[tokio::test]
+async fn get_group_history_messages() -> anyhow::Result<()> {
+    setup_logger();
+    let (client, _) = create_and_start_client("history").await?;
+    let list = client.get_all_conversations().await?;
+    let (conversation_id, group_id, _conversation_type) = match first_group_from_list(&list) {
+        Some(t) => t,
+        None => {
+            eprintln!("[集成测试-历史消息] 无群会话，跳过");
+            let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+            return Ok(());
+        }
+    };
+    const PAGE_SIZE: i32 = 20;
+    let params = GetAdvancedHistoryMessageListParams {
+        conversation_id: conversation_id.clone(),
+        start_client_msg_id: String::new(),
+        count: PAGE_SIZE,
+        view_type: 0,
+    };
+    let mut all_messages = Vec::new();
+    let mut start_client_msg_id = String::new();
+    loop {
+        let params_page = GetAdvancedHistoryMessageListParams {
+            start_client_msg_id: start_client_msg_id.clone(),
+            ..params.clone()
+        };
+        let cb = client.get_advanced_history_message_list(params_page).await?;
+        assert_eq!(cb.err_code, 0, "err_code 应为 0");
+        let n = cb.message_list.len();
+        all_messages.extend(cb.message_list);
+        if cb.is_end || n == 0 {
+            break;
+        }
+        start_client_msg_id = all_messages
+            .last()
+            .and_then(|m| m.client_msg_id.as_deref())
+            .unwrap_or("")
+            .to_string();
+        if start_client_msg_id.is_empty() {
+            break;
+        }
+    }
+    eprintln!(
+        "[集成测试-历史消息] 第一个群 conversation_id={} group_id={} 共加载历史消息 {} 条",
+        conversation_id,
+        group_id,
+        all_messages.len()
+    );
+    for (i, msg) in all_messages.iter().take(5).enumerate() {
+        eprintln!(
+            "  [{}] client_msg_id={:?} seq={} content_type={} send_time={}",
+            i,
+            msg.client_msg_id,
+            msg.seq,
+            msg.content_type,
+            msg.send_time
+        );
+    }
+    if all_messages.len() > 5 {
+        eprintln!("  ... 共 {} 条", all_messages.len());
+    }
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
