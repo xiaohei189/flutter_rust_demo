@@ -4,6 +4,10 @@
 // ----- auth -----
 /// ParseToken = "/auth/parse_token"
 pub const AUTH_PARSE_TOKEN: &str = "/auth/parse_token";
+/// GetAdminToken = "/auth/get_admin_token"
+pub const AUTH_GET_ADMIN_TOKEN: &str = "/auth/get_admin_token";
+/// GetUserToken = "/auth/get_user_token"
+pub const AUTH_GET_USER_TOKEN: &str = "/auth/get_user_token";
 
 // ----- user -----
 /// GetUsersInfo = "/user/get_users_info"
