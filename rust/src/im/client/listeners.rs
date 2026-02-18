@@ -76,10 +76,7 @@ impl ConversationListener for EmptyConversationListener {
         warn!("[EmptyConversationListener] on_conversation_changed {:?}", conversation_list);
     }
     async fn on_total_unread_message_count_changed(&self, total_unread_count: i32) {
-        warn!(
-            "[EmptyConversationListener] on_total_unread_message_count_changed total_unread_count={}",
-            total_unread_count
-        );
+        warn!("[EmptyConversationListener] on_total_unread_message_count_changed total_unread_count={}", total_unread_count);
     }
     async fn on_conversation_user_input_status_changed(&self, change: String) {
         warn!("[EmptyConversationListener] on_conversation_user_input_status_changed {:?}", change);

@@ -6,7 +6,6 @@ use crate::im::model::constant::sync_flag;
 use crate::im::model::message::SeqRange as SeqRangeModel;
 use crate::im::model::ws::{self, WsRpcEnvelope};
 use crate::im::util;
-use crate::im::ws_rpc;
 use anyhow::{anyhow, Result};
 use openim_protocol::{prost, sdkws};
 use sqlx::{Pool, Sqlite};
@@ -406,19 +405,12 @@ impl MessageHandle {
 
     /// 触发有新消息的会话事件（msg_id 用于 tracing 串联；from_push true=在线推送，false=离线/同步）
     #[tracing::instrument(skip(self, msgs), fields(msg_id = ?msg_id, convs = msgs.len()))]
-    async fn trigger_conversation(
-        &self,
-        msg_id: Option<&str>,
-        msgs: &std::collections::HashMap<String, sdkws::PullMsgs>,
-        _from_push: bool,
-    ) -> Result<()> {
+    async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, _from_push: bool) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
-        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome(
-            CmdNewMsgComeToConversation { msgs: msgs.clone() },
-        )));
+        let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome(CmdNewMsgComeToConversation { msgs: msgs.clone() })));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
@@ -526,9 +518,7 @@ impl MessageHandle {
 
     #[tracing::instrument(skip(self))]
     async fn get_newest_seq(&self) -> Result<HashMap<String, i64>> {
-        let req = self.make_ws_req(constant::GET_NEWEST_SEQ, sdkws::GetMaxSeqReq { user_id: self.login_user_id.clone() })?;
-        let resp = self.send_ws_req_wait(req).await?;
-        let decoded: sdkws::GetMaxSeqResp = self.decode_ws_resp(&resp)?;
+        let decoded: sdkws::GetMaxSeqResp = self.send_ws_req(constant::GET_NEWEST_SEQ, &sdkws::GetMaxSeqReq { user_id: self.login_user_id.clone() }).await?;
         let max_seqs = decoded.max_seqs;
         tracing::event!(
             tracing::Level::DEBUG,
@@ -541,52 +531,43 @@ impl MessageHandle {
 
     #[tracing::instrument(skip(self, ranges))]
     async fn pull_msg_by_range(&self, ranges: Vec<SeqRangeModel>) -> Result<sdkws::PullMessageBySeqsResp> {
-        let req = self.make_ws_req(
-            constant::PULL_MSG_BY_RANGE,
-            sdkws::PullMessageBySeqsReq {
-                user_id: self.login_user_id.clone(),
-                seq_ranges: ranges
-                    .into_iter()
-                    .map(|r| sdkws::SeqRange {
-                        conversation_id: r.conversation_id,
-                        begin: r.begin,
-                        end: r.end,
-                        num: r.num,
-                    })
-                    .collect(),
-                order: 0,
-            },
-        )?;
-        let resp = self.send_ws_req_wait(req).await?;
-        let decoded: sdkws::PullMessageBySeqsResp = self.decode_ws_resp(&resp)?;
-        Ok(decoded)
-    }
-    /// 构造通用 WS 请求（protobuf -> bytes）；operation_id 使用当前 OTel trace_id:span_id 便于响应端通过 trace_id 建子 span
-    fn make_ws_req<M: prost::Message>(&self, req_identifier: i32, msg: M) -> Result<ws::OpenIMReq> {
-        let data = msg.encode_to_vec();
-        Ok(crate::im::model::ws::OpenIMReq {
-            req_identifier,
-            token: String::new(),
-            send_id: self.login_user_id.clone(),
-            operation_id: crate::im::trace_context::operation_id_from_otel(),
-            msg_incr: crate::im::util::make_msg_incr(),
-            data,
-        })
+        let req = sdkws::PullMessageBySeqsReq {
+            user_id: self.login_user_id.clone(),
+            seq_ranges: ranges
+                .into_iter()
+                .map(|r| sdkws::SeqRange {
+                    conversation_id: r.conversation_id,
+                    begin: r.begin,
+                    end: r.end,
+                    num: r.num,
+                })
+                .collect(),
+            order: 0,
+        };
+        self.send_ws_req(constant::PULL_MSG_BY_RANGE, &req).await
     }
 
-    /// 通过共享的 ws_send_tx 发送请求并等待响应（使用公共 ws_rpc 工具）
-    async fn send_ws_req_wait(&self, req: ws::OpenIMReq) -> Result<ws::OpenIMResp> {
+    /// 通用 WS 请求：入参为 pb 请求体 + req_identifier，出参为 pb 响应体（与 IMClient::send_ws_req 对齐）
+    async fn send_ws_req<Req, Resp>(&self, req_identifier: i32, req: &Req) -> Result<Resp>
+    where
+        Req: prost::Message,
+        Resp: prost::Message + Default,
+    {
         let tx = self
             .ws_send_tx
             .read()
             .map_err(|e| anyhow!("ws_send_tx lock: {}", e))?
             .clone()
             .ok_or_else(|| anyhow!("ws rpc channel not set"))?;
-        ws_rpc::send_ws_req_wait(&tx, req, Duration::from_secs(LONG_CONN_TIMEOUT_SECS)).await
-    }
-
-    fn decode_ws_resp<T: prost::Message + Default>(&self, resp: &crate::im::model::ws::OpenIMResp) -> Result<T> {
-        ws_rpc::decode_ws_resp(resp)
+        let open_req = ws::OpenIMReq {
+            req_identifier,
+            token: String::new(),
+            send_id: self.login_user_id.clone(),
+            operation_id: crate::im::trace_context::operation_id_from_otel(),
+            msg_incr: util::make_msg_incr(),
+            data: req.encode_to_vec(),
+        };
+        util::send_ws_req_wait::<Resp>(&tx, open_req, Duration::from_secs(LONG_CONN_TIMEOUT_SECS)).await
     }
 }
 

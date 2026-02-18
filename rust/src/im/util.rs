@@ -1,4 +1,10 @@
+use anyhow::{anyhow, Result};
+use openim_protocol::prost::Message;
+use tokio::sync::{mpsc, oneshot};
+use tokio::time::{timeout, Duration};
 use uuid::Uuid;
+
+use crate::im::model::ws::{OpenIMReq, OpenIMResp, WsRpcEnvelope};
 
 /// 生成操作 ID（时间戳）
 pub fn make_operation_id() -> String {
@@ -67,4 +73,22 @@ pub fn content_type_name(content_type: i32) -> &'static str {
         _ if content_type >= constant::CONTENT_TYPE_BEGIN && content_type < constant::NOTIFICATION_BEGIN => "消息",
         _ => "未知",
     }
+}
+
+/// 通过 WS 发送 OpenIMReq，等待 OpenIMResp 并解码为泛型 Resp（带超时，含业务错误校验）
+pub async fn send_ws_req_wait<Resp>(tx: &mpsc::UnboundedSender<WsRpcEnvelope>, req: OpenIMReq, timeout_dur: Duration) -> Result<Resp>
+where
+    Resp: Message + Default,
+{
+    let (resp_tx, resp_rx) = oneshot::channel();
+    tx.send((req, Some(resp_tx))).map_err(|_| anyhow!("ws rpc channel closed"))?;
+    let ws_resp = match timeout(timeout_dur, resp_rx).await {
+        Ok(Ok(resp)) => resp,
+        Ok(Err(e)) => return Err(anyhow!("ws response channel dropped: {:?}", e)),
+        Err(_) => return Err(anyhow!("ws rpc timeout")),
+    };
+    if ws_resp.err_code != 0 {
+        return Err(anyhow!("ws rpc err code={}, msg={}", ws_resp.err_code, ws_resp.err_msg));
+    }
+    Resp::decode(ws_resp.data.as_slice()).map_err(|e| anyhow!("decode ws resp: {}", e))
 }

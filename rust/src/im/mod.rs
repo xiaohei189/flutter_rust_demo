@@ -7,7 +7,6 @@ pub mod model;
 pub mod serialization;
 pub mod trace_context;
 pub mod util;
-pub mod ws_rpc;
 
 // 重新导出认证相关函数（从 http_client 模块）
 pub use http_client::login_async;
