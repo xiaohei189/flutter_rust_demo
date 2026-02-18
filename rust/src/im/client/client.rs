@@ -56,8 +56,8 @@ impl Client {
     }
 }
 
-use crate::im::api::api::Api;
-use crate::im::api::friend::FriendApi;
+use crate::im::http_client::friend::FriendApi;
+use crate::im::http_client::Api;
 use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;

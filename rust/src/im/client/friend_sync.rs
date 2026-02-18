@@ -2,7 +2,7 @@
 //!
 //! 实现 OpenIM SDK 的好友增量同步逻辑，参考 Go 版本的实现
 
-use crate::im::api::api::Api;
+use crate::im::http_client::Api;
 use crate::im::dao::FriendDao;
 use crate::im::dao::repository::Repository;
 use crate::im::listener::FriendListener;

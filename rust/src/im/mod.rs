@@ -1,7 +1,6 @@
-pub mod api;
 pub mod client;
 pub mod dao;
-pub mod http;
+pub mod http_client;
 
 pub mod listener;
 pub mod logger;
@@ -11,8 +10,8 @@ pub mod trace_context;
 pub mod util;
 pub mod ws_rpc;
 
-// 重新导出认证相关函数（从 http 模块）
-pub use http::login_async;
+// 重新导出认证相关函数（从 http_client 模块）
+pub use http_client::login_async;
 
 // 重新导出会话相关类型（ConversationSyncer 已移除，逻辑并入 ConversationHandle）
 pub use client::conversation_handle::ConversationHandle;

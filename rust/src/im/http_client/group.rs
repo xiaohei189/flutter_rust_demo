@@ -1,7 +1,8 @@
 //! 群组 HTTP API 客户端，路径与 openim-sdk-core pkg/api/api.go 完全一致
 
-use crate::im::api::routes;
-use crate::im::http::{extract_data, make_client, HttpClient};
+use super::response_extractor::extract_data;
+use super::routes;
+use super::{make_client, HttpClient};
 use crate::im::model::conversation::RequestPagination;
 use crate::im::model::group::{IncrementalJoinGroupResp, ServerGroupInfo, ServerGroupMemberFullInfo};
 use crate::im::model::message::EmptyResp;

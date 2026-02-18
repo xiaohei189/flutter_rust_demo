@@ -1,7 +1,8 @@
 //! 好友 HTTP API，路径与 openim-sdk-core pkg/api/api.go 完全一致
 
-use crate::im::api::routes;
-use crate::im::http::{extract_data, make_client, HttpClient};
+use super::response_extractor::extract_data;
+use super::routes;
+use super::{make_client, HttpClient};
 use crate::im::model::conversation::RequestPagination;
 use crate::im::model::friend::{AllFriendsResp, BlackList, FriendRequest, FriendRequestsResp, IncrementalFriendsResp};
 use crate::im::model::message::EmptyResp;
@@ -479,7 +480,7 @@ impl FriendApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::im::http::login_async;
+    use super::auth::login_async;
     use crate::im::logger::logger::init_logger;
     use test_context::test_context;
     use test_context::AsyncTestContext;

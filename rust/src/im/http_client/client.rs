@@ -1,4 +1,4 @@
-use crate::im::http::middleware::{LoggingMiddleware, RequestIdMiddleware, TokenMiddleware};
+use super::middleware::{LoggingMiddleware, RequestIdMiddleware, TokenMiddleware};
 use reqwest_middleware::ClientBuilder;
 
 /// 基于 reqwest-middleware 的 HTTP 客户端（带 request-id、token、logging 等中间件）

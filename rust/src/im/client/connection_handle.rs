@@ -405,7 +405,7 @@ mod tests {
     use super::{ClientConfig, ConnectionHandle};
     use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
     use crate::im::listener::FriendListener;
-    use crate::im::http::login_async;
+    use crate::im::http_client::login_async;
     use crate::im::listener::{AdvancedMsgListener, ConversationListener};
     use crate::im::logger::logger::init_logger;
     use crate::im::model::SeqRange;

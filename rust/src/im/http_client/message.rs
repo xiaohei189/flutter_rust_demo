@@ -1,6 +1,7 @@
 //! 消息 HTTP API，路径与 openim-sdk-core pkg/api/api.go 完全一致
-use crate::im::api::routes;
-use crate::im::http::{extract_data, make_client, HttpClient};
+use super::response_extractor::extract_data;
+use super::routes;
+use super::{make_client, HttpClient};
 use crate::im::model::message::{
     BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp,
     GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp, GetNewestSeqReq, GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
@@ -130,7 +131,7 @@ impl MessageApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::im::http::login_async;
+    use super::auth::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::message::{
         BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp, MarkConversationAsReadReq,

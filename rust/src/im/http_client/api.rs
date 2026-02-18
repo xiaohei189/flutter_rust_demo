@@ -1,9 +1,9 @@
-use crate::im::api::auth::AuthApi;
-use crate::im::api::conversation::ConversationApi;
-use crate::im::api::friend::FriendApi;
-use crate::im::api::group::GroupApi;
-use crate::im::api::message::MessageApi;
-use crate::im::api::user::UserApi;
+use super::conversation::ConversationApi;
+use super::friend::FriendApi;
+use super::group::GroupApi;
+use super::message::MessageApi;
+use super::token::AuthApi;
+use super::user::UserApi;
 
 #[derive(Clone)]
 pub struct Api {

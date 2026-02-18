@@ -1,7 +1,8 @@
 //! Auth HTTP API：GetAdminToken、GetUserToken，与 openim-sdk-core pkg/api/api.go 对齐
 
-use crate::im::api::routes;
-use crate::im::http::{extract_data, make_client, make_client_without_token, HttpClient};
+use super::response_extractor::extract_data;
+use super::routes;
+use super::{make_client, make_client_without_token, HttpClient};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

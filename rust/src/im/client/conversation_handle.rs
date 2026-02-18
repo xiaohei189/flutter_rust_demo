@@ -2,7 +2,7 @@
 //!
 //! 合并原 conversation/service 的会话同步逻辑，通过命令通道接收消息同步器下发的会话命令。
 
-use crate::im::api::api::Api;
+use crate::im::http_client::Api;
 use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
@@ -10,7 +10,7 @@ use crate::im::dao::user::LocalUser;
 use crate::im::listener::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener, GroupListener, UserListener};
 use crate::im::model::friend::BlackList;
-use crate::im::api::group::GetIncrementalGroupMemberReq;
+use crate::im::http_client::group::GetIncrementalGroupMemberReq;
 use crate::im::model::constant::sync_flag;
 use crate::im::model::constant::RECEIVE_MESSAGE;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};

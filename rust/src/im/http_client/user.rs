@@ -1,7 +1,8 @@
 //! 用户 HTTP API，路径与 openim-sdk-core pkg/api/api.go 完全一致
 
-use crate::im::api::routes;
-use crate::im::http::{extract_data, make_client, HttpClient};
+use super::response_extractor::extract_data;
+use super::routes;
+use super::{make_client, HttpClient};
 use crate::im::model::message::EmptyResp;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

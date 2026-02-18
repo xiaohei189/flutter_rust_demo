@@ -1,7 +1,8 @@
 //! 会话 HTTP API，路径与 openim-sdk-core pkg/api/api.go 完全一致
 
-use crate::im::api::routes;
-use crate::im::http::{extract_data, make_client, HttpClient};
+use super::response_extractor::extract_data;
+use super::routes;
+use super::{make_client, HttpClient};
 use crate::im::model::conversation::{
     AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
     GetSortedConversationListResp, IncrementalConversationResp, OwnerConversationReq, SetConversationsReq,
@@ -241,7 +242,7 @@ impl ConversationApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::im::http::login_async;
+    use super::auth::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::conversation::{GetConversationReq, GetConversationsReq, GetSortedConversationListReq, OwnerConversationReq, RequestPagination, SetConversationsReq};
     use test_context::{test_context, AsyncTestContext};
