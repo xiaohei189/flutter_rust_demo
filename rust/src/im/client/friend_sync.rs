@@ -1,11 +1,11 @@
-//! 好友同步服务层
+//! 好友同步服务层（由 im/friend/service 迁入 client 目录）
 //!
 //! 实现 OpenIM SDK 的好友增量同步逻辑，参考 Go 版本的实现
 
 use crate::im::api::api::Api;
 use crate::im::dao::FriendDao;
 use crate::im::dao::repository::Repository;
-use crate::im::friend::{EmptyFriendListener, FriendListener};
+use crate::im::listener::FriendListener;
 use crate::im::model::conversation::LocalVersionSync;
 use crate::im::model::friend::FriendSyncerConfig;
 use anyhow::Result;

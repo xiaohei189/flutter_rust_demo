@@ -67,7 +67,7 @@ use crate::im::dao::group_member::LocalGroupMember;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
 use crate::im::dao::black::LocalBlack;
-use crate::im::friend::FriendListener;
+use crate::im::listener::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
 use crate::im::listener::GroupListener;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};

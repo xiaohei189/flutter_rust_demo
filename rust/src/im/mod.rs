@@ -1,7 +1,6 @@
 pub mod api;
 pub mod client;
 pub mod dao;
-pub mod friend;
 pub mod http;
 
 pub mod listener;
@@ -19,8 +18,9 @@ pub use http::login_async;
 pub use client::conversation_handle::ConversationHandle;
 pub use model::{ConversationSyncerConfig, LocalVersionSync};
 
-// 重新导出好友相关类型和函数
-pub use friend::{FriendSyncer, FriendSyncerConfig};
+// 重新导出好友同步（FriendSyncer 在 client，FriendSyncerConfig 在 model::friend）
+pub use client::FriendSyncer;
+pub use model::friend::FriendSyncerConfig;
 
 // 重新导出消息相关类型和函数
 pub use listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConversationListener, EmptyUserListener, UserListener};

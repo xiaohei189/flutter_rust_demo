@@ -7,7 +7,7 @@ use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
-use crate::im::friend::FriendListener;
+use crate::im::listener::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener, GroupListener, UserListener};
 use crate::im::model::friend::BlackList;
 use crate::im::api::group::GetIncrementalGroupMemberReq;

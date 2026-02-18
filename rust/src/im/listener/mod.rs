@@ -5,6 +5,6 @@ pub mod callbacks;
 pub use callbacks::{
     AdvancedMsgListener, ConnListener, ConversationListener, CustomBusinessListener,
     EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener,
-    EmptyCustomBusinessListener, EmptyGroupListener, EmptyMessageKvInfoListener, EmptyUserListener,
-    GroupListener, MessageKvInfoListener, UserListener,
+    EmptyCustomBusinessListener, EmptyFriendListener, EmptyGroupListener, EmptyMessageKvInfoListener, EmptyUserListener,
+    FriendListener, GroupListener, MessageKvInfoListener, UserListener,
 };

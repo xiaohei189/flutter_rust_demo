@@ -206,3 +206,25 @@ pub struct EmptyMessageKvInfoListener;
 impl MessageKvInfoListener for EmptyMessageKvInfoListener {
     async fn on_message_kv_info_changed(&self, _message_changed_list: String) {}
 }
+
+// ============== OnFriendListener（好友/关系监听器） ==============
+
+/// 好友监听器（Go: RelationListener 的一部分能力）
+#[async_trait]
+pub trait FriendListener: Send + Sync {
+    /// 好友列表发生变更（新增或更新），参数为 JSON 数组字符串
+    async fn on_friend_list_changed(&self, friends_json: String);
+    /// 黑名单列表发生变更（全量同步结果），参数为 JSON 数组字符串
+    async fn on_black_list_changed(&self, blacks_json: String);
+    /// 好友申请列表发生变更（全量同步结果），参数为 JSON 数组字符串
+    async fn on_friend_request_list_changed(&self, requests_json: String);
+}
+
+pub struct EmptyFriendListener;
+
+#[async_trait]
+impl FriendListener for EmptyFriendListener {
+    async fn on_friend_list_changed(&self, _friends_json: String) {}
+    async fn on_black_list_changed(&self, _blacks_json: String) {}
+    async fn on_friend_request_list_changed(&self, _requests_json: String) {}
+}

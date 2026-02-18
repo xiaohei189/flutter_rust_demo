@@ -7,7 +7,9 @@ use crate::im::client::client::ClientConfig;
 use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::dao::MessageRepo;
-use crate::im::friend::{FriendListener, FriendSyncer, FriendSyncerConfig};
+use crate::im::client::FriendSyncer;
+use crate::im::listener::FriendListener;
+use crate::im::model::friend::FriendSyncerConfig;
 use crate::im::listener::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
@@ -402,7 +404,7 @@ mod tests {
 
     use super::{ClientConfig, ConnectionHandle};
     use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
-    use crate::im::friend::FriendListener;
+    use crate::im::listener::FriendListener;
     use crate::im::http::login_async;
     use crate::im::listener::{AdvancedMsgListener, ConversationListener};
     use crate::im::logger::logger::init_logger;
