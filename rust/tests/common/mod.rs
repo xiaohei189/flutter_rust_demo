@@ -8,7 +8,7 @@ use chrono::Utc;
 use once_cell::sync::Lazy;
 use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, IMClient};
 use rust_lib_flutter_rust_demo::im::dao::Repository;
-use rust_lib_flutter_rust_demo::im::http::auth::LoginData;
+use rust_lib_flutter_rust_demo::im::http_client::auth::LoginData;
 use rust_lib_flutter_rust_demo::im::listener::AdvancedMsgListener;
 use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::login_async;
