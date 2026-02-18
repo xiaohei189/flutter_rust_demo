@@ -5,7 +5,7 @@
 use crate::im::http_client::Api;
 use crate::im::dao::FriendDao;
 use crate::im::dao::repository::Repository;
-use crate::im::listener::FriendListener;
+use crate::im::client::FriendListener;
 use crate::im::model::conversation::LocalVersionSync;
 use crate::im::model::friend::FriendSyncerConfig;
 use anyhow::Result;

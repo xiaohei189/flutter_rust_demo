@@ -1,11 +1,10 @@
-//! 与 open_im_sdk_callback/callback_client.go 对齐的监听器回调（合并 conn / conversation / message，并补齐缺失）
+//! 与 open_im_sdk_callback/callback_client.go 对齐的监听器回调（由 listener/callbacks 迁入 client）
 
 use async_trait::async_trait;
-use tracing::{info, warn};
+use tracing::warn;
 
 // ============== OnConnListener ==============
 
-/// 连接监听器（Go: OnConnListener）
 #[async_trait]
 pub trait ConnListener: Send + Sync {
     async fn on_connecting(&self);
@@ -42,7 +41,6 @@ impl ConnListener for EmptyConnListener {
 
 // ============== OnConversationListener ==============
 
-/// 会话监听器（Go: OnConversationListener）
 #[async_trait]
 pub trait ConversationListener: Send + Sync {
     async fn on_sync_server_start(&self, reinstalled: bool);
@@ -90,7 +88,6 @@ impl ConversationListener for EmptyConversationListener {
 
 // ============== OnAdvancedMsgListener ==============
 
-/// 高级消息监听器（Go: OnAdvancedMsgListener）
 #[async_trait]
 pub trait AdvancedMsgListener: Send + Sync {
     async fn on_recv_new_message(&self, message: String);
@@ -125,9 +122,8 @@ impl AdvancedMsgListener for EmptyAdvancedMsgListener {
     }
 }
 
-// ============== OnGroupListener（Go 有，Rust 补齐） ==============
+// ============== OnGroupListener ==============
 
-/// 群组监听器（Go: OnGroupListener）
 #[async_trait]
 pub trait GroupListener: Send + Sync {
     async fn on_joined_group_added(&self, group_info: String);
@@ -160,9 +156,8 @@ impl GroupListener for EmptyGroupListener {
     async fn on_group_application_rejected(&self, _group_application: String) {}
 }
 
-// ============== OnUserListener（Go 有，Rust 补齐） ==============
+// ============== OnUserListener ==============
 
-/// 用户监听器（Go: OnUserListener）
 #[async_trait]
 pub trait UserListener: Send + Sync {
     async fn on_self_info_updated(&self, user_info: String);
@@ -177,9 +172,8 @@ impl UserListener for EmptyUserListener {
     async fn on_user_status_changed(&self, _user_online_status: String) {}
 }
 
-// ============== OnCustomBusinessListener（Go 有，Rust 补齐） ==============
+// ============== OnCustomBusinessListener ==============
 
-/// 自定义业务消息监听器（Go: OnCustomBusinessListener）
 #[async_trait]
 pub trait CustomBusinessListener: Send + Sync {
     async fn on_recv_custom_business_message(&self, business_message: String);
@@ -192,9 +186,8 @@ impl CustomBusinessListener for EmptyCustomBusinessListener {
     async fn on_recv_custom_business_message(&self, _business_message: String) {}
 }
 
-// ============== OnMessageKvInfoListener（Go 有，Rust 补齐） ==============
+// ============== OnMessageKvInfoListener ==============
 
-/// 消息 KV 变更监听器（Go: OnMessageKvInfoListener）
 #[async_trait]
 pub trait MessageKvInfoListener: Send + Sync {
     async fn on_message_kv_info_changed(&self, message_changed_list: String);
@@ -207,16 +200,12 @@ impl MessageKvInfoListener for EmptyMessageKvInfoListener {
     async fn on_message_kv_info_changed(&self, _message_changed_list: String) {}
 }
 
-// ============== OnFriendListener（好友/关系监听器） ==============
+// ============== OnFriendListener ==============
 
-/// 好友监听器（Go: RelationListener 的一部分能力）
 #[async_trait]
 pub trait FriendListener: Send + Sync {
-    /// 好友列表发生变更（新增或更新），参数为 JSON 数组字符串
     async fn on_friend_list_changed(&self, friends_json: String);
-    /// 黑名单列表发生变更（全量同步结果），参数为 JSON 数组字符串
     async fn on_black_list_changed(&self, blacks_json: String);
-    /// 好友申请列表发生变更（全量同步结果），参数为 JSON 数组字符串
     async fn on_friend_request_list_changed(&self, requests_json: String);
 }
 

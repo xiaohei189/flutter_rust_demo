@@ -2,8 +2,7 @@
 //!
 //! 将连接、会话、消息等各类监听器集中在一个结构体中，便于传递和扩展。
 
-use crate::im::listener::FriendListener;
-use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, GroupListener, UserListener};
+use super::listeners::{AdvancedMsgListener, ConnListener, ConversationListener, FriendListener, GroupListener, UserListener};
 use std::sync::Arc;
 
 /// 客户端全局回调（连接、会话、消息、好友、用户、群组等），各字段代表一种类型，后续扩展时新增字段即可

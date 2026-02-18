@@ -2,7 +2,6 @@ pub mod client;
 pub mod dao;
 pub mod http_client;
 
-pub mod listener;
 pub mod logger;
 pub mod model;
 pub mod serialization;
@@ -21,8 +20,10 @@ pub use model::{ConversationSyncerConfig, LocalVersionSync};
 pub use client::FriendSyncer;
 pub use model::friend::FriendSyncerConfig;
 
-// 重新导出消息相关类型和函数
-pub use listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConversationListener, EmptyUserListener, UserListener};
+// 重新导出监听器（已迁入 client）
+pub use client::{
+    AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConversationListener, EmptyUserListener, UserListener,
+};
 pub use model::message::{
     AtElem, AtInfo, ConversationArgs, CustomElem, FileElem, FindMessageListCallback, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, LocationElem,
     MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SearchByConversationResult, SearchLocalMessagesCallback, SearchLocalMessagesParams, SoundElem,

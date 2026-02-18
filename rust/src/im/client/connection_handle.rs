@@ -8,9 +8,9 @@ use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
 use crate::im::dao::MessageRepo;
 use crate::im::client::FriendSyncer;
-use crate::im::listener::FriendListener;
+use crate::im::client::FriendListener;
 use crate::im::model::friend::FriendSyncerConfig;
-use crate::im::listener::{AdvancedMsgListener, ConversationListener};
+use crate::im::client::{AdvancedMsgListener, ConversationListener};
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
 use crate::im::model::ws::WsRpcEnvelope;
@@ -404,9 +404,9 @@ mod tests {
 
     use super::{ClientConfig, ConnectionHandle};
     use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
-    use crate::im::listener::FriendListener;
+    use crate::im::client::FriendListener;
     use crate::im::http_client::login_async;
-    use crate::im::listener::{AdvancedMsgListener, ConversationListener};
+    use crate::im::client::{AdvancedMsgListener, ConversationListener};
     use crate::im::logger::logger::init_logger;
     use crate::im::model::SeqRange;
     use std::sync::Arc;
