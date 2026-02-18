@@ -25,8 +25,15 @@ pub use friend::{FriendSyncer, FriendSyncerConfig};
 // 重新导出消息相关类型和函数
 pub use listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConversationListener, EmptyUserListener, UserListener};
 pub use model::message::{
-    AtElem, AtInfo, CustomElem, FileElem, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, LocationElem, MarkdownEntityElem, MarkdownTextElem, MsgStruct,
-    PictureBaseInfo, PictureElem, QuoteElem, SoundElem, VideoElem,
+    AtElem, AtInfo, ConversationArgs, CustomElem, FileElem, FindMessageListCallback, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, LocationElem,
+    MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SearchByConversationResult, SearchLocalMessagesCallback, SearchLocalMessagesParams, SoundElem,
+    VideoElem,
+};
+// 消息构建（仅组 MsgData，不发送；与 Go CreateXxxMessage 对齐）
+pub use model::{
+    create_custom_message, create_file_message, create_image_message_by_url, create_image_message_simple,
+    create_location_message, create_quote_message, create_sound_message, create_text_message, create_video_message,
+    PictureBaseInfoInput,
 };
 // DAO 统一出口
 pub use dao::{

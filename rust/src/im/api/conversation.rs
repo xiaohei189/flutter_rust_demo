@@ -1,7 +1,6 @@
-//! 会话 HTTP API 客户端
-//!
-//! 负责所有会话相关的 HTTP 请求
+//! 会话 HTTP API，路径与 openim-sdk-core pkg/api/api.go 完全一致
 
+use crate::im::api::routes;
 use crate::im::http::{extract_data, make_client, HttpClient};
 use crate::im::model::conversation::{
     AllConversationsResp, ConversationIDsResp, EmptyResp, GetConversationReq, GetConversationResp, GetConversationsReq, GetConversationsResp, GetSortedConversationListReq,
@@ -12,6 +11,25 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use uuid::Uuid;
+
+/// jssdk GetActiveConversations 请求，对应 protocol jssdk.GetActiveConversationsReq
+#[derive(Debug, Clone, Serialize)]
+pub struct GetActiveConversationsReq {
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "count")]
+    pub count: i64,
+}
+
+/// jssdk GetActiveConversations 响应，对应 protocol jssdk.GetActiveConversationsResp
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetActiveConversationsResp {
+    pub unread_count: i64,
+    /// 每条为 jssdk.ConversationMsg（含 conversation、lastMsg、user、friend、group、maxSeq、readSeq）
+    #[serde(default)]
+    pub conversations: Vec<serde_json::Value>,
+}
 
 /// 会话相关的 HTTP API 客户端
 #[derive(Clone)]
@@ -36,7 +54,7 @@ impl ConversationApi {
     /// 从服务器获取每个会话的 MaxSeq 和 HasReadSeq
     pub async fn get_has_read_and_max_seqs(&self) -> Result<HashMap<String, (i64, i64)>> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!("{}/msg/get_conversations_has_read_and_max_seq", self.api_base_url);
+        let url = format!("{}{}", self.api_base_url, routes::MSG_GET_CONVERSATIONS_HAS_READ_AND_MAX_SEQ);
 
         let resp = self
             .client
@@ -103,7 +121,7 @@ impl ConversationApi {
     /// 从服务器获取所有会话
     pub async fn get_all_conversations(&self) -> Result<AllConversationsResp> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!("{}/conversation/get_all_conversations", self.api_base_url);
+        let url = format!("{}{}", self.api_base_url, routes::CONVERSATION_GET_ALL_CONVERSATIONS);
 
         let resp = self
             .client
@@ -123,7 +141,7 @@ impl ConversationApi {
     /// 从服务器获取所有会话 ID
     pub async fn get_all_conversation_ids(&self) -> Result<Vec<String>> {
         let operation_id = Uuid::new_v4().to_string();
-        let url = format!("{}/conversation/get_full_conversation_ids", self.api_base_url);
+        let url = format!("{}{}", self.api_base_url, routes::CONVERSATION_GET_FULL_CONVERSATION_IDS);
 
         let resp = self
             .client
@@ -163,38 +181,47 @@ impl ConversationApi {
         extract_data(resp).await
     }
 
-    /// /conversation/get_conversation
+    /// 单条会话（服务端路由，Go 用 get_conversations 批量）
     pub async fn get_conversation(&self, req: GetConversationReq) -> Result<GetConversationResp> {
         self.post_json("/conversation/get_conversation", req).await
     }
 
-    /// /conversation/get_conversations
+    /// GetConversations = "/conversation/get_conversations"
     pub async fn get_conversations(&self, req: GetConversationsReq) -> Result<GetConversationsResp> {
-        self.post_json("/conversation/get_conversations", req).await
+        self.post_json(routes::CONVERSATION_GET_CONVERSATIONS, req).await
     }
 
-    /// /conversation/set_conversations
+    /// SetConversations = "/conversation/set_conversations"
     pub async fn set_conversations(&self, req: SetConversationsReq) -> Result<EmptyResp> {
-        self.post_json("/conversation/set_conversations", req).await
+        self.post_json(routes::CONVERSATION_SET_CONVERSATIONS, req).await
     }
 
-    /// /conversation/get_owner_conversation
+    /// GetOwnerConversation = "/conversation/get_owner_conversation"
     pub async fn get_owner_conversation(&self, req: OwnerConversationReq) -> Result<GetConversationResp> {
-        self.post_json("/conversation/get_owner_conversation", req).await
+        self.post_json(routes::CONVERSATION_GET_OWNER_CONVERSATION, req).await
     }
 
     /// /conversation/get_not_notify_conversation_ids
     pub async fn get_not_notify_conversation_ids(&self) -> Result<HashSet<String>> {
         let payload = serde_json::json!({ "ownerUserID": self.user_id });
-        let resp: ConversationIDsResp = self.post_json("/conversation/get_not_notify_conversation_ids", payload).await?;
+        let resp: ConversationIDsResp = self.post_json(routes::CONVERSATION_GET_NOT_NOTIFY_CONVERSATION_IDS, payload).await?;
         Ok(resp.conversation_ids.into_iter().collect())
     }
 
     /// /conversation/get_pinned_conversation_ids
     pub async fn get_pinned_conversation_ids(&self) -> Result<HashSet<String>> {
         let payload = serde_json::json!({ "ownerUserID": self.user_id });
-        let resp: ConversationIDsResp = self.post_json("/conversation/get_pinned_conversation_ids", payload).await?;
+        let resp: ConversationIDsResp = self.post_json(routes::CONVERSATION_GET_PINNED_CONVERSATION_IDS, payload).await?;
         Ok(resp.conversation_ids.into_iter().collect())
+    }
+
+    /// GetActiveConversation (jssdk) = "/jssdk/get_active_conversations"，与 Go api.GetActiveConversation 对齐
+    pub async fn get_active_conversations(&self, count: i64) -> Result<GetActiveConversationsResp> {
+        let payload = GetActiveConversationsReq {
+            owner_user_id: self.user_id.clone(),
+            count,
+        };
+        self.post_json(routes::JSSDK_GET_ACTIVE_CONVERSATIONS, payload).await
     }
 
     async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {

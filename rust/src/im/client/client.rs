@@ -62,17 +62,22 @@ use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;
 use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
+use crate::im::dao::group::LocalGroup;
+use crate::im::dao::group_member::LocalGroupMember;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
+use crate::im::dao::black::LocalBlack;
 use crate::im::friend::FriendListener;
 use crate::im::listener::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
 use crate::im::listener::GroupListener;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
+use crate::im::model::group::server_group_to_local;
 use crate::im::model::message::{
-    local_chat_log_to_msg_struct, msg_handle_by_content_type_result, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, MarkConversationAsReadReq,
-    RevokeMsgReq,
+    local_chat_log_to_msg_struct, msg_handle_by_content_type_result, msg_struct_to_local_chat_log, ClearConversationsMsgReq, ConversationArgs, FindMessageListCallback,
+    GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, MarkConversationAsReadReq, MsgStruct, RevokeMsgReq, SearchByConversationResult,
+    SearchLocalMessagesCallback, SearchLocalMessagesParams, UserClearAllMsgReq,
 };
 use crate::im::model::ws::{msg_type, OpenIMReq, OpenIMResp, WsRpcEnvelope};
 use crate::im::util;
@@ -342,6 +347,27 @@ impl IMClient {
         Self::SDK_VERSION
     }
 
+    /// 反初始化 SDK（与 Go UnInitSDK 对齐），需先 logout 再调用，否则返回错误
+    pub fn un_init_sdk(&self) -> Result<()> {
+        if self.get_login_status() == 3 {
+            anyhow::bail!("sdk not logout, please logout first");
+        }
+        Ok(())
+    }
+
+    /// 设置应用前后台状态（与 Go SetAppBackgroundStatus 对齐），通过 WS 上报服务端
+    pub async fn set_app_background_status(&self, is_background: bool) -> Result<()> {
+        use crate::im::model::constant;
+        let req = sdkws::SetAppBackgroundStatusReq {
+            user_id: self.config.user_id.clone(),
+            is_background,
+        };
+        let _: sdkws::SetAppBackgroundStatusResp = self
+            .send_ws_req(constant::SET_BACKGROUND_STATUS, &req)
+            .await?;
+        Ok(())
+    }
+
     /// 获取会话列表（从本地 DB 读取，与 Go GetAllConversationList 一致）
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
         self.local_repo.conversation.get_all_conversations().await
@@ -484,11 +510,284 @@ impl IMClient {
         self.local_repo.message.get_message(conversation_id, client_msg_id).await
     }
 
+    // ---------- 会话/消息扩展（与 Go deleteConversationAndDeleteAllMsg、getAtAllTag、findMessageList、searchLocalMessages、searchConversation、insertSingleMessageToLocalStorage、setMessageLocalEx、hideAllConversations、deleteAllMsgFromLocal、clearConversationAndDeleteAllMsg 对齐） ----------
+
+    /// 获取 @all 标签字符串（与 Go GetAtAllTag 一致）
+    pub fn get_at_all_tag(&self) -> String {
+        constant::AT_ALL_STRING.to_string()
+    }
+
+    /// 清空会话并删除该会话下所有本地消息（先调服务端 clear_conversation_msg，再本地删消息并清空会话；与 Go ClearConversationAndDeleteAllMsg 一致）
+    pub async fn clear_conversation_and_delete_all_msg(&self, conversation_id: &str) -> Result<()> {
+        let _ = self.api.message.clear_conversation_msg(ClearConversationsMsgReq {
+            conversation_ids: vec![conversation_id.to_string()],
+            user_id: self.config.user_id.clone(),
+            delete_sync_opt: None,
+        }).await;
+        let _ = self.local_repo.message.mark_conversation_as_read(conversation_id).await;
+        self.local_repo.message.delete_conversation(conversation_id).await?;
+        self.local_repo.conversation.clear_conversation(conversation_id).await
+    }
+
+    /// 删除会话并删除该会话下所有本地消息（先调服务端 clear_conversation_msg，再本地删消息并重置会话；与 Go DeleteConversationAndDeleteAllMsg 一致）
+    pub async fn delete_conversation_and_delete_all_msg(&self, conversation_id: &str) -> Result<()> {
+        let _ = self.api.message.clear_conversation_msg(ClearConversationsMsgReq {
+            conversation_ids: vec![conversation_id.to_string()],
+            user_id: self.config.user_id.clone(),
+            delete_sync_opt: None,
+        }).await;
+        let _ = self.local_repo.message.mark_conversation_as_read(conversation_id).await;
+        self.local_repo.message.delete_conversation(conversation_id).await?;
+        self.local_repo.conversation.reset_conversation(conversation_id).await
+    }
+
+    /// 仅本地：删除所有会话的消息（mark_delete=true 时标记删除，否则物理删除；与 Go DeleteAllMessageFromLocalStorage / DeleteAllMsgFromLocal 一致）
+    pub async fn delete_all_msg_from_local(&self, mark_delete: bool) -> Result<()> {
+        let list = self.local_repo.conversation.get_all_conversations().await?;
+        for c in &list {
+            let _ = self.local_repo.message.mark_conversation_as_read(&c.conversation_id).await;
+            if mark_delete {
+                let _ = self.local_repo.message.mark_delete_conversation_all_messages(&c.conversation_id).await;
+            } else {
+                let _ = self.local_repo.message.delete_conversation(&c.conversation_id).await;
+            }
+            let _ = self.local_repo.conversation.clear_conversation(&c.conversation_id).await;
+        }
+        self.local_repo.conversation.reset_all_conversations().await
+    }
+
+    /// 服务端+本地删除全部消息（与 Go DeleteAllMsgFromLocalAndServer 一致）
+    pub async fn delete_all_msg_from_local_and_server(&self) -> Result<()> {
+        let _ = self.api.message.user_clear_all_msg(UserClearAllMsgReq { user_id: self.config.user_id.clone(), delete_sync_opt: None }).await;
+        self.delete_all_msg_from_local(false).await
+    }
+
+    /// 按会话与 clientMsgID 列表批量查消息，返回按会话分组的结果（与 Go FindMessageList 一致）
+    pub async fn find_message_list(&self, req: Vec<ConversationArgs>) -> Result<FindMessageListCallback> {
+        let mut total_count = 0i32;
+        let mut find_result_items = Vec::new();
+        for args in req {
+            let conv = match self.local_repo.conversation.get_conversation_by_id(&args.conversation_id).await? {
+                Some(c) => c,
+                None => continue,
+            };
+            let list = self.local_repo.message.get_messages_by_client_msg_ids(&args.conversation_id, &args.client_msg_id_list).await?;
+            let message_list: Vec<MsgStruct> = list.iter().map(local_chat_log_to_msg_struct).collect();
+            total_count += message_list.len() as i32;
+            find_result_items.push(SearchByConversationResult {
+                conversation_id: args.conversation_id,
+                conversation_type: conv.conversation_type,
+                show_name: conv.show_name.clone(),
+                face_url: conv.face_url.clone(),
+                latest_msg_send_time: conv.latest_msg_send_time,
+                message_count: message_list.len() as i32,
+                message_list,
+            });
+        }
+        Ok(FindMessageListCallback { total_count, find_result_items })
+    }
+
+    /// 本地搜索消息（与 Go SearchLocalMessages 一致；按 params 过滤后分页返回）
+    pub async fn search_local_messages(&self, params: SearchLocalMessagesParams) -> Result<SearchLocalMessagesCallback> {
+        let keyword = params.keyword_list.first().map(String::as_str);
+        let begin = if params.search_time_position > 0 && params.search_time_period > 0 {
+            Some(params.search_time_position - params.search_time_period)
+        } else { None };
+        let end = if params.search_time_position > 0 && params.search_time_period > 0 {
+            Some(params.search_time_position)
+        } else { None };
+        let ctypes = if params.message_type_list.is_empty() { None } else { Some(params.message_type_list.as_slice()) };
+        let logs = self.local_repo.message.search_local_messages(
+            Some(&params.conversation_id),
+            keyword,
+            ctypes,
+            begin,
+            end,
+        ).await?;
+        let mut search_result_items = Vec::new();
+        if !logs.is_empty() {
+            let conv = self.local_repo.conversation.get_conversation_by_id(&params.conversation_id).await?.unwrap_or_default();
+            let message_list: Vec<MsgStruct> = logs.iter().map(local_chat_log_to_msg_struct).collect();
+            let total = message_list.len() as i32;
+            let page_size = params.count.max(1);
+            let start = (params.page_index * page_size) as usize;
+            let page: Vec<MsgStruct> = message_list.into_iter().skip(start).take(page_size as usize).collect();
+            search_result_items.push(SearchByConversationResult {
+                conversation_id: params.conversation_id.clone(),
+                conversation_type: conv.conversation_type,
+                show_name: conv.show_name,
+                face_url: conv.face_url,
+                latest_msg_send_time: conv.latest_msg_send_time,
+                message_count: page.len() as i32,
+                message_list: page,
+            });
+        }
+        Ok(SearchLocalMessagesCallback {
+            total_count: logs.len() as i32,
+            search_result_items,
+        })
+    }
+
+    /// 按 show_name 模糊搜索会话（与 Go SearchConversation 一致）
+    pub async fn search_conversation(&self, search_param: &str) -> Result<Vec<LocalConversation>> {
+        self.local_repo.conversation.search_conversations(search_param).await
+    }
+
+    /// 单条消息写入本地（单聊；与 Go InsertSingleMessageToLocalStorage 一致，recv_id/send_id 必填）
+    pub async fn insert_single_message_to_local_storage(&self, mut msg: MsgStruct, recv_id: &str, send_id: &str) -> Result<MsgStruct> {
+        if recv_id.is_empty() || send_id.is_empty() {
+            return Err(anyhow!("recv_id and send_id required"));
+        }
+        let peer_id = if send_id == self.config.user_id { recv_id } else { send_id };
+        let conversation_id = self.conversation_id_by_session_type(peer_id, constant::SINGLE_CHAT_TYPE);
+        msg.send_id = Some(send_id.to_string());
+        msg.recv_id = Some(recv_id.to_string());
+        msg.client_msg_id = Some(Uuid::new_v4().to_string());
+        msg.send_time = chrono::Utc::now().timestamp_millis();
+        msg.create_time = msg.send_time;
+        msg.session_type = constant::SINGLE_CHAT_TYPE;
+        msg.status = constant::MSG_STATUS_SEND_SUCCESS;
+        let log = msg_struct_to_local_chat_log(&msg, &conversation_id);
+        self.local_repo.message.insert_message(&log).await?;
+        let conv = self.local_repo.conversation.get_conversation_by_id(&conversation_id).await?.unwrap_or_else(|| {
+            let mut c = LocalConversation::default();
+            c.conversation_id = conversation_id.clone();
+            c.conversation_type = constant::SINGLE_CHAT_TYPE;
+            c
+        });
+        let mut updated = conv;
+        updated.latest_msg = serde_json::to_string(&msg).unwrap_or_default();
+        updated.latest_msg_send_time = msg.send_time;
+        let _ = self.local_repo.conversation.upsert_conversation(&updated).await;
+        Ok(msg)
+    }
+
+    /// 设置消息本地扩展字段；若该条为会话最新消息则同步更新会话 latest_msg（与 Go SetMessageLocalEx 一致）
+    pub async fn set_message_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<()> {
+        self.local_repo.message.update_local_ex(conversation_id, client_msg_id, local_ex).await?;
+        if let Some(conv) = self.local_repo.conversation.get_conversation_by_id(conversation_id).await? {
+            if !conv.latest_msg.is_empty() {
+                if let Ok(mut ms) = serde_json::from_str::<MsgStruct>(&conv.latest_msg) {
+                    if ms.client_msg_id.as_deref() == Some(client_msg_id) {
+                        ms.local_ex = Some(local_ex.to_string());
+                        let latest_str = serde_json::to_string(&ms).unwrap_or_default();
+                        let _ = self.local_repo.conversation.update_conversation_latest_msg(conversation_id, &latest_str, ms.send_time).await;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// 隐藏全部会话（与 Go HideAllConversations 一致）
+    pub async fn hide_all_conversations(&self) -> Result<()> {
+        self.local_repo.conversation.reset_all_conversations().await
+    }
+
+    // ---------- 群组对外 API（与 Go GetJoinedGroupList / GetSpecifiedGroupsInfo / GetGroupMemberList 等对齐） ----------
+
+    /// 获取当前用户已加入的群列表（本地）
+    pub async fn get_joined_group_list(&self) -> Result<Vec<LocalGroup>> {
+        self.local_repo.group.get_joined_group_list().await
+    }
+
+    /// 分页获取已加入群列表（与 Go GetJoinedGroupListPage 对齐）
+    pub async fn get_joined_group_list_page(&self, offset: i32, count: i32) -> Result<Vec<LocalGroup>> {
+        self.local_repo.group.get_joined_group_list_page(offset, count).await
+    }
+
+    /// 拉取指定群信息（先请求服务端，转 LocalGroup 并可选写回本地后返回，与 Go GetSpecifiedGroupsInfo 对齐）
+    pub async fn get_specified_groups_info(&self, group_id_list: &[String]) -> Result<Vec<LocalGroup>> {
+        if group_id_list.is_empty() {
+            return Ok(Vec::new());
+        }
+        let ids: Vec<String> = group_id_list.to_vec();
+        let infos = self.api.group.get_groups_info(ids).await?;
+        let local: Vec<LocalGroup> = infos.iter().map(server_group_to_local).collect();
+        for g in &local {
+            if self.local_repo.group.get_group_info_by_group_id(&g.group_id).await?.is_some() {
+                let _ = self.local_repo.group.update(g).await;
+            } else {
+                let _ = self.local_repo.group.insert(g).await;
+            }
+        }
+        Ok(local)
+    }
+
+    /// 获取群成员列表（本地）
+    pub async fn get_group_member_list(&self, group_id: &str) -> Result<Vec<LocalGroupMember>> {
+        self.local_repo.group_member.get_member_list_by_group_id(group_id).await
+    }
+
+    /// 获取指定群成员信息（本地，与 Go GetSpecifiedGroupMembersInfo 对齐）
+    pub async fn get_specified_group_members_info(&self, group_id: &str, user_id_list: &[String]) -> Result<Vec<LocalGroupMember>> {
+        self.local_repo.group_member.get_some_member_info(group_id, user_id_list).await
+    }
+
+    /// 是否已加入该群（本地）
+    pub async fn is_join_group(&self, group_id: &str) -> Result<bool> {
+        Ok(self.local_repo.group.get_group_info_by_group_id(group_id).await?.is_some())
+    }
+
     /// 从服务器获取好友列表（HTTP API）
     pub async fn get_all_friends(&self) -> Result<AllFriendsResp> {
         let raw = IMClient::create_http_client(&self.config)?;
         let api = FriendApi::new(raw, self.config.api_base_url.clone(), self.config.user_id.clone(), &self.config.token);
         api.get_all_friends().await
+    }
+
+    /// 获取好友列表（本地，与 Go GetFriendList 对齐）。filter_black 为 true 时排除黑名单用户
+    pub async fn get_friend_list(&self, filter_black: bool) -> Result<Vec<sdkws::FriendInfo>> {
+        let list = self.local_repo.friend.get_all_friends().await?;
+        if !filter_black {
+            return Ok(list);
+        }
+        let blacks = self.local_repo.black.get_black_list().await?;
+        let black_set: std::collections::HashSet<String> = blacks.into_iter().map(|b| b.block_user_id).collect();
+        Ok(list
+            .into_iter()
+            .filter(|f| {
+                f.friend_user
+                    .as_ref()
+                    .map(|u| !black_set.contains(&u.user_id))
+                    .unwrap_or(true)
+            })
+            .collect())
+    }
+
+    /// 分页获取好友列表（与 Go GetFriendListPage 对齐）。filter_black 为 true 时排除黑名单用户
+    pub async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool) -> Result<Vec<sdkws::FriendInfo>> {
+        let list = self.local_repo.friend.get_friend_list_page(offset, count).await?;
+        if !filter_black {
+            return Ok(list);
+        }
+        let blacks = self.local_repo.black.get_black_list().await?;
+        let black_set: std::collections::HashSet<String> = blacks.into_iter().map(|b| b.block_user_id).collect();
+        Ok(list
+            .into_iter()
+            .filter(|f| {
+                f.friend_user
+                    .as_ref()
+                    .map(|u| !black_set.contains(&u.user_id))
+                    .unwrap_or(true)
+            })
+            .collect())
+    }
+
+    /// 获取黑名单列表（本地，与 Go GetBlackList 对齐）
+    pub async fn get_black_list(&self) -> Result<Vec<LocalBlack>> {
+        self.local_repo.black.get_black_list().await
+    }
+
+    /// 申请添加好友（与 Go AddFriend 对齐）：调用服务端后仅返回成功/失败，本地需同步更新
+    pub async fn add_friend(&self, to_user_id: &str, req_msg: &str) -> Result<()> {
+        self.api.friend.add_friend(to_user_id, req_msg).await
+    }
+
+    /// 删除好友（与 Go DeleteFriend 对齐）：先调服务端再删本地
+    pub async fn delete_friend(&self, friend_user_id: &str) -> Result<()> {
+        self.api.friend.delete_friend(friend_user_id).await?;
+        self.local_repo.friend.delete_friend(friend_user_id).await
     }
 
     /// 与 Go GetUserInfoWithCache 对齐：任意 userID，先本地，缺或昵称/头像为空则拉服务端并落库后返回
@@ -500,7 +799,7 @@ impl IMClient {
             }
         }
         if let Ok(resp) = self.api.user.get_users_info(vec![user_id.to_string()]).await {
-            for remote in resp.users_info {
+            if let Some(remote) = resp.users_info.into_iter().next() {
                 let local_user = LocalUser {
                     user_id: remote.user_id,
                     nickname: remote.nickname,
@@ -702,7 +1001,8 @@ impl IMClient {
         if !is_reverse {
             message_list.sort_by(|a, b| (b.send_time, b.seq).cmp(&(a.send_time, a.seq)));
         }
-        callback.message_list = message_list;
+        // 与 Go 一致：保证返回非 null 列表，无消息时为空数组
+        callback.message_list = if message_list.is_empty() { vec![] } else { message_list };
         Ok(callback)
     }
 

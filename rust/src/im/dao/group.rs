@@ -117,6 +117,18 @@ impl GroupDao {
         Ok(rows)
     }
 
+    /// 分页获取已加入群列表（与 Go GetJoinedGroupListPage 对齐），按 create_time 倒序
+    pub async fn get_joined_group_list_page(&self, offset: i32, count: i32) -> Result<Vec<LocalGroup>> {
+        let rows = sqlx::query_as::<_, LocalGroup>(
+            "SELECT * FROM local_groups ORDER BY create_time DESC LIMIT ? OFFSET ?",
+        )
+        .bind(count)
+        .bind(offset)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(rows)
+    }
+
     pub async fn get_groups(&self, group_ids: &[String]) -> Result<Vec<LocalGroup>> {
         if group_ids.is_empty() {
             return Ok(Vec::new());

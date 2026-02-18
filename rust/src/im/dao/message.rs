@@ -268,6 +268,14 @@ impl MessageRepo {
         Ok(())
     }
 
+    /// 标记会话内所有消息为已删除（与 Go MarkDeleteConversationAllMessages 对齐）
+    pub async fn mark_delete_conversation_all_messages(&self, conversation_id: &str) -> Result<u64> {
+        let table = self.table();
+        let sql = format!("UPDATE {} SET status = 4 WHERE conversation_id = ?", table);
+        let res = sqlx::query(&sql).bind(conversation_id).execute(&self.pool).await?;
+        Ok(res.rows_affected())
+    }
+
     pub async fn mark_as_read_by_msg_ids(&self, conversation_id: &str, msg_ids: &[String]) -> Result<i64> {
         if msg_ids.is_empty() {
             return Ok(0);

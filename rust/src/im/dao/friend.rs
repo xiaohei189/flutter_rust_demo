@@ -102,6 +102,37 @@ impl FriendDao {
         Ok(rows.into_iter().map(Into::into).collect())
     }
 
+    /// 分页获取好友列表（与 Go GetFriendListPage 对齐），按 create_time 倒序
+    pub async fn get_friend_list_page(&self, offset: i32, count: i32) -> Result<Vec<sdkws::FriendInfo>> {
+        let rows: Vec<LocalFriendRow> = sqlx::query_as(
+            r#"
+            SELECT
+                owner_user_id,
+                friend_user_id,
+                remark,
+                create_time,
+                add_source,
+                operator_user_id,
+                nickname,
+                face_url,
+                ex,
+                attached_info,
+                is_pinned
+            FROM local_friends
+            WHERE owner_user_id = ?
+            ORDER BY create_time DESC
+            LIMIT ? OFFSET ?
+            "#,
+        )
+        .bind(&self.user_id)
+        .bind(count)
+        .bind(offset)
+        .fetch_all(&self.db)
+        .await
+        .context("get_friend_list_page failed")?;
+        Ok(rows.into_iter().map(Into::into).collect())
+    }
+
     /// 与 Go batchGetUserNameAndFaceURL 对齐：按好友 user_id 查单条，用于补全会话 face/name
     pub async fn get_friend_by_friend_user_id(&self, friend_user_id: &str) -> Result<Option<sdkws::FriendInfo>> {
         let row: Option<LocalFriendRow> = sqlx::query_as(

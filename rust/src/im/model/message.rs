@@ -166,6 +166,17 @@ impl Default for SendMsgReq {
     }
 }
 
+/// /msg/send_msg 响应体，对齐 protocol msg.SendMsgResp
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SendMsgResp {
+    #[serde(rename = "serverMsgID")]
+    pub server_msg_id: String,
+    #[serde(rename = "clientMsgID")]
+    pub client_msg_id: String,
+    #[serde(rename = "sendTime")]
+    pub send_time: i64,
+}
+
 /// 将 SendMessageParams 转为 WS 实际发送的 sdkws::MsgData（集中补全发送人信息）
 pub fn params_to_ws_msg_data(params: &SendMessageParams, send_id: &str, sender_platform_id: i32, sender_nickname: &str, sender_face_url: &str) -> sdkws::MsgData {
     let content = if params.message.is_empty() {
@@ -287,6 +298,37 @@ pub struct SetConversationHasReadSeqReq {
     pub has_read_seq: i64,
     #[serde(rename = "noNotification", default)]
     pub no_notification: bool,
+}
+
+/// /msg/get_conversations_has_read_and_max_seq 请求（对齐 Go api.GetConversationsHasReadAndMaxSeq）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetConversationsHasReadAndMaxSeqReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "conversationIDs")]
+    pub conversation_ids: Vec<String>,
+    #[serde(rename = "returnPinned", default)]
+    pub return_pinned: bool,
+}
+
+/// 会话的 maxSeq / hasReadSeq / maxSeqTime（对齐 protocol msg.Seqs）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Seqs {
+    #[serde(rename = "maxSeq")]
+    pub max_seq: i64,
+    #[serde(rename = "hasReadSeq")]
+    pub has_read_seq: i64,
+    #[serde(rename = "maxSeqTime")]
+    pub max_seq_time: i64,
+}
+
+/// /msg/get_conversations_has_read_and_max_seq 响应（对齐 Go GetConversationsHasReadAndMaxSeqResp）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetConversationsHasReadAndMaxSeqResp {
+    #[serde(rename = "seqs")]
+    pub seqs: HashMap<String, Seqs>,
+    #[serde(rename = "pinnedConversationIDs", default)]
+    pub pinned_conversation_ids: Vec<String>,
 }
 
 /// 删除同步选项
@@ -752,6 +794,75 @@ pub struct GetAdvancedHistoryMessageListCallback {
     pub err_msg: String,
 }
 
+/// FindMessageList 入参项（对齐 Go ConversationArgs）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConversationArgs {
+    #[serde(rename = "conversationID")]
+    pub conversation_id: String,
+    #[serde(rename = "clientMsgIDList")]
+    pub client_msg_id_list: Vec<String>,
+}
+
+/// 按会话的搜索结果项（对齐 Go SearchByConversationResult，用于 FindMessageList / SearchLocalMessages）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchByConversationResult {
+    #[serde(rename = "conversationID")]
+    pub conversation_id: String,
+    #[serde(rename = "conversationType")]
+    pub conversation_type: i32,
+    #[serde(rename = "showName")]
+    pub show_name: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    #[serde(rename = "latestMsgSendTime", default)]
+    pub latest_msg_send_time: i64,
+    #[serde(rename = "messageCount")]
+    pub message_count: i32,
+    #[serde(rename = "messageList")]
+    pub message_list: Vec<MsgStruct>,
+}
+
+/// FindMessageList 返回值（对齐 Go FindMessageListCallback）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FindMessageListCallback {
+    #[serde(rename = "totalCount")]
+    pub total_count: i32,
+    #[serde(rename = "findResultItems")]
+    pub find_result_items: Vec<SearchByConversationResult>,
+}
+
+/// 本地搜索消息参数（对齐 Go SearchLocalMessagesParams）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchLocalMessagesParams {
+    #[serde(rename = "conversationID")]
+    pub conversation_id: String,
+    #[serde(rename = "keywordList")]
+    pub keyword_list: Vec<String>,
+    #[serde(rename = "keywordListMatchType")]
+    pub keyword_list_match_type: i32,
+    #[serde(rename = "senderUserIDList")]
+    pub sender_user_id_list: Vec<String>,
+    #[serde(rename = "messageTypeList")]
+    pub message_type_list: Vec<i32>,
+    #[serde(rename = "searchTimePosition")]
+    pub search_time_position: i64,
+    #[serde(rename = "searchTimePeriod")]
+    pub search_time_period: i64,
+    #[serde(rename = "pageIndex")]
+    pub page_index: i32,
+    #[serde(rename = "count")]
+    pub count: i32,
+}
+
+/// 本地搜索消息返回值（对齐 Go SearchLocalMessagesCallback）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchLocalMessagesCallback {
+    #[serde(rename = "totalCount")]
+    pub total_count: i32,
+    #[serde(rename = "searchResultItems")]
+    pub search_result_items: Vec<SearchByConversationResult>,
+}
+
 /// 消息结构体（对应 Go 的 MsgStruct）
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MsgStruct {
@@ -841,6 +952,33 @@ pub struct TypingStatus {
     pub send_id: Option<String>,
     #[serde(rename = "msgTip")]
     pub msg_tip: String,
+}
+
+/// MsgStruct 转 LocalChatLog（对齐 Go MsgStructToLocalChatLog），用于 insertSingleMessageToLocalStorage
+pub fn msg_struct_to_local_chat_log(s: &MsgStruct, conversation_id: &str) -> LocalChatLog {
+    LocalChatLog {
+        conversation_id: conversation_id.to_string(),
+        client_msg_id: s.client_msg_id.as_deref().unwrap_or("").to_string(),
+        server_msg_id: s.server_msg_id.as_deref().unwrap_or("").to_string(),
+        send_id: s.send_id.as_deref().unwrap_or("").to_string(),
+        recv_id: s.recv_id.as_deref().unwrap_or("").to_string(),
+        sender_platform_id: s.sender_platform_id,
+        sender_nickname: s.sender_nickname.as_deref().unwrap_or("").to_string(),
+        sender_face_url: s.sender_face_url.as_deref().unwrap_or("").to_string(),
+        session_type: s.session_type,
+        msg_from: s.msg_from,
+        content_type: s.content_type,
+        content: s.content.as_deref().unwrap_or("").to_string(),
+        is_read: s.is_read,
+        status: s.status,
+        seq: s.seq,
+        send_time: s.send_time,
+        create_time: s.create_time,
+        attached_info: s.attached_info.as_deref().unwrap_or("").to_string(),
+        ex: s.ex.as_deref().unwrap_or("").to_string(),
+        local_ex: s.local_ex.as_deref().unwrap_or("").to_string(),
+        group_id: s.group_id.as_deref().unwrap_or("").to_string(),
+    }
 }
 
 /// LocalChatLog 转 MsgStruct（对齐 Go LocalChatLogToMsgStruct），用于历史消息列表返回

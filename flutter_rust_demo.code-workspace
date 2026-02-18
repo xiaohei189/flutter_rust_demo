@@ -14,6 +14,9 @@
         },
         {
             "path": "../open-im-server"
+        },
+        {
+            "path": "../openim-chat"
         }
     ]
 }

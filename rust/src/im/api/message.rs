@@ -1,10 +1,10 @@
-//! 消息 HTTP API（P1 子集）
-//! 对齐 open-im-server `/msg` 路由：发送、撤回、已读、历史查询。
+//! 消息 HTTP API，路径与 openim-sdk-core pkg/api/api.go 完全一致
+use crate::im::api::routes;
 use crate::im::http::{extract_data, make_client, HttpClient};
 use crate::im::model::message::{
-    BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp, GetNewestSeqReq,
-    GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq, PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, ServerTimeResp,
-    SetConversationHasReadSeqReq, UserClearAllMsgReq,
+    BatchSendMsgReq, CheckMsgIsSendSuccessReq, CheckMsgIsSendSuccessResp, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, EmptyResp,
+    GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp, GetNewestSeqReq, GetNewestSeqResp, MarkConversationAsReadReq, MarkMsgsAsReadReq, PullMessageBySeqsReq,
+    PullMessageBySeqsResp, RevokeMsgReq, SearchMessageReq, SearchMessageResp, SendMsgReq, SendMsgResp, ServerTimeResp, SetConversationHasReadSeqReq, UserClearAllMsgReq,
 };
 use anyhow::Result;
 
@@ -24,80 +24,93 @@ impl MessageApi {
         }
     }
 
-    /// /msg/revoke_msg
+    /// RevokeMsg = "/msg/revoke_msg"
     pub async fn revoke_message(&self, req: RevokeMsgReq) -> Result<EmptyResp> {
-        self.post_json("/msg/revoke_msg", req).await
+        self.post_json(routes::MSG_REVOKE_MSG, req).await
     }
 
-    /// /msg/mark_msgs_as_read
+    /// MarkMsgsAsRead = "/msg/mark_msgs_as_read"
     pub async fn mark_msgs_as_read(&self, req: MarkMsgsAsReadReq) -> Result<EmptyResp> {
-        self.post_json("/msg/mark_msgs_as_read", req).await
+        self.post_json(routes::MSG_MARK_MSGS_AS_READ, req).await
     }
 
-    /// /msg/mark_conversation_as_read
+    /// MarkConversationAsRead = "/msg/mark_conversation_as_read"
     pub async fn mark_conversation_as_read(&self, req: MarkConversationAsReadReq) -> Result<EmptyResp> {
-        self.post_json("/msg/mark_conversation_as_read", req).await
+        self.post_json(routes::MSG_MARK_CONVERSATION_AS_READ, req).await
     }
 
-    /// /msg/search_msg  （对齐 GetAdvancedHistoryMessageList）
+    /// 历史消息搜索（服务端路由，非 Go api 定义）
     pub async fn search_msg(&self, req: SearchMessageReq) -> Result<SearchMessageResp> {
         self.post_json("/msg/search_msg", req).await
     }
 
-    /// /msg/newest_seq
+    /// 拉取最新 seq（服务端路由）
     pub async fn get_newest_seq(&self) -> Result<GetNewestSeqResp> {
         let payload = GetNewestSeqReq { user_id: self.user_id.clone() };
         self.post_json("/msg/newest_seq", payload).await
     }
 
-    /// /msg/pull_msg_by_seq
+    /// 按 seq 拉消息（服务端路由）
     pub async fn pull_msg_by_seqs(&self, payload: PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
         self.post_json("/msg/pull_msg_by_seq", payload).await
     }
 
-    /// /msg/set_conversation_has_read_seq
+    /// SetConversationHasReadSeq = "/msg/set_conversation_has_read_seq"
     pub async fn set_conversation_has_read_seq(&self, payload: SetConversationHasReadSeqReq) -> Result<EmptyResp> {
-        self.post_json("/msg/set_conversation_has_read_seq", payload).await
+        self.post_json(routes::MSG_SET_CONVERSATION_HAS_READ_SEQ, payload).await
     }
 
-    /// /msg/clear_conversation_msg
+    /// ClearConversationMsg = "/msg/clear_conversation_msg"
     pub async fn clear_conversation_msg(&self, payload: ClearConversationsMsgReq) -> Result<EmptyResp> {
-        self.post_json("/msg/clear_conversation_msg", payload).await
+        self.post_json(routes::MSG_CLEAR_CONVERSATION_MSG, payload).await
     }
 
-    /// /msg/user_clear_all_msg
+    /// ClearAllMsg = "/msg/user_clear_all_msg"
     pub async fn user_clear_all_msg(&self, payload: UserClearAllMsgReq) -> Result<EmptyResp> {
-        self.post_json("/msg/user_clear_all_msg", payload).await
+        self.post_json(routes::MSG_USER_CLEAR_ALL_MSG, payload).await
     }
 
-    /// /msg/delete_msgs
+    /// DeleteMsgs = "/msg/delete_msgs"
     pub async fn delete_msgs(&self, payload: DeleteMsgsReq) -> Result<EmptyResp> {
-        self.post_json("/msg/delete_msgs", payload).await
+        self.post_json(routes::MSG_DELETE_MSGS, payload).await
     }
 
-    /// /msg/delete_msg_physical
+    /// 物理删除消息（服务端路由）
     pub async fn delete_msg_physical(&self, payload: DeleteMsgPhysicalReq) -> Result<EmptyResp> {
         self.post_json("/msg/delete_msg_physical", payload).await
     }
 
-    /// /msg/delete_msg_phsical_by_seq
+    /// 按 seq 物理删除（服务端路由）
     pub async fn delete_msg_physical_by_seq(&self, payload: DeleteMsgPhysicalBySeqReq) -> Result<EmptyResp> {
         self.post_json("/msg/delete_msg_phsical_by_seq", payload).await
     }
 
-    /// /msg/batch_send_msg
+    /// 批量发消息（服务端路由）
     pub async fn batch_send_msg(&self, payload: BatchSendMsgReq) -> Result<EmptyResp> {
         self.post_json("/msg/batch_send_msg", payload).await
     }
 
-    /// /msg/check_msg_is_send_success
+    /// 检查发送是否成功（服务端路由）
     pub async fn check_msg_is_send_success(&self, payload: CheckMsgIsSendSuccessReq) -> Result<CheckMsgIsSendSuccessResp> {
         self.post_json("/msg/check_msg_is_send_success", payload).await
     }
 
-    /// /msg/get_server_time
+    /// GetServerTime = "/msg/get_server_time"
     pub async fn get_server_time(&self) -> Result<ServerTimeResp> {
-        self.post_json("/msg/get_server_time", serde_json::json!({})).await
+        self.post_json(routes::MSG_GET_SERVER_TIME, serde_json::json!({})).await
+    }
+
+    /// GetConversationsHasReadAndMaxSeq = "/msg/get_conversations_has_read_and_max_seq"（对齐 Go api.GetConversationsHasReadAndMaxSeq）
+    pub async fn get_conversations_has_read_and_max_seq(
+        &self,
+        req: GetConversationsHasReadAndMaxSeqReq,
+    ) -> Result<GetConversationsHasReadAndMaxSeqResp> {
+        self.post_json(routes::MSG_GET_CONVERSATIONS_HAS_READ_AND_MAX_SEQ, req).await
+    }
+
+    /// SendMsg = "/msg/send_msg"，与 Go api.SendMsg 对齐
+    pub async fn send_msg(&self, req: SendMsgReq) -> Result<SendMsgResp> {
+        self.post_json(routes::MSG_SEND_MSG, req).await
     }
 
     async fn post_json<T: serde::Serialize, R: serde::de::DeserializeOwned>(&self, path: &str, payload: T) -> Result<R> {

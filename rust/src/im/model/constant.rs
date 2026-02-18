@@ -9,6 +9,8 @@ pub const SEND_MSG: i32 = 1003;
 pub const PUSH_MSG: i32 = 2001;
 pub const KICK_ONLINE_MSG: i32 = 2002;
 pub const LOGOUT_MSG: i32 = 2003;
+/// 设置应用前后台状态（与 Go constant.SetBackgroundStatus = 2004 对齐）
+pub const SET_BACKGROUND_STATUS: i32 = 2004;
 pub const SEND_MSG_NOT_OSS: i32 = 3001;
 
 /// 收件选项（对齐 Go pkg/constant RecvMsgOpt）

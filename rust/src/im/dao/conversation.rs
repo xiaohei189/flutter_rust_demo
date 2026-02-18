@@ -588,6 +588,45 @@ impl ConversationDao {
         Ok(())
     }
 
+    /// 重置单会话（与 Go ResetConversation 对齐：清空最新消息与未读，保留会话记录）
+    pub async fn reset_conversation(&self, conversation_id: &str) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET latest_msg = '', latest_msg_send_time = 0, unread_count = 0, draft_text = '', draft_text_time = 0 WHERE conversation_id = ?",
+        )
+        .bind(conversation_id)
+        .execute(&self.db)
+        .await
+        .context("reset_conversation 失败")?;
+        Ok(())
+    }
+
+    /// 清空单会话（与 Go ClearConversation 对齐：同 reset，用于 clearConversationAndDeleteAllMsg 后）
+    pub async fn clear_conversation(&self, conversation_id: &str) -> Result<()> {
+        self.reset_conversation(conversation_id).await
+    }
+
+    /// 隐藏全部会话（与 Go HideAllConversations / ResetAllConversation 对齐：所有会话 latest_msg_send_time 置 0）
+    pub async fn reset_all_conversations(&self) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET latest_msg_send_time = 0")
+            .execute(&self.db)
+            .await
+            .context("reset_all_conversations 失败")?;
+        Ok(())
+    }
+
+    /// 按 show_name 模糊搜索会话（与 Go SearchConversations 对齐）
+    pub async fn search_conversations(&self, search_param: &str) -> Result<Vec<LocalConversation>> {
+        let pattern = format!("%{}%", search_param);
+        let rows: Vec<LocalConversation> = sqlx::query_as(
+            "SELECT * FROM local_conversations WHERE show_name LIKE ? ORDER BY latest_msg_send_time DESC",
+        )
+        .bind(&pattern)
+        .fetch_all(&self.db)
+        .await
+        .context("search_conversations 失败")?;
+        Ok(rows)
+    }
+
     /// 部分更新会话（与 Go SetConversation 对齐：仅更新传入的字段）
     pub async fn update_conversation_partial(
         &self,
