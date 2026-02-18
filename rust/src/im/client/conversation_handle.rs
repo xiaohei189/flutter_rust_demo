@@ -2,18 +2,18 @@
 //!
 //! 合并原 conversation/service 的会话同步逻辑，通过命令通道接收消息同步器下发的会话命令。
 
-use crate::im::http_client::Api;
-use crate::im::client::callbacks::ClientCallbacks;
+use crate::im::client::listeners::Listeners;
+use crate::im::client::{AdvancedMsgListener, ConversationListener, FriendListener, GroupListener, UserListener};
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
-use crate::im::client::{AdvancedMsgListener, ConversationListener, FriendListener, GroupListener, UserListener};
-use crate::im::model::friend::BlackList;
 use crate::im::http_client::group::GetIncrementalGroupMemberReq;
+use crate::im::http_client::Api;
 use crate::im::model::constant::sync_flag;
 use crate::im::model::constant::RECEIVE_MESSAGE;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
-use crate::im::model::group::{server_group_to_local, server_group_member_to_local};
+use crate::im::model::friend::BlackList;
+use crate::im::model::group::{server_group_member_to_local, server_group_to_local};
 use crate::im::model::message::{attached_info_apply_is_private, msg_handle_by_content_type_result};
 use crate::im::model::LocalConversation;
 use crate::im::LocalChatLog;
@@ -156,7 +156,7 @@ pub struct ConversationHandle {
     config: ConversationSyncerConfig,
     api: Api,
     repository: Repository,
-    callbacks: Option<Arc<ClientCallbacks>>,
+    callbacks: Option<Arc<Listeners>>,
     cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
     cancel_token: CancellationToken,
     /// 与 Go conversationSyncMutex 对齐：GetAllConversationListDB -> diff -> 写会话 区段加锁
@@ -171,7 +171,7 @@ impl ConversationHandle {
     /// 使用共享连接池与 HTTP 客户端创建（供 client 初始化时调用）
     pub async fn with_listener_and_db_and_client(
         config: ConversationSyncerConfig,
-        callbacks: Option<Arc<ClientCallbacks>>,
+        callbacks: Option<Arc<Listeners>>,
         db: Pool<Sqlite>,
         http_client: reqwest::Client,
         cmd_rx: mpsc::UnboundedReceiver<ConvCmd>,
@@ -267,12 +267,7 @@ impl ConversationHandle {
                         .get("content")
                         .and_then(|c| c.as_str())
                         .map(String::from)
-                        .or_else(|| {
-                            v.get("text")
-                                .and_then(|t| t.get("content"))
-                                .and_then(|c| c.as_str())
-                                .map(String::from)
-                        });
+                        .or_else(|| v.get("text").and_then(|t| t.get("content")).and_then(|c| c.as_str()).map(String::from));
                     if let Some(c) = content_str {
                         if !c.is_empty() {
                             return c;
@@ -468,7 +463,11 @@ impl ConversationHandle {
         let _ = self.repository.conversation.update_show_name_and_face_url(&conv_id, &new_local.nickname, &new_local.face_url).await;
         if let Ok(ids) = self.repository.conversation.get_all_single_conversation_ids().await {
             for cid in ids {
-                let _ = self.repository.message.update_sender_face_url_and_nickname(&cid, &self.config.user_id, &new_local.face_url, &new_local.nickname).await;
+                let _ = self
+                    .repository
+                    .message
+                    .update_sender_face_url_and_nickname(&cid, &self.config.user_id, &new_local.face_url, &new_local.nickname)
+                    .await;
             }
         }
         if let Ok(convs) = self.repository.conversation.get_all_conversations().await {
@@ -1330,8 +1329,7 @@ impl ConversationHandle {
 
     /// 用户信息变更通知（对齐 Go internal/user/notification.go userInfoUpdatedNotification）：若为当前登录用户则 SyncLoginUserInfo
     async fn do_user_info_updated_notification(&self, msg: &sdkws::MsgData) -> Result<()> {
-        let tips: UserInfoUpdatedTipsRust = serde_json::from_slice(&msg.content)
-            .map_err(|e| anyhow::anyhow!("parse UserInfoUpdatedTips: {}", e))?;
+        let tips: UserInfoUpdatedTipsRust = serde_json::from_slice(&msg.content).map_err(|e| anyhow::anyhow!("parse UserInfoUpdatedTips: {}", e))?;
         if tips.user_id != self.config.user_id {
             trace!("UserInfoUpdatedTips userID != loginUserID, skip sync_login_user_info");
             return Ok(());
@@ -1469,21 +1467,29 @@ impl ConversationHandle {
                 if server_set != local_set {
                     let all_resp = self.api.friend.get_all_friends().await?;
                     self.apply_friends_full_sync(&all_resp.friends_info, &local_friends, true).await?;
-                    let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
-                        table_name: "local_friends".to_string(),
-                        entity_id: self.config.user_id.clone(),
-                        version: srv_version,
-                        version_id: srv_version_id,
-                    }).await;
+                    let _ = self
+                        .repository
+                        .friend
+                        .save_version_sync(&LocalVersionSync {
+                            table_name: "local_friends".to_string(),
+                            entity_id: self.config.user_id.clone(),
+                            version: srv_version,
+                            version_id: srv_version_id,
+                        })
+                        .await;
                     return Ok(());
                 }
                 if srv_version > 0 && !srv_version_id.is_empty() {
-                    let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
-                        table_name: "local_friends".to_string(),
-                        entity_id: self.config.user_id.clone(),
-                        version: srv_version,
-                        version_id: srv_version_id,
-                    }).await;
+                    let _ = self
+                        .repository
+                        .friend
+                        .save_version_sync(&LocalVersionSync {
+                            table_name: "local_friends".to_string(),
+                            entity_id: self.config.user_id.clone(),
+                            version: srv_version,
+                            version_id: srv_version_id,
+                        })
+                        .await;
                 }
             }
         }
@@ -1493,12 +1499,16 @@ impl ConversationHandle {
             self.apply_friends_full_sync(&all_resp.friends_info, &local_friends, true).await?;
             if !resp.version_id.is_empty() {
                 let new_v = if resp.version > 0 { resp.version } else { version + 1 };
-                let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
-                    table_name: "local_friends".to_string(),
-                    entity_id: self.config.user_id.clone(),
-                    version: new_v,
-                    version_id: resp.version_id.clone(),
-                }).await;
+                let _ = self
+                    .repository
+                    .friend
+                    .save_version_sync(&LocalVersionSync {
+                        table_name: "local_friends".to_string(),
+                        entity_id: self.config.user_id.clone(),
+                        version: new_v,
+                        version_id: resp.version_id.clone(),
+                    })
+                    .await;
             }
             return Ok(());
         }
@@ -1511,12 +1521,16 @@ impl ConversationHandle {
         }
         if !resp.version_id.is_empty() {
             let new_v = if resp.version > 0 { resp.version } else { version + 1 };
-            let _ = self.repository.friend.save_version_sync(&LocalVersionSync {
-                table_name: "local_friends".to_string(),
-                entity_id: self.config.user_id.clone(),
-                version: new_v,
-                version_id: resp.version_id,
-            }).await;
+            let _ = self
+                .repository
+                .friend
+                .save_version_sync(&LocalVersionSync {
+                    table_name: "local_friends".to_string(),
+                    entity_id: self.config.user_id.clone(),
+                    version: new_v,
+                    version_id: resp.version_id,
+                })
+                .await;
         }
         if let Some(l) = self.friend_listener() {
             if let Ok(updated) = self.repository.friend.get_all_friends().await {
@@ -1537,21 +1551,10 @@ impl ConversationHandle {
         let user_id = &self.config.user_id;
 
         // 1) 增量同步加入的群列表（与 Go IncrSyncJoinGroup 一致）
-        let version_sync = self
-            .repository
-            .version_sync
-            .get_version_sync_for(LOCAL_GROUPS_TABLE, user_id)
-            .await?;
-        let (version, version_id) = version_sync
-            .as_ref()
-            .map(|v| (v.version, v.version_id.as_str()))
-            .unwrap_or((0, ""));
+        let version_sync = self.repository.version_sync.get_version_sync_for(LOCAL_GROUPS_TABLE, user_id).await?;
+        let (version, version_id) = version_sync.as_ref().map(|v| (v.version, v.version_id.as_str())).unwrap_or((0, ""));
 
-        let resp = self
-            .api
-            .group
-            .get_incremental_join_groups(version, version_id)
-            .await?;
+        let resp = self.api.group.get_incremental_join_groups(version, version_id).await?;
 
         if resp.full {
             let local = self.repository.group.get_joined_group_list().await?;
@@ -1594,11 +1597,7 @@ impl ConversationHandle {
         for chunk in group_ids.chunks(MAX_SYNC_PULL_NUMBER) {
             let mut req_list: Vec<GetIncrementalGroupMemberReq> = Vec::with_capacity(chunk.len());
             for group_id in chunk {
-                let lvs = self
-                    .repository
-                    .version_sync
-                    .get_version_sync_for(LOCAL_GROUP_ENTITIES_VERSION_TABLE, group_id)
-                    .await?;
+                let lvs = self.repository.version_sync.get_version_sync_for(LOCAL_GROUP_ENTITIES_VERSION_TABLE, group_id).await?;
                 req_list.push(GetIncrementalGroupMemberReq {
                     group_id: group_id.clone(),
                     version_id: lvs.as_ref().map(|v| v.version_id.as_str()).unwrap_or("").to_string(),
@@ -1650,20 +1649,9 @@ impl ConversationHandle {
         Ok(())
     }
 
-    async fn apply_friends_full_sync(
-        &self,
-        server_friends: &[sdkws::FriendInfo],
-        local_friends: &[sdkws::FriendInfo],
-        is_full: bool,
-    ) -> Result<()> {
-        let local_map: HashMap<String, sdkws::FriendInfo> = local_friends
-            .iter()
-            .filter_map(|f| f.friend_user.as_ref().map(|u| (u.user_id.clone(), f.clone())))
-            .collect();
-        let server_map: HashMap<String, sdkws::FriendInfo> = server_friends
-            .iter()
-            .filter_map(|f| f.friend_user.as_ref().map(|u| (u.user_id.clone(), f.clone())))
-            .collect();
+    async fn apply_friends_full_sync(&self, server_friends: &[sdkws::FriendInfo], local_friends: &[sdkws::FriendInfo], is_full: bool) -> Result<()> {
+        let local_map: HashMap<String, sdkws::FriendInfo> = local_friends.iter().filter_map(|f| f.friend_user.as_ref().map(|u| (u.user_id.clone(), f.clone()))).collect();
+        let server_map: HashMap<String, sdkws::FriendInfo> = server_friends.iter().filter_map(|f| f.friend_user.as_ref().map(|u| (u.user_id.clone(), f.clone()))).collect();
         for (_, server_f) in server_map.iter() {
             self.repository.friend.upsert_friend(server_f).await?;
         }
@@ -1698,7 +1686,7 @@ impl ConversationHandle {
                         warn!("[conversation_handle] AppDataSyncStart incr_sync_friends 失败 err={}", e);
                     }
                     listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 4 / 10).await; // 4，与 Go addInitProgress(4) 后 c.progress 一致
-                    // Go syncWait: IncrSyncConversations, SyncAllConversationHashReadSeqs
+                                                                                               // Go syncWait: IncrSyncConversations, SyncAllConversationHashReadSeqs
                     if let Err(e) = self.incr_sync_conversations().await {
                         warn!("[conversation_handle] AppDataSyncStart incr_sync_conversations 失败 err={}", e);
                     }
@@ -1706,7 +1694,7 @@ impl ConversationHandle {
                         warn!("[conversation_handle] AppDataSyncStart sync_unread_by_seq 失败 err={}", e);
                     }
                     listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS).await; // 10，与 Go addInitProgress(6) 后 c.progress=4+6 一致
-                    // Go asyncNoWait: SyncLoginUserInfoWithoutNotice, SyncAllBlackListWithoutNotice
+                                                                                      // Go asyncNoWait: SyncLoginUserInfoWithoutNotice, SyncAllBlackListWithoutNotice
                     if let Err(e) = self.sync_login_user_info(false).await {
                         warn!("[conversation_handle] SyncFlag(APP_DATA_SYNC_START) sync_login_user_info 失败 err={}", e);
                     }

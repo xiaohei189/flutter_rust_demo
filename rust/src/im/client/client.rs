@@ -56,19 +56,19 @@ impl Client {
     }
 }
 
-use crate::im::http_client::friend::FriendApi;
-use crate::im::http_client::Api;
-use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;
+use crate::im::client::listeners::Listeners;
 use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
+use crate::im::client::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
+use crate::im::client::{FriendListener, GroupListener};
+use crate::im::dao::black::LocalBlack;
 use crate::im::dao::group::LocalGroup;
 use crate::im::dao::group_member::LocalGroupMember;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
-use crate::im::dao::black::LocalBlack;
-use crate::im::client::{FriendListener, GroupListener};
-use crate::im::client::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
+use crate::im::http_client::friend::FriendApi;
+use crate::im::http_client::Api;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
@@ -103,7 +103,7 @@ const SEND_MSG_WS_TIMEOUT_SECS: u64 = 10;
 pub struct IMClient {
     pub(crate) config: ClientConfig,
     /// 全局回调（连接、会话、消息、好友等），统一由此结构体管理
-    callbacks: Arc<RwLock<ClientCallbacks>>,
+    callbacks: Arc<RwLock<Listeners>>,
     /// WebSocket RPC 发送端；在 start() 中设置，用于通过长连发送消息（直接使用变量，不通过参数传递）
     ws_send_tx: Arc<RwLock<Option<mpsc::UnboundedSender<WsRpcEnvelope>>>>,
     /// start() 内运行循环的 JoinHandle，用于 wait_for_exit() 阻塞等待退出
@@ -135,7 +135,7 @@ impl IMClient {
                 .await?;
         }
 
-        let callbacks = ClientCallbacks {
+        let callbacks = Listeners {
             conn_listener: Some(Arc::new(EmptyConnListener)),
             conversation_listener: Some(Arc::new(EmptyConversationListener)),
             advanced_msg_listener: Some(Arc::new(EmptyAdvancedMsgListener)),
@@ -361,9 +361,7 @@ impl IMClient {
             user_id: self.config.user_id.clone(),
             is_background,
         };
-        let _: sdkws::SetAppBackgroundStatusResp = self
-            .send_ws_req(constant::SET_BACKGROUND_STATUS, &req)
-            .await?;
+        let _: sdkws::SetAppBackgroundStatusResp = self.send_ws_req(constant::SET_BACKGROUND_STATUS, &req).await?;
         Ok(())
     }
 
@@ -395,16 +393,8 @@ impl IMClient {
     }
 
     /// 设置会话（与 Go SetConversation 一致）：置顶、免打扰等，None 表示不更新该字段
-    pub async fn set_conversation(
-        &self,
-        conversation_id: &str,
-        is_pinned: Option<bool>,
-        recv_msg_opt: Option<i32>,
-    ) -> Result<()> {
-        self.local_repo
-            .conversation
-            .update_conversation_partial(conversation_id, is_pinned, recv_msg_opt)
-            .await
+    pub async fn set_conversation(&self, conversation_id: &str, is_pinned: Option<bool>, recv_msg_opt: Option<i32>) -> Result<()> {
+        self.local_repo.conversation.update_conversation_partial(conversation_id, is_pinned, recv_msg_opt).await
     }
 
     /// 隐藏会话（与 Go HideConversation 一致）
@@ -468,8 +458,18 @@ impl IMClient {
 
     /// 撤回消息（与 Go RevokeMessage 一致）：调用服务端撤回并依赖推送更新本地
     pub async fn revoke_message(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
-        let msg = self.local_repo.message.get_message(conversation_id, client_msg_id).await?.ok_or_else(|| anyhow::anyhow!("message not found"))?;
-        let conv = self.local_repo.conversation.get_conversation_by_id(conversation_id).await?.ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
+        let msg = self
+            .local_repo
+            .message
+            .get_message(conversation_id, client_msg_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("message not found"))?;
+        let conv = self
+            .local_repo
+            .conversation
+            .get_conversation_by_id(conversation_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
         let req = RevokeMsgReq {
             revoke_msg_client_id: client_msg_id.to_string(),
             conversation_id: Some(conversation_id.to_string()),
@@ -518,11 +518,15 @@ impl IMClient {
 
     /// 清空会话并删除该会话下所有本地消息（先调服务端 clear_conversation_msg，再本地删消息并清空会话；与 Go ClearConversationAndDeleteAllMsg 一致）
     pub async fn clear_conversation_and_delete_all_msg(&self, conversation_id: &str) -> Result<()> {
-        let _ = self.api.message.clear_conversation_msg(ClearConversationsMsgReq {
-            conversation_ids: vec![conversation_id.to_string()],
-            user_id: self.config.user_id.clone(),
-            delete_sync_opt: None,
-        }).await;
+        let _ = self
+            .api
+            .message
+            .clear_conversation_msg(ClearConversationsMsgReq {
+                conversation_ids: vec![conversation_id.to_string()],
+                user_id: self.config.user_id.clone(),
+                delete_sync_opt: None,
+            })
+            .await;
         let _ = self.local_repo.message.mark_conversation_as_read(conversation_id).await;
         self.local_repo.message.delete_conversation(conversation_id).await?;
         self.local_repo.conversation.clear_conversation(conversation_id).await
@@ -530,11 +534,15 @@ impl IMClient {
 
     /// 删除会话并删除该会话下所有本地消息（先调服务端 clear_conversation_msg，再本地删消息并重置会话；与 Go DeleteConversationAndDeleteAllMsg 一致）
     pub async fn delete_conversation_and_delete_all_msg(&self, conversation_id: &str) -> Result<()> {
-        let _ = self.api.message.clear_conversation_msg(ClearConversationsMsgReq {
-            conversation_ids: vec![conversation_id.to_string()],
-            user_id: self.config.user_id.clone(),
-            delete_sync_opt: None,
-        }).await;
+        let _ = self
+            .api
+            .message
+            .clear_conversation_msg(ClearConversationsMsgReq {
+                conversation_ids: vec![conversation_id.to_string()],
+                user_id: self.config.user_id.clone(),
+                delete_sync_opt: None,
+            })
+            .await;
         let _ = self.local_repo.message.mark_conversation_as_read(conversation_id).await;
         self.local_repo.message.delete_conversation(conversation_id).await?;
         self.local_repo.conversation.reset_conversation(conversation_id).await
@@ -557,7 +565,14 @@ impl IMClient {
 
     /// 服务端+本地删除全部消息（与 Go DeleteAllMsgFromLocalAndServer 一致）
     pub async fn delete_all_msg_from_local_and_server(&self) -> Result<()> {
-        let _ = self.api.message.user_clear_all_msg(UserClearAllMsgReq { user_id: self.config.user_id.clone(), delete_sync_opt: None }).await;
+        let _ = self
+            .api
+            .message
+            .user_clear_all_msg(UserClearAllMsgReq {
+                user_id: self.config.user_id.clone(),
+                delete_sync_opt: None,
+            })
+            .await;
         self.delete_all_msg_from_local(false).await
     }
 
@@ -591,18 +606,16 @@ impl IMClient {
         let keyword = params.keyword_list.first().map(String::as_str);
         let begin = if params.search_time_position > 0 && params.search_time_period > 0 {
             Some(params.search_time_position - params.search_time_period)
-        } else { None };
+        } else {
+            None
+        };
         let end = if params.search_time_position > 0 && params.search_time_period > 0 {
             Some(params.search_time_position)
-        } else { None };
+        } else {
+            None
+        };
         let ctypes = if params.message_type_list.is_empty() { None } else { Some(params.message_type_list.as_slice()) };
-        let logs = self.local_repo.message.search_local_messages(
-            Some(&params.conversation_id),
-            keyword,
-            ctypes,
-            begin,
-            end,
-        ).await?;
+        let logs = self.local_repo.message.search_local_messages(Some(&params.conversation_id), keyword, ctypes, begin, end).await?;
         let mut search_result_items = Vec::new();
         if !logs.is_empty() {
             let conv = self.local_repo.conversation.get_conversation_by_id(&params.conversation_id).await?.unwrap_or_default();
@@ -743,15 +756,7 @@ impl IMClient {
         }
         let blacks = self.local_repo.black.get_black_list().await?;
         let black_set: std::collections::HashSet<String> = blacks.into_iter().map(|b| b.block_user_id).collect();
-        Ok(list
-            .into_iter()
-            .filter(|f| {
-                f.friend_user
-                    .as_ref()
-                    .map(|u| !black_set.contains(&u.user_id))
-                    .unwrap_or(true)
-            })
-            .collect())
+        Ok(list.into_iter().filter(|f| f.friend_user.as_ref().map(|u| !black_set.contains(&u.user_id)).unwrap_or(true)).collect())
     }
 
     /// 分页获取好友列表（与 Go GetFriendListPage 对齐）。filter_black 为 true 时排除黑名单用户
@@ -762,15 +767,7 @@ impl IMClient {
         }
         let blacks = self.local_repo.black.get_black_list().await?;
         let black_set: std::collections::HashSet<String> = blacks.into_iter().map(|b| b.block_user_id).collect();
-        Ok(list
-            .into_iter()
-            .filter(|f| {
-                f.friend_user
-                    .as_ref()
-                    .map(|u| !black_set.contains(&u.user_id))
-                    .unwrap_or(true)
-            })
-            .collect())
+        Ok(list.into_iter().filter(|f| f.friend_user.as_ref().map(|u| !black_set.contains(&u.user_id)).unwrap_or(true)).collect())
     }
 
     /// 获取黑名单列表（本地，与 Go GetBlackList 对齐）

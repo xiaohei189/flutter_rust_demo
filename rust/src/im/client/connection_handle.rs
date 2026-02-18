@@ -2,16 +2,16 @@
 //!
 //! 此模块包含 OpenIM 客户端的核心逻辑实现。
 
-use crate::im::client::callbacks::ClientCallbacks;
 use crate::im::client::client::ClientConfig;
+use crate::im::client::listeners::Listeners;
 use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
-use crate::im::dao::MessageRepo;
-use crate::im::client::FriendSyncer;
 use crate::im::client::FriendListener;
-use crate::im::model::friend::FriendSyncerConfig;
+use crate::im::client::FriendSyncer;
 use crate::im::client::{AdvancedMsgListener, ConversationListener};
+use crate::im::dao::MessageRepo;
 use crate::im::model::conversation::ConversationSyncerConfig;
+use crate::im::model::friend::FriendSyncerConfig;
 use crate::im::model::message::{AtElem, AtInfo, CustomElem, FileElem, LocationElem, MarkdownTextElem, MsgStruct, PictureElem, QuoteElem, SeqRange as SeqRangeModel, SoundElem, VideoElem};
 use crate::im::model::ws::WsRpcEnvelope;
 use crate::im::model::{msg_type, LocalConversation, OpenIMReq, OpenIMResp};
@@ -67,7 +67,7 @@ pub struct ConnectionHandle {
     reconnect_strategy: ReconnectStrategy,
     cancel_token: CancellationToken,
     /// 全局回调，直接调用各类型监听器，便于扩展
-    callbacks: Option<Arc<ClientCallbacks>>,
+    callbacks: Option<Arc<Listeners>>,
 }
 
 impl ConnectionHandle {
@@ -76,7 +76,7 @@ impl ConnectionHandle {
         cmd_rx: mpsc::UnboundedReceiver<WsRpcEnvelope>,
         msg_sync_cmd_tx: mpsc::UnboundedSender<MsgSyncCommand>,
         cancel_token: CancellationToken,
-        callbacks: Option<Arc<ClientCallbacks>>,
+        callbacks: Option<Arc<Listeners>>,
     ) -> Self {
         let client = Self {
             config,
@@ -405,8 +405,8 @@ mod tests {
     use super::{ClientConfig, ConnectionHandle};
     use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
     use crate::im::client::FriendListener;
-    use crate::im::http_client::login_async;
     use crate::im::client::{AdvancedMsgListener, ConversationListener};
+    use crate::im::http_client::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::SeqRange;
     use std::sync::Arc;

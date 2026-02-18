@@ -1,7 +1,26 @@
 //! 与 open_im_sdk_callback/callback_client.go 对齐的监听器回调（由 listener/callbacks 迁入 client）
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use tracing::warn;
+
+/// 客户端全局回调（连接、会话、消息、好友、用户、群组等），各字段代表一种类型，后续扩展时新增字段即可
+#[derive(Clone, Default)]
+pub struct Listeners {
+    /// 连接状态回调
+    pub conn_listener: Option<Arc<dyn ConnListener>>,
+    /// 会话变更回调
+    pub conversation_listener: Option<Arc<dyn ConversationListener>>,
+    /// 高级消息回调
+    pub advanced_msg_listener: Option<Arc<dyn AdvancedMsgListener>>,
+    /// 好友变更回调
+    pub friend_listener: Option<Arc<dyn FriendListener>>,
+    /// 用户信息回调（Go: OnUserListener，含 OnSelfInfoUpdated）
+    pub user_listener: Option<Arc<dyn UserListener>>,
+    /// 群组变更回调（Go: OnGroupListener）
+    pub group_listener: Option<Arc<dyn GroupListener>>,
+}
 
 // ============== OnConnListener ==============
 
