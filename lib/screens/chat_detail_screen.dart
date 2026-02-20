@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../utils/app_logger.dart';
 import '../models/user.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_input.dart';
@@ -109,7 +110,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         });
       }
     } catch (e) {
-      debugPrint('加载历史消息失败: $e');
+      appLog.e('加载历史消息失败: $e');
       setState(() {
         _isLoadingHistory = false;
       });

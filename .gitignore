@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 rust/conversations.db
 rust/logs/rust.log.*
+logs/rust.log.*

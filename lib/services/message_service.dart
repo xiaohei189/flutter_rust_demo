@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/chat.dart';
+import '../src/rust/api/simple.dart';
+import '../utils/app_logger.dart';
 import '../models/message.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/listeners/conversation.dart';
@@ -83,7 +85,7 @@ class MessageService extends ChangeNotifier {
 
       // 检查错误
       if (result.errCode != 0) {
-        debugPrint(
+        appLog.w(
           'dart MessageService ❌ 加载历史消息失败: ${result.errMsg} (code: ${result.errCode})',
         );
         return false;
@@ -113,14 +115,14 @@ class MessageService extends ChangeNotifier {
           .toList();
 
       notifyListeners();
-      debugPrint(
+      appLog.d(
         'dart MessageService ✅ 加载历史消息成功: ${messages.length} 条，isEnd: ${result.isEnd}',
       );
 
       // 返回是否还有更多消息（取反，因为 isEnd 表示已到末尾）
       return !result.isEnd;
     } catch (e) {
-      debugPrint('dart MessageService ❌ 加载历史消息失败: $e');
+      appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
       return false;
     }
   }
@@ -193,18 +195,21 @@ class MessageService extends ChangeNotifier {
   Future<void> initialize({String? wsUrl}) async {
     // 如果已经连接，热更新时跳过重复初始化
     if (_client != null && _isConnected) {
-      debugPrint('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
+      appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
 
     // 防止并发初始化
     if (_isInitializing) {
-      debugPrint('⚠️ 初始化正在进行中，跳过重复调用');
+      appLog.w('⚠️ 初始化正在进行中，跳过重复调用');
       return;
     }
 
     _isInitializing = true;
     try {
+      // 设置 Rust 日志级别为 debug
+      await initLogger(logLevel: 'info');
+
       // 先登录获取 token 信息（参考 openim-cli.rs 的实现）
       final resp = await loginAsync(
         areaCode: '+86',
@@ -216,7 +221,7 @@ class MessageService extends ChangeNotifier {
       final userId = resp.userId;
       final imToken = resp.imToken;
 
-      debugPrint('✅ 登录成功！用户ID: $userId');
+      appLog.i('✅ 登录成功！用户ID: $userId');
       _currentUserId = userId;
 
       // 创建客户端实例（异步，由 bridge executor 执行）
@@ -236,12 +241,12 @@ class MessageService extends ChangeNotifier {
       _isConnected = true;
       notifyListeners();
 
-      debugPrint('✅ 客户端连接成功');
+      appLog.i('✅ 客户端连接成功');
 
       // 加载初始会话列表
       await _loadConversations();
     } catch (e) {
-      debugPrint('❌ 初始化失败: $e');
+      appLog.e('❌ 初始化失败: $e');
       _isConnected = false;
       notifyListeners();
       rethrow;
@@ -327,11 +332,11 @@ class MessageService extends ChangeNotifier {
         _updateConversation(conv);
       }
       notifyListeners();
-      debugPrint(
+      appLog.d(
         'dart MessageService ✅ 加载会话列表成功: ${_conversations.length} 个会话',
       );
     } catch (e) {
-      debugPrint('dart MessageService ❌ 加载会话列表失败: $e');
+      appLog.e('dart MessageService ❌ 加载会话列表失败: $e');
     }
   }
 

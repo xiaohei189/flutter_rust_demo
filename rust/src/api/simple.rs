@@ -5,9 +5,9 @@ pub fn greet(name: String) -> String {
     format!("Hello, {name}!")
 }
 
-/// 初始化 Rust 日志，供 Dart 在应用启动时配置
-#[flutter_rust_bridge::frb(sync)]
-pub fn init_logger(log_level: String) {
+/// 初始化 Rust 日志，供 Dart 在 client 初始化时配置
+#[flutter_rust_bridge::frb]
+pub async fn init_logger(log_level: String) {
     rust_init_logger(&log_level);
 }
 

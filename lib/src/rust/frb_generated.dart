@@ -119,6 +119,8 @@ abstract class RustLibApi extends BaseApi {
 
   String crateApiSimpleGreet({required String name});
 
+  Future<void> crateApiSimpleInitLogger({required String logLevel});
+
   Future<void> crateApiSimpleInitApp();
 
   Future<LoginData> crateApiBridgeClientLoginAsync({
@@ -427,6 +429,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiSimpleGreetConstMeta =>
       const TaskConstMeta(debugName: "greet", argNames: ["name"]);
+
+  @override
+  Future<void> crateApiSimpleInitLogger({required String logLevel}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(logLevel, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 11,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiSimpleInitLoggerConstMeta,
+        argValues: [logLevel],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSimpleInitLoggerConstMeta =>
+      const TaskConstMeta(debugName: "init_logger", argNames: ["logLevel"]);
 
   @override
   Future<void> crateApiSimpleInitApp() {
