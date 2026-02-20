@@ -93,7 +93,7 @@ use tokio::task::JoinHandle;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio::time::timeout;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, trace};
+use tracing::{debug, error, info, trace};
 use uuid::Uuid;
 
 /// 发送消息 WS 等待响应超时（秒）
@@ -952,6 +952,7 @@ impl IMClient {
 
     /// 群聊发送文本消息；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`。
     pub async fn send_text_to_group(&self, group_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
+        debug!("[send_text_to_group] group_id={}, text={}", group_id, text);
         let mut msg_data = sdkws::MsgData::default();
         msg_data.group_id = group_id;
         msg_data.content_type = constant::TEXT;

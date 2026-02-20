@@ -11,6 +11,7 @@ use rust_lib_flutter_rust_demo::im::http_client::auth::LoginData;
 use rust_lib_flutter_rust_demo::im::{AdvancedMsgEvent, ConversationEvent};
 use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::login_async;
+use tracing::debug;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use tokio::sync::{oneshot, OnceCell};
@@ -213,6 +214,7 @@ pub fn first_group_from_list(list: &[rust_lib_flutter_rust_demo::LocalConversati
     let first = list.iter().find(|c| {
         c.conversation_type == CONVERSATION_TYPE_GROUP || c.conversation_type == CONVERSATION_TYPE_SUPER_GROUP
     })?;
+    debug!("first_group_from_list: {:?}", first);
     let group_id = first
         .group_id
         .is_empty()

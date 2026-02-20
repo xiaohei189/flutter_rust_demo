@@ -4,13 +4,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/chat.dart';
-import '../src/rust/api/simple.dart';
-import '../utils/app_logger.dart';
 import '../models/message.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/listeners/conversation.dart';
+import '../src/rust/api/simple.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../src/rust/im/model/message.dart' as im_msg;
+import '../utils/app_logger.dart';
 
 /// 消息服务 - 管理客户端连接、会话列表、消息
 /// 会话通过 get_all_conversations + 监听 conversation stream 回调同步
@@ -22,6 +22,7 @@ class MessageService extends ChangeNotifier {
 
   /// 会话同步中（用于显示同步提示）
   bool _isSyncingConversations = false;
+
   /// 同步进度 0-100
   int _syncProgress = 0;
 
@@ -179,6 +180,9 @@ class MessageService extends ChangeNotifier {
     if (_client == null) {
       throw StateError('客户端未初始化');
     }
+    if (recvId.trim().isEmpty) {
+      throw ArgumentError('接收方 ID 不能为空 (recvId)，请检查会话的 userId/groupId');
+    }
     await _client!.sendTextMessage(
       recvId: recvId,
       text: text,
@@ -208,7 +212,7 @@ class MessageService extends ChangeNotifier {
     _isInitializing = true;
     try {
       // 设置 Rust 日志级别为 debug
-      await initLogger(logLevel: 'info');
+      await initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
 
       // 先登录获取 token 信息（参考 openim-cli.rs 的实现）
       final resp = await loginAsync(
@@ -332,9 +336,7 @@ class MessageService extends ChangeNotifier {
         _updateConversation(conv);
       }
       notifyListeners();
-      appLog.d(
-        'dart MessageService ✅ 加载会话列表成功: ${_conversations.length} 个会话',
-      );
+      appLog.d('dart MessageService ✅ 加载会话列表成功: ${_conversations.length} 个会话');
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载会话列表失败: $e');
     }

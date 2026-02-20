@@ -145,21 +145,42 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
     if (!messageService.isConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('WebSocket 未连接，无法发送消息'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      appLog.e('发送消息失败: WebSocket 未连接');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('WebSocket 未连接，无法发送消息'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
     try {
-      // 确定接收者ID和会话类型
-      final recvId = widget.conversation.userId.isNotEmpty
-          ? widget.conversation.userId
-          : widget.conversation.groupId;
-      final sessionType = widget.conversation.conversationType;
+      // 按会话类型确定接收者 ID：1=单聊用 userId，2/3=群聊从 conversationId 去前缀得群 ID
+      final type = widget.conversation.conversationType;
+      final cid = widget.conversation.conversationId;
+      final recvId = switch (type) {
+        1 => widget.conversation.userId,
+        2 => cid.startsWith('g_') ? cid.substring(2) : widget.conversation.groupId,
+        3 => cid.startsWith('sg_') ? cid.substring(3) : widget.conversation.groupId,
+        _ => '',
+      };
+      final sessionType = type;
+
+      if (recvId.isEmpty) {
+        appLog.e('发送消息失败: recvId 为空，conversationId=${widget.conversation.conversationId} userId=${widget.conversation.userId} groupId=${widget.conversation.groupId}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('无法发送：会话缺少对方 ID，请返回会话列表重试'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
 
       // 发送消息（传入 conversationId 以便发送后刷新消息列表）
       await messageService.sendTextMessage(
@@ -171,7 +192,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
       _textController.clear();
       _scrollToBottom();
-    } catch (e) {
+    } catch (e, st) {
+      appLog.e('发送消息失败: $e', e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('发送消息失败: $e'), backgroundColor: Colors.red),

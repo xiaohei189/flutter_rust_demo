@@ -1,9 +1,30 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_list_item.dart';
 import 'chat_detail_screen.dart';
+
+/// 在控制台输出会话列表信息（便于调试）
+void debugPrintConversations(List<im_conv.LocalConversation> conversations) {
+  if (!kDebugMode || conversations.isEmpty) return;
+  debugPrint('========== 会话列表 (共 ${conversations.length} 条) ==========');
+  for (var i = 0; i < conversations.length; i++) {
+    final c = conversations[i];
+    final latestPreview = c.latestMsg.isEmpty ? '(空)' : (c.latestMsg.length > 40 ? '${c.latestMsg.substring(0, 40)}…' : c.latestMsg);
+    debugPrint(
+      '[$i] conversationId=${c.conversationId} '
+      'conversationType=${c.conversationType} '
+      'showName=${c.showName} '
+      'userId=${c.userId} groupId=${c.groupId} '
+      'unreadCount=${c.unreadCount} '
+      'latestMsgLen=${c.latestMsg.length} latestPreview=$latestPreview '
+      'draftText=${c.draftText.isNotEmpty ? c.draftText : "(无)"}',
+    );
+  }
+  debugPrint('========================================');
+}
 
 /// 聊天列表页面
 class ChatListScreen extends StatefulWidget {
@@ -29,6 +50,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   void _onMessageServiceChanged() {
     if (mounted) {
+      debugPrintConversations(messageService.conversations);
       setState(() {});
     }
   }
