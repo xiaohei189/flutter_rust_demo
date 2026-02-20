@@ -66,6 +66,10 @@ impl OpenIMBridgeClient {
         })
     }
 
+    // 会话 Stream：codegen 后取消注释
+    // #[flutter_rust_bridge::frb]
+    // pub fn set_conversation_stream(&self, sink: StreamSink<ConversationEvent>) -> Result<()> { ... }
+
     /// 连接到服务器
     ///
     /// 建立 WebSocket 连接并启动消息监听。

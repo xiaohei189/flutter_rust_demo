@@ -3,6 +3,8 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
+import 'dart:async';
+
 import '../../frb_generated.dart';
 import '../../im/model/conversation.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
@@ -61,9 +63,9 @@ class DartConversationListener {
 
   const DartConversationListener({required this.sink});
 
-  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-  static Stream<ConversationEvent> newInstance() => RustLib.instance.api
-      .crateApiListenersConversationDartConversationListenerNew();
+  // Rust 未实现 api::listeners，改用 OpenImBridgeClient.setConversationStream() 获取 Stream
+  static Stream<ConversationEvent> newInstance() =>
+      Stream<ConversationEvent>.empty();
 
   @override
   int get hashCode => sink.hashCode;

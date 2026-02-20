@@ -14,7 +14,10 @@ Future<void> main() async {
   // 1. 初始化 Rust 库
   await RustLib.init();
 
-  // 2. 初始化并连接 IM（登录已集成在 SDK 中）
+  // 2. 初始化 Rust 日志（需先运行 codegen 后取消注释）
+  // initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
+
+  // 3. 初始化并连接 IM（登录已集成在 SDK 中）
   try {
     await messageService.initialize(
       wsUrl: 'ws://localhost:10001', // WebSocket 地址

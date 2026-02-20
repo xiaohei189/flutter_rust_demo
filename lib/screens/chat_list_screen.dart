@@ -41,17 +41,38 @@ class _ChatListScreenState extends State<ChatListScreen> {
       appBar: AppBar(
         title: const Text('聊天'),
         actions: [
-          // 显示连接状态
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Center(
-              child: Icon(
-                messageService.isConnected ? Icons.cloud_done : Icons.cloud_off,
-                color: messageService.isConnected ? Colors.green : Colors.red,
-                size: 20,
+          // 显示同步状态
+          if (messageService.isSyncingConversations)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    value: messageService.syncProgress > 0
+                        ? messageService.syncProgress / 100
+                        : null,
+                  ),
+                ),
+              ),
+            )
+          else
+            // 显示连接状态
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: Icon(
+                  messageService.isConnected
+                      ? Icons.cloud_done
+                      : Icons.cloud_off,
+                  color:
+                      messageService.isConnected ? Colors.green : Colors.red,
+                  size: 20,
+                ),
               ),
             ),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
@@ -71,21 +92,32 @@ class _ChatListScreenState extends State<ChatListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '暂无会话',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    messageService.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                  ),
+                  if (messageService.isSyncingConversations) ...[
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(
+                      '正在同步会话... ${messageService.syncProgress}%',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ] else ...[
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '暂无会话',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      messageService.isConnected
+                          ? '等待接收消息...'
+                          : 'WebSocket 未连接',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
                 ],
               ),
             )

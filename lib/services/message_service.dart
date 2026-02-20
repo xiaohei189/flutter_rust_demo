@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,24 +6,38 @@ import 'package:flutter/material.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
 import '../src/rust/api/bridge_client.dart';
+import '../src/rust/api/listeners/conversation.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../src/rust/im/model/message.dart' as im_msg;
 
 /// 消息服务 - 管理客户端连接、会话列表、消息
-/// 连接状态和消息通过 connect() 结果及主动拉取获取，无 Stream 回调
+/// 会话通过 get_all_conversations + 监听 conversation stream 回调同步
 class MessageService extends ChangeNotifier {
   OpenImBridgeClient? _client;
   bool _isConnected = false;
   bool _isInitializing = false; // 初始化状态标志，防止并发初始化
   String _currentUserId = ''; // 当前登录用户 ID，用于判断消息是否为自己发送
 
+  /// 会话同步中（用于显示同步提示）
+  bool _isSyncingConversations = false;
+  /// 同步进度 0-100
+  int _syncProgress = 0;
+
   // 会话列表
   final List<im_conv.LocalConversation> _conversations = [];
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
 
+  StreamSubscription<ConversationEvent>? _conversationStreamSubscription;
+
   /// 是否已连接
   bool get isConnected => _isConnected;
+
+  /// 是否正在同步会话
+  bool get isSyncingConversations => _isSyncingConversations;
+
+  /// 同步进度 0-100
+  int get syncProgress => _syncProgress;
 
   /// 获取客户端实例
   OpenImBridgeClient? get client => _client;
@@ -212,6 +227,10 @@ class MessageService extends ChangeNotifier {
         wsUrl: wsUrl,
       );
 
+      // 设置会话监听 Stream（需在 connect 之前，codegen 生成 setConversationStream 后取消注释）
+      // final stream = _client!.setConversationStream();
+      // _conversationStreamSubscription = stream.listen(_handleConversationEvent);
+
       // 连接到服务器
       await _client!.connect();
       _isConnected = true;
@@ -256,6 +275,47 @@ class MessageService extends ChangeNotifier {
     });
   }
 
+  /// 处理会话事件（同步进度、新会话、会话变更等）
+  /// 在 setConversationStream 取消注释后由 stream.listen 调用
+  // ignore: unused_element
+  void _handleConversationEvent(ConversationEvent event) {
+    event.when(
+      syncServerStart: (_) {
+        _isSyncingConversations = true;
+        _syncProgress = 0;
+        notifyListeners();
+      },
+      syncServerFinish: (_) {
+        _isSyncingConversations = false;
+        _syncProgress = 100;
+        notifyListeners();
+        _loadConversations();
+      },
+      syncServerProgress: (progress) {
+        _syncProgress = progress;
+        notifyListeners();
+      },
+      syncServerFailed: (_) {
+        _isSyncingConversations = false;
+        notifyListeners();
+      },
+      newConversation: (list) {
+        for (final c in list) {
+          _updateConversation(c);
+        }
+        notifyListeners();
+      },
+      conversationChanged: (list) {
+        for (final c in list) {
+          _updateConversation(c);
+        }
+        notifyListeners();
+      },
+      totalUnreadMessageCountChanged: (_) => notifyListeners(),
+      conversationUserInputStatusChanged: (_) {},
+    );
+  }
+
   /// 加载会话列表
   Future<void> _loadConversations() async {
     if (_client == null) return;
@@ -282,6 +342,8 @@ class MessageService extends ChangeNotifier {
 
   /// 断开连接
   Future<void> disconnect() async {
+    await _conversationStreamSubscription?.cancel();
+    _conversationStreamSubscription = null;
     _client = null;
     _currentUserId = '';
     _isConnected = false;
