@@ -108,6 +108,8 @@ pub struct IMClient {
     ws_send_tx: Arc<RwLock<Option<mpsc::UnboundedSender<WsRpcEnvelope>>>>,
     /// start() 内运行循环的 JoinHandle，用于 wait_for_exit() 阻塞等待退出
     run_handle: Arc<RwLock<Option<JoinHandle<Result<()>>>>>,
+    /// 用于 stop() 取消连接循环；在 start() 中设置
+    cancel_token: Arc<RwLock<Option<CancellationToken>>>,
     /// 本地 DB 副本，new 时初始化，用于查询本地消息/会话及发送人信息
     local_repo: Repository,
     /// HTTP API（与 Go 一致，供 GetUserInfoWithCache / 发消息等使用）
@@ -150,6 +152,7 @@ impl IMClient {
             callbacks: Arc::new(RwLock::new(callbacks)),
             ws_send_tx: Arc::new(RwLock::new(None)),
             run_handle: Arc::new(RwLock::new(None)),
+            cancel_token: Arc::new(RwLock::new(None)),
             local_repo: repo,
             api,
             message_pull_forward_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
@@ -212,7 +215,9 @@ impl IMClient {
         let (ws_tx, connection_rx) = mpsc::unbounded_channel();
         let _ = self.ws_send_tx.write().unwrap().insert(ws_tx.clone());
         let (msg_sync_cmd_tx, msg_sync_cmd_rx) = mpsc::unbounded_channel();
-        let cancel_token = CancellationToken::new();
+        let parent_token = CancellationToken::new();
+        let cancel_token = parent_token.child_token();
+        let _ = self.cancel_token.write().unwrap().insert(parent_token);
 
         let callbacks_snap = self.callbacks.read().unwrap().clone();
         let callbacks = Arc::new(callbacks_snap);
@@ -292,6 +297,14 @@ impl IMClient {
             h.await.map_err(|e| anyhow::anyhow!("run task join error: {}", e))?
         } else {
             Ok(())
+        }
+    }
+
+    /// 停止客户端（取消连接循环，用于 Flutter 热重启等场景断开旧连接）
+    pub fn stop(&self) {
+        if let Some(token) = self.cancel_token.write().unwrap().take() {
+            token.cancel();
+            info!("[Client] 已发送停止信号");
         }
     }
 

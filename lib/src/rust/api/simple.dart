@@ -9,6 +9,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 String greet({required String name}) =>
     RustLib.instance.api.crateApiSimpleGreet(name: name);
 
-/// 初始化 Rust 日志，供 Dart 异步设置日志级别
+/// 初始化 Rust 日志，供 Dart 在 client 初始化时配置
 Future<void> initLogger({required String logLevel}) =>
     RustLib.instance.api.crateApiSimpleInitLogger(logLevel: logLevel);

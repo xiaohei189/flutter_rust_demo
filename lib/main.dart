@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
 
 import 'screens/main_screen.dart';
@@ -15,7 +16,10 @@ Future<void> main() async {
   // 1. 初始化 Rust 库
   await RustLib.init();
 
-  // 2. 初始化并连接 IM（Rust 日志在 client 初始化时设置）
+  // 2. 热重启时先关闭之前的 client，避免同 token 重复连接导致 TokenKickedError(1506)
+  await closeCurrentClientIfAny();
+
+  // 3. 初始化并连接 IM（Rust 日志在 client 初始化时设置）
   try {
     await messageService.initialize(
       wsUrl: 'ws://localhost:10001', // WebSocket 地址

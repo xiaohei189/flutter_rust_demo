@@ -10,6 +10,10 @@ import '../im/model/message.dart';
 import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
+Future<void> closeCurrentClientIfAny() =>
+    RustLib.instance.api.crateApiBridgeClientCloseCurrentClientIfAny();
+
 /// 登录接口
 ///
 /// 参考 openim-cli 的实现，先登录获取 token 信息
@@ -27,6 +31,9 @@ Future<LoginData> loginAsync({
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
+  /// 关闭当前实例（停止 WebSocket 与同步任务），由 Flutter 在断开/重启前调用
+  Future<void> close();
+
   /// 连接到服务器
   ///
   /// 建立 WebSocket 连接并启动消息监听。

@@ -2,9 +2,13 @@
 //!
 //! 按 flutter_rust_bridge_codegen 要求将 IMClient 暴露为 Flutter API。
 //! 使用 RustOpaque 包装 IMClient，通过 #[frb] 注解暴露方法。
+//!
+//! 热重启：Flutter 在 initialize 前调用 close_current_client_if_any() 关闭旧连接，
+//! 避免同 token 重复连接导致 TokenKickedError(1506)。
 
 use crate::im::client::client::{ClientConfig, IMClient};
 use crate::im::http_client::auth::LoginData;
+use std::sync::Mutex;
 use crate::im::model::conversation::LocalConversation;
 use crate::im::model::message::{
     GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams,
@@ -13,6 +17,19 @@ use anyhow::Result;
 use openim_protocol::constant;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+
+/// 热重启时由 Flutter 在创建新 client 前调用，关闭上一次的 client，避免 token 重复使用
+static CURRENT_CLIENT_INNER: Mutex<Option<Arc<RwLock<IMClient>>>> = Mutex::new(None);
+
+/// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
+#[flutter_rust_bridge::frb]
+pub async fn close_current_client_if_any() -> Result<()> {
+    let prev = CURRENT_CLIENT_INNER.lock().unwrap().take();
+    if let Some(inner) = prev {
+        inner.read().await.stop();
+    }
+    Ok(())
+}
 
 /// 登录接口
 ///
@@ -61,9 +78,16 @@ impl OpenIMBridgeClient {
             config.user_id
         );
         let client = IMClient::new(config).await?;
-        Ok(Self {
-            inner: Arc::new(RwLock::new(client)),
-        })
+        let inner = Arc::new(RwLock::new(client));
+        *CURRENT_CLIENT_INNER.lock().unwrap() = Some(inner.clone());
+        Ok(Self { inner })
+    }
+
+    /// 关闭当前实例（停止 WebSocket 与同步任务），由 Flutter 在断开/重启前调用
+    #[flutter_rust_bridge::frb]
+    pub async fn close(&self) -> Result<()> {
+        self.inner.read().await.stop();
+        Ok(())
     }
 
     // 会话 Stream：codegen 后取消注释

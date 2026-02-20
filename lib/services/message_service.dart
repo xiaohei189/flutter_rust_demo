@@ -349,7 +349,10 @@ class MessageService extends ChangeNotifier {
   Future<void> disconnect() async {
     await _conversationStreamSubscription?.cancel();
     _conversationStreamSubscription = null;
-    _client = null;
+    if (_client != null) {
+      await _client!.close();
+      _client = null;
+    }
     _currentUserId = '';
     _isConnected = false;
     _isInitializing = false; // 重置初始化状态
