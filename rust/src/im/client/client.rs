@@ -58,10 +58,10 @@ impl Client {
 
 use crate::im::client::connection_handle::ConnectionHandle;
 use crate::im::client::conversation_handle::ConversationHandle;
-use crate::im::client::listeners::Listeners;
+use crate::im::client::listeners::{
+    AdvancedMsgEvent, ConnEvent, ConversationEvent, FriendEvent, GroupEvent, Listeners, UserEvent,
+};
 use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
-use crate::im::client::{AdvancedMsgListener, ConnListener, ConversationListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyUserListener, UserListener};
-use crate::im::client::{FriendListener, GroupListener};
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::group::LocalGroup;
 use crate::im::dao::group_member::LocalGroupMember;
@@ -90,6 +90,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio::time::timeout;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, trace};
@@ -137,14 +138,7 @@ impl IMClient {
                 .await?;
         }
 
-        let callbacks = Listeners {
-            conn_listener: Some(Arc::new(EmptyConnListener)),
-            conversation_listener: Some(Arc::new(EmptyConversationListener)),
-            advanced_msg_listener: Some(Arc::new(EmptyAdvancedMsgListener)),
-            friend_listener: None,
-            user_listener: Some(Arc::new(EmptyUserListener)),
-            group_listener: None,
-        };
+        let callbacks = Listeners::default();
         let http_client = Self::create_http_client(&config)?;
         let api = Api::new(http_client, config.api_base_url.clone(), config.user_id.clone(), &config.token);
         Ok(Self {
@@ -308,34 +302,46 @@ impl IMClient {
         }
     }
 
-    /// 注册连接监听器（对应 Go 的 SetConnListener / OnConnListener）
-    pub fn set_conn_listener(&mut self, listener: Arc<dyn ConnListener>) {
-        self.callbacks.write().unwrap().conn_listener = Some(listener);
+    /// 订阅连接状态事件（Stream）。应在 start() 之前调用。
+    pub fn subscribe_conn_events(&self) -> UnboundedReceiverStream<ConnEvent> {
+        let (tx, rx) = mpsc::unbounded_channel::<ConnEvent>();
+        self.callbacks.write().unwrap().conn_event_tx = Some(Arc::new(RwLock::new(Some(tx))));
+        UnboundedReceiverStream::new(rx)
     }
 
-    /// 注册会话监听器
-    pub fn set_conversation_listener(&mut self, listener: Arc<dyn ConversationListener>) {
-        self.callbacks.write().unwrap().conversation_listener = Some(listener);
+    /// 订阅会话事件（Stream）。应在 start() 之前调用。
+    pub fn subscribe_conversation_events(&self) -> UnboundedReceiverStream<ConversationEvent> {
+        let (tx, rx) = mpsc::unbounded_channel::<ConversationEvent>();
+        self.callbacks.write().unwrap().conversation_event_tx = Some(Arc::new(RwLock::new(Some(tx))));
+        UnboundedReceiverStream::new(rx)
     }
 
-    /// 注册好友监听器
-    pub fn set_friend_listener(&mut self, listener: Arc<dyn FriendListener>) {
-        self.callbacks.write().unwrap().friend_listener = Some(listener);
+    /// 订阅高级消息事件（Stream）。应在 start() 之前调用。
+    pub fn subscribe_advanced_msg_events(&self) -> UnboundedReceiverStream<AdvancedMsgEvent> {
+        let (tx, rx) = mpsc::unbounded_channel::<AdvancedMsgEvent>();
+        self.callbacks.write().unwrap().advanced_msg_event_tx = Some(Arc::new(RwLock::new(Some(tx))));
+        UnboundedReceiverStream::new(rx)
     }
 
-    /// 注册高级消息监听器（参考 Go 版本的 SetAdvancedMsgListener）
-    pub fn set_advanced_msg_listener(&mut self, listener: Arc<dyn AdvancedMsgListener>) {
-        self.callbacks.write().unwrap().advanced_msg_listener = Some(listener);
+    /// 订阅用户事件（Stream）。应在 start() 之前调用。
+    pub fn subscribe_user_events(&self) -> UnboundedReceiverStream<UserEvent> {
+        let (tx, rx) = mpsc::unbounded_channel::<UserEvent>();
+        self.callbacks.write().unwrap().user_event_tx = Some(Arc::new(RwLock::new(Some(tx))));
+        UnboundedReceiverStream::new(rx)
     }
 
-    /// 注册用户监听器（Go: SetUserListener，含 OnSelfInfoUpdated）
-    pub fn set_user_listener(&mut self, listener: Arc<dyn UserListener>) {
-        self.callbacks.write().unwrap().user_listener = Some(listener);
+    /// 订阅好友事件（Stream）。应在 start() 之前调用。
+    pub fn subscribe_friend_events(&self) -> UnboundedReceiverStream<FriendEvent> {
+        let (tx, rx) = mpsc::unbounded_channel::<FriendEvent>();
+        self.callbacks.write().unwrap().friend_event_tx = Some(Arc::new(RwLock::new(Some(tx))));
+        UnboundedReceiverStream::new(rx)
     }
 
-    /// 注册群组监听器（Go: SetGroupListener）
-    pub fn set_group_listener(&mut self, listener: Arc<dyn GroupListener>) {
-        self.callbacks.write().unwrap().group_listener = Some(listener);
+    /// 订阅群组事件（Stream）。应在 start() 之前调用。
+    pub fn subscribe_group_events(&self) -> UnboundedReceiverStream<GroupEvent> {
+        let (tx, rx) = mpsc::unbounded_channel::<GroupEvent>();
+        self.callbacks.write().unwrap().group_event_tx = Some(Arc::new(RwLock::new(Some(tx))));
+        UnboundedReceiverStream::new(rx)
     }
 
     /// 获取当前登录用户 ID（Go: GetLoginUserID）

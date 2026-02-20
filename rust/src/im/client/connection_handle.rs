@@ -3,12 +3,10 @@
 //! 此模块包含 OpenIM 客户端的核心逻辑实现。
 
 use crate::im::client::client::ClientConfig;
-use crate::im::client::listeners::Listeners;
+use crate::im::client::listeners::{ConnEvent, Listeners};
 use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
 use crate::im::client::reconnect::{ConnectFatalError, ReconnectStrategy};
-use crate::im::client::FriendListener;
 use crate::im::client::FriendSyncer;
-use crate::im::client::{AdvancedMsgListener, ConversationListener};
 use crate::im::dao::MessageRepo;
 use crate::im::model::conversation::ConversationSyncerConfig;
 use crate::im::model::friend::FriendSyncerConfig;
@@ -156,9 +154,7 @@ impl ConnectionHandle {
         info!("[Client] 🔗 WebSocket 连接 URL: {}", url);
 
         if let Some(ref cb) = self.callbacks {
-            if let Some(ref l) = cb.conn_listener {
-                l.on_connecting().await;
-            }
+            cb.try_emit_conn_event(ConnEvent::Connecting);
         }
 
         let (ws_stream, response) = match connect_async(&url).await {
@@ -166,9 +162,7 @@ impl ConnectionHandle {
             Err(e) => {
                 let err_msg = e.to_string();
                 if let Some(ref cb) = self.callbacks {
-                    if let Some(ref l) = cb.conn_listener {
-                        l.on_connect_failed(-1, err_msg.clone()).await;
-                    }
+                    cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: -1, err_msg: err_msg.clone() });
                 }
                 return Err(anyhow::anyhow!("{}", err_msg));
             }
@@ -186,9 +180,7 @@ impl ConnectionHandle {
                 Ok(resp) => {
                     if resp.err_code == 0 {
                         if let Some(ref cb) = self.callbacks {
-                            if let Some(ref l) = cb.conn_listener {
-                                l.on_connect_success().await;
-                            }
+                            cb.try_emit_conn_event(ConnEvent::ConnectSuccess);
                         }
                         self.connected();
                     } else {
@@ -198,9 +190,7 @@ impl ConnectionHandle {
                             resp.err_msg.clone()
                         };
                         if let Some(ref cb) = self.callbacks {
-                            if let Some(ref l) = cb.conn_listener {
-                                l.on_connect_failed(resp.err_code, error_msg.clone()).await;
-                            }
+                            cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: resp.err_code, err_msg: error_msg.clone() });
                         }
                         error!("[Client] ❌ WebSocket 连接失败，错误码: {}, 错误信息: {}", resp.err_code, error_msg);
                         return Err(anyhow::anyhow!(error_msg));
@@ -209,9 +199,7 @@ impl ConnectionHandle {
                 Err(e) => {
                     let err_msg = format!("WebSocket 响应解析失败: {}", e);
                     if let Some(ref cb) = self.callbacks {
-                        if let Some(ref l) = cb.conn_listener {
-                            l.on_connect_failed(-1, err_msg.clone()).await;
-                        }
+                        cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: -1, err_msg: err_msg.clone() });
                     }
                     error!("[Client] ❌ {}", err_msg);
                     return Err(anyhow::anyhow!("{}", err_msg));
@@ -220,9 +208,7 @@ impl ConnectionHandle {
         } else {
             let err_msg = "未收到 WebSocket 连接响应".to_string();
             if let Some(ref cb) = self.callbacks {
-                if let Some(ref l) = cb.conn_listener {
-                    l.on_connect_failed(-1, err_msg.clone()).await;
-                }
+                cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: -1, err_msg: err_msg.clone() });
             }
             error!("[Client] ❌ {}", err_msg);
             return Err(anyhow::anyhow!("{}", err_msg));
@@ -404,8 +390,6 @@ mod tests {
 
     use super::{ClientConfig, ConnectionHandle};
     use crate::im::client::message_handle::{MsgSyncCommand, MsgSyncCommandKind};
-    use crate::im::client::FriendListener;
-    use crate::im::client::{AdvancedMsgListener, ConversationListener};
     use crate::im::http_client::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::SeqRange;

@@ -2,10 +2,10 @@
 //!
 //! 实现 OpenIM SDK 的好友增量同步逻辑，参考 Go 版本的实现
 
-use crate::im::http_client::Api;
+use crate::im::client::listeners::{FriendEvent, Listeners};
 use crate::im::dao::FriendDao;
 use crate::im::dao::repository::Repository;
-use crate::im::client::FriendListener;
+use crate::im::http_client::Api;
 use crate::im::model::conversation::LocalVersionSync;
 use crate::im::model::friend::FriendSyncerConfig;
 use anyhow::Result;
@@ -21,14 +21,13 @@ pub struct FriendSyncer {
     config: FriendSyncerConfig,
     api: Api,
     repository: Repository,
-    /// 好友监听器
-    listener: Option<Arc<dyn FriendListener>>,
+    /// 用于下发好友/黑名单/申请列表事件
+    callbacks: Option<Arc<Listeners>>,
 }
 
 impl FriendSyncer {
-
-    pub fn new(config: FriendSyncerConfig, api: Api, repository: Repository, listener: Option<Arc<dyn FriendListener>>) -> Self {
-        Self { config, api, repository, listener }
+    pub fn new(config: FriendSyncerConfig, api: Api, repository: Repository, callbacks: Option<Arc<Listeners>>) -> Self {
+        Self { config, api, repository, callbacks }
     }
     /// 启动后台好友增量同步任务
     pub fn spawn_incr_sync(self: Arc<Self>) -> JoinHandle<()> {
@@ -134,10 +133,8 @@ impl FriendSyncer {
             }
 
             if !changed.is_empty() {
-                if let Ok(json) = serde_json::to_string(&changed) {
-                    if let Some(listener) = &self.listener {
-                        listener.on_friend_list_changed(json).await;
-                    }
+                if let Some(ref cb) = &self.callbacks {
+                    cb.try_emit_friend_event(FriendEvent::FriendListChanged(changed));
                 }
             }
         }
@@ -297,19 +294,12 @@ impl FriendSyncer {
         }
 
         // 增量好友同步完成后，顺带同步一次黑名单和好友申请列表，触发对应监听器
-        if let Ok(blacks) = self.api.friend.get_black_list().await {
-            if let Ok(json) = serde_json::to_string(&blacks) {
-                if let Some(listener) = &self.listener {
-                    listener.on_black_list_changed(json).await;
-                }
+        if let Some(ref cb) = &self.callbacks {
+            if let Ok(blacks) = self.api.friend.get_black_list().await {
+                cb.try_emit_friend_event(FriendEvent::BlackListChanged(blacks));
             }
-        }
-
-        if let Ok(requests) = self.api.friend.get_friend_requests().await {
-            if let Ok(json) = serde_json::to_string(&requests) {
-                if let Some(listener) = &self.listener {
-                    listener.on_friend_request_list_changed(json).await;
-                }
+            if let Ok(requests) = self.api.friend.get_friend_requests().await {
+                cb.try_emit_friend_event(FriendEvent::FriendRequestListChanged(requests));
             }
         }
 

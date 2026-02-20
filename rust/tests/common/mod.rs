@@ -3,12 +3,12 @@
 //! 供 `im_client_integration.rs` 等集成测试复用。
 //! Token 全进程只登录一次并复用，避免多次登录导致旧 token 失效。
 
-use async_trait::async_trait;
 use chrono::Utc;
+use futures_util::StreamExt;
 use once_cell::sync::Lazy;
 use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, IMClient};
 use rust_lib_flutter_rust_demo::im::http_client::auth::LoginData;
-use rust_lib_flutter_rust_demo::im::{AdvancedMsgListener, ConversationListener};
+use rust_lib_flutter_rust_demo::im::{AdvancedMsgEvent, ConversationEvent};
 use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::login_async;
 use std::sync::{Arc, RwLock};
@@ -53,6 +53,38 @@ pub const EXIT_TIMEOUT_SECS: u64 = 3;
 /// 发送消息后等待服务端推送落库的时间（秒）
 pub const PUSH_WAIT_SECS: u64 = 10;
 
+/// 后台任务：消费会话与消息事件并通知 ExpectSyncListener / ExpectMsgListener
+fn spawn_event_forwarder(
+    mut conv_rx: tokio_stream::wrappers::UnboundedReceiverStream<ConversationEvent>,
+    mut msg_rx: tokio_stream::wrappers::UnboundedReceiverStream<AdvancedMsgEvent>,
+    sync_listener: Arc<ExpectSyncListener>,
+    msg_listener: Arc<ExpectMsgListener>,
+) {
+    tokio::spawn(async move {
+        loop {
+            tokio::select! {
+                Some(ev) = conv_rx.next() => {
+                    if let ConversationEvent::SyncServerFinish { reinstalled: false } = ev {
+                        sync_listener.try_complete_sync();
+                    }
+                }
+                Some(ev) = msg_rx.next() => {
+                    let id = match &ev {
+                        AdvancedMsgEvent::RecvNewMessage(ms)
+                        | AdvancedMsgEvent::RecvOfflineNewMessage(ms)
+                        | AdvancedMsgEvent::RecvOnlineOnlyMessage(ms) => ms.client_msg_id.as_deref(),
+                        _ => None,
+                    };
+                    if let Some(id) = id {
+                        try_notify_pending_id(&msg_listener.state, id);
+                    }
+                }
+                else => break,
+            }
+        }
+    });
+}
+
 /// 初始化日志（info + debug for lib），需配合 `cargo test -- --nocapture` 查看
 pub fn setup_logger() {
     let _ = init_logger("info,rust_lib_flutter_rust_demo=debug");
@@ -79,9 +111,8 @@ pub async fn create_and_start_client(db_suffix: &str) -> anyhow::Result<(IMClien
     Ok((client, self_user_id))
 }
 
-/// 创建客户端并注入 ExpectMsgListener 后再 start，供“发消息后等推送回调”的用例使用。
-/// 使用 ExpectSyncListener 等待同步完成，替代固定 sleep。
-/// 监听器必须在 start 之前设置，否则运行中的 handle 不会使用新监听器。
+/// 创建客户端并订阅会话/消息 Stream 后再 start，供“发消息后等推送”的用例使用。
+/// 使用 ExpectSyncListener 等待同步完成。
 pub async fn create_and_start_client_with_msg_listener(
     db_suffix: &str,
 ) -> anyhow::Result<(IMClient, String, Arc<ExpectMsgListener>)> {
@@ -100,8 +131,9 @@ pub async fn create_and_start_client_with_msg_listener(
     let msg_listener = Arc::new(ExpectMsgListener::new());
     let sync_listener = Arc::new(ExpectSyncListener::new());
     let mut client = IMClient::new(config).await?;
-    client.set_conversation_listener(sync_listener.clone());
-    client.set_advanced_msg_listener(msg_listener.clone());
+    let conv_rx = client.subscribe_conversation_events();
+    let msg_rx = client.subscribe_advanced_msg_events();
+    spawn_event_forwarder(conv_rx, msg_rx, sync_listener.clone(), msg_listener.clone());
     client.start().await?;
     sync_listener
         .wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS))
@@ -109,7 +141,7 @@ pub async fn create_and_start_client_with_msg_listener(
     Ok((client, self_user_id, msg_listener))
 }
 
-/// 创建客户端并注入 ExpectSyncListener + ExpectMsgListener，供“等同步完成 + 发消息后等推送”的用例使用。
+/// 创建客户端并订阅会话/消息 Stream，供“等同步完成 + 发消息后等推送”的用例使用。
 /// 不在此处等待，由调用方显式调用 sync_listener.wait_for_sync_finish() 后再查询会话/发送消息。
 pub async fn create_and_start_client_with_sync_and_msg_listener(
     db_suffix: &str,
@@ -129,8 +161,9 @@ pub async fn create_and_start_client_with_sync_and_msg_listener(
     let sync_listener = Arc::new(ExpectSyncListener::new());
     let msg_listener = Arc::new(ExpectMsgListener::new());
     let mut client = IMClient::new(config).await?;
-    client.set_conversation_listener(sync_listener.clone());
-    client.set_advanced_msg_listener(msg_listener.clone());
+    let conv_rx = client.subscribe_conversation_events();
+    let msg_rx = client.subscribe_advanced_msg_events();
+    spawn_event_forwarder(conv_rx, msg_rx, sync_listener.clone(), msg_listener.clone());
     client.start().await?;
     Ok((client, self_user_id, sync_listener, msg_listener))
 }
@@ -210,8 +243,8 @@ impl ExpectMsgListener {
         }
     }
 
-    /// 等待指定 client_msg_id 的推送回调，超时返回错误。
-    /// 应在发送消息后立即调用（先 set_advanced_msg_listener 再 send 再本方法）。
+    /// 等待指定 client_msg_id 的推送事件，超时返回错误。
+    /// 应在发送消息后立即调用（先 subscribe_advanced_msg_events 再 send 再本方法）。
     pub async fn wait_for_message(
         &self,
         client_msg_id: &str,
@@ -236,50 +269,22 @@ impl Default for ExpectMsgListener {
     }
 }
 
-/// 从消息 JSON 中提取 client_msg_id 并尝试触发等待（供多个回调复用）
-fn try_notify_pending(state: &RwLock<Option<PendingMsg>>, message: &str) {
-    let client_msg_id = serde_json::from_str::<serde_json::Value>(message)
-        .ok()
-        .and_then(|v| v.get("clientMsgId").cloned())
-        .and_then(|v| v.as_str().map(String::from));
-    if let Some(id) = client_msg_id {
-        let mut g = state.write().unwrap();
-        if let Some((expected, tx)) = g.take() {
-            if expected == id {
-                let _ = tx.send(());
-            } else {
-                *g = Some((expected, tx));
-            }
+/// 收到指定 client_msg_id 时触发等待方
+fn try_notify_pending_id(state: &RwLock<Option<PendingMsg>>, client_msg_id: &str) {
+    let mut g = state.write().unwrap();
+    if let Some((expected, tx)) = g.take() {
+        if expected == client_msg_id {
+            let _ = tx.send(());
+        } else {
+            *g = Some((expected, tx));
         }
-    }
-}
-
-#[async_trait]
-impl AdvancedMsgListener for ExpectMsgListener {
-    async fn on_recv_new_message(&self, message: String) {
-        try_notify_pending(&*self.state, &message);
-    }
-
-    async fn on_recv_c2c_read_receipt(&self, _msg_receipt_list: String) {}
-    async fn on_new_recv_message_revoked(&self, _message_revoked: String) {}
-    async fn on_recv_offline_new_message(&self, message: String) {
-        // 后台模式下自发送消息走此回调
-        try_notify_pending(&*self.state, &message);
-    }
-    async fn on_msg_deleted(&self, _message: String) {}
-    async fn on_recv_online_only_message(&self, message: String) {
-        // 自发送消息（is_history=false）通常走此回调
-        try_notify_pending(&*self.state, &message);
     }
 }
 
 // ---------- 会话同步 + 消息同步回调等待监听器 ----------
 
-/// 可复用的同步监听器：在 on_sync_server_finish 回调里通知等待方。
-/// 同步顺序：on_sync_server_finish(true) 会话同步完成 → on_sync_server_finish(false) 消息同步完成。
-/// 等待 on_sync_server_finish(false)，表示会话与消息同步均已完成。
+/// 可复用的同步等待器：收到 SyncServerFinish(reinstalled=false) 时通知等待方。
 pub struct ExpectSyncListener {
-    /// 使用 Option 以便只触发一次；oneshot 发送后置 None
     state: Arc<RwLock<Option<oneshot::Sender<()>>>>,
 }
 
@@ -290,8 +295,15 @@ impl ExpectSyncListener {
         }
     }
 
-    /// 等待消息同步完成（on_sync_server_finish(false)），超时返回错误。
-    /// 应在 start 之后立即调用，用于替代固定 SYNC_WAIT_SECS 的 sleep。
+    /// 由事件转发任务调用
+    pub fn try_complete_sync(&self) {
+        let mut g = self.state.write().unwrap();
+        if let Some(tx) = g.take() {
+            let _ = tx.send(());
+        }
+    }
+
+    /// 等待消息同步完成（SyncServerFinish(reinstalled=false)），超时返回错误。
     pub async fn wait_for_sync_finish(
         &self,
         timeout_duration: Duration,
@@ -305,7 +317,7 @@ impl ExpectSyncListener {
             Ok(Ok(())) => Ok(()),
             Ok(Err(e)) => anyhow::bail!("等待同步 channel 关闭: {}", e),
             Err(_) => anyhow::bail!(
-                "等待同步完成超时（{}ms）未收到 on_sync_server_finish(false)",
+                "等待同步完成超时（{}ms）未收到 SyncServerFinish(false)",
                 timeout_duration.as_millis()
             ),
         }
@@ -316,24 +328,4 @@ impl Default for ExpectSyncListener {
     fn default() -> Self {
         Self::new()
     }
-}
-
-#[async_trait]
-impl ConversationListener for ExpectSyncListener {
-    async fn on_sync_server_start(&self, _reinstalled: bool) {}
-    async fn on_sync_server_finish(&self, reinstalled: bool) {
-        // 仅当消息同步完成时通知（reinstalled=false 对应 MSG_SYNC_END）
-        if !reinstalled {
-            let mut g = self.state.write().unwrap();
-            if let Some(tx) = g.take() {
-                let _ = tx.send(());
-            }
-        }
-    }
-    async fn on_sync_server_progress(&self, _progress: i32) {}
-    async fn on_sync_server_failed(&self, _reinstalled: bool) {}
-    async fn on_new_conversation(&self, _conversation_list: String) {}
-    async fn on_conversation_changed(&self, _conversation_list: String) {}
-    async fn on_total_unread_message_count_changed(&self, _total_unread_count: i32) {}
-    async fn on_conversation_user_input_status_changed(&self, _change: String) {}
 }

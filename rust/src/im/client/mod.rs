@@ -10,9 +10,7 @@ pub mod reconnect;
 pub use client::IMClient;
 pub use conversation_handle::{ConvCmd, ConvCmdKind, ConversationHandle};
 pub use friend_sync::FriendSyncer;
-pub use listeners::Listeners;
 pub use listeners::{
-    AdvancedMsgListener, ConnListener, ConversationListener, CustomBusinessListener, EmptyAdvancedMsgListener, EmptyConnListener, EmptyConversationListener, EmptyCustomBusinessListener,
-    EmptyFriendListener, EmptyGroupListener, EmptyMessageKvInfoListener, EmptyUserListener, FriendListener, GroupListener, MessageKvInfoListener, UserListener,
+    AdvancedMsgEvent, ConnEvent, ConversationEvent, FriendEvent, GroupEvent, Listeners, MessageRevokedInfo, ReadReceiptItem, UserEvent,
 };
 pub use reconnect::{ConnectFatalError, ReconnectStrategy};

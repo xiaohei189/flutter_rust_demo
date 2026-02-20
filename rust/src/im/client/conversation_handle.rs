@@ -2,8 +2,9 @@
 //!
 //! 合并原 conversation/service 的会话同步逻辑，通过命令通道接收消息同步器下发的会话命令。
 
-use crate::im::client::listeners::Listeners;
-use crate::im::client::{AdvancedMsgListener, ConversationListener, FriendListener, GroupListener, UserListener};
+use crate::im::client::listeners::{
+    AdvancedMsgEvent, ConversationEvent, FriendEvent, GroupEvent, Listeners, MessageRevokedInfo, ReadReceiptItem, UserEvent,
+};
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
 use crate::im::dao::user::LocalUser;
@@ -14,7 +15,7 @@ use crate::im::model::constant::RECEIVE_MESSAGE;
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalVersionSync};
 use crate::im::model::friend::BlackList;
 use crate::im::model::group::{server_group_member_to_local, server_group_to_local};
-use crate::im::model::message::{attached_info_apply_is_private, msg_handle_by_content_type_result};
+use crate::im::model::message::{attached_info_apply_is_private, msg_handle_by_content_type_result, MsgStruct, TypingStatus};
 use crate::im::model::LocalConversation;
 use crate::im::LocalChatLog;
 use anyhow::Result;
@@ -192,31 +193,6 @@ impl ConversationHandle {
         })
     }
 
-    #[inline]
-    fn conversation_listener(&self) -> Option<Arc<dyn ConversationListener>> {
-        self.callbacks.as_ref().and_then(|c| c.conversation_listener.clone())
-    }
-
-    #[inline]
-    fn advanced_msg_listener(&self) -> Option<Arc<dyn AdvancedMsgListener>> {
-        self.callbacks.as_ref().and_then(|c| c.advanced_msg_listener.clone())
-    }
-
-    #[inline]
-    fn user_listener(&self) -> Option<Arc<dyn UserListener>> {
-        self.callbacks.as_ref().and_then(|c| c.user_listener.clone())
-    }
-
-    #[inline]
-    fn friend_listener(&self) -> Option<Arc<dyn FriendListener>> {
-        self.callbacks.as_ref().and_then(|c| c.friend_listener.clone())
-    }
-
-    #[inline]
-    fn group_listener(&self) -> Option<Arc<dyn GroupListener>> {
-        self.callbacks.as_ref().and_then(|c| c.group_listener.clone())
-    }
-
     /// 与 Go getConversationIDBySessionType 对齐：单聊 si_排序双ID、群 sg_/g_、通知 sn_
     fn get_conversation_id_by_session_type(&self, source_id: &str, session_type: i32) -> String {
         match session_type {
@@ -296,8 +272,7 @@ impl ConversationHandle {
         }
     }
 
-    /// 构建供 on_recv_new_message / on_recv_online_only_message 回调使用的消息 JSON。
-    /// 对 TEXT 类型将 content 转为已解析的字符串，避免前端收到字节数组时显示为空。
+    /// 构建供事件使用的消息 JSON；对 TEXT 将 content 转为已解析字符串。
     fn build_msg_json_for_listener(msg: &sdkws::MsgData) -> String {
         let mut value = match serde_json::to_value(msg) {
             Ok(v) => v,
@@ -311,22 +286,25 @@ impl ConversationHandle {
         serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string())
     }
 
-    /// TYPING 消息专用回调：OnRecvTypingStatus + OnConversationUserInputStatusChanged（与 client.handle_single_message 一致）
-    async fn trigger_typing_callbacks(&self, conversation_id: &str, msg: &sdkws::MsgData) {
+    fn msg_data_to_msg_struct(msg: &sdkws::MsgData) -> Option<MsgStruct> {
+        serde_json::from_str(&Self::build_msg_json_for_listener(msg)).ok()
+    }
+
+    /// TYPING 消息专用：下发 ConversationUserInputStatusChanged 事件
+    fn trigger_typing_callbacks(&self, conversation_id: &str, msg: &sdkws::MsgData) {
         let mut msg_tip = String::new();
         if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&msg.content) {
             if let Some(v) = json.get("msgTip").and_then(|v| v.as_str()) {
                 msg_tip = v.to_string();
             }
         }
-        let typing_json = serde_json::json!({
-            "conversationID": conversation_id,
-            "sendID": msg.send_id,
-            "msgTip": msg_tip,
-        });
-        let typing_json_str = serde_json::to_string(&typing_json).unwrap_or_default();
-        if let Some(l) = self.conversation_listener() {
-            l.on_conversation_user_input_status_changed(typing_json_str).await;
+        let typing = TypingStatus {
+            conversation_id: conversation_id.to_string(),
+            send_id: Some(msg.send_id.clone()),
+            msg_tip,
+        };
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_conversation_event(ConversationEvent::ConversationUserInputStatusChanged(typing));
         }
     }
 
@@ -446,18 +424,8 @@ impl ConversationHandle {
         if !changed {
             return Ok(());
         }
-        let server_json = serde_json::json!({
-            "userID": new_local.user_id,
-            "nickname": new_local.nickname,
-            "faceURL": new_local.face_url,
-            "createTime": new_local.create_time,
-            "appMangerLevel": new_local.app_manger_level,
-            "ex": new_local.ex,
-            "attachedInfo": new_local.attached_info,
-            "globalRecvMsgOpt": new_local.global_recv_msg_opt,
-        });
-        if let Some(l) = self.user_listener() {
-            l.on_self_info_updated(server_json.to_string()).await;
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_user_event(UserEvent::SelfInfoUpdated(new_local.clone()));
         }
         let conv_id = self.get_conversation_id_by_session_type(&self.config.user_id, constant::SINGLE_CHAT_TYPE);
         let _ = self.repository.conversation.update_show_name_and_face_url(&conv_id, &new_local.nickname, &new_local.face_url).await;
@@ -471,12 +439,10 @@ impl ConversationHandle {
             }
         }
         if let Ok(convs) = self.repository.conversation.get_all_conversations().await {
-            let changed_list: Vec<&LocalConversation> = convs.iter().filter(|c| c.conversation_id == conv_id).collect();
-            if let Some(conv) = changed_list.first() {
-                if let Ok(json) = serde_json::to_string(&conv) {
-                    if let Some(l) = self.conversation_listener() {
-                        l.on_conversation_changed(json).await;
-                    }
+            let changed_list: Vec<LocalConversation> = convs.into_iter().filter(|c| c.conversation_id == conv_id).collect();
+            if let Some(ref cb) = self.callbacks {
+                if !changed_list.is_empty() {
+                    cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_list });
                 }
             }
         }
@@ -549,24 +515,16 @@ impl ConversationHandle {
             }
         }
 
-        if !new_conversations.is_empty() {
-            let json = serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_new_conversation(json).await;
+        if let Some(ref cb) = self.callbacks {
+            if !new_conversations.is_empty() {
+                cb.try_emit_conversation_event(ConversationEvent::NewConversation { list: new_conversations.clone() });
             }
-        }
-
-        if !changed_conversations.is_empty() {
-            let json = serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_conversation_changed(json).await;
+            if !changed_conversations.is_empty() {
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_conversations.clone() });
             }
-        }
-
-        if !new_conversations.is_empty() || !changed_conversations.is_empty() {
-            if let Ok(total_unread) = self.get_total_unread_count().await {
-                if let Some(listener) = self.conversation_listener() {
-                    listener.on_total_unread_message_count_changed(total_unread).await;
+            if !new_conversations.is_empty() || !changed_conversations.is_empty() {
+                if let Ok(total_unread) = self.get_total_unread_count().await {
+                    cb.try_emit_conversation_event(ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count: total_unread });
                 }
             }
         }
@@ -621,22 +579,16 @@ impl ConversationHandle {
             self.delete_conversation(id).await?;
             delete_count += 1;
         }
-        if !new_conversations.is_empty() {
-            let json = serde_json::to_string(&new_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_new_conversation(json).await;
+        if let Some(ref cb) = self.callbacks {
+            if !new_conversations.is_empty() {
+                cb.try_emit_conversation_event(ConversationEvent::NewConversation { list: new_conversations.clone() });
             }
-        }
-        if !changed_conversations.is_empty() {
-            let json = serde_json::to_string(&changed_conversations).unwrap_or_else(|_| "[]".to_string());
-            if let Some(listener) = self.conversation_listener() {
-                listener.on_conversation_changed(json).await;
+            if !changed_conversations.is_empty() {
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_conversations.clone() });
             }
-        }
-        if insert_count > 0 || update_count > 0 || delete_count > 0 {
-            if let Ok(total_unread) = self.get_total_unread_count().await {
-                if let Some(listener) = self.conversation_listener() {
-                    listener.on_total_unread_message_count_changed(total_unread).await;
+            if insert_count > 0 || update_count > 0 || delete_count > 0 {
+                if let Ok(total_unread) = self.get_total_unread_count().await {
+                    cb.try_emit_conversation_event(ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count: total_unread });
                 }
             }
         }
@@ -981,9 +933,8 @@ impl ConversationHandle {
                     } else {
                         conv.latest_msg = new_latest_msg;
                         conv.latest_msg_send_time = log.send_time;
-                        if let Some(l) = self.conversation_listener() {
-                            let args = serde_json::to_string(&[conv.clone()]).unwrap_or_else(|_| "[]".to_string());
-                            l.on_conversation_changed(args).await;
+                        if let Some(ref cb) = self.callbacks {
+                            cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: vec![conv.clone()] });
                         }
                     }
                 }
@@ -1052,61 +1003,53 @@ impl ConversationHandle {
         new_messages.sort_by(|a, b| a.1.send_time.cmp(&b.1.send_time));
         let recv_opt_map: HashMap<String, i32> = changed_list.iter().chain(new_list.iter()).map(|c| (c.conversation_id.clone(), c.recv_msg_opt)).collect();
         let get_background = self.config.get_background.as_ref().map(|f| f()).unwrap_or(false);
-        if get_background {
-            if let Ok(Some(u)) = self.repository.user.get_login_user(&self.config.user_id).await {
-                if u.global_recv_msg_opt != RECEIVE_MESSAGE {
-                    // 全局不接收则不回调
-                } else if let Some(listener) = self.advanced_msg_listener() {
-                    for (conv_id, msg, _) in &new_messages {
-                        if msg.content_type == constant::TYPING {
-                            continue;
-                        }
-                        if recv_opt_map.get(conv_id).copied().unwrap_or(0) == RECEIVE_MESSAGE {
-                            let msg_json = serde_json::to_string(msg).unwrap_or_else(|_| "{}".to_string());
-                            listener.on_recv_offline_new_message(msg_json).await;
+        if let Some(ref cb) = self.callbacks {
+            if get_background {
+                if let Ok(Some(u)) = self.repository.user.get_login_user(&self.config.user_id).await {
+                    if u.global_recv_msg_opt == RECEIVE_MESSAGE {
+                        for (conv_id, msg, _) in &new_messages {
+                            if msg.content_type == constant::TYPING {
+                                continue;
+                            }
+                            if recv_opt_map.get(conv_id).copied().unwrap_or(0) == RECEIVE_MESSAGE {
+                                if let Some(ms) = Self::msg_data_to_msg_struct(msg) {
+                                    cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvOfflineNewMessage(ms));
+                                }
+                            }
                         }
                     }
                 }
-            }
-        } else {
-            if let Some(listener) = self.advanced_msg_listener() {
+            } else {
                 for (_conv_id, msg, in_online_map) in &new_messages {
                     if msg.content_type == constant::TYPING {
                         continue;
                     }
-                    let msg_json = Self::build_msg_json_for_listener(msg);
-                    if *in_online_map {
-                        listener.on_recv_online_only_message(msg_json).await;
-                    } else {
-                        listener.on_recv_new_message(msg_json).await;
+                    if let Some(ms) = Self::msg_data_to_msg_struct(msg) {
+                        if *in_online_map {
+                            cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvOnlineOnlyMessage(ms));
+                        } else {
+                            cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvNewMessage(ms));
+                        }
                     }
                 }
             }
-        }
-
-        if !new_list.is_empty() {
-            if let Some(l) = self.conversation_listener() {
-                let args = serde_json::to_string(&new_list).unwrap_or_default();
-                l.on_new_conversation(args).await;
+            if !new_list.is_empty() {
+                cb.try_emit_conversation_event(ConversationEvent::NewConversation { list: new_list.clone() });
             }
-        }
-        if !changed_list.is_empty() {
-            if let Some(l) = self.conversation_listener() {
-                let args = serde_json::to_string(&changed_list).unwrap_or_default();
-                l.on_conversation_changed(args).await;
+            if !changed_list.is_empty() {
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_list.clone() });
             }
-        }
-        if is_trigger_unread_count {
-            if let Some(l) = self.conversation_listener() {
-                let total = self.get_total_unread_count().await.unwrap_or(0);
-                l.on_total_unread_message_count_changed(total).await;
+            if is_trigger_unread_count {
+                if let Ok(total) = self.get_total_unread_count().await {
+                    cb.try_emit_conversation_event(ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count: total });
+                }
             }
         }
 
         for (conv_id, pull) in all_msg {
             for msg in &pull.msgs {
                 if msg.content_type == constant::TYPING {
-                    self.trigger_typing_callbacks(conv_id, msg).await;
+                    self.trigger_typing_callbacks(conv_id, msg);
                 }
             }
         }
@@ -1300,7 +1243,17 @@ impl ConversationHandle {
             .next()
             .ok_or_else(|| anyhow::anyhow!("GetMessageBySeq not found conv={} seq={}", conversation_id, seq))?;
         let revoker_nickname = String::new();
-        let n = serde_json::json!({
+        let revoke_info = MessageRevokedInfo {
+            conversation_id: conversation_id.to_string(),
+            seq: tips.seq,
+            revoke_time: tips.revoke_time,
+            source_message_send_time: revoked_msg.send_time,
+            source_message_send_id: revoked_msg.send_id.clone(),
+            source_message_sender_nickname: revoked_msg.sender_nickname.clone(),
+            ex: revoked_msg.ex.clone(),
+            is_admin_revoke: tips.is_admin_revoke,
+        };
+        let revoke_content = serde_json::to_string(&serde_json::json!({
             "detail": serde_json::json!({
                 "revokerID": tips.revoker_user_id,
                 "revokerRole": 0i32,
@@ -1315,14 +1268,13 @@ impl ConversationHandle {
                 "ex": revoked_msg.ex,
                 "isAdminRevoke": tips.is_admin_revoke,
             })
-        });
-        let revoke_content = serde_json::to_string(&n).unwrap_or_default();
+        })).unwrap_or_default();
         let mut updated = revoked_msg.clone();
         updated.content_type = constant::MSG_REVOKE_NOTIFICATION;
-        updated.content = revoke_content.clone();
+        updated.content = revoke_content;
         self.repository.message.update_message(conversation_id, &updated).await?;
-        if let Some(listener) = self.advanced_msg_listener() {
-            listener.on_new_recv_message_revoked(revoke_content).await;
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_advanced_msg_event(AdvancedMsgEvent::NewRecvMessageRevoked(revoke_info));
         }
         Ok(())
     }
@@ -1346,8 +1298,8 @@ impl ConversationHandle {
             warn!("[conversation_handle] 群通知后 sync_all_joined_groups_and_members 失败 err={}", e);
         }
         let content_str = String::from_utf8_lossy(&msg.content).to_string();
-        if let Some(l) = self.group_listener() {
-            l.on_group_info_changed(content_str).await;
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_group_event(GroupEvent::GroupInfoChanged { content: content_str });
         }
         Ok(())
     }
@@ -1369,15 +1321,14 @@ impl ConversationHandle {
                 success_msg_ids.push(m.client_msg_id);
             }
         }
-        let receipt_list = vec![serde_json::json!({
-            "userID": tips.mark_as_read_user_id,
-            "msgIDList": success_msg_ids,
-            "sessionType": msg.session_type,
-            "readTime": msg.send_time,
-        })];
-        let receipt_json = serde_json::to_string(&receipt_list).unwrap_or_default();
-        if let Some(listener) = self.advanced_msg_listener() {
-            listener.on_recv_c2c_read_receipt(receipt_json).await;
+        let receipt = ReadReceiptItem {
+            user_id: tips.mark_as_read_user_id.clone(),
+            msg_id_list: success_msg_ids,
+            session_type: msg.session_type,
+            read_time: msg.send_time,
+        };
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvC2CReadReceipt(vec![receipt]));
         }
         Ok(())
     }
@@ -1389,9 +1340,8 @@ impl ConversationHandle {
             let _ = self.repository.message.delete_conversation(cid).await;
             let _ = self.repository.conversation.delete_conversation(cid).await;
         }
-        if let Some(listener) = self.conversation_listener() {
-            let json = serde_json::to_string(&tips.conversation_i_ds).unwrap_or_else(|_| "[]".to_string());
-            listener.on_conversation_changed(json).await;
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_conversation_event(ConversationEvent::ConversationsCleared { conversation_ids: tips.conversation_i_ds.clone() });
         }
         if let Err(e) = self.incr_sync_conversations().await {
             warn!("[conversation_handle] 清空会话后增量同步失败 err={}", e);
@@ -1443,16 +1393,14 @@ impl ConversationHandle {
             }
         }
         if with_notice {
-            if let Some(l) = self.friend_listener() {
-                if let Ok(json) = serde_json::to_string(&server_list) {
-                    l.on_black_list_changed(json).await;
-                }
+            if let Some(ref cb) = self.callbacks {
+                cb.try_emit_friend_event(FriendEvent::BlackListChanged(server_list));
             }
         }
         Ok(())
     }
 
-    /// 与 Go IncrSyncFriends 对齐：增量同步好友并落库；完成后可选触发 on_friend_list_changed
+    /// 与 Go IncrSyncFriends 对齐：增量同步好友并落库；完成后触发 FriendListChanged 事件
     #[instrument(skip(self))]
     pub async fn incr_sync_friends(&self) -> Result<()> {
         use crate::im::model::conversation::LocalVersionSync;
@@ -1532,11 +1480,9 @@ impl ConversationHandle {
                 })
                 .await;
         }
-        if let Some(l) = self.friend_listener() {
+        if let Some(ref cb) = self.callbacks {
             if let Ok(updated) = self.repository.friend.get_all_friends().await {
-                if let Ok(json) = serde_json::to_string(&updated) {
-                    l.on_friend_list_changed(json).await;
-                }
+                cb.try_emit_friend_event(FriendEvent::FriendListChanged(updated));
             }
         }
         Ok(())
@@ -1672,51 +1618,65 @@ impl ConversationHandle {
     /// 同步阶段标记（Go syncFlag）：AppDataSyncStart 内容与 Go 对齐（进度 + syncWait 会话/已读 + asyncNoWait 用户/黑名单）；MsgSyncBegin 时执行 syncData
     #[instrument(skip(self), fields(flag = flag))]
     pub async fn sync_flag(&self, flag: i32) -> Result<()> {
-        if let Some(listener) = self.conversation_listener() {
-            match flag {
-                sync_flag::APP_DATA_SYNC_START => {
-                    self.msg_sync_offset.store(0, Ordering::SeqCst);
-                    listener.on_sync_server_start(true).await;
-                    listener.on_sync_server_progress(1).await;
-                    // Go asyncWait: SyncAllJoinedGroupsAndMembersWithLock, IncrSyncFriends
-                    if let Err(e) = self.sync_all_joined_groups_and_members().await {
-                        warn!("[conversation_handle] AppDataSyncStart sync_all_joined_groups_and_members 失败 err={}", e);
-                    }
-                    if let Err(e) = self.incr_sync_friends().await {
-                        warn!("[conversation_handle] AppDataSyncStart incr_sync_friends 失败 err={}", e);
-                    }
-                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS * 4 / 10).await; // 4，与 Go addInitProgress(4) 后 c.progress 一致
-                                                                                               // Go syncWait: IncrSyncConversations, SyncAllConversationHashReadSeqs
-                    if let Err(e) = self.incr_sync_conversations().await {
-                        warn!("[conversation_handle] AppDataSyncStart incr_sync_conversations 失败 err={}", e);
-                    }
-                    if let Err(e) = self.sync_unread_by_seq().await {
-                        warn!("[conversation_handle] AppDataSyncStart sync_unread_by_seq 失败 err={}", e);
-                    }
-                    listener.on_sync_server_progress(Self::INIT_SYNC_PROGRESS).await; // 10，与 Go addInitProgress(6) 后 c.progress=4+6 一致
-                                                                                      // Go asyncNoWait: SyncLoginUserInfoWithoutNotice, SyncAllBlackListWithoutNotice
-                    if let Err(e) = self.sync_login_user_info(false).await {
-                        warn!("[conversation_handle] SyncFlag(APP_DATA_SYNC_START) sync_login_user_info 失败 err={}", e);
-                    }
-                    if let Err(e) = self.sync_black_list(false).await {
-                        warn!("[conversation_handle] AppDataSyncStart sync_black_list 失败 err={}", e);
-                    }
+        let cb = self.callbacks.clone();
+        match flag {
+            sync_flag::APP_DATA_SYNC_START => {
+                self.msg_sync_offset.store(0, Ordering::SeqCst);
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerStart { reinstalled: true });
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerProgress { progress: 1 });
                 }
-                sync_flag::APP_DATA_SYNC_FINISH => {
-                    listener.on_sync_server_progress(100).await;
-                    listener.on_sync_server_finish(true).await
+                if let Err(e) = self.sync_all_joined_groups_and_members().await {
+                    warn!("[conversation_handle] AppDataSyncStart sync_all_joined_groups_and_members 失败 err={}", e);
                 }
-                sync_flag::MSG_SYNC_BEGIN => {
-                    listener.on_sync_server_start(false).await;
-                    if let Err(e) = self.sync_data().await {
-                        error!("[conversation_handle] SyncFlag(MSG_SYNC_BEGIN) sync_data 失败 err={}", e);
-                    }
+                if let Err(e) = self.incr_sync_friends().await {
+                    warn!("[conversation_handle] AppDataSyncStart incr_sync_friends 失败 err={}", e);
                 }
-                sync_flag::MSG_SYNC_END => listener.on_sync_server_finish(false).await,
-                sync_flag::MSG_SYNC_FAILED => listener.on_sync_server_failed(false).await,
-                sync_flag::MSG_SYNC_PROCESSING => {}
-                _ => {}
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerProgress { progress: Self::INIT_SYNC_PROGRESS * 4 / 10 });
+                }
+                if let Err(e) = self.incr_sync_conversations().await {
+                    warn!("[conversation_handle] AppDataSyncStart incr_sync_conversations 失败 err={}", e);
+                }
+                if let Err(e) = self.sync_unread_by_seq().await {
+                    warn!("[conversation_handle] AppDataSyncStart sync_unread_by_seq 失败 err={}", e);
+                }
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerProgress { progress: Self::INIT_SYNC_PROGRESS });
+                }
+                if let Err(e) = self.sync_login_user_info(false).await {
+                    warn!("[conversation_handle] SyncFlag(APP_DATA_SYNC_START) sync_login_user_info 失败 err={}", e);
+                }
+                if let Err(e) = self.sync_black_list(false).await {
+                    warn!("[conversation_handle] AppDataSyncStart sync_black_list 失败 err={}", e);
+                }
             }
+            sync_flag::APP_DATA_SYNC_FINISH => {
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerProgress { progress: 100 });
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerFinish { reinstalled: true });
+                }
+            }
+            sync_flag::MSG_SYNC_BEGIN => {
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerStart { reinstalled: false });
+                }
+                if let Err(e) = self.sync_data().await {
+                    error!("[conversation_handle] SyncFlag(MSG_SYNC_BEGIN) sync_data 失败 err={}", e);
+                }
+            }
+            sync_flag::MSG_SYNC_END => {
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerFinish { reinstalled: false });
+                }
+            }
+            sync_flag::MSG_SYNC_FAILED => {
+                if let Some(ref c) = cb {
+                    c.try_emit_conversation_event(ConversationEvent::SyncServerFailed { reinstalled: false });
+                }
+            }
+            sync_flag::MSG_SYNC_PROCESSING => {}
+            _ => {}
         }
         Ok(())
     }
@@ -1759,8 +1719,8 @@ impl ConversationHandle {
         let new_offset = self.msg_sync_offset.fetch_add(msg_len, Ordering::SeqCst) + msg_len;
         let total = total.max(1);
         let progress = (new_offset * (100 - Self::INIT_SYNC_PROGRESS) / total + Self::INIT_SYNC_PROGRESS).min(100);
-        if let Some(l) = self.conversation_listener() {
-            l.on_sync_server_progress(progress).await;
+        if let Some(ref cb) = self.callbacks {
+            cb.try_emit_conversation_event(ConversationEvent::SyncServerProgress { progress });
         }
         Ok(())
     }
