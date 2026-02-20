@@ -31,9 +31,10 @@ use tracing::{error, info};
 
 use common::{
     create_and_start_client, create_and_start_client_with_msg_listener,
+    create_and_start_client_with_sync_and_msg_listener,
     first_group_from_list, parse_group_id, parse_single_recv_id, setup_logger, test_message_with_time,
     CONVERSATION_TYPE_GROUP, CONVERSATION_TYPE_SINGLE, CONVERSATION_TYPE_SUPER_GROUP, EXIT_TIMEOUT_SECS,
-    PUSH_WAIT_SECS,
+    PUSH_WAIT_SECS, SYNC_WAIT_SECS,
 };
 
 // ---------- 会话 ----------
@@ -116,8 +117,13 @@ async fn send_text_to_first_conversation() -> anyhow::Result<()> {
 #[tokio::test]
 async fn group_send_text_message() -> anyhow::Result<()> {
     setup_logger();
-    let (mut client, self_user_id, msg_listener) =
-        create_and_start_client_with_msg_listener("msg_group_text").await?;
+    let (mut client, self_user_id, sync_listener, msg_listener) =
+        create_and_start_client_with_sync_and_msg_listener("msg_group_text").await?;
+    // 等待会话同步完成后再查询会话列表并发送消息
+    sync_listener
+        .wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS))
+        .await?;
+
     let list = client.get_all_conversations().await?;
     let (conversation_id, group_id, conversation_type) = match first_group_from_list(&list) {
         Some(t) => t,

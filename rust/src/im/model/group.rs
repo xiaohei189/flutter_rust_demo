@@ -6,19 +6,24 @@ use crate::im::dao::group_member::LocalGroupMember;
 use crate::im::model::common::deserialize_vec_or_null;
 use serde::Deserialize;
 
-/// 服务端群组信息（API JSON），与 sdkws.GroupInfo 字段对应
+/// 服务端群组信息（API JSON），与 sdkws.GroupInfo 字段对应。
+/// OpenIM API 使用 groupID/faceURL/ownerUserID 等（大写 ID/URL），serde alias 兼容。
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerGroupInfo {
+    #[serde(alias = "groupID")]
     pub group_id: String,
     pub group_name: String,
     pub notification: String,
     pub introduction: String,
+    #[serde(alias = "faceURL")]
     pub face_url: String,
     pub create_time: i64,
     pub status: i32,
+    #[serde(alias = "creatorUserID")]
     pub creator_user_id: String,
     pub group_type: i32,
+    #[serde(alias = "ownerUserID")]
     pub owner_user_id: String,
     pub member_count: i32,
     pub ex: String,
@@ -26,24 +31,31 @@ pub struct ServerGroupInfo {
     pub look_member_info: i32,
     pub apply_member_friend: i32,
     pub notification_update_time: i64,
+    #[serde(alias = "notificationUserID")]
     pub notification_user_id: String,
     #[serde(default)]
     pub attached_info: String,
 }
 
-/// 服务端群成员信息（API JSON），与 sdkws.GroupMemberFullInfo 对应
+/// 服务端群成员信息（API JSON），与 sdkws.GroupMemberFullInfo 对应。
+/// OpenIM API 使用 groupID/userID/faceURL 等（大写 ID/URL），serde alias 兼容。
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerGroupMemberFullInfo {
+    #[serde(alias = "groupID")]
     pub group_id: String,
+    #[serde(alias = "userID")]
     pub user_id: String,
     pub nickname: String,
+    #[serde(alias = "faceURL")]
     pub face_url: String,
     pub role_level: i32,
     pub join_time: i64,
     pub join_source: i32,
+    #[serde(alias = "inviterUserID")]
     pub inviter_user_id: String,
     pub mute_end_time: i64,
+    #[serde(alias = "operatorUserID")]
     pub operator_user_id: String,
     pub ex: String,
     #[serde(default)]

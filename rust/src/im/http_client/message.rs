@@ -131,7 +131,7 @@ impl MessageApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::auth::login_async;
+    use crate::im::http_client::auth::login_async;
     use crate::im::logger::logger::init_logger;
     use crate::im::model::message::{
         BatchSendMsgReq, CheckMsgIsSendSuccessReq, ClearConversationsMsgReq, DeleteMsgPhysicalBySeqReq, DeleteMsgPhysicalReq, DeleteMsgsReq, GetNewestSeqResp, MarkConversationAsReadReq,
@@ -192,7 +192,7 @@ mod tests {
             offline_push_info: None,
             ex: None,
         };
-        match api.send_message(req).await {
+        match api.send_msg(req).await {
             Ok(v) => info!("send_message resp: {:?}", v),
             Err(e) => error!("send_message error: {:?}", e),
         }
