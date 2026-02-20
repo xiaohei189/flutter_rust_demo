@@ -46,6 +46,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations();
 
+  // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
   /// 创建新的客户端实例
   ///
   /// # 参数
@@ -53,7 +54,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// - `token`: 认证 token（从登录接口获取）
   /// - `platform_id`: 平台 ID（例如：5 表示 Web）
   /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
-  factory OpenImBridgeClient({
+  static Future<OpenImBridgeClient> newInstance({
     required String userId,
     required String token,
     required int platformId,

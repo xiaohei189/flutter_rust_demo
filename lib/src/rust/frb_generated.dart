@@ -103,7 +103,7 @@ abstract class RustLibApi extends BaseApi {
     required OpenImBridgeClient that,
   });
 
-  OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({
+  Future<OpenImBridgeClient> crateApiBridgeClientOpenImBridgeClientNew({
     required String userId,
     required String token,
     required int platformId,
@@ -322,21 +322,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  OpenImBridgeClient crateApiBridgeClientOpenImBridgeClientNew({
+  Future<OpenImBridgeClient> crateApiBridgeClientOpenImBridgeClientNew({
     required String userId,
     required String token,
     required int platformId,
     String? wsUrl,
   }) {
-    return handler.executeSync(
-      SyncTask(
-        callFfi: () {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(userId, serializer);
           sse_encode_String(token, serializer);
           sse_encode_i_32(platformId, serializer);
           sse_encode_opt_String(wsUrl, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 5,
+            port: port_,
+          );
         },
         codec: SseCodec(
           decodeSuccessData:

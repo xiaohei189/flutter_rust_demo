@@ -44,8 +44,8 @@ impl OpenIMBridgeClient {
     /// - `token`: 认证 token（从登录接口获取）
     /// - `platform_id`: 平台 ID（例如：5 表示 Web）
     /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
-    #[flutter_rust_bridge::frb(sync)]
-    pub fn new(
+    #[flutter_rust_bridge::frb]
+    pub async fn new(
         user_id: String,
         token: String,
         platform_id: i32,
@@ -60,9 +60,7 @@ impl OpenIMBridgeClient {
             std::env::temp_dir().as_path().to_string_lossy(),
             config.user_id
         );
-        let client = tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current().block_on(IMClient::new(config))
-        })?;
+        let client = IMClient::new(config).await?;
         Ok(Self {
             inner: Arc::new(RwLock::new(client)),
         })

@@ -204,8 +204,8 @@ class MessageService extends ChangeNotifier {
       debugPrint('✅ 登录成功！用户ID: $userId');
       _currentUserId = userId;
 
-      // 创建客户端实例
-      _client = OpenImBridgeClient(
+      // 创建客户端实例（异步，由 bridge executor 执行）
+      _client = await OpenImBridgeClient.newInstance(
         userId: userId,
         token: imToken,
         platformId: 5,

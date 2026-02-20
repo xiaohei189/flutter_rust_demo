@@ -198,15 +198,16 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_all_conversations_imp
     )
 }
 fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "OpenImBridgeClient_new",
-            port: None,
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
         move || {
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
@@ -216,10 +217,15 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
             let api_platform_id = <i32>::sse_decode(&mut deserializer);
             let api_ws_url = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
-            transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>((move || {
-                let output_ok = crate::api::bridge_client::OpenIMBridgeClient::new(api_user_id, api_token, api_platform_id, api_ws_url)?;
-                Ok(output_ok)
-            })())
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::new(api_user_id, api_token, api_platform_id, api_ws_url).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
         },
     )
 }
@@ -1039,6 +1045,7 @@ fn pde_ffi_dispatcher_primary_impl(
         2 => wire__crate__api__bridge_client__OpenImBridgeClient_get_advanced_history_message_list_impl(port, ptr, rust_vec_len, data_len),
         3 => wire__crate__api__bridge_client__OpenImBridgeClient_get_advanced_history_message_list_reverse_impl(port, ptr, rust_vec_len, data_len),
         4 => wire__crate__api__bridge_client__OpenImBridgeClient_get_all_conversations_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
         6 => wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(port, ptr, rust_vec_len, data_len),
         8 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
         9 => wire__crate__api__bridge_client__login_async_impl(port, ptr, rust_vec_len, data_len),
@@ -1054,7 +1061,6 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        5 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(ptr, rust_vec_len, data_len),
         7 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
