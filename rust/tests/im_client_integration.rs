@@ -328,3 +328,167 @@ async fn get_group_history_messages() -> anyhow::Result<()> {
     Ok(())
 }
 
+// ---------- 消息 API：未读数、已读、撤回、删除、清空会话 ----------
+
+#[tokio::test]
+async fn get_total_unread_msg_count() -> anyhow::Result<()> {
+    setup_logger();
+    let (client, _) = create_and_start_client("unread").await?;
+    let count = client.get_total_unread_msg_count().await?;
+    eprintln!("[集成测试-未读数] 总未读: {}", count);
+    assert!(count >= 0, "未读数应非负");
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn mark_conversation_message_as_read() -> anyhow::Result<()> {
+    setup_logger();
+    let (client, _) = create_and_start_client("mark_read").await?;
+    let list = client.get_all_conversations().await?;
+    let conv = list.first().ok_or_else(|| anyhow!("无会话"))?;
+    client.mark_conversation_message_as_read(&conv.conversation_id).await?;
+    eprintln!(
+        "[集成测试-已读] 已标记会话已读 conversation_id={}",
+        conv.conversation_id
+    );
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn mark_all_conversation_message_as_read() -> anyhow::Result<()> {
+    setup_logger();
+    let (client, _) = create_and_start_client("mark_all_read").await?;
+    client.mark_all_conversation_message_as_read().await?;
+    eprintln!("[集成测试-已读] 已标记全部会话已读");
+    let count = client.get_total_unread_msg_count().await?;
+    assert!(count >= 0, "未读数应非负");
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn revoke_message() -> anyhow::Result<()> {
+    setup_logger();
+    let (mut client, _self_user_id, msg_listener) =
+        create_and_start_client_with_msg_listener("revoke").await?;
+    let list = client.get_all_conversations().await?;
+    let (conversation_id, group_id, _) = match first_group_from_list(&list) {
+        Some(t) => t,
+        None => {
+            eprintln!("[集成测试-撤回] 无群会话，跳过");
+            let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+            return Ok(());
+        }
+    };
+    let text_msg = test_message_with_time("待撤回");
+    let resp = client.send_text_to_group(group_id, text_msg).await?;
+    let _ = msg_listener
+        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
+        .await;
+    client.revoke_message(&conversation_id, &resp.client_msg_id).await?;
+    eprintln!(
+        "[集成测试-撤回] 已撤回 client_msg_id={}",
+        resp.client_msg_id
+    );
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn delete_message_from_local_storage() -> anyhow::Result<()> {
+    setup_logger();
+    let (mut client, _self_user_id, msg_listener) =
+        create_and_start_client_with_msg_listener("del_local").await?;
+    let list = client.get_all_conversations().await?;
+    let (conversation_id, group_id, _) = match first_group_from_list(&list) {
+        Some(t) => t,
+        None => {
+            eprintln!("[集成测试-删本地] 无群会话，跳过");
+            let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+            return Ok(());
+        }
+    };
+    let text_msg = test_message_with_time("仅删本地");
+    let resp = client.send_text_to_group(group_id, text_msg).await?;
+    let _ = msg_listener
+        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
+        .await;
+    let before = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
+    assert!(before.is_some(), "推送后本地应有该消息");
+    client
+        .delete_message_from_local_storage(&conversation_id, &resp.client_msg_id)
+        .await?;
+    let after = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
+    assert!(after.is_none(), "仅删本地后本地应查不到该消息");
+    eprintln!(
+        "[集成测试-删本地] 已从本地删除 client_msg_id={}",
+        resp.client_msg_id
+    );
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn delete_message() -> anyhow::Result<()> {
+    setup_logger();
+    let (mut client, _self_user_id, msg_listener) =
+        create_and_start_client_with_msg_listener("del_msg").await?;
+    let list = client.get_all_conversations().await?;
+    let (conversation_id, group_id, _) = match first_group_from_list(&list) {
+        Some(t) => t,
+        None => {
+            eprintln!("[集成测试-删消息] 无群会话，跳过");
+            let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+            return Ok(());
+        }
+    };
+    let text_msg = test_message_with_time("服务端+本地删除");
+    let resp = client.send_text_to_group(group_id, text_msg).await?;
+    let _ = msg_listener
+        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
+        .await;
+    let before = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
+    assert!(before.is_some(), "推送后本地应有该消息");
+    client.delete_message(&conversation_id, &resp.client_msg_id).await?;
+    let after = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
+    assert!(after.is_none(), "删除后本地应查不到该消息");
+    eprintln!(
+        "[集成测试-删消息] 已服务端+本地删除 client_msg_id={}",
+        resp.client_msg_id
+    );
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn clear_conversation_and_delete_all_msg() -> anyhow::Result<()> {
+    setup_logger();
+    let (client, _) = create_and_start_client("clear_conv").await?;
+    let list = client.get_all_conversations().await?;
+    let (conversation_id, _group_id, _) = match first_group_from_list(&list) {
+        Some(t) => t,
+        None => {
+            eprintln!("[集成测试-清空会话] 无群会话，跳过");
+            let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+            return Ok(());
+        }
+    };
+    client.clear_conversation_and_delete_all_msg(&conversation_id).await?;
+    eprintln!(
+        "[集成测试-清空会话] 已清空并删除该会话所有消息 conversation_id={}",
+        conversation_id
+    );
+    let convs = client.get_all_conversations().await?;
+    let conv = convs
+        .iter()
+        .find(|c| c.conversation_id == conversation_id)
+        .ok_or_else(|| anyhow!("清空后会话仍应在列表中（仅重置 latest_msg/unread）"))?;
+    assert!(conv.latest_msg.is_empty(), "清空后 latest_msg 应为空");
+    assert_eq!(conv.unread_count, 0, "清空后 unread_count 应为 0");
+    let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
+    Ok(())
+}
+
+
