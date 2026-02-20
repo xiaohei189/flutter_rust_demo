@@ -9,6 +9,13 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # 未使用的 Stream 监听器（Rust 未实现），暂排除分析
+    - lib/src/rust/api/listeners/**
+    # 日志 API（Rust 未暴露），暂排除分析
+    - lib/src/rust/api/logger.dart
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

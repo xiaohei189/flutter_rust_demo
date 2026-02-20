@@ -8,6 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// 本地会话数据结构
 /// 可以直接从服务器返回的 JSON 反序列化，缺失的字段使用默认值
+/// 同时实现 FromRow 用于 sqlx 直接映射数据库行（SQLite INTEGER 0/1 自动转为 bool）
 class LocalConversation {
   /// 会话 ID
   final String conversationId;

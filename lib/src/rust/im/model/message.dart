@@ -214,46 +214,6 @@ class LocationElem {
           latitude == other.latitude;
 }
 
-/// 消息撤回信息
-class MessageRevoked {
-  final String revokerId;
-  final int revokerRole;
-  final String clientMsgId;
-  final String revokerNickname;
-  final int sessionType;
-  final int seq;
-
-  const MessageRevoked({
-    required this.revokerId,
-    required this.revokerRole,
-    required this.clientMsgId,
-    required this.revokerNickname,
-    required this.sessionType,
-    required this.seq,
-  });
-
-  @override
-  int get hashCode =>
-      revokerId.hashCode ^
-      revokerRole.hashCode ^
-      clientMsgId.hashCode ^
-      revokerNickname.hashCode ^
-      sessionType.hashCode ^
-      seq.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MessageRevoked &&
-          runtimeType == other.runtimeType &&
-          revokerId == other.revokerId &&
-          revokerRole == other.revokerRole &&
-          clientMsgId == other.clientMsgId &&
-          revokerNickname == other.revokerNickname &&
-          sessionType == other.sessionType &&
-          seq == other.seq;
-}
-
 /// 消息结构体（对应 Go 的 MsgStruct）
 class MsgStruct {
   final String? clientMsgId;
@@ -540,32 +500,6 @@ class TextElem {
       other is TextElem &&
           runtimeType == other.runtimeType &&
           content == other.content;
-}
-
-/// 输入提示（typing）状态信息
-class TypingStatus {
-  final String conversationId;
-  final String? sendId;
-  final String msgTip;
-
-  const TypingStatus({
-    required this.conversationId,
-    this.sendId,
-    required this.msgTip,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^ sendId.hashCode ^ msgTip.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is TypingStatus &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          sendId == other.sendId &&
-          msgTip == other.msgTip;
 }
 
 /// 视频元素

@@ -1,3 +1,4 @@
+mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be accurate, and you can change it according to your needs. */
 pub mod api;
 pub mod im;
 
@@ -7,3 +8,4 @@ pub use im::{
 };
 
 // 重新导出 OfflinePushInfo，以便生成的代码可以访问
+pub use openim_protocol::sdkws::OfflinePushInfo;

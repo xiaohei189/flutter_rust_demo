@@ -160,11 +160,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           : widget.conversation.groupId;
       final sessionType = widget.conversation.conversationType;
 
-      // 发送消息
+      // 发送消息（传入 conversationId 以便发送后刷新消息列表）
       await messageService.sendTextMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
+        conversationId: widget.conversation.conversationId,
       );
 
       _textController.clear();

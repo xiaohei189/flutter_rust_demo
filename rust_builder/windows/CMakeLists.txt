@@ -9,6 +9,7 @@ set(PROJECT_NAME "rust_lib_flutter_rust_demo")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
 include("../cargokit/cmake/cargokit.cmake")
+# 从 .plugin_symlinks/rust_lib_flutter_rust_demo/windows/ 到项目根目录的 rust 需上溯 6 层
 apply_cargokit(${PROJECT_NAME} ../../../../../../rust rust_lib_flutter_rust_demo "")
 
 # List of absolute paths to libraries that should be bundled with the plugin.

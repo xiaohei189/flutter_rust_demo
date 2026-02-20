@@ -4,23 +4,15 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import '../im/http/auth.dart';
+import '../im/http_client/auth.dart';
 import '../im/model/conversation.dart';
 import '../im/model/message.dart';
 import '../lib.dart';
-import 'listeners/connection_status.dart';
-import 'listeners/conversation.dart';
-import 'listeners/message.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-// These functions are ignored because they are not marked as `pub`: `update_listener_wrapper`
-// These functions are ignored because they have generic arguments: `on_connection_status_changed`, `on_kicked_offline`, `on_msg_deleted`, `on_new_recv_message_revoked`, `on_recv_c2c_read_receipt`, `on_recv_new_message`, `on_recv_offline_new_message`, `on_recv_online_only_message`, `on_recv_typing_status`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ListenerWrapper`
 
 /// 登录接口
 ///
-/// 参考 openim-cli.rs 的实现，先登录获取 token 信息
-/// 直接使用本地 im 模块的类型，无需包装
+/// 参考 openim-cli 的实现，先登录获取 token 信息
 Future<LoginData> loginAsync({
   required String areaCode,
   required String phoneNumber,
@@ -38,29 +30,14 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 连接到服务器
   ///
   /// 建立 WebSocket 连接并启动消息监听。
-  /// 连接成功后会自动启动心跳和消息处理任务。
   Future<void> connect();
 
-  /// 设置连接状态监听器
-  ///
-  /// 监听连接状态变更事件，通过 StreamSink 发送到 Dart
-  Stream<ConnectionStatusEvent> connectionEvent();
-
-  /// 设置会话监听器
-  ///
-  /// 监听会话变更事件，通过 StreamSink 发送到 Dart
-  Stream<ConversationEvent> conversationEvent();
-
   /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
-  ///
-  /// 参数和返回值完全匹配 Go SDK
   Future<GetAdvancedHistoryMessageListCallback> getAdvancedHistoryMessageList({
     required GetAdvancedHistoryMessageListParams req,
   });
 
   /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
-  ///
-  /// 参数和返回值完全匹配 Go SDK
   Future<GetAdvancedHistoryMessageListCallback>
   getAdvancedHistoryMessageListReverse({
     required GetAdvancedHistoryMessageListParams req,
@@ -69,11 +46,6 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations();
 
-  /// 设置消息监听器
-  ///
-  /// 监听消息事件，通过 StreamSink 发送到 Dart
-  Stream<MessageEvent> messageEvent();
-
   /// 创建新的客户端实例
   ///
   /// # 参数
@@ -81,9 +53,6 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// - `token`: 认证 token（从登录接口获取）
   /// - `platform_id`: 平台 ID（例如：5 表示 Web）
   /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
-  ///
-  /// # 返回
-  /// 返回客户端实例
   factory OpenImBridgeClient({
     required String userId,
     required String token,
@@ -95,4 +64,14 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     platformId: platformId,
     wsUrl: wsUrl,
   );
+
+  /// 发送文本消息
+  /// - `recv_id`: 接收者 ID（单聊为用户 ID，群聊为群组 ID）
+  /// - `text`: 消息内容
+  /// - `session_type`: 会话类型，1=单聊，3=群聊
+  Future<void> sendTextMessage({
+    required String recvId,
+    required String text,
+    required int sessionType,
+  });
 }

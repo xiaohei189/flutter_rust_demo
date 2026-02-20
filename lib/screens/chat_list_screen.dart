@@ -53,6 +53,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              await messageService.refreshConversations();
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
               // TODO: 新建聊天

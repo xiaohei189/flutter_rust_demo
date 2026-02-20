@@ -4,16 +4,12 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/bridge_client.dart';
-import 'api/listeners/connection_status.dart';
-import 'api/listeners/conversation.dart';
-import 'api/listeners/message.dart';
-import 'api/logger.dart';
 import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'frb_generated.dart';
-import 'im/http/auth.dart';
+import 'im/http_client/auth.dart';
 import 'im/model/conversation.dart';
 import 'im/model/message.dart';
 import 'lib.dart';
@@ -28,22 +24,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkConnectionStatusEventPtr =>
-      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEventPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_ArcMutexOptionStreamSinkMessageEventPtr =>
-      wire._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEventPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_DartConnectionStatusListenerPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListenerPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_DartMessageListenerPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListenerPtr;
-
-  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_OfflinePushInfoPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfoPtr;
 
@@ -53,30 +33,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
-
-  @protected
-  ArcMutexOptionStreamSinkConnectionStatusEvent
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    dynamic raw,
-  );
-
-  @protected
-  ArcMutexOptionStreamSinkMessageEvent
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    dynamic raw,
-  );
-
-  @protected
-  DartConnectionStatusListener
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    dynamic raw,
-  );
-
-  @protected
-  DartMessageListener
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    dynamic raw,
-  );
 
   @protected
   OfflinePushInfo
@@ -91,62 +47,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  DartConnectionStatusListener
-  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    dynamic raw,
-  );
-
-  @protected
-  DartMessageListener
-  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    dynamic raw,
-  );
-
-  @protected
-  OpenImBridgeClient
-  dco_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    dynamic raw,
-  );
-
-  @protected
-  DartConnectionStatusListener
-  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    dynamic raw,
-  );
-
-  @protected
-  DartMessageListener
-  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    dynamic raw,
-  );
-
-  @protected
   OpenImBridgeClient
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    dynamic raw,
-  );
-
-  @protected
-  ArcMutexOptionStreamSinkConnectionStatusEvent
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    dynamic raw,
-  );
-
-  @protected
-  ArcMutexOptionStreamSinkMessageEvent
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    dynamic raw,
-  );
-
-  @protected
-  DartConnectionStatusListener
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    dynamic raw,
-  );
-
-  @protected
-  DartMessageListener
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
     dynamic raw,
   );
 
@@ -159,19 +61,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   OpenImBridgeClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    dynamic raw,
-  );
-
-  @protected
-  RustStreamSink<ConnectionStatusEvent>
-  dco_decode_StreamSink_connection_status_event_Sse(dynamic raw);
-
-  @protected
-  RustStreamSink<ConversationEvent>
-  dco_decode_StreamSink_conversation_event_Sse(dynamic raw);
-
-  @protected
-  RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(
     dynamic raw,
   );
 
@@ -213,15 +102,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
 
   @protected
-  LoggerConfig dco_decode_box_autoadd_logger_config(dynamic raw);
-
-  @protected
-  MessageRevoked dco_decode_box_autoadd_message_revoked(dynamic raw);
-
-  @protected
-  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
-
-  @protected
   PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
 
   @protected
@@ -234,25 +114,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
 
   @protected
-  TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw);
-
-  @protected
   VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
 
   @protected
   MsgStruct dco_decode_box_msg_struct(dynamic raw);
 
   @protected
-  ConnectionStatusEvent dco_decode_connection_status_event(dynamic raw);
-
-  @protected
-  ConversationEvent dco_decode_conversation_event(dynamic raw);
-
-  @protected
   CustomElem dco_decode_custom_elem(dynamic raw);
-
-  @protected
-  DartConversationListener dco_decode_dart_conversation_listener(dynamic raw);
 
   @protected
   double dco_decode_f_64(dynamic raw);
@@ -296,16 +164,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocationElem dco_decode_location_elem(dynamic raw);
 
   @protected
-  LoggerConfig dco_decode_logger_config(dynamic raw);
-
-  @protected
   LoginData dco_decode_login_data(dynamic raw);
-
-  @protected
-  MessageEvent dco_decode_message_event(dynamic raw);
-
-  @protected
-  MessageRevoked dco_decode_message_revoked(dynamic raw);
 
   @protected
   MsgStruct dco_decode_msg_struct(dynamic raw);
@@ -371,12 +230,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TextElem dco_decode_text_elem(dynamic raw);
 
   @protected
-  TypingStatus dco_decode_typing_status(dynamic raw);
-
-  @protected
-  int dco_decode_u_32(dynamic raw);
-
-  @protected
   int dco_decode_u_8(dynamic raw);
 
   @protected
@@ -392,30 +245,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
   @protected
-  ArcMutexOptionStreamSinkConnectionStatusEvent
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  ArcMutexOptionStreamSinkMessageEvent
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartConnectionStatusListener
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartMessageListener
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   OfflinePushInfo
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     SseDeserializer deserializer,
@@ -428,62 +257,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  DartConnectionStatusListener
-  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartMessageListener
-  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  OpenImBridgeClient
-  sse_decode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartConnectionStatusListener
-  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartMessageListener
-  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   OpenImBridgeClient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  ArcMutexOptionStreamSinkConnectionStatusEvent
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  ArcMutexOptionStreamSinkMessageEvent
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartConnectionStatusListener
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  DartMessageListener
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
     SseDeserializer deserializer,
   );
 
@@ -496,21 +271,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   OpenImBridgeClient
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  RustStreamSink<ConnectionStatusEvent>
-  sse_decode_StreamSink_connection_status_event_Sse(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  RustStreamSink<ConversationEvent>
-  sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer);
-
-  @protected
-  RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(
     SseDeserializer deserializer,
   );
 
@@ -556,19 +316,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  LoggerConfig sse_decode_box_autoadd_logger_config(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  MessageRevoked sse_decode_box_autoadd_message_revoked(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
-
-  @protected
   PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
 
   @protected
@@ -581,31 +328,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
 
   @protected
-  TypingStatus sse_decode_box_autoadd_typing_status(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
 
   @protected
   MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer);
 
   @protected
-  ConnectionStatusEvent sse_decode_connection_status_event(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer);
-
-  @protected
   CustomElem sse_decode_custom_elem(SseDeserializer deserializer);
-
-  @protected
-  DartConversationListener sse_decode_dart_conversation_listener(
-    SseDeserializer deserializer,
-  );
 
   @protected
   double sse_decode_f_64(SseDeserializer deserializer);
@@ -655,16 +384,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocationElem sse_decode_location_elem(SseDeserializer deserializer);
 
   @protected
-  LoggerConfig sse_decode_logger_config(SseDeserializer deserializer);
-
-  @protected
   LoginData sse_decode_login_data(SseDeserializer deserializer);
-
-  @protected
-  MessageEvent sse_decode_message_event(SseDeserializer deserializer);
-
-  @protected
-  MessageRevoked sse_decode_message_revoked(SseDeserializer deserializer);
 
   @protected
   MsgStruct sse_decode_msg_struct(SseDeserializer deserializer);
@@ -742,12 +462,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TextElem sse_decode_text_elem(SseDeserializer deserializer);
 
   @protected
-  TypingStatus sse_decode_typing_status(SseDeserializer deserializer);
-
-  @protected
-  int sse_decode_u_32(SseDeserializer deserializer);
-
-  @protected
   int sse_decode_u_8(SseDeserializer deserializer);
 
   @protected
@@ -767,34 +481,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    ArcMutexOptionStreamSinkConnectionStatusEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    ArcMutexOptionStreamSinkMessageEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    DartConnectionStatusListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    DartMessageListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     OfflinePushInfo self,
     SseSerializer serializer,
@@ -809,71 +495,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    DartConnectionStatusListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    DartMessageListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_RefMut_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    OpenImBridgeClient self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    DartConnectionStatusListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    DartMessageListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    ArcMutexOptionStreamSinkConnectionStatusEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    ArcMutexOptionStreamSinkMessageEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    DartConnectionStatusListener self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    DartMessageListener self,
     SseSerializer serializer,
   );
 
@@ -888,24 +511,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_StreamSink_connection_status_event_Sse(
-    RustStreamSink<ConnectionStatusEvent> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_StreamSink_conversation_event_Sse(
-    RustStreamSink<ConversationEvent> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_StreamSink_message_event_Sse(
-    RustStreamSink<MessageEvent> self,
     SseSerializer serializer,
   );
 
@@ -959,24 +564,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_box_autoadd_logger_config(
-    LoggerConfig self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_message_revoked(
-    MessageRevoked self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_msg_struct(
-    MsgStruct self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_box_autoadd_picture_elem(
     PictureElem self,
     SseSerializer serializer,
@@ -1001,12 +588,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_box_autoadd_typing_status(
-    TypingStatus self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_box_autoadd_video_elem(
     VideoElem self,
     SseSerializer serializer,
@@ -1016,25 +597,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer);
 
   @protected
-  void sse_encode_connection_status_event(
-    ConnectionStatusEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_conversation_event(
-    ConversationEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_custom_elem(CustomElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_dart_conversation_listener(
-    DartConversationListener self,
-    SseSerializer serializer,
-  );
 
   @protected
   void sse_encode_f_64(double self, SseSerializer serializer);
@@ -1094,19 +657,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_location_elem(LocationElem self, SseSerializer serializer);
 
   @protected
-  void sse_encode_logger_config(LoggerConfig self, SseSerializer serializer);
-
-  @protected
   void sse_encode_login_data(LoginData self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_message_event(MessageEvent self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_message_revoked(
-    MessageRevoked self,
-    SseSerializer serializer,
-  );
 
   @protected
   void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer);
@@ -1206,12 +757,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_text_elem(TextElem self, SseSerializer serializer);
 
   @protected
-  void sse_encode_typing_status(TypingStatus self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_u_32(int self, SseSerializer serializer);
-
-  @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
 
   @protected
@@ -1237,142 +782,6 @@ class RustLibWire implements BaseWire {
   /// The symbols are looked up in [dynamicLibrary].
   RustLibWire(ffi.DynamicLibrary dynamicLibrary)
     : _lookup = dynamicLibrary.lookup;
-
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEventPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEventPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEventPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEvent =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkConnectionStatusEventPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEventPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEventPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEventPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEvent =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcMutexOptionStreamSinkMessageEventPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListenerPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListenerPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListenerPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListener =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartConnectionStatusListenerPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListenerPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListenerPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListenerPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListener =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerDartMessageListenerPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(

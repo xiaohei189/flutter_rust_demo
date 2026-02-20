@@ -1,31 +1,25 @@
-import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
 import '../models/chat.dart';
 import '../models/message.dart';
 import '../src/rust/api/bridge_client.dart';
-import '../src/rust/api/listeners/connection_status.dart';
-import '../src/rust/api/listeners/conversation.dart';
-import '../src/rust/api/listeners/message.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../src/rust/im/model/message.dart' as im_msg;
 
-/// 消息服务 - 管理客户端连接、监听事件、更新会话列表
+/// 消息服务 - 管理客户端连接、会话列表、消息
+/// 连接状态和消息通过 connect() 结果及主动拉取获取，无 Stream 回调
 class MessageService extends ChangeNotifier {
   OpenImBridgeClient? _client;
   bool _isConnected = false;
   bool _isInitializing = false; // 初始化状态标志，防止并发初始化
+  String _currentUserId = ''; // 当前登录用户 ID，用于判断消息是否为自己发送
 
   // 会话列表
   final List<im_conv.LocalConversation> _conversations = [];
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
-
-  // Stream 订阅
-  StreamSubscription<ConversationEvent>? _conversationSubscription;
-  StreamSubscription<MessageEvent>? _messageSubscription;
-  StreamSubscription<ConnectionStatusEvent>? _connectionSubscription;
 
   /// 是否已连接
   bool get isConnected => _isConnected;
@@ -127,32 +121,21 @@ class MessageService extends ChangeNotifier {
     if (msg.textElem != null) {
       content = msg.textElem!.content;
     } else if (msg.content != null) {
-      // 如果是文本消息，content 可能是 JSON，需要解析
-      if (msg.contentType == 101) {
-        // TEXT 类型
+      final raw = msg.content!;
+      if (msg.contentType == 101 && raw.startsWith('{')) {
         try {
-          final json = msg.content!;
-          // 尝试解析 JSON，如果失败则直接使用
-          if (json.startsWith('{')) {
-            // 可能是 JSON 格式的 {"content": "..."}
-            // 这里简化处理，直接使用 content
-            content = json;
-          } else {
-            content = json;
-          }
-        } catch (e) {
-          content = msg.content!;
+          final decoded = jsonDecode(raw) as Map<String, dynamic>;
+          content = decoded['content'] as String? ?? raw;
+        } catch (_) {
+          content = raw;
         }
       } else {
-        content = msg.content ?? '';
+        content = raw;
       }
     }
 
     final sendTime = msg.sendTime.toInt();
-
-    // 判断是否是自己发送的消息
-    // TODO: 从客户端配置中获取当前用户ID
-    final isSent = true; // 暂时假设都是已发送的
+    final isSent = sendId == _currentUserId;
 
     return Message(
       id: clientMsgId.isNotEmpty
@@ -168,13 +151,27 @@ class MessageService extends ChangeNotifier {
     );
   }
 
-  /// 发送文本消息（空实现）
+  /// 发送文本消息
+  /// [conversationId] 可选，发送成功后若提供则刷新该会话的消息列表
   Future<void> sendTextMessage({
     required String recvId,
     required String text,
     required int sessionType,
+    String? conversationId,
   }) async {
-    // TODO: 实现消息发送功能
+    if (_client == null) {
+      throw StateError('客户端未初始化');
+    }
+    await _client!.sendTextMessage(
+      recvId: recvId,
+      text: text,
+      sessionType: sessionType,
+    );
+    if (conversationId != null) {
+      _messages[conversationId] = [];
+      await loadHistoryMessages(conversationId);
+    }
+    notifyListeners();
   }
 
   /// 初始化并连接服务
@@ -204,7 +201,8 @@ class MessageService extends ChangeNotifier {
       final userId = resp.userId;
       final imToken = resp.imToken;
 
-      debugPrint('✅ 登录成功！用户ID----: $userId');
+      debugPrint('✅ 登录成功！用户ID: $userId');
+      _currentUserId = userId;
 
       // 创建客户端实例
       _client = OpenImBridgeClient(
@@ -213,9 +211,6 @@ class MessageService extends ChangeNotifier {
         platformId: 5,
         wsUrl: wsUrl,
       );
-
-      // 设置监听器
-      _setupListeners();
 
       // 连接到服务器
       await _client!.connect();
@@ -233,106 +228,6 @@ class MessageService extends ChangeNotifier {
       rethrow;
     } finally {
       _isInitializing = false;
-    }
-  }
-
-  /// 设置监听器
-  void _setupListeners() {
-    if (_client == null) return;
-
-    // 设置会话监听器
-    _conversationSubscription = _client?.conversationEvent().listen((event) {
-      _handleConversationEvent(event);
-    });
-
-    // 设置消息监听器（独立的事件源）
-    _messageSubscription = _client?.messageEvent().listen((event) {
-      _handleMessageEvent(event);
-    });
-
-    // 设置连接状态监听器（独立的事件源）
-    _connectionSubscription = _client?.connectionEvent().listen((event) {
-      _isConnected = event.connected;
-      debugPrint(
-        '🔌 连接状态变更: ${event.connected ? "已连接" : "已断开"} - ${event.message}',
-      );
-      notifyListeners();
-    });
-  }
-
-  /// 处理新消息
-  void _handleMessageEvent(MessageEvent event) {
-    try {
-      event.when(
-        recvNewMessage: (message) {
-          debugPrint(
-            'dart MessageEvent recv new message: ${message.senderNickname}',
-          );
-        },
-        recvC2CReadReceipt: (msgReceiptList) {
-          debugPrint(
-            'dart MessageEvent recv C2C read receipt, msgReceiptList=$msgReceiptList',
-          );
-        },
-        newRecvMessageRevoked: (messageRevoked) {
-          debugPrint(
-            'dart MessageEvent new recv message revoked: $messageRevoked',
-          );
-        },
-        recvOfflineNewMessage: (message) {
-          debugPrint('dart MessageEvent recv offline new message: $message');
-        },
-        msgDeleted: (message) {
-          debugPrint('dart MessageEvent msg deleted: $message');
-        },
-        recvOnlineOnlyMessage: (message) {
-          debugPrint('dart MessageEvent recv online only message: $message');
-        },
-        kickedOffline: () {
-          debugPrint('dart MessageEvent kicked offline');
-        },
-        recvTypingStatus: (typingStatus) {
-          debugPrint('dart MessageEvent recv typing status: $typingStatus');
-        },
-      );
-      // final message = Message(
-      //   id:
-      //       messageData['clientMsgID'] as String? ??
-      //       DateTime.now().millisecondsSinceEpoch.toString(),
-      //   senderId: senderId,
-      //   content: content,
-      //   timestamp: sendTime != null
-      //       ? DateTime.fromMillisecondsSinceEpoch(sendTime)
-      //       : DateTime.now(),
-      // );
-
-      // // 添加到消息列表
-      // _messages.putIfAbsent(conversationId, () => []).add(message);
-
-      // // 更新会话列表
-      // _updateConversationFromMessage(conversationId, message);
-
-      notifyListeners();
-      // debugPrint('📨 收到新消息: $conversationId - $content');
-    } catch (e) {
-      debugPrint('❌ 处理新消息失败: $e');
-    }
-  }
-
-  /// 更新会话列表（从结构体列表）
-  void _updateConversationsFromList(
-    List<im_conv.LocalConversation> conversationList,
-  ) {
-    try {
-      for (final conv in conversationList) {
-        _updateConversation(conv);
-      }
-      notifyListeners();
-      debugPrint(
-        'dart MessageService 🔄 会话列表已更新: ${_conversations.length} 个会话',
-      );
-    } catch (e) {
-      debugPrint('dart MessageService ❌ 更新会话列表失败: $e');
     }
   }
 
@@ -361,67 +256,6 @@ class MessageService extends ChangeNotifier {
     });
   }
 
-  /// 处理会话变更
-  void _handleConversationEvent(ConversationEvent event) {
-    try {
-      event.when(
-        syncServerStart: (reinstalled) {
-          debugPrint(
-            'dart ConversationEvent sync start, reinstalled=$reinstalled',
-          );
-          // 同步开始时，可以显示加载状态
-        },
-        syncServerFinish: (reinstalled) {
-          debugPrint(
-            'dart ConversationEvent sync finish, reinstalled=$reinstalled',
-          );
-          // 同步完成时，重新加载会话列表
-          _loadConversations();
-        },
-        syncServerProgress: (progress) {
-          debugPrint('dart ConversationEvent progress=$progress');
-          // 可以更新同步进度UI
-        },
-        syncServerFailed: (reinstalled) {
-          debugPrint(
-            'dart ConversationEvent sync failed, reinstalled=$reinstalled',
-          );
-          // 同步失败时，可以显示错误提示
-        },
-        newConversation: (conversationList) {
-          debugPrint(
-            'dart ConversationEvent new conversation, count=${conversationList.length}',
-          );
-          // 新会话：直接使用结构体列表更新
-          _updateConversationsFromList(conversationList);
-        },
-        conversationChanged: (conversationList) {
-          debugPrint(
-            'dart ConversationEvent conversation changed, count=${conversationList.length}',
-          );
-          // 会话变更：直接使用结构体列表更新
-          _updateConversationsFromList(conversationList);
-        },
-        totalUnreadMessageCountChanged: (totalUnreadCount) {
-          debugPrint(
-            'dart ConversationEvent total unread message count changed, totalUnreadCount=$totalUnreadCount',
-          );
-          // 总未读数变更：可以更新应用角标等
-          // 注意：这里只是总未读数，具体会话的未读数在 conversationChanged 中更新
-        },
-        conversationUserInputStatusChanged: (change) {
-          debugPrint(
-            'dart ConversationEvent conversation user input status changed, change=$change',
-          );
-          // 用户输入状态变更：可以显示"正在输入"提示
-          // change 是 JSON 字符串，包含 conversationID 和状态信息
-        },
-      );
-    } catch (e) {
-      debugPrint('dart MessageService ❌ 处理会话变更失败: $e');
-    }
-  }
-
   /// 加载会话列表
   Future<void> _loadConversations() async {
     if (_client == null) return;
@@ -441,16 +275,15 @@ class MessageService extends ChangeNotifier {
     }
   }
 
+  /// 刷新会话列表（供下拉刷新等场景调用）
+  Future<void> refreshConversations() async {
+    await _loadConversations();
+  }
+
   /// 断开连接
   Future<void> disconnect() async {
-    await _conversationSubscription?.cancel();
-    await _messageSubscription?.cancel();
-    await _connectionSubscription?.cancel();
-    _conversationSubscription = null;
-    _messageSubscription = null;
-    _connectionSubscription = null;
-
     _client = null;
+    _currentUserId = '';
     _isConnected = false;
     _isInitializing = false; // 重置初始化状态
     _conversations.clear();
