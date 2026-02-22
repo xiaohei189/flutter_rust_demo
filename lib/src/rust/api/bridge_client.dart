@@ -150,5 +150,9 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   );
 
   /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
-  Future<void> sendMessage({required MsgData msg});
+  ///
+  /// **参数**
+  /// - `msg`: 已组装的 MsgData。
+  /// - `is_online_only`: 是否仅在线投递（不落库、不更新会话）；传 `false` 表示持久化，与 Go SDK 默认行为一致。
+  Future<void> sendMessage({required MsgData msg, required bool isOnlineOnly});
 }

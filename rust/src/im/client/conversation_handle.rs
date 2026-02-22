@@ -273,6 +273,7 @@ impl ConversationHandle {
     }
 
     /// 构建供事件使用的消息 JSON；对 TEXT 将 content 转为已解析字符串。
+    /// protocol MsgData 使用 rename_all = "camelCase" 会产出 clientMsgId 等，MsgStruct 期望 clientMsgID，此处做键名修正。
     fn build_msg_json_for_listener(msg: &sdkws::MsgData) -> String {
         let mut value = match serde_json::to_value(msg) {
             Ok(v) => v,
@@ -283,11 +284,39 @@ impl ConversationHandle {
                 value["content"] = serde_json::Value::String(content_str);
             }
         }
+        // 将 protocol camelCase 键名（如 clientMsgId）修正为 MsgStruct 期望的 clientMsgID 等，否则 from_str::<MsgStruct> 会失败导致 RecvNewMessage 不触发
+        if let Some(obj) = value.as_object() {
+            let mut new_obj = serde_json::Map::new();
+            for (k, v) in obj {
+                let key = match k.as_str() {
+                    "clientMsgId" => "clientMsgID",
+                    "serverMsgId" => "serverMsgID",
+                    "sendId" => "sendID",
+                    "recvId" => "recvID",
+                    "groupId" => "groupID",
+                    "senderPlatformId" => "senderPlatformID",
+                    _ => k.as_str(),
+                };
+                new_obj.insert(key.to_string(), v.clone());
+            }
+            value = serde_json::Value::Object(new_obj);
+        }
         serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string())
     }
 
     fn msg_data_to_msg_struct(msg: &sdkws::MsgData) -> Option<MsgStruct> {
-        serde_json::from_str(&Self::build_msg_json_for_listener(msg)).ok()
+        let json = Self::build_msg_json_for_listener(msg);
+        match serde_json::from_str::<MsgStruct>(&json) {
+            Ok(ms) => Some(ms),
+            Err(e) => {
+                tracing::warn!(
+                    "[conversation_handle] msg_data_to_msg_struct 失败 client_msg_id={} err={}",
+                    msg.client_msg_id,
+                    e
+                );
+                None
+            }
+        }
     }
 
     /// TYPING 消息专用：下发 ConversationUserInputStatusChanged 事件
@@ -442,7 +471,10 @@ impl ConversationHandle {
             let changed_list: Vec<LocalConversation> = convs.into_iter().filter(|c| c.conversation_id == conv_id).collect();
             if let Some(ref cb) = self.callbacks {
                 if !changed_list.is_empty() {
-                    cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_list });
+                    info!("[callback] ConversationEvent::ConversationChanged trigger=sync_login_user");
+                    cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                        list: changed_list,
+                    });
                 }
             }
         }
@@ -520,7 +552,10 @@ impl ConversationHandle {
                 cb.try_emit_conversation_event(ConversationEvent::NewConversation { list: new_conversations.clone() });
             }
             if !changed_conversations.is_empty() {
-                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_conversations.clone() });
+                info!("[callback] ConversationEvent::ConversationChanged trigger=sync_conversation");
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                    list: changed_conversations.clone(),
+                });
             }
             if !new_conversations.is_empty() || !changed_conversations.is_empty() {
                 if let Ok(total_unread) = self.get_total_unread_count().await {
@@ -584,7 +619,10 @@ impl ConversationHandle {
                 cb.try_emit_conversation_event(ConversationEvent::NewConversation { list: new_conversations.clone() });
             }
             if !changed_conversations.is_empty() {
-                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_conversations.clone() });
+                info!("[callback] ConversationEvent::ConversationChanged trigger=sync_conversation");
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                    list: changed_conversations.clone(),
+                });
             }
             if insert_count > 0 || update_count > 0 || delete_count > 0 {
                 if let Ok(total_unread) = self.get_total_unread_count().await {
@@ -794,7 +832,7 @@ impl ConversationHandle {
                 let content = match msg_handle_by_content_type_result(&v.content, v.content_type) {
                     Ok(s) => s,
                     Err(e) => {
-                        warn!("[conversation_handle] Parsing data error (skip msg): {} type={} msg={:?}", e, v.content_type, v);
+                        error!("[conversation_handle] Parsing data error (skip msg): {} type={} msg={:?}", e, v.content_type, v);
                         continue;
                     }
                 };
@@ -808,6 +846,7 @@ impl ConversationHandle {
 
                 let existing_msg: Option<LocalChatLog> = self.repository.message.get_message(conversation_id, &v.client_msg_id).await.ok().flatten();
 
+                // 与 Go 一致：自己发的消息若本地已存在且 seq==0（服务端回推），只做 updateMessage，不加入 new_messages，不触发 RecvNewMessage，避免界面显示两条
                 if v.send_id == self.config.user_id {
                     if let Some(ref existing) = existing_msg {
                         if existing.seq == 0 {
@@ -815,6 +854,7 @@ impl ConversationHandle {
                                 log.status = constant::MSG_STATUS_FILTERED;
                             }
                             update_message.push(log);
+                            // Go 在此分支不 append newMessages，故不触发 OnRecvNewMessage
                         } else {
                             Self::handle_exception_messages(Some(existing), &mut log, &self.config.user_id);
                             exception_msg.push(serde_json::to_string(&log).unwrap_or_else(|_| "{}".to_string()));
@@ -916,6 +956,10 @@ impl ConversationHandle {
                     warn!("[conversation_handle] do_msg_new update_message err: {}", e);
                     continue;
                 }
+                info!(
+                    "[conversation_handle] do_msg_new: self message updated (server echo), conversation_id={}, client_msg_id={}, seq={}",
+                    conversation_id, log.client_msg_id, log.seq
+                );
                 if latest_client_msg_id.as_deref() == Some(log.client_msg_id.as_str()) {
                     let mut latest_value: serde_json::Value = match serde_json::from_str(&conv.latest_msg) {
                         Ok(v) => v,
@@ -933,8 +977,12 @@ impl ConversationHandle {
                     } else {
                         conv.latest_msg = new_latest_msg;
                         conv.latest_msg_send_time = log.send_time;
+                        // 与 Go 一致：batchUpdateMessageList 里更新 latest 后会 doUpdateConversation(AddConOrUpLatMsg)，故此处也 emit
                         if let Some(ref cb) = self.callbacks {
-                            cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: vec![conv.clone()] });
+                            info!("[callback] ConversationEvent::ConversationChanged trigger=push_update_latest_msg");
+                            cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                                list: vec![conv.clone()],
+                            });
                         }
                     }
                 }
@@ -1001,6 +1049,11 @@ impl ConversationHandle {
 
         // newMessage：与 Go 一致，含 GetBackground/RecvMsgOpt 分支，且对 self 消息也回调
         new_messages.sort_by(|a, b| a.1.send_time.cmp(&b.1.send_time));
+        if new_messages.is_empty() {
+            debug!(
+                "[conversation_handle] do_msg_new new_messages 为空，不会发出 RecvNewMessage（仅会话回调）"
+            );
+        }
         let recv_opt_map: HashMap<String, i32> = changed_list.iter().chain(new_list.iter()).map(|c| (c.conversation_id.clone(), c.recv_msg_opt)).collect();
         let get_background = self.config.get_background.as_ref().map(|f| f()).unwrap_or(false);
         if let Some(ref cb) = self.callbacks {
@@ -1028,6 +1081,7 @@ impl ConversationHandle {
                         if *in_online_map {
                             cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvOnlineOnlyMessage(ms));
                         } else {
+                        
                             cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvNewMessage(ms));
                         }
                     }
@@ -1037,7 +1091,10 @@ impl ConversationHandle {
                 cb.try_emit_conversation_event(ConversationEvent::NewConversation { list: new_list.clone() });
             }
             if !changed_list.is_empty() {
-                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list: changed_list.clone() });
+                info!("[callback] ConversationEvent::ConversationChanged trigger=do_msg_new_batch");
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                    list: changed_list.clone(),
+                });
             }
             if is_trigger_unread_count {
                 if let Ok(total) = self.get_total_unread_count().await {

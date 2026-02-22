@@ -42,6 +42,6 @@ class Message {
     );
   }
 
-  // 判断是否是自己发送的消息
-  bool get isFromMe => senderId == '1';
+  /// 是否为自己发送的消息（与 senderId 比较需用当前登录用户 ID，这里用 isSent 与后端一致）
+  bool get isFromMe => isSent;
 }

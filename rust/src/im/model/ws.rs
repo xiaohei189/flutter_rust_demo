@@ -13,7 +13,7 @@ pub mod msg_type {
     pub const WS_PULL_MSG_BY_SEQ_LIST: i32 = 1005;
 
     // 1003：客户端通过 WS 发送消息时携带；服务端回执同样用 1003
-    // 典型流程：send_text_message / send_rich_message 走 WS RPC，响应 errCode/errMsg 填在 OpenIMResp
+    // 典型流程：send_message / send_message_not_oss 走 WS RPC，响应 errCode/errMsg 填在 OpenIMResp
     pub const WS_SEND_MSG: i32 = 1003;
 
     // 2001：服务端主动推送新消息（PushMessages），不是请求响应，只在下行通知出现

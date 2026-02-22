@@ -195,6 +195,7 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiBridgeClientOpenImBridgeClientSendMessage({
     required OpenImBridgeClient that,
     required MsgData msg,
+    required bool isOnlineOnly,
   });
 
   Future<void> crateApiBridgeClientCloseCurrentClientIfAny();
@@ -1006,6 +1007,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<void> crateApiBridgeClientOpenImBridgeClientSendMessage({
     required OpenImBridgeClient that,
     required MsgData msg,
+    required bool isOnlineOnly,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -1019,6 +1021,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             msg,
             serializer,
           );
+          sse_encode_bool(isOnlineOnly, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -1031,7 +1034,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientOpenImBridgeClientSendMessageConstMeta,
-        argValues: [that, msg],
+        argValues: [that, msg, isOnlineOnly],
         apiImpl: this,
       ),
     );
@@ -1041,7 +1044,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   get kCrateApiBridgeClientOpenImBridgeClientSendMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_message",
-        argNames: ["that", "msg"],
+        argNames: ["that", "msg", "isOnlineOnly"],
       );
 
   @override
@@ -4181,6 +4184,16 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
       .crateApiBridgeClientOpenImBridgeClientGetAllConversations(that: this);
 
   /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
-  Future<void> sendMessage({required MsgData msg}) => RustLib.instance.api
-      .crateApiBridgeClientOpenImBridgeClientSendMessage(that: this, msg: msg);
+  ///
+  /// **参数**
+  /// - `msg`: 已组装的 MsgData。
+  /// - `is_online_only`: 是否仅在线投递（不落库、不更新会话）；传 `false` 表示持久化，与 Go SDK 默认行为一致。
+  Future<void> sendMessage({
+    required MsgData msg,
+    required bool isOnlineOnly,
+  }) => RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientSendMessage(
+    that: this,
+    msg: msg,
+    isOnlineOnly: isOnlineOnly,
+  );
 }

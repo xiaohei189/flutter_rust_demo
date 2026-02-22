@@ -11,8 +11,14 @@ import '../widgets/user_avatar.dart';
 /// 聊天详情页面
 class ChatDetailScreen extends StatefulWidget {
   final im_conv.LocalConversation conversation;
+  /// 是否已在进入前预加载了最后一屏消息（列表页点击时先 load 再 push）
+  final bool preLoaded;
 
-  const ChatDetailScreen({super.key, required this.conversation});
+  const ChatDetailScreen({
+    super.key,
+    required this.conversation,
+    this.preLoaded = false,
+  });
 
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
@@ -23,16 +29,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingHistory = false; // 是否正在加载历史消息
   bool _hasMoreHistory = true; // 是否还有更多历史消息
+  bool _initialScrollDone = false; // 是否已完成首次滚到底部（避免进入时可见的滚动动画）
 
   @override
   void initState() {
     super.initState();
-    // 监听消息服务的变化
     messageService.addListener(_onMessageServiceChanged);
-    // 监听滚动事件，实现翻页加载
     _scrollController.addListener(_onScroll);
-    // 加载历史消息
-    _loadMessages();
+    // 仅未预加载时才在进入时请求历史（预加载时列表页已拉取最后一屏）
+    if (!widget.preLoaded) _loadMessages();
   }
 
   @override
@@ -47,8 +52,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void _onMessageServiceChanged() {
     if (mounted) {
       setState(() {});
-      // 自动滚动到底部
-      _scrollToBottom();
+      // reverse 列表下新消息在 index 0，无需滚动；非 reverse 时再滚到底部
+      if (!widget.preLoaded && _initialScrollDone) _scrollToBottom();
     }
   }
 
@@ -103,10 +108,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         _isLoadingHistory = false;
       });
 
-      // 首次加载时滚动到底部
+      // 首次加载后直接跳到底部，无动画，避免进入时出现向下滚动抖动
       if (!isLoadMore) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
+          _jumpToBottomOnce();
         });
       }
     } catch (e) {
@@ -117,29 +122,49 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
-  /// 滚动事件监听，实现滚动到顶部时加载更早的消息
+  /// 滚动事件监听。reverse 列表下「往上滑」= 看更早消息，pixels 增大，接近 maxScrollExtent 时加载更多
   void _onScroll() {
-    // 当滚动到顶部附近时（距离顶部 200px 内），加载更早的消息
-    if (_scrollController.hasClients &&
-        _scrollController.position.pixels < 200 &&
-        _hasMoreHistory &&
-        !_isLoadingHistory) {
-      _loadMessages(isLoadMore: true);
+    if (!_scrollController.hasClients || !_hasMoreHistory || _isLoadingHistory) return;
+    final pos = _scrollController.position;
+    if (widget.preLoaded) {
+      if (pos.pixels >= pos.maxScrollExtent - 200) _loadMessages(isLoadMore: true);
+    } else {
+      if (pos.pixels < 200) _loadMessages(isLoadMore: true);
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+  /// 非预加载时首次进入瞬间跳到底部
+  void _jumpToBottomOnce() {
+    if (widget.preLoaded || !mounted || _initialScrollDone) return;
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.maxScrollExtent > 0) {
+      _scrollController.jumpTo(pos.maxScrollExtent);
+      _initialScrollDone = true;
+      return;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _initialScrollDone || !_scrollController.hasClients) return;
+      final p = _scrollController.position;
+      if (p.maxScrollExtent > 0) _scrollController.jumpTo(p.maxScrollExtent);
+      _initialScrollDone = true;
+    });
+  }
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final pos = _scrollController.position;
+      if (pos.maxScrollExtent > pos.pixels) {
+        _scrollController.animateTo(
+          pos.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+      _initialScrollDone = true;
+    });
   }
 
   Future<void> _sendMessage(String text) async {
@@ -201,7 +226,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       );
 
       _textController.clear();
-      _scrollToBottom();
+      // reverse 列表下新消息已在 index 0（底部），无需滚动；非 reverse 时才滚到底部
+      if (!widget.preLoaded) _scrollToBottom();
     } catch (e, st) {
       appLog.e('发送消息失败: $e', e, st);
       if (mounted) {
@@ -277,23 +303,39 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   );
                 }
 
+                // 预加载时用 reverse 列表：index 0 在底部=最新一条，进入即最后一屏无滚动
+                final useReverse = widget.preLoaded;
+                final itemCount = messages.length + (_isLoadingHistory ? 1 : 0);
+
                 return ListView.builder(
                   controller: _scrollController,
+                  reverse: useReverse,
                   padding: const EdgeInsets.all(16),
-                  itemCount: messages.length + (_isLoadingHistory ? 1 : 0),
+                  itemCount: itemCount,
                   itemBuilder: (context, index) {
-                    // 显示加载指示器
-                    if (index == 0 && _isLoadingHistory) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
+                    // 加载更多指示器：正序在顶部 index 0，反序在「列表末尾」= 顶部
+                    if (_isLoadingHistory) {
+                      if (!useReverse && index == 0) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      if (useReverse && index == messages.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
                     }
 
-                    // 调整索引（如果有加载指示器）
-                    final messageIndex = _isLoadingHistory ? index - 1 : index;
+                    final messageIndex = useReverse
+                        ? messages.length - 1 - index
+                        : (_isLoadingHistory ? index - 1 : index);
                     if (messageIndex < 0 || messageIndex >= messages.length) {
                       return const SizedBox.shrink();
                     }

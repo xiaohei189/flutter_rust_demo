@@ -1,0 +1,13 @@
+---
+description: 不要编辑 flutter_rust_bridge 自动生成的文件
+alwaysApply: true
+---
+
+# 禁止编辑代码生成文件
+
+以下文件由 **flutter_rust_bridge** 的代码生成程序自动更新，**不要对它们做任何修改**：
+
+- `rust/src/frb_generated.rs`
+- `lib/src/rust/frb_generated.dart`
+
+如需改动与 Rust-Dart 桥接相关的类型或 API，应修改**源定义**（如 Rust 的 `listeners.rs`、API 等），然后运行项目的代码生成命令重新生成上述文件。

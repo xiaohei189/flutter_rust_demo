@@ -6,15 +6,20 @@
 use chrono::Utc;
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
+use openim_protocol::constant;
+use openim_protocol::sdkws;
 use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, IMClient};
 use rust_lib_flutter_rust_demo::im::http_client::auth::LoginData;
-use rust_lib_flutter_rust_demo::im::{AdvancedMsgEvent, ConversationEvent};
+use rust_lib_flutter_rust_demo::im::{create_text_message, init_basic_info, AdvancedMsgEvent, ConversationEvent, MsgStruct};
 use rust_lib_flutter_rust_demo::im::logger::logger::init_logger;
 use rust_lib_flutter_rust_demo::login_async;
-use tracing::debug;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
-use tokio::sync::{oneshot, OnceCell};
+use tokio::sync::OnceCell;
+use tokio::time::{interval, timeout};
+use tokio_stream::wrappers::UnboundedReceiverStream;
+use tracing::debug;
 
 /// 全进程只初始化一次的登录 token，供各 test 复用
 static TOKEN: Lazy<OnceCell<LoginData>> = Lazy::new(OnceCell::new);
@@ -54,41 +59,9 @@ pub const EXIT_TIMEOUT_SECS: u64 = 3;
 /// 发送消息后等待服务端推送落库的时间（秒）
 pub const PUSH_WAIT_SECS: u64 = 10;
 
-/// 后台任务：消费会话与消息事件并通知 ExpectSyncListener / ExpectMsgListener
-fn spawn_event_forwarder(
-    mut conv_rx: tokio_stream::wrappers::UnboundedReceiverStream<ConversationEvent>,
-    mut msg_rx: tokio_stream::wrappers::UnboundedReceiverStream<AdvancedMsgEvent>,
-    sync_listener: Arc<ExpectSyncListener>,
-    msg_listener: Arc<ExpectMsgListener>,
-) {
-    tokio::spawn(async move {
-        loop {
-            tokio::select! {
-                Some(ev) = conv_rx.next() => {
-                    if let ConversationEvent::SyncServerFinish { reinstalled: false } = ev {
-                        sync_listener.try_complete_sync();
-                    }
-                }
-                Some(ev) = msg_rx.next() => {
-                    let id = match &ev {
-                        AdvancedMsgEvent::RecvNewMessage(ms)
-                        | AdvancedMsgEvent::RecvOfflineNewMessage(ms)
-                        | AdvancedMsgEvent::RecvOnlineOnlyMessage(ms) => ms.client_msg_id.as_deref(),
-                        _ => None,
-                    };
-                    if let Some(id) = id {
-                        try_notify_pending_id(&msg_listener.state, id);
-                    }
-                }
-                else => break,
-            }
-        }
-    });
-}
-
 /// 初始化日志（info + debug for lib），需配合 `cargo test -- --nocapture` 查看
 pub fn setup_logger() {
-    let _ = init_logger("info,rust_lib_flutter_rust_demo=debug");
+    let _ = init_logger("info");
 }
 
 /// 登录并创建已启动的客户端与 self_user_id；等待 SYNC_WAIT_SECS 以便同步完成。
@@ -112,11 +85,8 @@ pub async fn create_and_start_client(db_suffix: &str) -> anyhow::Result<(IMClien
     Ok((client, self_user_id))
 }
 
-/// 创建客户端并订阅会话/消息 Stream 后再 start，供“发消息后等推送”的用例使用。
-/// 使用 ExpectSyncListener 等待同步完成。
-pub async fn create_and_start_client_with_msg_listener(
-    db_suffix: &str,
-) -> anyhow::Result<(IMClient, String, Arc<ExpectMsgListener>)> {
+/// 创建纯净客户端（不 start、不订阅 stream）。调用方自行 `client.start().await`，需要 stream 时再订阅。
+pub async fn create_client(db_suffix: &str) -> anyhow::Result<IMClient> {
     let token_info = get_or_init_token().await?;
     let mut config = ClientConfig::new(
         token_info.user_id.clone(),
@@ -128,45 +98,232 @@ pub async fn create_and_start_client_with_msg_listener(
         std::env::temp_dir().as_path().to_string_lossy(),
         db_suffix
     );
-    let self_user_id = config.user_id.clone();
-    let msg_listener = Arc::new(ExpectMsgListener::new());
-    let sync_listener = Arc::new(ExpectSyncListener::new());
-    let mut client = IMClient::new(config).await?;
-    let conv_rx = client.subscribe_conversation_events();
-    let msg_rx = client.subscribe_advanced_msg_events();
-    spawn_event_forwarder(conv_rx, msg_rx, sync_listener.clone(), msg_listener.clone());
-    client.start().await?;
-    sync_listener
-        .wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS))
-        .await?;
-    Ok((client, self_user_id, msg_listener))
+    let client = IMClient::new(config).await?;
+    Ok(client)
 }
 
-/// 创建客户端并订阅会话/消息 Stream，供“等同步完成 + 发消息后等推送”的用例使用。
-/// 不在此处等待，由调用方显式调用 sync_listener.wait_for_sync_finish() 后再查询会话/发送消息。
-pub async fn create_and_start_client_with_sync_and_msg_listener(
-    db_suffix: &str,
-) -> anyhow::Result<(IMClient, String, Arc<ExpectSyncListener>, Arc<ExpectMsgListener>)> {
-    let token_info = get_or_init_token().await?;
-    let mut config = ClientConfig::new(
-        token_info.user_id.clone(),
-        token_info.im_token.clone(),
-        DEFAULT_PLATFORM,
-    );
-    config.conversation_db_url = format!(
-        "sqlite://{}/conversations_test_{}.db?mode=rwc",
-        std::env::temp_dir().as_path().to_string_lossy(),
-        db_suffix
-    );
-    let self_user_id = config.user_id.clone();
-    let sync_listener = Arc::new(ExpectSyncListener::new());
-    let msg_listener = Arc::new(ExpectMsgListener::new());
-    let mut client = IMClient::new(config).await?;
-    let conv_rx = client.subscribe_conversation_events();
-    let msg_rx = client.subscribe_advanced_msg_events();
-    spawn_event_forwarder(conv_rx, msg_rx, sync_listener.clone(), msg_listener.clone());
-    client.start().await?;
-    Ok((client, self_user_id, sync_listener, msg_listener))
+/// 测试用：缓存所有订阅的会话/消息事件，支持查询并在获取后移除。
+pub struct StreamEventCache {
+    conv_events: Arc<Mutex<Vec<ConversationEvent>>>,
+    msg_events: Arc<Mutex<Vec<AdvancedMsgEvent>>>,
+}
+
+impl StreamEventCache {
+    pub fn new() -> Self {
+        Self {
+            conv_events: Arc::new(Mutex::new(Vec::new())),
+            msg_events: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    /// 从 client 订阅会话/消息流并启动后台任务，将事件写入内部缓存。
+    pub fn start_collecting(self: Arc<Self>, client: &IMClient) {
+        let mut conv_rx = client.subscribe_conversation_events();
+        let mut msg_rx = client.subscribe_advanced_msg_events();
+        let conv_events = self.conv_events.clone();
+        let msg_events = self.msg_events.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    Some(ev) = conv_rx.next() => {
+                        if let Ok(mut g) = conv_events.lock() {
+                            g.push(ev);
+                        }
+                    }
+                    Some(ev) = msg_rx.next() => {
+                        if let Ok(mut g) = msg_events.lock() {
+                            g.push(ev);
+                        }
+                    }
+                    else => break,
+                }
+            }
+        });
+    }
+
+    /// 是否存在 SyncServerFinish(reinstalled:false)，不移除。
+    pub fn has_sync_finish(&self) -> bool {
+        let g = match self.conv_events.lock() {
+            Ok(g) => g,
+            Err(_) => return false,
+        };
+        g.iter()
+            .any(|e| matches!(e, ConversationEvent::SyncServerFinish { reinstalled: false }))
+    }
+
+    /// 取出并移除第一个 SyncServerFinish(reinstalled:false)，返回是否找到。
+    pub fn take_sync_finish(&self) -> bool {
+        let mut g = match self.conv_events.lock() {
+            Ok(g) => g,
+            Err(_) => return false,
+        };
+        if let Some(pos) = g.iter().position(|e| matches!(e, ConversationEvent::SyncServerFinish { reinstalled: false })) {
+            g.remove(pos);
+            return true;
+        }
+        false
+    }
+
+    /// 是否存在指定 client_msg_id 的消息事件（RecvNewMessage/RecvOfflineNewMessage/RecvOnlineOnlyMessage），不移除。
+    pub fn has_message(&self, client_msg_id: &str) -> bool {
+        let g = match self.msg_events.lock() {
+            Ok(g) => g,
+            Err(_) => return false,
+        };
+        g.iter().any(|e| {
+            let id = match e {
+                AdvancedMsgEvent::RecvNewMessage(ms)
+                | AdvancedMsgEvent::RecvOfflineNewMessage(ms)
+                | AdvancedMsgEvent::RecvOnlineOnlyMessage(ms) => ms.client_msg_id.as_deref(),
+                _ => None,
+            };
+            id == Some(client_msg_id)
+        })
+    }
+
+    /// 取出并移除第一个匹配 client_msg_id 的消息事件，返回是否找到。
+    pub fn take_message_by_id(&self, client_msg_id: &str) -> bool {
+        self.take_message_struct_by_id(client_msg_id).is_some()
+    }
+
+    /// 取出并移除第一个匹配 client_msg_id 的消息事件，返回其中的 MsgStruct（可从中取 server_msg_id）。
+    pub fn take_message_struct_by_id(&self, client_msg_id: &str) -> Option<MsgStruct> {
+        let mut g = match self.msg_events.lock() {
+            Ok(g) => g,
+            Err(_) => return None,
+        };
+        let pos = g.iter().position(|e| {
+            let id = match e {
+                AdvancedMsgEvent::RecvNewMessage(ms)
+                | AdvancedMsgEvent::RecvOfflineNewMessage(ms)
+                | AdvancedMsgEvent::RecvOnlineOnlyMessage(ms) => ms.client_msg_id.as_deref(),
+                _ => None,
+            };
+            id == Some(client_msg_id)
+        });
+        pos.and_then(|pos| {
+            let ev = g.remove(pos);
+            match ev {
+                AdvancedMsgEvent::RecvNewMessage(ms)
+                | AdvancedMsgEvent::RecvOfflineNewMessage(ms)
+                | AdvancedMsgEvent::RecvOnlineOnlyMessage(ms) => Some(ms),
+                _ => None,
+            }
+        })
+    }
+
+    /// 等待 SyncServerFinish(reinstalled:false) 出现，获取到后移除并返回 Ok(())，超时返回错误。
+    pub async fn wait_for_sync_finish(&self, timeout_duration: Duration) -> anyhow::Result<()> {
+        let deadline = tokio::time::Instant::now() + timeout_duration;
+        let mut ticker = interval(Duration::from_millis(50));
+        loop {
+            if self.take_sync_finish() {
+                return Ok(());
+            }
+            if tokio::time::Instant::now() >= deadline {
+                anyhow::bail!(
+                    "等待同步完成超时（{}ms）未收到 SyncServerFinish(false)",
+                    timeout_duration.as_millis()
+                );
+            }
+            ticker.tick().await;
+        }
+    }
+
+    /// 等待指定 client_msg_id 的消息事件出现，获取到后移除并返回 Ok(())，超时返回错误。
+    /// 每次轮询前 sleep(50ms)，避免占用 current_thread 调度器导致推送处理 task 无法运行。
+    pub async fn wait_for_message(
+        &self,
+        client_msg_id: &str,
+        timeout_duration: Duration,
+    ) -> anyhow::Result<()> {
+        let id_for_error = client_msg_id.to_string();
+        let deadline = tokio::time::Instant::now() + timeout_duration;
+        let poll_interval = Duration::from_millis(50);
+        loop {
+            if self.take_message_by_id(client_msg_id) {
+                return Ok(());
+            }
+            if tokio::time::Instant::now() >= deadline {
+                anyhow::bail!(
+                    "等待推送超时（{}ms）未收到 client_msg_id={}",
+                    timeout_duration.as_millis(),
+                    id_for_error
+                );
+            }
+            tokio::time::sleep(poll_interval).await;
+        }
+    }
+}
+
+impl Default for StreamEventCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// 从会话事件流中等待 SyncServerFinish(reinstalled=false)，超时返回错误。
+pub async fn wait_for_sync_finish(
+    mut conv_rx: UnboundedReceiverStream<ConversationEvent>,
+    timeout_duration: Duration,
+) -> anyhow::Result<()> {
+    let res = timeout(
+        timeout_duration,
+        async move {
+            while let Some(ev) = conv_rx.next().await {
+                if let ConversationEvent::SyncServerFinish { reinstalled: false } = ev {
+                    return Ok(());
+                }
+            }
+            anyhow::bail!("stream closed before SyncServerFinish(false)")
+        },
+    )
+    .await;
+    match res {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(e)) => Err(e),
+        Err(_) => anyhow::bail!(
+            "等待同步完成超时（{}ms）未收到 SyncServerFinish(false)",
+            timeout_duration.as_millis()
+        ),
+    }
+}
+
+/// 从消息事件流中等待指定 client_msg_id 的推送（RecvNewMessage/RecvOfflineNewMessage/RecvOnlineOnlyMessage），超时返回错误。
+pub async fn wait_for_message(
+    mut msg_rx: UnboundedReceiverStream<AdvancedMsgEvent>,
+    client_msg_id: &str,
+    timeout_duration: Duration,
+) -> anyhow::Result<()> {
+    let id_for_timeout_msg = client_msg_id.to_string();
+    let client_msg_id = client_msg_id.to_string();
+    let res = timeout(
+        timeout_duration,
+        async move {
+            while let Some(ev) = msg_rx.next().await {
+                let id = match &ev {
+                    AdvancedMsgEvent::RecvNewMessage(ms)
+                    | AdvancedMsgEvent::RecvOfflineNewMessage(ms)
+                    | AdvancedMsgEvent::RecvOnlineOnlyMessage(ms) => ms.client_msg_id.as_deref(),
+                    _ => None,
+                };
+                if id.as_deref() == Some(client_msg_id.as_str()) {
+                    return Ok(());
+                }
+            }
+            anyhow::bail!("stream closed before message client_msg_id={}", client_msg_id)
+        },
+    )
+    .await;
+    match res {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(e)) => Err(e),
+        Err(_) => anyhow::bail!(
+            "等待推送超时（{}ms）未收到 client_msg_id={}",
+            timeout_duration.as_millis(),
+            id_for_timeout_msg
+        ),
+    }
 }
 
 /// 生成带格式化时间的测试消息（用于文本消息）
@@ -208,6 +365,24 @@ pub fn parse_group_id(conversation_id: &str) -> Option<String> {
 }
 
 
+/// 创建与发送分离：仅构造群文本消息体，不发送。调用方设置后交给 `client.send_message(msg, is_online_only)`。
+pub fn build_group_text_msg(user_id: &str, platform_id: i32, group_id: &str, text: &str) -> sdkws::MsgData {
+    let mut msg_data = create_text_message(text);
+    init_basic_info(&mut msg_data, user_id, platform_id);
+    msg_data.group_id = group_id.to_string();
+    msg_data.session_type = constant::READ_GROUP_CHAT_TYPE;
+    msg_data
+}
+
+/// 创建与发送分离：仅构造单聊文本消息体，不发送。调用方设置后交给 `client.send_message(msg, is_online_only)`。
+pub fn build_single_text_msg(user_id: &str, platform_id: i32, recv_id: &str, text: &str) -> sdkws::MsgData {
+    let mut msg_data = create_text_message(text);
+    init_basic_info(&mut msg_data, user_id, platform_id);
+    msg_data.recv_id = recv_id.to_string();
+    msg_data.session_type = constant::SINGLE_CHAT_TYPE;
+    msg_data
+}
+
 /// 从会话列表中取第一个群会话，返回 (conversation_id, group_id, conversation_type)。
 /// 若无群会话返回 None。
 pub fn first_group_from_list(list: &[rust_lib_flutter_rust_demo::LocalConversation]) -> Option<(String, String, i32)> {
@@ -228,106 +403,3 @@ pub fn first_group_from_list(list: &[rust_lib_flutter_rust_demo::LocalConversati
     ))
 }
 
-// ---------- 通用“等指定消息回调再继续、超时则报错”监听器 ----------
-
-/// 内部状态：当前等待的 client_msg_id 与 oneshot 发送端
-type PendingMsg = (String, oneshot::Sender<()>);
-
-/// 可复用的消息监听器：在回调里匹配 client_msg_id，匹配则通知等待方，收到即继续，超时则报错。
-pub struct ExpectMsgListener {
-    state: Arc<RwLock<Option<PendingMsg>>>,
-}
-
-impl ExpectMsgListener {
-    pub fn new() -> Self {
-        Self {
-            state: Arc::new(RwLock::new(None)),
-        }
-    }
-
-    /// 等待指定 client_msg_id 的推送事件，超时返回错误。
-    /// 应在发送消息后立即调用（先 subscribe_advanced_msg_events 再 send 再本方法）。
-    pub async fn wait_for_message(
-        &self,
-        client_msg_id: &str,
-        timeout_duration: Duration,
-    ) -> anyhow::Result<()> {
-        let (tx, rx) = oneshot::channel();
-        {
-            let mut g = self.state.write().unwrap();
-            *g = Some((client_msg_id.to_string(), tx));
-        }
-        match tokio::time::timeout(timeout_duration, rx).await {
-            Ok(Ok(())) => Ok(()),
-            Ok(Err(e)) => anyhow::bail!("等待推送 channel 关闭: {}", e),
-            Err(_) => anyhow::bail!("等待推送超时（{}ms）未收到 client_msg_id={}", timeout_duration.as_millis(), client_msg_id),
-        }
-    }
-}
-
-impl Default for ExpectMsgListener {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// 收到指定 client_msg_id 时触发等待方
-fn try_notify_pending_id(state: &RwLock<Option<PendingMsg>>, client_msg_id: &str) {
-    let mut g = state.write().unwrap();
-    if let Some((expected, tx)) = g.take() {
-        if expected == client_msg_id {
-            let _ = tx.send(());
-        } else {
-            *g = Some((expected, tx));
-        }
-    }
-}
-
-// ---------- 会话同步 + 消息同步回调等待监听器 ----------
-
-/// 可复用的同步等待器：收到 SyncServerFinish(reinstalled=false) 时通知等待方。
-pub struct ExpectSyncListener {
-    state: Arc<RwLock<Option<oneshot::Sender<()>>>>,
-}
-
-impl ExpectSyncListener {
-    pub fn new() -> Self {
-        Self {
-            state: Arc::new(RwLock::new(None)),
-        }
-    }
-
-    /// 由事件转发任务调用
-    pub fn try_complete_sync(&self) {
-        let mut g = self.state.write().unwrap();
-        if let Some(tx) = g.take() {
-            let _ = tx.send(());
-        }
-    }
-
-    /// 等待消息同步完成（SyncServerFinish(reinstalled=false)），超时返回错误。
-    pub async fn wait_for_sync_finish(
-        &self,
-        timeout_duration: Duration,
-    ) -> anyhow::Result<()> {
-        let (tx, rx) = oneshot::channel();
-        {
-            let mut g = self.state.write().unwrap();
-            *g = Some(tx);
-        }
-        match tokio::time::timeout(timeout_duration, rx).await {
-            Ok(Ok(())) => Ok(()),
-            Ok(Err(e)) => anyhow::bail!("等待同步 channel 关闭: {}", e),
-            Err(_) => anyhow::bail!(
-                "等待同步完成超时（{}ms）未收到 SyncServerFinish(false)",
-                timeout_duration.as_millis()
-            ),
-        }
-    }
-}
-
-impl Default for ExpectSyncListener {
-    fn default() -> Self {
-        Self::new()
-    }
-}

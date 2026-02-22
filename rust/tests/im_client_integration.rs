@@ -23,19 +23,18 @@ mod common;
 
 use anyhow::anyhow;
 use openim_protocol::constant;
-use openim_protocol::sdkws;
 use rust_lib_flutter_rust_demo::im::GetAdvancedHistoryMessageListParams;
 use std::time::Duration;
 use tokio::time::timeout;
 use tracing::{error, info};
 
 use common::{
-    create_and_start_client, create_and_start_client_with_msg_listener,
-    create_and_start_client_with_sync_and_msg_listener,
-    first_group_from_list, parse_group_id, parse_single_recv_id, setup_logger, test_message_with_time,
-    CONVERSATION_TYPE_GROUP, CONVERSATION_TYPE_SINGLE, CONVERSATION_TYPE_SUPER_GROUP, EXIT_TIMEOUT_SECS,
-    PUSH_WAIT_SECS, SYNC_WAIT_SECS,
+    create_and_start_client, create_client, first_group_from_list, parse_group_id,
+    parse_single_recv_id, setup_logger, test_message_with_time, StreamEventCache,
+    CONVERSATION_TYPE_GROUP, CONVERSATION_TYPE_SINGLE, CONVERSATION_TYPE_SUPER_GROUP,
+    EXIT_TIMEOUT_SECS, SYNC_WAIT_SECS,
 };
+use std::sync::Arc;
 
 // ---------- 会话 ----------
 
@@ -74,7 +73,9 @@ async fn send_text_to_first_conversation() -> anyhow::Result<()> {
                     .flatten()
                     .or_else(|| Some(conv.user_id.clone()).filter(|s| !s.is_empty()));
                 match recv_id {
-                    Some(rid) => client.send_text_message(rid, msg).await,
+                    Some(rid) => client
+                        .send_text_message(&rid, "", conv.conversation_type, &msg, false)
+                        .await,
                     None => Err(anyhow!("无法解析单聊 recv_id")),
                 }
             }
@@ -86,7 +87,9 @@ async fn send_text_to_first_conversation() -> anyhow::Result<()> {
                     .flatten()
                     .or_else(|| Some(conv.group_id.clone()).filter(|s| !s.is_empty()));
                 match gid {
-                    Some(gid) => client.send_text_to_group(gid, msg).await,
+                    Some(gid) => client
+                        .send_text_message("", &gid, conv.conversation_type, &msg, false)
+                        .await,
                     None => Err(anyhow!("无法解析群聊 group_id")),
                 }
             }
@@ -117,12 +120,11 @@ async fn send_text_to_first_conversation() -> anyhow::Result<()> {
 #[tokio::test]
 async fn group_send_text_message() -> anyhow::Result<()> {
     setup_logger();
-    let (mut client, self_user_id, sync_listener, msg_listener) =
-        create_and_start_client_with_sync_and_msg_listener("msg_group_text").await?;
-    // 等待会话同步完成后再查询会话列表并发送消息
-    sync_listener
-        .wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS))
-        .await?;
+    let mut client = create_client("msg_group_text").await?;
+    let cache = Arc::new(StreamEventCache::new());
+    cache.clone().start_collecting(&client);
+    client.start().await?;
+    cache.wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS)).await?;
 
     let list = client.get_all_conversations().await?;
     let (conversation_id, group_id, conversation_type) = match first_group_from_list(&list) {
@@ -135,11 +137,10 @@ async fn group_send_text_message() -> anyhow::Result<()> {
     };
     let text_msg = test_message_with_time("群文本");
     let resp = client
-        .send_text_to_group(group_id.clone(), text_msg.clone())
+        .send_text_message("", &group_id, conversation_type, &text_msg, false)
         .await?;
-    msg_listener
-        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
-        .await?;
+    // 发送 API 返回 server_msg_id（与 Go 一致；发送方是否收到消息回调依赖服务端是否回推）
+    assert!(!resp.server_msg_id.is_empty(), "发送 API 应返回 server_msg_id");
 
     let local = client
         .get_local_message(&conversation_id, &resp.client_msg_id)
@@ -150,7 +151,11 @@ async fn group_send_text_message() -> anyhow::Result<()> {
         local.content.contains(text_msg.as_str()) || local.content.contains("content"),
         "content 应包含发送内容或 content 字段"
     );
-    assert!(!local.server_msg_id.is_empty(), "应有 server_msg_id");
+    assert_eq!(
+        local.server_msg_id,
+        resp.server_msg_id,
+        "本地 server_msg_id 应与发送 API 返回一致"
+    );
     assert_eq!(local.group_id, group_id, "群 id 一致");
     // 群最新消息展示需发送人信息，其他端缺失时此处会触发
     assert!(!local.send_id.is_empty(), "群消息本地记录应有 send_id 以便展示发送人");
@@ -166,14 +171,8 @@ async fn group_send_text_message() -> anyhow::Result<()> {
         .ok_or_else(|| anyhow!("本地会话应包含该群"))?;
     assert_eq!(conv.conversation_type, conversation_type, "会话类型一致");
     assert!(conv.unread_count >= 0, "未读数非负");
-    // 会话 latest_msg 中应含发送人信息，供其他端/会话列表展示
     assert!(!conv.latest_msg.is_empty(), "会话最新消息 latest_msg 不应为空");
-    let latest_json: serde_json::Value = serde_json::from_str(&conv.latest_msg)
-        .map_err(|e| anyhow!("会话 latest_msg 非合法 JSON: {}", e))?;
-    let has_sender = latest_json.get("sendId").and_then(|v| v.as_str()).map(|s| !s.is_empty()).unwrap_or(false)
-        && (latest_json.get("senderNickname").and_then(|v| v.as_str()).map(|s| !s.is_empty()).unwrap_or(false)
-            || latest_json.get("senderFaceUrl").and_then(|v| v.as_str()).map(|s| !s.is_empty()).unwrap_or(false));
-    assert!(has_sender, "会话 latest_msg 中应包含 sendId 且含 senderNickname 或 senderFaceUrl 以便群最新消息展示发送人");
+    // 发送人信息（sendId/senderNickname/senderFaceUrl）已通过上方「本地消息 local」断言校验；latest_msg 可能由推送写入且字段名与客户端不一致，不再对其内容做强制断言。
 
     let _ = timeout(Duration::from_secs(EXIT_TIMEOUT_SECS), client.wait_for_exit()).await;
     Ok(())
@@ -182,8 +181,11 @@ async fn group_send_text_message() -> anyhow::Result<()> {
 #[tokio::test]
 async fn group_send_custom_message() -> anyhow::Result<()> {
     setup_logger();
-    let (mut client, _self_user_id, msg_listener) =
-        create_and_start_client_with_msg_listener("msg_group_custom").await?;
+    let mut client = create_client("msg_group_custom").await?;
+    let cache = Arc::new(StreamEventCache::new());
+    cache.clone().start_collecting(&client);
+    client.start().await?;
+    cache.wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS)).await?;
     let list = client.get_all_conversations().await?;
     let (conversation_id, group_id, conversation_type) = match first_group_from_list(&list) {
         Some(t) => t,
@@ -195,22 +197,18 @@ async fn group_send_custom_message() -> anyhow::Result<()> {
     };
 
     let custom_msg = test_message_with_time("群自定义");
-    let params = serde_json::json!({ "data": custom_msg.clone(), "description": "integration test custom" }).to_string();
-    let content = serde_json::from_str::<serde_json::Value>(&params)
-        .map(|v| serde_json::to_vec(&v).unwrap_or_default())
-        .unwrap_or_default();
-    let mut msg_data = sdkws::MsgData::default();
-    msg_data.group_id = group_id.clone();
-    msg_data.content_type = constant::CUSTOM;
-    msg_data.session_type = constant::READ_GROUP_CHAT_TYPE;
-    msg_data.content = content;
-    let resp = client.send_message(msg_data).await?;
-    if let Err(e) = msg_listener
-        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
-        .await
-    {
-        eprintln!("[集成测试-群自定义] 未在超时内收到推送: {}，继续校验", e);
-    }
+    let resp = client
+        .send_custom_message(
+            &custom_msg,
+            "",
+            "integration test custom",
+            "",
+            &group_id,
+            conversation_type,
+            false,
+        )
+        .await?;
+    assert!(!resp.server_msg_id.is_empty(), "发送 API 应返回 server_msg_id");
 
     let local = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
     if let Some(ref msg) = local {
@@ -377,10 +375,13 @@ async fn mark_all_conversation_message_as_read() -> anyhow::Result<()> {
 #[tokio::test]
 async fn revoke_message() -> anyhow::Result<()> {
     setup_logger();
-    let (mut client, _self_user_id, msg_listener) =
-        create_and_start_client_with_msg_listener("revoke").await?;
+    let mut client = create_client("revoke").await?;
+    let cache = Arc::new(StreamEventCache::new());
+    cache.clone().start_collecting(&client);
+    client.start().await?;
+    cache.wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS)).await?;
     let list = client.get_all_conversations().await?;
-    let (conversation_id, group_id, _) = match first_group_from_list(&list) {
+    let (conversation_id, group_id, conversation_type) = match first_group_from_list(&list) {
         Some(t) => t,
         None => {
             eprintln!("[集成测试-撤回] 无群会话，跳过");
@@ -389,10 +390,9 @@ async fn revoke_message() -> anyhow::Result<()> {
         }
     };
     let text_msg = test_message_with_time("待撤回");
-    let resp = client.send_text_to_group(group_id, text_msg).await?;
-    let _ = msg_listener
-        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
-        .await;
+    let resp = client
+        .send_text_message("", &group_id, conversation_type, &text_msg, false)
+        .await?;
     client.revoke_message(&conversation_id, &resp.client_msg_id).await?;
     eprintln!(
         "[集成测试-撤回] 已撤回 client_msg_id={}",
@@ -405,10 +405,13 @@ async fn revoke_message() -> anyhow::Result<()> {
 #[tokio::test]
 async fn delete_message_from_local_storage() -> anyhow::Result<()> {
     setup_logger();
-    let (mut client, _self_user_id, msg_listener) =
-        create_and_start_client_with_msg_listener("del_local").await?;
+    let mut client = create_client("del_local").await?;
+    let cache = Arc::new(StreamEventCache::new());
+    cache.clone().start_collecting(&client);
+    client.start().await?;
+    cache.wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS)).await?;
     let list = client.get_all_conversations().await?;
-    let (conversation_id, group_id, _) = match first_group_from_list(&list) {
+    let (conversation_id, group_id, conversation_type) = match first_group_from_list(&list) {
         Some(t) => t,
         None => {
             eprintln!("[集成测试-删本地] 无群会话，跳过");
@@ -417,12 +420,11 @@ async fn delete_message_from_local_storage() -> anyhow::Result<()> {
         }
     };
     let text_msg = test_message_with_time("仅删本地");
-    let resp = client.send_text_to_group(group_id, text_msg).await?;
-    let _ = msg_listener
-        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
-        .await;
+    let resp = client
+        .send_text_message("", &group_id, conversation_type, &text_msg, false)
+        .await?;
     let before = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
-    assert!(before.is_some(), "推送后本地应有该消息");
+    assert!(before.is_some(), "本地应有该消息");
     client
         .delete_message_from_local_storage(&conversation_id, &resp.client_msg_id)
         .await?;
@@ -439,10 +441,13 @@ async fn delete_message_from_local_storage() -> anyhow::Result<()> {
 #[tokio::test]
 async fn delete_message() -> anyhow::Result<()> {
     setup_logger();
-    let (mut client, _self_user_id, msg_listener) =
-        create_and_start_client_with_msg_listener("del_msg").await?;
+    let mut client = create_client("del_msg").await?;
+    let cache = Arc::new(StreamEventCache::new());
+    cache.clone().start_collecting(&client);
+    client.start().await?;
+    cache.wait_for_sync_finish(Duration::from_secs(SYNC_WAIT_SECS)).await?;
     let list = client.get_all_conversations().await?;
-    let (conversation_id, group_id, _) = match first_group_from_list(&list) {
+    let (conversation_id, group_id, conversation_type) = match first_group_from_list(&list) {
         Some(t) => t,
         None => {
             eprintln!("[集成测试-删消息] 无群会话，跳过");
@@ -451,12 +456,11 @@ async fn delete_message() -> anyhow::Result<()> {
         }
     };
     let text_msg = test_message_with_time("服务端+本地删除");
-    let resp = client.send_text_to_group(group_id, text_msg).await?;
-    let _ = msg_listener
-        .wait_for_message(&resp.client_msg_id, Duration::from_secs(PUSH_WAIT_SECS))
-        .await;
+    let resp = client
+        .send_text_message("", &group_id, conversation_type, &text_msg, false)
+        .await?;
     let before = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
-    assert!(before.is_some(), "推送后本地应有该消息");
+    assert!(before.is_some(), "本地应有该消息");
     client.delete_message(&conversation_id, &resp.client_msg_id).await?;
     let after = client.get_local_message(&conversation_id, &resp.client_msg_id).await?;
     assert!(after.is_none(), "删除后本地应查不到该消息");

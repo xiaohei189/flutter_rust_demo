@@ -19,10 +19,6 @@ use crate::im::model::conversation::LocalConversation;
 use crate::im::model::message::{
     GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams,
 };
-use crate::im::{
-    create_custom_message, create_image_message_simple, create_location_message, create_text_message,
-    create_file_message, create_sound_message, create_video_message, init_basic_info,
-};
 use anyhow::Result;
 use crate::frb_generated::StreamSink;
 use openim_protocol::sdkws::MsgData;
@@ -138,7 +134,6 @@ impl OpenIMBridgeClient {
         tokio::spawn(async move {
             let mut stream = stream;
             while let Some(ev) = stream.next().await {
-                tracing::debug!("[bridge] advanced_msg 收到事件，准备 sink.add: {:?}", std::mem::discriminant(&ev));
                 if let Err(e) = sink.add(ev) {
                     tracing::error!("[bridge] advanced_msg_stream sink.add 失败: {:?}", e);
                 }
@@ -199,13 +194,8 @@ impl OpenIMBridgeClient {
         group_id: String,
         session_type: i32,
     ) -> Result<MsgData> {
-        let mut msg = create_text_message(&text);
         let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        msg.recv_id = recv_id;
-        msg.group_id = group_id;
-        msg.session_type = session_type;
-        Ok(msg)
+        Ok(client.create_text_message(&text, &recv_id, &group_id, session_type))
     }
 
     /// 创建自定义消息。
@@ -216,19 +206,15 @@ impl OpenIMBridgeClient {
         extension: String,
         description: String,
     ) -> Result<MsgData> {
-        let mut msg = create_custom_message(&data, &extension, &description);
         let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        Ok(msg)
+        Ok(client.create_custom_message(&data, &extension, &description))
     }
 
     /// 创建图片消息（简化：仅 URL + 宽高）。
     #[flutter_rust_bridge::frb]
     pub async fn create_image_message(&self, url: String, width: i32, height: i32) -> Result<MsgData> {
-        let mut msg = create_image_message_simple(&url, width, height);
         let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        Ok(msg)
+        Ok(client.create_image_message(&url, width, height))
     }
 
     /// 创建视频消息。
@@ -248,7 +234,8 @@ impl OpenIMBridgeClient {
         snapshot_width: i32,
         snapshot_height: i32,
     ) -> Result<MsgData> {
-        let mut msg = create_video_message(
+        let client = self.inner.read().await;
+        Ok(client.create_video_message(
             &video_path,
             &video_uuid,
             &video_url,
@@ -261,10 +248,7 @@ impl OpenIMBridgeClient {
             &snapshot_url,
             snapshot_width,
             snapshot_height,
-        );
-        let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        Ok(msg)
+        ))
     }
 
     /// 创建语音消息。
@@ -277,10 +261,8 @@ impl OpenIMBridgeClient {
         data_size: i64,
         duration: i64,
     ) -> Result<MsgData> {
-        let mut msg = create_sound_message(&uuid, &sound_path, &source_url, data_size, duration);
         let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        Ok(msg)
+        Ok(client.create_sound_message(&uuid, &sound_path, &source_url, data_size, duration))
     }
 
     /// 创建文件消息。
@@ -293,10 +275,14 @@ impl OpenIMBridgeClient {
         file_name: String,
         file_size: i64,
     ) -> Result<MsgData> {
-        let mut msg = create_file_message(&file_path, &uuid, &source_url, &file_name, file_size);
         let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        Ok(msg)
+        Ok(client.create_file_message(
+            &file_path,
+            &uuid,
+            &source_url,
+            &file_name,
+            file_size,
+        ))
     }
 
     /// 创建位置消息。
@@ -307,16 +293,18 @@ impl OpenIMBridgeClient {
         longitude: f64,
         latitude: f64,
     ) -> Result<MsgData> {
-        let mut msg = create_location_message(&description, longitude, latitude);
         let client = self.inner.read().await;
-        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
-        Ok(msg)
+        Ok(client.create_location_message(&description, longitude, latitude))
     }
 
     /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
+    ///
+    /// **参数**
+    /// - `msg`: 已组装的 MsgData。
+    /// - `is_online_only`: 是否仅在线投递（不落库、不更新会话）；传 `false` 表示持久化，与 Go SDK 默认行为一致。
     #[flutter_rust_bridge::frb]
-    pub async fn send_message(&self, msg: MsgData) -> Result<()> {
-        self.inner.read().await.send_message(msg).await?;
+    pub async fn send_message(&self, msg: MsgData, is_online_only: bool) -> Result<()> {
+        self.inner.read().await.send_message(msg, is_online_only).await?;
         Ok(())
     }
 }

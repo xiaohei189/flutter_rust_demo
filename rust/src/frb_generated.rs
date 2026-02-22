@@ -719,6 +719,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_message_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_msg = <MsgData>::sse_decode(&mut deserializer);
+            let api_is_online_only = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -732,7 +733,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_message(&*api_that_guard, api_msg).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_message(&*api_that_guard, api_msg, api_is_online_only).await?;
                         Ok(output_ok)
                     })()
                     .await,

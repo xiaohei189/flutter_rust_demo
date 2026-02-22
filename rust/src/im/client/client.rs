@@ -65,15 +65,21 @@ use crate::im::client::message_handle::{MessageHandle, MsgSyncCommand};
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::group::LocalGroup;
 use crate::im::dao::group_member::LocalGroupMember;
-use crate::im::dao::repository::Repository;
+use crate::im::dao::{repository::Repository, LocalSendingMessage};
 use crate::im::dao::user::LocalUser;
 use crate::im::http_client::friend::FriendApi;
 use crate::im::http_client::Api;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
+use crate::im::model::{
+    create_custom_message as build_custom_message, create_file_message as build_file_message,
+    create_image_message_simple as build_image_message_simple,
+    create_location_message as build_location_message, create_sound_message as build_sound_message,
+    create_text_message as build_text_message, create_video_message as build_video_message,
+    init_basic_info,
+};
 use crate::im::model::friend::AllFriendsResp;
 use crate::im::model::group::server_group_to_local;
-use crate::im::{create_text_message, init_basic_info};
 use crate::im::model::message::{
     local_chat_log_to_msg_struct, msg_handle_by_content_type_result, msg_struct_to_local_chat_log, ClearConversationsMsgReq, ConversationArgs, FindMessageListCallback,
     GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, MarkConversationAsReadReq, MsgStruct, RevokeMsgReq, SearchByConversationResult,
@@ -158,6 +164,14 @@ impl IMClient {
     /// 只读访问当前配置（供桥接层创建消息时获取 user_id、platform_id）
     pub fn config(&self) -> &ClientConfig {
         &self.config
+    }
+
+    /// 获取当前登录用户的昵称与头像，供发送消息时填充 sender_nickname/sender_face_url（与 Go 一致）。
+    /// 先本地缓存，缺或为空则拉服务端并落库后返回；失败时返回空字符串。
+    pub async fn get_login_user_display_info(&self) -> (String, String) {
+        self.get_login_user_info_with_cache()
+            .await
+            .unwrap_or_else(|_| (String::new(), String::new()))
     }
 
     /// 与 Go GetUserInfoWithCache 一致：先本地，缺或昵称/头像为空则拉服务端并落库后返回
@@ -448,6 +462,57 @@ impl IMClient {
             constant::NOTIFICATION_CHAT_TYPE => format!("sn_{}_{}", source_id, self.config.user_id),
             _ => format!("g_{}", source_id),
         }
+    }
+
+    /// 从 MsgData 推导 conversation_id（与 Go checkID 中 getConversationIDBySessionType 一致）
+    fn conversation_id_from_msg_data(&self, msg_data: &sdkws::MsgData) -> String {
+        if !msg_data.group_id.is_empty() {
+            self.conversation_id_by_session_type(&msg_data.group_id, msg_data.session_type)
+        } else {
+            self.conversation_id_by_session_type(&msg_data.recv_id, constant::SINGLE_CHAT_TYPE)
+        }
+    }
+
+    /// 发送成功后或失败后更新本地消息状态、删除发送中表、更新会话并触发会话事件（与 Go updateMsgStatusAndTriggerConversation 一致）
+    async fn update_msg_status_and_trigger_conversation(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+        server_msg_id: &str,
+        send_time: i64,
+        status: i32,
+        latest_msg_json: &str,
+    ) -> Result<()> {
+        let _ = self
+            .local_repo
+            .message
+            .update_message_time_and_status(conversation_id, client_msg_id, server_msg_id, send_time, status)
+            .await;
+        let _ = self
+            .local_repo
+            .sending_messages
+            .delete(conversation_id, client_msg_id)
+            .await;
+        let mut conv = self
+            .local_repo
+            .conversation
+            .get_conversation_by_id(conversation_id)
+            .await?
+            .unwrap_or_else(|| {
+                let mut c = LocalConversation::default();
+                c.conversation_id = conversation_id.to_string();
+                c
+            });
+        conv.latest_msg = latest_msg_json.to_string();
+        conv.latest_msg_send_time = send_time;
+        self.local_repo.conversation.upsert_conversation(&conv).await?;
+        if let Ok(cb) = self.callbacks.read() {
+            info!("[callback] ConversationEvent::ConversationChanged trigger=update_msg_status");
+            cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                list: vec![conv],
+            });
+        }
+        Ok(())
     }
 
     /// 标记会话消息已读（与 Go MarkConversationMessageAsRead 一致）：先取未读 seq，上报服务端，再本地标已读并会话未读清零
@@ -917,53 +982,501 @@ impl IMClient {
         Resp::decode(ws_resp.data.as_slice()).map_err(|e| anyhow!("decode ws resp: {}", e))
     }
 
-    /// 发送消息：入参 MsgData，内部补齐公共字段（client_msg_id、create_time、msg_from）及个人信息（send_id、sender_platform_id、sender_nickname、sender_face_url）后发送；仅通过 WebSocket，需先 start()。
-    /// 与 open-im-server msggateway 一致：WS 请求的 Data 为 MsgData 的 protobuf 编码，非 SendMsgReq。
-    pub async fn send_message(&self, mut msg_data: sdkws::MsgData) -> Result<openim_protocol::msg::SendMsgResp> {
-        if msg_data.client_msg_id.is_empty() {
-            msg_data.client_msg_id = Uuid::new_v4().to_string();
-        }
-        if msg_data.create_time == 0 {
-            msg_data.create_time = chrono::Utc::now().timestamp_millis();
-        }
-        msg_data.msg_from = constant::USER_MSG_TYPE;
+    // ---------- 创建消息（与 Go CreateXxxMessage 对齐；发送前需设置 recv_id/group_id/session_type 后调用 send_message） ----------
 
-        let (nickname, face_url) = self.get_login_user_info_with_cache().await.unwrap_or_else(|_| (String::new(), String::new()));
-
-        if msg_data.send_id.is_empty() {
-            msg_data.send_id = self.config.user_id.clone();
-        }
-        if msg_data.sender_platform_id == 0 {
-            msg_data.sender_platform_id = self.config.platform_id;
-        }
-        if msg_data.sender_nickname.is_empty() {
-            msg_data.sender_nickname = nickname;
-        }
-        if msg_data.sender_face_url.is_empty() {
-            msg_data.sender_face_url = face_url;
-        }
-
-        self.send_ws_req::<sdkws::MsgData, openim_protocol::msg::SendMsgResp>(msg_type::WS_SEND_MSG, &msg_data).await
+    /// 创建文本消息（已填入 recv_id/group_id/session_type），返回 MsgData 可直接送 send_message 发送。
+    pub fn create_text_message(
+        &self,
+        text: &str,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+    ) -> sdkws::MsgData {
+        let mut msg = build_text_message(text);
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        msg
     }
 
-    /// 单聊发送文本消息；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`，与 Go SDK 一致。
-    /// 单聊发送文本消息：先创建消息体再发送（创建与发送分离，与 Go CreateTextMessage + SendMessage 一致）。
-    pub async fn send_text_message(&self, recv_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
-        let mut msg_data = create_text_message(&text);
-        init_basic_info(&mut msg_data, &self.config.user_id, self.config.platform_id);
-        msg_data.recv_id = recv_id;
-        msg_data.session_type = constant::SINGLE_CHAT_TYPE;
-        self.send_message(msg_data).await
+    /// 创建自定义消息；发送前需设置 recv_id/group_id/session_type 后调用 send_message。
+    pub fn create_custom_message(
+        &self,
+        data: &str,
+        extension: &str,
+        description: &str,
+    ) -> sdkws::MsgData {
+        let mut msg = build_custom_message(data, extension, description);
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg
     }
 
-    /// 群聊发送文本消息：先创建消息体再发送；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`。
-    pub async fn send_text_to_group(&self, group_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
-        debug!("[send_text_to_group] group_id={}, text={}", group_id, text);
-        let mut msg_data = create_text_message(&text);
-        init_basic_info(&mut msg_data, &self.config.user_id, self.config.platform_id);
-        msg_data.group_id = group_id;
-        msg_data.session_type = constant::READ_GROUP_CHAT_TYPE;
-        self.send_message(msg_data).await
+    /// 创建图片消息（简化：仅 URL + 宽高）；发送前需设置 recv_id/group_id/session_type 后调用 send_message。
+    pub fn create_image_message(&self, url: &str, width: i32, height: i32) -> sdkws::MsgData {
+        let mut msg = build_image_message_simple(url, width, height);
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg
+    }
+
+    /// 创建视频消息；发送前需设置 recv_id/group_id/session_type 后调用 send_message。
+    pub fn create_video_message(
+        &self,
+        video_path: &str,
+        video_uuid: &str,
+        video_url: &str,
+        video_type: &str,
+        video_size: i64,
+        duration: i64,
+        snapshot_path: &str,
+        snapshot_uuid: &str,
+        snapshot_size: i64,
+        snapshot_url: &str,
+        snapshot_width: i32,
+        snapshot_height: i32,
+    ) -> sdkws::MsgData {
+        let mut msg = build_video_message(
+            video_path,
+            video_uuid,
+            video_url,
+            video_type,
+            video_size,
+            duration,
+            snapshot_path,
+            snapshot_uuid,
+            snapshot_size,
+            snapshot_url,
+            snapshot_width,
+            snapshot_height,
+        );
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg
+    }
+
+    /// 创建语音消息；发送前需设置 recv_id/group_id/session_type 后调用 send_message。
+    pub fn create_sound_message(
+        &self,
+        uuid: &str,
+        sound_path: &str,
+        source_url: &str,
+        data_size: i64,
+        duration: i64,
+    ) -> sdkws::MsgData {
+        let mut msg = build_sound_message(uuid, sound_path, source_url, data_size, duration);
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg
+    }
+
+    /// 创建文件消息；发送前需设置 recv_id/group_id/session_type 后调用 send_message。
+    pub fn create_file_message(
+        &self,
+        file_path: &str,
+        uuid: &str,
+        source_url: &str,
+        file_name: &str,
+        file_size: i64,
+    ) -> sdkws::MsgData {
+        let mut msg = build_file_message(file_path, uuid, source_url, file_name, file_size);
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg
+    }
+
+    /// 创建位置消息；发送前需设置 recv_id/group_id/session_type 后调用 send_message。
+    pub fn create_location_message(
+        &self,
+        description: &str,
+        longitude: f64,
+        latitude: f64,
+    ) -> sdkws::MsgData {
+        let mut msg = build_location_message(description, longitude, latitude);
+        init_basic_info(&mut msg, &self.config.user_id, self.config.platform_id);
+        msg
+    }
+
+    // ---------- 便捷发送（与 Go 一致：提供创建方法同时提供发送方法，create + send 一步完成） ----------
+
+    /// 创建并发送文本消息。
+    pub async fn send_text_message(
+        &self,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        text: &str,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg = self.create_text_message(text, recv_id, group_id, session_type);
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 创建并发送自定义消息。
+    pub async fn send_custom_message(
+        &self,
+        data: &str,
+        extension: &str,
+        description: &str,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg = self.create_custom_message(data, extension, description);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 创建并发送图片消息（简化：仅 URL + 宽高）。
+    pub async fn send_image_message(
+        &self,
+        url: &str,
+        width: i32,
+        height: i32,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg = self.create_image_message(url, width, height);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 创建并发送视频消息。
+    pub async fn send_video_message(
+        &self,
+        video_path: &str,
+        video_uuid: &str,
+        video_url: &str,
+        video_type: &str,
+        video_size: i64,
+        duration: i64,
+        snapshot_path: &str,
+        snapshot_uuid: &str,
+        snapshot_size: i64,
+        snapshot_url: &str,
+        snapshot_width: i32,
+        snapshot_height: i32,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg = self.create_video_message(
+            video_path,
+            video_uuid,
+            video_url,
+            video_type,
+            video_size,
+            duration,
+            snapshot_path,
+            snapshot_uuid,
+            snapshot_size,
+            snapshot_url,
+            snapshot_width,
+            snapshot_height,
+        );
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 创建并发送语音消息。
+    pub async fn send_sound_message(
+        &self,
+        uuid: &str,
+        sound_path: &str,
+        source_url: &str,
+        data_size: i64,
+        duration: i64,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg = self.create_sound_message(uuid, sound_path, source_url, data_size, duration);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 创建并发送文件消息。
+    pub async fn send_file_message(
+        &self,
+        file_path: &str,
+        uuid: &str,
+        source_url: &str,
+        file_name: &str,
+        file_size: i64,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg =
+            self.create_file_message(file_path, uuid, source_url, file_name, file_size);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 创建并发送位置消息。
+    pub async fn send_location_message(
+        &self,
+        description: &str,
+        longitude: f64,
+        latitude: f64,
+        recv_id: &str,
+        group_id: &str,
+        session_type: i32,
+        is_online_only: bool,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let mut msg = self.create_location_message(description, longitude, latitude);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        let (nickname, face_url) = self.get_login_user_display_info().await;
+        msg.sender_nickname = nickname;
+        msg.sender_face_url = face_url;
+        self.send_message(msg, is_online_only).await
+    }
+
+    /// 通用发送消息，与 Go SendMessage 对齐；创建与发送分离。
+    ///
+    /// 调用方需先通过 `create_text_message` / `create_image_message` 等创建消息体，并设置
+    /// `recv_id`/`group_id`、`session_type`、`send_id`、`sender_nickname`/`sender_face_url` 等后再调用本方法。
+    /// 若后续在本层增加媒体上传逻辑，则本方法会先上传再发送；不走上传时请使用 [`send_message_not_oss`](Self::send_message_not_oss)。
+    ///
+    /// **参数**
+    /// - `msg_data`: 由调用方填充（client_msg_id、create_time、send_id、sender_*、recv_id/group_id、session_type 等）；内部仅在非仅在线时做发前落库、发后更新。
+    /// - `is_online_only`: 为 `true` 时仅在线投递：不落库、不写发送中表、不更新会话，且通过 options 通知服务端不存历史、不持久化、不更新会话与未读等；为 `false` 时与 Go 一致：发前落库+发送中表+会话更新，发后根据响应更新状态并触发事件。
+    pub async fn send_message(&self, msg_data: sdkws::MsgData, is_online_only: bool) -> Result<openim_protocol::msg::SendMsgResp> {
+        self.send_message_with_req_type(msg_data, is_online_only, msg_type::WS_SEND_MSG).await
+    }
+
+    /// 发送消息且不经过 OSS 上传路径，与 Go SendMessageNotOss 对齐。
+    ///
+    /// 与 [`send_message`](Self::send_message) 使用相同发前/发后逻辑，但使用不同的 WS 请求码（3001），且本方法不执行媒体上传；
+    /// 消息体应由调用方在上层完成上传与 content 组装后传入。
+    pub async fn send_message_not_oss(&self, msg_data: sdkws::MsgData, is_online_only: bool) -> Result<openim_protocol::msg::SendMsgResp> {
+        self.send_message_with_req_type(msg_data, is_online_only, msg_type::WS_SEND_MSG_NOT_OSS).await
+    }
+
+    async fn send_message_with_req_type(
+        &self,
+        mut msg_data: sdkws::MsgData,
+        is_online_only: bool,
+        req_identifier: i32,
+    ) -> Result<openim_protocol::msg::SendMsgResp> {
+        let conversation_id = self.conversation_id_from_msg_data(&msg_data);
+
+        if !is_online_only {
+            // 发前：重发校验；首次发送则落库+发送中表+会话更新，重发（原消息 SendFailed）则仅发送中表（与 Go 一致）
+            let existing = self
+                .local_repo
+                .message
+                .get_by_client_msg_id(&conversation_id, &msg_data.client_msg_id)
+                .await?;
+            let is_resend = existing.as_ref().map_or(false, |e| e.status == constant::MSG_STATUS_SEND_FAILED);
+            if let Some(ref existing) = existing {
+                if existing.status != constant::MSG_STATUS_SEND_FAILED {
+                    return Err(anyhow!("ErrMsgRepeated: message already sent"));
+                }
+            }
+            if is_resend {
+                // 重发：仅写入发送中表，不再次 InsertMessage、不更新会话（与 Go else 分支一致）
+                self.local_repo
+                    .sending_messages
+                    .insert(&LocalSendingMessage {
+                        conversation_id: conversation_id.clone(),
+                        client_msg_id: msg_data.client_msg_id.clone(),
+                        ex: String::new(),
+                    })
+                    .await?;
+            } else {
+                // 首次发送：落库、发送中表、会话更新
+                let mut local_log = self.msg_data_to_local_chat_log(&msg_data, &conversation_id)?;
+                local_log.status = constant::MSG_STATUS_SENDING;
+                self.local_repo.message.insert_message(&local_log).await?;
+                self.local_repo
+                    .sending_messages
+                    .insert(&LocalSendingMessage {
+                        conversation_id: conversation_id.clone(),
+                        client_msg_id: msg_data.client_msg_id.clone(),
+                        ex: String::new(),
+                    })
+                    .await?;
+                let latest_msg_json = serde_json::to_string(&local_chat_log_to_msg_struct(&local_log)).unwrap_or_default();
+                let mut conv = self
+                    .local_repo
+                    .conversation
+                    .get_conversation_by_id(&conversation_id)
+                    .await?
+                    .unwrap_or_else(|| {
+                        let mut c = LocalConversation::default();
+                        c.conversation_id = conversation_id.clone();
+                        c.conversation_type = msg_data.session_type;
+                        if !msg_data.group_id.is_empty() {
+                            c.group_id = msg_data.group_id.clone();
+                        } else {
+                            c.user_id = msg_data.recv_id.clone();
+                        }
+                        c
+                    });
+                conv.latest_msg = latest_msg_json.clone();
+                conv.latest_msg_send_time = msg_data.create_time;
+                self.local_repo.conversation.upsert_conversation(&conv).await?;
+                if let Ok(cb) = self.callbacks.read() {
+                    info!("[callback] ConversationEvent::ConversationChanged trigger=send_before");
+                    cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                        list: vec![conv],
+                    });
+                }
+            }
+        } else {
+            // 仅在线：与 Go sendMessageToServer 一致，设置 options 通知服务端不存历史、不持久化、不更新会话与未读等
+            let opts = std::collections::HashMap::from([
+                (constant::IS_HISTORY.to_string(), false),
+                (constant::IS_PERSISTENT.to_string(), false),
+                (constant::IS_SENDER_SYNC.to_string(), false),
+                (constant::IS_CONVERSATION_UPDATE.to_string(), false),
+                (constant::IS_SENDER_CONVERSATION_UPDATE.to_string(), false),
+                (constant::IS_UNREAD_COUNT.to_string(), false),
+                (constant::IS_OFFLINE_PUSH.to_string(), false),
+            ]);
+            msg_data.options = opts;
+        }
+
+        let resp = match self
+            .send_ws_req::<sdkws::MsgData, openim_protocol::msg::SendMsgResp>(req_identifier, &msg_data)
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                if !is_online_only {
+                    // 与 Go 一致：网络超时时若本地已标记发送成功，则用库内数据当作成功返回，避免重复发送
+                    let err_str = e.to_string();
+                    if err_str.contains("ws rpc timeout") {
+                        if let Ok(Some(old)) = self
+                            .local_repo
+                            .message
+                            .get_by_client_msg_id(&conversation_id, &msg_data.client_msg_id)
+                            .await
+                        {
+                            if old.status == constant::MSG_STATUS_SEND_SUCCESS {
+                                return Ok(openim_protocol::msg::SendMsgResp {
+                                    server_msg_id: old.server_msg_id.clone(),
+                                    client_msg_id: old.client_msg_id.clone(),
+                                    send_time: old.send_time,
+                                    modify: None,
+                                });
+                            }
+                        }
+                    }
+                    let mut fail_log = self.msg_data_to_local_chat_log(&msg_data, &conversation_id)?;
+                    fail_log.status = constant::MSG_STATUS_SEND_FAILED;
+                    let fail_json = serde_json::to_string(&local_chat_log_to_msg_struct(&fail_log)).unwrap_or_default();
+                    let _ = self
+                        .update_msg_status_and_trigger_conversation(
+                            &conversation_id,
+                            &msg_data.client_msg_id,
+                            "",
+                            msg_data.create_time,
+                            constant::MSG_STATUS_SEND_FAILED,
+                            &fail_json,
+                        )
+                        .await;
+                }
+                return Err(e);
+            }
+        };
+
+        if !is_online_only {
+            // 发后：Modify 则 UpdateMessage，否则 UpdateMessageTimeAndStatus；DeleteSendingMessage；更新会话并触发事件（与 Go sendMsg/updateMsgStatusAndTriggerConversation 一致）
+            let final_log: LocalChatLog = if let Some(ref modify) = resp.modify {
+                let mut log = self.msg_data_to_local_chat_log(modify, &conversation_id)?;
+                log.status = constant::MSG_STATUS_SEND_SUCCESS;
+                if let Err(err) = self
+                    .local_repo
+                    .message
+                    .update_message(&conversation_id, &log)
+                    .await
+                {
+                    tracing::warn!("send_message update_message(modify) err: {}", err);
+                }
+                log
+            } else {
+                let mut log = self.msg_data_to_local_chat_log(&msg_data, &conversation_id)?;
+                log.server_msg_id = resp.server_msg_id.clone();
+                log.send_time = resp.send_time;
+                log.status = constant::MSG_STATUS_SEND_SUCCESS;
+                let _ = self
+                    .local_repo
+                    .message
+                    .update_message_time_and_status(
+                        &conversation_id,
+                        &resp.client_msg_id,
+                        &resp.server_msg_id,
+                        resp.send_time,
+                        constant::MSG_STATUS_SEND_SUCCESS,
+                    )
+                    .await;
+                log.server_msg_id = resp.server_msg_id.clone();
+                log.send_time = resp.send_time;
+                log
+            };
+            let _ = self
+                .local_repo
+                .sending_messages
+                .delete(&conversation_id, &resp.client_msg_id)
+                .await;
+            let latest_msg_json = serde_json::to_string(&local_chat_log_to_msg_struct(&final_log)).unwrap_or_default();
+            let _ = self
+                .local_repo
+                .conversation
+                .update_conversation_latest_msg(&conversation_id, &latest_msg_json, resp.send_time)
+                .await;
+            let mut conv = self
+                .local_repo
+                .conversation
+                .get_conversation_by_id(&conversation_id)
+                .await?
+                .unwrap_or_default();
+            conv.conversation_id = conversation_id.clone();
+            conv.latest_msg = latest_msg_json;
+            conv.latest_msg_send_time = resp.send_time;
+            if let Ok(cb) = self.callbacks.read() {
+                info!("[callback] ConversationEvent::ConversationChanged trigger=send_after");
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged {
+                    list: vec![conv],
+                });
+            }
+        }
+
+        Ok(resp)
     }
 
     /// 获取高级历史消息列表（正序：从新到旧，对齐 Go GetAdvancedHistoryMessageList）

@@ -14,10 +14,11 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}/rust",
-            "console": "internalConsole",
+            "console": "integratedTerminal",
             "env": {
                 "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4317",
-                "OTEL_SERVICE_NAME": "rust_lib"
+                "OTEL_SERVICE_NAME": "rust_lib",
+                "RUST_LOG": "debug"
             }
         },
         {
@@ -44,7 +45,6 @@
             "program": "lib/main.dart",
             "flutterMode": "profile",
             "deviceId": "android"
-        },{
         }
     ]
 }

@@ -213,8 +213,8 @@ class MessageService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 3. 发送
-      await _client!.sendMessage(msg: msgData);
+      // 3. 发送（isOnlineOnly: false 表示持久化落库、更新会话，与 Go 默认一致）
+      await _client!.sendMessage(msg: msgData, isOnlineOnly: false);
       // 4. 发送成功，更新状态
       _updateMessageSendStatus(conversationId, tempId, MessageSendStatus.sent);
     } catch (e) {

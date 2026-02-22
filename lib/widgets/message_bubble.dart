@@ -22,76 +22,89 @@ class MessageBubble extends StatelessWidget {
     final isFromMe = message.isFromMe;
     final timeFormat = DateFormat('HH:mm');
 
+    // 当前用户在左侧：自己的消息在左，对方在右。气泡小角在靠近头像一侧。
+    final bubbleContent = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: isFromMe
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
+      children: [
+        Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color: isFromMe
+                ? AppTheme.myMessageColor
+                : AppTheme.otherMessageColor,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(18),
+              topRight: const Radius.circular(18),
+              bottomLeft: Radius.circular(isFromMe ? 4 : 18),
+              bottomRight: Radius.circular(isFromMe ? 18 : 4),
+            ),
+          ),
+          child: Text(
+            message.content,
+            style: TextStyle(
+              color: isFromMe ? Colors.white : Colors.black87,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: isFromMe
+              ? MainAxisAlignment.start
+              : MainAxisAlignment.end,
+          children: [
+            Text(
+              timeFormat.format(message.timestamp),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            if (isFromMe && message.sendStatus != null) ...[
+              const SizedBox(width: 6),
+              _buildSendStatusIcon(message.sendStatus!),
+            ],
+          ],
+        ),
+      ],
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: isFromMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 对方头像
-          if (!isFromMe) ...[
-            UserAvatar(user: otherUser, radius: 18),
-            const SizedBox(width: 8),
-          ],
-
-          // 消息内容
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isFromMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isFromMe
-                        ? AppTheme.myMessageColor
-                        : AppTheme.otherMessageColor,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
-                      bottomLeft: Radius.circular(isFromMe ? 18 : 4),
-                      bottomRight: Radius.circular(isFromMe ? 4 : 18),
-                    ),
-                  ),
-                  child: Text(
-                    message.content,
-                    style: TextStyle(
-                      color: isFromMe ? Colors.white : Colors.black87,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: isFromMe
-                      ? MainAxisAlignment.end
-                      : MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      timeFormat.format(message.timestamp),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                    if (isFromMe && message.sendStatus != null) ...[
-                      const SizedBox(width: 6),
-                      _buildSendStatusIcon(message.sendStatus!),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // 自己的头像
+          // 当前用户（自己）的消息：在左侧，头像在左、气泡在右
           if (isFromMe) ...[
-            const SizedBox(width: 8),
             UserAvatar(user: User.currentUser, radius: 18),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: bubbleContent,
+              ),
+            ),
+          ],
+          // 对方消息：在右侧，气泡在左、头像在右
+          if (!isFromMe) ...[
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: bubbleContent,
+              ),
+            ),
+            const SizedBox(width: 8),
+            UserAvatar(user: otherUser, radius: 18),
           ],
         ],
       ),

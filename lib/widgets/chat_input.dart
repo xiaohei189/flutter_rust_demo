@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-/// 聊天输入框组件
-class ChatInput extends StatelessWidget {
+/// 聊天输入框组件：回车发送，Shift+回车换行
+class ChatInput extends StatefulWidget {
   final TextEditingController controller;
   final Function(String) onSend;
 
@@ -10,6 +11,30 @@ class ChatInput extends StatelessWidget {
     required this.controller,
     required this.onSend,
   });
+
+  @override
+  State<ChatInput> createState() => _ChatInputState();
+}
+
+class _ChatInputState extends State<ChatInput> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _doSend() {
+    final text = widget.controller.text.trim();
+    if (text.isNotEmpty) widget.onSend(text);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,53 +53,57 @@ class ChatInput extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // 语音按钮
             IconButton(
               icon: const Icon(Icons.mic_none),
               onPressed: () {
                 // TODO: 语音输入
               },
             ),
-            
-            // 文本输入框
             Expanded(
-              child: TextField(
-                controller: controller,
-                maxLines: null,
-                decoration: InputDecoration(
-                  hintText: '输入消息...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                ),
-                onSubmitted: (text) {
-                  onSend(text);
+              child: Focus(
+                focusNode: _focusNode,
+                onKeyEvent: (FocusNode node, KeyEvent event) {
+                  if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                  final key = event.logicalKey;
+                  if (key != LogicalKeyboardKey.enter &&
+                      key != LogicalKeyboardKey.numpadEnter) {
+                    return KeyEventResult.ignored;
+                  }
+                  if (HardwareKeyboard.instance.isShiftPressed) {
+                    return KeyEventResult.ignored;
+                  }
+                  _doSend();
+                  return KeyEventResult.handled;
                 },
+                child: TextField(
+                  controller: widget.controller,
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  decoration: InputDecoration(
+                    hintText: '输入消息...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                  ),
+                  onSubmitted: (_) => _doSend(),
+                ),
               ),
             ),
-            
-            // 更多功能按钮
             IconButton(
               icon: const Icon(Icons.add_circle_outline),
-              onPressed: () {
-                _showMoreOptions(context);
-              },
+              onPressed: () => _showMoreOptions(context),
             ),
-            
-            // 发送按钮
             IconButton(
               icon: const Icon(Icons.send),
               color: Theme.of(context).primaryColor,
-              onPressed: () {
-                onSend(controller.text);
-              },
+              onPressed: _doSend,
             ),
           ],
         ),
