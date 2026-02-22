@@ -551,10 +551,10 @@ class __$$MessageEvent_NewRecvMessageRevokedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? messageRevoked = null}) {
+  $Res call({Object? messageRevoked = freezed}) {
     return _then(
       _$MessageEvent_NewRecvMessageRevokedImpl(
-        messageRevoked: null == messageRevoked
+        messageRevoked: freezed == messageRevoked
             ? _value.messageRevoked
             : messageRevoked // ignore: cast_nullable_to_non_nullable
                   as MessageRevoked,
@@ -583,12 +583,17 @@ class _$MessageEvent_NewRecvMessageRevokedImpl
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$MessageEvent_NewRecvMessageRevokedImpl &&
-            (identical(other.messageRevoked, messageRevoked) ||
-                other.messageRevoked == messageRevoked));
+            const DeepCollectionEquality().equals(
+              other.messageRevoked,
+              messageRevoked,
+            ));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, messageRevoked);
+  int get hashCode => Object.hash(
+    runtimeType,
+    const DeepCollectionEquality().hash(messageRevoked),
+  );
 
   /// Create a copy of MessageEvent
   /// with the given fields replaced by the non-null parameter values.

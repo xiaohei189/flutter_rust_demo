@@ -1,14 +1,37 @@
-//! 消息构建：仅组装 content_type + content（JSON），不发送；与 Go CreateTextMessage/CreateImageMessage 等语义对齐。
+//! 消息构建：仅组装 content_type + content（及可选基础信息），不涉及入库、不发送；与 Go CreateTextMessage/CreateImageMessage 等语义对齐。
 //! 调用方设置 recv_id/group_id/session_type 后交给 `IMClient::send_message` 发送。
 
+use chrono;
 use openim_protocol::constant;
 use openim_protocol::sdkws;
 use serde::Serialize;
+use uuid::Uuid;
 
 use super::message::{
     CustomElem, FileElem, LocationElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SoundElem, TextElem,
     VideoElem,
 };
+
+/// 生成客户端消息唯一 ID（与 Go utils.GetMsgID 语义一致，当前用 UUID 保证唯一）。
+#[inline]
+pub fn get_msg_id(_send_id: &str) -> String {
+    Uuid::new_v4().to_string()
+}
+
+/// 为待发送消息填充基础字段：client_msg_id、create_time、msg_from、send_id、sender_platform_id。
+/// 与 Go initBasicInfo 对齐；创建后调用方设置 recv_id/group_id/session_type 再送 send_message。
+pub fn init_basic_info(msg: &mut sdkws::MsgData, send_id: &str, platform_id: i32) {
+    if msg.client_msg_id.is_empty() {
+        msg.client_msg_id = get_msg_id(send_id);
+    }
+    if msg.create_time == 0 {
+        msg.create_time = chrono::Utc::now().timestamp_millis();
+    }
+    msg.send_time = msg.create_time;
+    msg.msg_from = constant::USER_MSG_TYPE;
+    msg.send_id = send_id.to_string();
+    msg.sender_platform_id = platform_id;
+}
 
 fn msg_data_with_content(content_type: i32, content: Vec<u8>) -> sdkws::MsgData {
     let mut msg = sdkws::MsgData::default();

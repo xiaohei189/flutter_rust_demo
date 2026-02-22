@@ -182,12 +182,22 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         return;
       }
 
-      // 发送消息（传入 conversationId 以便发送后刷新消息列表）
+      // 先创建消息并加入列表，再发送，成功后更新发送状态
+      final groupId = sessionType == 3 || sessionType == 2
+          ? (widget.conversation.groupId.isNotEmpty
+              ? widget.conversation.groupId
+              : cid.startsWith('sg_')
+                  ? cid.substring(3)
+                  : cid.startsWith('g_')
+                      ? cid.substring(2)
+                      : '')
+          : '';
       await messageService.sendTextMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
         conversationId: widget.conversation.conversationId,
+        groupId: groupId,
       );
 
       _textController.clear();

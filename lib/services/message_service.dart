@@ -4,10 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/chat.dart';
-import '../models/message.dart';
+import '../models/message.dart' show Message, MessageSendStatus, MessageType;
 import '../src/rust/api/bridge_client.dart';
-import '../src/rust/api/listeners/conversation.dart';
 import '../src/rust/api/simple.dart';
+import '../src/rust/im/client/listeners.dart'
+    show AdvancedMsgEvent, ConversationEvent;
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../src/rust/im/model/message.dart' as im_msg;
 import '../utils/app_logger.dart';
@@ -31,7 +32,9 @@ class MessageService extends ChangeNotifier {
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
 
-  StreamSubscription<ConversationEvent>? _conversationStreamSubscription;
+  StreamSubscription<dynamic>? _connStreamSubscription;
+  StreamSubscription<dynamic>? _conversationStreamSubscription;
+  StreamSubscription<dynamic>? _advancedMsgStreamSubscription;
 
   /// 是否已连接
   bool get isConnected => _isConnected;
@@ -169,30 +172,70 @@ class MessageService extends ChangeNotifier {
     );
   }
 
-  /// 发送文本消息
-  /// [conversationId] 可选，发送成功后若提供则刷新该会话的消息列表
+  /// 发送文本消息：先创建消息 -> 加入列表展示 -> 发送 -> 成功后更新状态
+  /// [conversationId] 必填，用于把乐观消息加入该会话列表
+  /// [groupId] 群聊时传群 ID，单聊传空字符串
   Future<void> sendTextMessage({
     required String recvId,
     required String text,
     required int sessionType,
-    String? conversationId,
+    required String conversationId,
+    String groupId = '',
   }) async {
     if (_client == null) {
       throw StateError('客户端未初始化');
     }
-    if (recvId.trim().isEmpty) {
-      throw ArgumentError('接收方 ID 不能为空 (recvId)，请检查会话的 userId/groupId');
+    if (recvId.trim().isEmpty && groupId.trim().isEmpty) {
+      throw ArgumentError('recvId 与 groupId 至少填一个');
     }
-    await _client!.sendTextMessage(
-      recvId: recvId,
+
+    // 1. 创建消息（Rust 已填 recv_id/group_id/session_type）
+    final msgData = await _client!.createTextMessage(
       text: text,
+      recvId: recvId,
+      groupId: groupId,
       sessionType: sessionType,
     );
-    if (conversationId != null) {
-      _messages[conversationId] = [];
-      await loadHistoryMessages(conversationId);
+
+    // 2. 加入展示列表（乐观更新，状态为发送中）
+    final tempId = 'sending_${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticMessage = Message(
+      id: tempId,
+      senderId: _currentUserId,
+      content: text,
+      type: MessageType.text,
+      timestamp: DateTime.now(),
+      isSent: true,
+      sendStatus: MessageSendStatus.sending,
+    );
+    final list = _messages.putIfAbsent(conversationId, () => []);
+    list.add(optimisticMessage);
+    notifyListeners();
+
+    try {
+      // 3. 发送
+      await _client!.sendMessage(msg: msgData);
+      // 4. 发送成功，更新状态
+      _updateMessageSendStatus(conversationId, tempId, MessageSendStatus.sent);
+    } catch (e) {
+      appLog.e('dart MessageService 发送失败: $e');
+      _updateMessageSendStatus(conversationId, tempId, MessageSendStatus.failed);
+      rethrow;
     }
     notifyListeners();
+  }
+
+  void _updateMessageSendStatus(
+    String conversationId,
+    String messageId,
+    MessageSendStatus status,
+  ) {
+    final list = _messages[conversationId];
+    if (list == null) return;
+    final index = list.indexWhere((m) => m.id == messageId);
+    if (index >= 0) {
+      list[index] = list[index].copyWith(sendStatus: status);
+    }
   }
 
   /// 初始化并连接服务
@@ -236,9 +279,16 @@ class MessageService extends ChangeNotifier {
         wsUrl: wsUrl,
       );
 
-      // 设置会话监听 Stream（需在 connect 之前，codegen 生成 setConversationStream 后取消注释）
-      // final stream = _client!.setConversationStream();
-      // _conversationStreamSubscription = stream.listen(_handleConversationEvent);
+      // 状态订阅、会话变动订阅、消息变动订阅（必须在 connect 之前调用）
+      // 先订阅消息流，确保 Rust 端 advanced_msg_event_tx 最先注册（与会话流同源 callbacks）
+      _advancedMsgStreamSubscription =
+          _client!.advancedMsgStream().listen(_handleAdvancedMsgEvent);
+      _connStreamSubscription = _client!.connStream().listen(_handleConnEvent);
+      _conversationStreamSubscription =
+          _client!.conversationStream().listen(_handleConversationEvent);
+
+      // 等待 Rust 端流订阅就绪（bridge 侧 stream 方法为 unawaited，不等待则 connect 时 tx 可能尚未设置）
+      await Future.delayed(const Duration(milliseconds: 300));
 
       // 连接到服务器
       await _client!.connect();
@@ -284,9 +334,22 @@ class MessageService extends ChangeNotifier {
     });
   }
 
+  /// 处理连接状态事件
+  void _handleConnEvent(dynamic event) {
+    if (event == null) return;
+    final name = event.runtimeType.toString();
+    if (name.contains('ConnectSuccess') || name == 'ConnEvent_ConnectSuccess') {
+      _isConnected = true;
+    } else if (name.contains('ConnectFailed') ||
+        name.contains('KickedOffline') ||
+        name.contains('UserTokenExpired') ||
+        name.contains('UserTokenInvalid')) {
+      _isConnected = false;
+    }
+    notifyListeners();
+  }
+
   /// 处理会话事件（同步进度、新会话、会话变更等）
-  /// 在 setConversationStream 取消注释后由 stream.listen 调用
-  // ignore: unused_element
   void _handleConversationEvent(ConversationEvent event) {
     event.when(
       syncServerStart: (_) {
@@ -320,9 +383,66 @@ class MessageService extends ChangeNotifier {
         }
         notifyListeners();
       },
+      conversationsCleared: (_) {
+        notifyListeners();
+      },
       totalUnreadMessageCountChanged: (_) => notifyListeners(),
       conversationUserInputStatusChanged: (_) {},
     );
+  }
+
+  /// 处理消息变动事件（新消息、已读回执、撤回等）
+  void _handleAdvancedMsgEvent(AdvancedMsgEvent event) {
+    appLog.d('📩 收到消息事件: ${event.runtimeType}');
+    try {
+      event.when(
+        recvNewMessage: (msg) {
+          _appendMsgStructToMessages(msg);
+          notifyListeners();
+        },
+        recvC2CReadReceipt: (_) => notifyListeners(),
+        newRecvMessageRevoked: (_) => notifyListeners(),
+        recvOfflineNewMessage: (msg) {
+          _appendMsgStructToMessages(msg);
+          notifyListeners();
+        },
+        msgDeleted: (_) => notifyListeners(),
+        recvOnlineOnlyMessage: (msg) {
+          _appendMsgStructToMessages(msg);
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      appLog.e('dart MessageService 处理消息事件失败: $e');
+      notifyListeners();
+    }
+  }
+
+  void _appendMsgStructToMessages(im_msg.MsgStruct msg) {
+    final conversationId = _msgStructToConversationId(msg);
+    if (conversationId.isEmpty) return;
+    final list = _messages.putIfAbsent(conversationId, () => []);
+    list.add(_msgStructToMessage(msg));
+  }
+
+  /// 与 Rust conversation_id_by_session_type 一致：单聊 si_{uid1}_{uid2} 排序，群聊 sg_{groupId}，其他 g_{groupId}
+  String _msgStructToConversationId(im_msg.MsgStruct msg) {
+    final sessionType = msg.sessionType;
+    final sendId = msg.sendId ?? '';
+    final recvId = msg.recvId ?? '';
+    final groupId = msg.groupId ?? '';
+    if (sessionType == 1) {
+      final my = _currentUserId;
+      if (my.isEmpty) return '';
+      final other = sendId == my ? recvId : sendId;
+      if (other.isEmpty) return '';
+      final parts = [my, other]..sort();
+      return 'si_${parts[0]}_${parts[1]}';
+    }
+    if (sessionType == 2) return 'sg_$groupId';
+    if (sessionType == 3) return 'sg_$groupId';
+    if (groupId.isNotEmpty) return 'g_$groupId';
+    return '';
   }
 
   /// 加载会话列表
@@ -349,8 +469,12 @@ class MessageService extends ChangeNotifier {
 
   /// 断开连接
   Future<void> disconnect() async {
+    await _connStreamSubscription?.cancel();
+    _connStreamSubscription = null;
     await _conversationStreamSubscription?.cancel();
     _conversationStreamSubscription = null;
+    await _advancedMsgStreamSubscription?.cancel();
+    _advancedMsgStreamSubscription = null;
     if (_client != null) {
       await _client!.close();
       _client = null;

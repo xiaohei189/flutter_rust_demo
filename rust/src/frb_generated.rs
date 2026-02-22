@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 850578984;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1230126075;
 
 // Section: executor
 
@@ -43,6 +43,45 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__bridge_client__OpenImBridgeClient_advanced_msg_stream_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_advanced_msg_stream",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::im::client::listeners::AdvancedMsgEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::advanced_msg_stream(&*api_that_guard, api_sink).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__bridge_client__OpenImBridgeClient_close_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -81,6 +120,45 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_close_impl(
         },
     )
 }
+fn wire__crate__api__bridge_client__OpenImBridgeClient_conn_stream_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_conn_stream",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::im::client::listeners::ConnEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::conn_stream(&*api_that_guard, api_sink).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__bridge_client__OpenImBridgeClient_connect_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -111,6 +189,363 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_connect_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok = crate::api::bridge_client::OpenIMBridgeClient::connect(&*api_that_guard).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_conversation_stream",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::im::client::listeners::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::conversation_stream(&*api_that_guard, api_sink).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_custom_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_custom_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_data = <String>::sse_decode(&mut deserializer);
+            let api_extension = <String>::sse_decode(&mut deserializer);
+            let api_description = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::create_custom_message(&*api_that_guard, api_data, api_extension, api_description).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_file_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_file_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_file_path = <String>::sse_decode(&mut deserializer);
+            let api_uuid = <String>::sse_decode(&mut deserializer);
+            let api_source_url = <String>::sse_decode(&mut deserializer);
+            let api_file_name = <String>::sse_decode(&mut deserializer);
+            let api_file_size = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::bridge_client::OpenIMBridgeClient::create_file_message(&*api_that_guard, api_file_path, api_uuid, api_source_url, api_file_name, api_file_size).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_image_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_image_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_url = <String>::sse_decode(&mut deserializer);
+            let api_width = <i32>::sse_decode(&mut deserializer);
+            let api_height = <i32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::create_image_message(&*api_that_guard, api_url, api_width, api_height).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_location_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_location_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_description = <String>::sse_decode(&mut deserializer);
+            let api_longitude = <f64>::sse_decode(&mut deserializer);
+            let api_latitude = <f64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::create_location_message(&*api_that_guard, api_description, api_longitude, api_latitude).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_sound_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_sound_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_uuid = <String>::sse_decode(&mut deserializer);
+            let api_sound_path = <String>::sse_decode(&mut deserializer);
+            let api_source_url = <String>::sse_decode(&mut deserializer);
+            let api_data_size = <i64>::sse_decode(&mut deserializer);
+            let api_duration = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok =
+                            crate::api::bridge_client::OpenIMBridgeClient::create_sound_message(&*api_that_guard, api_uuid, api_sound_path, api_source_url, api_data_size, api_duration).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_text_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_text_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_recv_id = <String>::sse_decode(&mut deserializer);
+            let api_group_id = <String>::sse_decode(&mut deserializer);
+            let api_session_type = <i32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::create_text_message(&*api_that_guard, api_text, api_recv_id, api_group_id, api_session_type).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_create_video_message_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_create_video_message",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_video_path = <String>::sse_decode(&mut deserializer);
+            let api_video_uuid = <String>::sse_decode(&mut deserializer);
+            let api_video_url = <String>::sse_decode(&mut deserializer);
+            let api_video_type = <String>::sse_decode(&mut deserializer);
+            let api_video_size = <i64>::sse_decode(&mut deserializer);
+            let api_duration = <i64>::sse_decode(&mut deserializer);
+            let api_snapshot_path = <String>::sse_decode(&mut deserializer);
+            let api_snapshot_uuid = <String>::sse_decode(&mut deserializer);
+            let api_snapshot_size = <i64>::sse_decode(&mut deserializer);
+            let api_snapshot_url = <String>::sse_decode(&mut deserializer);
+            let api_snapshot_width = <i32>::sse_decode(&mut deserializer);
+            let api_snapshot_height = <i32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::create_video_message(
+                            &*api_that_guard,
+                            api_video_path,
+                            api_video_uuid,
+                            api_video_url,
+                            api_video_type,
+                            api_video_size,
+                            api_duration,
+                            api_snapshot_path,
+                            api_snapshot_uuid,
+                            api_snapshot_size,
+                            api_snapshot_url,
+                            api_snapshot_width,
+                            api_snapshot_height,
+                        )
+                        .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -267,7 +702,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
+fn wire__crate__api__bridge_client__OpenImBridgeClient_send_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -275,7 +710,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "OpenImBridgeClient_send_text_message",
+            debug_name: "OpenImBridgeClient_send_message",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
@@ -283,9 +718,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_recv_id = <String>::sse_decode(&mut deserializer);
-            let api_text = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <i32>::sse_decode(&mut deserializer);
+            let api_msg = <MsgData>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -299,7 +732,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_recv_id, api_text, api_session_type).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_message(&*api_that_guard, api_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -452,6 +885,7 @@ fn wire__crate__api__bridge_client__login_async_impl(
 
 // Section: related_funcs
 
+flutter_rust_bridge::frb_generated_moi_arc_impl_value!(flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>);
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OfflinePushInfo>);
 flutter_rust_bridge::frb_generated_moi_arc_impl_value!(flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>);
 
@@ -462,6 +896,14 @@ impl SseDecode for flutter_rust_bridge::for_generated::anyhow::Error {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
         return flutter_rust_bridge::for_generated::anyhow::anyhow!("{}", inner);
+    }
+}
+
+impl SseDecode for MsgData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>>::sse_decode(deserializer);
+        return flutter_rust_bridge::for_generated::rust_auto_opaque_decode_owned(inner);
     }
 }
 
@@ -481,6 +923,14 @@ impl SseDecode for OpenIMBridgeClient {
     }
 }
 
+impl SseDecode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <usize>::sse_decode(deserializer);
+        return decode_rust_opaque_moi(inner);
+    }
+}
+
 impl SseDecode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OfflinePushInfo>> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -497,11 +947,71 @@ impl SseDecode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpa
     }
 }
 
+impl SseDecode for StreamSink<crate::im::client::listeners::AdvancedMsgEvent, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return StreamSink::deserialize(inner);
+    }
+}
+
+impl SseDecode for StreamSink<crate::im::client::listeners::ConnEvent, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return StreamSink::deserialize(inner);
+    }
+}
+
+impl SseDecode for StreamSink<crate::im::client::listeners::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return StreamSink::deserialize(inner);
+    }
+}
+
 impl SseDecode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <Vec<u8>>::sse_decode(deserializer);
         return String::from_utf8(inner).unwrap();
+    }
+}
+
+impl SseDecode for crate::im::client::listeners::AdvancedMsgEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut tag_ = <i32>::sse_decode(deserializer);
+        match tag_ {
+            0 => {
+                let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::RecvNewMessage(var_field0);
+            }
+            1 => {
+                let mut var_field0 = <Vec<crate::im::client::listeners::ReadReceiptItem>>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::RecvC2CReadReceipt(var_field0);
+            }
+            2 => {
+                let mut var_field0 = <crate::im::client::listeners::MessageRevokedInfo>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(var_field0);
+            }
+            3 => {
+                let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(var_field0);
+            }
+            4 => {
+                let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(var_field0);
+            }
+            5 => {
+                let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(var_field0);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
     }
 }
 
@@ -546,6 +1056,94 @@ impl SseDecode for Box<crate::im::model::message::MsgStruct> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         return Box::new(<crate::im::model::message::MsgStruct>::sse_decode(deserializer));
+    }
+}
+
+impl SseDecode for crate::im::client::listeners::ConnEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut tag_ = <i32>::sse_decode(deserializer);
+        match tag_ {
+            0 => {
+                return crate::im::client::listeners::ConnEvent::Connecting;
+            }
+            1 => {
+                return crate::im::client::listeners::ConnEvent::ConnectSuccess;
+            }
+            2 => {
+                let mut var_errCode = <i32>::sse_decode(deserializer);
+                let mut var_errMsg = <String>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConnEvent::ConnectFailed {
+                    err_code: var_errCode,
+                    err_msg: var_errMsg,
+                };
+            }
+            3 => {
+                return crate::im::client::listeners::ConnEvent::KickedOffline;
+            }
+            4 => {
+                return crate::im::client::listeners::ConnEvent::UserTokenExpired;
+            }
+            5 => {
+                let mut var_errMsg = <String>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConnEvent::UserTokenInvalid { err_msg: var_errMsg };
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+
+impl SseDecode for crate::im::client::listeners::ConversationEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut tag_ = <i32>::sse_decode(deserializer);
+        match tag_ {
+            0 => {
+                let mut var_reinstalled = <bool>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::SyncServerStart { reinstalled: var_reinstalled };
+            }
+            1 => {
+                let mut var_reinstalled = <bool>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::SyncServerFinish { reinstalled: var_reinstalled };
+            }
+            2 => {
+                let mut var_progress = <i32>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::SyncServerProgress { progress: var_progress };
+            }
+            3 => {
+                let mut var_reinstalled = <bool>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::SyncServerFailed { reinstalled: var_reinstalled };
+            }
+            4 => {
+                let mut var_list = <Vec<crate::im::model::conversation::LocalConversation>>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::NewConversation { list: var_list };
+            }
+            5 => {
+                let mut var_list = <Vec<crate::im::model::conversation::LocalConversation>>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::ConversationChanged { list: var_list };
+            }
+            6 => {
+                let mut var_conversationIds = <Vec<String>>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::ConversationsCleared {
+                    conversation_ids: var_conversationIds,
+                };
+            }
+            7 => {
+                let mut var_totalUnreadCount = <i32>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::TotalUnreadMessageCountChanged {
+                    total_unread_count: var_totalUnreadCount,
+                };
+            }
+            8 => {
+                let mut var_field0 = <crate::im::model::message::TypingStatus>::sse_decode(deserializer);
+                return crate::im::client::listeners::ConversationEvent::ConversationUserInputStatusChanged(var_field0);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
     }
 }
 
@@ -694,6 +1292,18 @@ impl SseDecode for Vec<u8> {
     }
 }
 
+impl SseDecode for Vec<crate::im::client::listeners::ReadReceiptItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = vec![];
+        for idx_ in 0..len_ {
+            ans_.push(<crate::im::client::listeners::ReadReceiptItem>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for crate::im::model::conversation::LocalConversation {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -774,6 +1384,30 @@ impl SseDecode for crate::im::http_client::auth::LoginData {
             im_token: var_imToken,
             chat_token: var_chatToken,
             user_id: var_userId,
+        };
+    }
+}
+
+impl SseDecode for crate::im::client::listeners::MessageRevokedInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_conversationId = <String>::sse_decode(deserializer);
+        let mut var_seq = <i64>::sse_decode(deserializer);
+        let mut var_revokeTime = <i64>::sse_decode(deserializer);
+        let mut var_sourceMessageSendTime = <i64>::sse_decode(deserializer);
+        let mut var_sourceMessageSendId = <String>::sse_decode(deserializer);
+        let mut var_sourceMessageSenderNickname = <String>::sse_decode(deserializer);
+        let mut var_ex = <String>::sse_decode(deserializer);
+        let mut var_isAdminRevoke = <bool>::sse_decode(deserializer);
+        return crate::im::client::listeners::MessageRevokedInfo {
+            conversation_id: var_conversationId,
+            seq: var_seq,
+            revoke_time: var_revokeTime,
+            source_message_send_time: var_sourceMessageSendTime,
+            source_message_send_id: var_sourceMessageSendId,
+            source_message_sender_nickname: var_sourceMessageSenderNickname,
+            ex: var_ex,
+            is_admin_revoke: var_isAdminRevoke,
         };
     }
 }
@@ -1052,6 +1686,22 @@ impl SseDecode for crate::im::model::message::QuoteElem {
     }
 }
 
+impl SseDecode for crate::im::client::listeners::ReadReceiptItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_userId = <String>::sse_decode(deserializer);
+        let mut var_msgIdList = <Vec<String>>::sse_decode(deserializer);
+        let mut var_sessionType = <i32>::sse_decode(deserializer);
+        let mut var_readTime = <i64>::sse_decode(deserializer);
+        return crate::im::client::listeners::ReadReceiptItem {
+            user_id: var_userId,
+            msg_id_list: var_msgIdList,
+            session_type: var_sessionType,
+            read_time: var_readTime,
+        };
+    }
+}
+
 impl SseDecode for crate::im::model::message::SoundElem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1075,6 +1725,20 @@ impl SseDecode for crate::im::model::message::TextElem {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_content = <String>::sse_decode(deserializer);
         return crate::im::model::message::TextElem { content: var_content };
+    }
+}
+
+impl SseDecode for crate::im::model::message::TypingStatus {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_conversationId = <String>::sse_decode(deserializer);
+        let mut var_sendId = <Option<String>>::sse_decode(deserializer);
+        let mut var_msgTip = <String>::sse_decode(deserializer);
+        return crate::im::model::message::TypingStatus {
+            conversation_id: var_conversationId,
+            send_id: var_sendId,
+            msg_tip: var_msgTip,
+        };
     }
 }
 
@@ -1138,17 +1802,27 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__bridge_client__OpenImBridgeClient_close_impl(port, ptr, rust_vec_len, data_len),
-        2 => wire__crate__api__bridge_client__OpenImBridgeClient_connect_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__bridge_client__OpenImBridgeClient_get_advanced_history_message_list_impl(port, ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__bridge_client__OpenImBridgeClient_get_advanced_history_message_list_reverse_impl(port, ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__bridge_client__OpenImBridgeClient_get_all_conversations_impl(port, ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(port, ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__bridge_client__close_current_client_if_any_impl(port, ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__simple__init_logger_impl(port, ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__bridge_client__login_async_impl(port, ptr, rust_vec_len, data_len),
+        1 => wire__crate__api__bridge_client__OpenImBridgeClient_advanced_msg_stream_impl(port, ptr, rust_vec_len, data_len),
+        2 => wire__crate__api__bridge_client__OpenImBridgeClient_close_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__bridge_client__OpenImBridgeClient_conn_stream_impl(port, ptr, rust_vec_len, data_len),
+        4 => wire__crate__api__bridge_client__OpenImBridgeClient_connect_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(port, ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__bridge_client__OpenImBridgeClient_create_custom_message_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__bridge_client__OpenImBridgeClient_create_file_message_impl(port, ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__bridge_client__OpenImBridgeClient_create_image_message_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__bridge_client__OpenImBridgeClient_create_location_message_impl(port, ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__bridge_client__OpenImBridgeClient_create_sound_message_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__bridge_client__OpenImBridgeClient_create_text_message_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__bridge_client__OpenImBridgeClient_create_video_message_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__bridge_client__OpenImBridgeClient_get_advanced_history_message_list_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__bridge_client__OpenImBridgeClient_get_advanced_history_message_list_reverse_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__bridge_client__OpenImBridgeClient_get_all_conversations_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__bridge_client__OpenImBridgeClient_send_message_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__bridge_client__close_current_client_if_any_impl(port, ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__simple__init_logger_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__bridge_client__login_async_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1161,12 +1835,26 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        9 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
 
 // Section: rust2dart
+
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for FrbWrapper<MsgData> {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self.0).into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<MsgData> {}
+
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<MsgData>> for MsgData {
+    fn into_into_dart(self) -> FrbWrapper<MsgData> {
+        self.into()
+    }
+}
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for FrbWrapper<OfflinePushInfo> {
@@ -1197,6 +1885,28 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<OpenIMBridgeClient>> for OpenI
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::AdvancedMsgEvent {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            crate::im::client::listeners::AdvancedMsgEvent::RecvNewMessage(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::RecvC2CReadReceipt(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::client::listeners::AdvancedMsgEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::client::listeners::AdvancedMsgEvent> for crate::im::client::listeners::AdvancedMsgEvent {
+    fn into_into_dart(self) -> crate::im::client::listeners::AdvancedMsgEvent {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::im::model::message::AtElem {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -1224,6 +1934,53 @@ impl flutter_rust_bridge::IntoDart for crate::im::model::message::AtInfo {
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::model::message::AtInfo {}
 impl flutter_rust_bridge::IntoIntoDart<crate::im::model::message::AtInfo> for crate::im::model::message::AtInfo {
     fn into_into_dart(self) -> crate::im::model::message::AtInfo {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::ConnEvent {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            crate::im::client::listeners::ConnEvent::Connecting => [0.into_dart()].into_dart(),
+            crate::im::client::listeners::ConnEvent::ConnectSuccess => [1.into_dart()].into_dart(),
+            crate::im::client::listeners::ConnEvent::ConnectFailed { err_code, err_msg } => [2.into_dart(), err_code.into_into_dart().into_dart(), err_msg.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConnEvent::KickedOffline => [3.into_dart()].into_dart(),
+            crate::im::client::listeners::ConnEvent::UserTokenExpired => [4.into_dart()].into_dart(),
+            crate::im::client::listeners::ConnEvent::UserTokenInvalid { err_msg } => [5.into_dart(), err_msg.into_into_dart().into_dart()].into_dart(),
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::client::listeners::ConnEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::client::listeners::ConnEvent> for crate::im::client::listeners::ConnEvent {
+    fn into_into_dart(self) -> crate::im::client::listeners::ConnEvent {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::ConversationEvent {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            crate::im::client::listeners::ConversationEvent::SyncServerStart { reinstalled } => [0.into_dart(), reinstalled.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::SyncServerFinish { reinstalled } => [1.into_dart(), reinstalled.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::SyncServerProgress { progress } => [2.into_dart(), progress.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::SyncServerFailed { reinstalled } => [3.into_dart(), reinstalled.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::NewConversation { list } => [4.into_dart(), list.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::ConversationChanged { list } => [5.into_dart(), list.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::ConversationsCleared { conversation_ids } => [6.into_dart(), conversation_ids.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count } => [7.into_dart(), total_unread_count.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::ConversationEvent::ConversationUserInputStatusChanged(field0) => [8.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::client::listeners::ConversationEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::client::listeners::ConversationEvent> for crate::im::client::listeners::ConversationEvent {
+    fn into_into_dart(self) -> crate::im::client::listeners::ConversationEvent {
         self
     }
 }
@@ -1372,6 +2129,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::im::http_client::auth::LoginData> 
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::MessageRevokedInfo {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.conversation_id.into_into_dart().into_dart(),
+            self.seq.into_into_dart().into_dart(),
+            self.revoke_time.into_into_dart().into_dart(),
+            self.source_message_send_time.into_into_dart().into_dart(),
+            self.source_message_send_id.into_into_dart().into_dart(),
+            self.source_message_sender_nickname.into_into_dart().into_dart(),
+            self.ex.into_into_dart().into_dart(),
+            self.is_admin_revoke.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::client::listeners::MessageRevokedInfo {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::client::listeners::MessageRevokedInfo> for crate::im::client::listeners::MessageRevokedInfo {
+    fn into_into_dart(self) -> crate::im::client::listeners::MessageRevokedInfo {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::im::model::message::MsgStruct {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -1468,6 +2247,24 @@ impl flutter_rust_bridge::IntoIntoDart<crate::im::model::message::QuoteElem> for
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::ReadReceiptItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.user_id.into_into_dart().into_dart(),
+            self.msg_id_list.into_into_dart().into_dart(),
+            self.session_type.into_into_dart().into_dart(),
+            self.read_time.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::client::listeners::ReadReceiptItem {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::client::listeners::ReadReceiptItem> for crate::im::client::listeners::ReadReceiptItem {
+    fn into_into_dart(self) -> crate::im::client::listeners::ReadReceiptItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::im::model::message::SoundElem {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -1495,6 +2292,23 @@ impl flutter_rust_bridge::IntoDart for crate::im::model::message::TextElem {
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::model::message::TextElem {}
 impl flutter_rust_bridge::IntoIntoDart<crate::im::model::message::TextElem> for crate::im::model::message::TextElem {
     fn into_into_dart(self) -> crate::im::model::message::TextElem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::model::message::TypingStatus {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.conversation_id.into_into_dart().into_dart(),
+            self.send_id.into_into_dart().into_dart(),
+            self.msg_tip.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::model::message::TypingStatus {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::model::message::TypingStatus> for crate::im::model::message::TypingStatus {
+    fn into_into_dart(self) -> crate::im::model::message::TypingStatus {
         self
     }
 }
@@ -1532,6 +2346,13 @@ impl SseEncode for flutter_rust_bridge::for_generated::anyhow::Error {
     }
 }
 
+impl SseEncode for MsgData {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>>::sse_encode(flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self), serializer);
+    }
+}
+
 impl SseEncode for OfflinePushInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1549,6 +2370,15 @@ impl SseEncode for OpenIMBridgeClient {
             flutter_rust_bridge::for_generated::rust_auto_opaque_encode::<_, MoiArc<_>>(self),
             serializer,
         );
+    }
+}
+
+impl SseEncode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        let (ptr, size) = self.sse_encode_raw();
+        <usize>::sse_encode(ptr, serializer);
+        <i32>::sse_encode(size, serializer);
     }
 }
 
@@ -1570,10 +2400,66 @@ impl SseEncode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpa
     }
 }
 
+impl SseEncode for StreamSink<crate::im::client::listeners::AdvancedMsgEvent, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        unimplemented!("")
+    }
+}
+
+impl SseEncode for StreamSink<crate::im::client::listeners::ConnEvent, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        unimplemented!("")
+    }
+}
+
+impl SseEncode for StreamSink<crate::im::client::listeners::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        unimplemented!("")
+    }
+}
+
 impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.into_bytes(), serializer);
+    }
+}
+
+impl SseEncode for crate::im::client::listeners::AdvancedMsgEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        match self {
+            crate::im::client::listeners::AdvancedMsgEvent::RecvNewMessage(field0) => {
+                <i32>::sse_encode(0, serializer);
+                <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::RecvC2CReadReceipt(field0) => {
+                <i32>::sse_encode(1, serializer);
+                <Vec<crate::im::client::listeners::ReadReceiptItem>>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(field0) => {
+                <i32>::sse_encode(2, serializer);
+                <crate::im::client::listeners::MessageRevokedInfo>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(field0) => {
+                <i32>::sse_encode(3, serializer);
+                <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(field0) => {
+                <i32>::sse_encode(4, serializer);
+                <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(field0) => {
+                <i32>::sse_encode(5, serializer);
+                <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
     }
 }
 
@@ -1607,6 +2493,85 @@ impl SseEncode for Box<crate::im::model::message::MsgStruct> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <crate::im::model::message::MsgStruct>::sse_encode(*self, serializer);
+    }
+}
+
+impl SseEncode for crate::im::client::listeners::ConnEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        match self {
+            crate::im::client::listeners::ConnEvent::Connecting => {
+                <i32>::sse_encode(0, serializer);
+            }
+            crate::im::client::listeners::ConnEvent::ConnectSuccess => {
+                <i32>::sse_encode(1, serializer);
+            }
+            crate::im::client::listeners::ConnEvent::ConnectFailed { err_code, err_msg } => {
+                <i32>::sse_encode(2, serializer);
+                <i32>::sse_encode(err_code, serializer);
+                <String>::sse_encode(err_msg, serializer);
+            }
+            crate::im::client::listeners::ConnEvent::KickedOffline => {
+                <i32>::sse_encode(3, serializer);
+            }
+            crate::im::client::listeners::ConnEvent::UserTokenExpired => {
+                <i32>::sse_encode(4, serializer);
+            }
+            crate::im::client::listeners::ConnEvent::UserTokenInvalid { err_msg } => {
+                <i32>::sse_encode(5, serializer);
+                <String>::sse_encode(err_msg, serializer);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
+    }
+}
+
+impl SseEncode for crate::im::client::listeners::ConversationEvent {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        match self {
+            crate::im::client::listeners::ConversationEvent::SyncServerStart { reinstalled } => {
+                <i32>::sse_encode(0, serializer);
+                <bool>::sse_encode(reinstalled, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::SyncServerFinish { reinstalled } => {
+                <i32>::sse_encode(1, serializer);
+                <bool>::sse_encode(reinstalled, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::SyncServerProgress { progress } => {
+                <i32>::sse_encode(2, serializer);
+                <i32>::sse_encode(progress, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::SyncServerFailed { reinstalled } => {
+                <i32>::sse_encode(3, serializer);
+                <bool>::sse_encode(reinstalled, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::NewConversation { list } => {
+                <i32>::sse_encode(4, serializer);
+                <Vec<crate::im::model::conversation::LocalConversation>>::sse_encode(list, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::ConversationChanged { list } => {
+                <i32>::sse_encode(5, serializer);
+                <Vec<crate::im::model::conversation::LocalConversation>>::sse_encode(list, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::ConversationsCleared { conversation_ids } => {
+                <i32>::sse_encode(6, serializer);
+                <Vec<String>>::sse_encode(conversation_ids, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count } => {
+                <i32>::sse_encode(7, serializer);
+                <i32>::sse_encode(total_unread_count, serializer);
+            }
+            crate::im::client::listeners::ConversationEvent::ConversationUserInputStatusChanged(field0) => {
+                <i32>::sse_encode(8, serializer);
+                <crate::im::model::message::TypingStatus>::sse_encode(field0, serializer);
+            }
+            _ => {
+                unimplemented!("");
+            }
+        }
     }
 }
 
@@ -1721,6 +2686,16 @@ impl SseEncode for Vec<u8> {
     }
 }
 
+impl SseEncode for Vec<crate::im::client::listeners::ReadReceiptItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::im::client::listeners::ReadReceiptItem>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for crate::im::model::conversation::LocalConversation {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1766,6 +2741,20 @@ impl SseEncode for crate::im::http_client::auth::LoginData {
         <String>::sse_encode(self.im_token, serializer);
         <String>::sse_encode(self.chat_token, serializer);
         <String>::sse_encode(self.user_id, serializer);
+    }
+}
+
+impl SseEncode for crate::im::client::listeners::MessageRevokedInfo {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.conversation_id, serializer);
+        <i64>::sse_encode(self.seq, serializer);
+        <i64>::sse_encode(self.revoke_time, serializer);
+        <i64>::sse_encode(self.source_message_send_time, serializer);
+        <String>::sse_encode(self.source_message_send_id, serializer);
+        <String>::sse_encode(self.source_message_sender_nickname, serializer);
+        <String>::sse_encode(self.ex, serializer);
+        <bool>::sse_encode(self.is_admin_revoke, serializer);
     }
 }
 
@@ -1977,6 +2966,16 @@ impl SseEncode for crate::im::model::message::QuoteElem {
     }
 }
 
+impl SseEncode for crate::im::client::listeners::ReadReceiptItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.user_id, serializer);
+        <Vec<String>>::sse_encode(self.msg_id_list, serializer);
+        <i32>::sse_encode(self.session_type, serializer);
+        <i64>::sse_encode(self.read_time, serializer);
+    }
+}
+
 impl SseEncode for crate::im::model::message::SoundElem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1992,6 +2991,15 @@ impl SseEncode for crate::im::model::message::TextElem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.content, serializer);
+    }
+}
+
+impl SseEncode for crate::im::model::message::TypingStatus {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.conversation_id, serializer);
+        <Option<String>>::sse_encode(self.send_id, serializer);
+        <String>::sse_encode(self.msg_tip, serializer);
     }
 }
 
@@ -2051,6 +3059,16 @@ mod io {
     flutter_rust_bridge::frb_generated_boilerplate_io!();
 
     #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(ptr: *const std::ffi::c_void) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>::increment_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(ptr: *const std::ffi::c_void) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>::decrement_strong_count(ptr as _);
+    }
+
+    #[unsafe(no_mangle)]
     pub extern "C" fn frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(ptr: *const std::ffi::c_void) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OfflinePushInfo>>::increment_strong_count(ptr as _);
     }
@@ -2093,6 +3111,16 @@ mod web {
     // Section: boilerplate
 
     flutter_rust_bridge::frb_generated_boilerplate_web!();
+
+    #[wasm_bindgen]
+    pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(ptr: *const std::ffi::c_void) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>::increment_strong_count(ptr as _);
+    }
+
+    #[wasm_bindgen]
+    pub fn rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(ptr: *const std::ffi::c_void) {
+        MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>::decrement_strong_count(ptr as _);
+    }
 
     #[wasm_bindgen]
     pub fn rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(ptr: *const std::ffi::c_void) {

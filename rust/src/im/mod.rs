@@ -30,7 +30,7 @@ pub use model::message::{
 pub use model::{
     create_custom_message, create_file_message, create_image_message_by_url, create_image_message_simple,
     create_location_message, create_quote_message, create_sound_message, create_text_message, create_video_message,
-    PictureBaseInfoInput,
+    get_msg_id, init_basic_info, PictureBaseInfoInput,
 };
 // DAO 统一出口
 pub use dao::{

@@ -7,5 +7,5 @@ pub use im::{
     client::IMClient, login_async, ConversationSyncerConfig, IncrementalConversationResp, LocalConversation, LocalGroup, LocalGroupMember,
 };
 
-// 重新导出 OfflinePushInfo，以便生成的代码可以访问
-pub use openim_protocol::sdkws::OfflinePushInfo;
+// 重新导出消息类型，供桥接与生成的代码使用（protocol 的 build 已为 MsgData 添加 serde）
+pub use openim_protocol::sdkws::{MsgData, OfflinePushInfo};

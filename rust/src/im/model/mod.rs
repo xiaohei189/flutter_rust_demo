@@ -18,7 +18,7 @@ pub use friend::{AllFriendsResp, BlackList, FriendRequest, FriendRequestsResp, F
 pub use create_message::{
     create_custom_message, create_file_message, create_image_message_by_url, create_image_message_simple,
     create_location_message, create_quote_message, create_sound_message, create_text_message, create_video_message,
-    PictureBaseInfoInput,
+    get_msg_id, init_basic_info, PictureBaseInfoInput,
 };
 pub use message::*;
 pub use ws::{msg_type, OpenIMReq, OpenIMResp, WebSocketConnectResp};

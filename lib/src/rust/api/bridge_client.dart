@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import '../im/client/listeners.dart';
 import '../im/http_client/auth.dart';
 import '../im/model/conversation.dart';
 import '../im/model/message.dart';
@@ -29,15 +30,90 @@ Future<LoginData> loginAsync({
   platform: platform,
 );
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>
+abstract class MsgData implements RustOpaqueInterface {}
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
+  /// 消息变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<AdvancedMsgEvent> 并 listen。
+  Stream<AdvancedMsgEvent> advancedMsgStream();
+
   /// 关闭当前实例（停止 WebSocket 与同步任务），由 Flutter 在断开/重启前调用
   Future<void> close();
+
+  /// 连接状态事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConnEvent> 并 listen。
+  Stream<ConnEvent> connStream();
 
   /// 连接到服务器
   ///
   /// 建立 WebSocket 连接并启动消息监听。
   Future<void> connect();
+
+  /// 会话变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConversationEvent> 并 listen。
+  Stream<ConversationEvent> conversationStream();
+
+  /// 创建自定义消息。
+  Future<MsgData> createCustomMessage({
+    required String data,
+    required String extension_,
+    required String description,
+  });
+
+  /// 创建文件消息。
+  Future<MsgData> createFileMessage({
+    required String filePath,
+    required String uuid,
+    required String sourceUrl,
+    required String fileName,
+    required PlatformInt64 fileSize,
+  });
+
+  /// 创建图片消息（简化：仅 URL + 宽高）。
+  Future<MsgData> createImageMessage({
+    required String url,
+    required int width,
+    required int height,
+  });
+
+  /// 创建位置消息。
+  Future<MsgData> createLocationMessage({
+    required String description,
+    required double longitude,
+    required double latitude,
+  });
+
+  /// 创建语音消息。
+  Future<MsgData> createSoundMessage({
+    required String uuid,
+    required String soundPath,
+    required String sourceUrl,
+    required PlatformInt64 dataSize,
+    required PlatformInt64 duration,
+  });
+
+  /// 创建文本消息（已填入 recv_id/group_id/session_type），返回 MsgData 可直接送 send_message 发送。
+  Future<MsgData> createTextMessage({
+    required String text,
+    required String recvId,
+    required String groupId,
+    required int sessionType,
+  });
+
+  /// 创建视频消息。
+  Future<MsgData> createVideoMessage({
+    required String videoPath,
+    required String videoUuid,
+    required String videoUrl,
+    required String videoType,
+    required PlatformInt64 videoSize,
+    required PlatformInt64 duration,
+    required String snapshotPath,
+    required String snapshotUuid,
+    required PlatformInt64 snapshotSize,
+    required String snapshotUrl,
+    required int snapshotWidth,
+    required int snapshotHeight,
+  });
 
   /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
   Future<GetAdvancedHistoryMessageListCallback> getAdvancedHistoryMessageList({
@@ -73,13 +149,6 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     wsUrl: wsUrl,
   );
 
-  /// 发送文本消息
-  /// - `recv_id`: 接收者 ID（单聊为用户 ID，群聊为群组 ID）
-  /// - `text`: 消息内容
-  /// - `session_type`: 会话类型，1=单聊，3=群聊
-  Future<void> sendTextMessage({
-    required String recvId,
-    required String text,
-    required int sessionType,
-  });
+  /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
+  Future<void> sendMessage({required MsgData msg});
 }

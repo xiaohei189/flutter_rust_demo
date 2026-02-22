@@ -11,6 +11,7 @@ import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
+import 'im/client/listeners.dart';
 import 'im/http_client/auth.dart';
 import 'im/model/conversation.dart';
 import 'im/model/message.dart';
@@ -26,6 +27,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_MsgDataPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData;
+
+  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_OfflinePushInfoPtr => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo;
 
@@ -35,6 +40,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  MsgData
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  );
 
   @protected
   OfflinePushInfo
@@ -55,6 +66,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  MsgData
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  );
+
+  @protected
   OfflinePushInfo
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     dynamic raw,
@@ -67,7 +84,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<AdvancedMsgEvent> dco_decode_StreamSink_advanced_msg_event_Sse(
+    dynamic raw,
+  );
+
+  @protected
+  RustStreamSink<ConnEvent> dco_decode_StreamSink_conn_event_Sse(dynamic raw);
+
+  @protected
+  RustStreamSink<ConversationEvent>
+  dco_decode_StreamSink_conversation_event_Sse(dynamic raw);
+
+  @protected
   String dco_decode_String(dynamic raw);
+
+  @protected
+  AdvancedMsgEvent dco_decode_advanced_msg_event(dynamic raw);
 
   @protected
   AtElem dco_decode_at_elem(dynamic raw);
@@ -104,6 +136,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
 
   @protected
+  MessageRevokedInfo dco_decode_box_autoadd_message_revoked_info(dynamic raw);
+
+  @protected
+  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
+
+  @protected
   PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
 
   @protected
@@ -116,10 +154,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
 
   @protected
+  TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw);
+
+  @protected
   VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
 
   @protected
   MsgStruct dco_decode_box_msg_struct(dynamic raw);
+
+  @protected
+  ConnEvent dco_decode_conn_event(dynamic raw);
+
+  @protected
+  ConversationEvent dco_decode_conversation_event(dynamic raw);
 
   @protected
   CustomElem dco_decode_custom_elem(dynamic raw);
@@ -160,6 +207,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<ReadReceiptItem> dco_decode_list_read_receipt_item(dynamic raw);
+
+  @protected
   LocalConversation dco_decode_local_conversation(dynamic raw);
 
   @protected
@@ -167,6 +217,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LoginData dco_decode_login_data(dynamic raw);
+
+  @protected
+  MessageRevokedInfo dco_decode_message_revoked_info(dynamic raw);
 
   @protected
   MsgStruct dco_decode_msg_struct(dynamic raw);
@@ -226,10 +279,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   QuoteElem dco_decode_quote_elem(dynamic raw);
 
   @protected
+  ReadReceiptItem dco_decode_read_receipt_item(dynamic raw);
+
+  @protected
   SoundElem dco_decode_sound_elem(dynamic raw);
 
   @protected
   TextElem dco_decode_text_elem(dynamic raw);
+
+  @protected
+  TypingStatus dco_decode_typing_status(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -245,6 +304,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
+  MsgData
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  );
 
   @protected
   OfflinePushInfo
@@ -265,6 +330,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  MsgData
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   OfflinePushInfo
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     SseDeserializer deserializer,
@@ -277,7 +348,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<AdvancedMsgEvent> sse_decode_StreamSink_advanced_msg_event_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RustStreamSink<ConnEvent> sse_decode_StreamSink_conn_event_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  RustStreamSink<ConversationEvent>
+  sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer);
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  AdvancedMsgEvent sse_decode_advanced_msg_event(SseDeserializer deserializer);
 
   @protected
   AtElem sse_decode_at_elem(SseDeserializer deserializer);
@@ -318,6 +406,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  MessageRevokedInfo sse_decode_box_autoadd_message_revoked_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
+
+  @protected
   PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
 
   @protected
@@ -330,10 +426,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
 
   @protected
+  TypingStatus sse_decode_box_autoadd_typing_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
 
   @protected
   MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer);
+
+  @protected
+  ConnEvent sse_decode_conn_event(SseDeserializer deserializer);
+
+  @protected
+  ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer);
 
   @protected
   CustomElem sse_decode_custom_elem(SseDeserializer deserializer);
@@ -380,6 +487,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<ReadReceiptItem> sse_decode_list_read_receipt_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
   @protected
@@ -387,6 +499,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LoginData sse_decode_login_data(SseDeserializer deserializer);
+
+  @protected
+  MessageRevokedInfo sse_decode_message_revoked_info(
+    SseDeserializer deserializer,
+  );
 
   @protected
   MsgStruct sse_decode_msg_struct(SseDeserializer deserializer);
@@ -458,10 +575,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   QuoteElem sse_decode_quote_elem(SseDeserializer deserializer);
 
   @protected
+  ReadReceiptItem sse_decode_read_receipt_item(SseDeserializer deserializer);
+
+  @protected
   SoundElem sse_decode_sound_elem(SseDeserializer deserializer);
 
   @protected
   TextElem sse_decode_text_elem(SseDeserializer deserializer);
+
+  @protected
+  TypingStatus sse_decode_typing_status(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -478,6 +601,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    MsgData self,
     SseSerializer serializer,
   );
 
@@ -504,6 +634,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    MsgData self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     OfflinePushInfo self,
     SseSerializer serializer,
@@ -517,7 +654,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_StreamSink_advanced_msg_event_Sse(
+    RustStreamSink<AdvancedMsgEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_conn_event_Sse(
+    RustStreamSink<ConnEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_conversation_event_Sse(
+    RustStreamSink<ConversationEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_advanced_msg_event(
+    AdvancedMsgEvent self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_at_elem(AtElem self, SseSerializer serializer);
@@ -566,6 +727,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_message_revoked_info(
+    MessageRevokedInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_msg_struct(
+    MsgStruct self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_picture_elem(
     PictureElem self,
     SseSerializer serializer,
@@ -590,6 +763,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_typing_status(
+    TypingStatus self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_video_elem(
     VideoElem self,
     SseSerializer serializer,
@@ -597,6 +776,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_conn_event(ConnEvent self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_conversation_event(
+    ConversationEvent self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_custom_elem(CustomElem self, SseSerializer serializer);
@@ -650,6 +838,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_read_receipt_item(
+    List<ReadReceiptItem> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_local_conversation(
     LocalConversation self,
     SseSerializer serializer,
@@ -660,6 +854,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_login_data(LoginData self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_message_revoked_info(
+    MessageRevokedInfo self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer);
@@ -753,10 +953,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer);
 
   @protected
+  void sse_encode_read_receipt_item(
+    ReadReceiptItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_sound_elem(SoundElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_text_elem(TextElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_typing_status(TypingStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
@@ -775,6 +984,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
 class RustLibWire implements BaseWire {
   RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+        ptr,
+      );
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+        ptr,
+      );
 
   void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
@@ -815,6 +1040,16 @@ external RustLibWasmModule get wasmModule;
 @JS()
 @anonymous
 extension type RustLibWasmModule._(JSObject _) implements JSObject {
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  );
+
   external void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     int ptr,

@@ -14,7 +14,8 @@ use crate::im::model::message::{MsgStruct, TypingStatus};
 // ============== ConnEvent（已有） ==============
 
 /// 连接状态事件
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ConnEvent {
     Connecting,
     ConnectSuccess,
@@ -29,17 +30,27 @@ pub type ConnEventTx = Arc<std::sync::RwLock<Option<mpsc::UnboundedSender<ConnEv
 // ============== ConversationEvent ==============
 
 /// 会话同步/变更事件，负载为结构体
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ConversationEvent {
     SyncServerStart { reinstalled: bool },
     SyncServerFinish { reinstalled: bool },
     SyncServerProgress { progress: i32 },
     SyncServerFailed { reinstalled: bool },
-    NewConversation { list: Vec<LocalConversation> },
-    ConversationChanged { list: Vec<LocalConversation> },
+    NewConversation {
+        #[serde(rename = "conversationList")]
+        list: Vec<LocalConversation>,
+    },
+    ConversationChanged {
+        #[serde(rename = "conversationList")]
+        list: Vec<LocalConversation>,
+    },
     /// 清空会话时下发的会话 ID 列表
     ConversationsCleared { conversation_ids: Vec<String> },
-    TotalUnreadMessageCountChanged { total_unread_count: i32 },
+    TotalUnreadMessageCountChanged {
+        #[serde(rename = "totalUnreadCount")]
+        total_unread_count: i32,
+    },
     ConversationUserInputStatusChanged(TypingStatus),
 }
 
@@ -75,7 +86,8 @@ pub struct MessageRevokedInfo {
 }
 
 /// 高级消息事件，负载为结构体
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum AdvancedMsgEvent {
     RecvNewMessage(MsgStruct),
     RecvC2CReadReceipt(Vec<ReadReceiptItem>),

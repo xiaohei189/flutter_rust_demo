@@ -502,6 +502,32 @@ class TextElem {
           content == other.content;
 }
 
+/// 输入提示（typing）状态信息
+class TypingStatus {
+  final String conversationId;
+  final String? sendId;
+  final String msgTip;
+
+  const TypingStatus({
+    required this.conversationId,
+    this.sendId,
+    required this.msgTip,
+  });
+
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^ sendId.hashCode ^ msgTip.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TypingStatus &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          sendId == other.sendId &&
+          msgTip == other.msgTip;
+}
+
 /// 视频元素
 class VideoElem {
   final String videoPath;

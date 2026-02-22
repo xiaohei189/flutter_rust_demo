@@ -73,6 +73,7 @@ use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIF
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
 use crate::im::model::friend::AllFriendsResp;
 use crate::im::model::group::server_group_to_local;
+use crate::im::{create_text_message, init_basic_info};
 use crate::im::model::message::{
     local_chat_log_to_msg_struct, msg_handle_by_content_type_result, msg_struct_to_local_chat_log, ClearConversationsMsgReq, ConversationArgs, FindMessageListCallback,
     GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, MarkConversationAsReadReq, MsgStruct, RevokeMsgReq, SearchByConversationResult,
@@ -152,6 +153,11 @@ impl IMClient {
             message_pull_forward_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
             message_pull_reverse_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
         })
+    }
+
+    /// 只读访问当前配置（供桥接层创建消息时获取 user_id、platform_id）
+    pub fn config(&self) -> &ClientConfig {
+        &self.config
     }
 
     /// 与 Go GetUserInfoWithCache 一致：先本地，缺或昵称/头像为空则拉服务端并落库后返回
@@ -941,23 +947,22 @@ impl IMClient {
     }
 
     /// 单聊发送文本消息；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`，与 Go SDK 一致。
+    /// 单聊发送文本消息：先创建消息体再发送（创建与发送分离，与 Go CreateTextMessage + SendMessage 一致）。
     pub async fn send_text_message(&self, recv_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
-        let mut msg_data = sdkws::MsgData::default();
+        let mut msg_data = create_text_message(&text);
+        init_basic_info(&mut msg_data, &self.config.user_id, self.config.platform_id);
         msg_data.recv_id = recv_id;
-        msg_data.content_type = constant::TEXT;
         msg_data.session_type = constant::SINGLE_CHAT_TYPE;
-        msg_data.content = serde_json::to_vec(&json!({ "content": text })).unwrap_or_default();
         self.send_message(msg_data).await
     }
 
-    /// 群聊发送文本消息；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`。
+    /// 群聊发送文本消息：先创建消息体再发送；TEXT 的 content 使用 TextElem 格式 `{"content":"..."}`。
     pub async fn send_text_to_group(&self, group_id: String, text: String) -> Result<openim_protocol::msg::SendMsgResp> {
         debug!("[send_text_to_group] group_id={}, text={}", group_id, text);
-        let mut msg_data = sdkws::MsgData::default();
+        let mut msg_data = create_text_message(&text);
+        init_basic_info(&mut msg_data, &self.config.user_id, self.config.platform_id);
         msg_data.group_id = group_id;
-        msg_data.content_type = constant::TEXT;
         msg_data.session_type = constant::READ_GROUP_CHAT_TYPE;
-        msg_data.content = serde_json::to_vec(&json!({ "content": text })).unwrap_or_default();
         self.send_message(msg_data).await
     }
 

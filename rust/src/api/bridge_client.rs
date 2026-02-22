@@ -5,18 +5,32 @@
 //!
 //! 热重启：Flutter 在 initialize 前调用 close_current_client_if_any() 关闭旧连接，
 //! 避免同 token 重复连接导致 TokenKickedError(1506)。
+//!
+//! 消息流程：先通过 create_* 创建消息（得到 MsgData），设置 recv_id/group_id/session_type 后，
+//! 再调用 send_message(msg) 发送已创建的消息。
+//!
+//! 状态/会话/消息订阅：conn_stream、conversation_stream、advanced_msg_stream 需在 connect 前调用；
+//! 修改本文件后请执行 `dart run flutter_rust_bridge_codegen generate` 以生成 ConnEvent 等类型的 SseEncode。
 
 use crate::im::client::client::{ClientConfig, IMClient};
+use crate::im::client::listeners::{AdvancedMsgEvent, ConnEvent, ConversationEvent};
 use crate::im::http_client::auth::LoginData;
-use std::sync::Mutex;
 use crate::im::model::conversation::LocalConversation;
 use crate::im::model::message::{
     GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams,
 };
+use crate::im::{
+    create_custom_message, create_image_message_simple, create_location_message, create_text_message,
+    create_file_message, create_sound_message, create_video_message, init_basic_info,
+};
 use anyhow::Result;
-use openim_protocol::constant;
+use crate::frb_generated::StreamSink;
+use openim_protocol::sdkws::MsgData;
 use std::sync::Arc;
+use std::sync::Mutex;
 use tokio::sync::RwLock;
+use tokio_stream::StreamExt;
+use tracing;
 
 /// 热重启时由 Flutter 在创建新 client 前调用，关闭上一次的 client，避免 token 重复使用
 static CURRENT_CLIENT_INNER: Mutex<Option<Arc<RwLock<IMClient>>>> = Mutex::new(None);
@@ -90,9 +104,49 @@ impl OpenIMBridgeClient {
         Ok(())
     }
 
-    // 会话 Stream：codegen 后取消注释
-    // #[flutter_rust_bridge::frb]
-    // pub fn set_conversation_stream(&self, sink: StreamSink<ConversationEvent>) -> Result<()> { ... }
+    /// 连接状态事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConnEvent> 并 listen。
+    #[flutter_rust_bridge::frb]
+    pub async fn conn_stream(&self, sink: StreamSink<ConnEvent>) -> Result<()> {
+        let stream = self.inner.write().await.subscribe_conn_events();
+        tokio::spawn(async move {
+            let mut stream = stream;
+            while let Some(ev) = stream.next().await {
+                let _ = sink.add(ev);
+            }
+        });
+        Ok(())
+    }
+
+    /// 会话变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConversationEvent> 并 listen。
+    #[flutter_rust_bridge::frb]
+    pub async fn conversation_stream(&self, sink: StreamSink<ConversationEvent>) -> Result<()> {
+        let stream = self.inner.write().await.subscribe_conversation_events();
+        tokio::spawn(async move {
+            let mut stream = stream;
+            while let Some(ev) = stream.next().await {
+                let _ = sink.add(ev);
+            }
+        });
+        Ok(())
+    }
+
+    /// 消息变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<AdvancedMsgEvent> 并 listen。
+    #[flutter_rust_bridge::frb]
+    pub async fn advanced_msg_stream(&self, sink: StreamSink<AdvancedMsgEvent>) -> Result<()> {
+        let stream = self.inner.write().await.subscribe_advanced_msg_events();
+        tracing::info!("[bridge] advanced_msg_stream: 已注册 rx，spawn 转发任务");
+        tokio::spawn(async move {
+            let mut stream = stream;
+            while let Some(ev) = stream.next().await {
+                tracing::debug!("[bridge] advanced_msg 收到事件，准备 sink.add: {:?}", std::mem::discriminant(&ev));
+                if let Err(e) = sink.add(ev) {
+                    tracing::error!("[bridge] advanced_msg_stream sink.add 失败: {:?}", e);
+                }
+            }
+            tracing::warn!("[bridge] advanced_msg_stream 循环退出（rx 已关闭）");
+        });
+        Ok(())
+    }
 
     /// 连接到服务器
     ///
@@ -134,23 +188,135 @@ impl OpenIMBridgeClient {
             .await
     }
 
-    /// 发送文本消息
-    /// - `recv_id`: 接收者 ID（单聊为用户 ID，群聊为群组 ID）
-    /// - `text`: 消息内容
-    /// - `session_type`: 会话类型，1=单聊，3=群聊
+    // ---------- 创建消息（仅组包，不发送；发送前需设置 recv_id/group_id、session_type 后调用 send_message） ----------
+
+    /// 创建文本消息（已填入 recv_id/group_id/session_type），返回 MsgData 可直接送 send_message 发送。
     #[flutter_rust_bridge::frb]
-    pub async fn send_text_message(
+    pub async fn create_text_message(
         &self,
-        recv_id: String,
         text: String,
+        recv_id: String,
+        group_id: String,
         session_type: i32,
-    ) -> Result<()> {
+    ) -> Result<MsgData> {
+        let mut msg = create_text_message(&text);
         let client = self.inner.read().await;
-        if session_type == constant::READ_GROUP_CHAT_TYPE {
-            client.send_text_to_group(recv_id, text).await?;
-        } else {
-            client.send_text_message(recv_id, text).await?;
-        }
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        msg.recv_id = recv_id;
+        msg.group_id = group_id;
+        msg.session_type = session_type;
+        Ok(msg)
+    }
+
+    /// 创建自定义消息。
+    #[flutter_rust_bridge::frb]
+    pub async fn create_custom_message(
+        &self,
+        data: String,
+        extension: String,
+        description: String,
+    ) -> Result<MsgData> {
+        let mut msg = create_custom_message(&data, &extension, &description);
+        let client = self.inner.read().await;
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        Ok(msg)
+    }
+
+    /// 创建图片消息（简化：仅 URL + 宽高）。
+    #[flutter_rust_bridge::frb]
+    pub async fn create_image_message(&self, url: String, width: i32, height: i32) -> Result<MsgData> {
+        let mut msg = create_image_message_simple(&url, width, height);
+        let client = self.inner.read().await;
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        Ok(msg)
+    }
+
+    /// 创建视频消息。
+    #[flutter_rust_bridge::frb]
+    pub async fn create_video_message(
+        &self,
+        video_path: String,
+        video_uuid: String,
+        video_url: String,
+        video_type: String,
+        video_size: i64,
+        duration: i64,
+        snapshot_path: String,
+        snapshot_uuid: String,
+        snapshot_size: i64,
+        snapshot_url: String,
+        snapshot_width: i32,
+        snapshot_height: i32,
+    ) -> Result<MsgData> {
+        let mut msg = create_video_message(
+            &video_path,
+            &video_uuid,
+            &video_url,
+            &video_type,
+            video_size,
+            duration,
+            &snapshot_path,
+            &snapshot_uuid,
+            snapshot_size,
+            &snapshot_url,
+            snapshot_width,
+            snapshot_height,
+        );
+        let client = self.inner.read().await;
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        Ok(msg)
+    }
+
+    /// 创建语音消息。
+    #[flutter_rust_bridge::frb]
+    pub async fn create_sound_message(
+        &self,
+        uuid: String,
+        sound_path: String,
+        source_url: String,
+        data_size: i64,
+        duration: i64,
+    ) -> Result<MsgData> {
+        let mut msg = create_sound_message(&uuid, &sound_path, &source_url, data_size, duration);
+        let client = self.inner.read().await;
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        Ok(msg)
+    }
+
+    /// 创建文件消息。
+    #[flutter_rust_bridge::frb]
+    pub async fn create_file_message(
+        &self,
+        file_path: String,
+        uuid: String,
+        source_url: String,
+        file_name: String,
+        file_size: i64,
+    ) -> Result<MsgData> {
+        let mut msg = create_file_message(&file_path, &uuid, &source_url, &file_name, file_size);
+        let client = self.inner.read().await;
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        Ok(msg)
+    }
+
+    /// 创建位置消息。
+    #[flutter_rust_bridge::frb]
+    pub async fn create_location_message(
+        &self,
+        description: String,
+        longitude: f64,
+        latitude: f64,
+    ) -> Result<MsgData> {
+        let mut msg = create_location_message(&description, longitude, latitude);
+        let client = self.inner.read().await;
+        init_basic_info(&mut msg, &client.config().user_id, client.config().platform_id);
+        Ok(msg)
+    }
+
+    /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
+    #[flutter_rust_bridge::frb]
+    pub async fn send_message(&self, msg: MsgData) -> Result<()> {
+        self.inner.read().await.send_message(msg).await?;
         Ok(())
     }
 }

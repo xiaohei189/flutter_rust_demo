@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/message.dart';
+import '../models/message.dart' show Message, MessageSendStatus;
 import '../models/user.dart';
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
@@ -68,9 +68,21 @@ class MessageBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  timeFormat.format(message.timestamp),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: isFromMe
+                      ? MainAxisAlignment.end
+                      : MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      timeFormat.format(message.timestamp),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    if (isFromMe && message.sendStatus != null) ...[
+                      const SizedBox(width: 6),
+                      _buildSendStatusIcon(message.sendStatus!),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -84,5 +96,23 @@ class MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildSendStatusIcon(MessageSendStatus status) {
+    switch (status) {
+      case MessageSendStatus.sending:
+        return SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white70,
+          ),
+        );
+      case MessageSendStatus.sent:
+        return Icon(Icons.done_all, size: 14, color: Colors.white70);
+      case MessageSendStatus.failed:
+        return Icon(Icons.error_outline, size: 14, color: Colors.red[200]);
+    }
   }
 }
