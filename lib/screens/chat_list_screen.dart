@@ -39,7 +39,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('聊天'),
+        title: const Text('会话'),
         actions: [
           // 显示同步状态
           if (messageService.isSyncingConversations)

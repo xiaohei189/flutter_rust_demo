@@ -11,7 +11,7 @@ class ContactsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('联系人'),
+        title: const Text('通讯录'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add),

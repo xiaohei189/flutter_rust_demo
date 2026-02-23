@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'chat_list_screen.dart';
 import 'contacts_screen.dart';
+import 'discover_screen.dart';
 import 'profile_screen.dart';
 
-/// 主页面 - 包含底部导航栏
+/// 主页面 - 底部导航与 openim-flutter-demo 对齐：会话、通讯录、发现、我的
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -14,10 +16,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const ChatListScreen(),
-    const ContactsScreen(),
-    const ProfileScreen(),
+  static const _tabs = [
+    (widget: ChatListScreen(), label: '会话', icon: Icons.chat_bubble_outline, activeIcon: Icons.chat_bubble),
+    (widget: ContactsScreen(), label: '通讯录', icon: Icons.people_outline, activeIcon: Icons.people),
+    (widget: DiscoverScreen(), label: '发现', icon: Icons.explore_outlined, activeIcon: Icons.explore),
+    (widget: ProfileScreen(), label: '我的', icon: Icons.person_outline, activeIcon: Icons.person),
   ];
 
   @override
@@ -25,31 +28,19 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: _tabs.map((e) => e.widget).toList(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            activeIcon: Icon(Icons.chat_bubble),
-            label: '聊天',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: '联系人',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: '我的',
-          ),
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        items: [
+          for (var i = 0; i < _tabs.length; i++)
+            BottomNavigationBarItem(
+              icon: Icon(_tabs[i].icon),
+              activeIcon: Icon(_tabs[i].activeIcon),
+              label: _tabs[i].label,
+            ),
         ],
       ),
     );
