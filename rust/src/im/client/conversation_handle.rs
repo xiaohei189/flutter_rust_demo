@@ -3,7 +3,7 @@
 //! 合并原 conversation/service 的会话同步逻辑，通过命令通道接收消息同步器下发的会话命令。
 
 use crate::im::client::listeners::{
-    AdvancedMsgEvent, ConversationEvent, FriendEvent, GroupEvent, Listeners, MessageRevokedInfo, ReadReceiptItem, UserEvent,
+    AdvancedMsgEvent, ConversationEvent, FriendEvent, GroupEvent, GroupReadReceiptItem, Listeners, MessageRevokedInfo, ReadReceiptItem, UserEvent,
 };
 use crate::im::dao::black::LocalBlack;
 use crate::im::dao::repository::Repository;
@@ -332,6 +332,10 @@ impl ConversationHandle {
             send_id: Some(msg.send_id.clone()),
             msg_tip,
         };
+        info!(
+            "[callback] ConversationEvent::ConversationUserInputStatusChanged conversation_id={} send_id={:?} msg_tip={}",
+            conversation_id, typing.send_id, typing.msg_tip
+        );
         if let Some(ref cb) = self.callbacks {
             cb.try_emit_conversation_event(ConversationEvent::ConversationUserInputStatusChanged(typing));
         }
@@ -1240,9 +1244,11 @@ impl ConversationHandle {
         (cc, nc)
     }
 
-    /// 通知消息处理（Go doNotificationManager）：按 ContentType 分发，与 doNotification 一致
+    /// 通知消息处理（Go doNotificationManager）：按 ContentType 分发，与 doNotification 一致；含已读回执、撤回等
     #[instrument(skip(self, msgs), name = "conv.do_notification_manager", fields(convs = msgs.len()))]
     pub async fn do_notification_manager(&self, msgs: HashMap<String, sdkws::PullMsgs>) -> Result<()> {
+        let total: usize = msgs.values().map(|p| p.msgs.len()).sum();
+        info!("[conversation_handle] do_notification_manager 处理通知 convs={} 条数={}", msgs.len(), total);
         for (conversation_id, pull) in msgs {
             for msg in &pull.msgs {
                 if let Err(e) = self.do_notification(&conversation_id, msg).await {
@@ -1263,6 +1269,10 @@ impl ConversationHandle {
     /// 单条通知按类型分发（对齐 Go doNotification）
     async fn do_notification(&self, conversation_id: &str, msg: &sdkws::MsgData) -> Result<()> {
         match msg.content_type {
+            constant::TYPING => {
+                self.trigger_typing_callbacks(conversation_id, msg);
+                Ok(())
+            }
             constant::MSG_REVOKE_NOTIFICATION => self.do_revoke_msg(conversation_id, msg).await,
             constant::HAS_READ_RECEIPT => self.do_read_drawing(conversation_id, msg).await,
             constant::CONVERSATION_CHANGE_NOTIFICATION | constant::CONVERSATION_PRIVATE_CHAT_NOTIFICATION => {
@@ -1361,31 +1371,135 @@ impl ConversationHandle {
         Ok(())
     }
 
-    /// 已读回执（Go doReadDrawing）：更新本地已读并触发 OnRecvC2CReadReceipt
+    /// 已读回执（Go doReadDrawing）：仅单聊更新本地已读并触发 OnRecvC2CReadReceipt；群聊不触发任何回执；自己发的已读走 do_unread_count（与 Go 完全一致）
     async fn do_read_drawing(&self, conversation_id: &str, msg: &sdkws::MsgData) -> Result<()> {
         let tips: ReadReceiptTips = serde_json::from_slice(&msg.content).map_err(|e| anyhow::anyhow!("parse MarkAsReadTips: {}", e))?;
+        let conv = match self.repository.conversation.get_conversation_by_id(conversation_id).await {
+            Ok(Some(c)) => c,
+            Ok(None) => {
+                warn!("[conversation_handle] do_read_drawing 会话不存在 conversation_id={}", conversation_id);
+                return Ok(());
+            }
+            Err(e) => {
+                warn!("[conversation_handle] do_read_drawing GetConversation err conversation_id={} err={}", conversation_id, e);
+                return Ok(());
+            }
+        };
         if tips.mark_as_read_user_id == self.config.user_id {
-            return Ok(());
+            return self.do_unread_count(conversation_id, &conv, tips.has_read_seq, &tips.seqs, msg.send_time).await;
         }
         if tips.seqs.is_empty() {
             return Ok(());
         }
-        let messages = self.repository.message.get_messages_by_seq(conversation_id, &tips.seqs).await?;
-        let mut success_msg_ids = Vec::new();
-        for mut m in messages {
-            m.is_read = true;
-            if self.repository.message.update_message(conversation_id, &m).await.is_ok() {
-                success_msg_ids.push(m.client_msg_id);
+        if conv.conversation_type == constant::SINGLE_CHAT_TYPE {
+            let messages = self.repository.message.get_messages_by_seq(conversation_id, &tips.seqs).await?;
+            let mut success_msg_ids = Vec::new();
+            for mut m in messages {
+                m.is_read = true;
+                if self.repository.message.update_message(conversation_id, &m).await.is_ok() {
+                    success_msg_ids.push(m.client_msg_id);
+                }
+            }
+            let receipt = ReadReceiptItem {
+                user_id: tips.mark_as_read_user_id.clone(),
+                msg_id_list: success_msg_ids,
+                session_type: msg.session_type,
+                read_time: msg.send_time,
+            };
+            info!(
+                "[callback] AdvancedMsgEvent::RecvC2CReadReceipt conversation_id={} user_id={} msg_count={}",
+                conversation_id, receipt.user_id, receipt.msg_id_list.len()
+            );
+            if let Some(ref cb) = self.callbacks {
+                cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvC2CReadReceipt(vec![receipt]));
             }
         }
-        let receipt = ReadReceiptItem {
-            user_id: tips.mark_as_read_user_id.clone(),
-            msg_id_list: success_msg_ids,
-            session_type: msg.session_type,
-            read_time: msg.send_time,
-        };
-        if let Some(ref cb) = self.callbacks {
-            cb.try_emit_advanced_msg_event(AdvancedMsgEvent::RecvC2CReadReceipt(vec![receipt]));
+        Ok(())
+    }
+
+    /// 自己发的已读回执（Go doUnreadCount）：单聊按 seq 标已读并更新 unread_count；群聊将 unread_count 置 0；最后触发会话变更与总未读变更
+    async fn do_unread_count(
+        &self,
+        conversation_id: &str,
+        conv: &LocalConversation,
+        has_read_seq: i64,
+        seqs: &[i64],
+        _send_time: i64,
+    ) -> Result<()> {
+        if conv.conversation_type == constant::SINGLE_CHAT_TYPE {
+            if !seqs.is_empty() {
+                let has_read_msg = self
+                    .repository
+                    .message
+                    .get_messages_by_seq(conversation_id, &[has_read_seq])
+                    .await
+                    .ok()
+                    .and_then(|v| v.into_iter().next());
+                if let Some(ref m) = has_read_msg {
+                    if m.is_read {
+                        return Ok(());
+                    }
+                }
+                let messages = self.repository.message.get_messages_by_seq(conversation_id, seqs).await.unwrap_or_default();
+                for mut m in messages {
+                    m.is_read = true;
+                    let _ = self.repository.message.update_message(conversation_id, &m).await;
+                }
+            }
+            let current_max_seq = conv.max_seq;
+            if current_max_seq == 0 {
+                return Ok(());
+            }
+            let unread_count = (current_max_seq - has_read_seq).max(0) as i32;
+            let mut updated = conv.clone();
+            updated.unread_count = unread_count;
+            if let Err(e) = self.repository.conversation.batch_update_conversation_list(&[updated.clone()]).await {
+                warn!("[conversation_handle] do_unread_count batch_update_conversation_list err: {}", e);
+                return Ok(());
+            }
+            if !seqs.is_empty() {
+                if let Ok(latest_value) = serde_json::from_str::<serde_json::Value>(&conv.latest_msg) {
+                    let latest_seq = latest_value.get("seq").and_then(|v| v.as_i64());
+                    let is_read = latest_value.get("isRead").and_then(|v| v.as_bool()).unwrap_or(false);
+                    if let Some(seq) = latest_seq {
+                        if !is_read && seqs.contains(&seq) {
+                            let mut obj = latest_value.clone();
+                            if let Some(o) = obj.as_object_mut() {
+                                o.insert("isRead".to_string(), serde_json::Value::Bool(true));
+                            }
+                            let new_latest = serde_json::to_string(&obj).unwrap_or_else(|_| conv.latest_msg.clone());
+                            let _ = self.repository.conversation.update_conversation_latest_msg(conversation_id, &new_latest, conv.latest_msg_send_time).await;
+                        }
+                    }
+                }
+            }
+        } else {
+            let mut updated = conv.clone();
+            updated.unread_count = 0;
+            if let Err(e) = self.repository.conversation.batch_update_conversation_list(&[updated.clone()]).await {
+                warn!("[conversation_handle] do_unread_count batch_update_conversation_list err: {}", e);
+                return Ok(());
+            }
+        }
+        let list = self
+            .repository
+            .conversation
+            .get_conversation_by_id(conversation_id)
+            .await
+            .ok()
+            .flatten()
+            .map(|c| vec![c])
+            .unwrap_or_default();
+        if !list.is_empty() {
+            if let Some(ref cb) = self.callbacks {
+                info!("[callback] ConversationEvent::ConversationChanged trigger=do_unread_count");
+                cb.try_emit_conversation_event(ConversationEvent::ConversationChanged { list });
+            }
+        }
+        if let Ok(total) = self.get_total_unread_count().await {
+            if let Some(ref cb) = self.callbacks {
+                cb.try_emit_conversation_event(ConversationEvent::TotalUnreadMessageCountChanged { total_unread_count: total });
+            }
         }
         Ok(())
     }
@@ -1798,6 +1912,14 @@ impl ConversationHandle {
             };
             // 使用传递位置创建的 span，enter 覆盖整次处理，单次 loop 结束即关闭 span
             let _guard = envelope.span.enter();
+            if let ConvCmdKind::NewMsgCome(ref c2v) = envelope.kind {
+                let n: usize = c2v.msgs.values().map(|p| p.msgs.len()).sum();
+                info!("[conversation_handle] 收到新消息推送 convs={} 条数={} 开始处理", c2v.msgs.len(), n);
+            }
+            if let ConvCmdKind::Notification { ref msgs } = envelope.kind {
+                let n: usize = msgs.values().map(|p| p.msgs.len()).sum();
+                info!("[conversation_handle] 收到通知推送(已读/撤回等) convs={} 条数={} 开始处理", msgs.len(), n);
+            }
             let result = match envelope.kind {
                 ConvCmdKind::NewMsgCome(c2v) => self.do_msg_new(c2v).await,
                 ConvCmdKind::Notification { msgs } => self.do_notification_manager(msgs).await,

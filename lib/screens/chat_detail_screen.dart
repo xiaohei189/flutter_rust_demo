@@ -183,15 +183,32 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
 
     try {
-      // 按会话类型确定接收者 ID：1=单聊用 userId，2/3=群聊从 conversationId 去前缀得群 ID
+      // 按会话类型确定接收者 ID：1=单聊用 userId，若为空则从 conversationId（si_id1_id2）解析对方 ID；2/3=群聊从 conversationId 去前缀得群 ID
       final type = widget.conversation.conversationType;
       final cid = widget.conversation.conversationId;
-      final recvId = switch (type) {
-        1 => widget.conversation.userId,
-        2 => cid.startsWith('g_') ? cid.substring(2) : widget.conversation.groupId,
-        3 => cid.startsWith('sg_') ? cid.substring(3) : widget.conversation.groupId,
-        _ => '',
-      };
+      String recvId;
+      switch (type) {
+        case 1:
+          recvId = widget.conversation.userId;
+          if (recvId.isEmpty && cid.startsWith('si_')) {
+            final parts = cid.split('_');
+            if (parts.length >= 3) {
+              final id1 = parts[1];
+              final id2 = parts[2];
+              final my = messageService.currentUserId;
+              recvId = id1 == my ? id2 : id1;
+            }
+          }
+          break;
+        case 2:
+          recvId = cid.startsWith('g_') ? cid.substring(2) : widget.conversation.groupId;
+          break;
+        case 3:
+          recvId = cid.startsWith('sg_') ? cid.substring(3) : widget.conversation.groupId;
+          break;
+        default:
+          recvId = '';
+      }
       final sessionType = type;
 
       if (recvId.isEmpty) {

@@ -1273,6 +1273,7 @@ impl IMClient {
     /// **参数**
     /// - `msg_data`: 由调用方填充（client_msg_id、create_time、send_id、sender_*、recv_id/group_id、session_type 等）；内部仅在非仅在线时做发前落库、发后更新。
     /// - `is_online_only`: 为 `true` 时仅在线投递：不落库、不写发送中表、不更新会话，且通过 options 通知服务端不存历史、不持久化、不更新会话与未读等；为 `false` 时与 Go 一致：发前落库+发送中表+会话更新，发后根据响应更新状态并触发事件。
+    #[tracing::instrument(skip(self, msg_data), fields(recv_id = ?msg_data.recv_id, client_msg_id = ?msg_data.client_msg_id, is_online_only = is_online_only))]
     pub async fn send_message(&self, msg_data: sdkws::MsgData, is_online_only: bool) -> Result<openim_protocol::msg::SendMsgResp> {
         self.send_message_with_req_type(msg_data, is_online_only, msg_type::WS_SEND_MSG).await
     }

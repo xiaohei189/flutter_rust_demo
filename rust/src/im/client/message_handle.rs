@@ -156,7 +156,7 @@ impl MessageHandle {
                 MsgSyncCommandKind::Connected => self.do_connected().await,
                 MsgSyncCommandKind::Wakeup => self.do_wakeup_data_sync().await,
                 MsgSyncCommandKind::ManualSync(conversation_ids) => self.do_im_message_sync(conversation_ids).await,
-                MsgSyncCommandKind::Push { push } => self.do_push_msg(None, &push).await,
+                MsgSyncCommandKind::Push { push } => self.do_push_msg(&push).await,
             };
             if let Err(e) = result {
                 warn!("[message_handle] 处理命令失败: {e}");
@@ -241,17 +241,21 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 处理推送消息（对齐 go 的 doPushMsg）；msg_id 为 None 时表示不串联单条 Push 链路
+    /// 处理推送消息（对齐 go 的 doPushMsg）
     #[tracing::instrument(skip(self, push), name = "push_msg")]
-    async fn do_push_msg(&mut self, msg_id: Option<&str>, push: &sdkws::PushMessages) -> Result<()> {
-        self.push_trigger_and_sync(msg_id, &push.msgs, false).await?;
-        self.push_trigger_and_sync(msg_id, &push.notification_msgs, true).await?;
+    async fn do_push_msg(&mut self, push: &sdkws::PushMessages) -> Result<()> {
+        let msg_convs = push.msgs.len();
+        let msg_total: usize = push.msgs.values().map(|p| p.msgs.len()).sum();
+        let notif_convs = push.notification_msgs.len();
+        let notif_total: usize = push.notification_msgs.values().map(|p| p.msgs.len()).sum();
+        self.push_trigger_and_sync(&push.msgs, false).await?;
+        self.push_trigger_and_sync(&push.notification_msgs, true).await?;
         Ok(())
     }
 
-    /// 核心触发与判定逻辑（对齐 Go pushTriggerAndSync）；msg_id 为 None 时表示非单条 Push 链路（如 sync 补拉）
+    /// 核心触发与判定逻辑（对齐 Go pushTriggerAndSync）
     #[tracing::instrument(skip(self, push_messages), name = "push_trigger_and_sync", fields(is_notification = is_notification, convs = push_messages.len()))]
-    async fn push_trigger_and_sync(&mut self, msg_id: Option<&str>, push_messages: &HashMap<String, sdkws::PullMsgs>, is_notification: bool) -> Result<()> {
+    async fn push_trigger_and_sync(&mut self, push_messages: &HashMap<String, sdkws::PullMsgs>, is_notification: bool) -> Result<()> {
         if push_messages.is_empty() {
             return Ok(());
         }
@@ -264,11 +268,13 @@ impl MessageHandle {
             let mut last_seq: i64 = 0;
             let mut storage_msgs: Vec<sdkws::MsgData> = Vec::new();
             for msg in &pull.msgs {
+
+                info!("[message_handle] 处理推送消息: conversation_id={} seq={} content_type={}", conversation_id, msg.seq,util::content_type_name(msg.content_type));
                 if msg.seq == 0 {
                     if is_notification {
-                        self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
+                        self.trigger_notification(&self.create_pull_msgs(conversation_id, &[msg.clone()])).await?;
                     } else {
-                        self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &[msg.clone()]), true).await?;
+                        self.trigger_conversation(&self.create_pull_msgs(conversation_id, &[msg.clone()]), true).await?;
                     }
                     continue;
                 }
@@ -281,9 +287,9 @@ impl MessageHandle {
 
             if last_seq != 0 && last_seq == synced_seq + storage_msgs.len() as i64 && !storage_msgs.is_empty() {
                 if is_notification {
-                    self.trigger_notification(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
+                    self.trigger_notification(&self.create_pull_msgs(conversation_id, &storage_msgs)).await?;
                 } else {
-                    self.trigger_conversation(msg_id, &self.create_pull_msgs(conversation_id, &storage_msgs), true).await?;
+                    self.trigger_conversation(&self.create_pull_msgs(conversation_id, &storage_msgs), true).await?;
                 }
                 self.synced_max_seqs.insert(conversation_id.clone(), last_seq);
             } else if last_seq > synced_seq && last_seq != 0 {
@@ -332,8 +338,8 @@ impl MessageHandle {
             // 达到分批推拉的数量后拉取一批
             if msg_num >= SPLIT_PULL_MSG_NUM {
                 let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-                self.trigger_conversation(None, &resp.msgs, false).await?;
-                self.trigger_notification(None, &resp.notification_msgs).await?;
+                self.trigger_conversation(&resp.msgs, false).await?;
+                self.trigger_notification(&resp.notification_msgs).await?;
                 // 同步最大seqs
                 for (conversation_id, seqs) in &temp_seq_map {
                     self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
@@ -347,8 +353,8 @@ impl MessageHandle {
         // 拉最后一批剩余的map
         if !temp_seq_map.is_empty() {
             let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-            self.trigger_conversation(None, &resp.msgs, false).await?;
-            self.trigger_notification(None, &resp.notification_msgs).await?;
+            self.trigger_conversation(&resp.msgs, false).await?;
+            self.trigger_notification(&resp.notification_msgs).await?;
             for (conversation_id, seqs) in &temp_seq_map {
                 self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
             }
@@ -381,8 +387,8 @@ impl MessageHandle {
 
             if msg_num >= SPLIT_PULL_MSG_NUM {
                 let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-                self.trigger_reinstall_conversation(None, &resp.msgs, total).await?;
-                self.trigger_notification(None, &resp.notification_msgs).await?;
+                self.trigger_reinstall_conversation(&resp.msgs, total).await?;
+                self.trigger_notification(&resp.notification_msgs).await?;
                 for (conversation_id, seqs) in &temp_seq_map {
                     self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
                 }
@@ -393,8 +399,8 @@ impl MessageHandle {
 
         if !temp_seq_map.is_empty() {
             let resp = self.pull_msg_by_seq_range(&temp_seq_map, sync_msg_num).await?;
-            self.trigger_reinstall_conversation(None, &resp.msgs, total).await?;
-            self.trigger_notification(None, &resp.notification_msgs).await?;
+            self.trigger_reinstall_conversation(&resp.msgs, total).await?;
+            self.trigger_notification(&resp.notification_msgs).await?;
             for (conversation_id, seqs) in &temp_seq_map {
                 self.synced_max_seqs.insert(conversation_id.clone(), seqs.1);
             }
@@ -402,21 +408,23 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 触发有新消息的会话事件（msg_id 用于 tracing 串联；from_push true=在线推送，false=离线/同步）
-    #[tracing::instrument(skip(self, msgs), fields(msg_id = ?msg_id, convs = msgs.len()))]
-    async fn trigger_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, _from_push: bool) -> Result<()> {
+    /// 触发有新消息的会话事件（from_push true=在线推送，false=离线/同步）
+    #[tracing::instrument(skip(self, msgs), fields(convs = msgs.len()))]
+    async fn trigger_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, _from_push: bool) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_conversation empty");
             return Ok(());
         }
+        let total: usize = msgs.values().map(|p| p.msgs.len()).sum();
+        info!("[message_handle] 触发新消息到会话层 convs={} 条数={} (其他端输入/同步)", msgs.len(), total);
         let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::NewMsgCome(CmdNewMsgComeToConversation { msgs: msgs.clone() })));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Conversation(msgs.clone()));
         Ok(())
     }
 
     /// 安装（例如重装）时同步会话消息
-    #[tracing::instrument(skip(self, msgs), name = "trigger_reinstall_conversation", fields(msg_id = ?msg_id, convs = msgs.len(), total = total))]
-    async fn trigger_reinstall_conversation(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
+    #[tracing::instrument(skip(self, msgs), name = "trigger_reinstall_conversation", fields(convs = msgs.len(), total = total))]
+    async fn trigger_reinstall_conversation(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>, total: i32) -> Result<()> {
         if msgs.is_empty() {
             debug!("[message_handle] trigger_reinstall_conversation empty");
             return Ok(());
@@ -427,14 +435,15 @@ impl MessageHandle {
         Ok(())
     }
 
-    /// 触发通知消息事件（msg_id 用于 tracing 串联）
-    #[tracing::instrument(skip(self, msgs), name = "trigger_notification", fields(msg_id = ?msg_id, convs = msgs.len()))]
-    async fn trigger_notification(&self, msg_id: Option<&str>, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
+    /// 触发通知消息事件；含已读回执、撤回等
+    #[tracing::instrument(skip(self, msgs), name = "trigger_notification", fields(convs = msgs.len()))]
+    async fn trigger_notification(&self, msgs: &std::collections::HashMap<String, sdkws::PullMsgs>) -> Result<()> {
         if msgs.is_empty() {
             event!(Level::TRACE, "[message_handle] trigger_notification empty");
             return Ok(());
         }
-        event!(Level::TRACE, "[ConvSync] 发送 Notification 会话数={}", msgs.len());
+        let total: usize = msgs.values().map(|p| p.msgs.len()).sum();
+        info!("[message_handle] 触发通知到会话层 convs={} 条数={} (已读/撤回等)", msgs.len(), total);
         let _ = self.conv_cmd_tx.send(ConvCmd::with_span(ConvCmdKind::Notification { msgs: msgs.clone() }));
         let _ = self.event_tx.send(MsgSyncTriggerEvent::Notification(msgs.clone()));
         Ok(())

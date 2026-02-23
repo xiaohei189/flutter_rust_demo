@@ -1327,18 +1327,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           dco_decode_list_read_receipt_item(raw[1]),
         );
       case 2:
+        return AdvancedMsgEvent_RecvGroupReadReceipt(
+          dco_decode_list_group_read_receipt_item(raw[1]),
+        );
+      case 3:
         return AdvancedMsgEvent_NewRecvMessageRevoked(
           dco_decode_box_autoadd_message_revoked_info(raw[1]),
         );
-      case 3:
+      case 4:
         return AdvancedMsgEvent_RecvOfflineNewMessage(
           dco_decode_box_autoadd_msg_struct(raw[1]),
         );
-      case 4:
+      case 5:
         return AdvancedMsgEvent_MsgDeleted(
           dco_decode_box_autoadd_msg_struct(raw[1]),
         );
-      case 5:
+      case 6:
         return AdvancedMsgEvent_RecvOnlineOnlyMessage(
           dco_decode_box_autoadd_msg_struct(raw[1]),
         );
@@ -1616,6 +1620,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupReadReceiptItem dco_decode_group_read_receipt_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return GroupReadReceiptItem(
+      groupId: dco_decode_String(arr[0]),
+      userId: dco_decode_String(arr[1]),
+      msgIdList: dco_decode_list_String(arr[2]),
+      readTime: dco_decode_i_64(arr[3]),
+      sessionType: dco_decode_i_32(arr[4]),
+    );
+  }
+
+  @protected
   int dco_decode_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -1637,6 +1656,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<AtInfo> dco_decode_list_at_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_at_info).toList();
+  }
+
+  @protected
+  List<GroupReadReceiptItem> dco_decode_list_group_read_receipt_item(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_group_read_receipt_item)
+        .toList();
   }
 
   @protected
@@ -2144,17 +2173,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_field0 = sse_decode_list_read_receipt_item(deserializer);
         return AdvancedMsgEvent_RecvC2CReadReceipt(var_field0);
       case 2:
+        var var_field0 = sse_decode_list_group_read_receipt_item(deserializer);
+        return AdvancedMsgEvent_RecvGroupReadReceipt(var_field0);
+      case 3:
         var var_field0 = sse_decode_box_autoadd_message_revoked_info(
           deserializer,
         );
         return AdvancedMsgEvent_NewRecvMessageRevoked(var_field0);
-      case 3:
-        var var_field0 = sse_decode_box_autoadd_msg_struct(deserializer);
-        return AdvancedMsgEvent_RecvOfflineNewMessage(var_field0);
       case 4:
         var var_field0 = sse_decode_box_autoadd_msg_struct(deserializer);
-        return AdvancedMsgEvent_MsgDeleted(var_field0);
+        return AdvancedMsgEvent_RecvOfflineNewMessage(var_field0);
       case 5:
+        var var_field0 = sse_decode_box_autoadd_msg_struct(deserializer);
+        return AdvancedMsgEvent_MsgDeleted(var_field0);
+      case 6:
         var var_field0 = sse_decode_box_autoadd_msg_struct(deserializer);
         return AdvancedMsgEvent_RecvOnlineOnlyMessage(var_field0);
       default:
@@ -2451,6 +2483,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupReadReceiptItem sse_decode_group_read_receipt_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_groupId = sse_decode_String(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    var var_msgIdList = sse_decode_list_String(deserializer);
+    var var_readTime = sse_decode_i_64(deserializer);
+    var var_sessionType = sse_decode_i_32(deserializer);
+    return GroupReadReceiptItem(
+      groupId: var_groupId,
+      userId: var_userId,
+      msgIdList: var_msgIdList,
+      readTime: var_readTime,
+      sessionType: var_sessionType,
+    );
+  }
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
@@ -2482,6 +2533,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <AtInfo>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_at_info(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<GroupReadReceiptItem> sse_decode_list_group_read_receipt_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <GroupReadReceiptItem>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_group_read_receipt_item(deserializer));
     }
     return ans_;
   }
@@ -3202,17 +3267,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case AdvancedMsgEvent_RecvC2CReadReceipt(field0: final field0):
         sse_encode_i_32(1, serializer);
         sse_encode_list_read_receipt_item(field0, serializer);
-      case AdvancedMsgEvent_NewRecvMessageRevoked(field0: final field0):
+      case AdvancedMsgEvent_RecvGroupReadReceipt(field0: final field0):
         sse_encode_i_32(2, serializer);
+        sse_encode_list_group_read_receipt_item(field0, serializer);
+      case AdvancedMsgEvent_NewRecvMessageRevoked(field0: final field0):
+        sse_encode_i_32(3, serializer);
         sse_encode_box_autoadd_message_revoked_info(field0, serializer);
       case AdvancedMsgEvent_RecvOfflineNewMessage(field0: final field0):
-        sse_encode_i_32(3, serializer);
-        sse_encode_box_autoadd_msg_struct(field0, serializer);
-      case AdvancedMsgEvent_MsgDeleted(field0: final field0):
         sse_encode_i_32(4, serializer);
         sse_encode_box_autoadd_msg_struct(field0, serializer);
-      case AdvancedMsgEvent_RecvOnlineOnlyMessage(field0: final field0):
+      case AdvancedMsgEvent_MsgDeleted(field0: final field0):
         sse_encode_i_32(5, serializer);
+        sse_encode_box_autoadd_msg_struct(field0, serializer);
+      case AdvancedMsgEvent_RecvOnlineOnlyMessage(field0: final field0):
+        sse_encode_i_32(6, serializer);
         sse_encode_box_autoadd_msg_struct(field0, serializer);
     }
   }
@@ -3496,6 +3564,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_group_read_receipt_item(
+    GroupReadReceiptItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.groupId, serializer);
+    sse_encode_String(self.userId, serializer);
+    sse_encode_list_String(self.msgIdList, serializer);
+    sse_encode_i_64(self.readTime, serializer);
+    sse_encode_i_32(self.sessionType, serializer);
+  }
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
@@ -3522,6 +3603,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_at_info(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_group_read_receipt_item(
+    List<GroupReadReceiptItem> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_group_read_receipt_item(item, serializer);
     }
   }
 

@@ -11,6 +11,6 @@ pub use client::IMClient;
 pub use conversation_handle::{ConvCmd, ConvCmdKind, ConversationHandle};
 pub use friend_sync::FriendSyncer;
 pub use listeners::{
-    AdvancedMsgEvent, ConnEvent, ConversationEvent, FriendEvent, GroupEvent, Listeners, MessageRevokedInfo, ReadReceiptItem, UserEvent,
+    AdvancedMsgEvent, ConnEvent, ConversationEvent, FriendEvent, GroupEvent, GroupReadReceiptItem, Listeners, MessageRevokedInfo, ReadReceiptItem, UserEvent,
 };
 pub use reconnect::{ConnectFatalError, ReconnectStrategy};

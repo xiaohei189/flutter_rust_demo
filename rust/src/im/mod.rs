@@ -20,7 +20,7 @@ pub use client::FriendSyncer;
 pub use model::friend::FriendSyncerConfig;
 
 // 重新导出事件与订阅（Stream 方式，原监听器已移除）
-pub use client::{AdvancedMsgEvent, ConnEvent, ConversationEvent, FriendEvent, GroupEvent, MessageRevokedInfo, ReadReceiptItem, UserEvent};
+pub use client::{AdvancedMsgEvent, ConnEvent, ConversationEvent, FriendEvent, GroupEvent, GroupReadReceiptItem, MessageRevokedInfo, ReadReceiptItem, UserEvent};
 pub use model::message::{
     AtElem, AtInfo, ConversationArgs, CustomElem, FileElem, FindMessageListCallback, GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams, LocalChatLog, LocationElem,
     MarkdownEntityElem, MarkdownTextElem, MsgStruct, PictureBaseInfo, PictureElem, QuoteElem, SearchByConversationResult, SearchLocalMessagesCallback, SearchLocalMessagesParams, SoundElem,

@@ -45,6 +45,9 @@ class MessageService extends ChangeNotifier {
   /// 同步进度 0-100
   int get syncProgress => _syncProgress;
 
+  /// 当前登录用户 ID（单聊从 conversationId 解析对方 ID 时会用到）
+  String get currentUserId => _currentUserId;
+
   /// 获取客户端实例
   OpenImBridgeClient? get client => _client;
 
@@ -119,10 +122,6 @@ class MessageService extends ChangeNotifier {
           .toList();
 
       notifyListeners();
-      appLog.d(
-        'dart MessageService ✅ 加载历史消息成功: ${messages.length} 条，isEnd: ${result.isEnd}',
-      );
-
       // 返回是否还有更多消息（取反，因为 isEnd 表示已到末尾）
       return !result.isEnd;
     } catch (e) {
@@ -393,7 +392,12 @@ class MessageService extends ChangeNotifier {
         notifyListeners();
       },
       totalUnreadMessageCountChanged: (_) => notifyListeners(),
-      conversationUserInputStatusChanged: (_) {},
+      conversationUserInputStatusChanged: (typing) {
+        appLog.d(
+          '👤 用户输入状态回调 conversationId=${typing.conversationId} sendId=${typing.sendId} msgTip=${typing.msgTip}',
+        );
+        notifyListeners();
+      },
     );
   }
 
@@ -407,6 +411,7 @@ class MessageService extends ChangeNotifier {
           notifyListeners();
         },
         recvC2CReadReceipt: (_) => notifyListeners(),
+        recvGroupReadReceipt: (_) => notifyListeners(),
         newRecvMessageRevoked: (_) => notifyListeners(),
         recvOfflineNewMessage: (msg) {
           _appendMsgStructToMessages(msg);

@@ -994,18 +994,22 @@ impl SseDecode for crate::im::client::listeners::AdvancedMsgEvent {
                 return crate::im::client::listeners::AdvancedMsgEvent::RecvC2CReadReceipt(var_field0);
             }
             2 => {
+                let mut var_field0 = <Vec<crate::im::client::listeners::GroupReadReceiptItem>>::sse_decode(deserializer);
+                return crate::im::client::listeners::AdvancedMsgEvent::RecvGroupReadReceipt(var_field0);
+            }
+            3 => {
                 let mut var_field0 = <crate::im::client::listeners::MessageRevokedInfo>::sse_decode(deserializer);
                 return crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(var_field0);
             }
-            3 => {
+            4 => {
                 let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
                 return crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(var_field0);
             }
-            4 => {
+            5 => {
                 let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
                 return crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(var_field0);
             }
-            5 => {
+            6 => {
                 let mut var_field0 = <crate::im::model::message::MsgStruct>::sse_decode(deserializer);
                 return crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(var_field0);
             }
@@ -1219,6 +1223,24 @@ impl SseDecode for crate::im::model::message::GetAdvancedHistoryMessageListParam
     }
 }
 
+impl SseDecode for crate::im::client::listeners::GroupReadReceiptItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_groupId = <String>::sse_decode(deserializer);
+        let mut var_userId = <String>::sse_decode(deserializer);
+        let mut var_msgIdList = <Vec<String>>::sse_decode(deserializer);
+        let mut var_readTime = <i64>::sse_decode(deserializer);
+        let mut var_sessionType = <i32>::sse_decode(deserializer);
+        return crate::im::client::listeners::GroupReadReceiptItem {
+            group_id: var_groupId,
+            user_id: var_userId,
+            msg_id_list: var_msgIdList,
+            read_time: var_readTime,
+            session_type: var_sessionType,
+        };
+    }
+}
+
 impl SseDecode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1252,6 +1274,18 @@ impl SseDecode for Vec<crate::im::model::message::AtInfo> {
         let mut ans_ = vec![];
         for idx_ in 0..len_ {
             ans_.push(<crate::im::model::message::AtInfo>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::im::client::listeners::GroupReadReceiptItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = vec![];
+        for idx_ in 0..len_ {
+            ans_.push(<crate::im::client::listeners::GroupReadReceiptItem>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -1891,10 +1925,11 @@ impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::AdvancedMsg
         match self {
             crate::im::client::listeners::AdvancedMsgEvent::RecvNewMessage(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::im::client::listeners::AdvancedMsgEvent::RecvC2CReadReceipt(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::RecvGroupReadReceipt(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -2054,6 +2089,25 @@ impl flutter_rust_bridge::IntoDart for crate::im::model::message::GetAdvancedHis
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::model::message::GetAdvancedHistoryMessageListParams {}
 impl flutter_rust_bridge::IntoIntoDart<crate::im::model::message::GetAdvancedHistoryMessageListParams> for crate::im::model::message::GetAdvancedHistoryMessageListParams {
     fn into_into_dart(self) -> crate::im::model::message::GetAdvancedHistoryMessageListParams {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::im::client::listeners::GroupReadReceiptItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.group_id.into_into_dart().into_dart(),
+            self.user_id.into_into_dart().into_dart(),
+            self.msg_id_list.into_into_dart().into_dart(),
+            self.read_time.into_into_dart().into_dart(),
+            self.session_type.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::im::client::listeners::GroupReadReceiptItem {}
+impl flutter_rust_bridge::IntoIntoDart<crate::im::client::listeners::GroupReadReceiptItem> for crate::im::client::listeners::GroupReadReceiptItem {
+    fn into_into_dart(self) -> crate::im::client::listeners::GroupReadReceiptItem {
         self
     }
 }
@@ -2441,20 +2495,24 @@ impl SseEncode for crate::im::client::listeners::AdvancedMsgEvent {
                 <i32>::sse_encode(1, serializer);
                 <Vec<crate::im::client::listeners::ReadReceiptItem>>::sse_encode(field0, serializer);
             }
-            crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(field0) => {
+            crate::im::client::listeners::AdvancedMsgEvent::RecvGroupReadReceipt(field0) => {
                 <i32>::sse_encode(2, serializer);
+                <Vec<crate::im::client::listeners::GroupReadReceiptItem>>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::NewRecvMessageRevoked(field0) => {
+                <i32>::sse_encode(3, serializer);
                 <crate::im::client::listeners::MessageRevokedInfo>::sse_encode(field0, serializer);
             }
             crate::im::client::listeners::AdvancedMsgEvent::RecvOfflineNewMessage(field0) => {
-                <i32>::sse_encode(3, serializer);
-                <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
-            }
-            crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(field0) => {
                 <i32>::sse_encode(4, serializer);
                 <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
             }
-            crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(field0) => {
+            crate::im::client::listeners::AdvancedMsgEvent::MsgDeleted(field0) => {
                 <i32>::sse_encode(5, serializer);
+                <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
+            }
+            crate::im::client::listeners::AdvancedMsgEvent::RecvOnlineOnlyMessage(field0) => {
+                <i32>::sse_encode(6, serializer);
                 <crate::im::model::message::MsgStruct>::sse_encode(field0, serializer);
             }
             _ => {
@@ -2623,6 +2681,17 @@ impl SseEncode for crate::im::model::message::GetAdvancedHistoryMessageListParam
     }
 }
 
+impl SseEncode for crate::im::client::listeners::GroupReadReceiptItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.group_id, serializer);
+        <String>::sse_encode(self.user_id, serializer);
+        <Vec<String>>::sse_encode(self.msg_id_list, serializer);
+        <i64>::sse_encode(self.read_time, serializer);
+        <i32>::sse_encode(self.session_type, serializer);
+    }
+}
+
 impl SseEncode for i32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2653,6 +2722,16 @@ impl SseEncode for Vec<crate::im::model::message::AtInfo> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::im::model::message::AtInfo>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::im::client::listeners::GroupReadReceiptItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::im::client::listeners::GroupReadReceiptItem>::sse_encode(item, serializer);
         }
     }
 }

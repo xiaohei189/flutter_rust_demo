@@ -162,7 +162,10 @@ impl ConnectionHandle {
             Err(e) => {
                 let err_msg = e.to_string();
                 if let Some(ref cb) = self.callbacks {
-                    cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: -1, err_msg: err_msg.clone() });
+                    cb.try_emit_conn_event(ConnEvent::ConnectFailed {
+                        err_code: -1,
+                        err_msg: err_msg.clone(),
+                    });
                 }
                 return Err(anyhow::anyhow!("{}", err_msg));
             }
@@ -190,7 +193,10 @@ impl ConnectionHandle {
                             resp.err_msg.clone()
                         };
                         if let Some(ref cb) = self.callbacks {
-                            cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: resp.err_code, err_msg: error_msg.clone() });
+                            cb.try_emit_conn_event(ConnEvent::ConnectFailed {
+                                err_code: resp.err_code,
+                                err_msg: error_msg.clone(),
+                            });
                         }
                         error!("[Client] ❌ WebSocket 连接失败，错误码: {}, 错误信息: {}", resp.err_code, error_msg);
                         return Err(anyhow::anyhow!(error_msg));
@@ -199,7 +205,10 @@ impl ConnectionHandle {
                 Err(e) => {
                     let err_msg = format!("WebSocket 响应解析失败: {}", e);
                     if let Some(ref cb) = self.callbacks {
-                        cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: -1, err_msg: err_msg.clone() });
+                        cb.try_emit_conn_event(ConnEvent::ConnectFailed {
+                            err_code: -1,
+                            err_msg: err_msg.clone(),
+                        });
                     }
                     error!("[Client] ❌ {}", err_msg);
                     return Err(anyhow::anyhow!("{}", err_msg));
@@ -208,7 +217,10 @@ impl ConnectionHandle {
         } else {
             let err_msg = "未收到 WebSocket 连接响应".to_string();
             if let Some(ref cb) = self.callbacks {
-                cb.try_emit_conn_event(ConnEvent::ConnectFailed { err_code: -1, err_msg: err_msg.clone() });
+                cb.try_emit_conn_event(ConnEvent::ConnectFailed {
+                    err_code: -1,
+                    err_msg: err_msg.clone(),
+                });
             }
             error!("[Client] ❌ {}", err_msg);
             return Err(anyhow::anyhow!("{}", err_msg));
@@ -280,7 +292,7 @@ impl ConnectionHandle {
     fn handle_message(&mut self, msg: WsMessage) -> Result<()> {
         match msg {
             WsMessage::Text(text) => {
-                event!(Level::DEBUG, len = text.len(), "处理文本消息");
+                info!("[Client] 收到 WS 文本帧 len={}（推送通常为二进制，若仅见文本可检查服务端）", text.len());
                 return Ok(());
             }
             WsMessage::Binary(data) => {
@@ -303,9 +315,18 @@ impl ConnectionHandle {
                 };
 
                 use crate::im::model::OpenIMResp;
-                let im_resp = serde_json::from_slice::<OpenIMResp>(&data)?;
+                let im_resp = match serde_json::from_slice::<OpenIMResp>(&data) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        warn!("[Client] 解析 OpenIM 二进制消息失败 len={} err={}", data.len(), e);
+                        return Err(anyhow::anyhow!("解析 OpenIM 响应失败: {}", e));
+                    }
+                };
 
-                trace!(req_identifier = im_resp.req_identifier, msg_incr = %im_resp.msg_incr, "解析 OpenIM 响应");
+                info!(
+                    im_resp.req_identifier,
+                    im_resp.msg_incr, im_resp.operation_id, im_resp.err_code, im_resp.err_msg, "[Client] 收到 WS 下行消息"
+                );
 
                 match im_resp.req_identifier {
                     msg_type::WS_GET_NEWEST_SEQ | msg_type::WS_PULL_MSG_BY_RANGE | msg_type::WS_PULL_MSG_BY_SEQ_LIST | msg_type::WS_SEND_MSG | msg_type::WS_SEND_MSG_NOT_OSS => {
@@ -366,12 +387,10 @@ impl ConnectionHandle {
         let push_msg = match sdkws::PushMessages::decode(im_resp.data.as_slice()) {
             Ok(pm) => pm,
             Err(e) => {
+                warn!("[Client] Push 消息 Protobuf 解析失败 data_len={} err={}", im_resp.data.len(), e);
                 return Err(anyhow::anyhow!("Protobuf 解析失败: {}", e));
             }
         };
-
-        info!("[Client] 收到 Push 原始消息: {:?}", push_msg);
-
         if let Err(e) = self.msg_sync_cmd_tx.send(MsgSyncCommand::new(MsgSyncCommandKind::Push { push: push_msg })) {
             error!("[Client] 发送推送命令到 message_handle 失败: {e}");
             return Err(anyhow::anyhow!("发送推送命令失败: {e}"));

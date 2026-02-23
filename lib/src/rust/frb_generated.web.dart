@@ -186,6 +186,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_get_advanced_history_message_list_params(dynamic raw);
 
   @protected
+  GroupReadReceiptItem dco_decode_group_read_receipt_item(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
@@ -196,6 +199,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<AtInfo> dco_decode_list_at_info(dynamic raw);
+
+  @protected
+  List<GroupReadReceiptItem> dco_decode_list_group_read_receipt_item(
+    dynamic raw,
+  );
 
   @protected
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
@@ -464,6 +472,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  GroupReadReceiptItem sse_decode_group_read_receipt_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
@@ -474,6 +487,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer);
+
+  @protected
+  List<GroupReadReceiptItem> sse_decode_list_group_read_receipt_item(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<LocalConversation> sse_decode_list_local_conversation(
@@ -808,6 +826,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_group_read_receipt_item(
+    GroupReadReceiptItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
@@ -818,6 +842,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_group_read_receipt_item(
+    List<GroupReadReceiptItem> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_local_conversation(

@@ -17,9 +17,16 @@ sealed class AdvancedMsgEvent with _$AdvancedMsgEvent {
 
   const factory AdvancedMsgEvent.recvNewMessage(MsgStruct field0) =
       AdvancedMsgEvent_RecvNewMessage;
+
+  /// 单聊已读回执（对方读了你的消息，与 Go OnRecvC2CReadReceipt 一致）
   const factory AdvancedMsgEvent.recvC2CReadReceipt(
     List<ReadReceiptItem> field0,
   ) = AdvancedMsgEvent_RecvC2CReadReceipt;
+
+  /// 群组已读回执（群成员读了消息，与 Go OnRecvGroupReadReceipt 一致）
+  const factory AdvancedMsgEvent.recvGroupReadReceipt(
+    List<GroupReadReceiptItem> field0,
+  ) = AdvancedMsgEvent_RecvGroupReadReceipt;
   const factory AdvancedMsgEvent.newRecvMessageRevoked(
     MessageRevokedInfo field0,
   ) = AdvancedMsgEvent_NewRecvMessageRevoked;
@@ -78,6 +85,42 @@ sealed class ConversationEvent with _$ConversationEvent {
   const factory ConversationEvent.conversationUserInputStatusChanged(
     TypingStatus field0,
   ) = ConversationEvent_ConversationUserInputStatusChanged;
+}
+
+/// 群组已读回执单条（与 Go sdk_struct.MessageReceipt 一致，用于 OnRecvGroupReadReceipt）
+class GroupReadReceiptItem {
+  final String groupId;
+  final String userId;
+  final List<String> msgIdList;
+  final PlatformInt64 readTime;
+  final int sessionType;
+
+  const GroupReadReceiptItem({
+    required this.groupId,
+    required this.userId,
+    required this.msgIdList,
+    required this.readTime,
+    required this.sessionType,
+  });
+
+  @override
+  int get hashCode =>
+      groupId.hashCode ^
+      userId.hashCode ^
+      msgIdList.hashCode ^
+      readTime.hashCode ^
+      sessionType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupReadReceiptItem &&
+          runtimeType == other.runtimeType &&
+          groupId == other.groupId &&
+          userId == other.userId &&
+          msgIdList == other.msgIdList &&
+          readTime == other.readTime &&
+          sessionType == other.sessionType;
 }
 
 /// 消息撤回通知内容

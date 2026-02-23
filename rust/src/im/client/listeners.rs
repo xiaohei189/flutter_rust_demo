@@ -68,6 +68,17 @@ pub struct ReadReceiptItem {
     pub read_time: i64,
 }
 
+/// 群组已读回执单条（与 Go sdk_struct.MessageReceipt 一致，用于 OnRecvGroupReadReceipt）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupReadReceiptItem {
+    pub group_id: String,
+    pub user_id: String,
+    pub msg_id_list: Vec<String>,
+    pub read_time: i64,
+    pub session_type: i32,
+}
+
 /// 消息撤回通知内容
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -86,11 +97,16 @@ pub struct MessageRevokedInfo {
 }
 
 /// 高级消息事件，负载为结构体
+///
+/// 已读回执：单聊走 C2C 回执（HAS_READ_RECEIPT 2200）；群聊走群组回执（同 2200，会话类型为群时触发 RecvGroupReadReceipt）
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AdvancedMsgEvent {
     RecvNewMessage(MsgStruct),
+    /// 单聊已读回执（对方读了你的消息，与 Go OnRecvC2CReadReceipt 一致）
     RecvC2CReadReceipt(Vec<ReadReceiptItem>),
+    /// 群组已读回执（群成员读了消息，与 Go OnRecvGroupReadReceipt 一致）
+    RecvGroupReadReceipt(Vec<GroupReadReceiptItem>),
     NewRecvMessageRevoked(MessageRevokedInfo),
     RecvOfflineNewMessage(MsgStruct),
     MsgDeleted(MsgStruct),

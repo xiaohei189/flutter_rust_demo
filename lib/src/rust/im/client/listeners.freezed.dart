@@ -22,6 +22,8 @@ mixin _$AdvancedMsgEvent {
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -31,6 +33,7 @@ mixin _$AdvancedMsgEvent {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -40,6 +43,7 @@ mixin _$AdvancedMsgEvent {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -52,6 +56,8 @@ mixin _$AdvancedMsgEvent {
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -65,6 +71,8 @@ mixin _$AdvancedMsgEvent {
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -78,6 +86,8 @@ mixin _$AdvancedMsgEvent {
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -193,6 +203,8 @@ class _$AdvancedMsgEvent_RecvNewMessageImpl
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -206,6 +218,7 @@ class _$AdvancedMsgEvent_RecvNewMessageImpl
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -219,6 +232,7 @@ class _$AdvancedMsgEvent_RecvNewMessageImpl
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -238,6 +252,8 @@ class _$AdvancedMsgEvent_RecvNewMessageImpl
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -255,6 +271,8 @@ class _$AdvancedMsgEvent_RecvNewMessageImpl
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -272,6 +290,8 @@ class _$AdvancedMsgEvent_RecvNewMessageImpl
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -396,6 +416,8 @@ class _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -409,6 +431,7 @@ class _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -422,6 +445,7 @@ class _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -441,6 +465,8 @@ class _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -458,6 +484,8 @@ class _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -475,6 +503,8 @@ class _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -505,6 +535,220 @@ abstract class AdvancedMsgEvent_RecvC2CReadReceipt extends AdvancedMsgEvent {
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$AdvancedMsgEvent_RecvC2CReadReceiptImplCopyWith<
     _$AdvancedMsgEvent_RecvC2CReadReceiptImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWith<$Res> {
+  factory _$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWith(
+    _$AdvancedMsgEvent_RecvGroupReadReceiptImpl value,
+    $Res Function(_$AdvancedMsgEvent_RecvGroupReadReceiptImpl) then,
+  ) = __$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({List<GroupReadReceiptItem> field0});
+}
+
+/// @nodoc
+class __$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWithImpl<$Res>
+    extends
+        _$AdvancedMsgEventCopyWithImpl<
+          $Res,
+          _$AdvancedMsgEvent_RecvGroupReadReceiptImpl
+        >
+    implements _$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWith<$Res> {
+  __$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWithImpl(
+    _$AdvancedMsgEvent_RecvGroupReadReceiptImpl _value,
+    $Res Function(_$AdvancedMsgEvent_RecvGroupReadReceiptImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of AdvancedMsgEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$AdvancedMsgEvent_RecvGroupReadReceiptImpl(
+        null == field0
+            ? _value._field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as List<GroupReadReceiptItem>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$AdvancedMsgEvent_RecvGroupReadReceiptImpl
+    extends AdvancedMsgEvent_RecvGroupReadReceipt {
+  const _$AdvancedMsgEvent_RecvGroupReadReceiptImpl(
+    final List<GroupReadReceiptItem> field0,
+  ) : _field0 = field0,
+      super._();
+
+  final List<GroupReadReceiptItem> _field0;
+  @override
+  List<GroupReadReceiptItem> get field0 {
+    if (_field0 is EqualUnmodifiableListView) return _field0;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_field0);
+  }
+
+  @override
+  String toString() {
+    return 'AdvancedMsgEvent.recvGroupReadReceipt(field0: $field0)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$AdvancedMsgEvent_RecvGroupReadReceiptImpl &&
+            const DeepCollectionEquality().equals(other._field0, _field0));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_field0));
+
+  /// Create a copy of AdvancedMsgEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWith<
+    _$AdvancedMsgEvent_RecvGroupReadReceiptImpl
+  >
+  get copyWith =>
+      __$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWithImpl<
+        _$AdvancedMsgEvent_RecvGroupReadReceiptImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(MsgStruct field0) recvNewMessage,
+    required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
+    required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
+    required TResult Function(MsgStruct field0) recvOfflineNewMessage,
+    required TResult Function(MsgStruct field0) msgDeleted,
+    required TResult Function(MsgStruct field0) recvOnlineOnlyMessage,
+  }) {
+    return recvGroupReadReceipt(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(MsgStruct field0)? recvNewMessage,
+    TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
+    TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
+    TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
+    TResult? Function(MsgStruct field0)? msgDeleted,
+    TResult? Function(MsgStruct field0)? recvOnlineOnlyMessage,
+  }) {
+    return recvGroupReadReceipt?.call(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(MsgStruct field0)? recvNewMessage,
+    TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
+    TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
+    TResult Function(MsgStruct field0)? recvOfflineNewMessage,
+    TResult Function(MsgStruct field0)? msgDeleted,
+    TResult Function(MsgStruct field0)? recvOnlineOnlyMessage,
+    required TResult orElse(),
+  }) {
+    if (recvGroupReadReceipt != null) {
+      return recvGroupReadReceipt(field0);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(AdvancedMsgEvent_RecvNewMessage value)
+    recvNewMessage,
+    required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
+    recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
+    required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
+    newRecvMessageRevoked,
+    required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(AdvancedMsgEvent_MsgDeleted value) msgDeleted,
+    required TResult Function(AdvancedMsgEvent_RecvOnlineOnlyMessage value)
+    recvOnlineOnlyMessage,
+  }) {
+    return recvGroupReadReceipt(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
+    TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
+    recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
+    TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
+    newRecvMessageRevoked,
+    TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(AdvancedMsgEvent_MsgDeleted value)? msgDeleted,
+    TResult? Function(AdvancedMsgEvent_RecvOnlineOnlyMessage value)?
+    recvOnlineOnlyMessage,
+  }) {
+    return recvGroupReadReceipt?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
+    TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
+    recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
+    TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
+    newRecvMessageRevoked,
+    TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(AdvancedMsgEvent_MsgDeleted value)? msgDeleted,
+    TResult Function(AdvancedMsgEvent_RecvOnlineOnlyMessage value)?
+    recvOnlineOnlyMessage,
+    required TResult orElse(),
+  }) {
+    if (recvGroupReadReceipt != null) {
+      return recvGroupReadReceipt(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class AdvancedMsgEvent_RecvGroupReadReceipt extends AdvancedMsgEvent {
+  const factory AdvancedMsgEvent_RecvGroupReadReceipt(
+    final List<GroupReadReceiptItem> field0,
+  ) = _$AdvancedMsgEvent_RecvGroupReadReceiptImpl;
+  const AdvancedMsgEvent_RecvGroupReadReceipt._() : super._();
+
+  @override
+  List<GroupReadReceiptItem> get field0;
+
+  /// Create a copy of AdvancedMsgEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$AdvancedMsgEvent_RecvGroupReadReceiptImplCopyWith<
+    _$AdvancedMsgEvent_RecvGroupReadReceiptImpl
   >
   get copyWith => throw _privateConstructorUsedError;
 }
@@ -591,6 +835,8 @@ class _$AdvancedMsgEvent_NewRecvMessageRevokedImpl
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -604,6 +850,7 @@ class _$AdvancedMsgEvent_NewRecvMessageRevokedImpl
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -617,6 +864,7 @@ class _$AdvancedMsgEvent_NewRecvMessageRevokedImpl
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -636,6 +884,8 @@ class _$AdvancedMsgEvent_NewRecvMessageRevokedImpl
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -653,6 +903,8 @@ class _$AdvancedMsgEvent_NewRecvMessageRevokedImpl
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -670,6 +922,8 @@ class _$AdvancedMsgEvent_NewRecvMessageRevokedImpl
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -786,6 +1040,8 @@ class _$AdvancedMsgEvent_RecvOfflineNewMessageImpl
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -799,6 +1055,7 @@ class _$AdvancedMsgEvent_RecvOfflineNewMessageImpl
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -812,6 +1069,7 @@ class _$AdvancedMsgEvent_RecvOfflineNewMessageImpl
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -831,6 +1089,8 @@ class _$AdvancedMsgEvent_RecvOfflineNewMessageImpl
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -848,6 +1108,8 @@ class _$AdvancedMsgEvent_RecvOfflineNewMessageImpl
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -865,6 +1127,8 @@ class _$AdvancedMsgEvent_RecvOfflineNewMessageImpl
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -974,6 +1238,8 @@ class _$AdvancedMsgEvent_MsgDeletedImpl extends AdvancedMsgEvent_MsgDeleted {
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -987,6 +1253,7 @@ class _$AdvancedMsgEvent_MsgDeletedImpl extends AdvancedMsgEvent_MsgDeleted {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -1000,6 +1267,7 @@ class _$AdvancedMsgEvent_MsgDeletedImpl extends AdvancedMsgEvent_MsgDeleted {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -1019,6 +1287,8 @@ class _$AdvancedMsgEvent_MsgDeletedImpl extends AdvancedMsgEvent_MsgDeleted {
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -1036,6 +1306,8 @@ class _$AdvancedMsgEvent_MsgDeletedImpl extends AdvancedMsgEvent_MsgDeleted {
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -1053,6 +1325,8 @@ class _$AdvancedMsgEvent_MsgDeletedImpl extends AdvancedMsgEvent_MsgDeleted {
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -1166,6 +1440,8 @@ class _$AdvancedMsgEvent_RecvOnlineOnlyMessageImpl
   TResult when<TResult extends Object?>({
     required TResult Function(MsgStruct field0) recvNewMessage,
     required TResult Function(List<ReadReceiptItem> field0) recvC2CReadReceipt,
+    required TResult Function(List<GroupReadReceiptItem> field0)
+    recvGroupReadReceipt,
     required TResult Function(MessageRevokedInfo field0) newRecvMessageRevoked,
     required TResult Function(MsgStruct field0) recvOfflineNewMessage,
     required TResult Function(MsgStruct field0) msgDeleted,
@@ -1179,6 +1455,7 @@ class _$AdvancedMsgEvent_RecvOnlineOnlyMessageImpl
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(MsgStruct field0)? recvNewMessage,
     TResult? Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult? Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult? Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult? Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult? Function(MsgStruct field0)? msgDeleted,
@@ -1192,6 +1469,7 @@ class _$AdvancedMsgEvent_RecvOnlineOnlyMessageImpl
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(MsgStruct field0)? recvNewMessage,
     TResult Function(List<ReadReceiptItem> field0)? recvC2CReadReceipt,
+    TResult Function(List<GroupReadReceiptItem> field0)? recvGroupReadReceipt,
     TResult Function(MessageRevokedInfo field0)? newRecvMessageRevoked,
     TResult Function(MsgStruct field0)? recvOfflineNewMessage,
     TResult Function(MsgStruct field0)? msgDeleted,
@@ -1211,6 +1489,8 @@ class _$AdvancedMsgEvent_RecvOnlineOnlyMessageImpl
     recvNewMessage,
     required TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)
     recvC2CReadReceipt,
+    required TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)
+    recvGroupReadReceipt,
     required TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)
     newRecvMessageRevoked,
     required TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)
@@ -1228,6 +1508,8 @@ class _$AdvancedMsgEvent_RecvOnlineOnlyMessageImpl
     TResult? Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult? Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult? Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult? Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult? Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
@@ -1245,6 +1527,8 @@ class _$AdvancedMsgEvent_RecvOnlineOnlyMessageImpl
     TResult Function(AdvancedMsgEvent_RecvNewMessage value)? recvNewMessage,
     TResult Function(AdvancedMsgEvent_RecvC2CReadReceipt value)?
     recvC2CReadReceipt,
+    TResult Function(AdvancedMsgEvent_RecvGroupReadReceipt value)?
+    recvGroupReadReceipt,
     TResult Function(AdvancedMsgEvent_NewRecvMessageRevoked value)?
     newRecvMessageRevoked,
     TResult Function(AdvancedMsgEvent_RecvOfflineNewMessage value)?
