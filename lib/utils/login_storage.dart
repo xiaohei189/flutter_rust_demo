@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_logger.dart';
+
 /// 登录凭证本地存储，用于 splash 自动登录与登录页记住账号
 class LoginStorage {
   static const _keyUserId = 'im_user_id';
@@ -13,11 +15,14 @@ class LoginStorage {
     String areaCode = '+86',
     String phoneNumber = '',
   }) async {
+    appLog.i('[LoginStorage] saveCredentials 开始');
     final prefs = await SharedPreferences.getInstance();
+    appLog.i('[LoginStorage] SharedPreferences.getInstance 完成');
     await prefs.setString(_keyUserId, userId);
     await prefs.setString(_keyImToken, imToken);
     await prefs.setString(_keyAreaCode, areaCode);
     await prefs.setString(_keyPhoneNumber, phoneNumber);
+    appLog.i('[LoginStorage] saveCredentials 完成');
   }
 
   static Future<LoginCredentials?> loadCredentials() async {

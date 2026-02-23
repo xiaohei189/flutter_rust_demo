@@ -1,6 +1,130 @@
 //! Trace 导出参考：<https://github.com/tokio-rs/tracing-opentelemetry/tree/v0.1.x/examples>
 //! 特别是 opentelemetry-otlp.rs：OtelGuard + shutdown、Resource、Sampler。
 //! 日志文件接入 <https://crates.io/crates/tracing-appender>：rolling + non_blocking。
+//! Android 下控制台输出通过 android_log-sys 写入 logcat。
+
+#[cfg(target_os = "android")]
+mod android_log {
+    use std::ffi::CString;
+    use std::io::{self, Write};
+    use std::sync::{Arc, Mutex};
+
+    use android_log_sys::{__android_log_write, LogPriority};
+    use tracing_subscriber::fmt::MakeWriter;
+
+    const LOG_TAG: &str = "Rust";
+
+    /// 根据日志行开头的 level 文本推断 Android 优先级（格式中 level 在时间戳后）
+    fn priority_from_line(line: &str) -> i32 {
+        let rest = line.trim_start();
+        if rest.starts_with("ERROR") {
+            LogPriority::ERROR as i32
+        } else if rest.starts_with("WARN") {
+            LogPriority::WARN as i32
+        } else if rest.starts_with("INFO") {
+            LogPriority::INFO as i32
+        } else if rest.starts_with("DEBUG") {
+            LogPriority::DEBUG as i32
+        } else if rest.starts_with("TRACE") {
+            LogPriority::VERBOSE as i32
+        } else {
+            LogPriority::INFO as i32
+        }
+    }
+
+    /// 实现 io::Write，将内容按行写入 Android logcat（__android_log_write）
+    struct AndroidLogWriterInner {
+        buffer: Vec<u8>,
+    }
+
+    impl AndroidLogWriterInner {
+        fn new() -> Self {
+            Self { buffer: Vec::new() }
+        }
+
+        fn flush_line(&mut self, line: &[u8]) {
+            if line.is_empty() {
+                return;
+            }
+            let Ok(s) = std::str::from_utf8(line) else { return };
+            let s = s.trim_end_matches(|c| c == '\r' || c == '\n');
+            if s.is_empty() {
+                return;
+            }
+            if let (Ok(tag), Ok(msg)) = (CString::new(LOG_TAG), CString::new(s)) {
+                let prio = priority_from_line(s);
+                unsafe {
+                    __android_log_write(prio, tag.as_ptr(), msg.as_ptr());
+                }
+            }
+        }
+    }
+
+    impl Write for AndroidLogWriterInner {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            let mut start = 0;
+            for (i, &b) in buf.iter().enumerate() {
+                if b == b'\n' {
+                    self.buffer.extend_from_slice(&buf[start..=i]);
+                    let line = std::mem::take(&mut self.buffer);
+                    self.flush_line(&line);
+                    start = i + 1;
+                }
+            }
+            self.buffer.extend_from_slice(&buf[start..]);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            if !self.buffer.is_empty() {
+                let line = std::mem::take(&mut self.buffer);
+                self.flush_line(&line);
+            }
+            Ok(())
+        }
+    }
+
+    /// 供 MakeWriter 使用的 Writer 句柄（持有一个 Arc 引用，Write 时加锁写入）
+    pub struct AndroidLogWriterHandle(pub Arc<Mutex<AndroidLogWriterInner>>);
+
+    impl Write for AndroidLogWriterHandle {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.0
+                .lock()
+                .map_err(|_| io::ErrorKind::Other.into())
+                .and_then(|mut w| w.write(buf))
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            self.0
+                .lock()
+                .map_err(|_| io::ErrorKind::Other.into())
+                .and_then(|mut w| w.flush())
+        }
+    }
+
+    /// 实现 MakeWriter，供 tracing_subscriber::fmt::layer().with_writer() 在 Android 上使用
+    pub struct AndroidLogMakeWriter(pub Arc<Mutex<AndroidLogWriterInner>>);
+
+    impl AndroidLogMakeWriter {
+        pub fn new() -> Self {
+            Self(Arc::new(Mutex::new(AndroidLogWriterInner::new())))
+        }
+    }
+
+    impl Default for AndroidLogMakeWriter {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl<'a> MakeWriter<'a> for AndroidLogMakeWriter {
+        type Writer = AndroidLogWriterHandle;
+
+        fn make_writer(&'a self) -> Self::Writer {
+            AndroidLogWriterHandle(Arc::clone(&self.0))
+        }
+    }
+}
 
 use opentelemetry::trace::{TraceContextExt, TracerProvider};
 use opentelemetry::KeyValue;
@@ -262,31 +386,57 @@ pub fn init_logger(log_level: &str) {
             (None, ())
         };
 
-        // OpenTelemetry tracer：优先上报到 Tempo（OTLP gRPC/tonic），失败则仅本地日志带 trace_id
-        // 注意：gRPC 默认端口通常是 4317；HTTP/protobuf 默认端口通常是 4318。
-        let endpoint = std::env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
-            .unwrap_or_else(|_| "http://localhost:4317".to_string());
+        // OpenTelemetry tracer：仅用于在日志中带 trace_id；上报到 Tempo 为可选，且必须不阻塞、不影响主程序。
+        // Android 上未显式配置 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT 时不做上报，避免 BatchSpanProcessor 连不通时干扰主流程。
         let service_name = std::env::var("OTEL_SERVICE_NAME").unwrap_or_else(|_| "rust_lib".to_string());
         let resource = otel_resource(service_name.clone());
-        let provider = match opentelemetry_otlp::SpanExporter::builder()
-            .with_tonic()
-            .with_endpoint(endpoint.clone())
-            .build()
-        {
-            Ok(otlp_exporter) => {
-                eprintln!("[logger] Trace 上报到 Tempo: endpoint={}", endpoint);
-                opentelemetry_sdk::trace::SdkTracerProvider::builder()
-                    .with_sampler(Sampler::ParentBased(Box::new(Sampler::TraceIdRatioBased(1.0))))
-                    .with_batch_exporter(otlp_exporter)
-                    .with_resource(resource)
-                    .build()
+        #[cfg(target_os = "android")]
+        let use_otlp = std::env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT").is_ok();
+        #[cfg(not(target_os = "android"))]
+        let use_otlp = true;
+
+        let provider = if use_otlp {
+            let default_otel_endpoint = {
+                #[cfg(target_os = "android")]
+                { "http://10.0.2.2:4317".to_string() }
+                #[cfg(not(target_os = "android"))]
+                { "http://localhost:4317".to_string() }
+            };
+            let endpoint = std::env::var("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")
+                .unwrap_or_else(|_| default_otel_endpoint);
+            match opentelemetry_otlp::SpanExporter::builder()
+                .with_tonic()
+                .with_endpoint(endpoint.clone())
+                .build()
+            {
+                Ok(otlp_exporter) => {
+                    eprintln!("[logger] Trace 上报到 Tempo: endpoint={}", endpoint);
+                    opentelemetry_sdk::trace::SdkTracerProvider::builder()
+                        .with_sampler(Sampler::ParentBased(Box::new(Sampler::TraceIdRatioBased(1.0))))
+                        .with_batch_exporter(otlp_exporter)
+                        .with_resource(resource)
+                        .build()
+                }
+                Err(e) => {
+                    eprintln!("[logger] OTLP/Tempo 未配置或不可用 ({})，仅本地日志带 trace_id", e);
+                    opentelemetry_sdk::trace::SdkTracerProvider::builder()
+                        .with_simple_exporter(NoopSpanExporter)
+                        .with_resource(resource)
+                        .build()
+                }
             }
-            Err(e) => {
-                eprintln!("[logger] OTLP/Tempo 未配置或不可用 ({})，仅本地日志带 trace_id", e);
+        } else {
+            #[cfg(target_os = "android")]
+            {
+                eprintln!("[logger] Android 未设置 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT，仅本地日志带 trace_id，上报不影响主程序");
                 opentelemetry_sdk::trace::SdkTracerProvider::builder()
                     .with_simple_exporter(NoopSpanExporter)
                     .with_resource(resource)
                     .build()
+            }
+            #[cfg(not(target_os = "android"))]
+            {
+                unreachable!()
             }
         };
         let _ = TRACER_PROVIDER.set(provider);
@@ -297,17 +447,22 @@ pub fn init_logger(log_level: &str) {
         let otel_layer = OpenTelemetryLayer::new(tracer);
 
         // 使用自定义 formatter：console 开 ANSI，file 关 ANSI（格式一致）
-        // CustomFormatter 包装官方的 Format，自动获取所有配置
-        // 使用原生 API，配置会自动传递，无需单独设置
-        let console_layer = tracing_subscriber::fmt::layer()
-            .with_writer(io::stdout)
-            .with_ansi(true)
-            .with_file(true)
-            .with_target(false)
-            .with_line_number(true)
-            .with_thread_names(true)
-            .with_thread_ids(true)
-            .event_format(CustomFormatter::new());
+        // Android 下控制台输出到 logcat（android_log-sys），非 Android 用 stdout
+        let console_layer = {
+            #[cfg(target_os = "android")]
+            let w = android_log::AndroidLogMakeWriter::new();
+            #[cfg(not(target_os = "android"))]
+            let w = io::stdout;
+            tracing_subscriber::fmt::layer()
+                .with_writer(w)
+                .with_ansi(!cfg!(target_os = "android")) // Android logcat 不需要 ANSI
+                .with_file(true)
+                .with_target(false)
+                .with_line_number(true)
+                .with_thread_names(true)
+                .with_thread_ids(true)
+                .event_format(CustomFormatter::new())
+        };
 
         let file_layer = file_writer.map(|w| {
             tracing_subscriber::fmt::layer()
@@ -350,7 +505,25 @@ pub fn init_logger(log_level: &str) {
         if let Err(e) = init_result {
             eprintln!("[logger] 设置 global subscriber 失败（可能已被其他组件设置），跳过: {:?}", e);
         }
+
+        // 控制 log 库输出：flutter_rust_bridge 会先注册 android_logger，我们无法替换。
+        // 通过 set_max_level 限制传给 android_logger 的级别，避免 tokio-tungstenite 等依赖的 trace/debug 刷屏。
+        let log_max = log_level_to_filter(log_level);
+        log::set_max_level(log_max);
     });
+}
+
+/// 将 init_logger 的 log_level 字符串映射为 log 库的 LevelFilter，用于 set_max_level
+fn log_level_to_filter(s: &str) -> log::LevelFilter {
+    match s.to_lowercase().as_str() {
+        "trace" => log::LevelFilter::Trace,
+        "debug" => log::LevelFilter::Debug,
+        "info" | "information" => log::LevelFilter::Info,
+        "warn" | "warning" => log::LevelFilter::Warn,
+        "error" => log::LevelFilter::Error,
+        "off" => log::LevelFilter::Off,
+        _ => log::LevelFilter::Info, // 默认只显示 info 及以上，屏蔽依赖的 trace/debug
+    }
 }
 
 /// 在程序退出前调用：先 force_flush 再 shutdown，与官方示例 OtelGuard::drop 行为一致。

@@ -263,9 +263,12 @@ class MessageService extends ChangeNotifier {
     }
 
     _isInitializing = true;
+    appLog.i('[MessageService] initialize 开始');
     try {
       // 设置 Rust 日志级别为 debug
+      appLog.i('[MessageService] 即将调用 initLogger');
       await initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
+      appLog.i('[MessageService] initLogger 完成');
 
       final String resolvedUserId;
       final String resolvedImToken;
@@ -281,12 +284,14 @@ class MessageService extends ChangeNotifier {
       _currentUserId = resolvedUserId;
 
       // 创建客户端实例（异步，由 bridge executor 执行）
+      appLog.i('[MessageService] 即将调用 OpenImBridgeClient.newInstance');
       _client = await OpenImBridgeClient.newInstance(
         userId: resolvedUserId,
         token: resolvedImToken,
         platformId: 5,
         wsUrl: wsUrl,
       );
+      appLog.i('[MessageService] newInstance 完成');
 
       // 状态订阅、会话变动订阅、消息变动订阅（必须在 connect 之前调用）
       // 先订阅消息流，确保 Rust 端 advanced_msg_event_tx 最先注册（与会话流同源 callbacks）
@@ -297,19 +302,25 @@ class MessageService extends ChangeNotifier {
       _conversationStreamSubscription = _client!.conversationStream().listen(
         _handleConversationEvent,
       );
+      appLog.i('[MessageService] 流订阅已注册');
 
       // 等待 Rust 端流订阅就绪（bridge 侧 stream 方法为 unawaited，不等待则 connect 时 tx 可能尚未设置）
+      appLog.i('[MessageService] 等待 300ms');
       await Future.delayed(const Duration(milliseconds: 300));
+      appLog.i('[MessageService] 300ms 完成');
 
-      // 连接到服务器
+      // 连接到服务器（connect 仅启动后台连接，不等待鉴权结果）
+      appLog.i('[MessageService] 即将调用 connect()');
       await _client!.connect();
+      appLog.i('[MessageService] connect() 返回');
       _isConnected = true;
       notifyListeners();
 
       appLog.i('✅ 客户端连接成功');
 
-      // 加载初始会话列表
-      await _loadConversations();
+      // 会话列表改为由 syncServerFinish 回调加载，不在此阻塞，避免验证码登录后一直转圈
+      appLog.i('[MessageService] 触发 _loadConversations（不 await）');
+      _loadConversations();
     } catch (e) {
       appLog.e('❌ 初始化失败: $e');
       _isConnected = false;
@@ -351,6 +362,8 @@ class MessageService extends ChangeNotifier {
     final name = event.runtimeType.toString();
     if (name.contains('ConnectSuccess') || name == 'ConnEvent_ConnectSuccess') {
       _isConnected = true;
+      appLog.i('[MessageService] 连接成功，主动拉取一次会话列表');
+      _loadConversations();
     } else if (name.contains('ConnectFailed') ||
         name.contains('KickedOffline') ||
         name.contains('UserTokenExpired') ||
@@ -369,6 +382,7 @@ class MessageService extends ChangeNotifier {
         notifyListeners();
       },
       syncServerFinish: (_) {
+        appLog.i('[MessageService] 收到 syncServerFinish，拉取会话列表');
         _isSyncingConversations = false;
         _syncProgress = 100;
         notifyListeners();
@@ -464,10 +478,15 @@ class MessageService extends ChangeNotifier {
 
   /// 加载会话列表
   Future<void> _loadConversations() async {
-    if (_client == null) return;
+    if (_client == null) {
+      appLog.w('[MessageService] _loadConversations 跳过：client 为空');
+      return;
+    }
 
     try {
+      appLog.i('[MessageService] _loadConversations 开始 getAllConversations');
       final conversations = await _client!.getAllConversations();
+      appLog.i('[MessageService] getAllConversations 返回，共 ${conversations.length} 条');
       _conversations.clear();
       for (final conv in conversations) {
         _updateConversation(conv);

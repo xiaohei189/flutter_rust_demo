@@ -130,12 +130,19 @@ impl ConnectionHandle {
                     return Ok(());
                 }
                 res = self.do_connect() => {
-                    if let Err(e) = res {
-                        error!("[Client] 连接失败: {}", e);
+                    match res {
+                        Err(e) => {
+                            if e.downcast_ref::<ConnectFatalError>().is_some() {
+                                error!("[Client] 鉴权失败，不重连，返回上层: {}", e);
+                                return Err(e);
+                            }
+                            error!("[Client] 连接失败（将重连）: {}", e);
+                        }
+                        Ok(()) => {}
                     }
                 }
             }
-            // 断线后按 Go 版逻辑进行带退避的重连
+            // 断线后按 Go 版逻辑进行带退避的重连（鉴权失败已在上方 return，不会走到这里）
             let wait = self.reconnect_strategy.next_interval();
             reconnect_count += 1;
             info!("[Client] 尝试重连，等待 {:?} 后重试（指数退避），重连次数: {}", wait, reconnect_count);
@@ -170,8 +177,7 @@ impl ConnectionHandle {
                 return Err(anyhow::anyhow!("{}", err_msg));
             }
         };
-        info!("✅ WebSocket 连接成功, 状态: {}", response.status());
-        self.reconnect_strategy.reset();
+        info!("[Client] WebSocket 已建立 ({}), 等待鉴权响应", response.status());
 
         let (mut writer, mut reader) = ws_stream.split();
 
@@ -182,6 +188,8 @@ impl ConnectionHandle {
             match serde_json::from_str::<WebSocketConnectResp>(&text) {
                 Ok(resp) => {
                     if resp.err_code == 0 {
+                        self.reconnect_strategy.reset();
+                        info!("✅ WebSocket 连接成功, 状态: {}", response.status());
                         if let Some(ref cb) = self.callbacks {
                             cb.try_emit_conn_event(ConnEvent::ConnectSuccess);
                         }
@@ -198,8 +206,15 @@ impl ConnectionHandle {
                                 err_msg: error_msg.clone(),
                             });
                         }
-                        error!("[Client] ❌ WebSocket 连接失败，错误码: {}, 错误信息: {}", resp.err_code, error_msg);
-                        return Err(anyhow::anyhow!(error_msg));
+                        error!(
+                            "[Client] ❌ 鉴权失败，错误码: {}, 错误信息: {}，不重连，交给上层处理",
+                            resp.err_code, error_msg
+                        );
+                        return Err(ConnectFatalError {
+                            code: resp.err_code,
+                            message: error_msg,
+                        }
+                        .into());
                     }
                 }
                 Err(e) => {

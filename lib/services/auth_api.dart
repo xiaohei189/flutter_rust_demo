@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
+import '../utils/app_logger.dart';
 import '../utils/host_config.dart';
 
 /// 认证服务端基础 URL；Android 模拟器内用 10.0.2.2 访问宿主机
@@ -80,6 +81,7 @@ Future<LoginResult> loginWithVerifyCode({
   required int platform,
 }) async {
   final url = Uri.parse('$kAuthBaseUrl/account/login');
+  appLog.i('[AuthAPI] 验证码登录 HTTP 请求发出: $url');
   final resp = await http.post(
     url,
     headers: {
@@ -93,6 +95,7 @@ Future<LoginResult> loginWithVerifyCode({
       'platform': platform,
     }),
   );
+  appLog.i('[AuthAPI] 验证码登录 HTTP 响应: statusCode=${resp.statusCode}');
   if (resp.statusCode != 200) {
     final body = jsonDecode(resp.body) as Map<String, dynamic>?;
     final errMsg = body?['errMsg'] ?? body?['errDtl'] ?? resp.body;

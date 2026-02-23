@@ -97,24 +97,30 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _errorText = '请输入手机号和密码');
       return;
     }
+    appLog.i('[登录] 密码登录开始');
     setState(() {
       _loading = true;
       _errorText = null;
     });
     try {
+      appLog.i('[登录] 即将请求密码登录 HTTP');
       final resp = await loginAsync(
         areaCode: _areaCode,
         phoneNumber: _phone,
         password: password,
         platform: 5,
       );
-      await _onLoginSuccess(resp.userId, resp.imToken);
+      appLog.i('[登录] 密码登录 HTTP 返回成功');
+      if (!mounted) return;
+      appLog.i('[登录] 调用 _stopLoadingAndGoToMain');
+      _stopLoadingAndGoToMain(resp.userId, resp.imToken);
     } catch (e, st) {
-      appLog.e('登录失败', e, st);
+      appLog.e('[登录] 密码登录失败', e, st);
       if (mounted) {
         setState(() {
           _loading = false;
-          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          final msg = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          _errorText = '$msg\n请求地址: $kAuthBaseUrl/account/login';
         });
       }
     }
@@ -126,45 +132,65 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _errorText = '请输入手机号和验证码');
       return;
     }
+    appLog.i('[登录] 验证码登录开始');
     setState(() {
       _loading = true;
       _errorText = null;
     });
     try {
+      appLog.i('[登录] 即将请求验证码登录 HTTP（最多等 30s）');
       final result = await loginWithVerifyCode(
         areaCode: _areaCode,
         phoneNumber: _phone,
         verifyCode: code,
         platform: 5,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception(
+          '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: $kAuthBaseUrl/account/login',
+        ),
       );
-      await _onLoginSuccess(result.userId, result.imToken);
+      appLog.i('[登录] 验证码登录 HTTP 返回成功');
+      if (!mounted) return;
+      appLog.i('[登录] 调用 _stopLoadingAndGoToMain');
+      _stopLoadingAndGoToMain(result.userId, result.imToken);
     } catch (e, st) {
-      appLog.e('验证码登录失败', e, st);
+      appLog.e('[登录] 验证码登录失败', e, st);
       if (mounted) {
         setState(() {
           _loading = false;
-          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          final msg = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          _errorText = '$msg\n请求地址: $kAuthBaseUrl/account/login';
         });
       }
     }
   }
 
-  Future<void> _onLoginSuccess(String userId, String imToken) async {
-    await LoginStorage.saveCredentials(
-      userId: userId,
-      imToken: imToken,
-      areaCode: _areaCode,
-      phoneNumber: _phone,
-    );
-    await messageService.initialize(
-      wsUrl: widget.wsUrl,
-      userId: userId,
-      imToken: imToken,
-    );
+  /// 立即停止转圈并跳转主界面，保存凭证与建连在后台执行（不 await，避免任何阻塞）
+  void _stopLoadingAndGoToMain(String userId, String imToken) {
+    appLog.i('[登录] _stopLoadingAndGoToMain 开始');
+    if (!mounted) return;
+    setState(() => _loading = false);
+    appLog.i('[登录] setState(_loading=false) 已调用');
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const MainScreen()),
     );
+    appLog.i('[登录] pushReplacement(MainScreen) 已调用，后台保存凭证并初始化');
+    // 后台：保存凭证并创建连接
+    LoginStorage.saveCredentials(
+      userId: userId,
+      imToken: imToken,
+      areaCode: _areaCode,
+      phoneNumber: _phone,
+    ).then((_) {
+      appLog.i('[登录] 凭证已保存，开始 MessageService.initialize');
+      messageService.initialize(
+        wsUrl: widget.wsUrl,
+        userId: userId,
+        imToken: imToken,
+      );
+    });
   }
 
   void _login() {

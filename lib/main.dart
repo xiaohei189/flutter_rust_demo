@@ -8,6 +8,7 @@ import 'screens/splash_screen.dart';
 import 'services/message_service.dart';
 import 'theme/app_theme.dart';
 import 'utils/host_config.dart';
+import 'utils/login_storage.dart';
 
 // 全局消息服务实例
 final messageService = MessageService();
@@ -25,7 +26,10 @@ Future<void> main() async {
   final dir = await getTemporaryDirectory();
   setLogDirectory(path: dir.path);
 
-  // 3. 热重启时先关闭之前的 client，避免同 token 重复连接导致 TokenKickedError(1506)
+  // 3. 每次启动清除本地凭证，不自动复用 token，要求重新输入账号密码登录
+  await LoginStorage.clearCredentials();
+
+  // 4. 热重启时先关闭之前的 client，避免同 token 重复连接导致 TokenKickedError(1506)
   await closeCurrentClientIfAny();
 
   runApp(const MyApp());

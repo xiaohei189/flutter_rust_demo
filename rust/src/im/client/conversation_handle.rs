@@ -821,6 +821,10 @@ impl ConversationHandle {
 
                 // 与 Go 一致：不在此处跳过 TYPING，TYPING 可进入 new_messages，后续由 typing 回调和 listener 内按 contentType 处理
                 if v.status == constant::MSG_STATUS_HAS_DELETED {
+                    info!(
+                        "[conversation_handle] exception 原因=MSG_STATUS_HAS_DELETED conv={} client_msg_id={}",
+                        conversation_id, v.client_msg_id
+                    );
                     let mut log = LocalChatLog::from((v, conversation_id.to_string()));
                     log.status = constant::MSG_STATUS_HAS_DELETED;
                     log.attached_info = attached_info_apply_is_private(&log.attached_info, is_not_private);
@@ -851,15 +855,20 @@ impl ConversationHandle {
                 let existing_msg: Option<LocalChatLog> = self.repository.message.get_message(conversation_id, &v.client_msg_id).await.ok().flatten();
 
                 // 与 Go 一致：自己发的消息若本地已存在且 seq==0（服务端回推），只做 updateMessage，不加入 new_messages，不触发 RecvNewMessage，避免界面显示两条
+                // 若本地已存在且 seq 相同（同一条消息再次推送/同步），也只做 updateMessage，不重复 insert、不记入 exception
                 if v.send_id == self.config.user_id {
                     if let Some(ref existing) = existing_msg {
-                        if existing.seq == 0 {
+                        if existing.seq == 0 || existing.seq == v.seq {
                             if !is_conversation_update {
                                 log.status = constant::MSG_STATUS_FILTERED;
                             }
                             update_message.push(log);
-                            // Go 在此分支不 append newMessages，故不触发 OnRecvNewMessage
+                            // 不 append newMessages，不触发 OnRecvNewMessage
                         } else {
+                            info!(
+                                "[conversation_handle] exception 原因=self_msg_already_exists_seq_nonzero(SEQ_DUP) conv={} client_msg_id={} seq={} existing_seq={}",
+                                conversation_id, v.client_msg_id, v.seq, existing.seq
+                            );
                             Self::handle_exception_messages(Some(existing), &mut log, &self.config.user_id);
                             exception_msg.push(serde_json::to_string(&log).unwrap_or_else(|_| "{}".to_string()));
                             insert_message.push(log);
@@ -876,6 +885,10 @@ impl ConversationHandle {
                     }
                 } else {
                     if let Some(ref existing) = existing_msg {
+                        info!(
+                            "[conversation_handle] exception 原因=other_msg_already_exists(SEQ_DUP) conv={} client_msg_id={} seq={} send_id={}",
+                            conversation_id, v.client_msg_id, v.seq, v.send_id
+                        );
                         Self::handle_exception_messages(Some(existing), &mut log, &self.config.user_id);
                         exception_msg.push(serde_json::to_string(&log).unwrap_or_else(|_| "{}".to_string()));
                         insert_message.push(log);
@@ -1116,7 +1129,8 @@ impl ConversationHandle {
         }
 
         for msg_json in &exception_msg {
-            warn!("[conversation_handle] exceptionMsg show: {}", msg_json);
+            // 重复/已存在/已删除等预期情况，用 debug 避免刷屏
+            debug!("[conversation_handle] exceptionMsg (dup/filtered): {}", msg_json);
         }
 
         Ok(())

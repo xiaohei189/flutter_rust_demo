@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../main.dart';
@@ -15,15 +17,23 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
+  Timer? _delayRefreshTimer;
+
   @override
   void initState() {
     super.initState();
-    // 监听消息服务的变化
     messageService.addListener(_onMessageServiceChanged);
+    // 进入列表页后延迟 3 秒再拉一次会话，避免服务端同步未完成时一直为空
+    _delayRefreshTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && messageService.conversations.isEmpty) {
+        messageService.refreshConversations();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _delayRefreshTimer?.cancel();
     messageService.removeListener(_onMessageServiceChanged);
     super.dispose();
   }

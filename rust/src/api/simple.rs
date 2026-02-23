@@ -1,3 +1,5 @@
+use flutter_rust_bridge::PanicBacktrace;
+
 use crate::im::logger::logger::{init_logger as rust_init_logger, set_log_directory as rust_set_log_directory};
 
 #[flutter_rust_bridge::frb(sync)]
@@ -20,5 +22,8 @@ pub async fn init_logger(log_level: String) {
 #[flutter_rust_bridge::frb(init)]
 pub fn init_app() {
     // Default utilities - feel free to customize
-    flutter_rust_bridge::setup_default_user_utils();
+    // flutter_rust_bridge::setup_default_user_utils();
+    //日志自定义
+    PanicBacktrace::setup();
+
 }
