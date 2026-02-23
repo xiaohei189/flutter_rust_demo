@@ -242,7 +242,14 @@ class MessageService extends ChangeNotifier {
   }
 
   /// 初始化并连接服务
-  Future<void> initialize({String? wsUrl}) async {
+  ///
+  /// [wsUrl] WebSocket 地址。
+  /// [userId] / [imToken] 若都传入则使用本地凭证连接，不调登录接口；否则需在调用前通过登录页获取并传入。
+  Future<void> initialize({
+    String? wsUrl,
+    String? userId,
+    String? imToken,
+  }) async {
     // 如果已经连接，热更新时跳过重复初始化
     if (_client != null && _isConnected) {
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
@@ -260,24 +267,23 @@ class MessageService extends ChangeNotifier {
       // 设置 Rust 日志级别为 debug
       await initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
 
-      // 先登录获取 token 信息（参考 openim-cli.rs 的实现）
-      final resp = await loginAsync(
-        areaCode: '+86',
-        phoneNumber: '17764338283',
-        password: '284f3d09ea0695538e4ded1c1766d73a',
-        platform: 5,
-      );
+      final String resolvedUserId;
+      final String resolvedImToken;
+      if (userId != null && userId.isNotEmpty && imToken != null && imToken.isNotEmpty) {
+        resolvedUserId = userId;
+        resolvedImToken = imToken;
+        appLog.i('✅ 使用传入凭证连接，用户ID: $resolvedUserId');
+      } else {
+        // 无凭证时无法连接，由调用方先完成登录再传入
+        throw StateError('缺少 userId 或 imToken，请先登录');
+      }
 
-      final userId = resp.userId;
-      final imToken = resp.imToken;
-
-      appLog.i('✅ 登录成功！用户ID: $userId');
-      _currentUserId = userId;
+      _currentUserId = resolvedUserId;
 
       // 创建客户端实例（异步，由 bridge executor 执行）
       _client = await OpenImBridgeClient.newInstance(
-        userId: userId,
-        token: imToken,
+        userId: resolvedUserId,
+        token: resolvedImToken,
         platformId: 5,
         wsUrl: wsUrl,
       );

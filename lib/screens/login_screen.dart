@@ -1,0 +1,347 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../main.dart';
+import '../services/auth_api.dart';
+import '../src/rust/api/bridge_client.dart';
+import '../utils/app_logger.dart';
+import '../utils/login_storage.dart';
+import 'main_screen.dart';
+
+/// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
+class LoginScreen extends StatefulWidget {
+  final String wsUrl;
+
+  const LoginScreen({super.key, this.wsUrl = 'ws://localhost:10001'});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _areaCodeController = TextEditingController(text: '+86');
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _codeController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _loading = false;
+  bool _isVerifyCodeLogin = false; // false=密码登录 true=验证码登录
+  int _countdown = 0; // 获取验证码倒计时秒数
+  Timer? _countdownTimer;
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    _areaCodeController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  String get _areaCode =>
+      _areaCodeController.text.trim().isEmpty ? '+86' : _areaCodeController.text.trim();
+  String get _phone => _phoneController.text.trim();
+
+  Future<void> _sendCode() async {
+    if (_phone.isEmpty) {
+      setState(() => _errorText = '请先输入手机号');
+      return;
+    }
+    if (_countdown > 0) return;
+    setState(() {
+      _errorText = null;
+      _countdown = 60;
+    });
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        if (_countdown <= 1) {
+          _countdown = 0;
+          t.cancel();
+        } else {
+          _countdown--;
+        }
+      });
+    });
+    try {
+      await sendVerificationCode(
+        areaCode: _areaCode,
+        phoneNumber: _phone,
+        usedFor: usedForLogin,
+      );
+      if (mounted) setState(() => _errorText = null);
+    } catch (e, st) {
+      appLog.e('发送验证码失败', e, st);
+      if (mounted) {
+        setState(() {
+          _countdown = 0;
+          _countdownTimer?.cancel();
+          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+        });
+      }
+    }
+  }
+
+  Future<void> _loginWithPassword() async {
+    final password = _passwordController.text.trim();
+    if (_phone.isEmpty || password.isEmpty) {
+      setState(() => _errorText = '请输入手机号和密码');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _errorText = null;
+    });
+    try {
+      final resp = await loginAsync(
+        areaCode: _areaCode,
+        phoneNumber: _phone,
+        password: password,
+        platform: 5,
+      );
+      await _onLoginSuccess(resp.userId, resp.imToken);
+    } catch (e, st) {
+      appLog.e('登录失败', e, st);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+        });
+      }
+    }
+  }
+
+  Future<void> _loginWithVerifyCode() async {
+    final code = _codeController.text.trim();
+    if (_phone.isEmpty || code.isEmpty) {
+      setState(() => _errorText = '请输入手机号和验证码');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _errorText = null;
+    });
+    try {
+      final result = await loginWithVerifyCode(
+        areaCode: _areaCode,
+        phoneNumber: _phone,
+        verifyCode: code,
+        platform: 5,
+      );
+      await _onLoginSuccess(result.userId, result.imToken);
+    } catch (e, st) {
+      appLog.e('验证码登录失败', e, st);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+        });
+      }
+    }
+  }
+
+  Future<void> _onLoginSuccess(String userId, String imToken) async {
+    await LoginStorage.saveCredentials(
+      userId: userId,
+      imToken: imToken,
+      areaCode: _areaCode,
+      phoneNumber: _phone,
+    );
+    await messageService.initialize(
+      wsUrl: widget.wsUrl,
+      userId: userId,
+      imToken: imToken,
+    );
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+    );
+  }
+
+  void _login() {
+    if (_isVerifyCodeLogin) {
+      _loginWithVerifyCode();
+    } else {
+      _loginWithPassword();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 48),
+                Icon(Icons.chat_bubble_outline, size: 64, color: Colors.blue.shade400),
+                const SizedBox(height: 12),
+                Text(
+                  '欢迎使用',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue.shade700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('密码登录')),
+                    ButtonSegment(value: true, label: Text('验证码登录')),
+                  ],
+                  selected: {_isVerifyCodeLogin},
+                  onSelectionChanged: (s) {
+                    setState(() {
+                      _isVerifyCodeLogin = s.first;
+                      _errorText = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 72,
+                      child: TextFormField(
+                        controller: _areaCodeController,
+                        decoration: const InputDecoration(
+                          labelText: '区号',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _phoneController,
+                        decoration: const InputDecoration(
+                          labelText: '手机号',
+                          hintText: '请输入手机号',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        onChanged: (_) => setState(() => _errorText = null),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (_isVerifyCodeLogin) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _codeController,
+                          decoration: const InputDecoration(
+                            labelText: '验证码',
+                            hintText: '请输入验证码',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState(() => _errorText = null),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 120,
+                        child: FilledButton.tonal(
+                          onPressed: (_countdown > 0 || _loading) ? null : _sendCode,
+                          child: _countdown > 0
+                              ? Text('${_countdown}s 后重发')
+                              : const Text('获取验证码'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '测试环境：请先点击「获取验证码」，再输入 666666',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ] else
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: '密码',
+                      hintText: '请输入密码',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
+                      ),
+                    ),
+                    onChanged: (_) => setState(() => _errorText = null),
+                  ),
+                if (_errorText != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorText!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _loading ? null : _login,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('登录'),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        // TODO: 注册
+                      },
+                      child: const Text('注册账号'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // TODO: 忘记密码
+                      },
+                      child: const Text('忘记密码'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
