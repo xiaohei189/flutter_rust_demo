@@ -9,6 +9,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 String greet({required String name}) =>
     RustLib.instance.api.crateApiSimpleGreet(name: name);
 
+/// 设置日志目录（应在 init_logger 前调用）。Dart 侧可用 path_provider 的 getTemporaryDirectory 等传入。
+void setLogDirectory({required String path}) =>
+    RustLib.instance.api.crateApiSimpleSetLogDirectory(path: path);
+
 /// 初始化 Rust 日志，供 Dart 在 client 初始化时配置
 Future<void> initLogger({required String logLevel}) =>
     RustLib.instance.api.crateApiSimpleInitLogger(logLevel: logLevel);

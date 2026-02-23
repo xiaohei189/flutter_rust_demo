@@ -25,11 +25,19 @@ use tracing_subscriber::EnvFilter;
 
 static INIT_LOGGER: Once = Once::new();
 
+/// 由 Dart 传入的日志目录（path_provider），在 init_logger 前设置；Android 上设置后才会写文件日志
+static LOG_DIR_OVERRIDE: OnceLock<String> = OnceLock::new();
+
 /// 保存 TracerProvider，以便程序退出前可 force_flush，确保 span 上报到 Tempo
 static TRACER_PROVIDER: OnceLock<SdkTracerProvider> = OnceLock::new();
 
 /// 保存文件日志的 WorkerGuard，进程退出时 drop 会刷新缓冲（tracing-appender non_blocking）
 static FILE_APPENDER_GUARD: OnceLock<WorkerGuard> = OnceLock::new();
+
+/// 由 Dart 在 init_logger 前调用，传入 path_provider 得到的可写目录（如 getTemporaryDirectory）
+pub fn set_log_directory(path: String) {
+    let _ = LOG_DIR_OVERRIDE.set(path);
+}
 
 /// 不导出到后端的 SpanExporter，仅用于让 SdkTracerProvider 生成有效 trace_id/span_id
 #[derive(Debug)]
@@ -50,9 +58,25 @@ fn otel_resource(service_name: String) -> Resource {
         .build()
 }
 
-/// 日志文件：按天滚动，目录与文件名前缀（tracing-appender rolling::daily）
-const LOG_DIR: &str = "logs";
+/// 日志文件名前缀（tracing-appender rolling::daily）
 const LOG_FILE_PREFIX: &str = "rust.log";
+
+/// 日志目录：若 Dart 已通过 set_log_directory 传入则用该路径，否则用 temp_dir（Android 上未传入时不写文件）
+fn log_dir() -> std::path::PathBuf {
+    LOG_DIR_OVERRIDE
+        .get()
+        .map(|s| std::path::PathBuf::from(s.as_str()))
+        .unwrap_or_else(|| std::env::temp_dir().join("rust_logs"))
+}
+
+/// 是否启用文件日志：非 Android 始终启用；Android 仅在已设置 LOG_DIR_OVERRIDE 时启用
+fn use_file_appender() -> bool {
+    if cfg!(target_os = "android") {
+        LOG_DIR_OVERRIDE.get().is_some()
+    } else {
+        true
+    }
+}
 
 /// 自定义 formatter：自己记录配置属性，并在末尾追加 trace_id/span_id
 /// 实现与 Format 相同的方法，让 layer 的配置能自动传递
@@ -226,10 +250,17 @@ pub fn init_logger(log_level: &str) {
     INIT_LOGGER.call_once(|| {
         let filter_layer = EnvFilter::new(log_level);
 
-        // 文件滚动（按天），guard 必须持有否则日志会丢
-        let file_appender = RollingFileAppender::new(Rotation::DAILY, LOG_DIR, LOG_FILE_PREFIX);
-        let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
-        let _ = FILE_APPENDER_GUARD.set(guard);
+        // 当 use_file_appender() 为 true 时写文件（非 Android 或 Android 且 Dart 已传入日志目录）
+        let (file_writer, _guard) = if use_file_appender() {
+            let dir = log_dir();
+            let dir_str = dir.to_string_lossy().into_owned();
+            let file_appender = RollingFileAppender::new(Rotation::DAILY, &dir_str, LOG_FILE_PREFIX);
+            let (w, g) = tracing_appender::non_blocking(file_appender);
+            let _ = FILE_APPENDER_GUARD.set(g);
+            (Some(w), ())
+        } else {
+            (None, ())
+        };
 
         // OpenTelemetry tracer：优先上报到 Tempo（OTLP gRPC/tonic），失败则仅本地日志带 trace_id
         // 注意：gRPC 默认端口通常是 4317；HTTP/protobuf 默认端口通常是 4318。
@@ -278,36 +309,46 @@ pub fn init_logger(log_level: &str) {
             .with_thread_ids(true)
             .event_format(CustomFormatter::new());
 
-        let file_layer = tracing_subscriber::fmt::layer()
-            .with_writer(file_writer)
-            .with_ansi(false)
-            .with_file(true)
-            .with_target(false)
-            .with_line_number(true)
-            .with_thread_names(true)
-            .with_thread_ids(true)
-            .event_format(CustomFormatter::new());
+        let file_layer = file_writer.map(|w| {
+            tracing_subscriber::fmt::layer()
+                .with_writer(w)
+                .with_ansi(false)
+                .with_file(true)
+                .with_target(false)
+                .with_line_number(true)
+                .with_thread_names(true)
+                .with_thread_ids(true)
+                .event_format(CustomFormatter::new())
+        });
 
         #[cfg(tokio_unstable)]
-        {
+        let init_result = {
             let tokio_console = console_subscriber::spawn();
-            tracing_subscriber::registry()
+            let reg = tracing_subscriber::registry()
                 .with(filter_layer)
                 .with(otel_layer)
                 .with(tokio_console)
-                .with(console_layer)
-                .with(file_layer)
-                .init();
-        }
+                .with(console_layer);
+            match file_layer {
+                Some(fl) => reg.with(fl).try_init(),
+                None => reg.try_init(),
+            }
+        };
 
         #[cfg(not(tokio_unstable))]
-        {
-            tracing_subscriber::registry()
+        let init_result = {
+            let reg = tracing_subscriber::registry()
                 .with(filter_layer)
                 .with(otel_layer)
-                .with(console_layer)
-                .with(file_layer)
-                .init();
+                .with(console_layer);
+            match file_layer {
+                Some(fl) => reg.with(fl).try_init(),
+                None => reg.try_init(),
+            }
+        };
+
+        if let Err(e) = init_result {
+            eprintln!("[logger] 设置 global subscriber 失败（可能已被其他组件设置），跳过: {:?}", e);
         }
     });
 }

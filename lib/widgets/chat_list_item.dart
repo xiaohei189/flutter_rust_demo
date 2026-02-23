@@ -6,7 +6,12 @@ import 'package:intl/intl.dart';
 
 import '../models/user.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
+import 'unread_count_view.dart';
 import 'user_avatar.dart';
+
+/// 会话列表项颜色与 openim-flutter-demo 对齐
+const _colorName = Color(0xFF0C1C33);
+const _colorSub = Color(0xFF8E9AB0);
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
 T? _getKey<T>(Map<String, dynamic> map, String camel, String snake) {
@@ -120,43 +125,91 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback onTap;
   /// 是否为当前选中项（高亮背景）
   final bool isSelected;
+  /// 当前登录用户 ID，用于从单聊 conversationId(si_uid1_uid2) 中解析出对方显示名
+  final String? currentUserId;
 
   const ChatListItem({
     super.key,
     required this.conversation,
     required this.onTap,
     this.isSelected = false,
+    this.currentUserId,
   });
 
-  /// 时间展示：当天仅时间，否则「年月日 时:分」
+  /// 时间展示：与 openim IMUtils.getChatTimeline 一致（今天 HH:mm、昨天、周x、今年 M月d日、更早 yyyy年）
+  static bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static bool _isSameWeek(DateTime a, DateTime b) {
+    final start = b.subtract(Duration(days: b.weekday - 1));
+    final end = start.add(const Duration(days: 6));
+    return !a.isBefore(start.subtract(const Duration(days: 1))) &&
+        !a.isAfter(end.add(const Duration(days: 1)));
+  }
+
+  static const _weekdayZh = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
   String _formatTime(PlatformInt64? timeMs) {
     if (timeMs == null || timeMs.toInt() <= 0) return '';
 
     final time = DateTime.fromMillisecondsSinceEpoch(timeMs.toInt());
     final now = DateTime.now();
-    final sameDay = time.year == now.year && time.month == now.month && time.day == now.day;
+    const formatToday = 'HH:mm';
 
-    if (sameDay) {
-      return DateFormat('HH:mm').format(time);
+    if (_isSameDay(time, now)) {
+      return DateFormat(formatToday).format(time);
+    }
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (_isSameDay(time, yesterday)) {
+      return '昨天 ${DateFormat(formatToday).format(time)}';
+    }
+    if (_isSameWeek(time, now)) {
+      return '${_weekdayZh[time.weekday - 1]} ${DateFormat(formatToday).format(time)}';
+    }
+    if (time.year == now.year) {
+      return DateFormat('M月d日 HH:mm').format(time);
     }
     return DateFormat('yyyy年M月d日 HH:mm').format(time);
   }
 
-  /// 会话展示名称：优先 showName，否则按会话类型显示「用户/群聊 ID」或会话 ID
+  /// 会话展示名称：优先 showName；否则避免直接展示 si_/sg_ 原始 ID，解析为「用户 XXX」/「群聊 XXX」
   String get _conversationDisplayName {
     if (conversation.showName.isNotEmpty) return conversation.showName;
+    final cid = conversation.conversationId;
     switch (conversation.conversationType) {
-      case 1: // 单聊
-        return conversation.userId.isNotEmpty ? '用户 ${conversation.userId}' : conversation.conversationId;
+      case 1: // 单聊：conversationId 格式 si_uid1_uid2，取「对方」ID 显示
+        if (conversation.userId.isNotEmpty && !_isConversationIdPrefix(conversation.userId)) {
+          return conversation.userId;
+        }
+        if (cid.startsWith('si_')) {
+          final parts = cid.substring(3).split('_');
+          if (parts.length >= 2) {
+            final other = currentUserId != null && parts[0] == currentUserId
+                ? parts[1]
+                : parts[0];
+            return other.isNotEmpty ? '用户 $other' : '未知用户';
+          }
+        }
+        return '未知用户';
       case 2:
-      case 3: // 普通群聊 / 超级群聊
-        return conversation.groupId.isNotEmpty ? '群聊 ${conversation.groupId}' : conversation.conversationId;
-      case 4: // 通知会话
+      case 3: // 群聊：conversationId 格式 sg_groupId
+        if (conversation.groupId.isNotEmpty && !_isConversationIdPrefix(conversation.groupId)) {
+          return conversation.groupId;
+        }
+        if (cid.startsWith('sg_')) {
+          final groupId = cid.substring(3);
+          return groupId.isNotEmpty ? '群聊 $groupId' : '未知群组';
+        }
+        return '未知群组';
+      case 4:
         return '通知';
       default:
-        return conversation.conversationId;
+        return _isConversationIdPrefix(cid) ? '会话' : cid;
     }
   }
+
+  static bool _isConversationIdPrefix(String s) =>
+      s.startsWith('si_') || s.startsWith('sg_') || s.startsWith('sn_');
 
   User _getUser() {
     final userId = conversation.userId.isNotEmpty
@@ -170,107 +223,119 @@ class ChatListItem extends StatelessWidget {
     );
   }
 
-  /// 副标题：有草稿显示「[草稿] 内容」，否则解析 latestMsg JSON 显示消息内容预览
-  Widget _buildSubtitle() {
-    final hasDraft = conversation.draftText.isNotEmpty;
-    final String content = hasDraft ? conversation.draftText : latestMessagePreview(conversation.latestMsg);
-
-    if (hasDraft) {
-      return Row(
-        children: [
-          Expanded(
-            child: RichText(
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              text: TextSpan(
-                style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                children: [
-                  TextSpan(
-                    text: '[草稿] ',
-                    style: TextStyle(color: Colors.teal[700], fontSize: 14),
-                  ),
-                  TextSpan(text: content),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
+  /// 副标题主文案：与 openim getContent 一致。草稿支持 JSON {"text":"..."}，否则 latestMsg 预览；无消息时提示「点击发消息」
+  String get _contentPreview {
+    if (conversation.draftText.isNotEmpty) {
+      try {
+        final map = jsonDecode(conversation.draftText) as Map<String, dynamic>?;
+        final text = map?['text'] as String?;
+        if (text != null && text.isNotEmpty) return text;
+      } catch (_) {}
+      return conversation.draftText;
     }
-    return Text(
-      content,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(color: Colors.grey[700], fontSize: 14),
-    );
+    final preview = latestMessagePreview(conversation.latestMsg);
+    return preview == '暂无消息' ? '点击发消息' : preview;
   }
+
+  /// 未读条数前缀「[n条] 」；无未读返回空
+  String get _unreadPrefix {
+    final n = conversation.unreadCount;
+    return n > 0 ? '[$n条] ' : '';
+  }
+
+  bool get _hasDraft => conversation.draftText.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     final user = _getUser();
     final latestMsgTime = conversation.latestMsgSendTime;
-    final hasUnread = conversation.unreadCount > 0;
+    final unread = conversation.unreadCount;
 
     return Material(
       color: isSelected ? Colors.blue.withOpacity(0.08) : null,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Stack(
-          children: [
-            UserAvatar(user: user, radius: 28),
-            if (conversation.isPinned)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.orange,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.push_pin,
-                    size: 12,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                user.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            // 未读红点（紧挨会话名右侧）
-            if (hasUnread) ...[
-              const SizedBox(width: 6),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              _formatTime(latestMsgTime),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: _buildSubtitle(),
-        ),
+      child: InkWell(
         onTap: onTap,
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  UserAvatar(user: user, radius: 24),
+                  if (conversation.isPinned)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.push_pin, size: 10, color: Colors.white),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            user.name,
+                            style: const TextStyle(
+                              color: _colorName,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 17,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          _formatTime(latestMsgTime),
+                          style: const TextStyle(fontSize: 12, color: _colorSub),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RichText(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            text: TextSpan(
+                              style: const TextStyle(fontSize: 14, color: _colorSub),
+                              children: [
+                                if (_hasDraft)
+                                  const TextSpan(
+                                    text: '[草稿] ',
+                                    style: TextStyle(color: Color(0xFF0089FF), fontSize: 14),
+                                  )
+                                else if (_unreadPrefix.isNotEmpty)
+                                  TextSpan(text: _unreadPrefix),
+                                TextSpan(text: _contentPreview),
+                              ],
+                            ),
+                          ),
+                        ),
+                        UnreadCountView(count: unread),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

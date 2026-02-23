@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_list_item.dart';
+import '../widgets/conversation_title_bar.dart';
 import 'chat_detail_screen.dart';
 
 /// 聊天列表页面
@@ -33,58 +34,31 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  static const _backgroundColor = Color(0xFFF8F9FA);
+
   @override
   Widget build(BuildContext context) {
     final conversations = messageService.conversations;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('会话'),
-        actions: [
-          // 显示同步状态
-          if (messageService.isSyncingConversations)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    value: messageService.syncProgress > 0
-                        ? messageService.syncProgress / 100
-                        : null,
-                  ),
-                ),
-              ),
-            )
-          else
-            // 显示连接状态
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Center(
-                child: Icon(
-                  messageService.isConnected
-                      ? Icons.cloud_done
-                      : Icons.cloud_off,
-                  color: messageService.isConnected ? Colors.green : Colors.red,
-                  size: 20,
-                ),
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              await messageService.refreshConversations();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: 新建聊天
-            },
-          ),
-        ],
+      backgroundColor: _backgroundColor,
+      appBar: ConversationTitleBar(
+        currentUserId: messageService.currentUserId,
+        nickname: null,
+        avatarUrl: null,
+        isSyncing: messageService.isSyncingConversations,
+        isConnected: messageService.isConnected,
+        syncProgress: messageService.syncProgress,
+        onRefresh: () => messageService.refreshConversations(),
+        onAddFriend: () {
+          // TODO: 添加好友
+        },
+        onAddGroup: () {
+          // TODO: 加群
+        },
+        onCreateGroup: () {
+          // TODO: 建群
+        },
       ),
       body: conversations.isEmpty
           ? Center(
@@ -121,12 +95,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ),
             )
           : ListView.builder(
+              padding: EdgeInsets.zero,
               itemCount: conversations.length,
               itemBuilder: (context, index) {
                 final im_conv.LocalConversation conversation =
                     conversations[index];
                 return ChatListItem(
                   conversation: conversation,
+                  currentUserId: messageService.currentUserId.isNotEmpty
+                      ? messageService.currentUserId
+                      : null,
                   onTap: () async {
                     // 进入前先拉取最后一屏消息，再打开详情，避免进入后滚动抖动
                     await messageService.loadHistoryMessages(

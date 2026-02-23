@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
-/// 认证服务端基础 URL，与 Rust 侧 login 一致（openim-chat 等）
-const kAuthBaseUrl = 'http://localhost:10008';
+import '../utils/host_config.dart';
+
+/// 认证服务端基础 URL；Android 模拟器内用 10.0.2.2 访问宿主机
+String get kAuthBaseUrl => 'http://${getHostAddress()}:10008';
 
 /// 账号服务中间件要求 header 带 operationID（与 openim-sdk-core cmd/sdk 一致）
 String _nextOperationID() {

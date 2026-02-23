@@ -72,7 +72,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1230126075;
+  int get rustContentHash => -290245460;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -212,6 +212,8 @@ abstract class RustLibApi extends BaseApi {
     required String password,
     required int platform,
   });
+
+  void crateApiSimpleSetLogDirectory({required String path});
 
   RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_MsgData;
 
@@ -1193,6 +1195,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         debugName: "login_async",
         argNames: ["areaCode", "phoneNumber", "password", "platform"],
       );
+
+  @override
+  void crateApiSimpleSetLogDirectory({required String path}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(path, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiSimpleSetLogDirectoryConstMeta,
+        argValues: [path],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSimpleSetLogDirectoryConstMeta =>
+      const TaskConstMeta(debugName: "set_log_directory", argNames: ["path"]);
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_MsgData => wire
