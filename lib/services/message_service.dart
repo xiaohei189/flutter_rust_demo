@@ -219,7 +219,11 @@ class MessageService extends ChangeNotifier {
       _updateMessageSendStatus(conversationId, tempId, MessageSendStatus.sent);
     } catch (e) {
       appLog.e('dart MessageService 发送失败: $e');
-      _updateMessageSendStatus(conversationId, tempId, MessageSendStatus.failed);
+      _updateMessageSendStatus(
+        conversationId,
+        tempId,
+        MessageSendStatus.failed,
+      );
       rethrow;
     }
     notifyListeners();
@@ -281,11 +285,13 @@ class MessageService extends ChangeNotifier {
 
       // 状态订阅、会话变动订阅、消息变动订阅（必须在 connect 之前调用）
       // 先订阅消息流，确保 Rust 端 advanced_msg_event_tx 最先注册（与会话流同源 callbacks）
-      _advancedMsgStreamSubscription =
-          _client!.advancedMsgStream().listen(_handleAdvancedMsgEvent);
+      _advancedMsgStreamSubscription = _client!.advancedMsgStream().listen(
+        _handleAdvancedMsgEvent,
+      );
       _connStreamSubscription = _client!.connStream().listen(_handleConnEvent);
-      _conversationStreamSubscription =
-          _client!.conversationStream().listen(_handleConversationEvent);
+      _conversationStreamSubscription = _client!.conversationStream().listen(
+        _handleConversationEvent,
+      );
 
       // 等待 Rust 端流订阅就绪（bridge 侧 stream 方法为 unawaited，不等待则 connect 时 tx 可能尚未设置）
       await Future.delayed(const Duration(milliseconds: 300));
@@ -456,7 +462,6 @@ class MessageService extends ChangeNotifier {
         _updateConversation(conv);
       }
       notifyListeners();
-      appLog.d('dart MessageService ✅ 加载会话列表成功: ${_conversations.length} 个会话');
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载会话列表失败: $e');
     }

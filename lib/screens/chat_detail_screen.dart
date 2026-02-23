@@ -207,7 +207,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         return;
       }
 
-      // 先创建消息并加入列表，再发送，成功后更新发送状态
+      // 先清空输入框，再发送，避免等网络返回才消失
+      _textController.clear();
+
       final groupId = sessionType == 3 || sessionType == 2
           ? (widget.conversation.groupId.isNotEmpty
               ? widget.conversation.groupId
@@ -225,7 +227,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         groupId: groupId,
       );
 
-      _textController.clear();
       // reverse 列表下新消息已在 index 0（底部），无需滚动；非 reverse 时才滚到底部
       if (!widget.preLoaded) _scrollToBottom();
     } catch (e, st) {
