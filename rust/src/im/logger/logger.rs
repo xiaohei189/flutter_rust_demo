@@ -455,7 +455,7 @@ pub fn init_logger(log_level: &str) {
             let w = io::stdout;
             tracing_subscriber::fmt::layer()
                 .with_writer(w)
-                .with_ansi(!cfg!(target_os = "android")) // Android logcat 不需要 ANSI
+                .with_ansi(true) // Android logcat 不需要 ANSI
                 .with_file(true)
                 .with_target(false)
                 .with_line_number(true)

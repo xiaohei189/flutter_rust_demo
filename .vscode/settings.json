@@ -1,0 +1,20 @@
+{
+    // 启用 Flutter 日志颜色输出
+    "dart.flutterRunLogFile": null,
+    // 确保终端支持颜色
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.enablePersistentSessions": false,
+    // 启用 ANSI 颜色支持
+    "terminal.integrated.minimumContrastRatio": 1,
+    // 确保终端始终支持颜色
+    "terminal.integrated.inheritEnv": true,
+    // Flutter 相关设置
+    "dart.flutterSdkPath": null,
+    "dart.enableSdkFormatter": true,
+    // 全局启用 Flutter 颜色输出
+    "dart.flutterAdditionalArgs": [],
+    // 启用 Dart/Flutter 扩展的详细日志（可能有助于颜色输出）
+    "dart.showLog": false,
+    // 确保输出面板支持颜色
+    "dart.flutterHotReloadOnSave": "all"
+}

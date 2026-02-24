@@ -26,14 +26,23 @@
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
-            "deviceId": "windows"
+            "deviceId": "windows",
+            "env": {
+                "FLUTTER_COLOR": "true"
+            }
         },
         {
-            "name": "Flutter (Android)",
+            "name": "Flutter (Android Emulator-5554)",
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
-            "deviceId": "android"
+            "deviceId": "emulator-5554",
+            "env": {
+                "RUST_LOG": "debug",
+                "PUB_HOSTED_URL": "https://pub.flutter-io.cn",
+                "FLUTTER_STORAGE_BASE_URL": "https://storage.flutter-io.cn",
+                "FLUTTER_COLOR": "true"
+            }
         },
         {
             "name": "Flutter (Android Debug)",
@@ -43,7 +52,10 @@
             "args": [
                 "--debug"
             ],
-            "deviceId": "android"
+            "deviceId": "android",
+            "env": {
+                "FLUTTER_COLOR": "true"
+            }
         },
         {
             "name": "Flutter (Android Profile)",
@@ -51,7 +63,10 @@
             "request": "launch",
             "program": "lib/main.dart",
             "flutterMode": "profile",
-            "deviceId": "android"
+            "deviceId": "android",
+            "env": {
+                "FLUTTER_COLOR": "true"
+            }
         }
     ]
 }
