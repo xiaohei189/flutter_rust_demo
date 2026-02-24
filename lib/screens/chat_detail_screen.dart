@@ -264,7 +264,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           children: [
             UserAvatar(user: _getUser(), radius: 18),
             const SizedBox(width: 10),
-            Text(_getUser().name),
+            Expanded(
+              child: Text(
+                _getUser().name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [
