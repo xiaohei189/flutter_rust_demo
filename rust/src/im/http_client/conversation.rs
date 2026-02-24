@@ -98,9 +98,11 @@ impl ConversationApi {
     }
 
     /// 从服务器获取增量会话
+    /// 服务端/ MongoDB 使用 int64，version 超过 i64::MAX 会报 overflow，故发送时截断
     pub async fn get_incremental_conversations(&self, version: u64, version_id: &str) -> Result<IncrementalConversationResp> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}/conversation/get_incremental_conversations", self.api_base_url);
+        let version_safe = version.min(i64::MAX as u64);
 
         let resp = self
             .client
@@ -109,7 +111,7 @@ impl ConversationApi {
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
-                "version": version,
+                "version": version_safe,
                 "versionID": version_id
             }))
             .send()

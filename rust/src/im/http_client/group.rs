@@ -345,9 +345,11 @@ impl GroupApi {
     }
 
     /// 增量拉取当前用户加入的群列表（与 Go getIncrementalJoinGroup 对齐）
+    /// 服务端/ MongoDB 使用 int64，version 超过 i64::MAX 会报 overflow，故发送时截断
     pub async fn get_incremental_join_groups(&self, version: u64, version_id: &str) -> Result<IncrementalJoinGroupResp> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}{}", self.api_base_url, routes::GROUP_GET_INCREMENTAL_JOIN_GROUPS);
+        let version_safe = version.min(i64::MAX as u64);
         let resp = self
             .client
             .post(&url)
@@ -355,7 +357,7 @@ impl GroupApi {
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
-                "version": version,
+                "version": version_safe,
                 "versionID": version_id,
             }))
             .send()
@@ -365,6 +367,7 @@ impl GroupApi {
     }
 
     /// 批量拉取各群的增量成员（与 Go getIncrementalGroupMemberBatch 对齐）
+    /// req_list 中的 version 发送时截断至 i64::MAX，避免服务端/ MongoDB int64 溢出
     pub async fn get_incremental_group_members_batch(
         &self,
         req_list: &[GetIncrementalGroupMemberReq],
@@ -374,9 +377,22 @@ impl GroupApi {
         }
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}{}", self.api_base_url, routes::GROUP_GET_INCREMENTAL_GROUP_MEMBERS_BATCH);
+        let req_list_safe: Vec<serde_json::Value> = req_list
+            .iter()
+            .map(|r| {
+                let mut obj = serde_json::json!({
+                    "groupID": r.group_id,
+                    "versionID": r.version_id,
+                });
+                if let Some(v) = r.version {
+                    obj["version"] = serde_json::json!(v.min(i64::MAX as u64));
+                }
+                obj
+            })
+            .collect();
         let body = serde_json::json!({
             "userID": self.user_id,
-            "reqList": req_list,
+            "reqList": req_list_safe,
         });
         let resp = self
             .client

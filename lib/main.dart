@@ -15,6 +15,8 @@ final messageService = MessageService();
 
 /// WebSocket 地址；Android 模拟器内用 10.0.2.2 访问宿主机
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
+/// HTTP API 基础地址；与 ws 同 host，Android 下不能用 localhost
+String get kApiBaseUrl => 'http://${getHostAddress()}:10002';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +46,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter 聊天应用',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: SplashScreen(wsUrl: kWsUrl),
+      home: SplashScreen(wsUrl: kWsUrl, apiBaseUrl: kApiBaseUrl),
     );
   }
 }

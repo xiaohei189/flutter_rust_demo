@@ -190,6 +190,7 @@ abstract class RustLibApi extends BaseApi {
     required String token,
     required int platformId,
     String? wsUrl,
+    String? apiBaseUrl,
   });
 
   Future<void> crateApiBridgeClientOpenImBridgeClientSendMessage({
@@ -971,6 +972,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String token,
     required int platformId,
     String? wsUrl,
+    String? apiBaseUrl,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -980,6 +982,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(token, serializer);
           sse_encode_i_32(platformId, serializer);
           sse_encode_opt_String(wsUrl, serializer);
+          sse_encode_opt_String(apiBaseUrl, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -993,7 +996,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientOpenImBridgeClientNewConstMeta,
-        argValues: [userId, token, platformId, wsUrl],
+        argValues: [userId, token, platformId, wsUrl, apiBaseUrl],
         apiImpl: this,
       ),
     );
@@ -1002,7 +1005,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiBridgeClientOpenImBridgeClientNewConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_new",
-        argNames: ["userId", "token", "platformId", "wsUrl"],
+        argNames: ["userId", "token", "platformId", "wsUrl", "apiBaseUrl"],
       );
 
   @override

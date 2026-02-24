@@ -689,11 +689,12 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
             let api_token = <String>::sse_decode(&mut deserializer);
             let api_platform_id = <i32>::sse_decode(&mut deserializer);
             let api_ws_url = <Option<String>>::sse_decode(&mut deserializer);
+            let api_api_base_url = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::new(api_user_id, api_token, api_platform_id, api_ws_url).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::new(api_user_id, api_token, api_platform_id, api_ws_url, api_api_base_url).await?;
                         Ok(output_ok)
                     })()
                     .await,

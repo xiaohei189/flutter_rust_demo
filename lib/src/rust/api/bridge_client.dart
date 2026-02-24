@@ -137,16 +137,19 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// - `token`: 认证 token（从登录接口获取）
   /// - `platform_id`: 平台 ID（例如：5 表示 Web）
   /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
+  /// - `api_base_url`: HTTP API 基础地址（可选，默认 localhost:10002；Android 等可传单独地址）
   static Future<OpenImBridgeClient> newInstance({
     required String userId,
     required String token,
     required int platformId,
     String? wsUrl,
+    String? apiBaseUrl,
   }) => RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientNew(
     userId: userId,
     token: token,
     platformId: platformId,
     wsUrl: wsUrl,
+    apiBaseUrl: apiBaseUrl,
   );
 
   /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。

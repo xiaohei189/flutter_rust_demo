@@ -957,11 +957,11 @@ impl ConversationHandle {
             let mut conv = match self.repository.conversation.get_conversation_by_id(conversation_id).await {
                 Ok(Some(c)) => c,
                 Ok(None) => {
-                    warn!("[conversation_handle] GetConversation err conversationID={} (skip this conv)", conversation_id);
+                    warn!("[conversation_handle] GetConversation not found conversationID={} (skip this conv)", conversation_id);
                     continue;
                 }
                 Err(e) => {
-                    warn!("[conversation_handle] GetConversation err conversationID={} err={} (skip this conv)", conversation_id, e);
+                    warn!("[conversation_handle] GetConversation failed conversationID={} err={} (skip this conv)", conversation_id, e);
                     continue;
                 }
             };

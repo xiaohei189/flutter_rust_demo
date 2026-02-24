@@ -243,10 +243,12 @@ class MessageService extends ChangeNotifier {
 
   /// 初始化并连接服务
   ///
-  /// [wsUrl] WebSocket 地址。
+  /// [wsUrl] WebSocket 地址（可选，默认 localhost:10001）。
+  /// [apiBaseUrl] HTTP API 基础地址（可选，默认 localhost:10002；Android 等可传单独地址）。
   /// [userId] / [imToken] 若都传入则使用本地凭证连接，不调登录接口；否则需在调用前通过登录页获取并传入。
   Future<void> initialize({
     String? wsUrl,
+    String? apiBaseUrl,
     String? userId,
     String? imToken,
   }) async {
@@ -290,6 +292,7 @@ class MessageService extends ChangeNotifier {
         token: resolvedImToken,
         platformId: 5,
         wsUrl: wsUrl,
+        apiBaseUrl: apiBaseUrl,
       );
       appLog.i('[MessageService] newInstance 完成');
 

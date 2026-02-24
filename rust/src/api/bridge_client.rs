@@ -71,17 +71,16 @@ impl OpenIMBridgeClient {
     /// - `token`: 认证 token（从登录接口获取）
     /// - `platform_id`: 平台 ID（例如：5 表示 Web）
     /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
+    /// - `api_base_url`: HTTP API 基础地址（可选，默认 localhost:10002；Android 等可传单独地址）
     #[flutter_rust_bridge::frb]
     pub async fn new(
         user_id: String,
         token: String,
         platform_id: i32,
         ws_url: Option<String>,
+        api_base_url: Option<String>,
     ) -> Result<Self> {
-        let mut config = ClientConfig::new(user_id, token, platform_id);
-        if let Some(url) = ws_url {
-            config.ws_url = url;
-        }
+        let mut config = ClientConfig::new(user_id, token, platform_id, ws_url, api_base_url);
         config.conversation_db_url = format!(
             "sqlite://{}/conversations_{}.db?mode=rwc",
             std::env::temp_dir().as_path().to_string_lossy(),

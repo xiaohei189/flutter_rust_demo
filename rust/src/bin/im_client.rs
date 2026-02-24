@@ -36,7 +36,13 @@ async fn main() -> anyhow::Result<()> {
     info!("登录中: {} {}", args.area_code, args.phone);
     let token_info = login_async(args.area_code.clone(), args.phone.clone(), args.password, args.platform).await?;
 
-    let config = ClientConfig::new(token_info.user_id.clone(), token_info.im_token.clone(), args.platform);
+    let config = ClientConfig::new(
+        token_info.user_id.clone(),
+        token_info.im_token.clone(),
+        args.platform,
+        None,
+        None,
+    );
     info!("已创建配置，user_id={}", config.user_id);
 
     let mut client = IMClient::new(config).await?;

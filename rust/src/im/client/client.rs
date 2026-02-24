@@ -28,18 +28,27 @@ pub struct ClientConfig {
 }
 
 impl ClientConfig {
-    /// 创建默认配置
-    pub fn new(user_id: String, token: String, platform_id: i32) -> Self {
+    /// 创建配置
+    ///
+    /// - `ws_url`: WebSocket 地址，None 时使用默认 `ws://localhost:10001`
+    /// - `api_base_url`: HTTP API 基础地址，None 时使用默认 `http://localhost:10002`（Android 等可传入单独地址）
+    pub fn new(
+        user_id: String,
+        token: String,
+        platform_id: i32,
+        ws_url: Option<String>,
+        api_base_url: Option<String>,
+    ) -> Self {
         Self {
             user_id,
             token,
             platform_id,
-            ws_url: "ws://localhost:10001".to_string(),
+            ws_url: ws_url.unwrap_or_else(|| "ws://localhost:10001".to_string()),
             compression: "gzip".to_string(),
             is_background: false,
             is_msg_resp: true,
             sdk_type: "js".to_string(),
-            api_base_url: "http://localhost:10002".to_string(),
+            api_base_url: api_base_url.unwrap_or_else(|| "http://localhost:10002".to_string()),
             conversation_db_url: "sqlite://conversations.db?mode=rwc".to_string(),
             msg_resp_timeout: Duration::from_secs(10),
         }

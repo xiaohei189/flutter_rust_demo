@@ -12,8 +12,13 @@ import 'main_screen.dart';
 /// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
 class LoginScreen extends StatefulWidget {
   final String wsUrl;
+  final String apiBaseUrl;
 
-  const LoginScreen({super.key, this.wsUrl = 'ws://localhost:10001'});
+  const LoginScreen({
+    super.key,
+    this.wsUrl = 'ws://localhost:10001',
+    this.apiBaseUrl = 'http://localhost:10002',
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -187,6 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appLog.i('[登录] 凭证已保存，开始 MessageService.initialize');
       messageService.initialize(
         wsUrl: widget.wsUrl,
+        apiBaseUrl: widget.apiBaseUrl,
         userId: userId,
         imToken: imToken,
       );

@@ -176,9 +176,11 @@ impl FriendApi {
     }
 
     /// 从服务器获取增量好友
+    /// 服务端/ MongoDB 使用 int64，version 超过 i64::MAX 会报 overflow，故发送时截断
     pub async fn get_incremental_friends(&self, version: u64, version_id: &str) -> Result<IncrementalFriendsResp> {
         let operation_id = Uuid::new_v4().to_string();
         let url = format!("{}{}", self.api_base_url, routes::FRIEND_GET_INCREMENTAL_FRIENDS);
+        let version_safe = version.min(i64::MAX as u64);
 
         let resp = self
             .client
@@ -187,7 +189,7 @@ impl FriendApi {
             .header("operationID", &operation_id)
             .json(&serde_json::json!({
                 "userID": self.user_id,
-                "version": version,
+                "version": version_safe,
                 "versionID": version_id,
             }))
             .send()

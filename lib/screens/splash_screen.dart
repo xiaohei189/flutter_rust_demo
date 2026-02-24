@@ -9,8 +9,13 @@ import '../utils/login_storage.dart';
 /// 启动页：有本地凭证则尝试自动登录并进入主页，否则进入登录页
 class SplashScreen extends StatefulWidget {
   final String wsUrl;
+  final String apiBaseUrl;
 
-  const SplashScreen({super.key, this.wsUrl = 'ws://localhost:10001'});
+  const SplashScreen({
+    super.key,
+    this.wsUrl = 'ws://localhost:10001',
+    this.apiBaseUrl = 'http://localhost:10002',
+  });
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -33,6 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
       try {
         await messageService.initialize(
           wsUrl: widget.wsUrl,
+          apiBaseUrl: widget.apiBaseUrl,
           userId: credentials.userId,
           imToken: credentials.imToken,
         );
@@ -50,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => LoginScreen(wsUrl: widget.wsUrl),
+        builder: (_) => LoginScreen(wsUrl: widget.wsUrl, apiBaseUrl: widget.apiBaseUrl),
       ),
     );
   }

@@ -72,6 +72,8 @@ pub async fn create_and_start_client(db_suffix: &str) -> anyhow::Result<(IMClien
         token_info.user_id.clone(),
         token_info.im_token.clone(),
         DEFAULT_PLATFORM,
+        None,
+        None,
     );
     config.conversation_db_url = format!(
         "sqlite://{}/conversations_test_{}.db?mode=rwc",
@@ -92,6 +94,8 @@ pub async fn create_client(db_suffix: &str) -> anyhow::Result<IMClient> {
         token_info.user_id.clone(),
         token_info.im_token.clone(),
         DEFAULT_PLATFORM,
+        None,
+        None,
     );
     config.conversation_db_url = format!(
         "sqlite://{}/conversations_test_{}.db?mode=rwc",
