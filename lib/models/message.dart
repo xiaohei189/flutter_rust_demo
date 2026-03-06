@@ -15,9 +15,10 @@ class Message {
   final String content;
   final MessageType type;
   final DateTime timestamp;
-  final bool isSent; // 是否为自己发送
-  /// 发送状态，仅自己发送的消息有效；null 表示历史消息默认已送达
+  final bool isSent;
   final MessageSendStatus? sendStatus;
+  final String? senderNickname;
+  final String? senderFaceUrl;
 
   Message({
     required this.id,
@@ -27,9 +28,10 @@ class Message {
     required this.timestamp,
     this.isSent = true,
     this.sendStatus,
+    this.senderNickname,
+    this.senderFaceUrl,
   });
 
-  /// 复制并更新发送状态
   Message copyWith({MessageSendStatus? sendStatus}) {
     return Message(
       id: id,
@@ -39,9 +41,10 @@ class Message {
       timestamp: timestamp,
       isSent: isSent,
       sendStatus: sendStatus ?? this.sendStatus,
+      senderNickname: senderNickname,
+      senderFaceUrl: senderFaceUrl,
     );
   }
 
-  /// 是否为自己发送的消息（与 senderId 比较需用当前登录用户 ID，这里用 isSent 与后端一致）
   bool get isFromMe => isSent;
 }

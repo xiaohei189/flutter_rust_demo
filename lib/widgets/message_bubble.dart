@@ -3,40 +3,74 @@ import 'package:intl/intl.dart';
 
 import '../models/message.dart' show Message, MessageSendStatus;
 import '../models/user.dart';
+import '../screens/user_profile_screen.dart';
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
 
-/// 消息气泡组件
+/// 消息气泡：我=左侧蓝色，对方=右侧浅灰；头像优先显示图片，无图片显示名字首字
 class MessageBubble extends StatelessWidget {
   final Message message;
   final User otherUser;
+  final String? currentUserId;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.otherUser,
+    this.currentUserId,
   });
+
+  /// 根据消息的发送者信息构建头像 User，优先用消息自带的昵称/头像
+  User _buildSenderUser() {
+    final isFromMe = _isFromMe;
+    if (isFromMe) {
+      return User(
+        id: message.senderId.isNotEmpty ? message.senderId : (currentUserId ?? ''),
+        name: message.senderNickname?.isNotEmpty == true
+            ? message.senderNickname!
+            : (currentUserId ?? '我'),
+        avatar: message.senderFaceUrl,
+      );
+    } else {
+      if (message.senderNickname != null || message.senderFaceUrl != null) {
+        return User(
+          id: message.senderId,
+          name: message.senderNickname?.isNotEmpty == true
+              ? message.senderNickname!
+              : otherUser.name,
+          avatar: message.senderFaceUrl?.isNotEmpty == true
+              ? message.senderFaceUrl
+              : otherUser.avatar,
+        );
+      }
+      return otherUser;
+    }
+  }
+
+  bool get _isFromMe =>
+      message.isFromMe ||
+      (currentUserId != null &&
+          currentUserId!.isNotEmpty &&
+          message.senderId.isNotEmpty &&
+          message.senderId == currentUserId);
 
   @override
   Widget build(BuildContext context) {
-    final isFromMe = message.isFromMe;
+    final isFromMe = _isFromMe;
     final timeFormat = DateFormat('HH:mm');
+    final senderUser = _buildSenderUser();
 
-    // 当前用户在左侧：自己的消息在左，对方在右。气泡小角在靠近头像一侧。
     final bubbleContent = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: isFromMe
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.end,
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Container(
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 10,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: isFromMe
                 ? AppTheme.myMessageColor
@@ -44,14 +78,14 @@ class MessageBubble extends StatelessWidget {
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(18),
               topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isFromMe ? 4 : 18),
-              bottomRight: Radius.circular(isFromMe ? 18 : 4),
+              bottomLeft: Radius.circular(isFromMe ? 18 : 4),
+              bottomRight: Radius.circular(isFromMe ? 4 : 18),
             ),
           ),
           child: Text(
             message.content,
             style: TextStyle(
-              color: isFromMe ? Colors.white : Colors.black87,
+              color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
               fontSize: 16,
             ),
           ),
@@ -59,16 +93,16 @@ class MessageBubble extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: isFromMe
-              ? MainAxisAlignment.start
-              : MainAxisAlignment.end,
           children: [
             Text(
               timeFormat.format(message.timestamp),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 11,
+                color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+              ),
             ),
             if (isFromMe && message.sendStatus != null) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               _buildSendStatusIcon(message.sendStatus!),
             ],
           ],
@@ -76,37 +110,55 @@ class MessageBubble extends StatelessWidget {
       ],
     );
 
+    // 自己：右侧（气泡在左、头像在右）；对方：左侧（头像在左、气泡在右）
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: isFromMe
-            ? MainAxisAlignment.start
-            : MainAxisAlignment.end,
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 当前用户（自己）的消息：在左侧，头像在左、气泡在右
-          if (isFromMe) ...[
-            UserAvatar(user: User.currentUser, radius: 18),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: bubbleContent,
-              ),
-            ),
-          ],
-          // 对方消息：在右侧，气泡在左、头像在右
           if (!isFromMe) ...[
-            Flexible(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: bubbleContent,
-              ),
+            GestureDetector(
+              onTap: () => _navigateToProfile(context, senderUser, false),
+              child: UserAvatar(user: senderUser, radius: 18),
             ),
             const SizedBox(width: 8),
-            UserAvatar(user: otherUser, radius: 18),
+          ],
+          Flexible(
+            child: Align(
+              alignment: isFromMe
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: bubbleContent,
+            ),
+          ),
+          if (isFromMe) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _navigateToProfile(context, senderUser, true),
+              child: UserAvatar(user: senderUser, radius: 18),
+            ),
           ],
         ],
+      ),
+    );
+  }
+
+  void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {
+    final isSelf = isFromMeHint ||
+        (currentUserId != null &&
+            currentUserId!.isNotEmpty &&
+            user.id.isNotEmpty &&
+            user.id == currentUserId);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(
+          user: user,
+          isCurrentUser: isSelf,
+        ),
       ),
     );
   }
@@ -119,13 +171,21 @@ class MessageBubble extends StatelessWidget {
           height: 14,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Colors.white70,
+            color: AppTheme.myMessageColor.withValues(alpha: 0.9),
           ),
         );
       case MessageSendStatus.sent:
-        return Icon(Icons.done_all, size: 14, color: Colors.white70);
+        return Icon(
+          Icons.done_all,
+          size: 14,
+          color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+        );
       case MessageSendStatus.failed:
-        return Icon(Icons.error_outline, size: 14, color: Colors.red[200]);
+        return Icon(
+          Icons.error_outline,
+          size: 14,
+          color: AppTheme.unreadRed.withValues(alpha: 0.9),
+        );
     }
   }
 }

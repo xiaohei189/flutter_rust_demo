@@ -39,37 +39,50 @@ class UserAvatar extends StatelessWidget {
       );
     }
 
-    // 使用首字母作为头像
+    final initials = _getInitials(user.name);
+    final fontSize = initials.length <= 1
+        ? radius * 0.8
+        : initials.length <= 2
+            ? radius * 0.7
+            : radius * 0.48;
+
     return CircleAvatar(
       radius: radius,
       backgroundColor: _getColorFromName(user.name),
       child: Text(
-        _getInitials(user.name),
+        initials,
         style: TextStyle(
           color: Colors.white,
-          fontSize: radius * 0.8,
+          fontSize: fontSize,
           fontWeight: FontWeight.bold,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.visible,
       ),
     );
   }
 
-  /// 根据名字获取首字母
+  /// 根据名字获取展示文字：
+  /// - 有中文：取第一个中文字符
+  /// - 多个英文单词：取首字母缩写（如 "John Doe" → "JD"）
+  /// - 单个英文单词且 ≤ 6 字符：显示完整名字（如 "alice" → "alice"）
+  /// - 单个英文单词且 > 6 字符：截取前 4 字符（如 "xiaoming11" → "xiao"）
   String _getInitials(String name) {
     if (name.isEmpty) return '?';
-    if (name.length == 1) return name.toUpperCase();
-    
-    // 中文名取最后一个字，英文名取首字母
-    if (RegExp(r'[\u4e00-\u9fa5]').hasMatch(name)) {
-      return name.substring(name.length - 1); // 中文取最后一个字
-    } else {
-      // 英文取首字母
-      final parts = name.split(' ');
-      if (parts.length >= 2) {
-        return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-      }
-      return name.substring(0, 1).toUpperCase();
+
+    final cnMatch = RegExp(r'[\u4e00-\u9fa5]').firstMatch(name);
+    if (cnMatch != null) {
+      return cnMatch.group(0)!;
     }
+
+    final trimmed = name.trim();
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+
+    if (trimmed.length <= 6) return trimmed;
+    return trimmed.substring(0, 4);
   }
 
   /// 根据名字生成颜色

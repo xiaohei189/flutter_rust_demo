@@ -132,11 +132,9 @@ class MessageService extends ChangeNotifier {
 
   /// 将 MsgStruct 转换为 Message
   Message _msgStructToMessage(im_msg.MsgStruct msg) {
-    // 从 MsgStruct 中提取信息
     final clientMsgId = msg.clientMsgId ?? '';
     final sendId = msg.sendId ?? '';
 
-    // 提取内容（优先使用 textElem，否则使用 content）
     String content = '';
     if (msg.textElem != null) {
       content = msg.textElem!.content;
@@ -157,17 +155,24 @@ class MessageService extends ChangeNotifier {
     final sendTime = msg.sendTime.toInt();
     final isSent = sendId == _currentUserId;
 
+    appLog.d(
+      '📩 _msgStructToMessage: sendId="$sendId", _currentUserId="$_currentUserId", '
+      'isSent=$isSent, clientMsgId="$clientMsgId", contentType=${msg.contentType}',
+    );
+
     return Message(
       id: clientMsgId.isNotEmpty
           ? clientMsgId
           : DateTime.now().millisecondsSinceEpoch.toString(),
       senderId: sendId,
       content: content,
-      type: MessageType.text, // 暂时都当作文本消息
+      type: MessageType.text,
       timestamp: sendTime > 0
           ? DateTime.fromMillisecondsSinceEpoch(sendTime)
           : DateTime.now(),
       isSent: isSent,
+      senderNickname: msg.senderNickname,
+      senderFaceUrl: msg.senderFaceUrl,
     );
   }
 
@@ -503,6 +508,13 @@ class MessageService extends ChangeNotifier {
   /// 刷新会话列表（供下拉刷新等场景调用）
   Future<void> refreshConversations() async {
     await _loadConversations();
+  }
+
+  /// 从本地列表移除会话（左滑删除/长按删除时调用；服务端删除可后续对接 SDK）
+  void removeConversation(String conversationId) {
+    _conversations.removeWhere((c) => c.conversationId == conversationId);
+    _messages.remove(conversationId);
+    notifyListeners();
   }
 
   /// 断开连接

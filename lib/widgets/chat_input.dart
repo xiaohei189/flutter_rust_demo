@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// 聊天输入框组件：回车发送，Shift+回车换行
+import '../theme/app_theme.dart';
+
+/// 底部输入区：语音/文字切换、自适应输入框、表情、加号（无内容）/发送（有内容）
 class ChatInput extends StatefulWidget {
   final TextEditingController controller;
   final Function(String) onSend;
@@ -18,22 +20,48 @@ class ChatInput extends StatefulWidget {
 
 class _ChatInputState extends State<ChatInput> {
   late FocusNode _focusNode;
+  bool _isVoiceMode = false;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
+    _focusNode.onKeyEvent = _handleKeyEvent;
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.enter &&
+        key != LogicalKeyboardKey.numpadEnter) {
+      return KeyEventResult.ignored;
+    }
+    if (HardwareKeyboard.instance.isShiftPressed) {
+      return KeyEventResult.ignored;
+    }
+    _doSend();
+    return KeyEventResult.handled;
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_onTextChanged);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   void _doSend() {
     final text = widget.controller.text.trim();
     if (text.isNotEmpty) widget.onSend(text);
+  }
+
+  bool get _hasText {
+    return widget.controller.text.trim().isNotEmpty;
   }
 
   @override
@@ -44,51 +72,64 @@ class _ChatInputState extends State<ChatInput> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.2),
-            blurRadius: 5,
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // 语音/文字切换
             IconButton(
-              icon: const Icon(Icons.mic_none),
+              icon: Icon(
+                _isVoiceMode ? Icons.keyboard_alt_outlined : Icons.mic_none,
+                size: 26,
+                color: AppTheme.textSecondaryColor,
+              ),
               onPressed: () {
-                // TODO: 语音输入
+                setState(() => _isVoiceMode = !_isVoiceMode);
+                if (!_isVoiceMode) _focusNode.requestFocus();
               },
             ),
+            // 输入框
             Expanded(
-              child: Focus(
-                focusNode: _focusNode,
-                onKeyEvent: (FocusNode node, KeyEvent event) {
-                  if (event is! KeyDownEvent) return KeyEventResult.ignored;
-                  final key = event.logicalKey;
-                  if (key != LogicalKeyboardKey.enter &&
-                      key != LogicalKeyboardKey.numpadEnter) {
-                    return KeyEventResult.ignored;
-                  }
-                  if (HardwareKeyboard.instance.isShiftPressed) {
-                    return KeyEventResult.ignored;
-                  }
-                  _doSend();
-                  return KeyEventResult.handled;
-                },
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
                 child: TextField(
                   controller: widget.controller,
+                  focusNode: _focusNode,
                   maxLines: null,
                   textInputAction: TextInputAction.send,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppTheme.textPrimaryColor,
+                  ),
                   decoration: InputDecoration(
                     hintText: '输入消息...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide.none,
+                    hintStyle: const TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 16,
                     ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: AppTheme.backgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
+                      horizontal: 12,
                       vertical: 10,
                     ),
                   ),
@@ -96,15 +137,47 @@ class _ChatInputState extends State<ChatInput> {
                 ),
               ),
             ),
+            // 表情
             IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: () => _showMoreOptions(context),
+              icon: Icon(
+                Icons.emoji_emotions_outlined,
+                size: 26,
+                color: AppTheme.textSecondaryColor,
+              ),
+              onPressed: () {
+                // TODO: 打开表情面板
+              },
             ),
-            IconButton(
-              icon: const Icon(Icons.send),
-              color: Theme.of(context).primaryColor,
-              onPressed: _doSend,
-            ),
+            // 有内容时显示发送，否则显示加号
+            if (_hasText)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: TextButton(
+                  onPressed: _doSend,
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: const Text('发送', style: TextStyle(fontSize: 15)),
+                ),
+              )
+            else
+              IconButton(
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  size: 28,
+                  color: AppTheme.textSecondaryColor,
+                ),
+                onPressed: () => _showMoreOptions(context),
+              ),
           ],
         ),
       ),
@@ -114,53 +187,69 @@ class _ChatInputState extends State<ChatInput> {
   void _showMoreOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: GridView.count(
-          shrinkWrap: true,
-          crossAxisCount: 4,
-          mainAxisSpacing: 20,
-          crossAxisSpacing: 20,
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _buildOptionItem(Icons.photo, '相册', () {}),
-            _buildOptionItem(Icons.camera_alt, '拍照', () {}),
-            _buildOptionItem(Icons.videocam, '视频', () {}),
-            _buildOptionItem(Icons.insert_drive_file, '文件', () {}),
-            _buildOptionItem(Icons.location_on, '位置', () {}),
-            _buildOptionItem(Icons.contact_page, '名片', () {}),
-            _buildOptionItem(Icons.calendar_today, '日程', () {}),
-            _buildOptionItem(Icons.payment, '转账', () {}),
+            Row(
+              children: [
+                _buildOptionItem(context, Icons.photo_library_outlined, '相册', () {}),
+                const SizedBox(width: 32),
+                _buildOptionItem(context, Icons.camera_alt_outlined, '相机', () {}),
+                const SizedBox(width: 32),
+                _buildOptionItem(context, Icons.location_on_outlined, '定位', () {}),
+                const SizedBox(width: 32),
+                _buildOptionItem(context, Icons.insert_drive_file_outlined, '文件', () {}),
+                const SizedBox(width: 32),
+                _buildOptionItem(context, Icons.card_giftcard_outlined, '红包', () {}),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOptionItem(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildOptionItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 28),
+            child: Icon(icon, size: 28, color: AppTheme.primaryColor),
           ),
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondaryColor,
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
-

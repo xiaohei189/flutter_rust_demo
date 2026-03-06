@@ -95,6 +95,7 @@ impl ConnectionHandle {
         } else {
             format!("&compression={}", self.config.compression)
         };
+        println!("hello world: ");
 
         format!(
             "{}/?token={}&sendID={}&platformID={}&operationID={}{}&isBackground={}&isMsgResp={}&sdkType={}",
@@ -108,6 +109,7 @@ impl ConnectionHandle {
             self.config.is_msg_resp,
             self.config.sdk_type
         )
+
     }
 
     /// 通知 message_handle 长连已连接

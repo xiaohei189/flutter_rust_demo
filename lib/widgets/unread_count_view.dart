@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// 未读数角标（与 openim-flutter-demo UnreadCountView 对齐）
+import '../theme/app_theme.dart';
+
+/// 未读数角标：红色小圆点（数字或单纯红点）
 class UnreadCountView extends StatelessWidget {
   const UnreadCountView({
     super.key,
@@ -23,7 +25,7 @@ class UnreadCountView extends StatelessWidget {
         maxWidth: count > 99 ? size * 1.8 : size,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF381F),
+        color: AppTheme.unreadRed,
         shape: count > 99 ? BoxShape.rectangle : BoxShape.circle,
         borderRadius: count > 99 ? BorderRadius.circular(size / 2) : null,
       ),

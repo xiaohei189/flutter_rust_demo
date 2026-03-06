@@ -5,13 +5,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:intl/intl.dart';
 
 import '../models/user.dart';
+import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import 'unread_count_view.dart';
 import 'user_avatar.dart';
-
-/// 会话列表项颜色与 openim-flutter-demo 对齐
-const _colorName = Color(0xFF0C1C33);
-const _colorSub = Color(0xFF8E9AB0);
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
 T? _getKey<T>(Map<String, dynamic> map, String camel, String snake) {
@@ -46,7 +43,6 @@ String latestMessagePreview(String latestMsgJson) {
   if (latestMsgJson.isEmpty) return '暂无消息';
   final trimmed = latestMsgJson.trim();
   if (trimmed.isEmpty) return '暂无消息';
-  // 非 JSON 时（例如纯文本）直接展示
   if (!trimmed.startsWith('{')) {
     return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
   }
@@ -61,7 +57,7 @@ String latestMessagePreview(String latestMsgJson) {
 
     String body;
     switch (contentType) {
-      case 101: // TEXT
+      case 101:
         body = '';
         if (textElem != null) {
           final c = textElem['content'];
@@ -119,14 +115,17 @@ String latestMessagePreview(String latestMsgJson) {
   }
 }
 
-/// 聊天列表项组件（参考会话列表效果：红点未读、草稿、时间格式、选中高亮）
+/// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
 class ChatListItem extends StatelessWidget {
   final im_conv.LocalConversation conversation;
   final VoidCallback onTap;
-  /// 是否为当前选中项（高亮背景）
   final bool isSelected;
-  /// 当前登录用户 ID，用于从单聊 conversationId(si_uid1_uid2) 中解析出对方显示名
   final String? currentUserId;
+  final VoidCallback? onDelete;
+  final VoidCallback? onPinToggle;
+  final VoidCallback? onMarkRead;
+  /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
+  final int? itemIndex;
 
   const ChatListItem({
     super.key,
@@ -134,9 +133,12 @@ class ChatListItem extends StatelessWidget {
     required this.onTap,
     this.isSelected = false,
     this.currentUserId,
+    this.onDelete,
+    this.onPinToggle,
+    this.onMarkRead,
+    this.itemIndex,
   });
 
-  /// 时间展示：与 openim IMUtils.getChatTimeline 一致（今天 HH:mm、昨天、周x、今年 M月d日、更早 yyyy年）
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -151,33 +153,30 @@ class ChatListItem extends StatelessWidget {
 
   String _formatTime(PlatformInt64? timeMs) {
     if (timeMs == null || timeMs.toInt() <= 0) return '';
-
     final time = DateTime.fromMillisecondsSinceEpoch(timeMs.toInt());
     final now = DateTime.now();
     const formatToday = 'HH:mm';
-
     if (_isSameDay(time, now)) {
       return DateFormat(formatToday).format(time);
     }
     final yesterday = now.subtract(const Duration(days: 1));
     if (_isSameDay(time, yesterday)) {
-      return '昨天 ${DateFormat(formatToday).format(time)}';
+      return '昨天';
     }
     if (_isSameWeek(time, now)) {
-      return '${_weekdayZh[time.weekday - 1]} ${DateFormat(formatToday).format(time)}';
+      return _weekdayZh[time.weekday - 1];
     }
     if (time.year == now.year) {
-      return DateFormat('M月d日 HH:mm').format(time);
+      return DateFormat('M/d').format(time);
     }
-    return DateFormat('yyyy年M月d日 HH:mm').format(time);
+    return DateFormat('yyyy/M/d').format(time);
   }
 
-  /// 会话展示名称：优先 showName；否则避免直接展示 si_/sg_ 原始 ID，解析为「用户 XXX」/「群聊 XXX」
   String get _conversationDisplayName {
     if (conversation.showName.isNotEmpty) return conversation.showName;
     final cid = conversation.conversationId;
     switch (conversation.conversationType) {
-      case 1: // 单聊：conversationId 格式 si_uid1_uid2，取「对方」ID 显示
+      case 1:
         if (conversation.userId.isNotEmpty && !_isConversationIdPrefix(conversation.userId)) {
           return conversation.userId;
         }
@@ -192,7 +191,7 @@ class ChatListItem extends StatelessWidget {
         }
         return '未知用户';
       case 2:
-      case 3: // 群聊：conversationId 格式 sg_groupId
+      case 3:
         if (conversation.groupId.isNotEmpty && !_isConversationIdPrefix(conversation.groupId)) {
           return conversation.groupId;
         }
@@ -223,7 +222,6 @@ class ChatListItem extends StatelessWidget {
     );
   }
 
-  /// 副标题主文案：与 openim getContent 一致。草稿支持 JSON {"text":"..."}，否则 latestMsg 预览；无消息时提示「点击发消息」
   String get _contentPreview {
     if (conversation.draftText.isNotEmpty) {
       try {
@@ -237,33 +235,33 @@ class ChatListItem extends StatelessWidget {
     return preview == '暂无消息' ? '点击发消息' : preview;
   }
 
-  /// 未读条数前缀「[n条] 」；无未读返回空
   String get _unreadPrefix {
     final n = conversation.unreadCount;
     return n > 0 ? '[$n条] ' : '';
   }
 
   bool get _hasDraft => conversation.draftText.isNotEmpty;
+  /// 免打扰：recvMsgOpt 1=接收但不通知
+  bool get _isMuted => conversation.recvMsgOpt == 1;
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildContent(BuildContext context) {
     final user = _getUser();
-    final latestMsgTime = conversation.latestMsgSendTime;
     final unread = conversation.unreadCount;
 
     return Material(
-      color: isSelected ? Colors.blue.withOpacity(0.08) : null,
+      color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.08) : Colors.white,
       child: InkWell(
         onTap: onTap,
+        onLongPress: () => _showLongPressMenu(context),
         child: Container(
-          height: 68,
+          height: 72,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  UserAvatar(user: user, radius: 24),
+                  UserAvatar(user: user, radius: 26),
                   if (conversation.isPinned)
                     Positioned(
                       right: -2,
@@ -271,7 +269,7 @@ class ChatListItem extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(2),
                         decoration: const BoxDecoration(
-                          color: Colors.orange,
+                          color: AppTheme.draftOrange,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.push_pin, size: 10, color: Colors.white),
@@ -291,7 +289,7 @@ class ChatListItem extends StatelessWidget {
                           child: Text(
                             user.name,
                             style: const TextStyle(
-                              color: _colorName,
+                              color: AppTheme.textPrimaryColor,
                               fontWeight: FontWeight.w600,
                               fontSize: 17,
                             ),
@@ -300,12 +298,15 @@ class ChatListItem extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          _formatTime(latestMsgTime),
-                          style: const TextStyle(fontSize: 12, color: _colorSub),
+                          _formatTime(conversation.latestMsgSendTime),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondaryColor,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(
@@ -313,12 +314,18 @@ class ChatListItem extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             text: TextSpan(
-                              style: const TextStyle(fontSize: 14, color: _colorSub),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textSecondaryColor,
+                              ),
                               children: [
                                 if (_hasDraft)
                                   const TextSpan(
                                     text: '[草稿] ',
-                                    style: TextStyle(color: Color(0xFF0089FF), fontSize: 14),
+                                    style: TextStyle(
+                                      color: AppTheme.draftOrange,
+                                      fontSize: 14,
+                                    ),
                                   )
                                 else if (_unreadPrefix.isNotEmpty)
                                   TextSpan(text: _unreadPrefix),
@@ -327,6 +334,15 @@ class ChatListItem extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (_isMuted)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(
+                              Icons.notifications_off_outlined,
+                              size: 16,
+                              color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                            ),
+                          ),
                         UnreadCountView(count: unread),
                       ],
                     ),
@@ -338,5 +354,63 @@ class ChatListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showLongPressMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.push_pin_outlined),
+              title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
+              onTap: () {
+                Navigator.pop(ctx);
+                onPinToggle?.call();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.done_all_outlined),
+              title: const Text('标为已读'),
+              onTap: () {
+                Navigator.pop(ctx);
+                onMarkRead?.call();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: AppTheme.unreadRed),
+              title: const Text('删除', style: TextStyle(color: AppTheme.unreadRed)),
+              onTap: () {
+                Navigator.pop(ctx);
+                onDelete?.call();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (onDelete != null) {
+      return Dismissible(
+        key: ValueKey<String>(
+          '${conversation.conversationId}_${itemIndex ?? 0}',
+        ),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          color: AppTheme.unreadRed,
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 24),
+          child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+        ),
+        onDismissed: (_) => onDelete!(),
+        child: _buildContent(context),
+      );
+    }
+    return _buildContent(context);
   }
 }

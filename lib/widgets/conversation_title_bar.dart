@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// 会话列表标题栏左侧的同步/连接状态（与 openim SyncStatusView 对齐）
+import '../theme/app_theme.dart';
+
+/// 网络状态小标签
 class _SyncStatusChip extends StatelessWidget {
   const _SyncStatusChip({
     required this.isFailed,
@@ -10,39 +12,39 @@ class _SyncStatusChip extends StatelessWidget {
   final bool isFailed;
   final String label;
 
-  static const _colorFailedBg = Color(0xFFFFE1DD);
-  static const _colorFailedText = Color(0xFFFF381F);
-  static const _colorSyncingBg = Color(0xFFF2F8FF);
-  static const _colorSyncingText = Color(0xFF0089FF);
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
       decoration: BoxDecoration(
-        color: isFailed ? _colorFailedBg : _colorSyncingBg,
-        borderRadius: BorderRadius.circular(6),
+        color: isFailed
+            ? const Color(0xFFFFE1DD)
+            : const Color(0xFFE8F4FF),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (isFailed)
-            Icon(Icons.sync_problem, size: 14, color: _colorFailedText)
+            const Icon(Icons.sync_problem, size: 12, color: Color(0xFFFF381F))
           else
             SizedBox(
-              width: 14,
-              height: 14,
+              width: 12,
+              height: 12,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: _colorSyncingText,
+                color: AppTheme.primaryColor,
               ),
             ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
-              color: isFailed ? _colorFailedText : _colorSyncingText,
+              fontSize: 11,
+              color: isFailed
+                  ? const Color(0xFFFF381F)
+                  : AppTheme.primaryColor,
             ),
           ),
         ],
@@ -51,8 +53,10 @@ class _SyncStatusChip extends StatelessWidget {
   }
 }
 
-/// 会话列表标题栏（与 openim-flutter-demo TitleBar.conversation 对齐）
-/// 左侧：当前用户头像 + 昵称 + 同步/连接状态；右侧：加号菜单（添加好友、加群、建群）
+/// 会话列表顶部栏
+/// 左侧：用户头像（点击进入侧边栏/设置）
+/// 中间：「消息」标题 + 网络状态指示（如「连接中...」）
+/// 右侧：「+」图标（发起群聊、扫一扫、添加好友）
 class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidget {
   const ConversationTitleBar({
     super.key,
@@ -62,10 +66,12 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
     required this.isSyncing,
     required this.isConnected,
     this.syncProgress = 0,
-    this.onRefresh,
+    this.onAvatarTap,
     this.onAddFriend,
     this.onAddGroup,
     this.onCreateGroup,
+    this.onScan,
+    this.onRefresh,
   });
 
   final String currentUserId;
@@ -74,10 +80,12 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
   final bool isSyncing;
   final bool isConnected;
   final int syncProgress;
-  final VoidCallback? onRefresh;
+  final VoidCallback? onAvatarTap;
   final VoidCallback? onAddFriend;
   final VoidCallback? onAddGroup;
   final VoidCallback? onCreateGroup;
+  final VoidCallback? onScan;
+  final VoidCallback? onRefresh;
 
   @override
   Size get preferredSize => const Size.fromHeight(56);
@@ -85,9 +93,8 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
   @override
   Widget build(BuildContext context) {
     final showStatus = isSyncing || !isConnected;
-    final statusFailed = !isConnected;
     final statusStr = isSyncing
-        ? (syncProgress > 0 ? '同步中($syncProgress%)' : '同步中')
+        ? (syncProgress > 0 ? '同步中 $syncProgress%' : '连接中...')
         : '连接失败';
 
     return AppBar(
@@ -97,57 +104,57 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
-      title: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 21,
-              backgroundColor: Colors.blue.shade100,
-              backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                  ? NetworkImage(avatarUrl!)
-                  : null,
-              child: avatarUrl == null || avatarUrl!.isEmpty
-                  ? Text(
-                      nickname?.isNotEmpty == true
-                          ? nickname!.substring(0, 1).toUpperCase()
-                          : currentUserId.isNotEmpty
-                              ? currentUserId.substring(0, 1).toUpperCase()
-                              : '我',
-                      style: TextStyle(
-                        color: Colors.blue.shade700,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  : null,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            '消息',
+            style: TextStyle(
+              color: AppTheme.textPrimaryColor,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                nickname?.isNotEmpty == true ? nickname! : '我',
-                style: const TextStyle(
-                  color: Color(0xFF0C1C33),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+          ),
+          if (showStatus)
+            _SyncStatusChip(
+              isFailed: !isConnected,
+              label: statusStr,
             ),
-            if (showStatus) ...[
-              const SizedBox(width: 12),
-              _SyncStatusChip(
-                isFailed: statusFailed,
-                label: statusStr,
-              ),
-            ],
-          ],
+        ],
+      ),
+      leading: IconButton(
+        icon: CircleAvatar(
+          radius: 18,
+          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+          backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+              ? NetworkImage(avatarUrl!)
+              : null,
+          child: avatarUrl == null || avatarUrl!.isEmpty
+              ? Text(
+                  nickname?.isNotEmpty == true
+                      ? nickname!.substring(0, 1).toUpperCase()
+                      : currentUserId.isNotEmpty
+                          ? currentUserId.substring(0, 1).toUpperCase()
+                          : '我',
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              : null,
+        ),
+        onPressed: onAvatarTap ?? () {
+          // 默认可进入设置/侧边栏，由外部传入 onAvatarTap
+        },
+        style: IconButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(48, 48),
         ),
       ),
       actions: [
         PopupMenuButton<String>(
-          icon: const Icon(Icons.add_circle_outline, size: 28),
+          icon: const Icon(Icons.add_circle_outline, size: 26),
           padding: const EdgeInsets.only(right: 8),
           onSelected: (value) {
             switch (value) {
@@ -159,6 +166,9 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
                 break;
               case 'create_group':
                 onCreateGroup?.call();
+                break;
+              case 'scan':
+                onScan?.call();
                 break;
             }
           },
@@ -183,7 +193,15 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
               value: 'create_group',
               child: ListTile(
                 leading: Icon(Icons.group_outlined),
-                title: Text('建群'),
+                title: Text('发起群聊'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'scan',
+              child: ListTile(
+                leading: Icon(Icons.qr_code_scanner_outlined),
+                title: Text('扫一扫'),
                 contentPadding: EdgeInsets.zero,
               ),
             ),

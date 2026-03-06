@@ -15,6 +15,8 @@ analyzer:
     - lib/src/rust/api/listeners/**
     # 日志 API（Rust 未暴露），暂排除分析
     - lib/src/rust/api/logger.dart
+    # Cargokit 独立子包，有自身 pubspec，根目录分析会缺依赖；不影响 flutter run 编译
+    - rust_builder/**
 
 linter:
   # The lint rules applied to this project can be customized in the

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../theme/app_theme.dart';
 import '../screens/login_screen.dart';
 import 'main_screen.dart';
 import '../utils/app_logger.dart';
@@ -66,9 +67,10 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
+          color: AppTheme.backgroundColor,
           gradient: LinearGradient(
             colors: [
-              Colors.blue.shade50,
+              AppTheme.primaryColor.withValues(alpha: 0.08),
               Colors.white,
             ],
             begin: Alignment.topCenter,
@@ -79,18 +81,18 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.chat_bubble_outline, size: 80, color: Colors.blue.shade400),
+              Icon(Icons.chat_bubble_outline, size: 80, color: AppTheme.primaryColor),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Flutter 聊天',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blue.shade700,
+                  color: AppTheme.textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 32),
-              const CircularProgressIndicator(),
+              const CircularProgressIndicator(color: AppTheme.primaryColor),
             ],
           ),
         ),

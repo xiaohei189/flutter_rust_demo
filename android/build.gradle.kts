@@ -1,11 +1,10 @@
 allprojects {
     repositories {
-        // 使用阿里云镜像
+        // 仅使用阿里云镜像，所有依赖从阿里云下载
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         maven { url = uri("https://maven.aliyun.com/repository/central") }
-        google()
-        mavenCentral()
-        gradlePluginPortal()
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
     }
 }
 
