@@ -155,11 +155,6 @@ class MessageService extends ChangeNotifier {
     final sendTime = msg.sendTime.toInt();
     final isSent = sendId == _currentUserId;
 
-    appLog.d(
-      '📩 _msgStructToMessage: sendId="$sendId", _currentUserId="$_currentUserId", '
-      'isSent=$isSent, clientMsgId="$clientMsgId", contentType=${msg.contentType}',
-    );
-
     return Message(
       id: clientMsgId.isNotEmpty
           ? clientMsgId
@@ -279,7 +274,10 @@ class MessageService extends ChangeNotifier {
 
       final String resolvedUserId;
       final String resolvedImToken;
-      if (userId != null && userId.isNotEmpty && imToken != null && imToken.isNotEmpty) {
+      if (userId != null &&
+          userId.isNotEmpty &&
+          imToken != null &&
+          imToken.isNotEmpty) {
         resolvedUserId = userId;
         resolvedImToken = imToken;
         appLog.i('✅ 使用传入凭证连接，用户ID: $resolvedUserId');
@@ -494,7 +492,9 @@ class MessageService extends ChangeNotifier {
     try {
       appLog.i('[MessageService] _loadConversations 开始 getAllConversations');
       final conversations = await _client!.getAllConversations();
-      appLog.i('[MessageService] getAllConversations 返回，共 ${conversations.length} 条');
+      appLog.i(
+        '[MessageService] getAllConversations 返回，共 ${conversations.length} 条',
+      );
       _conversations.clear();
       for (final conv in conversations) {
         _updateConversation(conv);

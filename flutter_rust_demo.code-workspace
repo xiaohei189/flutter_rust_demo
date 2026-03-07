@@ -23,6 +23,9 @@
         {
             "name": "openim-chat",
             "path": "../openim-chat"
+        },
+        {
+            "path": "../chat-server"
         }
     ]
 }

@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../models/user.dart';
 import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
-import 'unread_count_view.dart';
 import 'user_avatar.dart';
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
@@ -235,122 +234,138 @@ class ChatListItem extends StatelessWidget {
     return preview == '暂无消息' ? '点击发消息' : preview;
   }
 
-  String get _unreadPrefix {
-    final n = conversation.unreadCount;
-    return n > 0 ? '[$n条] ' : '';
-  }
-
   bool get _hasDraft => conversation.draftText.isNotEmpty;
   /// 免打扰：recvMsgOpt 1=接收但不通知
   bool get _isMuted => conversation.recvMsgOpt == 1;
 
+  bool get _isGroup => conversation.conversationType == 2 || conversation.conversationType == 3;
+
   Widget _buildContent(BuildContext context) {
     final user = _getUser();
     final unread = conversation.unreadCount;
+    final isPinned = conversation.isPinned;
 
     return Material(
-      color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.08) : Colors.white,
+      color: isPinned
+          ? const Color(0xFFF7F8FA)
+          : (isSelected ? AppTheme.primaryColor.withValues(alpha: 0.06) : Colors.white),
       child: InkWell(
         onTap: onTap,
         onLongPress: () => _showLongPressMenu(context),
-        child: Container(
-          height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
+        child: Column(
+          children: [
+            Container(
+              height: 72,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
                 children: [
-                  UserAvatar(user: user, radius: 26),
-                  if (conversation.isPinned)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: AppTheme.draftOrange,
-                          shape: BoxShape.circle,
+                  // 头像（带未读红点角标）
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      UserAvatar(user: user, radius: 24),
+                      if (unread > 0)
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: Container(
+                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: _isMuted ? AppTheme.textSecondaryColor : AppTheme.unreadRed,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white, width: 1.5),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              unread > 99 ? '99+' : '$unread',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
-                        child: const Icon(Icons.push_pin, size: 10, color: Colors.white),
-                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  // 内容区
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 第一行：名称 + 标签 + 时间
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                user.name,
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimaryColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_isGroup)
+                              _TagLabel(text: '群聊', color: const Color(0xFF4CAF50)),
+                            if (_isMuted)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.notifications_off_outlined,
+                                  size: 14,
+                                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            const Spacer(),
+                            Text(
+                              _formatTime(conversation.latestMsgSendTime),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: unread > 0
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.textSecondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        // 第二行：消息预览
+                        RichText(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondaryColor,
+                            ),
+                            children: [
+                              if (_hasDraft)
+                                const TextSpan(
+                                  text: '[草稿] ',
+                                  style: TextStyle(color: AppTheme.draftOrange),
+                                ),
+                              TextSpan(text: _contentPreview),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
                 ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            user.name,
-                            style: const TextStyle(
-                              color: AppTheme.textPrimaryColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 17,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          _formatTime(conversation.latestMsgSendTime),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: RichText(
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                              children: [
-                                if (_hasDraft)
-                                  const TextSpan(
-                                    text: '[草稿] ',
-                                    style: TextStyle(
-                                      color: AppTheme.draftOrange,
-                                      fontSize: 14,
-                                    ),
-                                  )
-                                else if (_unreadPrefix.isNotEmpty)
-                                  TextSpan(text: _unreadPrefix),
-                                TextSpan(text: _contentPreview),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_isMuted)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(
-                              Icons.notifications_off_outlined,
-                              size: 16,
-                              color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        UnreadCountView(count: unread),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+            // 底部分割线（缩进到头像之后）
+            Padding(
+              padding: const EdgeInsets.only(left: 68),
+              child: Divider(height: 1, color: const Color(0xFFF0F0F0)),
+            ),
+          ],
         ),
       ),
     );
@@ -412,5 +427,33 @@ class ChatListItem extends StatelessWidget {
       );
     }
     return _buildContent(context);
+  }
+}
+
+/// 名称后的小标签（群聊/外部/机器人等）
+class _TagLabel extends StatelessWidget {
+  const _TagLabel({required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+    );
   }
 }
