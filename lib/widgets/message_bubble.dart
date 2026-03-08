@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/message.dart' show Message, MessageSendStatus;
 import '../models/user.dart';
+import '../src/rust/api/bridge_client.dart';
 import '../screens/user_profile_screen.dart';
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
@@ -12,34 +13,40 @@ class MessageBubble extends StatelessWidget {
   final Message message;
   final User otherUser;
   final String? currentUserId;
+  final UserProfile? cachedSenderProfile;
+  final UserProfile? cachedCurrentUserProfile;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.otherUser,
     this.currentUserId,
+    this.cachedSenderProfile,
+    this.cachedCurrentUserProfile,
   });
 
   /// 根据消息的发送者信息构建头像 User，优先用消息自带的昵称/头像
   User _buildSenderUser() {
     final isFromMe = _isFromMe;
+    final senderProfile = cachedSenderProfile;
+    final meProfile = cachedCurrentUserProfile;
     if (isFromMe) {
+      final nickname = meProfile?.nickname ?? message.senderNickname ?? '';
+      final faceUrl = meProfile?.faceUrl ?? message.senderFaceUrl;
       return User(
         id: message.senderId.isNotEmpty ? message.senderId : (currentUserId ?? ''),
-        name: message.senderNickname?.isNotEmpty == true
-            ? message.senderNickname!
-            : (currentUserId ?? '我'),
-        avatar: message.senderFaceUrl,
+        name: nickname.isNotEmpty ? nickname : (currentUserId ?? '我'),
+        avatar: faceUrl?.isNotEmpty == true ? faceUrl : null,
       );
     } else {
-      if (message.senderNickname != null || message.senderFaceUrl != null) {
+      final nickname = senderProfile?.nickname ?? message.senderNickname ?? '';
+      final faceUrl = senderProfile?.faceUrl ?? message.senderFaceUrl;
+      if (nickname.isNotEmpty || (faceUrl?.isNotEmpty == true)) {
         return User(
           id: message.senderId,
-          name: message.senderNickname?.isNotEmpty == true
-              ? message.senderNickname!
-              : otherUser.name,
-          avatar: message.senderFaceUrl?.isNotEmpty == true
-              ? message.senderFaceUrl
+          name: nickname.isNotEmpty ? nickname : otherUser.name,
+          avatar: faceUrl?.isNotEmpty == true
+              ? faceUrl
               : otherUser.avatar,
         );
       }

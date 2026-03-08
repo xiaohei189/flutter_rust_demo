@@ -8,6 +8,7 @@ import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_list_item.dart';
 import '../widgets/conversation_title_bar.dart';
 import 'chat_detail_screen.dart';
+import 'my_profile_screen.dart';
 import 'profile_drawer_screen.dart';
 import 'search_screen.dart';
 
@@ -152,14 +153,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
       backgroundColor: AppTheme.backgroundColor,
       appBar: ConversationTitleBar(
         currentUserId: messageService.currentUserId,
-        nickname: null,
-        avatarUrl: null,
+        nickname: messageService.loginUserProfile?.nickname,
+        avatarUrl: messageService.loginUserProfile?.faceUrl,
         isSyncing: messageService.isSyncingConversations,
         isConnected: messageService.isConnected,
         syncProgress: messageService.syncProgress,
         onAvatarTap: () {
           Navigator.of(context).push(_LeftSlideRoute(
-            child: const ProfileDrawerScreen(),
+            child: ProfileDrawerScreen(
+              onOpenMyProfile: () {
+                Navigator.of(context).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MyProfileScreen(),
+                    ),
+                  );
+                });
+              },
+            ),
           ));
         },
         onSearchTap: () {
@@ -282,24 +295,39 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       return ChatListItem(
                         key: ValueKey<String>(conversation.conversationId),
                         conversation: conversation,
+                        cachedUserProfile: conversation.userId.isNotEmpty
+                            ? messageService.getUserProfile(conversation.userId)
+                            : null,
                         itemIndex: index,
                         currentUserId:
                             messageService.currentUserId.isNotEmpty
                                 ? messageService.currentUserId
                                 : null,
-                        onTap: () async {
-                          await messageService.loadHistoryMessages(
-                            conversation.conversationId,
-                            count: 20,
-                          );
-                          if (!context.mounted) return;
+                        onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => ChatDetailScreen(
+                            PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => ChatDetailScreen(
                                 conversation: conversation,
-                                preLoaded: true,
+                                preLoaded: false,
                               ),
+                              transitionsBuilder: (_, animation, __, child) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(1, 0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                    reverseCurve: Curves.easeInCubic,
+                                  )),
+                                  child: child,
+                                );
+                              },
+                              transitionDuration:
+                                  const Duration(milliseconds: 180),
+                              reverseTransitionDuration:
+                                  const Duration(milliseconds: 150),
                             ),
                           );
                         },

@@ -197,18 +197,25 @@ class _ChatInputState extends State<ChatInput> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                _buildOptionItem(context, Icons.photo_library_outlined, '相册', () {}),
-                const SizedBox(width: 32),
-                _buildOptionItem(context, Icons.camera_alt_outlined, '相机', () {}),
-                const SizedBox(width: 32),
-                _buildOptionItem(context, Icons.location_on_outlined, '定位', () {}),
-                const SizedBox(width: 32),
-                _buildOptionItem(context, Icons.insert_drive_file_outlined, '文件', () {}),
-                const SizedBox(width: 32),
-                _buildOptionItem(context, Icons.card_giftcard_outlined, '红包', () {}),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildOptionItem(context, Icons.photo_library_outlined, '相册', () {}),
+                    const SizedBox(width: 32),
+                    _buildOptionItem(context, Icons.camera_alt_outlined, '相机', () {}),
+                    const SizedBox(width: 32),
+                    _buildOptionItem(context, Icons.location_on_outlined, '定位', () {}),
+                    const SizedBox(width: 32),
+                    _buildOptionItem(context, Icons.insert_drive_file_outlined, '文件', () {}),
+                    const SizedBox(width: 32),
+                    _buildOptionItem(context, Icons.card_giftcard_outlined, '红包', () {}),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

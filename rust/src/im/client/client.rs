@@ -77,6 +77,7 @@ use crate::im::dao::group_member::LocalGroupMember;
 use crate::im::dao::{repository::Repository, LocalSendingMessage};
 use crate::im::dao::user::LocalUser;
 use crate::im::http_client::friend::FriendApi;
+use crate::im::http_client::user::{UpdateUserInfoExReq, UserInfoItem, UserInfoWithExFields};
 use crate::im::http_client::Api;
 use crate::im::model::constant::{PULL_MSG_BY_SEQ_LIST, PULL_MSG_NUM_FOR_READ_DIFFUSION};
 use crate::im::model::conversation::{ConversationSyncerConfig, LocalConversation};
@@ -135,6 +136,8 @@ pub struct IMClient {
     message_pull_forward_end_seq_map: Arc<RwLock<HashMap<(String, i32), i64>>>,
     /// 反序拉取时各 (conversation_id, view_type) 已拉到的末端 seq（对齐 Go messagePullReverseEndSeqMap）
     message_pull_reverse_end_seq_map: Arc<RwLock<HashMap<(String, i32), i64>>>,
+    /// 用户资料内存缓存（与 Go UserCache 对齐，其它用户仅内存）
+    user_cache: Arc<RwLock<HashMap<String, UserInfoItem>>>,
 }
 
 impl IMClient {
@@ -167,6 +170,7 @@ impl IMClient {
             api,
             message_pull_forward_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
             message_pull_reverse_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
+            user_cache: Arc::new(RwLock::new(HashMap::new())),
         })
     }
 
@@ -183,33 +187,117 @@ impl IMClient {
             .unwrap_or_else(|_| (String::new(), String::new()))
     }
 
-    /// 与 Go GetUserInfoWithCache 一致：先本地，缺或昵称/头像为空则拉服务端并落库后返回
+    /// 从服务端批量获取用户资料（与 Go GetUsersInfoFromServer 对齐）
+    async fn get_users_info_from_server(&self, user_ids: Vec<String>) -> Result<Vec<UserInfoItem>> {
+        if user_ids.is_empty() {
+            return Ok(vec![]);
+        }
+        let resp = self.api.user.get_users_info(user_ids).await?;
+        Ok(resp.users_info)
+    }
+
+    /// 从 UserCache 删除指定用户（登录用户/好友更新时调用，与 Go UserCache.Delete 对齐）
+    fn delete_user_from_cache(&self, user_id: &str) {
+        let _ = self.user_cache.write().unwrap().remove(user_id);
+    }
+
+    /// 批量获取用户资料（优先内存缓存，缺失则拉服务端，与 Go GetUsersInfoWithCache 对齐）
+    pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<UserInfoItem>> {
+        if user_ids.is_empty() {
+            return Ok(vec![]);
+        }
+        let uniq: Vec<String> = user_ids
+            .into_iter()
+            .filter(|id| !id.is_empty())
+            .collect::<std::collections::HashSet<String>>()
+            .into_iter()
+            .collect();
+        if uniq.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let (cached, to_fetch): (Vec<_>, Vec<_>) = {
+            let cache = self.user_cache.read().unwrap();
+            let mut cached = Vec::new();
+            let mut to_fetch = Vec::new();
+            for id in &uniq {
+                if let Some(p) = cache.get(id) {
+                    cached.push(p.clone());
+                } else {
+                    to_fetch.push(id.clone());
+                }
+            }
+            (cached, to_fetch)
+        };
+
+        let mut result = cached;
+        if !to_fetch.is_empty() {
+            let fetched = self.get_users_info_from_server(to_fetch.clone()).await?;
+            {
+                let mut cache = self.user_cache.write().unwrap();
+                for p in &fetched {
+                    cache.insert(p.user_id.clone(), p.clone());
+                }
+            }
+            result.extend(fetched);
+        }
+
+        Ok(result)
+    }
+
+    /// 更新当前登录用户资料（仅更新指定字段），并回写本地缓存后返回最新资料
+    /// 与 Go 对齐：更新后需使 UserCache 中登录用户条目失效
+    pub async fn update_login_user_profile(
+        &self,
+        nickname: Option<String>,
+        face_url: Option<String>,
+        ex: Option<String>,
+        global_recv_msg_opt: Option<i32>,
+    ) -> Result<UserInfoItem> {
+        let req = UpdateUserInfoExReq {
+            user_info: UserInfoWithExFields {
+                user_id: self.config.user_id.clone(),
+                nickname,
+                face_url,
+                ex,
+                global_recv_msg_opt,
+            },
+        };
+        self.api.user.update_user_info_ex(req).await?;
+        self.delete_user_from_cache(&self.config.user_id);
+        let list = self.get_users_info(vec![self.config.user_id.clone()]).await?;
+        Ok(list.into_iter().next().unwrap_or_else(|| UserInfoItem {
+            user_id: self.config.user_id.clone(),
+            nickname: String::new(),
+            face_url: String::new(),
+            create_time: 0,
+            app_manger_level: 0,
+            ex: String::new(),
+            attached_info: String::new(),
+            global_recv_msg_opt: 0,
+        }))
+    }
+
+    /// 与 Go GetUserInfoWithCache 一致：通过 get_users_info 获取登录用户昵称与头像
     async fn get_login_user_info_with_cache(&self) -> Result<(String, String)> {
-        let (nickname, face_url) = self
-            .local_repo
-            .user
-            .get_login_user(&self.config.user_id)
-            .await?
-            .map(|u| (u.nickname, u.face_url))
-            .unwrap_or_else(|| (String::new(), String::new()));
-        if !nickname.is_empty() && !face_url.is_empty() {
-            return Ok((nickname, face_url));
+        let list = self.get_users_info(vec![self.config.user_id.clone()]).await?;
+        match list.into_iter().next() {
+            Some(p) => Ok((p.nickname, p.face_url)),
+            None => Ok((String::new(), String::new())),
         }
-        if let Some(remote) = self.api.user.get_login_user_from_server().await? {
-            let local = LocalUser {
-                user_id: remote.user_id,
-                nickname: remote.nickname.clone(),
-                face_url: remote.face_url.clone(),
-                create_time: remote.create_time,
-                app_manger_level: remote.app_manger_level,
-                ex: remote.ex,
-                attached_info: remote.attached_info,
-                global_recv_msg_opt: remote.global_recv_msg_opt,
-            };
-            self.local_repo.user.upsert_login_user(&local).await?;
-            return Ok((remote.nickname, remote.face_url));
+    }
+
+    fn local_user_to_user_info_item(local: LocalUser) -> UserInfoItem {
+        UserInfoItem {
+            user_id: local.user_id,
+            nickname: local.nickname,
+            face_url: local.face_url,
+            create_time: local.create_time,
+            app_manger_level: local.app_manger_level,
+            ex: local.ex,
+            attached_info: local.attached_info,
+            global_recv_msg_opt: local.global_recv_msg_opt,
         }
-        Ok((nickname, face_url))
     }
 }
 

@@ -11,6 +11,8 @@ import '../im/model/message.dart';
 import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`, `from`
+
 /// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
 Future<void> closeCurrentClientIfAny() =>
     RustLib.instance.api.crateApiBridgeClientCloseCurrentClientIfAny();
@@ -129,6 +131,9 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// 获取所有会话列表
   Future<List<LocalConversation>> getAllConversations();
 
+  /// 批量获取用户资料（优先内存缓存，缺失则拉服务端，与 Go GetUsersInfo 对齐）
+  Future<List<UserProfile>> getUsersInfo({required List<String> userIds});
+
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
   /// 创建新的客户端实例
   ///
@@ -158,4 +163,87 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   /// - `msg`: 已组装的 MsgData。
   /// - `is_online_only`: 是否仅在线投递（不落库、不更新会话）；传 `false` 表示持久化，与 Go SDK 默认行为一致。
   Future<void> sendMessage({required MsgData msg, required bool isOnlineOnly});
+
+  /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
+  Future<UserProfile> updateLoginUserProfile({required UserProfilePatch patch});
+}
+
+/// 用户资料（Bridge 暴露给 Dart 的统一结构）
+class UserProfile {
+  final String userId;
+  final String nickname;
+  final String faceUrl;
+  final String ex;
+  final String attachedInfo;
+  final int globalRecvMsgOpt;
+  final PlatformInt64 createTime;
+  final int appMangerLevel;
+
+  const UserProfile({
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.ex,
+    required this.attachedInfo,
+    required this.globalRecvMsgOpt,
+    required this.createTime,
+    required this.appMangerLevel,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      ex.hashCode ^
+      attachedInfo.hashCode ^
+      globalRecvMsgOpt.hashCode ^
+      createTime.hashCode ^
+      appMangerLevel.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserProfile &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          ex == other.ex &&
+          attachedInfo == other.attachedInfo &&
+          globalRecvMsgOpt == other.globalRecvMsgOpt &&
+          createTime == other.createTime &&
+          appMangerLevel == other.appMangerLevel;
+}
+
+/// 用户资料更新补丁（仅更新传入字段）
+class UserProfilePatch {
+  final String? nickname;
+  final String? faceUrl;
+  final String? ex;
+  final int? globalRecvMsgOpt;
+
+  const UserProfilePatch({
+    this.nickname,
+    this.faceUrl,
+    this.ex,
+    this.globalRecvMsgOpt,
+  });
+
+  @override
+  int get hashCode =>
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      ex.hashCode ^
+      globalRecvMsgOpt.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserProfilePatch &&
+          runtimeType == other.runtimeType &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          ex == other.ex &&
+          globalRecvMsgOpt == other.globalRecvMsgOpt;
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../main.dart';
@@ -9,17 +11,35 @@ import 'my_profile_screen.dart';
 /// 个人资料左侧抽屉（参考飞书风格）
 /// 从左侧滑入，占满屏幕高度，宽度约 80%
 class ProfileDrawerScreen extends StatelessWidget {
-  const ProfileDrawerScreen({super.key});
+  const ProfileDrawerScreen({
+    super.key,
+    this.onOpenMyProfile,
+  });
+
+  final VoidCallback? onOpenMyProfile;
 
   @override
   Widget build(BuildContext context) {
     final panelWidth = MediaQuery.of(context).size.width * 0.82;
+    final profile = messageService.loginUserProfile;
+    String signature = '输入你的个性签名...';
+    if ((profile?.ex ?? '').isNotEmpty) {
+      try {
+        final ex = jsonDecode(profile!.ex);
+        if (ex is Map<String, dynamic>) {
+          final s = (ex['signature'] as String? ?? '').trim();
+          if (s.isNotEmpty) signature = s;
+        }
+      } catch (_) {}
+    }
     final currentUser = User(
       id: messageService.currentUserId,
-      name: messageService.currentUserId.isNotEmpty
-          ? messageService.currentUserId
-          : '我',
-      avatar: null,
+      name: (profile?.nickname ?? '').isNotEmpty
+          ? profile!.nickname
+          : (messageService.currentUserId.isNotEmpty
+                ? messageService.currentUserId
+                : '我'),
+      avatar: (profile?.faceUrl ?? '').isNotEmpty ? profile!.faceUrl : null,
       status: null,
     );
 
@@ -72,7 +92,11 @@ class ProfileDrawerScreen extends StatelessWidget {
                     // 名字 + 二维码 + 箭头（点击进入个人信息）
                     GestureDetector(
                       onTap: () {
-                        Navigator.of(context).pushReplacement(
+                        if (onOpenMyProfile != null) {
+                          onOpenMyProfile!();
+                          return;
+                        }
+                        Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const MyProfileScreen(),
                           ),
@@ -110,7 +134,7 @@ class ProfileDrawerScreen extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          '输入你的个性签名...',
+                          signature,
                           style: TextStyle(
                             fontSize: 13,
                             color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),

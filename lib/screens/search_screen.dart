@@ -184,19 +184,33 @@ class _SearchScreenState extends State<SearchScreen> {
                                   messageService.currentUserId.isNotEmpty
                                       ? messageService.currentUserId
                                       : null,
-                              onTap: () async {
-                                await messageService.loadHistoryMessages(
-                                  conversation.conversationId,
-                                  count: 20,
-                                );
-                                if (!context.mounted) return;
+                              onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ChatDetailScreen(
+                                  PageRouteBuilder(
+                                    pageBuilder: (_, __, ___) =>
+                                        ChatDetailScreen(
                                       conversation: conversation,
-                                      preLoaded: true,
+                                      preLoaded: false,
                                     ),
+                                    transitionsBuilder:
+                                        (_, animation, __, child) {
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(1, 0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeOutCubic,
+                                          reverseCurve: Curves.easeInCubic,
+                                        )),
+                                        child: child,
+                                      );
+                                    },
+                                    transitionDuration:
+                                        const Duration(milliseconds: 180),
+                                    reverseTransitionDuration:
+                                        const Duration(milliseconds: 150),
                                   ),
                                 );
                               },

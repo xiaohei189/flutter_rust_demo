@@ -94,7 +94,7 @@ pub struct GetUserClientConfigResp {
     pub configs: HashMap<String, String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInfoItem {
     #[serde(rename = "userID")]

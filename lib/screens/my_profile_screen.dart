@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../models/user.dart';
+import '../src/rust/api/bridge_client.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
@@ -15,6 +19,8 @@ class MyProfileScreen extends StatefulWidget {
 }
 
 class _MyProfileScreenState extends State<MyProfileScreen> {
+  UserProfile? _profile;
+  bool _loading = true;
   late String _name;
   late String _alias;
   late String _signature;
@@ -22,55 +28,107 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _name = messageService.currentUserId.isNotEmpty
-        ? messageService.currentUserId
-        : '未设置';
+    _name = '';
     _alias = '';
     _signature = '';
+    unawaited(_loadProfile());
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   User get _currentUser => User(
-        id: messageService.currentUserId,
-        name: _name,
-        avatar: null,
-        status: null,
-      );
+    id: messageService.currentUserId,
+    name: _name.isNotEmpty ? _name : '未设置',
+    avatar: _profile?.faceUrl.isNotEmpty == true ? _profile!.faceUrl : null,
+    status: null,
+  );
+
+  Future<void> _loadProfile() async {
+    setState(() => _loading = true);
+    final profile = await messageService.refreshLoginUserProfile();
+    if (!mounted) return;
+    _profile = profile;
+    _name = (profile?.nickname ?? '').trim();
+    final ex = _decodeEx(profile?.ex);
+    _alias = (ex['alias'] as String? ?? '').trim();
+    _signature = (ex['signature'] as String? ?? '').trim();
+    _loading = false;
+    setState(() {});
+  }
+
+  Map<String, dynamic> _decodeEx(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
+    return <String, dynamic>{};
+  }
+
+  String _buildEx({String? alias, String? signature}) {
+    final map = _decodeEx(_profile?.ex);
+    map['alias'] = alias ?? _alias;
+    map['signature'] = signature ?? _signature;
+    return jsonEncode(map);
+  }
 
   Future<void> _editField({
     required String title,
     required String currentValue,
     required String hint,
-    required ValueChanged<String> onSave,
+    required Future<void> Function(String) onSave,
   }) async {
-    final controller = TextEditingController(text: currentValue);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: const UnderlineInputBorder(),
-          ),
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _ProfileFieldEditScreen(
+          title: title,
+          hint: hint,
+          initialValue: currentValue,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
       ),
     );
-    controller.dispose();
     if (result != null) {
-      onSave(result);
+      await onSave(result);
     }
+  }
+
+  Future<void> _saveName(String value) async {
+    final updated = await messageService.updateLoginUserProfile(
+      nickname: value,
+    );
+    if (updated == null || !mounted) return;
+    setState(() {
+      _profile = updated;
+      _name = updated.nickname;
+    });
+  }
+
+  Future<void> _saveAlias(String value) async {
+    final updated = await messageService.updateLoginUserProfile(
+      ex: _buildEx(alias: value),
+    );
+    if (updated == null || !mounted) return;
+    setState(() {
+      _profile = updated;
+      _alias = value;
+    });
+  }
+
+  Future<void> _saveSignature(String value) async {
+    final updated = await messageService.updateLoginUserProfile(
+      ex: _buildEx(signature: value),
+    );
+    if (updated == null || !mounted) return;
+    setState(() {
+      _profile = updated;
+      _signature = value;
+    });
   }
 
   @override
@@ -84,89 +142,94 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: ListView(
-        children: [
-          const SizedBox(height: 12),
-          // 基本信息卡片
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
               children: [
-                // 头像
-                _buildRow(
-                  label: '头像',
-                  trailing: UserAvatar(user: _currentUser, radius: 20),
-                  onTap: () {},
-                ),
-                _divider(),
-                // 姓名
-                _buildRow(
-                  label: '姓名',
-                  value: _name,
-                  onTap: () => _editField(
-                    title: '修改姓名',
-                    currentValue: _name,
-                    hint: '请输入姓名',
-                    onSave: (v) => setState(() => _name = v),
+                const SizedBox(height: 12),
+                // 基本信息卡片
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      // 头像
+                      _buildRow(
+                        label: '头像',
+                        trailing: UserAvatar(user: _currentUser, radius: 20),
+                        onTap: () {},
+                      ),
+                      _divider(),
+                      // 姓名
+                      _buildRow(
+                        label: '姓名',
+                        value: _name,
+                        onTap: () => _editField(
+                          title: '修改姓名',
+                          currentValue: _name,
+                          hint: '请输入姓名',
+                          onSave: _saveName,
+                        ),
+                      ),
+                      _divider(),
+                      // 别名
+                      _buildRow(
+                        label: '别名',
+                        value: _alias.isEmpty ? null : _alias,
+                        placeholder: '输入别名',
+                        onTap: () => _editField(
+                          title: '修改别名',
+                          currentValue: _alias,
+                          hint: '请输入别名',
+                          onSave: _saveAlias,
+                        ),
+                      ),
+                      _divider(),
+                      // 我的二维码
+                      _buildRow(
+                        label: '我的二维码',
+                        trailing: Icon(
+                          Icons.qr_code_2,
+                          size: 22,
+                          color: AppTheme.textPrimaryColor,
+                        ),
+                        onTap: () {},
+                      ),
+                      _divider(),
+                      // 个性签名
+                      _buildRow(
+                        label: '个性签名',
+                        value: _signature.isEmpty ? null : _signature,
+                        onTap: () => _editField(
+                          title: '修改个性签名',
+                          currentValue: _signature,
+                          hint: '请输入个性签名',
+                          onSave: _saveSignature,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                _divider(),
-                // 别名
-                _buildRow(
-                  label: '别名',
-                  value: _alias.isEmpty ? null : _alias,
-                  placeholder: '输入别名',
-                  onTap: () => _editField(
-                    title: '修改别名',
-                    currentValue: _alias,
-                    hint: '请输入别名',
-                    onSave: (v) => setState(() => _alias = v),
+                const SizedBox(height: 12),
+                // 企业
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                _divider(),
-                // 我的二维码
-                _buildRow(
-                  label: '我的二维码',
-                  trailing: Icon(Icons.qr_code_2, size: 22,
-                      color: AppTheme.textPrimaryColor),
-                  onTap: () {},
-                ),
-                _divider(),
-                // 个性签名
-                _buildRow(
-                  label: '个性签名',
-                  value: _signature.isEmpty ? null : _signature,
-                  onTap: () => _editField(
-                    title: '修改个性签名',
-                    currentValue: _signature,
-                    hint: '请输入个性签名',
-                    onSave: (v) => setState(() => _signature = v),
+                  child: _buildRow(
+                    label: '企业',
+                    value: '未认证',
+                    valueColor: AppTheme.textSecondaryColor,
+                    onTap: () {},
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 12),
-          // 企业
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: _buildRow(
-              label: '企业',
-              value: '未认证',
-              valueColor: AppTheme.textSecondaryColor,
-              onTap: () {},
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -224,5 +287,123 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   Widget _divider() {
     return const Divider(height: 1, indent: 16, endIndent: 16);
+  }
+}
+
+class _ProfileFieldEditScreen extends StatefulWidget {
+  const _ProfileFieldEditScreen({
+    required this.title,
+    required this.hint,
+    required this.initialValue,
+  });
+
+  final String title;
+  final String hint;
+  final String initialValue;
+
+  @override
+  State<_ProfileFieldEditScreen> createState() =>
+      _ProfileFieldEditScreenState();
+}
+
+class _ProfileFieldEditScreenState extends State<_ProfileFieldEditScreen> {
+  late final TextEditingController _controller;
+
+  bool get _hasText => _controller.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimaryColor,
+          ),
+        ),
+        centerTitle: true,
+        leadingWidth: 72,
+        leading: TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            '取消',
+            style: TextStyle(fontSize: 17, color: AppTheme.textPrimaryColor),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, _controller.text.trim()),
+            child: Text(
+              '保存',
+              style: TextStyle(
+                fontSize: 17,
+                color: _hasText
+                    ? AppTheme.primaryColor
+                    : AppTheme.textSecondaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        child: TextField(
+          controller: _controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+            suffixIcon: _hasText
+                ? IconButton(
+                    onPressed: () => _controller.clear(),
+                    icon: Icon(
+                      Icons.cancel,
+                      size: 18,
+                      color: AppTheme.textSecondaryColor.withValues(
+                        alpha: 0.45,
+                      ),
+                    ),
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryColor,
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryColor,
+                width: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

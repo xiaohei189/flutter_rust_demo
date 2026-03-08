@@ -72,7 +72,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -290245460;
+  int get rustContentHash => -1582337392;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -185,6 +185,11 @@ abstract class RustLibApi extends BaseApi {
     required OpenImBridgeClient that,
   });
 
+  Future<List<UserProfile>> crateApiBridgeClientOpenImBridgeClientGetUsersInfo({
+    required OpenImBridgeClient that,
+    required List<String> userIds,
+  });
+
   Future<OpenImBridgeClient> crateApiBridgeClientOpenImBridgeClientNew({
     required String userId,
     required String token,
@@ -197,6 +202,12 @@ abstract class RustLibApi extends BaseApi {
     required OpenImBridgeClient that,
     required MsgData msg,
     required bool isOnlineOnly,
+  });
+
+  Future<UserProfile>
+  crateApiBridgeClientOpenImBridgeClientUpdateLoginUserProfile({
+    required OpenImBridgeClient that,
+    required UserProfilePatch patch,
   });
 
   Future<void> crateApiBridgeClientCloseCurrentClientIfAny();
@@ -967,6 +978,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<List<UserProfile>> crateApiBridgeClientOpenImBridgeClientGetUsersInfo({
+    required OpenImBridgeClient that,
+    required List<String> userIds,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_list_String(userIds, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 16,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_user_profile,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiBridgeClientOpenImBridgeClientGetUsersInfoConstMeta,
+        argValues: [that, userIds],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientGetUsersInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_users_info",
+        argNames: ["that", "userIds"],
+      );
+
+  @override
   Future<OpenImBridgeClient> crateApiBridgeClientOpenImBridgeClientNew({
     required String userId,
     required String token,
@@ -986,7 +1036,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 17,
             port: port_,
           );
         },
@@ -1030,7 +1080,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 18,
             port: port_,
           );
         },
@@ -1053,6 +1103,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<UserProfile>
+  crateApiBridgeClientOpenImBridgeClientUpdateLoginUserProfile({
+    required OpenImBridgeClient that,
+    required UserProfilePatch patch,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_user_profile_patch(patch, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_user_profile,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta:
+            kCrateApiBridgeClientOpenImBridgeClientUpdateLoginUserProfileConstMeta,
+        argValues: [that, patch],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientUpdateLoginUserProfileConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_update_login_user_profile",
+        argNames: ["that", "patch"],
+      );
+
+  @override
   Future<void> crateApiBridgeClientCloseCurrentClientIfAny() {
     return handler.executeNormal(
       NormalTask(
@@ -1061,7 +1152,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 20,
             port: port_,
           );
         },
@@ -1089,7 +1180,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1114,7 +1205,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1142,7 +1233,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 23,
             port: port_,
           );
         },
@@ -1178,7 +1269,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 24,
             port: port_,
           );
         },
@@ -1206,7 +1297,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -1455,6 +1546,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int dco_decode_box_autoadd_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
   LocationElem dco_decode_box_autoadd_location_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_location_elem(raw);
@@ -1500,6 +1597,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_typing_status(raw);
+  }
+
+  @protected
+  UserProfilePatch dco_decode_box_autoadd_user_profile_patch(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_user_profile_patch(raw);
   }
 
   @protected
@@ -1721,6 +1824,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<UserProfile> dco_decode_list_user_profile(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_user_profile).toList();
+  }
+
+  @protected
   LocalConversation dco_decode_local_conversation(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1887,6 +1996,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int? dco_decode_opt_box_autoadd_i_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_i_32(raw);
+  }
+
+  @protected
   LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_location_elem(raw);
@@ -2037,6 +2152,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void dco_decode_unit(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return;
+  }
+
+  @protected
+  UserProfile dco_decode_user_profile(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    return UserProfile(
+      userId: dco_decode_String(arr[0]),
+      nickname: dco_decode_String(arr[1]),
+      faceUrl: dco_decode_String(arr[2]),
+      ex: dco_decode_String(arr[3]),
+      attachedInfo: dco_decode_String(arr[4]),
+      globalRecvMsgOpt: dco_decode_i_32(arr[5]),
+      createTime: dco_decode_i_64(arr[6]),
+      appMangerLevel: dco_decode_i_32(arr[7]),
+    );
+  }
+
+  @protected
+  UserProfilePatch dco_decode_user_profile_patch(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return UserProfilePatch(
+      nickname: dco_decode_opt_String(arr[0]),
+      faceUrl: dco_decode_opt_String(arr[1]),
+      ex: dco_decode_opt_String(arr[2]),
+      globalRecvMsgOpt: dco_decode_opt_box_autoadd_i_32(arr[3]),
+    );
   }
 
   @protected
@@ -2298,6 +2445,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int sse_decode_box_autoadd_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_i_32(deserializer));
+  }
+
+  @protected
   LocationElem sse_decode_box_autoadd_location_elem(
     SseDeserializer deserializer,
   ) {
@@ -2351,6 +2504,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_typing_status(deserializer));
+  }
+
+  @protected
+  UserProfilePatch sse_decode_box_autoadd_user_profile_patch(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_user_profile_patch(deserializer));
   }
 
   @protected
@@ -2627,6 +2788,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<UserProfile> sse_decode_list_user_profile(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <UserProfile>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_user_profile(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   LocalConversation sse_decode_local_conversation(
     SseDeserializer deserializer,
   ) {
@@ -2886,6 +3059,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_i_32(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   LocationElem? sse_decode_opt_box_autoadd_location_elem(
     SseDeserializer deserializer,
   ) {
@@ -3086,6 +3270,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_decode_unit(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
+  }
+
+  @protected
+  UserProfile sse_decode_user_profile(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_userId = sse_decode_String(deserializer);
+    var var_nickname = sse_decode_String(deserializer);
+    var var_faceUrl = sse_decode_String(deserializer);
+    var var_ex = sse_decode_String(deserializer);
+    var var_attachedInfo = sse_decode_String(deserializer);
+    var var_globalRecvMsgOpt = sse_decode_i_32(deserializer);
+    var var_createTime = sse_decode_i_64(deserializer);
+    var var_appMangerLevel = sse_decode_i_32(deserializer);
+    return UserProfile(
+      userId: var_userId,
+      nickname: var_nickname,
+      faceUrl: var_faceUrl,
+      ex: var_ex,
+      attachedInfo: var_attachedInfo,
+      globalRecvMsgOpt: var_globalRecvMsgOpt,
+      createTime: var_createTime,
+      appMangerLevel: var_appMangerLevel,
+    );
+  }
+
+  @protected
+  UserProfilePatch sse_decode_user_profile_patch(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_nickname = sse_decode_opt_String(deserializer);
+    var var_faceUrl = sse_decode_opt_String(deserializer);
+    var var_ex = sse_decode_opt_String(deserializer);
+    var var_globalRecvMsgOpt = sse_decode_opt_box_autoadd_i_32(deserializer);
+    return UserProfilePatch(
+      nickname: var_nickname,
+      faceUrl: var_faceUrl,
+      ex: var_ex,
+      globalRecvMsgOpt: var_globalRecvMsgOpt,
+    );
   }
 
   @protected
@@ -3389,6 +3611,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_location_elem(
     LocationElem self,
     SseSerializer serializer,
@@ -3458,6 +3686,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_typing_status(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_user_profile_patch(
+    UserProfilePatch self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_user_profile_patch(self, serializer);
   }
 
   @protected
@@ -3693,6 +3930,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_user_profile(
+    List<UserProfile> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_user_profile(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_local_conversation(
     LocalConversation self,
     SseSerializer serializer,
@@ -3869,6 +4118,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_file_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_i_32(self, serializer);
     }
   }
 
@@ -4051,6 +4310,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_unit(void self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
+  }
+
+  @protected
+  void sse_encode_user_profile(UserProfile self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.userId, serializer);
+    sse_encode_String(self.nickname, serializer);
+    sse_encode_String(self.faceUrl, serializer);
+    sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.attachedInfo, serializer);
+    sse_encode_i_32(self.globalRecvMsgOpt, serializer);
+    sse_encode_i_64(self.createTime, serializer);
+    sse_encode_i_32(self.appMangerLevel, serializer);
+  }
+
+  @protected
+  void sse_encode_user_profile_patch(
+    UserProfilePatch self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.nickname, serializer);
+    sse_encode_opt_String(self.faceUrl, serializer);
+    sse_encode_opt_String(self.ex, serializer);
+    sse_encode_opt_box_autoadd_i_32(self.globalRecvMsgOpt, serializer);
   }
 
   @protected
@@ -4304,6 +4588,13 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<LocalConversation>> getAllConversations() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientGetAllConversations(that: this);
 
+  /// 批量获取用户资料（优先内存缓存，缺失则拉服务端，与 Go GetUsersInfo 对齐）
+  Future<List<UserProfile>> getUsersInfo({required List<String> userIds}) =>
+      RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientGetUsersInfo(
+        that: this,
+        userIds: userIds,
+      );
+
   /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
   ///
   /// **参数**
@@ -4317,4 +4608,13 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     msg: msg,
     isOnlineOnly: isOnlineOnly,
   );
+
+  /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
+  Future<UserProfile> updateLoginUserProfile({
+    required UserProfilePatch patch,
+  }) => RustLib.instance.api
+      .crateApiBridgeClientOpenImBridgeClientUpdateLoginUserProfile(
+        that: this,
+        patch: patch,
+      );
 }

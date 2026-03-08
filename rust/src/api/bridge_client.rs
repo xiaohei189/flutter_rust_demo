@@ -27,6 +27,7 @@ use std::sync::Mutex;
 use tokio::sync::RwLock;
 use tokio_stream::StreamExt;
 use tracing;
+use serde::{Deserialize, Serialize};
 
 /// 热重启时由 Flutter 在创建新 client 前调用，关闭上一次的 client，避免 token 重复使用
 static CURRENT_CLIENT_INNER: Mutex<Option<Arc<RwLock<IMClient>>>> = Mutex::new(None);
@@ -52,6 +53,53 @@ pub async fn login_async(
     platform: i32,
 ) -> Result<LoginData> {
     crate::im::http_client::auth::login_async(area_code, phone_number, password, platform).await
+}
+
+/// 用户资料（Bridge 暴露给 Dart 的统一结构）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserProfile {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    pub nickname: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    #[serde(default)]
+    pub ex: String,
+    #[serde(default)]
+    pub attached_info: String,
+    #[serde(default)]
+    pub global_recv_msg_opt: i32,
+    #[serde(default)]
+    pub create_time: i64,
+    #[serde(default)]
+    pub app_manger_level: i32,
+}
+
+/// 用户资料更新补丁（仅更新传入字段）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserProfilePatch {
+    pub nickname: Option<String>,
+    #[serde(rename = "faceURL")]
+    pub face_url: Option<String>,
+    pub ex: Option<String>,
+    pub global_recv_msg_opt: Option<i32>,
+}
+
+impl From<crate::im::http_client::user::UserInfoItem> for UserProfile {
+    fn from(v: crate::im::http_client::user::UserInfoItem) -> Self {
+        Self {
+            user_id: v.user_id,
+            nickname: v.nickname,
+            face_url: v.face_url,
+            ex: v.ex,
+            attached_info: v.attached_info,
+            global_recv_msg_opt: v.global_recv_msg_opt,
+            create_time: v.create_time,
+            app_manger_level: v.app_manger_level,
+        }
+    }
 }
 
 /// OpenIM 桥接客户端，包装 IMClient 供 Flutter 使用
@@ -305,5 +353,29 @@ impl OpenIMBridgeClient {
     pub async fn send_message(&self, msg: MsgData, is_online_only: bool) -> Result<()> {
         self.inner.read().await.send_message(msg, is_online_only).await?;
         Ok(())
+    }
+
+    /// 批量获取用户资料（优先内存缓存，缺失则拉服务端，与 Go GetUsersInfo 对齐）
+    #[flutter_rust_bridge::frb]
+    pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<UserProfile>> {
+        let list = self.inner.read().await.get_users_info(user_ids).await?;
+        Ok(list.into_iter().map(UserProfile::from).collect())
+    }
+
+    /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
+    #[flutter_rust_bridge::frb]
+    pub async fn update_login_user_profile(&self, patch: UserProfilePatch) -> Result<UserProfile> {
+        let profile = self
+            .inner
+            .read()
+            .await
+            .update_login_user_profile(
+                patch.nickname,
+                patch.face_url,
+                patch.ex,
+                patch.global_recv_msg_opt,
+            )
+            .await?;
+        Ok(profile.into())
     }
 }

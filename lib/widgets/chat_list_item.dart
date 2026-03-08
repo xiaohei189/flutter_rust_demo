@@ -5,6 +5,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:intl/intl.dart';
 
 import '../models/user.dart';
+import '../src/rust/api/bridge_client.dart';
 import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import 'user_avatar.dart';
@@ -16,7 +17,7 @@ T? _getKey<T>(Map<String, dynamic> map, String camel, String snake) {
   return null;
 }
 
-/// 从 content 中解析出可读字符串（可能是 String / List<int> bytes / Map）
+/// 从 content 中解析出可读字符串（可能是 String / int 列表 bytes / Map）。
 String _contentToDisplay(dynamic content) {
   if (content == null) return '';
   if (content is String) return content.trim();
@@ -123,6 +124,7 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onPinToggle;
   final VoidCallback? onMarkRead;
+  final UserProfile? cachedUserProfile;
   /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
   final int? itemIndex;
 
@@ -135,6 +137,7 @@ class ChatListItem extends StatelessWidget {
     this.onDelete,
     this.onPinToggle,
     this.onMarkRead,
+    this.cachedUserProfile,
     this.itemIndex,
   });
 
@@ -213,10 +216,16 @@ class ChatListItem extends StatelessWidget {
     final userId = conversation.userId.isNotEmpty
         ? conversation.userId
         : conversation.groupId;
+    final profile = cachedUserProfile;
+    final profileName = profile?.nickname ?? '';
+    final profileAvatar = profile?.faceUrl ?? '';
+    final convFace = conversation.faceUrl;
     return User(
       id: userId,
-      name: _conversationDisplayName,
-      avatar: conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null,
+      name: profileName.isNotEmpty ? profileName : _conversationDisplayName,
+      avatar: profileAvatar.isNotEmpty
+          ? profileAvatar
+          : (convFace.isNotEmpty ? convFace : null),
       status: null,
     );
   }

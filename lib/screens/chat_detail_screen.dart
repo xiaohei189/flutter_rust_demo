@@ -28,9 +28,10 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isLoadingHistory = false;
+  final ValueNotifier<bool> _loadingNotifier = ValueNotifier<bool>(false);
   bool _hasMoreHistory = true;
   bool _initialScrollDone = false;
+  bool _bodyReady = false;
 
   @override
   void initState() {
@@ -38,21 +39,24 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     messageService.addListener(_onMessageServiceChanged);
     _scrollController.addListener(_onScroll);
     if (!widget.preLoaded) _loadMessages();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _bodyReady = true);
+    });
   }
 
   @override
   void dispose() {
     messageService.removeListener(_onMessageServiceChanged);
     _scrollController.removeListener(_onScroll);
+    _loadingNotifier.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _onMessageServiceChanged() {
-    if (mounted) {
-      setState(() {});
-      if (!widget.preLoaded && _initialScrollDone) _scrollToBottom();
+    if (mounted && !widget.preLoaded && _initialScrollDone) {
+      _scrollToBottom();
     }
   }
 
@@ -64,11 +68,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         ? widget.conversation.showName
         : widget.conversation.conversationId;
 
+    final cached = widget.conversation.userId.isNotEmpty
+        ? messageService.getUserProfile(widget.conversation.userId)
+        : null;
+
     return User(
       id: userId,
-      name: userName,
-      avatar: widget.conversation.faceUrl.isNotEmpty
-          ? widget.conversation.faceUrl
+      name: (cached?.nickname ?? '').isNotEmpty ? cached!.nickname : userName,
+      avatar: (cached?.faceUrl ?? '').isNotEmpty
+          ? cached!.faceUrl
+          : widget.conversation.faceUrl.isNotEmpty
+              ? widget.conversation.faceUrl
           : null,
       status: null,
     );
@@ -79,10 +89,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       widget.conversation.conversationType == 3;
 
   Future<void> _loadMessages({bool isLoadMore = false}) async {
-    if (_isLoadingHistory) return;
+    if (_loadingNotifier.value) return;
     if (!_hasMoreHistory && isLoadMore) return;
 
-    setState(() => _isLoadingHistory = true);
+    _loadingNotifier.value = true;
 
     try {
       final conversationId = widget.conversation.conversationId;
@@ -99,52 +109,45 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         count: 20,
         startClientMsgId: startClientMsgId,
       );
+      await _preloadMessageUserProfiles(conversationId);
 
-      setState(() {
-        _hasMoreHistory = hasMore;
-        _isLoadingHistory = false;
-      });
+      _hasMoreHistory = hasMore;
+      _loadingNotifier.value = false;
 
       if (!isLoadMore) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _jumpToBottomOnce();
+          if (mounted) _initialScrollDone = true;
         });
       }
     } catch (e) {
       appLog.e('加载历史消息失败: $e');
-      setState(() => _isLoadingHistory = false);
+      _loadingNotifier.value = false;
     }
+  }
+
+  Future<void> _preloadMessageUserProfiles(String conversationId) async {
+    final messages = messageService.getMessages(conversationId);
+    final ids = messages
+        .map((m) => m.senderId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    if (widget.conversation.userId.isNotEmpty) {
+      ids.add(widget.conversation.userId);
+    }
+    if (ids.isEmpty) return;
+    await messageService.preloadUserProfiles(ids.toList());
   }
 
   void _onScroll() {
     if (!_scrollController.hasClients ||
         !_hasMoreHistory ||
-        _isLoadingHistory) return;
-    final pos = _scrollController.position;
-    if (widget.preLoaded) {
-      if (pos.pixels >= pos.maxScrollExtent - 200) {
-        _loadMessages(isLoadMore: true);
-      }
-    } else {
-      if (pos.pixels < 200) _loadMessages(isLoadMore: true);
-    }
-  }
-
-  void _jumpToBottomOnce() {
-    if (widget.preLoaded || !mounted || _initialScrollDone) return;
-    if (!_scrollController.hasClients) return;
-    final pos = _scrollController.position;
-    if (pos.maxScrollExtent > 0) {
-      _scrollController.jumpTo(pos.maxScrollExtent);
-      _initialScrollDone = true;
+        _loadingNotifier.value) {
       return;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _initialScrollDone || !_scrollController.hasClients) return;
-      final p = _scrollController.position;
-      if (p.maxScrollExtent > 0) _scrollController.jumpTo(p.maxScrollExtent);
-      _initialScrollDone = true;
-    });
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _loadMessages(isLoadMore: true);
+    }
   }
 
   void _scrollToBottom() {
@@ -152,9 +155,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
       final pos = _scrollController.position;
-      if (pos.maxScrollExtent > pos.pixels) {
+      final target = 0.0;
+      if (pos.pixels != target) {
         _scrollController.animateTo(
-          pos.maxScrollExtent,
+          target,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
         );
@@ -371,14 +375,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: _bodyReady
+          ? Column(
         children: [
           Expanded(
-            child: Builder(
-              builder: (context) {
+            child: ListenableBuilder(
+              listenable: Listenable.merge([messageService, _loadingNotifier]),
+              builder: (context, _) {
                 final messages = messageService.getMessages(
                   widget.conversation.conversationId,
                 );
+                final isLoading = _loadingNotifier.value;
+
+                if (isLoading && messages.isEmpty) {
+                  return const _MessageSkeleton();
+                }
 
                 if (messages.isEmpty) {
                   return Center(
@@ -405,9 +416,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   );
                 }
 
-                final useReverse = widget.preLoaded;
-                final itemCount =
-                    messages.length + (_isLoadingHistory ? 1 : 0);
+                const useReverse = true;
+                final itemCount = messages.length + (isLoading ? 1 : 0);
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -415,32 +425,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: itemCount,
                   itemBuilder: (context, index) {
-                    if (_isLoadingHistory) {
-                      if (!useReverse && index == 0) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(
-                              color: AppTheme.primaryColor,
-                            ),
+                    if (isLoading && index == messages.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(
+                            color: AppTheme.primaryColor,
                           ),
-                        );
-                      }
-                      if (useReverse && index == messages.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                        );
-                      }
+                        ),
+                      );
                     }
 
-                    final messageIndex = useReverse
-                        ? messages.length - 1 - index
-                        : (_isLoadingHistory ? index - 1 : index);
+                    final messageIndex = messages.length - 1 - index;
                     if (messageIndex < 0 ||
                         messageIndex >= messages.length) {
                       return const SizedBox.shrink();
@@ -462,6 +458,61 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             onSend: _sendMessage,
           ),
         ],
+      )
+          : ColoredBox(
+              color: AppTheme.backgroundColor,
+              child: const SizedBox.expand(),
+            ),
+    );
+  }
+}
+
+/// 消息加载时的骨架屏
+class _MessageSkeleton extends StatelessWidget {
+  const _MessageSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      reverse: true,
+      children: [
+        _SkeletonBubble(width: 180, alignRight: true),
+        const SizedBox(height: 12),
+        _SkeletonBubble(width: 220, alignRight: false),
+        const SizedBox(height: 12),
+        _SkeletonBubble(width: 160, alignRight: true),
+        const SizedBox(height: 12),
+        _SkeletonBubble(width: 260, alignRight: false),
+        const SizedBox(height: 12),
+        _SkeletonBubble(width: 140, alignRight: true),
+      ],
+    );
+  }
+}
+
+class _SkeletonBubble extends StatelessWidget {
+  const _SkeletonBubble({required this.width, required this.alignRight});
+
+  final double width;
+  final bool alignRight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        width: width,
+        height: 48,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8E8E8),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(alignRight ? 18 : 4),
+            bottomRight: Radius.circular(alignRight ? 4 : 18),
+          ),
+        ),
       ),
     );
   }

@@ -9,10 +9,6 @@
             "path": "../protocol"
         },
         {
-            "name": "openim-sdk-core",
-            "path": "../openim-sdk-core"
-        },
-        {
             "name": "tools",
             "path": "../tools"
         },
@@ -21,11 +17,13 @@
             "path": "../open-im-server"
         },
         {
-            "name": "openim-chat",
-            "path": "../openim-chat"
+            "path": "../openim-flutter-demo"
         },
         {
-            "path": "../chat-server"
+            "path": "../chat"
+        },
+        {
+            "path": "../openim-sdk-core"
         }
     ]
 }

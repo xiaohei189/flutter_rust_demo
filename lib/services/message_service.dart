@@ -31,6 +31,9 @@ class MessageService extends ChangeNotifier {
   final List<im_conv.LocalConversation> _conversations = [];
   // 消息列表（按会话ID分组）
   final Map<String, List<Message>> _messages = {};
+  // 用户资料缓存（userId -> profile）
+  final Map<String, UserProfile> _userProfiles = {};
+  UserProfile? _loginUserProfile;
 
   StreamSubscription<dynamic>? _connStreamSubscription;
   StreamSubscription<dynamic>? _conversationStreamSubscription;
@@ -51,6 +54,12 @@ class MessageService extends ChangeNotifier {
   /// 获取客户端实例
   OpenImBridgeClient? get client => _client;
 
+  /// 当前登录用户资料
+  UserProfile? get loginUserProfile => _loginUserProfile;
+
+  /// 获取指定用户资料（命中缓存时）
+  UserProfile? getUserProfile(String userId) => _userProfiles[userId];
+
   /// 获取所有会话列表
   List<im_conv.LocalConversation> get conversations =>
       List.unmodifiable(_conversations);
@@ -62,6 +71,68 @@ class MessageService extends ChangeNotifier {
   /// 获取指定会话的消息列表
   List<Message> getMessages(String conversationId) {
     return List.unmodifiable(_messages[conversationId] ?? []);
+  }
+
+  /// 拉取当前登录用户资料（通过批量接口 getUsersInfo，走缓存）并更新内存缓存
+  Future<UserProfile?> refreshLoginUserProfile() async {
+    if (_client == null || _currentUserId.isEmpty) return null;
+    try {
+      final list = await _client!.getUsersInfo(userIds: [_currentUserId]);
+      final profile = list.isNotEmpty ? list.first : null;
+      if (profile != null) {
+        _loginUserProfile = profile;
+        _userProfiles[profile.userId] = profile;
+        notifyListeners();
+      }
+      return profile;
+    } catch (e) {
+      appLog.e('[MessageService] 拉取当前用户资料失败: $e');
+      return null;
+    }
+  }
+
+  /// 批量预加载用户资料（用于会话/消息展示昵称与头像）
+  /// 缓存逻辑由 Rust 侧 get_users_info 实现，Dart 直接传全部 userIds
+  Future<void> preloadUserProfiles(List<String> userIds) async {
+    if (_client == null || userIds.isEmpty) return;
+    final uniq = userIds.where((id) => id.isNotEmpty).toSet().toList();
+    if (uniq.isEmpty) return;
+    try {
+      final list = await _client!.getUsersInfo(userIds: uniq);
+      for (final p in list) {
+        _userProfiles[p.userId] = p;
+      }
+      notifyListeners();
+    } catch (e) {
+      appLog.w('[MessageService] 批量拉取用户资料失败: $e');
+    }
+  }
+
+  /// 更新当前登录用户资料（仅更新 patch 中指定字段），并回写缓存
+  Future<UserProfile?> updateLoginUserProfile({
+    String? nickname,
+    String? faceUrl,
+    String? ex,
+    int? globalRecvMsgOpt,
+  }) async {
+    if (_client == null) return null;
+    try {
+      final updated = await _client!.updateLoginUserProfile(
+        patch: UserProfilePatch(
+          nickname: nickname,
+          faceUrl: faceUrl,
+          ex: ex,
+          globalRecvMsgOpt: globalRecvMsgOpt,
+        ),
+      );
+      _loginUserProfile = updated;
+      _userProfiles[updated.userId] = updated;
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      appLog.e('[MessageService] 更新当前用户资料失败: $e');
+      return null;
+    }
   }
 
   /// 加载历史消息（首次加载或翻页）
@@ -323,6 +394,7 @@ class MessageService extends ChangeNotifier {
       notifyListeners();
 
       appLog.i('✅ 客户端连接成功');
+      await refreshLoginUserProfile();
 
       // 会话列表改为由 syncServerFinish 回调加载，不在此阻塞，避免验证码登录后一直转圈
       appLog.i('[MessageService] 触发 _loadConversations（不 await）');
@@ -499,6 +571,12 @@ class MessageService extends ChangeNotifier {
       for (final conv in conversations) {
         _updateConversation(conv);
       }
+      final userIds = conversations
+          .where((c) => c.userId.isNotEmpty)
+          .map((c) => c.userId)
+          .toSet()
+          .toList();
+      unawaited(preloadUserProfiles(userIds));
       notifyListeners();
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载会话列表失败: $e');

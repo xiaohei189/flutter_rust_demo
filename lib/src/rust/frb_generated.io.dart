@@ -131,6 +131,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw);
 
   @protected
+  int dco_decode_box_autoadd_i_32(dynamic raw);
+
+  @protected
   LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
 
   @protected
@@ -153,6 +156,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw);
+
+  @protected
+  UserProfilePatch dco_decode_box_autoadd_user_profile_patch(dynamic raw);
 
   @protected
   VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
@@ -216,6 +222,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ReadReceiptItem> dco_decode_list_read_receipt_item(dynamic raw);
 
   @protected
+  List<UserProfile> dco_decode_list_user_profile(dynamic raw);
+
+  @protected
   LocalConversation dco_decode_local_conversation(dynamic raw);
 
   @protected
@@ -250,6 +259,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw);
+
+  @protected
+  int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
 
   @protected
   LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw);
@@ -301,6 +313,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void dco_decode_unit(dynamic raw);
+
+  @protected
+  UserProfile dco_decode_user_profile(dynamic raw);
+
+  @protected
+  UserProfilePatch dco_decode_user_profile_patch(dynamic raw);
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
@@ -407,6 +425,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
+
+  @protected
   LocationElem sse_decode_box_autoadd_location_elem(
     SseDeserializer deserializer,
   );
@@ -433,6 +454,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   TypingStatus sse_decode_box_autoadd_typing_status(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  UserProfilePatch sse_decode_box_autoadd_user_profile_patch(
     SseDeserializer deserializer,
   );
 
@@ -508,6 +534,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<UserProfile> sse_decode_list_user_profile(SseDeserializer deserializer);
+
+  @protected
   LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
   @protected
@@ -546,6 +575,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer);
+
+  @protected
+  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
 
   @protected
   LocationElem? sse_decode_opt_box_autoadd_location_elem(
@@ -607,6 +639,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_decode_unit(SseDeserializer deserializer);
+
+  @protected
+  UserProfile sse_decode_user_profile(SseDeserializer deserializer);
+
+  @protected
+  UserProfilePatch sse_decode_user_profile_patch(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
@@ -737,6 +775,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_location_elem(
     LocationElem self,
     SseSerializer serializer,
@@ -781,6 +822,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_typing_status(
     TypingStatus self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_user_profile_patch(
+    UserProfilePatch self,
     SseSerializer serializer,
   );
 
@@ -872,6 +919,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_user_profile(
+    List<UserProfile> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_local_conversation(
     LocalConversation self,
     SseSerializer serializer,
@@ -922,6 +975,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     FileElem? self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_location_elem(
@@ -1000,6 +1056,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_user_profile(UserProfile self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_user_profile_patch(
+    UserProfilePatch self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
