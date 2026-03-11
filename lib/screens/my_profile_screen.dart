@@ -1,89 +1,48 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../main.dart';
 import '../models/user.dart';
+import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
-import '../src/rust/api/bridge_client.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
 /// 个人信息页面（可编辑），从左侧抽屉进入
 /// 头像、姓名、别名、我的二维码、个性签名、企业
-class MyProfileScreen extends StatefulWidget {
+class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
 
   @override
-  State<MyProfileScreen> createState() => _MyProfileScreenState();
+  ConsumerState<MyProfileScreen> createState() => _MyProfileScreenState();
 }
 
-class _MyProfileScreenState extends State<MyProfileScreen> {
-  UserProfile? _profile;
-  bool _loading = true;
-  late String _name;
-  late String _alias;
-  late String _signature;
-
+class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _name = '';
-    _alias = '';
-    _signature = '';
-    unawaited(_loadProfile());
+    // 页面加载时自动获取用户资料
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userProfileProvider.notifier).loadProfile();
+    });
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  User get _currentUser => User(
-    id: messageService.currentUserId,
-    name: _name.isNotEmpty ? _name : '未设置',
-    avatar: _profile?.faceUrl.isNotEmpty == true ? _profile!.faceUrl : null,
-    status: null,
-  );
-
-  Future<void> _loadProfile() async {
-    setState(() => _loading = true);
-    final profile = await messageService.refreshLoginUserProfile();
-    if (!mounted) return;
-    _profile = profile;
-    _name = (profile?.nickname ?? '').trim();
-    final ex = _decodeEx(profile?.ex);
-    _alias = (ex['alias'] as String? ?? '').trim();
-    _signature = (ex['signature'] as String? ?? '').trim();
-    _loading = false;
-    setState(() {});
-  }
-
-  Map<String, dynamic> _decodeEx(String? raw) {
-    if (raw == null || raw.trim().isEmpty) return <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(decoded);
-      }
-    } catch (_) {}
-    return <String, dynamic>{};
-  }
-
-  String _buildEx({String? alias, String? signature}) {
-    final map = _decodeEx(_profile?.ex);
-    map['alias'] = alias ?? _alias;
-    map['signature'] = signature ?? _signature;
-    return jsonEncode(map);
+  User _buildCurrentUser(UserProfileState state) {
+    return User(
+      id: state.profile?.userId ?? '',
+      name: state.nickname.isNotEmpty ? state.nickname : '未设置',
+      avatar: state.profile?.faceUrl.isNotEmpty == true
+          ? state.profile!.faceUrl
+          : null,
+      status: null,
+    );
   }
 
   Future<void> _editField({
     required String title,
     required String currentValue,
     required String hint,
-    required Future<void> Function(String) onSave,
+    required Future<bool> Function(String) onSave,
   }) async {
     final result = await context.push<String>(
       '/profile/edit-field',
@@ -93,46 +52,25 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         'initialValue': currentValue,
       },
     );
-    if (result != null) {
-      await onSave(result);
+    if (result != null && mounted) {
+      final success = await onSave(result);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存成功')),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存失败')),
+        );
+      }
     }
-  }
-
-  Future<void> _saveName(String value) async {
-    final updated = await messageService.updateLoginUserProfile(
-      nickname: value,
-    );
-    if (updated == null || !mounted) return;
-    setState(() {
-      _profile = updated;
-      _name = updated.nickname;
-    });
-  }
-
-  Future<void> _saveAlias(String value) async {
-    final updated = await messageService.updateLoginUserProfile(
-      ex: _buildEx(alias: value),
-    );
-    if (updated == null || !mounted) return;
-    setState(() {
-      _profile = updated;
-      _alias = value;
-    });
-  }
-
-  Future<void> _saveSignature(String value) async {
-    final updated = await messageService.updateLoginUserProfile(
-      ex: _buildEx(signature: value),
-    );
-    if (updated == null || !mounted) return;
-    setState(() {
-      _profile = updated;
-      _signature = value;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(userProfileProvider);
+    final currentUser = _buildCurrentUser(state);
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -142,7 +80,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           onPressed: () => AppRouter.goBack(context),
         ),
       ),
-      body: _loading
+      body: state.isLoading && state.profile == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
@@ -159,32 +97,34 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       // 头像
                       _buildRow(
                         label: '头像',
-                        trailing: UserAvatar(user: _currentUser, radius: 20),
+                        trailing: UserAvatar(user: currentUser, radius: 20),
                         onTap: () {},
                       ),
                       _divider(),
                       // 姓名
                       _buildRow(
                         label: '姓名',
-                        value: _name,
+                        value: state.nickname,
                         onTap: () => _editField(
                           title: '修改姓名',
-                          currentValue: _name,
+                          currentValue: state.nickname,
                           hint: '请输入姓名',
-                          onSave: _saveName,
+                          onSave: (value) =>
+                              ref.read(userProfileProvider.notifier).updateNickname(value),
                         ),
                       ),
                       _divider(),
                       // 别名
                       _buildRow(
                         label: '别名',
-                        value: _alias.isEmpty ? null : _alias,
+                        value: state.alias.isEmpty ? null : state.alias,
                         placeholder: '输入别名',
                         onTap: () => _editField(
                           title: '修改别名',
-                          currentValue: _alias,
+                          currentValue: state.alias,
                           hint: '请输入别名',
-                          onSave: _saveAlias,
+                          onSave: (value) =>
+                              ref.read(userProfileProvider.notifier).updateAlias(value),
                         ),
                       ),
                       _divider(),
@@ -202,12 +142,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       // 个性签名
                       _buildRow(
                         label: '个性签名',
-                        value: _signature.isEmpty ? null : _signature,
+                        value: state.signature.isEmpty ? null : state.signature,
                         onTap: () => _editField(
                           title: '修改个性签名',
-                          currentValue: _signature,
+                          currentValue: state.signature,
                           hint: '请输入个性签名',
-                          onSave: _saveSignature,
+                          onSave: (value) =>
+                              ref.read(userProfileProvider.notifier).updateSignature(value),
                         ),
                       ),
                     ],
@@ -325,84 +266,57 @@ class _ProfileFieldEditScreenState extends State<ProfileFieldEditScreen> {
     super.dispose();
   }
 
+  void _save() {
+    final text = _controller.text.trim();
+    if (text.isNotEmpty) {
+      AppRouter.goBackWithResult(context, text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimaryColor,
-          ),
-        ),
-        centerTitle: true,
-        leadingWidth: 72,
-        leading: TextButton(
+        title: Text(widget.title),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
           onPressed: () => AppRouter.goBack(context),
-          child: const Text(
-            '取消',
-            style: TextStyle(fontSize: 17, color: AppTheme.textPrimaryColor),
-          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => AppRouter.goBackWithResult(context, _controller.text.trim()),
+            onPressed: _hasText ? _save : null,
             child: Text(
               '保存',
               style: TextStyle(
-                fontSize: 17,
-                color: _hasText
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondaryColor,
+                color: _hasText ? AppTheme.primaryColor : Colors.grey,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        padding: const EdgeInsets.all(16),
         child: TextField(
           controller: _controller,
           autofocus: true,
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
-            suffixIcon: _hasText
-                ? IconButton(
-                    onPressed: () => _controller.clear(),
-                    icon: Icon(
-                      Icons.cancel,
-                      size: 18,
-                      color: AppTheme.textSecondaryColor.withValues(
-                        alpha: 0.45,
-                      ),
-                    ),
-                  )
-                : null,
             filled: true,
             fillColor: Colors.white,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(
-                color: AppTheme.primaryColor,
-                width: 1,
-              ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(
-                color: AppTheme.primaryColor,
-                width: 1.2,
-              ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
             ),
           ),
+          maxLines: null,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _save(),
         ),
       ),
     );

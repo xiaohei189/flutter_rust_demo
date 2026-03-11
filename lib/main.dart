@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
 import 'package:flutter_rust_demo/src/rust/api/simple.dart';
@@ -47,11 +48,13 @@ class MyApp extends StatelessWidget {
       apiBaseUrl: kApiBaseUrl,
     );
 
-    return MaterialApp.router(
-      title: 'Flutter 聊天应用',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      routerConfig: router,
+    return ProviderScope(
+      child: MaterialApp.router(
+        title: 'Flutter 聊天应用',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        routerConfig: router,
+      ),
     );
   }
 }

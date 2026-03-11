@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../main.dart';
+import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -10,7 +9,7 @@ import '../models/user.dart';
 
 /// 个人资料左侧抽屉（参考飞书风格）
 /// 从左侧滑入，占满屏幕高度，宽度约 80%
-class ProfileDrawerScreen extends StatelessWidget {
+class ProfileDrawerScreen extends ConsumerWidget {
   const ProfileDrawerScreen({
     super.key,
     this.onOpenMyProfile,
@@ -18,30 +17,34 @@ class ProfileDrawerScreen extends StatelessWidget {
 
   final VoidCallback? onOpenMyProfile;
 
-  @override
-  Widget build(BuildContext context) {
-    final panelWidth = MediaQuery.of(context).size.width * 0.82;
-    final profile = messageService.loginUserProfile;
-    String signature = '输入你的个性签名...';
-    if ((profile?.ex ?? '').isNotEmpty) {
-      try {
-        final ex = jsonDecode(profile!.ex);
-        if (ex is Map<String, dynamic>) {
-          final s = (ex['signature'] as String? ?? '').trim();
-          if (s.isNotEmpty) signature = s;
-        }
-      } catch (_) {}
-    }
-    final currentUser = User(
-      id: messageService.currentUserId,
-      name: (profile?.nickname ?? '').isNotEmpty
-          ? profile!.nickname
-          : (messageService.currentUserId.isNotEmpty
-                ? messageService.currentUserId
-                : '我'),
-      avatar: (profile?.faceUrl ?? '').isNotEmpty ? profile!.faceUrl : null,
+  User _buildCurrentUser(UserProfileState state) {
+    return User(
+      id: state.profile?.userId ?? '',
+      name: state.nickname.isNotEmpty
+          ? state.nickname
+          : (state.profile?.userId.isNotEmpty == true
+              ? state.profile!.userId
+              : '我'),
+      avatar: state.profile?.faceUrl.isNotEmpty == true
+          ? state.profile!.faceUrl
+          : null,
       status: null,
     );
+  }
+
+  String _getSignature(UserProfileState state) {
+    if (state.signature.isNotEmpty) {
+      return state.signature;
+    }
+    return '输入你的个性签名...';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final panelWidth = MediaQuery.of(context).size.width * 0.82;
+    final state = ref.watch(userProfileProvider);
+    final currentUser = _buildCurrentUser(state);
+    final signature = _getSignature(state);
 
     return GestureDetector(
       onTap: () => AppRouter.goBack(context),
