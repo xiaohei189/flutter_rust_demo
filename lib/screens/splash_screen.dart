@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../main.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
-import '../screens/login_screen.dart';
-import 'main_screen.dart';
 import '../utils/app_logger.dart';
 import '../utils/login_storage.dart';
 
@@ -44,9 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
           imToken: credentials.imToken,
         );
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-        );
+        context.go(AppRouter.main);
         return;
       } catch (e) {
         appLog.w('自动登录失败，跳转登录页: $e');
@@ -55,11 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => LoginScreen(wsUrl: widget.wsUrl, apiBaseUrl: widget.apiBaseUrl),
-      ),
-    );
+    context.go(AppRouter.login);
   }
 
   @override

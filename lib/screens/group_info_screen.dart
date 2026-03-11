@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/user.dart';
+import '../router/app_router.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -49,7 +50,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
         title: const Text('群信息'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppRouter.goBack(context),
         ),
       ),
       body: ListView(

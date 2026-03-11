@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 
 /// 底部输入区：语音/文字切换、自适应输入框、表情、加号（无内容）/发送（有内容）
@@ -231,7 +232,7 @@ class _ChatInputState extends State<ChatInput> {
   ) {
     return InkWell(
       onTap: () {
-        Navigator.pop(context);
+        AppRouter.goBack(context);
         onTap();
       },
       borderRadius: BorderRadius.circular(12),

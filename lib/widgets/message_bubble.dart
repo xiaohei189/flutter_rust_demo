@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../models/message.dart' show Message, MessageSendStatus;
 import '../models/user.dart';
+import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
-import '../screens/user_profile_screen.dart';
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
 
@@ -154,19 +154,10 @@ class MessageBubble extends StatelessWidget {
   }
 
   void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {
-    final isSelf = isFromMeHint ||
-        (currentUserId != null &&
-            currentUserId!.isNotEmpty &&
-            user.id.isNotEmpty &&
-            user.id == currentUserId);
-    Navigator.push(
+    AppRouter.goToUserProfile(
       context,
-      MaterialPageRoute(
-        builder: (_) => UserProfileScreen(
-          user: user,
-          isCurrentUser: isSelf,
-        ),
-      ),
+      userId: user.id,
+      user: user,
     );
   }
 

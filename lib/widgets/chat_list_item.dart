@@ -5,6 +5,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:intl/intl.dart';
 
 import '../models/user.dart';
+import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
@@ -391,7 +392,7 @@ class ChatListItem extends StatelessWidget {
               leading: const Icon(Icons.push_pin_outlined),
               title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
               onTap: () {
-                Navigator.pop(ctx);
+                AppRouter.goBack(ctx);
                 onPinToggle?.call();
               },
             ),
@@ -399,7 +400,7 @@ class ChatListItem extends StatelessWidget {
               leading: const Icon(Icons.done_all_outlined),
               title: const Text('标为已读'),
               onTap: () {
-                Navigator.pop(ctx);
+                AppRouter.goBack(ctx);
                 onMarkRead?.call();
               },
             ),
@@ -407,7 +408,7 @@ class ChatListItem extends StatelessWidget {
               leading: const Icon(Icons.delete_outline, color: AppTheme.unreadRed),
               title: const Text('删除', style: TextStyle(color: AppTheme.unreadRed)),
               onTap: () {
-                Navigator.pop(ctx);
+                AppRouter.goBack(ctx);
                 onDelete?.call();
               },
             ),

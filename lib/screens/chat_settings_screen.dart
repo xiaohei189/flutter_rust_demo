@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/user.dart';
+import '../router/app_router.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
-import 'group_info_screen.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
 class ChatSettingsScreen extends StatefulWidget {
@@ -58,7 +58,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
         title: const Text('设置'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppRouter.goBack(context),
         ),
         actions: [
           IconButton(
@@ -296,14 +296,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     return [
       InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => GroupInfoScreen(
-                conversation: widget.conversation,
-              ),
-            ),
-          );
+          AppRouter.goToGroupInfo(context, widget.conversation);
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -530,7 +523,8 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primaryColor,
+            activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+            activeThumbColor: AppTheme.primaryColor,
           ),
         ],
       ),

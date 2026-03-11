@@ -4,7 +4,7 @@ import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
 import 'package:flutter_rust_demo/src/rust/api/simple.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
 
-import 'screens/splash_screen.dart';
+import 'router/app_router.dart';
 import 'services/message_service.dart';
 import 'theme/app_theme.dart';
 import 'utils/host_config.dart';
@@ -42,11 +42,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final router = AppRouter.createRouter(
+      wsUrl: kWsUrl,
+      apiBaseUrl: kApiBaseUrl,
+    );
+
+    return MaterialApp.router(
       title: 'Flutter 聊天应用',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: SplashScreen(wsUrl: kWsUrl, apiBaseUrl: kApiBaseUrl),
+      routerConfig: router,
     );
   }
 }

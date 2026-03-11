@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/user.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
@@ -24,7 +25,7 @@ class UserProfileScreen extends StatelessWidget {
         title: const Text('个人信息'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 22),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppRouter.goBack(context),
         ),
       ),
       body: ListView(

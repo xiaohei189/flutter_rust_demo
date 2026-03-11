@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../models/user.dart';
@@ -8,7 +9,6 @@ import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_input.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/user_avatar.dart';
-import 'chat_settings_screen.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
 class ChatDetailScreen extends StatefulWidget {
@@ -363,14 +363,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           IconButton(
             icon: const Icon(Icons.more_horiz),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatSettingsScreen(
-                    conversation: widget.conversation,
-                  ),
-                ),
-              );
+              AppRouter.goToChatSettings(context, widget.conversation);
             },
           ),
         ],

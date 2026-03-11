@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../main.dart';
 import '../models/user.dart';
+import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -83,15 +85,13 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     required String hint,
     required Future<void> Function(String) onSave,
   }) async {
-    final result = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _ProfileFieldEditScreen(
-          title: title,
-          hint: hint,
-          initialValue: currentValue,
-        ),
-      ),
+    final result = await context.push<String>(
+      '/profile/edit-field',
+      extra: {
+        'title': title,
+        'hint': hint,
+        'initialValue': currentValue,
+      },
     );
     if (result != null) {
       await onSave(result);
@@ -139,7 +139,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         title: const Text('个人信息'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppRouter.goBack(context),
         ),
       ),
       body: _loading
@@ -290,8 +290,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 }
 
-class _ProfileFieldEditScreen extends StatefulWidget {
-  const _ProfileFieldEditScreen({
+class ProfileFieldEditScreen extends StatefulWidget {
+  const ProfileFieldEditScreen({
+    super.key,
     required this.title,
     required this.hint,
     required this.initialValue,
@@ -302,11 +303,11 @@ class _ProfileFieldEditScreen extends StatefulWidget {
   final String initialValue;
 
   @override
-  State<_ProfileFieldEditScreen> createState() =>
+  State<ProfileFieldEditScreen> createState() =>
       _ProfileFieldEditScreenState();
 }
 
-class _ProfileFieldEditScreenState extends State<_ProfileFieldEditScreen> {
+class _ProfileFieldEditScreenState extends State<ProfileFieldEditScreen> {
   late final TextEditingController _controller;
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
@@ -344,7 +345,7 @@ class _ProfileFieldEditScreenState extends State<_ProfileFieldEditScreen> {
         centerTitle: true,
         leadingWidth: 72,
         leading: TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppRouter.goBack(context),
           child: const Text(
             '取消',
             style: TextStyle(fontSize: 17, color: AppTheme.textPrimaryColor),
@@ -352,7 +353,7 @@ class _ProfileFieldEditScreenState extends State<_ProfileFieldEditScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, _controller.text.trim()),
+            onPressed: () => AppRouter.goBackWithResult(context, _controller.text.trim()),
             child: Text(
               '保存',
               style: TextStyle(

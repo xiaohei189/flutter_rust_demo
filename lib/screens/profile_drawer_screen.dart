@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';
-import 'my_profile_screen.dart';
 
 /// 个人资料左侧抽屉（参考飞书风格）
 /// 从左侧滑入，占满屏幕高度，宽度约 80%
@@ -44,7 +44,7 @@ class ProfileDrawerScreen extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: () => Navigator.pop(context),
+      onTap: () => AppRouter.goBack(context),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: GestureDetector(
@@ -96,11 +96,7 @@ class ProfileDrawerScreen extends StatelessWidget {
                           onOpenMyProfile!();
                           return;
                         }
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const MyProfileScreen(),
-                          ),
-                        );
+                        AppRouter.goToMyProfile(context);
                       },
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),

@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../main.dart';
+import '../router/app_router.dart';
 import '../services/auth_api.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/login_storage.dart';
-import 'main_screen.dart';
 
 /// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
 class LoginScreen extends StatefulWidget {
@@ -178,10 +179,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = false);
     appLog.i('[登录] setState(_loading=false) 已调用');
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MainScreen()),
-    );
-    appLog.i('[登录] pushReplacement(MainScreen) 已调用，后台保存凭证并初始化');
+    context.go(AppRouter.main);
+    appLog.i('[登录] 导航到主页已调用，后台保存凭证并初始化');
     // 后台：保存凭证并创建连接
     LoginStorage.saveCredentials(
       userId: userId,

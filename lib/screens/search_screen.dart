@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_list_item.dart';
-import 'chat_detail_screen.dart';
 
 /// 搜索分类
 enum _SearchCategory { message, contacts, groups }
@@ -122,7 +122,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => AppRouter.goBack(context),
                     child: const Text(
                       '取消',
                       style: TextStyle(
@@ -185,34 +185,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       ? messageService.currentUserId
                                       : null,
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (_, __, ___) =>
-                                        ChatDetailScreen(
-                                      conversation: conversation,
-                                      preLoaded: false,
-                                    ),
-                                    transitionsBuilder:
-                                        (_, animation, __, child) {
-                                      return SlideTransition(
-                                        position: Tween<Offset>(
-                                          begin: const Offset(1, 0),
-                                          end: Offset.zero,
-                                        ).animate(CurvedAnimation(
-                                          parent: animation,
-                                          curve: Curves.easeOutCubic,
-                                          reverseCurve: Curves.easeInCubic,
-                                        )),
-                                        child: child,
-                                      );
-                                    },
-                                    transitionDuration:
-                                        const Duration(milliseconds: 180),
-                                    reverseTransitionDuration:
-                                        const Duration(milliseconds: 150),
-                                  ),
-                                );
+                                AppRouter.goToChatDetail(context, conversation);
                               },
                             );
                           },

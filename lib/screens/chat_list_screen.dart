@@ -3,14 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_list_item.dart';
 import '../widgets/conversation_title_bar.dart';
-import 'chat_detail_screen.dart';
-import 'my_profile_screen.dart';
 import 'profile_drawer_screen.dart';
-import 'search_screen.dart';
 
 /// 会话列表页（参考飞书风格）
 class ChatListScreen extends StatefulWidget {
@@ -137,7 +135,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         unreadCount: totalUnread,
         groupCount: groupCount,
         onSelect: (filter) {
-          Navigator.pop(context);
+          AppRouter.goBack(context);
           setState(() => _activeFilter = filter);
         },
       ),
@@ -165,21 +163,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 Navigator.of(context).pop();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (!mounted) return;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const MyProfileScreen(),
-                    ),
-                  );
+                  AppRouter.goToMyProfile(context);
                 });
               },
             ),
           ));
         },
         onSearchTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SearchScreen()),
-          );
+          AppRouter.goToSearch(context);
         },
         onRefresh: () => messageService.refreshConversations(),
         onAddFriend: () {},
@@ -304,32 +295,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                 ? messageService.currentUserId
                                 : null,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => ChatDetailScreen(
-                                conversation: conversation,
-                                preLoaded: false,
-                              ),
-                              transitionsBuilder: (_, animation, __, child) {
-                                return SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(1, 0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                    reverseCurve: Curves.easeInCubic,
-                                  )),
-                                  child: child,
-                                );
-                              },
-                              transitionDuration:
-                                  const Duration(milliseconds: 180),
-                              reverseTransitionDuration:
-                                  const Duration(milliseconds: 150),
-                            ),
-                          );
+                          AppRouter.goToChatDetail(context, conversation);
                         },
                         onDelete: () {
                           messageService.removeConversation(
@@ -569,7 +535,7 @@ class _GroupFilterPanel extends StatelessWidget {
     final panelWidth = MediaQuery.of(context).size.width * 0.80;
 
     return GestureDetector(
-      onTap: () => Navigator.pop(context),
+      onTap: () => AppRouter.goBack(context),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: GestureDetector(
@@ -599,7 +565,7 @@ class _GroupFilterPanel extends StatelessWidget {
                           ),
                           const Spacer(),
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () => AppRouter.goBack(context),
                             child: Icon(
                               Icons.tune,
                               size: 20,
