@@ -67,15 +67,15 @@ class AppRouter {
         GoRoute(
           path: chatDetail,
           builder: (context, state) {
-            final conversation = state.extra as im_conv.LocalConversation?;
+            final conversationId = state.pathParameters['id'];
             final preLoaded = state.uri.queryParameters['preLoaded'] == 'true';
-            if (conversation == null) {
+            if (conversationId == null || conversationId.isEmpty) {
               return const Scaffold(
-                body: Center(child: Text('会话信息不存在')),
+                body: Center(child: Text('会话ID不存在')),
               );
             }
             return ChatDetailScreen(
-              conversation: conversation,
+              conversationId: conversationId,
               preLoaded: preLoaded,
             );
           },
@@ -84,26 +84,26 @@ class AppRouter {
         GoRoute(
           path: chatSettings,
           builder: (context, state) {
-            final conversation = state.extra as im_conv.LocalConversation?;
-            if (conversation == null) {
+            final conversationId = state.pathParameters['id'];
+            if (conversationId == null || conversationId.isEmpty) {
               return const Scaffold(
-                body: Center(child: Text('会话信息不存在')),
+                body: Center(child: Text('会话ID不存在')),
               );
             }
-            return ChatSettingsScreen(conversation: conversation);
+            return ChatSettingsScreen(conversationId: conversationId);
           },
         ),
         // 群组信息页
         GoRoute(
           path: groupInfo,
           builder: (context, state) {
-            final conversation = state.extra as im_conv.LocalConversation?;
-            if (conversation == null) {
+            final conversationId = state.pathParameters['id'];
+            if (conversationId == null || conversationId.isEmpty) {
               return const Scaffold(
-                body: Center(child: Text('会话信息不存在')),
+                body: Center(child: Text('会话ID不存在')),
               );
             }
-            return GroupInfoScreen(conversation: conversation);
+            return GroupInfoScreen(conversationId: conversationId);
           },
         ),
         // 我的个人资料页
@@ -170,7 +170,17 @@ class AppRouter {
     bool preLoaded = false,
   }) {
     final queryParams = preLoaded ? '?preLoaded=true' : '';
-    context.push('/chat/${conversation.conversationId}$queryParams', extra: conversation);
+    context.push('/chat/${conversation.conversationId}$queryParams');
+  }
+
+  /// 导航到聊天详情页（通过ID）
+  static void goToChatDetailById(
+    BuildContext context,
+    String conversationId, {
+    bool preLoaded = false,
+  }) {
+    final queryParams = preLoaded ? '?preLoaded=true' : '';
+    context.push('/chat/$conversationId$queryParams');
   }
 
   /// 导航到聊天设置页
@@ -178,7 +188,15 @@ class AppRouter {
     BuildContext context,
     im_conv.LocalConversation conversation,
   ) {
-    context.push('/chat/${conversation.conversationId}/settings', extra: conversation);
+    context.push('/chat/${conversation.conversationId}/settings');
+  }
+
+  /// 导航到聊天设置页（通过ID）
+  static void goToChatSettingsById(
+    BuildContext context,
+    String conversationId,
+  ) {
+    context.push('/chat/$conversationId/settings');
   }
 
   /// 导航到群组信息页
@@ -186,7 +204,15 @@ class AppRouter {
     BuildContext context,
     im_conv.LocalConversation conversation,
   ) {
-    context.push('/group/${conversation.conversationId}/info', extra: conversation);
+    context.push('/group/${conversation.conversationId}/info');
+  }
+
+  /// 导航到群组信息页（通过ID）
+  static void goToGroupInfoById(
+    BuildContext context,
+    String conversationId,
+  ) {
+    context.push('/group/$conversationId/info');
   }
 
   /// 导航到我的个人资料页

@@ -24,6 +24,9 @@ class AppTheme {
   static const Color unreadRed = Color(0xFFFF3B30);
   static const Color draftOrange = Color(0xFFFF9500);
 
+  /// 分割线
+  static const Color dividerColor = Color(0xFFE5E5EA);
+
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     primaryColor: primaryColor,

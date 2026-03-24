@@ -57,23 +57,51 @@ class NavigationService {
     final context = _context;
     if (context != null) {
       final queryParams = preLoaded ? '?preLoaded=true' : '';
-      context.push('/chat/${conversation.conversationId}$queryParams', extra: conversation);
+      context.push('/chat/${conversation.conversationId}$queryParams');
     }
   }
-  
+
+  /// 导航到聊天详情页（通过ID）
+  void goToChatDetailById(
+    String conversationId, {
+    bool preLoaded = false,
+  }) {
+    final context = _context;
+    if (context != null) {
+      final queryParams = preLoaded ? '?preLoaded=true' : '';
+      context.push('/chat/$conversationId$queryParams');
+    }
+  }
+
   /// 导航到聊天设置页
   void goToChatSettings(im_conv.LocalConversation conversation) {
     final context = _context;
     if (context != null) {
-      context.push('/chat/${conversation.conversationId}/settings', extra: conversation);
+      context.push('/chat/${conversation.conversationId}/settings');
     }
   }
-  
+
+  /// 导航到聊天设置页（通过ID）
+  void goToChatSettingsById(String conversationId) {
+    final context = _context;
+    if (context != null) {
+      context.push('/chat/$conversationId/settings');
+    }
+  }
+
   /// 导航到群组信息页
   void goToGroupInfo(im_conv.LocalConversation conversation) {
     final context = _context;
     if (context != null) {
-      context.push('/group/${conversation.conversationId}/info', extra: conversation);
+      context.push('/group/${conversation.conversationId}/info');
+    }
+  }
+
+  /// 导航到群组信息页（通过ID）
+  void goToGroupInfoById(String conversationId) {
+    final context = _context;
+    if (context != null) {
+      context.push('/group/$conversationId/info');
     }
   }
   

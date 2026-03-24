@@ -13,12 +13,12 @@ import '../widgets/user_avatar.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
 class ChatDetailScreen extends ConsumerStatefulWidget {
-  final im_conv.LocalConversation conversation;
+  final String conversationId;
   final bool preLoaded;
 
   const ChatDetailScreen({
     super.key,
-    required this.conversation,
+    required this.conversationId,
     this.preLoaded = false,
   });
 
@@ -31,15 +31,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _loadingNotifier = ValueNotifier<bool>(false);
   bool _hasMoreHistory = true;
-  bool _initialScrollDone = false;
   bool _bodyReady = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    if (!widget.preLoaded) _loadMessages();
+    // 设置当前选中的会话
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(selectedConversationIdProvider.notifier).state = widget.conversationId;
+      if (!widget.preLoaded) _loadMessages();
       if (mounted) setState(() => _bodyReady = true);
     });
   }
@@ -53,17 +54,42 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     super.dispose();
   }
 
+  /// 获取会话信息
+  im_conv.LocalConversation? get _conversation {
+    // 先尝试从新的 ConversationService 获取
+    final newService = ref.read(conversationServiceProvider);
+    var conversation = newService.getConversation(widget.conversationId);
+    if (conversation != null) return conversation;
+    
+    // 如果新服务没有，尝试从旧的 conversationListProvider 获取
+    final oldState = ref.read(conversationListProvider);
+    conversation = oldState.conversations
+        .where((c) => c.conversationId == widget.conversationId)
+        .firstOrNull;
+    return conversation;
+  }
+
   User _getUser(UserProfileState userProfileState) {
-    final userId = widget.conversation.userId.isNotEmpty
-        ? widget.conversation.userId
-        : widget.conversation.groupId;
-    final userName = widget.conversation.showName.isNotEmpty
-        ? widget.conversation.showName
-        : widget.conversation.conversationId;
+    final conversation = _conversation;
+    if (conversation == null) {
+      return User(
+        id: widget.conversationId,
+        name: '未知会话',
+        avatar: null,
+        status: null,
+      );
+    }
+
+    final userId = conversation.userId.isNotEmpty
+        ? conversation.userId
+        : conversation.groupId;
+    final userName = conversation.showName.isNotEmpty
+        ? conversation.showName
+        : conversation.conversationId;
 
     // 从 notifier 获取用户资料缓存
-    final cached = widget.conversation.userId.isNotEmpty
-        ? ref.read(userProfileProvider.notifier).getUserProfile(widget.conversation.userId)
+    final cached = conversation.userId.isNotEmpty
+        ? ref.read(userProfileProvider.notifier).getUserProfile(conversation.userId)
         : null;
 
     return User(
@@ -71,16 +97,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       name: (cached?.nickname ?? '').isNotEmpty ? cached!.nickname : userName,
       avatar: (cached?.faceUrl ?? '').isNotEmpty
           ? cached!.faceUrl
-          : widget.conversation.faceUrl.isNotEmpty
-              ? widget.conversation.faceUrl
+          : conversation.faceUrl.isNotEmpty
+              ? conversation.faceUrl
               : null,
       status: null,
     );
   }
 
-  bool get _isGroup =>
-      widget.conversation.conversationType == 2 ||
-      widget.conversation.conversationType == 3;
+  bool get _isGroup {
+    final conversation = _conversation;
+    if (conversation == null) return false;
+    return conversation.conversationType == 2 ||
+        conversation.conversationType == 3;
+  }
 
   Future<void> _loadMessages({bool isLoadMore = false}) async {
     if (_loadingNotifier.value) return;
@@ -89,8 +118,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     _loadingNotifier.value = true;
 
     try {
-      final conversationId = widget.conversation.conversationId;
-      final messageState = ref.read(messageListProvider(conversationId));
+      final messageState = ref.read(messageListProvider(widget.conversationId));
       final currentMessages = messageState.messages;
       String? startClientMsgId;
 
@@ -99,7 +127,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       }
 
       final hasMore = await ref
-          .read(messageListProvider(conversationId).notifier)
+          .read(messageListProvider(widget.conversationId).notifier)
           .loadHistoryMessages(
             count: 20,
             startClientMsgId: startClientMsgId,
@@ -110,7 +138,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
       if (!isLoadMore) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _initialScrollDone = true;
+          if (mounted) _scrollToBottom();
         });
       }
     } catch (e) {
@@ -144,7 +172,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
           curve: Curves.easeOut,
         );
       }
-      _initialScrollDone = true;
     });
   }
 
@@ -165,14 +192,28 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       return;
     }
 
+    final conversation = _conversation;
+    if (conversation == null) {
+      appLog.e('发送消息失败: 会话不存在');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('会话不存在'),
+            backgroundColor: AppTheme.unreadRed,
+          ),
+        );
+      }
+      return;
+    }
+
     try {
-      final type = widget.conversation.conversationType;
-      final cid = widget.conversation.conversationId;
+      final type = conversation.conversationType;
+      final cid = conversation.conversationId;
       final userProfileState = ref.read(userProfileProvider);
       String recvId;
       switch (type) {
         case 1:
-          recvId = widget.conversation.userId;
+          recvId = conversation.userId;
           if (recvId.isEmpty && cid.startsWith('si_')) {
             final parts = cid.split('_');
             if (parts.length >= 3) {
@@ -186,12 +227,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         case 2:
           recvId = cid.startsWith('g_')
               ? cid.substring(2)
-              : widget.conversation.groupId;
+              : conversation.groupId;
           break;
         case 3:
           recvId = cid.startsWith('sg_')
               ? cid.substring(3)
-              : widget.conversation.groupId;
+              : conversation.groupId;
           break;
         default:
           recvId = '';
@@ -200,7 +241,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
       if (recvId.isEmpty) {
         appLog.e(
-            '发送消息失败: recvId 为空，conversationId=${widget.conversation.conversationId}');
+            '发送消息失败: recvId 为空，conversationId=${conversation.conversationId}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -215,8 +256,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       _textController.clear();
 
       final groupId = sessionType == 3 || sessionType == 2
-          ? (widget.conversation.groupId.isNotEmpty
-              ? widget.conversation.groupId
+          ? (conversation.groupId.isNotEmpty
+              ? conversation.groupId
               : cid.startsWith('sg_')
                   ? cid.substring(3)
                   : cid.startsWith('g_')
@@ -225,7 +266,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
           : '';
 
       await ref
-          .read(messageListProvider(widget.conversation.conversationId).notifier)
+          .read(messageListProvider(conversation.conversationId).notifier)
           .sendTextMessage(
             recvId: recvId,
             text: text,
@@ -251,8 +292,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   Widget build(BuildContext context) {
     final userProfileState = ref.watch(userProfileProvider);
     final user = _getUser(userProfileState);
-    final unread = widget.conversation.unreadCount;
+    final conversation = _conversation;
+    final unread = conversation?.unreadCount ?? 0;
     final currentUserId = userProfileState.profile?.userId ?? '';
+
+    if (conversation == null) {
+      return Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 22),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('会话不存在'),
+        ),
+        body: const Center(
+          child: Text('会话信息不存在或已被删除'),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -351,7 +409,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
           IconButton(
             icon: const Icon(Icons.more_horiz),
             onPressed: () {
-              AppRouter.goToChatSettings(context, widget.conversation);
+              AppRouter.goToChatSettings(context, conversation);
             },
           ),
         ],
@@ -363,7 +421,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                   child: Consumer(
                     builder: (context, ref, child) {
                       final messageState = ref.watch(
-                        messageListProvider(widget.conversation.conversationId),
+                        messageListProvider(widget.conversationId),
                       );
                       final messages = messageState.messages;
                       final isLoading = _loadingNotifier.value;

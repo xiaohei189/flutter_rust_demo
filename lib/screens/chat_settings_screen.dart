@@ -1,57 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user.dart';
+import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
-class ChatSettingsScreen extends StatefulWidget {
-  final im_conv.LocalConversation conversation;
+class ChatSettingsScreen extends ConsumerStatefulWidget {
+  final String conversationId;
 
-  const ChatSettingsScreen({super.key, required this.conversation});
+  const ChatSettingsScreen({super.key, required this.conversationId});
 
   @override
-  State<ChatSettingsScreen> createState() => _ChatSettingsScreenState();
+  ConsumerState<ChatSettingsScreen> createState() => _ChatSettingsScreenState();
 }
 
-class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
+class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   late bool _muteNotification;
   late bool _pinChat;
   bool _addToMark = false;
 
-  bool get _isGroup =>
-      widget.conversation.conversationType == 2 ||
-      widget.conversation.conversationType == 3;
+  /// 获取会话信息
+  im_conv.LocalConversation? get _conversation {
+    // 先尝试从新的 ConversationService 获取
+    final newService = ref.read(conversationServiceProvider);
+    var conversation = newService.getConversation(widget.conversationId);
+    if (conversation != null) return conversation;
+    
+    // 如果新服务没有，尝试从旧的 conversationListProvider 获取
+    final oldState = ref.read(conversationListProvider);
+    conversation = oldState.conversations
+        .where((c) => c.conversationId == widget.conversationId)
+        .firstOrNull;
+    return conversation;
+  }
 
-  String get _displayName =>
-      widget.conversation.showName.isNotEmpty
-          ? widget.conversation.showName
-          : _isGroup
-              ? '群聊'
-              : '用户';
+  bool get _isGroup {
+    final conversation = _conversation;
+    if (conversation == null) return false;
+    return conversation.conversationType == 2 ||
+        conversation.conversationType == 3;
+  }
 
-  User get _chatUser => User(
-        id: widget.conversation.userId.isNotEmpty
-            ? widget.conversation.userId
-            : widget.conversation.groupId,
-        name: _displayName,
-        avatar: widget.conversation.faceUrl.isNotEmpty
-            ? widget.conversation.faceUrl
-            : null,
+  String get _displayName {
+    final conversation = _conversation;
+    if (conversation == null) return '未知';
+    return conversation.showName.isNotEmpty
+        ? conversation.showName
+        : _isGroup
+            ? '群聊'
+            : '用户';
+  }
+
+  User get _chatUser {
+    final conversation = _conversation;
+    if (conversation == null) {
+      return User(
+        id: widget.conversationId,
+        name: '未知',
+        avatar: null,
       );
+    }
+    return User(
+      id: conversation.userId.isNotEmpty
+          ? conversation.userId
+          : conversation.groupId,
+      name: _displayName,
+      avatar: conversation.faceUrl.isNotEmpty
+          ? conversation.faceUrl
+          : null,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _muteNotification = widget.conversation.recvMsgOpt == 1;
-    _pinChat = widget.conversation.isPinned;
+    final conversation = _conversation;
+    if (conversation != null) {
+      _muteNotification = conversation.recvMsgOpt == 1;
+      _pinChat = conversation.isPinned;
+    } else {
+      _muteNotification = false;
+      _pinChat = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final conversation = _conversation;
+
+    if (conversation == null) {
+      return Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          title: const Text('设置'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => AppRouter.goBack(context),
+          ),
+        ),
+        body: const Center(
+          child: Text('会话不存在'),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -202,7 +259,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             child: GestureDetector(
               onTap: () {
                 Clipboard.setData(
-                  ClipboardData(text: widget.conversation.conversationId),
+                  ClipboardData(text: conversation.conversationId),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -216,7 +273,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '会话 ID: ${widget.conversation.conversationId}',
+                    '会话 ID: ${conversation.conversationId}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppTheme.textSecondaryColor,
@@ -252,13 +309,38 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  // ==================== 单聊头部 ====================
+  Widget _buildCard({required List<Widget> children}) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.textSecondaryColor,
+        ),
+      ),
+    );
+  }
 
   List<Widget> _buildSingleHeader() {
     return [
@@ -266,204 +348,165 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Column(
-              children: [
-                UserAvatar(user: _chatUser, radius: 24),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: 56,
-                  child: Text(
+            UserAvatar(user: _chatUser, radius: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
                     _displayName,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryColor),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    '在线',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: 16),
-            _buildAddButton(),
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+              onPressed: () {},
+            ),
           ],
         ),
       ),
     ];
   }
-
-  // ==================== 群聊头部 ====================
 
   List<Widget> _buildGroupHeader() {
     return [
-      InkWell(
-        onTap: () {
-          AppRouter.goToGroupInfo(context, widget.conversation);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              UserAvatar(user: _chatUser, radius: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            _displayName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimaryColor,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.qr_code,
-                          size: 18,
-                          color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '群描述',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ];
-  }
-
-  // ==================== 群成员列表 ====================
-
-  List<Widget> _buildGroupMembers() {
-    return [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+        padding: const EdgeInsets.all(16),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              '群成员',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textPrimaryColor,
+            UserAvatar(user: _chatUser, radius: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _displayName,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '群聊 · 3 人',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Row(
-              children: [
-                Text(
-                  '0',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
-                ),
-              ],
+            IconButton(
+              icon: const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+              onPressed: () {},
             ),
           ],
         ),
       ),
+    ];
+  }
+
+  List<Widget> _buildGroupMembers() {
+    return [
+      _buildSectionTitle('群成员'),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Row(children: [_buildAddButton()]),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+        child: Row(
+          children: [
+            _buildMemberAvatar('用户1'),
+            _buildMemberAvatar('用户2'),
+            _buildMemberAvatar('用户3'),
+            _buildAddMemberButton(),
+          ],
+        ),
       ),
     ];
   }
 
-  // ==================== 通用组件 ====================
-
-  Widget _buildCard({required List<Widget> children}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildAddButton() {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFDDDDDD)),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Icon(
-          Icons.add,
-          size: 24,
-          color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
+  Widget _buildMemberAvatar(String name) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: AppTheme.textPrimaryColor,
-        ),
+      padding: const EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+            child: Text(
+              name.substring(0, 1),
+              style: const TextStyle(
+                color: AppTheme.primaryColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            name,
+            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddMemberButton() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.dividerColor),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(Icons.add, color: AppTheme.textSecondaryColor, size: 20),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '添加',
+            style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildAppIcon(IconData icon, String label, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 24),
+    return Expanded(
       child: Column(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 24, color: color),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
+            style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryColor),
           ),
         ],
       ),
@@ -474,20 +517,18 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, size: 22, color: AppTheme.textSecondaryColor),
-          const SizedBox(height: 6),
+          Icon(icon, color: AppTheme.textSecondaryColor, size: 24),
+          const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNavRow(String title, {required VoidCallback onTap}) {
+  Widget _buildNavRow(String title, {VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -500,9 +541,9 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
               style: const TextStyle(fontSize: 15, color: AppTheme.textPrimaryColor),
             ),
             Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
+              Icons.chevron_right,
               color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+              size: 20,
             ),
           ],
         ),
@@ -523,8 +564,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
-            activeThumbColor: AppTheme.primaryColor,
+            activeColor: AppTheme.primaryColor,
           ),
         ],
       ),
