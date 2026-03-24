@@ -4,6 +4,8 @@ import '../models/user.dart';
 import '../router/app_router.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../theme/app_theme.dart';
+import '../widgets/card_layout.dart';
+import '../widgets/list_row.dart';
 import '../widgets/user_avatar.dart';
 
 /// 群信息页面：群头像（可编辑）、群名称（可编辑）、群描述（可编辑）、群二维码（只读）
@@ -56,10 +58,10 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
       body: ListView(
         children: [
           const SizedBox(height: 12),
-          // 群头像
-          _buildEditableCard(
+          // 群头像、群名称、群描述
+          CardLayout(
             children: [
-              _buildRow(
+              ListRow(
                 label: '群头像',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -76,16 +78,15 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 onTap: () {
                   // TODO: 选择/更换群头像
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('更换群头像功能开发中'),
+                    const SnackBar(
+                      content: Text('更换群头像功能开发中'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
                 },
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              // 群名称
-              _buildTwoLineRow(
+              const ListDivider(),
+              TwoLineListRow(
                 label: '群名称',
                 value: _groupName,
                 onTap: () => _editField(
@@ -94,9 +95,8 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   onSave: (val) => setState(() => _groupName = val),
                 ),
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              // 群描述
-              _buildTwoLineRow(
+              const ListDivider(),
+              TwoLineListRow(
                 label: '群描述',
                 value: _groupDescription,
                 onTap: () => _editField(
@@ -105,16 +105,15 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   onSave: (val) => setState(
                     () => _groupDescription = val.isEmpty ? '暂无描述' : val,
                   ),
-                  maxLines: 4,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           // 群二维码（只读）
-          _buildEditableCard(
+          CardLayout(
             children: [
-              _buildRow(
+              ListRow(
                 label: '群二维码',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -135,8 +134,8 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 onTap: () {
                   // TODO: 展示群二维码大图
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('群二维码功能开发中'),
+                    const SnackBar(
+                      content: Text('群二维码功能开发中'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -146,104 +145,6 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
           ),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEditableCard({required List<Widget> children}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: children,
-      ),
-    );
-  }
-
-  /// 单行样式：标签在左，trailing 或箭头在最右
-  Widget _buildRow({
-    required String label,
-    Widget? trailing,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppTheme.textPrimaryColor,
-              ),
-            ),
-            const Spacer(),
-            if (trailing != null)
-              trailing
-            else
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 14,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 两行样式：标签在上，值在下一行，箭头在最右侧垂直居中
-  Widget _buildTwoLineRow({
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondaryColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
-            ),
-          ],
-        ),
       ),
     );
   }
