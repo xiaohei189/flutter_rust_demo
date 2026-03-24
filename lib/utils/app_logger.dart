@@ -65,14 +65,12 @@ class _FileLinePrinter extends LogPrinter {
       Level.trace => 'TRACE',
       Level.debug => 'DEBUG',
       Level.info => 'INFO',
-      Level.verbose => 'VERBOSE',
       Level.warning => 'WARN',
       Level.error => 'ERROR',
       Level.fatal => 'FATAL',
       Level.off => 'OFF',
       Level.all => 'ALL',
-      Level.wtf => 'WTF',
-      Level.nothing => 'NOTHING',
+      _ => 'UNKNOWN',
     };
   }
 

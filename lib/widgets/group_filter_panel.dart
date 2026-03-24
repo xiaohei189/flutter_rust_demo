@@ -196,7 +196,7 @@ class GroupFilterPanel extends StatelessWidget {
 }
 
 /// 从左侧滑入的路由动画
-class LeftSlideRoute extends PageRouteBuilder {
+class LeftSlideRoute extends PageRouteBuilder<void> {
   final Widget child;
 
   LeftSlideRoute({required this.child})

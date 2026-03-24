@@ -33,7 +33,7 @@ class LoginResult {
   });
 
   factory LoginResult.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
+    final data = json['data'] as Map<String, dynamic>?;
     if (data == null) throw Exception('登录响应无 data');
     return LoginResult(
       userId: data['userID'] as String? ?? '',
