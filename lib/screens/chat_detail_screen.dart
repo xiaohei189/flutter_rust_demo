@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../main.dart';
+import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
@@ -11,7 +12,7 @@ import '../widgets/message_list.dart';
 import '../widgets/user_avatar.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
-class ChatDetailScreen extends StatefulWidget {
+class ChatDetailScreen extends ConsumerStatefulWidget {
   final im_conv.LocalConversation conversation;
   final bool preLoaded;
 
@@ -22,10 +23,10 @@ class ChatDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+  ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _ChatDetailScreenState extends State<ChatDetailScreen> {
+class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _loadingNotifier = ValueNotifier<bool>(false);
@@ -36,7 +37,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   void initState() {
     super.initState();
-    messageService.addListener(_onMessageServiceChanged);
     _scrollController.addListener(_onScroll);
     if (!widget.preLoaded) _loadMessages();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -46,7 +46,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   void dispose() {
-    messageService.removeListener(_onMessageServiceChanged);
     _scrollController.removeListener(_onScroll);
     _loadingNotifier.dispose();
     _textController.dispose();
@@ -54,13 +53,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     super.dispose();
   }
 
-  void _onMessageServiceChanged() {
-    if (mounted && !widget.preLoaded && _initialScrollDone) {
-      _scrollToBottom();
-    }
-  }
-
-  User _getUser() {
+  User _getUser(UserProfileState userProfileState) {
     final userId = widget.conversation.userId.isNotEmpty
         ? widget.conversation.userId
         : widget.conversation.groupId;
@@ -68,8 +61,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         ? widget.conversation.showName
         : widget.conversation.conversationId;
 
+    // 从 notifier 获取用户资料缓存
     final cached = widget.conversation.userId.isNotEmpty
-        ? messageService.getUserProfile(widget.conversation.userId)
+        ? ref.read(userProfileProvider.notifier).getUserProfile(widget.conversation.userId)
         : null;
 
     return User(
@@ -79,7 +73,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ? cached!.faceUrl
           : widget.conversation.faceUrl.isNotEmpty
               ? widget.conversation.faceUrl
-          : null,
+              : null,
       status: null,
     );
   }
@@ -96,20 +90,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
     try {
       final conversationId = widget.conversation.conversationId;
-      final currentMessages =
-          messageService.getMessages(conversationId);
+      final messageState = ref.read(messageListProvider(conversationId));
+      final currentMessages = messageState.messages;
       String? startClientMsgId;
 
       if (isLoadMore && currentMessages.isNotEmpty) {
         startClientMsgId = currentMessages.first.id;
       }
 
-      final hasMore = await messageService.loadHistoryMessages(
-        conversationId,
-        count: 20,
-        startClientMsgId: startClientMsgId,
-      );
-      await _preloadMessageUserProfiles(conversationId);
+      final hasMore = await ref
+          .read(messageListProvider(conversationId).notifier)
+          .loadHistoryMessages(
+            count: 20,
+            startClientMsgId: startClientMsgId,
+          );
 
       _hasMoreHistory = hasMore;
       _loadingNotifier.value = false;
@@ -123,19 +117,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       appLog.e('加载历史消息失败: $e');
       _loadingNotifier.value = false;
     }
-  }
-
-  Future<void> _preloadMessageUserProfiles(String conversationId) async {
-    final messages = messageService.getMessages(conversationId);
-    final ids = messages
-        .map((m) => m.senderId)
-        .where((id) => id.isNotEmpty)
-        .toSet();
-    if (widget.conversation.userId.isNotEmpty) {
-      ids.add(widget.conversation.userId);
-    }
-    if (ids.isEmpty) return;
-    await messageService.preloadUserProfiles(ids.toList());
   }
 
   void _onScroll() {
@@ -169,7 +150,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
-    if (!messageService.isConnected) {
+
+    final connectionState = ref.read(connectionProvider);
+    if (!connectionState.isConnected) {
       appLog.e('发送消息失败: WebSocket 未连接');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -185,6 +168,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     try {
       final type = widget.conversation.conversationType;
       final cid = widget.conversation.conversationId;
+      final userProfileState = ref.read(userProfileProvider);
       String recvId;
       switch (type) {
         case 1:
@@ -194,7 +178,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             if (parts.length >= 3) {
               final id1 = parts[1];
               final id2 = parts[2];
-              final my = messageService.currentUserId;
+              final my = userProfileState.profile?.userId ?? '';
               recvId = id1 == my ? id2 : id1;
             }
           }
@@ -239,13 +223,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       ? cid.substring(2)
                       : '')
           : '';
-      await messageService.sendTextMessage(
-        recvId: recvId,
-        text: text,
-        sessionType: sessionType,
-        conversationId: widget.conversation.conversationId,
-        groupId: groupId,
-      );
+
+      await ref
+          .read(messageListProvider(widget.conversation.conversationId).notifier)
+          .sendTextMessage(
+            recvId: recvId,
+            text: text,
+            sessionType: sessionType,
+            groupId: groupId,
+          );
 
       if (!widget.preLoaded) _scrollToBottom();
     } catch (e, st) {
@@ -263,8 +249,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = _getUser();
+    final userProfileState = ref.watch(userProfileProvider);
+    final user = _getUser(userProfileState);
     final unread = widget.conversation.unreadCount;
+    final currentUserId = userProfileState.profile?.userId ?? '';
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -372,20 +360,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ? Column(
               children: [
                 Expanded(
-                  child: ListenableBuilder(
-                    listenable: Listenable.merge([messageService, _loadingNotifier]),
-                    builder: (context, _) {
-                      final messages = messageService.getMessages(
-                        widget.conversation.conversationId,
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final messageState = ref.watch(
+                        messageListProvider(widget.conversation.conversationId),
                       );
+                      final messages = messageState.messages;
                       final isLoading = _loadingNotifier.value;
 
                       return MessageList(
                         messages: messages,
                         otherUser: user,
-                        currentUserId: messageService.currentUserId.isNotEmpty
-                            ? messageService.currentUserId
-                            : null,
+                        currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
                         scrollController: _scrollController,
                         isLoading: isLoading,
                       );

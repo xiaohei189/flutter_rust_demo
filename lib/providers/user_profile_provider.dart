@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../main.dart';
 import '../services/message_service.dart';
 import '../src/rust/api/bridge_client.dart';
+import 'message_service_provider.dart';
 
 /// 用户资料状态
 class UserProfileState {
@@ -86,6 +86,16 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   UserProfileNotifier(this._messageService) : super(const UserProfileState());
 
   final MessageService _messageService;
+
+  /// 获取指定用户资料（从 MessageService 缓存）
+  UserProfile? getUserProfile(String userId) {
+    // 如果是当前登录用户，直接返回
+    if (state.profile?.userId == userId) {
+      return state.profile;
+    }
+    // 从 MessageService 缓存获取
+    return _messageService.getUserProfile(userId);
+  }
 
   /// 加载当前登录用户资料
   Future<void> loadProfile() async {
@@ -235,11 +245,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {
   return UserProfileNotifier(ref.read(messageServiceProvider));
-});
-
-/// MessageService Provider
-final messageServiceProvider = Provider<MessageService>((ref) {
-  return messageService;
 });
 
 /// 当前用户资料 Provider（仅返回 profile）

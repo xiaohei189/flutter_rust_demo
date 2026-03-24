@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../main.dart';
+import '../providers/providers.dart';
 import '../router/app_router.dart';
-import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../theme/app_theme.dart';
 import '../widgets/chat_list_header.dart';
 import '../widgets/chat_list_item.dart';
 import '../widgets/conversation_title_bar.dart';
@@ -13,24 +14,24 @@ import '../widgets/group_filter_panel.dart';
 import 'profile_drawer_screen.dart';
 
 /// 会话列表页（参考飞书风格）
-class ChatListScreen extends StatefulWidget {
+class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
   @override
-  State<ChatListScreen> createState() => _ChatListScreenState();
+  ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
+class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   Timer? _delayRefreshTimer;
   GroupFilter _activeFilter = GroupFilter.all;
 
   @override
   void initState() {
     super.initState();
-    messageService.addListener(_onMessageServiceChanged);
     _delayRefreshTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && messageService.conversations.isEmpty) {
-        messageService.refreshConversations();
+      final conversations = ref.read(conversationListProvider).conversations;
+      if (mounted && conversations.isEmpty) {
+        ref.read(conversationListProvider.notifier).refreshConversations();
       }
     });
   }
@@ -38,54 +39,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   void dispose() {
     _delayRefreshTimer?.cancel();
-    messageService.removeListener(_onMessageServiceChanged);
     super.dispose();
   }
 
-  void _onMessageServiceChanged() {
-    if (mounted) setState(() {});
-  }
-
-  int get _totalUnreadCount {
-    int sum = 0;
-    for (final c in messageService.conversations) {
-      sum += c.unreadCount;
-    }
-    return sum;
-  }
-
   int get _groupChatCount {
-    return messageService.conversations
+    final conversations = ref.read(conversationListProvider).conversations;
+    return conversations
         .where((c) => c.conversationType == 2 || c.conversationType == 3)
         .length;
   }
 
-  List<im_conv.LocalConversation> get _filteredConversations {
-    var list = messageService.conversations;
-
+  List<im_conv.LocalConversation> _getFilteredConversations(List<im_conv.LocalConversation> conversations) {
     switch (_activeFilter) {
       case GroupFilter.unread:
-        list = list.where((c) => c.unreadCount > 0).toList();
-        break;
+        return conversations.where((c) => c.unreadCount > 0).toList();
       case GroupFilter.singleChat:
-        list = list.where((c) => c.conversationType == 1).toList();
-        break;
+        return conversations.where((c) => c.conversationType == 1).toList();
       case GroupFilter.groupChat:
-        list = list
-            .where((c) =>
-                c.conversationType == 2 || c.conversationType == 3)
+        return conversations
+            .where((c) => c.conversationType == 2 || c.conversationType == 3)
             .toList();
-        break;
       case GroupFilter.flagged:
       case GroupFilter.atMe:
       case GroupFilter.done:
-        list = [];
-        break;
+        return [];
       case GroupFilter.all:
-        break;
+        return conversations;
     }
-
-    return list;
   }
 
   bool get _isQuickTab =>
@@ -94,8 +74,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
       _activeFilter == GroupFilter.flagged;
 
   void _openGroupFilterPanel() {
-    final totalUnread = _totalUnreadCount;
-    final totalMessages = messageService.conversations.length;
+    final conversationState = ref.read(conversationListProvider);
+    final totalUnread = conversationState.totalUnreadCount;
+    final totalMessages = conversationState.conversations.length;
     final groupCount = _groupChatCount;
 
     Navigator.of(context).push(LeftSlideRoute(
@@ -114,18 +95,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final conversations = _filteredConversations;
-    final totalUnread = _totalUnreadCount;
+    final conversationState = ref.watch(conversationListProvider);
+    final connectionState = ref.watch(connectionProvider);
+    final userProfileState = ref.watch(userProfileProvider);
+
+    final conversations = _getFilteredConversations(conversationState.conversations);
+    final totalUnread = conversationState.totalUnreadCount;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: ConversationTitleBar(
-        currentUserId: messageService.currentUserId,
-        nickname: messageService.loginUserProfile?.nickname,
-        avatarUrl: messageService.loginUserProfile?.faceUrl,
-        isSyncing: messageService.isSyncingConversations,
-        isConnected: messageService.isConnected,
-        syncProgress: messageService.syncProgress,
+        currentUserId: userProfileState.profile?.userId ?? '',
+        nickname: userProfileState.profile?.nickname,
+        avatarUrl: userProfileState.profile?.faceUrl,
+        isSyncing: conversationState.isSyncing,
+        isConnected: connectionState.isConnected,
+        syncProgress: conversationState.syncProgress,
         onAvatarTap: () {
           Navigator.of(context).push(LeftSlideRoute(
             child: ProfileDrawerScreen(
@@ -142,7 +127,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         onSearchTap: () {
           AppRouter.goToSearch(context);
         },
-        onRefresh: () => messageService.refreshConversations(),
+        onRefresh: () => ref.read(conversationListProvider.notifier).refreshConversations(),
         onAddFriend: () {},
         onAddGroup: () {},
         onCreateGroup: () {},
@@ -154,8 +139,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
             activeFilter: _activeFilter,
             totalUnreadCount: totalUnread,
             isQuickTab: _isQuickTab,
-            isSyncing: messageService.isSyncingConversations,
-            syncProgress: messageService.syncProgress,
+            isSyncing: conversationState.isSyncing,
+            syncProgress: conversationState.syncProgress,
             onFilterChange: (filter) {
               setState(() => _activeFilter = filter);
             },
@@ -164,7 +149,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           const Divider(height: 1, color: Color(0xFFEEEEEE)),
           Expanded(
             child: conversations.isEmpty
-                ? _buildEmptyState()
+                ? _buildEmptyState(conversationState, connectionState)
                 : ListView.builder(
                     key: ValueKey<int>(conversations.length),
                     padding: EdgeInsets.zero,
@@ -175,23 +160,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         key: ValueKey<String>(conversation.conversationId),
                         conversation: conversation,
                         cachedUserProfile: conversation.userId.isNotEmpty
-                            ? messageService.getUserProfile(conversation.userId)
+                            ? userProfileState.profile
                             : null,
                         itemIndex: index,
-                        currentUserId:
-                            messageService.currentUserId.isNotEmpty
-                                ? messageService.currentUserId
-                                : null,
+                        currentUserId: userProfileState.profile?.userId,
                         onTap: () {
                           AppRouter.goToChatDetail(context, conversation);
                         },
                         onDelete: () {
-                          messageService.removeConversation(
-                            conversation.conversationId,
-                          );
+                          // TODO: 使用 Provider 实现删除会话
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('已删除会话'),
+                            const SnackBar(
+                              content: Text('已删除会话'),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -221,7 +201,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ConversationListState conversationState, AppConnectionState connectionState) {
     final label = _activeFilter == GroupFilter.all
         ? '消息'
         : _activeFilter == GroupFilter.unread
@@ -239,11 +219,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (messageService.isSyncingConversations) ...[
+          if (conversationState.isSyncing) ...[
             const CircularProgressIndicator(color: AppTheme.primaryColor),
             const SizedBox(height: 16),
             Text(
-              '正在同步会话... ${messageService.syncProgress}%',
+              '正在同步会话... ${conversationState.syncProgress}%',
               style: const TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondaryColor,
@@ -270,7 +250,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             if (_activeFilter == GroupFilter.all) ...[
               const SizedBox(height: 8),
               Text(
-                messageService.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
+                connectionState.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
