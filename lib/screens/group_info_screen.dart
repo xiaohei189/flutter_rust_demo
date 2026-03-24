@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user.dart';
 import '../router/app_router.dart';
+import '../services/navigation_service.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../theme/app_theme.dart';
 import '../widgets/card_layout.dart';
@@ -176,14 +177,14 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => NavigationService.instance.goBack(),
             child: const Text('取消'),
           ),
           TextButton(
             onPressed: () {
               final text = controller.text.trim();
               if (text.isNotEmpty) onSave(text);
-              Navigator.pop(ctx);
+              NavigationService.instance.goBack();
             },
             child: const Text('保存'),
           ),

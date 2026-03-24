@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../models/user.dart';
 import '../router/app_router.dart';
+import '../services/navigation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
@@ -132,7 +133,7 @@ class UserProfileScreen extends StatelessWidget {
                     context,
                     Icons.chat_bubble_outline,
                     '发消息',
-                    () => Navigator.pop(context),
+                    () => NavigationService.instance.goBack(),
                   ),
                   _buildDivider(),
                   _buildActionRow(

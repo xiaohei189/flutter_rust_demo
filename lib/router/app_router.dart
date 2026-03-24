@@ -11,11 +11,14 @@ import '../screens/my_profile_screen.dart' show MyProfileScreen, ProfileFieldEdi
 import '../screens/search_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../models/user.dart';
+import '../services/navigation_service.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 
 /// 应用路由配置
 class AppRouter {
-  static final _rootNavigatorKey = GlobalKey<NavigatorState>();
+  /// 使用 NavigationService 的 navigatorKey 确保全局导航一致性
+  static GlobalKey<NavigatorState> get _rootNavigatorKey => 
+      NavigationService.instance.navigatorKey;
 
   /// 路由路径常量
   static const String splash = '/';
