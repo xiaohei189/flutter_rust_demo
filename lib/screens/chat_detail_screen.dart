@@ -7,7 +7,7 @@ import '../utils/app_logger.dart';
 import '../models/user.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import '../widgets/chat_input.dart';
-import '../widgets/message_bubble.dart';
+import '../widgets/message_list.dart';
 import '../widgets/user_avatar.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
@@ -155,7 +155,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
       final pos = _scrollController.position;
-      final target = 0.0;
+      const target = 0.0;
       if (pos.pixels != target) {
         _scrollController.animateTo(
           target,
@@ -370,143 +370,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ),
       body: _bodyReady
           ? Column(
-        children: [
-          Expanded(
-            child: ListenableBuilder(
-              listenable: Listenable.merge([messageService, _loadingNotifier]),
-              builder: (context, _) {
-                final messages = messageService.getMessages(
-                  widget.conversation.conversationId,
-                );
-                final isLoading = _loadingNotifier.value;
-
-                if (isLoading && messages.isEmpty) {
-                  return const _MessageSkeleton();
-                }
-
-                if (messages.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: AppTheme.textSecondaryColor.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          '暂无消息',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                const useReverse = true;
-                final itemCount = messages.length + (isLoading ? 1 : 0);
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: useReverse,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  itemCount: itemCount,
-                  itemBuilder: (context, index) {
-                    if (isLoading && index == messages.length) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
+              children: [
+                Expanded(
+                  child: ListenableBuilder(
+                    listenable: Listenable.merge([messageService, _loadingNotifier]),
+                    builder: (context, _) {
+                      final messages = messageService.getMessages(
+                        widget.conversation.conversationId,
                       );
-                    }
+                      final isLoading = _loadingNotifier.value;
 
-                    final messageIndex = messages.length - 1 - index;
-                    if (messageIndex < 0 ||
-                        messageIndex >= messages.length) {
-                      return const SizedBox.shrink();
-                    }
-
-                    final message = messages[messageIndex];
-                    return MessageBubble(
-                      message: message,
-                      otherUser: user,
-                      currentUserId: messageService.currentUserId,
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          ChatInput(
-            controller: _textController,
-            onSend: _sendMessage,
-          ),
-        ],
-      )
-          : ColoredBox(
+                      return MessageList(
+                        messages: messages,
+                        otherUser: user,
+                        currentUserId: messageService.currentUserId.isNotEmpty
+                            ? messageService.currentUserId
+                            : null,
+                        scrollController: _scrollController,
+                        isLoading: isLoading,
+                      );
+                    },
+                  ),
+                ),
+                ChatInput(
+                  controller: _textController,
+                  onSend: _sendMessage,
+                ),
+              ],
+            )
+          : const ColoredBox(
               color: AppTheme.backgroundColor,
-              child: const SizedBox.expand(),
+              child: SizedBox.expand(),
             ),
-    );
-  }
-}
-
-/// 消息加载时的骨架屏
-class _MessageSkeleton extends StatelessWidget {
-  const _MessageSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      reverse: true,
-      children: [
-        _SkeletonBubble(width: 180, alignRight: true),
-        const SizedBox(height: 12),
-        _SkeletonBubble(width: 220, alignRight: false),
-        const SizedBox(height: 12),
-        _SkeletonBubble(width: 160, alignRight: true),
-        const SizedBox(height: 12),
-        _SkeletonBubble(width: 260, alignRight: false),
-        const SizedBox(height: 12),
-        _SkeletonBubble(width: 140, alignRight: true),
-      ],
-    );
-  }
-}
-
-class _SkeletonBubble extends StatelessWidget {
-  const _SkeletonBubble({required this.width, required this.alignRight});
-
-  final double width;
-  final bool alignRight;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        width: width,
-        height: 48,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8E8E8),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(alignRight ? 18 : 4),
-            bottomRight: Radius.circular(alignRight ? 4 : 18),
-          ),
-        ),
-      ),
     );
   }
 }
