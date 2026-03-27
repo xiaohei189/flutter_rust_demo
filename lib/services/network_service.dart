@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'logger_service.dart';
 
 class NetworkService {
   static final NetworkService _instance = NetworkService._internal();
@@ -19,14 +20,20 @@ class NetworkService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          logger.debug('发送请求: ${options.method} ${options.uri}');
+          logger.debug('请求参数: ${options.data}');
           // 添加认证头
           // options.headers['Authorization'] = 'Bearer token';
           return handler.next(options);
         },
         onResponse: (response, handler) {
+          logger.debug('收到响应: ${response.statusCode} ${response.requestOptions.uri}');
+          logger.debug('响应数据: ${response.data}');
           return handler.next(response);
         },
         onError: (error, handler) {
+          logger.error('请求错误: ${error.message}');
+          logger.error('错误信息: ${error.response?.data}');
           return handler.next(error);
         },
       ),
