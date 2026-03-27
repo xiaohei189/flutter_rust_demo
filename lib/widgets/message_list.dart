@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/message.dart' show Message;
+import '../models/message.dart';
 import '../models/user.dart';
 import '../src/rust/api/bridge_client.dart' show UserProfile;
 import '../theme/app_theme.dart';

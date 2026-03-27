@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/message.dart' show Message, MessageSendStatus;
+import '../models/message.dart';
 import '../models/user.dart';
 import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
@@ -37,6 +37,8 @@ class MessageBubble extends StatelessWidget {
         id: message.senderId.isNotEmpty ? message.senderId : (currentUserId ?? ''),
         name: nickname.isNotEmpty ? nickname : (currentUserId ?? '我'),
         avatar: faceUrl?.isNotEmpty == true ? faceUrl : null,
+        avatarColorValue: 0xFF6200EE,
+        avatarIconName: 'person',
       );
     } else {
       final nickname = senderProfile?.nickname ?? message.senderNickname ?? '';
@@ -48,6 +50,8 @@ class MessageBubble extends StatelessWidget {
           avatar: faceUrl?.isNotEmpty == true
               ? faceUrl
               : otherUser.avatar,
+          avatarColorValue: 0xFF6200EE,
+          avatarIconName: 'person',
         );
       }
       return otherUser;
@@ -183,6 +187,12 @@ class MessageBubble extends StatelessWidget {
           Icons.error_outline,
           size: 14,
           color: AppTheme.unreadRed.withValues(alpha: 0.9),
+        );
+      case MessageSendStatus.read:
+        return Icon(
+          Icons.done_all,
+          size: 14,
+          color: AppTheme.primaryColor,
         );
     }
   }

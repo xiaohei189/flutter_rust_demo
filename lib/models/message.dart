@@ -1,50 +1,43 @@
-/// 消息类型
-enum MessageType { text, image, voice, video, file }
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter_rust_demo/models/user.dart';
 
-/// 发送状态（自己发出的消息）
+part 'message.freezed.dart';
+part 'message.g.dart';
+
+enum MessageType {
+  text,
+  image,
+  audio,
+  video,
+  file,
+}
+
 enum MessageSendStatus {
   sending,
   sent,
   failed,
+  read,
 }
 
-/// 消息模型
-class Message {
-  final String id;
-  final String senderId;
-  final String content;
-  final MessageType type;
-  final DateTime timestamp;
-  final bool isSent;
-  final MessageSendStatus? sendStatus;
-  final String? senderNickname;
-  final String? senderFaceUrl;
+@freezed
+class Message with _$Message {
+  const factory Message({
+    required String id,
+    required String senderId,
+    required String content,
+    @Default(MessageType.text) MessageType type,
+    required DateTime timestamp,
+    @Default(true) bool isSent,
+    MessageSendStatus? sendStatus,
+    String? senderNickname,
+    String? senderFaceUrl,
+  }) = _Message;
 
-  Message({
-    required this.id,
-    required this.senderId,
-    required this.content,
-    this.type = MessageType.text,
-    required this.timestamp,
-    this.isSent = true,
-    this.sendStatus,
-    this.senderNickname,
-    this.senderFaceUrl,
-  });
-
-  Message copyWith({MessageSendStatus? sendStatus}) {
-    return Message(
-      id: id,
-      senderId: senderId,
-      content: content,
-      type: type,
-      timestamp: timestamp,
-      isSent: isSent,
-      sendStatus: sendStatus ?? this.sendStatus,
-      senderNickname: senderNickname,
-      senderFaceUrl: senderFaceUrl,
-    );
-  }
-
-  bool get isFromMe => isSent;
+  factory Message.fromJson(Map<String, dynamic> json) => _$MessageFromJson(json);
 }
+
+// 为 Message 类添加扩展方法
+extension MessageExtensions on Message {
+  bool get isFromMe => senderId == User.currentUser.id;
+}
+

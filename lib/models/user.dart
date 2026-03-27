@@ -1,52 +1,55 @@
-import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// 用户模型
-class User {
-  final String id;
-  final String name;
-  final String? avatar; // 改为可选，不依赖网络图片
-  final String? status; // 在线状态
-  final Color? avatarColor; // 头像背景颜色
-  final IconData? avatarIcon; // 头像图标
+part 'user.freezed.dart';
+part 'user.g.dart';
 
-  User({
-    required this.id,
-    required this.name,
-    this.avatar,
-    this.status,
-    this.avatarColor,
-    this.avatarIcon,
-  });
+@freezed
+class User with _$User {
+  const factory User({
+    required String id,
+    required String name,
+    String? avatar,
+    String? status,
+    int? avatarColorValue,
+    String? avatarIconName,
+  }) = _User;
 
-  // 模拟数据 - 使用颜色和图标代替网络图片
-  static User currentUser = User(
-    id: '1',
-    name: '我',
-    avatarColor: Colors.blue,
-    avatarIcon: Icons.person,
-  );
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
-  static List<User> mockUsers = [
+  // 添加 currentUser getter
+  static User get currentUser => mockUsers[0];
+
+  static const List<User> mockUsers = [
+    User(
+      id: '1',
+      name: '张三',
+      avatar: null,
+      status: '在线',
+      avatarColorValue: 0xFF6200EE,
+      avatarIconName: 'person',
+    ),
     User(
       id: '2',
-      name: '张三',
-      status: '在线',
-      avatarColor: Colors.orange,
-      avatarIcon: Icons.face,
+      name: '李四',
+      avatar: null,
+      status: '离线',
+      avatarColorValue: 0xFF03DAC6,
+      avatarIconName: 'person',
     ),
     User(
       id: '3',
-      name: '李四',
-      status: '离线',
-      avatarColor: Colors.green,
-      avatarIcon: Icons.account_circle,
-    ),
-    User(
-      id: '4',
       name: '王五',
-      status: '在线',
-      avatarColor: Colors.purple,
-      avatarIcon: Icons.person_outline,
+      avatar: null,
+      status: '忙碌',
+      avatarColorValue: 0xFFF44336,
+      avatarIconName: 'person',
     ),
   ];
 }
+
+// 为 User 类添加扩展方法
+extension UserExtensions on User {
+  int get avatarColor => avatarColorValue ?? 0xFF6200EE;
+  String get avatarIcon => avatarIconName ?? 'person';
+}
+
