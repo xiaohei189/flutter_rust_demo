@@ -54,22 +54,29 @@ class ConversationListState {
 
 /// 会话列表 Notifier
 class ConversationListNotifier extends StateNotifier<ConversationListState> {
-  ConversationListNotifier(this._messageService)
+  ConversationListNotifier(this._ref)
       : super(const ConversationListState()) {
     _init();
   }
 
-  final MessageServiceNotifier _messageService;
+  final Ref _ref;
 
   void _init() {
-    _syncState();
+    // 监听 messageServiceProvider 的状态变化
+    _ref.listen(
+      messageServiceProvider,
+      (_, next) {
+        _syncState(next);
+      },
+      fireImmediately: true,
+    );
   }
 
-  void _syncState() {
+  void _syncState(MessageServiceState messageServiceState) {
     state = state.copyWith(
-      conversations: _messageService.state.conversations,
-      isSyncing: _messageService.state.isSyncingConversations,
-      syncProgress: _messageService.state.syncProgress,
+      conversations: messageServiceState.conversations,
+      isSyncing: messageServiceState.isSyncingConversations,
+      syncProgress: messageServiceState.syncProgress,
     );
   }
 
@@ -77,8 +84,7 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
   Future<void> refreshConversations() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _messageService.refreshConversations();
-      _syncState();
+      await _ref.read(messageServiceProvider.notifier).refreshConversations();
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(
@@ -103,7 +109,7 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
 /// 会话列表 Provider
 final conversationListProvider =
     StateNotifierProvider<ConversationListNotifier, ConversationListState>((ref) {
-  return ConversationListNotifier(ref.read(messageServiceProvider.notifier));
+  return ConversationListNotifier(ref);
 });
 
 /// 当前会话列表 Provider（便捷访问）
