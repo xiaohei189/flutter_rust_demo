@@ -149,7 +149,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     
     if (_client == null) return null;
     try {
-      final updated = await _client!.updateLoginUserProfile(
+      // 调用更新 API（API 返回空响应）
+      await _client!.updateLoginUserProfile(
         patch: UserProfilePatch(
           nickname: nickname,
           faceUrl: faceUrl,
@@ -157,12 +158,19 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           globalRecvMsgOpt: globalRecvMsgOpt,
         ),
       );
-      final newUserProfiles = Map<String, UserProfile>.from(this.state.userProfiles);
-      newUserProfiles[updated.userId] = updated;
-      this.state = this.state.copyWith(
-        loginUserProfile: updated,
-        userProfiles: newUserProfiles,
-      );
+      
+      // 重新获取用户信息
+      final updated = await refreshLoginUserProfile();
+      
+      if (updated != null) {
+        final newUserProfiles = Map<String, UserProfile>.from(this.state.userProfiles);
+        newUserProfiles[updated.userId] = updated;
+        this.state = this.state.copyWith(
+          loginUserProfile: updated,
+          userProfiles: newUserProfiles,
+        );
+      }
+      
       return updated;
     } catch (e) {
       appLog.e('[MessageService] 更新当前用户资料失败: $e');
