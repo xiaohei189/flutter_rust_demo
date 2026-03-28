@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/services.dart';
+import 'message_service_provider.dart';
 
 // ==================== ImClient Provider ====================
 
@@ -85,27 +86,14 @@ final syncProgressProvider = Provider<int>((ref) {
 
 // ==================== Message Providers ====================
 
-/// 消息服务实例 Provider
-final messageServiceNewProvider = Provider<MessageService>((ref) {
-  return MessageService.instance;
-});
-
-/// 所有消息流 Provider
-final allMessagesStreamProvider = StreamProvider<Map<String, List<dynamic>>>((ref) {
-  final service = ref.watch(messageServiceNewProvider);
-  return service.messagesStream;
-});
-
-/// 指定会话的消息流 Provider（Family）
-final messagesStreamProvider = StreamProvider.family<List<dynamic>, String>((ref, conversationId) {
-  final service = ref.watch(messageServiceNewProvider);
-  return service.getMessagesStream(conversationId);
+/// 所有消息 Provider
+final allMessagesProvider = Provider<Map<String, List<dynamic>>>((ref) {
+  return ref.watch(messageServiceProvider).messages;
 });
 
 /// 指定会话的消息列表 Provider（Family）
 final messagesProvider = Provider.family<List<dynamic>, String>((ref, conversationId) {
-  final service = ref.watch(messageServiceNewProvider);
-  return service.getMessages(conversationId);
+  return ref.watch(messageServiceProvider).messages[conversationId] ?? [];
 });
 
 // ==================== User Providers ====================

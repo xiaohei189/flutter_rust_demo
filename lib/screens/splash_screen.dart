@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../main.dart';
+import '../providers/message_service_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../utils/login_storage.dart';
 
 /// 启动页：有本地凭证则尝试自动登录并进入主页，否则进入登录页
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   final String wsUrl;
   final String apiBaseUrl;
 
@@ -19,10 +20,10 @@ class SplashScreen extends StatefulWidget {
   });
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -37,7 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final credentials = await LoginStorage.loadCredentials();
     if (credentials != null) {
       try {
-        await messageService.initialize(
+        await ref.read(messageServiceProvider.notifier).initialize(
           wsUrl: widget.wsUrl,
           apiBaseUrl: widget.apiBaseUrl,
           userId: credentials.userId,

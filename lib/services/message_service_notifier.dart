@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_rust_demo/models/chat.dart';
 import 'package:flutter_rust_demo/models/message.dart';

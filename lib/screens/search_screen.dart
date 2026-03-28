@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../main.dart';
+import '../providers/message_service_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
@@ -13,14 +14,14 @@ enum _SearchCategory { message, contacts, groups }
 /// 顶部：搜索输入框 + 取消按钮
 /// 分类 Tab：消息、联系人、群组
 /// 内容区：搜索结果或空状态提示
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String _query = '';
@@ -47,7 +48,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<im_conv.LocalConversation> get _searchResults {
     if (_query.isEmpty) return [];
     final q = _query.toLowerCase();
-    final conversations = messageService.conversations;
+    final conversations = ref.read(messageServiceProvider).conversations;
 
     switch (_activeCategory) {
       case _SearchCategory.message:
@@ -181,8 +182,8 @@ class _SearchScreenState extends State<SearchScreen> {
                               conversation: conversation,
                               itemIndex: index,
                               currentUserId:
-                                  messageService.currentUserId.isNotEmpty
-                                      ? messageService.currentUserId
+                                  ref.read(messageServiceProvider).currentUserId.isNotEmpty
+                                      ? ref.read(messageServiceProvider).currentUserId
                                       : null,
                               onTap: () {
                                 AppRouter.goToChatDetail(context, conversation);
