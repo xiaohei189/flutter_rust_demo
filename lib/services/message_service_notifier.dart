@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_rust_demo/models/chat.dart';
 import 'package:flutter_rust_demo/models/message.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
 import 'package:flutter_rust_demo/src/rust/api/simple.dart';
 import 'package:flutter_rust_demo/src/rust/im/client/listeners.dart'
@@ -73,22 +74,22 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 获取指定会话的消息列表
   List<Message> getMessages(String conversationId) {
-    return List.unmodifiable(state.messages[conversationId] ?? []);
+    return List.unmodifiable(this.state.messages[conversationId] ?? []);
   }
 
   /// 获取指定用户资料（命中缓存时）
-  UserProfile? getUserProfile(String userId) => state.userProfiles[userId];
+  UserProfile? getUserProfile(String userId) => this.state.userProfiles[userId];
 
   /// 拉取当前登录用户资料（通过批量接口 getUsersInfo，走缓存）并更新内存缓存
   Future<UserProfile?> refreshLoginUserProfile() async {
-    if (_client == null || state.currentUserId.isEmpty) return null;
+    if (_client == null || this.state.currentUserId.isEmpty) return null;
     try {
-      final list = await _client!.getUsersInfo(userIds: [state.currentUserId]);
+      final list = await _client!.getUsersInfo(userIds: [this.state.currentUserId]);
       final profile = list.isNotEmpty ? list.first : null;
       if (profile != null) {
-        final newUserProfiles = Map<String, UserProfile>.from(state.userProfiles);
+        final newUserProfiles = Map<String, UserProfile>.from(this.state.userProfiles);
         newUserProfiles[profile.userId] = profile;
-        state = state.copyWith(
+        this.state = this.state.copyWith(
           loginUserProfile: profile,
           userProfiles: newUserProfiles,
         );
@@ -108,11 +109,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (uniq.isEmpty) return;
     try {
       final list = await _client!.getUsersInfo(userIds: uniq);
-      final newUserProfiles = Map<String, UserProfile>.from(state.userProfiles);
+      final newUserProfiles = Map<String, UserProfile>.from(this.state.userProfiles);
       for (final p in list) {
         newUserProfiles[p.userId] = p;
       }
-      state = state.copyWith(userProfiles: newUserProfiles);
+      this.state = this.state.copyWith(userProfiles: newUserProfiles);
     } catch (e) {
       appLog.w('[MessageService] 批量拉取用户资料失败: $e');
     }
@@ -135,9 +136,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           globalRecvMsgOpt: globalRecvMsgOpt,
         ),
       );
-      final newUserProfiles = Map<String, UserProfile>.from(state.userProfiles);
+      final newUserProfiles = Map<String, UserProfile>.from(this.state.userProfiles);
       newUserProfiles[updated.userId] = updated;
-      state = state.copyWith(
+      this.state = this.state.copyWith(
         loginUserProfile: updated,
         userProfiles: newUserProfiles,
       );
@@ -187,7 +188,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           .map((msg) => _msgStructToMessage(msg))
           .toList();
 
-      final newMessages = Map<String, List<Message>>.from(state.messages);
+      final newMessages = Map<String, List<Message>>.from(this.state.messages);
       final currentMessages = newMessages.putIfAbsent(conversationId, () => []);
 
       currentMessages.insertAll(0, messages.reversed);
@@ -197,7 +198,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           .where((msg) => seenIds.add(msg.id))
           .toList();
 
-      state = state.copyWith(messages: newMessages);
+      this.state = this.state.copyWith(messages: newMessages);
 
       return !result.isEnd;
     } catch (e) {
@@ -229,7 +230,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
 
     final sendTime = msg.sendTime.toInt();
-    final isSent = sendId == state.currentUserId;
+    final isSent = sendId == this.state.currentUserId;
 
     return Message(
       id: clientMsgId.isNotEmpty
@@ -274,17 +275,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     final tempId = 'sending_${DateTime.now().millisecondsSinceEpoch}';
     final optimisticMessage = Message(
       id: tempId,
-      senderId: state.currentUserId,
+      senderId: this.state.currentUserId,
       content: text,
       type: MessageType.text,
       timestamp: DateTime.now(),
       isSent: true,
       sendStatus: MessageSendStatus.sending,
     );
-    final newMessages = Map<String, List<Message>>.from(state.messages);
+    final newMessages = Map<String, List<Message>>.from(this.state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     list.add(optimisticMessage);
-    state = state.copyWith(messages: newMessages);
+    this.state = this.state.copyWith(messages: newMessages);
 
     try {
       await _client!.sendMessage(msg: msgData, isOnlineOnly: false);
@@ -305,14 +306,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     String messageId,
     MessageSendStatus status,
   ) {
-    final list = state.messages[conversationId];
+    final list = this.state.messages[conversationId];
     if (list == null) return;
     final index = list.indexWhere((m) => m.id == messageId);
     if (index >= 0) {
-      final newMessages = Map<String, List<Message>>.from(state.messages);
+      final newMessages = Map<String, List<Message>>.from(this.state.messages);
       newMessages[conversationId] = List<Message>.from(list);
       newMessages[conversationId]![index] = list[index].copyWith(sendStatus: status);
-      state = state.copyWith(messages: newMessages);
+      this.state = this.state.copyWith(messages: newMessages);
     }
   }
 
@@ -327,17 +328,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     String? userId,
     String? imToken,
   }) async {
-    if (_client != null && state.isConnected) {
+    if (_client != null && this.state.isConnected) {
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
 
-    if (state.isInitializing) {
+    if (this.state.isInitializing) {
       appLog.w('⚠️ 初始化正在进行中，跳过重复调用');
       return;
     }
 
-    state = state.copyWith(isInitializing: true);
+    this.state = this.state.copyWith(isInitializing: true);
     appLog.i('[MessageService] initialize 开始');
     try {
       appLog.i('[MessageService] 即将调用 initLogger');
@@ -357,7 +358,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         throw StateError('缺少 userId 或 imToken，请先登录');
       }
 
-      state = state.copyWith(currentUserId: resolvedUserId);
+      this.state = this.state.copyWith(currentUserId: resolvedUserId);
 
       appLog.i('[MessageService] 即将调用 OpenImBridgeClient.newInstance');
       _client = await OpenImBridgeClient.newInstance(
@@ -385,7 +386,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       appLog.i('[MessageService] 即将调用 connect()');
       await _client!.connect();
       appLog.i('[MessageService] connect() 返回');
-      state = state.copyWith(isConnected: true);
+      this.state = this.state.copyWith(isConnected: true);
 
       appLog.i('✅ 客户端连接成功');
       await refreshLoginUserProfile();
@@ -394,16 +395,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       _loadConversations();
     } catch (e) {
       appLog.e('❌ 初始化失败: $e');
-      state = state.copyWith(isConnected: false);
+      this.state = this.state.copyWith(isConnected: false);
       rethrow;
     } finally {
-      state = state.copyWith(isInitializing: false);
+      this.state = this.state.copyWith(isInitializing: false);
     }
   }
 
   /// 更新或添加会话
   void _updateConversation(im_conv.LocalConversation conv) {
-    final newConversations = List<im_conv.LocalConversation>.from(state.conversations);
+    final newConversations = List<im_conv.LocalConversation>.from(this.state.conversations);
     final index = newConversations.indexWhere(
       (c) => c.conversationId == conv.conversationId,
     );
@@ -423,7 +424,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       return bTime.compareTo(aTime);
     });
 
-    state = state.copyWith(conversations: newConversations);
+    this.state = this.state.copyWith(conversations: newConversations);
   }
 
   /// 处理连接状态事件
@@ -431,14 +432,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (event == null) return;
     final name = event.runtimeType.toString();
     if (name.contains('ConnectSuccess') || name == 'ConnEvent_ConnectSuccess') {
-      state = state.copyWith(isConnected: true);
+      this.state = this.state.copyWith(isConnected: true);
       appLog.i('[MessageService] 连接成功，主动拉取一次会话列表');
       _loadConversations();
     } else if (name.contains('ConnectFailed') ||
         name.contains('KickedOffline') ||
         name.contains('UserTokenExpired') ||
         name.contains('UserTokenInvalid')) {
-      state = state.copyWith(isConnected: false);
+      this.state = this.state.copyWith(isConnected: false);
     }
   }
 
@@ -446,24 +447,24 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   void _handleConversationEvent(ConversationEvent event) {
     event.when(
       syncServerStart: (_) {
-        state = state.copyWith(
+        this.state = this.state.copyWith(
           isSyncingConversations: true,
           syncProgress: 0,
         );
       },
       syncServerFinish: (_) {
         appLog.i('[MessageService] 收到 syncServerFinish，拉取会话列表');
-        state = state.copyWith(
+        this.state = this.state.copyWith(
           isSyncingConversations: false,
           syncProgress: 100,
         );
         _loadConversations();
       },
       syncServerProgress: (progress) {
-        state = state.copyWith(syncProgress: progress);
+        this.state = this.state.copyWith(syncProgress: progress);
       },
       syncServerFailed: (_) {
-        state = state.copyWith(isSyncingConversations: false);
+        this.state = this.state.copyWith(isSyncingConversations: false);
       },
       newConversation: (list) {
         for (final c in list) {
@@ -512,10 +513,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   void _appendMsgStructToMessages(im_msg.MsgStruct msg) {
     final conversationId = _msgStructToConversationId(msg);
     if (conversationId.isEmpty) return;
-    final newMessages = Map<String, List<Message>>.from(state.messages);
+    final newMessages = Map<String, List<Message>>.from(this.state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     list.add(_msgStructToMessage(msg));
-    state = state.copyWith(messages: newMessages);
+    this.state = this.state.copyWith(messages: newMessages);
   }
 
   /// 与 Rust conversation_id_by_session_type 一致：单聊 si_{uid1}_{uid2} 排序，群聊 sg_{groupId}，其他 g_{groupId}
@@ -525,7 +526,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     final recvId = msg.recvId ?? '';
     final groupId = msg.groupId ?? '';
     if (sessionType == 1) {
-      final my = state.currentUserId;
+      final my = this.state.currentUserId;
       if (my.isEmpty) return '';
       final other = sendId == my ? recvId : sendId;
       if (other.isEmpty) return '';
@@ -551,7 +552,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       appLog.i(
         '[MessageService] getAllConversations 返回，共 ${conversations.length} 条',
       );
-      state = state.copyWith(conversations: []);
+      this.state = this.state.copyWith(conversations: []);
       for (final conv in conversations) {
         _updateConversation(conv);
       }
@@ -573,11 +574,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 从本地列表移除会话（左滑删除/长按删除时调用；服务端删除可后续对接 SDK）
   void removeConversation(String conversationId) {
-    final newConversations = List<im_conv.LocalConversation>.from(state.conversations);
+    final newConversations = List<im_conv.LocalConversation>.from(this.state.conversations);
     newConversations.removeWhere((c) => c.conversationId == conversationId);
-    final newMessages = Map<String, List<Message>>.from(state.messages);
+    final newMessages = Map<String, List<Message>>.from(this.state.messages);
     newMessages.remove(conversationId);
-    state = state.copyWith(
+    this.state = this.state.copyWith(
       conversations: newConversations,
       messages: newMessages,
     );
@@ -585,7 +586,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 断开连接
   Future<void> disconnect() async {
-    await _client?.disconnect();
+    await _client?.close();
     _connStreamSubscription?.cancel();
     _conversationStreamSubscription?.cancel();
     _advancedMsgStreamSubscription?.cancel();
@@ -593,14 +594,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     _conversationStreamSubscription = null;
     _advancedMsgStreamSubscription = null;
     _client = null;
-    state = const MessageServiceState();
-  }
-
-  @override
-  void dispose() {
-    _connStreamSubscription?.cancel();
-    _conversationStreamSubscription?.cancel();
-    _advancedMsgStreamSubscription?.cancel();
-    super.dispose();
+    this.state = const MessageServiceState();
   }
 }
