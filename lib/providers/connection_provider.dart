@@ -30,27 +30,34 @@ class AppConnectionState {
 
 /// 连接状态 Notifier
 class ConnectionNotifier extends StateNotifier<AppConnectionState> {
-  ConnectionNotifier(this._messageService) : super(const AppConnectionState()) {
+  ConnectionNotifier(this._ref) : super(const AppConnectionState()) {
     _init();
   }
 
-  final MessageServiceNotifier _messageService;
+  final Ref _ref;
 
   void _init() {
-    _syncState();
+    // 监听 messageServiceProvider 的状态变化
+    _ref.listen(
+      messageServiceProvider,
+      (_, next) {
+        _syncState(next);
+      },
+      fireImmediately: true,
+    );
   }
 
-  void _syncState() {
+  void _syncState(MessageServiceState messageServiceState) {
     state = state.copyWith(
-      isConnected: _messageService.state.isConnected,
-      isInitializing: _messageService.state.isInitializing,
+      isConnected: messageServiceState.isConnected,
+      isInitializing: messageServiceState.isInitializing,
     );
   }
 }
 
 /// 连接状态 Provider
 final connectionProvider = StateNotifierProvider<ConnectionNotifier, AppConnectionState>((ref) {
-  return ConnectionNotifier(ref.read(messageServiceProvider.notifier));
+  return ConnectionNotifier(ref);
 });
 
 /// 是否已连接 Provider（便捷访问）
