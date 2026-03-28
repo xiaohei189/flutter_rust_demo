@@ -6,13 +6,9 @@ import 'package:flutter_rust_demo/src/rust/api/simple.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
 
 import 'router/app_router.dart';
-import 'services/message_service.dart';
 import 'theme/app_theme.dart';
 import 'utils/host_config.dart';
 import 'utils/login_storage.dart';
-
-// 全局消息服务实例
-final messageService = MessageService();
 
 /// WebSocket 地址；Android 模拟器内用 10.0.2.2 访问宿主机
 String get kWsUrl => 'ws://${getHostAddress()}:10001';

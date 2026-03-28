@@ -8,9 +8,13 @@
 export 'im_client.dart';
 export 'connection_service.dart';
 export 'conversation_service.dart';
-export 'message_service_new.dart' show MessageService;
+export 'message_service_notifier.dart';
 export 'user_service.dart';
 export 'navigation_service.dart';
+export 'permission_service.dart';
+export 'image_picker_service.dart';
+export 'video_player_service.dart';
+export 'logger_service.dart';
+export 'network_service.dart';
 
-// 导出 Rust 侧的 UserProfile 和 UserProfilePatch
 export '../src/rust/api/bridge_client.dart' show UserProfile, UserProfilePatch;

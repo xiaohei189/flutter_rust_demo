@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/message.dart' show Message;
-import '../services/message_service.dart';
+import '../services/message_service_notifier.dart';
 import 'message_service_provider.dart';
 
 /// 消息列表状态
@@ -46,15 +46,10 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     _init();
   }
 
-  final MessageService _messageService;
+  final MessageServiceNotifier _messageService;
   final String _conversationId;
 
   void _init() {
-    _messageService.addListener(_onServiceChanged);
-    _syncState();
-  }
-
-  void _onServiceChanged() {
     _syncState();
   }
 
@@ -79,6 +74,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
         startClientMsgId: startClientMsgId,
       );
 
+      _syncState();
       state = state.copyWith(
         isLoading: false,
         hasMore: hasMore,
@@ -108,17 +104,12 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
         conversationId: _conversationId,
         groupId: groupId ?? '',
       );
+      _syncState();
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送消息失败: $e');
       return false;
     }
-  }
-
-  @override
-  void dispose() {
-    _messageService.removeListener(_onServiceChanged);
-    super.dispose();
   }
 }
 
@@ -126,7 +117,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
 final messageListProvider = StateNotifierProvider.family<MessageListNotifier, MessageListState, String>(
   (ref, conversationId) {
     return MessageListNotifier(
-      ref.read(messageServiceProvider),
+      ref.read(messageServiceProvider.notifier),
       conversationId,
     );
   },

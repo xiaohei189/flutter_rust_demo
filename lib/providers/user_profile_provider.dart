@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/message_service.dart';
+import '../services/message_service_notifier.dart';
 import '../src/rust/api/bridge_client.dart';
 import 'message_service_provider.dart';
 
@@ -85,7 +85,7 @@ class UserProfileState {
 class UserProfileNotifier extends StateNotifier<UserProfileState> {
   UserProfileNotifier(this._messageService) : super(const UserProfileState());
 
-  final MessageService _messageService;
+  final MessageServiceNotifier _messageService;
 
   /// 获取指定用户资料（从 MessageService 缓存）
   UserProfile? getUserProfile(String userId) {
@@ -244,7 +244,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 /// 用户资料 Provider
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {
-  return UserProfileNotifier(ref.read(messageServiceProvider));
+  return UserProfileNotifier(ref.read(messageServiceProvider.notifier));
 });
 
 /// 当前用户资料 Provider（仅返回 profile）

@@ -1,17 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../main.dart';
 import '../router/app_router.dart';
 import '../services/auth_api.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/login_storage.dart';
+import '../providers/message_service_provider.dart';
 
 /// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   final String wsUrl;
   final String apiBaseUrl;
 
@@ -22,10 +23,10 @@ class LoginScreen extends StatefulWidget {
   });
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _areaCodeController = TextEditingController(text: '+86');
   final _phoneController = TextEditingController();
@@ -189,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
       phoneNumber: _phone,
     ).then((_) {
       appLog.i('[登录] 凭证已保存，开始 MessageService.initialize');
-      messageService.initialize(
+      ref.read(messageServiceProvider.notifier).initialize(
         wsUrl: widget.wsUrl,
         apiBaseUrl: widget.apiBaseUrl,
         userId: userId,

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/message_service.dart';
+import '../services/message_service_notifier.dart';
 import '../src/rust/im/model/conversation.dart' as im_conv;
 import 'message_service_provider.dart';
 
@@ -59,22 +59,17 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
     _init();
   }
 
-  final MessageService _messageService;
+  final MessageServiceNotifier _messageService;
 
   void _init() {
-    _messageService.addListener(_onServiceChanged);
-    _syncState();
-  }
-
-  void _onServiceChanged() {
     _syncState();
   }
 
   void _syncState() {
     state = state.copyWith(
-      conversations: _messageService.conversations,
-      isSyncing: _messageService.isSyncingConversations,
-      syncProgress: _messageService.syncProgress,
+      conversations: _messageService.state.conversations,
+      isSyncing: _messageService.state.isSyncingConversations,
+      syncProgress: _messageService.state.syncProgress,
     );
   }
 
@@ -82,8 +77,8 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
   Future<void> refreshConversations() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      // 调用 MessageService 的方法刷新会话
       await _messageService.refreshConversations();
+      _syncState();
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(
@@ -103,18 +98,12 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
       return null;
     }
   }
-
-  @override
-  void dispose() {
-    _messageService.removeListener(_onServiceChanged);
-    super.dispose();
-  }
 }
 
 /// 会话列表 Provider
 final conversationListProvider =
     StateNotifierProvider<ConversationListNotifier, ConversationListState>((ref) {
-  return ConversationListNotifier(ref.read(messageServiceProvider));
+  return ConversationListNotifier(ref.read(messageServiceProvider.notifier));
 });
 
 /// 当前会话列表 Provider（便捷访问）
