@@ -83,9 +83,23 @@ class UserProfileState {
 
 /// 用户资料 Notifier
 class UserProfileNotifier extends StateNotifier<UserProfileState> {
-  UserProfileNotifier(this._messageService) : super(const UserProfileState());
+  UserProfileNotifier(this._ref) : super(const UserProfileState()) {
+    _init();
+  }
 
-  final MessageServiceNotifier _messageService;
+  final Ref _ref;
+
+  void _init() {
+    // 监听 messageServiceProvider 的状态变化
+    _ref.listen(
+      messageServiceProvider,
+      (_, next) {
+        if (next.isConnected && next.loginUserProfile != null) {
+          loadProfile();
+        }
+      },
+    );
+  }
 
   /// 获取指定用户资料（从 MessageService 缓存）
   UserProfile? getUserProfile(String userId) {
@@ -94,7 +108,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       return state.profile;
     }
     // 从 MessageService 缓存获取
-    return _messageService.getUserProfile(userId);
+    return _ref.read(messageServiceProvider.notifier).getUserProfile(userId);
   }
 
   /// 加载当前登录用户资料
@@ -102,7 +116,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final profile = await _messageService.refreshLoginUserProfile();
+      final profile = await _ref.read(messageServiceProvider.notifier).refreshLoginUserProfile();
 
       if (profile != null) {
         final exData = UserProfileState.parseEx(profile.ex);
@@ -132,7 +146,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final updated = await _messageService.updateLoginUserProfile(
+      final updated = await _ref.read(messageServiceProvider.notifier).updateLoginUserProfile(
         nickname: nickname,
       );
 
@@ -170,7 +184,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         alias: alias,
       );
 
-      final updated = await _messageService.updateLoginUserProfile(
+      final updated = await _ref.read(messageServiceProvider.notifier).updateLoginUserProfile(
         ex: newEx,
       );
 
@@ -208,7 +222,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         signature: signature,
       );
 
-      final updated = await _messageService.updateLoginUserProfile(
+      final updated = await _ref.read(messageServiceProvider.notifier).updateLoginUserProfile(
         ex: newEx,
       );
 
@@ -244,7 +258,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 /// 用户资料 Provider
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {
-  return UserProfileNotifier(ref.read(messageServiceProvider.notifier));
+  return UserProfileNotifier(ref);
 });
 
 /// 当前用户资料 Provider（仅返回 profile）

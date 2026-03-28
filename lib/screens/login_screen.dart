@@ -173,30 +173,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  /// 立即停止转圈并跳转主界面，保存凭证与建连在后台执行（不 await，避免任何阻塞）
-  void _stopLoadingAndGoToMain(String userId, String imToken) {
+  /// 保存凭证并初始化 MessageService，然后跳转主界面
+  void _stopLoadingAndGoToMain(String userId, String imToken) async {
     appLog.i('[登录] _stopLoadingAndGoToMain 开始');
     if (!mounted) return;
     setState(() => _loading = false);
     appLog.i('[登录] setState(_loading=false) 已调用');
-    if (!mounted) return;
-    context.go(AppRouter.main);
-    appLog.i('[登录] 导航到主页已调用，后台保存凭证并初始化');
-    // 后台：保存凭证并创建连接
-    LoginStorage.saveCredentials(
-      userId: userId,
-      imToken: imToken,
-      areaCode: _areaCode,
-      phoneNumber: _phone,
-    ).then((_) {
-      appLog.i('[登录] 凭证已保存，开始 MessageService.initialize');
-      ref.read(messageServiceProvider.notifier).initialize(
+    
+    try {
+      // 保存凭证
+      await LoginStorage.saveCredentials(
+        userId: userId,
+        imToken: imToken,
+        areaCode: _areaCode,
+        phoneNumber: _phone,
+      );
+      appLog.i('[登录] 凭证已保存');
+      
+      // 初始化 MessageService
+      appLog.i('[登录] 开始 MessageService.initialize');
+      await ref.read(messageServiceProvider.notifier).initialize(
         wsUrl: widget.wsUrl,
         apiBaseUrl: widget.apiBaseUrl,
         userId: userId,
         imToken: imToken,
       );
-    });
+      appLog.i('[登录] MessageService.initialize 完成');
+      
+      if (!mounted) return;
+      // 初始化完成后再导航到主页
+      context.go(AppRouter.main);
+      appLog.i('[登录] 导航到主页已调用');
+    } catch (e) {
+      appLog.e('[登录] 初始化失败: $e');
+      if (mounted) {
+        setState(() {
+          _errorText = '初始化失败: $e';
+        });
+      }
+    }
   }
 
   void _login() {

@@ -11,6 +11,7 @@ import 'package:flutter_rust_demo/src/rust/im/client/listeners.dart'
 import 'package:flutter_rust_demo/src/rust/im/model/conversation.dart' as im_conv;
 import 'package:flutter_rust_demo/src/rust/im/model/message.dart' as im_msg;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
+import 'package:flutter_rust_demo/utils/login_storage.dart';
 
 /// MessageService 的状态类
 class MessageServiceState {
@@ -127,6 +128,25 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     String? ex,
     int? globalRecvMsgOpt,
   }) async {
+    if (_client == null) {
+      // 尝试重新初始化（如果有保存的凭证）
+      try {
+        appLog.i('[MessageService] _client 为 null，尝试重新初始化');
+        final credentials = await LoginStorage.loadCredentials();
+        if (credentials != null) {
+          appLog.i('[MessageService] 找到保存的凭证，尝试重新初始化');
+          await initialize(
+            userId: credentials.userId,
+            imToken: credentials.imToken,
+          );
+        } else {
+          appLog.w('[MessageService] 没有找到保存的凭证，无法重新初始化');
+        }
+      } catch (e) {
+        appLog.e('[MessageService] 重新初始化失败: $e');
+      }
+    }
+    
     if (_client == null) return null;
     try {
       final updated = await _client!.updateLoginUserProfile(
