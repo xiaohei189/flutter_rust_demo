@@ -371,6 +371,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       );
       appLog.i('[MessageService] newInstance 完成');
 
+      // 立即加载本地缓存的会话列表
+      appLog.i('[MessageService] 立即加载本地缓存的会话列表');
+      unawaited(_loadConversations());
+
       _advancedMsgStreamSubscription = _client!.advancedMsgStream().listen(
         _handleAdvancedMsgEvent,
       );
