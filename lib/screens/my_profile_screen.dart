@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/user.dart';
 import '../providers/user_profile_provider.dart';
@@ -68,6 +69,23 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null && mounted) {
+      final success = await ref.read(userProfileProvider.notifier).updateAvatar(image.path);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('头像更新成功')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('头像更新失败')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(userProfileProvider);
@@ -94,7 +112,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     ListRow(
                       label: '头像',
                       trailing: UserAvatar(user: currentUser, radius: 20),
-                      onTap: () {},
+                      onTap: _pickImage,
                     ),
                     const ListDivider(),
                     // 姓名
@@ -110,18 +128,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       ),
                     ),
                     const ListDivider(),
-                    // 别名
+                    // User ID
                     ListRow(
-                      label: '别名',
-                      value: state.alias.isEmpty ? null : state.alias,
-                      placeholder: '输入别名',
-                      onTap: () => _editField(
-                        title: '修改别名',
-                        currentValue: state.alias,
-                        hint: '请输入别名',
-                        onSave: (value) =>
-                            ref.read(userProfileProvider.notifier).updateAlias(value),
-                      ),
+                      label: 'User ID',
+                      value: state.profile?.userId ?? '未设置',
+                      valueColor: AppTheme.textSecondaryColor,
+                      onTap: null,
                     ),
                     const ListDivider(),
                     // 我的二维码

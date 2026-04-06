@@ -24,6 +24,12 @@
         },
         {
             "path": "../openim-sdk-core"
+        },
+        {
+            "path": "../openim-electron-demo"
+        },
+        {
+            "path": "../openim-docker"
         }
     ]
 }

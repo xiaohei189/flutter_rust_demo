@@ -121,7 +121,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 更新当前登录用户资料（仅更新 patch 中指定字段），并回写缓存
+  /// 更新当前登录用户资料（仅更新 patch 中传入字段），并回写缓存
   Future<UserProfile?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
@@ -148,8 +148,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
     
     if (_client == null) return null;
+    
     try {
-      // 调用更新 API（API 返回空响应）
+      // 调用 Rust 层的更新方法（Rust 层使用 HTTP API）
       await _client!.updateLoginUserProfile(
         patch: UserProfilePatch(
           nickname: nickname,
@@ -159,19 +160,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         ),
       );
       
-      // 重新获取用户信息
-      final updated = await refreshLoginUserProfile();
-      
-      if (updated != null) {
-        final newUserProfiles = Map<String, UserProfile>.from(this.state.userProfiles);
-        newUserProfiles[updated.userId] = updated;
-        this.state = this.state.copyWith(
-          loginUserProfile: updated,
-          userProfiles: newUserProfiles,
-        );
-      }
-      
-      return updated;
+      // 更新成功后，重新获取用户信息以确保状态一致性
+      return await refreshLoginUserProfile();
     } catch (e) {
       appLog.e('[MessageService] 更新当前用户资料失败: $e');
       return null;

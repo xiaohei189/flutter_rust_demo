@@ -279,6 +279,41 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     }
   }
 
+  /// 更新头像
+  Future<bool> updateAvatar(String imagePath) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // 这里需要实现图片上传逻辑，返回图片的 URL
+      // 暂时使用一个模拟的 URL
+      final imageUrl = 'https://example.com/avatar.jpg';
+      
+      final updated = await _ref.read(messageServiceProvider.notifier).updateLoginUserProfile(
+        faceUrl: imageUrl,
+      );
+
+      if (updated != null) {
+        state = state.copyWith(
+          profile: updated,
+          isLoading: false,
+        );
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: '更新头像失败',
+        );
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: '更新头像失败: $e',
+      );
+      return false;
+    }
+  }
+
   /// 清除错误
   void clearError() {
     state = state.copyWith(error: null);

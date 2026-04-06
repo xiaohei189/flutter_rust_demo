@@ -62,6 +62,8 @@ pub struct UserInfoWithExFields {
     pub global_recv_msg_opt: Option<i32>,
 }
 
+
+
 // ----- UserRegister (protocol user.UserRegisterReq) -----
 #[derive(Debug, Clone, Serialize)]
 pub struct UserRegisterReq {
@@ -165,8 +167,34 @@ impl UserApi {
 
     /// UpdateUserInfoEx = "/user/update_user_info_ex"，与 Go api.UpdateUserInfoEx 对齐（仅更新指定字段）
     pub async fn update_user_info_ex(&self, req: UpdateUserInfoExReq) -> Result<EmptyResp> {
-        self.post_json(routes::USER_UPDATE_USER_INFO_EX, req).await
+        let operation_id = Uuid::new_v4().to_string();
+        let url = format!("{}{}", self.api_base_url, routes::USER_UPDATE_USER_INFO_EX);
+        let resp = self
+            .client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("operationID", &operation_id)
+            .json(&req)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("update_user_info_ex request failed: {}", e))?;
+        
+        // 解析响应
+        let json: serde_json::Value = resp.json().await
+            .map_err(|e| anyhow::anyhow!("parse response failed: {}", e))?;
+        
+        // 检查 errCode
+        let err_code = json["errCode"].as_i64().unwrap_or(-1);
+        if err_code != 0 {
+            let err_msg = json["errMsg"].as_str().unwrap_or("Unknown error");
+            return Err(anyhow::anyhow!("API error: {} - {}", err_code, err_msg));
+        }
+        
+        // 直接返回空响应，因为 UpdateUserInfoEx API 不返回 data 字段
+        Ok(EmptyResp {})
     }
+
+
 
     /// UserRegister = "/user/user_register"，与 Go api.UserRegister 对齐
     pub async fn user_register(&self, req: UserRegisterReq) -> Result<EmptyResp> {
