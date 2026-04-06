@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user.dart';
+import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../services/navigation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends ConsumerWidget {
   final User user;
   final bool isCurrentUser;
 
@@ -19,7 +21,22 @@ class UserProfileScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 获取最新的用户信息
+    final userProfileState = ref.watch(userProfileProvider);
+    final currentUserProfile = userProfileState.profile;
+    
+    // 总是使用最新的用户信息
+    User displayUser = user;
+    if (currentUserProfile != null && currentUserProfile.userId == user.id) {
+      displayUser = User(
+        id: currentUserProfile.userId,
+        name: currentUserProfile.nickname,
+        avatar: currentUserProfile.faceUrl.isNotEmpty ? currentUserProfile.faceUrl : null,
+        status: user.status,
+      );
+    }
+    
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -42,10 +59,10 @@ class UserProfileScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                UserAvatar(user: user, radius: 44),
+                UserAvatar(user: displayUser, radius: 44),
                 const SizedBox(height: 16),
                 Text(
-                  user.name,
+                  displayUser.name,
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
@@ -55,7 +72,7 @@ class UserProfileScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () {
-                    Clipboard.setData(ClipboardData(text: user.id));
+                    Clipboard.setData(ClipboardData(text: displayUser.id));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('已复制 ID'),
@@ -68,7 +85,7 @@ class UserProfileScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'ID: ${user.id}',
+                        'ID: ${displayUser.id}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondaryColor,
@@ -83,13 +100,13 @@ class UserProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (user.status != null && user.status!.isNotEmpty) ...[
+                if (displayUser.status != null && displayUser.status!.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    user.status!,
+                    displayUser.status!,
                     style: TextStyle(
                       fontSize: 13,
-                      color: user.status == '在线'
+                      color: displayUser.status == '在线'
                           ? const Color(0xFF34C759)
                           : AppTheme.textSecondaryColor,
                     ),
@@ -108,10 +125,10 @@ class UserProfileScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _buildInfoRow('昵称', user.name),
+                _buildInfoRow('昵称', displayUser.name),
                 _buildDivider(),
-                _buildInfoRow('用户 ID', user.id),
-                if (user.avatar != null && user.avatar!.isNotEmpty) ...[
+                _buildInfoRow('用户 ID', displayUser.id),
+                if (displayUser.avatar != null && displayUser.avatar!.isNotEmpty) ...[
                   _buildDivider(),
                   _buildInfoRow('头像', '已设置'),
                 ],

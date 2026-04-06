@@ -93,11 +93,26 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     // 监听 messageServiceProvider 的状态变化
     _ref.listen(
       messageServiceProvider,
-      (_, next) {
+      (previous, next) {
         if (next.isConnected && next.loginUserProfile != null) {
-          loadProfile();
+          // 当 loginUserProfile 变化时直接更新状态
+          if (previous?.loginUserProfile?.userId != next.loginUserProfile?.userId ||
+              previous?.loginUserProfile?.nickname != next.loginUserProfile?.nickname ||
+              previous?.loginUserProfile?.faceUrl != next.loginUserProfile?.faceUrl) {
+            final profile = next.loginUserProfile!;
+            final exData = UserProfileState.parseEx(profile.ex);
+            state = state.copyWith(
+              profile: profile,
+              nickname: profile.nickname.trim(),
+              alias: exData['alias'] ?? '',
+              signature: exData['signature'] ?? '',
+              isLoading: false,
+              error: null,
+            );
+          }
         }
       },
+      fireImmediately: true,
     );
   }
 
@@ -116,7 +131,9 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final profile = await _ref.read(messageServiceProvider.notifier).refreshLoginUserProfile();
+      // 直接从 messageServiceProvider 获取登录用户资料
+      final messageService = _ref.read(messageServiceProvider);
+      final profile = messageService.loginUserProfile;
 
       if (profile != null) {
         final exData = UserProfileState.parseEx(profile.ex);
@@ -128,10 +145,23 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
           isLoading: false,
         );
       } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: '加载用户资料失败',
-        );
+        // 如果 messageService 中没有登录用户资料，尝试从服务端获取
+        final refreshedProfile = await _ref.read(messageServiceProvider.notifier).refreshLoginUserProfile();
+        if (refreshedProfile != null) {
+          final exData = UserProfileState.parseEx(refreshedProfile.ex);
+          state = state.copyWith(
+            profile: refreshedProfile,
+            nickname: refreshedProfile.nickname.trim(),
+            alias: exData['alias'] ?? '',
+            signature: exData['signature'] ?? '',
+            isLoading: false,
+          );
+        } else {
+          state = state.copyWith(
+            isLoading: false,
+            error: '加载用户资料失败',
+          );
+        }
       }
     } catch (e) {
       state = state.copyWith(
