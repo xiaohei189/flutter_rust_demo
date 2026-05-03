@@ -81,16 +81,25 @@ class UserAvatar extends StatelessWidget {
   /// 判断是否为本地文件路径
   bool _isLocalPath(String path) {
     appLog.i('[UserAvatar] 检查是否为本地路径: $path');
-    // Windows 路径（如 C:\Users\...）
-    if (path.contains(':\\') || path.contains(':/')) {
+    
+    // 先检查是否是网络协议（http://, https://, ftp:// 等）
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('ftp://')) {
+      appLog.i('[UserAvatar] 检测到网络 URL');
+      return false;
+    }
+    
+    // Windows 路径（如 C:\Users\... 或 D:/...）
+    if (RegExp(r'^[a-zA-Z]:\\').hasMatch(path)) {
       appLog.i('[UserAvatar] 检测到 Windows 路径');
       return true;
     }
-    // Unix 绝对路径
+    
+    // Unix 绝对路径（如 /data/user/0/...）
     if (path.startsWith('/')) {
       appLog.i('[UserAvatar] 检测到 Unix 绝对路径');
       return true;
     }
+    
     appLog.i('[UserAvatar] 不是本地路径');
     return false;
   }
