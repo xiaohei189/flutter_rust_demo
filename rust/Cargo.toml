@@ -38,6 +38,7 @@ tracing-core = "0.1"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json", "ansi"] }
 tracing-appender = "0.2"
 tracing-log = "0.2"
+md-5 = "0.10"
 # 对齐 openim-sdk-core-rust 依赖的 sqlx 版本
 sqlx = { version = "0.8.5", features = [
     "runtime-tokio-rustls",

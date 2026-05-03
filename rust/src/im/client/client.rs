@@ -278,6 +278,22 @@ impl IMClient {
         }))
     }
 
+    /// 上传文件到对象存储
+    /// - `file_path`: 本地文件路径
+    /// - `file_name`: 文件名（不含路径）
+    /// - 返回: 上传后的文件 URL
+    pub async fn upload_file(&self, file_path: &str, file_name: &str) -> Result<String> {
+        use crate::im::file::file::FileService;
+        let file_service = FileService::new(self.api.object.clone());
+        let user_prefix = format!("{}/", self.config.user_id);
+        let full_name = if file_name.starts_with(&user_prefix) {
+            file_name.to_string()
+        } else {
+            format!("{}{}", user_prefix, file_name)
+        };
+        file_service.upload_file(file_path, &full_name).await
+    }
+
     /// 与 Go GetUserInfoWithCache 一致：通过 get_users_info 获取登录用户昵称与头像
     async fn get_login_user_info_with_cache(&self) -> Result<(String, String)> {
         let list = self.get_users_info(vec![self.config.user_id.clone()]).await?;

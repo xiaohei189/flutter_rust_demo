@@ -24,13 +24,19 @@ use crate::frb_generated::StreamSink;
 use openim_protocol::sdkws::MsgData;
 use std::sync::Arc;
 use std::sync::Mutex;
-use tokio::sync::RwLock;
+pub use tokio::sync::RwLock;
 use tokio_stream::StreamExt;
 use tracing;
 use serde::{Deserialize, Serialize};
 
 /// 热重启时由 Flutter 在创建新 client 前调用，关闭上一次的 client，避免 token 重复使用
 static CURRENT_CLIENT_INNER: Mutex<Option<Arc<RwLock<IMClient>>>> = Mutex::new(None);
+
+/// 获取当前客户端实例（供其他模块使用）
+pub async fn get_current_client() -> Result<Arc<RwLock<IMClient>>> {
+    let guard = CURRENT_CLIENT_INNER.lock().map_err(|e| anyhow::anyhow!("lock error: {}", e))?;
+    guard.as_ref().cloned().ok_or_else(|| anyhow::anyhow!("client not initialized"))
+}
 
 /// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
 #[flutter_rust_bridge::frb]
@@ -177,7 +183,6 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn advanced_msg_stream(&self, sink: StreamSink<AdvancedMsgEvent>) -> Result<()> {
         let stream = self.inner.write().await.subscribe_advanced_msg_events();
-        tracing::info!("[bridge] advanced_msg_stream: 已注册 rx，spawn 转发任务");
         tokio::spawn(async move {
             let mut stream = stream;
             while let Some(ev) = stream.next().await {
@@ -377,5 +382,19 @@ impl OpenIMBridgeClient {
             )
             .await?;
         Ok(profile.into())
+    }
+
+    /// 上传文件到对象存储
+    ///
+    /// # 参数
+    /// - `file_path`: 本地文件路径
+    /// - `file_name`: 文件名（会自动添加用户ID前缀）
+    ///
+    /// # 返回值
+    /// - 成功：返回文件的 URL
+    /// - 失败：返回错误
+    #[flutter_rust_bridge::frb]
+    pub async fn upload_file(&self, file_path: String, file_name: String) -> Result<String> {
+        self.inner.read().await.upload_file(&file_path, &file_name).await
     }
 }

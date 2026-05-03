@@ -1,5 +1,6 @@
 pub mod client;
 pub mod dao;
+pub mod file;
 pub mod http_client;
 
 pub mod logger;

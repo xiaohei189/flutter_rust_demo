@@ -13,6 +13,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`, `from`
 
+/// 获取当前客户端实例（供其他模块使用）
+Future<ArcImClient> getCurrentClient() =>
+    RustLib.instance.api.crateApiBridgeClientGetCurrentClient();
+
 /// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
 Future<void> closeCurrentClientIfAny() =>
     RustLib.instance.api.crateApiBridgeClientCloseCurrentClientIfAny();
@@ -31,6 +35,9 @@ Future<LoginData> loginAsync({
   password: password,
   platform: platform,
 );
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Arc < RwLock < IMClient > >>>
+abstract class ArcImClient implements RustOpaqueInterface {}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>
 abstract class MsgData implements RustOpaqueInterface {}
@@ -166,6 +173,20 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
   Future<UserProfile> updateLoginUserProfile({required UserProfilePatch patch});
+
+  /// 上传文件到对象存储
+  ///
+  /// # 参数
+  /// - `file_path`: 本地文件路径
+  /// - `file_name`: 文件名（会自动添加用户ID前缀）
+  ///
+  /// # 返回值
+  /// - 成功：返回文件的 URL
+  /// - 失败：返回错误
+  Future<String> uploadFile({
+    required String filePath,
+    required String fileName,
+  });
 }
 
 /// 用户资料（Bridge 暴露给 Dart 的统一结构）

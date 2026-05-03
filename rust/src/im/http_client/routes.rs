@@ -152,3 +152,15 @@ pub const GROUP_SET_GROUP_MEMBER_INFO: &str = "/group/set_group_member_info";
 pub const GROUP_GET_FULL_JOIN_GROUP_IDS: &str = "/group/get_full_join_group_ids";
 /// GetFullGroupMemberUserIDs = "/group/get_full_group_member_user_ids"
 pub const GROUP_GET_FULL_GROUP_MEMBER_USER_IDS: &str = "/group/get_full_group_member_user_ids";
+
+// ----- third / object -----
+/// PartLimit = "/object/part_limit"
+pub const OBJECT_PART_LIMIT: &str = "/object/part_limit";
+/// InitiateMultipartUpload = "/object/initiate_multipart_upload"
+pub const OBJECT_INITIATE_MULTIPART_UPLOAD: &str = "/object/initiate_multipart_upload";
+/// AuthSign = "/object/auth_sign"
+pub const OBJECT_AUTH_SIGN: &str = "/object/auth_sign";
+/// CompleteMultipartUpload = "/object/complete_multipart_upload"
+pub const OBJECT_COMPLETE_MULTIPART_UPLOAD: &str = "/object/complete_multipart_upload";
+/// AccessURL = "/object/access_url"
+pub const OBJECT_ACCESS_URL: &str = "/object/access_url";

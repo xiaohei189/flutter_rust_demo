@@ -2,6 +2,7 @@ use super::conversation::ConversationApi;
 use super::friend::FriendApi;
 use super::group::GroupApi;
 use super::message::MessageApi;
+use super::object::ObjectApi;
 use super::token::AuthApi;
 use super::user::UserApi;
 
@@ -13,6 +14,7 @@ pub struct Api {
     pub friend: FriendApi,
     pub group: GroupApi,
     pub user: UserApi,
+    pub object: ObjectApi,
 }
 
 impl Api {
@@ -22,7 +24,8 @@ impl Api {
         let conversation_api = ConversationApi::new(client.clone(), api_base_url.clone(), user_id.clone(), token);
         let friend_api = FriendApi::new(client.clone(), api_base_url.clone(), user_id.clone(), token);
         let group_api = GroupApi::new(client.clone(), api_base_url.clone(), user_id.clone(), token);
-        let user_api = UserApi::new(client, api_base_url, user_id, token);
+        let user_api = UserApi::new(client.clone(), api_base_url.clone(), user_id.clone(), token);
+        let object_api = ObjectApi::new(client, api_base_url, token);
         Self {
             auth: auth_api,
             message: message_api,
@@ -30,6 +33,7 @@ impl Api {
             friend: friend_api,
             group: group_api,
             user: user_api,
+            object: object_api,
         }
     }
 }

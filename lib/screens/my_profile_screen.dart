@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
 import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
+import '../src/rust/api/file.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_logger.dart';
 import '../widgets/card_layout.dart';
 import '../widgets/list_row.dart';
 import '../widgets/user_avatar.dart';
@@ -24,19 +28,19 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // 页面加载时自动获取用户资料
+    // 页面加载时自动获取用户资料（会同时加载本地头像路径）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(userProfileProvider.notifier).loadProfile();
     });
   }
 
   User _buildCurrentUser(UserProfileState state) {
+    // 使用 Provider 中的显示头像 URL（自动处理本地路径和服务器 URL 的优先级）
+    final avatarUrl = ref.read(userProfileProvider.notifier).getDisplayAvatarUrl();
     return User(
       id: state.profile?.userId ?? '',
       name: state.nickname.isNotEmpty ? state.nickname : '未设置',
-      avatar: state.profile?.faceUrl.isNotEmpty == true
-          ? state.profile!.faceUrl
-          : null,
+      avatar: avatarUrl,
       status: null,
     );
   }
@@ -70,17 +74,68 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Future<void> _pickImage() async {
+    appLog.i('[MyProfile] 开始选择图片...');
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null && mounted) {
-      final success = await ref.read(userProfileProvider.notifier).updateAvatar(image.path);
-      if (success) {
+
+    if (image == null) {
+      appLog.i('[MyProfile] 用户取消选择图片');
+      return;
+    }
+
+    appLog.i('[MyProfile] 选择图片成功: ${image.path}');
+    appLog.i('[MyProfile] 文件是否存在: ${File(image.path).existsSync()}');
+
+    if (!mounted) return;
+
+    // 先设置本地路径并持久化，立即显示预览
+    await ref.read(userProfileProvider.notifier).setLocalAvatarPath(image.path);
+    appLog.i('[MyProfile] 已保存本地头像路径到 Provider');
+
+    try {
+      appLog.i('[MyProfile] 开始上传文件...');
+      // 上传文件到服务器
+      final url = await uploadFile(filePath: image.path, fileName: 'avatar.jpg');
+      appLog.i('[MyProfile] 上传完成，返回 URL: $url');
+
+      // 检查 URL 是否有效（不是模拟 URL）
+      final isValidUrl = !url.contains('example.com');
+      appLog.i('[MyProfile] URL 是否有效: $isValidUrl');
+
+      // 更新服务器头像 URL（用于持久化）
+      appLog.i('[MyProfile] 开始更新服务器头像...');
+      final success = await ref.read(userProfileProvider.notifier).updateAvatar(url);
+      appLog.i('[MyProfile] 服务器更新结果: $success');
+
+      if (!mounted) return;
+
+      if (success && isValidUrl) {
+        // 服务器返回有效 URL，清除本地路径（使用服务器 URL）
+        await ref.read(userProfileProvider.notifier).clearLocalAvatarPath();
+        appLog.i('[MyProfile] 服务器 URL 有效，已清除本地路径');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('头像更新成功')),
+        );
+      } else if (success && !isValidUrl) {
+        // 服务器返回无效 URL（模拟 URL），提示上传失败
+        appLog.w('[MyProfile] 服务器返回无效 URL，上传实际未成功');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('头像上传失败：服务器返回无效地址'),
+            backgroundColor: Colors.orange,
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('头像更新失败')),
+        );
+      }
+    } catch (e, stackTrace) {
+      appLog.e('[MyProfile] 上传失败: $e');
+      appLog.e('[MyProfile] 堆栈: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('上传失败: $e')),
         );
       }
     }
@@ -102,9 +157,48 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       ),
       body: state.isLoading && state.profile == null
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
+          : Column(
               children: [
-                const SizedBox(height: 12),
+                // 测试按钮
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // 创建一个简单的测试文件
+                      final testDir = Directory.systemTemp;
+                      final testFile = File('${testDir.path}/test_upload_${DateTime.now().millisecondsSinceEpoch}.txt');
+                      await testFile.writeAsString('Test content: ${DateTime.now()}');
+                      appLog.i('[MyProfile] 测试文件路径: ${testFile.path}');
+
+                      try {
+                        final url = await uploadFile(
+                          filePath: testFile.path,
+                          fileName: 'test_${DateTime.now().millisecondsSinceEpoch}.txt',
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('测试上传成功: $url'), backgroundColor: Colors.green),
+                          );
+                        }
+                        // 清理测试文件
+                        await testFile.delete();
+                      } catch (e) {
+                        appLog.e('[MyProfile] 测试上传失败: $e');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('测试上传失败: $e'), backgroundColor: Colors.red),
+                          );
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                    child: const Text('测试文件上传', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      const SizedBox(height: 12),
                 // 基本信息卡片
                 CardLayout(
                   children: [
@@ -175,6 +269,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 }

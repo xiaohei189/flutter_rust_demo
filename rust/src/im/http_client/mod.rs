@@ -8,6 +8,7 @@ pub mod friend;
 pub mod group;
 pub mod message;
 pub mod middleware;
+pub mod object;
 pub mod response_extractor;
 pub mod routes;
 pub mod token;

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(cargo check *)",
+      "Bash(xargs grep *)",
+      "Bash(python3 *)",
+      "Bash(cargo test *)",
+      "Bash(flutter_rust_bridge_codegen generate *)"
+    ]
+  }
+}

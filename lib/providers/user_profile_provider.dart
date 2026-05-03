@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../services/message_service_notifier.dart';
 import '../src/rust/api/bridge_client.dart';
 import 'message_service_provider.dart';
 
@@ -13,6 +13,7 @@ class UserProfileState {
   final String nickname;
   final String alias;
   final String signature;
+  final String? localAvatarPath; // 本地头像路径（用于持久化显示）
   final bool isLoading;
   final String? error;
 
@@ -21,6 +22,7 @@ class UserProfileState {
     this.nickname = '',
     this.alias = '',
     this.signature = '',
+    this.localAvatarPath,
     this.isLoading = false,
     this.error,
   });
@@ -30,6 +32,7 @@ class UserProfileState {
     String? nickname,
     String? alias,
     String? signature,
+    String? localAvatarPath,
     bool? isLoading,
     String? error,
   }) {
@@ -38,6 +41,7 @@ class UserProfileState {
       nickname: nickname ?? this.nickname,
       alias: alias ?? this.alias,
       signature: signature ?? this.signature,
+      localAvatarPath: localAvatarPath ?? this.localAvatarPath,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -81,6 +85,9 @@ class UserProfileState {
   }
 }
 
+/// SharedPreferences key for local avatar
+const _kLocalAvatarPathKey = 'user_local_avatar_path';
+
 /// 用户资料 Notifier
 class UserProfileNotifier extends StateNotifier<UserProfileState> {
   UserProfileNotifier(this._ref) : super(const UserProfileState()) {
@@ -101,11 +108,21 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
               previous?.loginUserProfile?.faceUrl != next.loginUserProfile?.faceUrl) {
             final profile = next.loginUserProfile!;
             final exData = UserProfileState.parseEx(profile.ex);
+            
+            // 如果服务器头像URL有效，清除本地路径（使用服务器URL）
+            String? localAvatarPath = state.localAvatarPath;
+            if (_isValidAvatarUrl(profile.faceUrl)) {
+              localAvatarPath = null;
+              // 同时清除 SharedPreferences 中的本地路径
+              _saveLocalAvatarPath(null);
+            }
+            
             state = state.copyWith(
               profile: profile,
               nickname: profile.nickname.trim(),
               alias: exData['alias'] ?? '',
               signature: exData['signature'] ?? '',
+              localAvatarPath: localAvatarPath,
               isLoading: false,
               error: null,
             );
@@ -114,6 +131,57 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       },
       fireImmediately: true,
     );
+  }
+
+  /// 从 SharedPreferences 加载本地头像路径
+  Future<void> loadLocalAvatarPath() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final path = prefs.getString(_kLocalAvatarPathKey);
+      if (path != null) {
+        state = state.copyWith(localAvatarPath: path);
+      }
+    } catch (e) {
+      // 忽略错误
+    }
+  }
+
+  /// 保存本地头像路径到 SharedPreferences
+  Future<void> _saveLocalAvatarPath(String? path) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (path != null) {
+        await prefs.setString(_kLocalAvatarPathKey, path);
+      } else {
+        await prefs.remove(_kLocalAvatarPathKey);
+      }
+    } catch (e) {
+      // 忽略错误
+    }
+  }
+
+  /// 检查 URL 是否为有效的头像 URL（不是模拟 URL）
+  bool _isValidAvatarUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    // 排除模拟 URL
+    if (url.contains('example.com')) return false;
+    // 排除本地路径
+    if (url.contains(':\\') || url.startsWith('/')) return false;
+    return true;
+  }
+
+  /// 获取用于显示的头像 URL
+  /// 优先级：本地路径 > 服务器 URL（如果有效）
+  String? getDisplayAvatarUrl() {
+    // 如果有本地路径，优先使用
+    if (state.localAvatarPath != null && state.localAvatarPath!.isNotEmpty) {
+      return state.localAvatarPath;
+    }
+    // 如果服务器 URL 有效，使用服务器 URL
+    if (_isValidAvatarUrl(state.profile?.faceUrl)) {
+      return state.profile?.faceUrl;
+    }
+    return null;
   }
 
   /// 获取指定用户资料（从 MessageService 缓存）
@@ -131,17 +199,29 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      // 从 SharedPreferences 加载本地头像路径
+      final prefs = await SharedPreferences.getInstance();
+      final localPath = prefs.getString(_kLocalAvatarPathKey);
+
       // 直接从 messageServiceProvider 获取登录用户资料
       final messageService = _ref.read(messageServiceProvider);
       final profile = messageService.loginUserProfile;
 
       if (profile != null) {
         final exData = UserProfileState.parseEx(profile.ex);
+        
+        // 如果服务器头像URL有效，忽略本地路径（使用服务器URL）
+        String? finalLocalPath = localPath;
+        if (_isValidAvatarUrl(profile.faceUrl)) {
+          finalLocalPath = null;
+        }
+        
         state = state.copyWith(
           profile: profile,
           nickname: profile.nickname.trim(),
           alias: exData['alias'] ?? '',
           signature: exData['signature'] ?? '',
+          localAvatarPath: finalLocalPath,
           isLoading: false,
         );
       } else {
@@ -154,6 +234,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
             nickname: refreshedProfile.nickname.trim(),
             alias: exData['alias'] ?? '',
             signature: exData['signature'] ?? '',
+            localAvatarPath: _isValidAvatarUrl(refreshedProfile.faceUrl) ? null : localPath,
             isLoading: false,
           );
         } else {
@@ -280,21 +361,30 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   }
 
   /// 更新头像
-  Future<bool> updateAvatar(String imagePath) async {
+  Future<bool> updateAvatar(String imageUrl) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 这里需要实现图片上传逻辑，返回图片的 URL
-      // 暂时使用一个模拟的 URL
-      final imageUrl = 'https://example.com/avatar.jpg';
-      
       final updated = await _ref.read(messageServiceProvider.notifier).updateLoginUserProfile(
         faceUrl: imageUrl,
       );
 
       if (updated != null) {
+        // 给头像 URL 添加时间戳参数，绕过缓存确保立即生效
+        final cacheBustedUrl = _addCacheBuster(updated.faceUrl);
+        final profileWithCacheBuster = UserProfile(
+          userId: updated.userId,
+          nickname: updated.nickname,
+          faceUrl: cacheBustedUrl,
+          ex: updated.ex,
+          attachedInfo: updated.attachedInfo,
+          globalRecvMsgOpt: updated.globalRecvMsgOpt,
+          createTime: updated.createTime,
+          appMangerLevel: updated.appMangerLevel,
+        );
         state = state.copyWith(
-          profile: updated,
+          profile: profileWithCacheBuster,
+          localAvatarPath: null, // 清除本地路径，使用服务器URL
           isLoading: false,
         );
         return true;
@@ -312,6 +402,26 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       );
       return false;
     }
+  }
+
+  /// 设置本地头像路径（用于临时显示和持久化）
+  Future<void> setLocalAvatarPath(String path) async {
+    await _saveLocalAvatarPath(path);
+    state = state.copyWith(localAvatarPath: path);
+  }
+
+  /// 清除本地头像路径
+  Future<void> clearLocalAvatarPath() async {
+    await _saveLocalAvatarPath(null);
+    state = state.copyWith(localAvatarPath: null);
+  }
+
+  /// 为 URL 添加缓存清除参数
+  String _addCacheBuster(String url) {
+    if (url.isEmpty) return url;
+    final separator = url.contains('?') ? '&' : '?';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return '$url${separator}_t=$timestamp';
   }
 
   /// 清除错误

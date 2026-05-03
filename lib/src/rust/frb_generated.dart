@@ -4,7 +4,9 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/bridge_client.dart';
+import 'api/file.dart';
 import 'api/simple.dart';
+import 'api/test_upload.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -72,7 +74,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => -1582337392;
+  int get rustContentHash => 314151445;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -210,7 +212,15 @@ abstract class RustLibApi extends BaseApi {
     required UserProfilePatch patch,
   });
 
+  Future<String> crateApiBridgeClientOpenImBridgeClientUploadFile({
+    required OpenImBridgeClient that,
+    required String filePath,
+    required String fileName,
+  });
+
   Future<void> crateApiBridgeClientCloseCurrentClientIfAny();
+
+  Future<ArcImClient> crateApiBridgeClientGetCurrentClient();
 
   String crateApiSimpleGreet({required String name});
 
@@ -226,6 +236,29 @@ abstract class RustLibApi extends BaseApi {
   });
 
   void crateApiSimpleSetLogDirectory({required String path});
+
+  Future<String> crateApiTestUploadTestUploadFile({
+    required String filePath,
+    required String fileName,
+  });
+
+  Future<String> crateApiFileUploadFile({
+    required String filePath,
+    required String fileName,
+  });
+
+  Future<String> crateApiFileUploadFileWithProgress({
+    required String filePath,
+    required String fileName,
+  });
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcImClient;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcImClient;
+
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_ArcImClientPtr;
 
   RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_MsgData;
 
@@ -1144,6 +1177,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String> crateApiBridgeClientOpenImBridgeClientUploadFile({
+    required OpenImBridgeClient that,
+    required String filePath,
+    required String fileName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_String(filePath, serializer);
+          sse_encode_String(fileName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 20,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiBridgeClientOpenImBridgeClientUploadFileConstMeta,
+        argValues: [that, filePath, fileName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiBridgeClientOpenImBridgeClientUploadFileConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_upload_file",
+        argNames: ["that", "filePath", "fileName"],
+      );
+
+  @override
   Future<void> crateApiBridgeClientCloseCurrentClientIfAny() {
     return handler.executeNormal(
       NormalTask(
@@ -1152,7 +1226,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 21,
             port: port_,
           );
         },
@@ -1174,13 +1248,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<ArcImClient> crateApiBridgeClientGetCurrentClient() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 22,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiBridgeClientGetCurrentClientConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiBridgeClientGetCurrentClientConstMeta =>
+      const TaskConstMeta(debugName: "get_current_client", argNames: []);
+
+  @override
   String crateApiSimpleGreet({required String name}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(name, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1205,7 +1307,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 24,
             port: port_,
           );
         },
@@ -1233,7 +1335,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 25,
             port: port_,
           );
         },
@@ -1269,7 +1371,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 26,
             port: port_,
           );
         },
@@ -1297,7 +1399,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
@@ -1312,6 +1414,118 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiSimpleSetLogDirectoryConstMeta =>
       const TaskConstMeta(debugName: "set_log_directory", argNames: ["path"]);
+
+  @override
+  Future<String> crateApiTestUploadTestUploadFile({
+    required String filePath,
+    required String fileName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(filePath, serializer);
+          sse_encode_String(fileName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 28,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiTestUploadTestUploadFileConstMeta,
+        argValues: [filePath, fileName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiTestUploadTestUploadFileConstMeta =>
+      const TaskConstMeta(
+        debugName: "test_upload_file",
+        argNames: ["filePath", "fileName"],
+      );
+
+  @override
+  Future<String> crateApiFileUploadFile({
+    required String filePath,
+    required String fileName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(filePath, serializer);
+          sse_encode_String(fileName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 29,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiFileUploadFileConstMeta,
+        argValues: [filePath, fileName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiFileUploadFileConstMeta => const TaskConstMeta(
+    debugName: "upload_file",
+    argNames: ["filePath", "fileName"],
+  );
+
+  @override
+  Future<String> crateApiFileUploadFileWithProgress({
+    required String filePath,
+    required String fileName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(filePath, serializer);
+          sse_encode_String(fileName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 30,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiFileUploadFileWithProgressConstMeta,
+        argValues: [filePath, fileName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiFileUploadFileWithProgressConstMeta =>
+      const TaskConstMeta(
+        debugName: "upload_file_with_progress",
+        argNames: ["filePath", "fileName"],
+      );
+
+  RustArcIncrementStrongCountFnType
+  get rust_arc_increment_strong_count_ArcImClient => wire
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient;
+
+  RustArcDecrementStrongCountFnType
+  get rust_arc_decrement_strong_count_ArcImClient => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient;
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_MsgData => wire
@@ -1341,6 +1555,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return AnyhowException(raw as String);
+  }
+
+  @protected
+  ArcImClient
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcImClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -1377,6 +1600,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  ArcImClient
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ArcImClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -2222,6 +2454,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ArcImClient
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcImClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
   MsgData
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
     SseDeserializer deserializer,
@@ -2264,6 +2508,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalSseDecode(
+      sse_decode_usize(deserializer),
+      sse_decode_i_32(deserializer),
+    );
+  }
+
+  @protected
+  ArcImClient
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return ArcImClientImpl.frbInternalSseDecode(
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
@@ -3358,6 +3614,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+    ArcImClient self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcImClientImpl).frbInternalSseEncode(move: true),
+      serializer,
+    );
+  }
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
     MsgData self,
     SseSerializer serializer,
@@ -3404,6 +3673,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: false),
+      serializer,
+    );
+  }
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+    ArcImClient self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_usize(
+      (self as ArcImClientImpl).frbInternalSseEncode(move: null),
       serializer,
     );
   }
@@ -4362,6 +4644,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 }
 
 @sealed
+class ArcImClientImpl extends RustOpaque implements ArcImClient {
+  // Not to be used by end users
+  ArcImClientImpl.frbInternalDcoDecode(List<dynamic> wire)
+    : super.frbInternalDcoDecode(wire, _kStaticData);
+
+  // Not to be used by end users
+  ArcImClientImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
+    : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+  static final _kStaticData = RustArcStaticData(
+    rustArcIncrementStrongCount:
+        RustLib.instance.api.rust_arc_increment_strong_count_ArcImClient,
+    rustArcDecrementStrongCount:
+        RustLib.instance.api.rust_arc_decrement_strong_count_ArcImClient,
+    rustArcDecrementStrongCountPtr:
+        RustLib.instance.api.rust_arc_decrement_strong_count_ArcImClientPtr,
+  );
+}
+
+@sealed
 class MsgDataImpl extends RustOpaque implements MsgData {
   // Not to be used by end users
   MsgDataImpl.frbInternalDcoDecode(List<dynamic> wire)
@@ -4617,4 +4919,22 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         that: this,
         patch: patch,
       );
+
+  /// 上传文件到对象存储
+  ///
+  /// # 参数
+  /// - `file_path`: 本地文件路径
+  /// - `file_name`: 文件名（会自动添加用户ID前缀）
+  ///
+  /// # 返回值
+  /// - 成功：返回文件的 URL
+  /// - 失败：返回错误
+  Future<String> uploadFile({
+    required String filePath,
+    required String fileName,
+  }) => RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientUploadFile(
+    that: this,
+    filePath: filePath,
+    fileName: fileName,
+  );
 }
