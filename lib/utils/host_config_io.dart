@@ -1,4 +1,4 @@
-// 用于 Android/iOS/桌面：Android 模拟器访问宿主机需用 10.0.2.2
+// 用于 Android/iOS/桌面：使用 WSL/Hyper-V 网络IP让虚拟机能访问
 import 'dart:io';
 
-String getHostAddress() => Platform.isAndroid ? '10.0.2.2' : 'localhost';
+String getHostAddress() => '172.18.160.1';

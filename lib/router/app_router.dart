@@ -226,7 +226,7 @@ class AppRouter {
     String? userId,
     dynamic user,
   }) {
-    if (userId != null) {
+    if (userId != null && userId.isNotEmpty) {
       context.push('/profile/user/$userId', extra: user);
     } else if (user != null) {
       context.push(userProfile.replaceAll(':id', 'unknown'), extra: user);

@@ -107,7 +107,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       appBar: ConversationTitleBar(
         currentUserId: userProfileState.profile?.userId ?? '',
         nickname: userProfileState.profile?.nickname,
-        avatarUrl: userProfileState.profile?.faceUrl,
+        avatarUrl: ref.read(userProfileProvider.notifier).getDisplayAvatarUrl(),
         isSyncing: conversationState.isSyncing,
         isConnected: connectionState.isConnected,
         syncProgress: conversationState.syncProgress,
@@ -162,6 +162,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                         cachedUserProfile: conversation.userId.isNotEmpty
                             ? userProfileState.profile
                             : null,
+                        currentUserLocalAvatarPath: userProfileState.localAvatarPath,
                         itemIndex: index,
                         currentUserId: userProfileState.profile?.userId,
                         onTap: () {

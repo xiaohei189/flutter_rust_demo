@@ -17,7 +17,9 @@ class ProfileDrawerScreen extends ConsumerWidget {
 
   final VoidCallback? onOpenMyProfile;
 
-  User _buildCurrentUser(UserProfileState state) {
+  User _buildCurrentUser(UserProfileState state, UserProfileNotifier notifier) {
+    // 使用 getDisplayAvatarUrl() 获取头像，优先使用本地路径
+    final avatarUrl = notifier.getDisplayAvatarUrl();
     return User(
       id: state.profile?.userId ?? '',
       name: state.nickname.isNotEmpty
@@ -25,9 +27,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
           : (state.profile?.userId.isNotEmpty == true
               ? state.profile!.userId
               : '我'),
-      avatar: state.profile?.faceUrl.isNotEmpty == true
-          ? state.profile!.faceUrl
-          : null,
+      avatar: avatarUrl,
       status: null,
     );
   }
@@ -43,7 +43,8 @@ class ProfileDrawerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final panelWidth = MediaQuery.of(context).size.width * 0.82;
     final state = ref.watch(userProfileProvider);
-    final currentUser = _buildCurrentUser(state);
+    final notifier = ref.read(userProfileProvider.notifier);
+    final currentUser = _buildCurrentUser(state, notifier);
     final signature = _getSignature(state);
 
     return GestureDetector(

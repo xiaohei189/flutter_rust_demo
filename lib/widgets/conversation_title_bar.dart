@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -55,6 +57,28 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
     return '我';
   }
 
+  /// 判断是否为本地文件路径
+  bool _isLocalPath(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('ftp://')) {
+      return false;
+    }
+    if (RegExp(r'^[a-zA-Z]:\\').hasMatch(path)) {
+      return true;
+    }
+    if (path.startsWith('/')) {
+      return true;
+    }
+    return false;
+  }
+
+  ImageProvider? _getAvatarImage() {
+    if (avatarUrl == null || avatarUrl!.isEmpty) return null;
+    if (_isLocalPath(avatarUrl!)) {
+      return FileImage(File(avatarUrl!));
+    }
+    return NetworkImage(avatarUrl!);
+  }
+
   @override
   Size get preferredSize => const Size.fromHeight(56);
 
@@ -81,9 +105,7 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
-                    backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                        ? NetworkImage(avatarUrl!)
-                        : null,
+                    backgroundImage: _getAvatarImage(),
                     child: avatarUrl == null || avatarUrl!.isEmpty
                         ? Text(
                             _avatarInitial,

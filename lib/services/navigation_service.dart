@@ -118,7 +118,7 @@ class NavigationService {
     final context = _context;
     if (context == null) return;
     
-    if (userId != null) {
+    if (userId != null && userId.isNotEmpty) {
       context.push('/profile/user/$userId', extra: user);
     } else if (user != null) {
       context.push('/profile/user/unknown', extra: user);

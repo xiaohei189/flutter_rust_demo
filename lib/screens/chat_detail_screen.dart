@@ -432,6 +432,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                         currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
                         scrollController: _scrollController,
                         isLoading: isLoading,
+                        cachedCurrentUserProfile: ref.watch(userProfileProvider).profile,
                       );
                     },
                   ),

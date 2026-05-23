@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user.dart';
+import '../providers/user_profile_provider.dart';
 import '../widgets/user_avatar.dart';
 
 /// 个人中心页面
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = User.currentUser;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(userProfileProvider);
+    final notifier = ref.read(userProfileProvider.notifier);
+    final avatarUrl = notifier.getDisplayAvatarUrl();
+    
+    // 使用用户资料中的信息
+    final userName = state.nickname.isNotEmpty
+        ? state.nickname
+        : (state.profile?.userId.isNotEmpty == true ? state.profile!.userId : '我');
+    final userId = state.profile?.userId ?? '';
+    
+    final displayUser = User(
+      id: userId,
+      name: userName,
+      avatar: avatarUrl,
+      status: '在线',
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('我的')),
@@ -20,14 +37,14 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                UserAvatar(user: user, radius: 40),
+                UserAvatar(user: displayUser, radius: 40),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user.name,
+                        displayUser.name,
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -35,7 +52,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        'ID: ${user.id}',
+                        'ID: ${displayUser.id}',
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],

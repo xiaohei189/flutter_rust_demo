@@ -53,24 +53,29 @@ impl FileService {
     where
         F: Fn(f64),
     {
+        info!("[FileUpload] 开始上传文件: path={}, name={}", file_path, file_name);
+        
         // 1. 打开文件并获取文件大小
         let mut file = File::open(file_path).context("failed to open file")?;
         let file_size = file.metadata()?.len();
+        info!("[FileUpload] 文件大小: {} bytes", file_size);
 
         // 2. 获取分块大小限制
+        info!("[FileUpload] 获取分块限制...");
         let part_limit = self.object_api.part_limit().await?;
+        info!("[FileUpload] 分块限制: min={}, max={}, maxNum={}", part_limit.min_part_size, part_limit.max_part_size, part_limit.max_num_size);
         let part_size = self.calculate_part_size(file_size, &part_limit)?;
         let part_num = self.calculate_part_num(file_size, part_size);
+        info!("[FileUpload] 计算的分块大小: {}, 分块数: {}", part_size, part_num);
 
         // 3. 计算文件 MD5 和分块信息
         let part_info = self.calculate_part_info(&mut file, file_size, part_size, part_num, &callback)?;
-        info!("[FileUpload] file_md5: {}, part_md5: {}", part_info.file_md5, part_info.part_md5);
-        info!("[FileUpload] part_md5s: {:?}", part_info.part_md5s);
+        info!("[FileUpload] 文件 MD5: {}, 分块 MD5: {}", part_info.file_md5, part_info.part_md5);
 
         // 4. 初始化分块上传
         // 注意：hash 应该使用 part_md5（所有分块MD5组合后的MD5），而不是 file_md5
         let content_type = &part_info.content_type;
-        info!("[FileUpload] initiating upload with hash: {}", part_info.part_md5);
+        info!("[FileUpload] 初始化分块上传 with hash: {}", part_info.part_md5);
         let upload_resp = self.object_api.initiate_multipart_upload(InitiateMultipartUploadReq {
             hash: part_info.part_md5.clone(),
             size: file_size as i64,
@@ -80,14 +85,18 @@ impl FileService {
             name: file_name.to_string(),
             content_type: content_type.clone(),
         }).await?;
+        
+        info!("[FileUpload] 初始化响应: url={}, upload={:?}", upload_resp.url, upload_resp.upload);
 
         // 如果 upload 为 None，表示服务器已存在该文件，直接返回 URL
         if upload_resp.upload.is_none() {
             callback(1.0);
+            info!("[FileUpload] 文件已存在，直接返回 URL: {}", upload_resp.url);
             return Ok(upload_resp.url);
         }
 
         let upload_info = upload_resp.upload.unwrap();
+        info!("[FileUpload] 开始上传 {} 个分块...", part_num);
 
         // 验证分块大小
         if upload_info.part_size != part_size as i64 {
@@ -137,9 +146,17 @@ impl FileService {
             } else {
                 self.get_part_sign(&upload_info.upload_id, part_number).await?
             };
+            
+            info!("[FileUpload] 上传分块 {}/{}, size={}", part_number, part_num, current_part_size);
 
             // 上传分块
-            self.object_api.put_part(&auth_sign.0, auth_sign.1, part_data).await?;
+            match self.object_api.put_part(&auth_sign.0, auth_sign.1, part_data).await {
+                Ok(_) => info!("[FileUpload] 分块 {} 上传成功", part_number),
+                Err(e) => {
+                    error!("[FileUpload] 分块 {} 上传失败: {}", part_number, e);
+                    return Err(e);
+                }
+            }
 
             uploaded_size += current_part_size;
             let progress = uploaded_size as f64 / file_size as f64;
@@ -147,7 +164,7 @@ impl FileService {
         }
 
         // 6. 完成分块上传
-        info!("[FileUpload] completing upload with parts: {:?}", part_info.part_md5s);
+        info!("[FileUpload] 完成分块上传...");
         let complete_resp = self.object_api.complete_multipart_upload(CompleteMultipartUploadReq {
             upload_id: upload_info.upload_id.clone(),
             parts: part_info.part_md5s.clone(),
@@ -155,6 +172,8 @@ impl FileService {
             content_type: content_type.clone(),
             cause: "upload".to_string(),
         }).await?;
+        
+        info!("[FileUpload] 上传完成，返回 URL: {}", complete_resp.url);
 
         Ok(complete_resp.url)
     }

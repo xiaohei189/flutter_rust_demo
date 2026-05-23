@@ -98,8 +98,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       final url = await uploadFile(filePath: image.path, fileName: 'avatar.jpg');
       appLog.i('[MyProfile] 上传完成，返回 URL: $url');
 
-      // 检查 URL 是否有效（不是模拟 URL）
-      final isValidUrl = !url.contains('example.com');
+      // 检查 URL 是否为有效的外部 URL（排除本地地址和示例地址）
+      final isValidUrl = !url.contains('example.com') && 
+          !url.contains('localhost') && 
+          !url.contains('127.0.0.1');
       appLog.i('[MyProfile] URL 是否有效: $isValidUrl');
 
       // 更新服务器头像 URL（用于持久化）
@@ -110,24 +112,16 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       if (!mounted) return;
 
       if (success && isValidUrl) {
-        // 服务器返回有效 URL，清除本地路径（使用服务器 URL）
-        await ref.read(userProfileProvider.notifier).clearLocalAvatarPath();
-        appLog.i('[MyProfile] 服务器 URL 有效，已清除本地路径');
+        // 服务器返回有效 URL，本地路径已保留作为备份
+        appLog.i('[MyProfile] 服务器 URL 有效，保留本地路径作为备份');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('头像更新成功')),
         );
-      } else if (success && !isValidUrl) {
-        // 服务器返回无效 URL（模拟 URL），提示上传失败
-        appLog.w('[MyProfile] 服务器返回无效 URL，上传实际未成功');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('头像上传失败：服务器返回无效地址'),
-            backgroundColor: Colors.orange,
-          ),
-        );
       } else {
+        // 服务器更新失败或 URL 无效
+        appLog.w('[MyProfile] 服务器更新失败或 URL 无效，保留本地路径');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('头像更新失败')),
+          const SnackBar(content: Text('头像上传失败')),
         );
       }
     } catch (e, stackTrace) {
@@ -159,42 +153,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // 测试按钮
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      // 创建一个简单的测试文件
-                      final testDir = Directory.systemTemp;
-                      final testFile = File('${testDir.path}/test_upload_${DateTime.now().millisecondsSinceEpoch}.txt');
-                      await testFile.writeAsString('Test content: ${DateTime.now()}');
-                      appLog.i('[MyProfile] 测试文件路径: ${testFile.path}');
-
-                      try {
-                        final url = await uploadFile(
-                          filePath: testFile.path,
-                          fileName: 'test_${DateTime.now().millisecondsSinceEpoch}.txt',
-                        );
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('测试上传成功: $url'), backgroundColor: Colors.green),
-                          );
-                        }
-                        // 清理测试文件
-                        await testFile.delete();
-                      } catch (e) {
-                        appLog.e('[MyProfile] 测试上传失败: $e');
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('测试上传失败: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                    child: const Text('测试文件上传', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
                 Expanded(
                   child: ListView(
                     children: [

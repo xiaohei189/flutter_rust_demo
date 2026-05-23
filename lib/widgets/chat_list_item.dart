@@ -126,6 +126,8 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback? onPinToggle;
   final VoidCallback? onMarkRead;
   final UserProfile? cachedUserProfile;
+  /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
+  final String? currentUserLocalAvatarPath;
   /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
   final int? itemIndex;
 
@@ -139,6 +141,7 @@ class ChatListItem extends StatelessWidget {
     this.onPinToggle,
     this.onMarkRead,
     this.cachedUserProfile,
+    this.currentUserLocalAvatarPath,
     this.itemIndex,
   });
 
@@ -219,12 +222,20 @@ class ChatListItem extends StatelessWidget {
         : conversation.groupId;
     final profile = cachedUserProfile;
     final profileName = profile?.nickname ?? '';
-    final profileAvatar = profile?.faceUrl ?? '';
+    
+    // 如果是当前用户自己的对话，优先使用本地头像路径
+    String? profileAvatar;
+    if (userId == currentUserId && currentUserLocalAvatarPath != null && currentUserLocalAvatarPath!.isNotEmpty) {
+      profileAvatar = currentUserLocalAvatarPath;
+    } else {
+      profileAvatar = profile?.faceUrl;
+    }
+    
     final convFace = conversation.faceUrl;
     return User(
       id: userId,
       name: profileName.isNotEmpty ? profileName : _conversationDisplayName,
-      avatar: profileAvatar.isNotEmpty
+      avatar: (profileAvatar != null && profileAvatar.isNotEmpty)
           ? profileAvatar
           : (convFace.isNotEmpty ? convFace : null),
       status: null,
