@@ -278,6 +278,54 @@ impl IMClient {
         }))
     }
 
+    /// 同步当前登录用户信息并更新会话中的消息发送者头像
+    /// 与 Go SyncLoginUserInfo 对齐：当头像或昵称变更时，更新所有会话中的消息发送者信息
+    pub async fn sync_login_user_info(&self) -> Result<()> {
+        let list = self.get_users_info(vec![self.config.user_id.clone()]).await?;
+        let user_info = match list.into_iter().next() {
+            Some(u) => u,
+            None => return Ok(()),
+        };
+        
+        let old_local = self.local_repo.user.get_login_user(&self.config.user_id).await?;
+        let new_local = LocalUser {
+            user_id: user_info.user_id.clone(),
+            nickname: user_info.nickname.clone(),
+            face_url: user_info.face_url.clone(),
+            create_time: user_info.create_time,
+            app_manger_level: user_info.app_manger_level,
+            ex: user_info.ex.clone(),
+            attached_info: user_info.attached_info.clone(),
+            global_recv_msg_opt: user_info.global_recv_msg_opt,
+        };
+        
+        let changed = old_local.as_ref().map_or(true, |o| 
+            o.nickname != new_local.nickname || o.face_url != new_local.face_url
+        );
+        
+        if !changed {
+            return Ok(());
+        }
+        
+        self.local_repo.user.upsert_login_user(&new_local).await?;
+        
+        // 更新所有会话（包括单聊和群聊）中的消息发送者头像
+        if let Ok(ids) = self.local_repo.conversation.get_all_conversation_ids().await {
+            for cid in ids {
+                let _ = self.local_repo.message
+                    .update_sender_face_url_and_nickname(
+                        &cid, 
+                        &self.config.user_id, 
+                        &new_local.face_url, 
+                        &new_local.nickname
+                    )
+                    .await;
+            }
+        }
+        
+        Ok(())
+    }
+
     /// 上传文件到对象存储
     /// - `file_path`: 本地文件路径
     /// - `file_name`: 文件名（不含路径）

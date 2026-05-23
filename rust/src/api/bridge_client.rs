@@ -368,6 +368,7 @@ impl OpenIMBridgeClient {
     }
 
     /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
+    /// 同时会同步更新会话中的消息发送者头像
     #[flutter_rust_bridge::frb]
     pub async fn update_login_user_profile(&self, patch: UserProfilePatch) -> Result<UserProfile> {
         let profile = self
@@ -381,6 +382,10 @@ impl OpenIMBridgeClient {
                 patch.global_recv_msg_opt,
             )
             .await?;
+        
+        // 更新成功后，同步更新所有会话中的消息发送者头像
+        let _ = self.inner.read().await.sync_login_user_info().await;
+        
         Ok(profile.into())
     }
 
