@@ -156,12 +156,16 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                     itemCount: conversations.length,
                     itemBuilder: (context, index) {
                       final conversation = conversations[index];
-                      return ChatListItem(
+                      final otherUserId = conversation.conversationType == 1 && conversation.userId.isNotEmpty
+                            ? conversation.userId
+                            : null;
+                        final otherUserProfile = otherUserId != null && otherUserId != userProfileState.profile?.userId
+                            ? ref.read(messageServiceProvider.notifier).getUserProfile(otherUserId)
+                            : null;
+                        return ChatListItem(
                         key: ValueKey<String>(conversation.conversationId),
                         conversation: conversation,
-                        cachedUserProfile: conversation.userId.isNotEmpty
-                            ? userProfileState.profile
-                            : null,
+                        cachedUserProfile: otherUserProfile,
                         currentUserLocalAvatarPath: userProfileState.localAvatarPath,
                         itemIndex: index,
                         currentUserId: userProfileState.profile?.userId,
