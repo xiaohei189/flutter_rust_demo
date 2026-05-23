@@ -5,7 +5,7 @@ use crate::im::http_client::object::{ObjectApi, InitiateMultipartUploadReq, Auth
 use anyhow::{Context, Result};
 use md5::{Digest, Md5};
 use std::collections::HashMap;
-use tracing::{info, debug};
+use tracing::{info, debug, error};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;

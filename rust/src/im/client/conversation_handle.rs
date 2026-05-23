@@ -409,12 +409,20 @@ impl ConversationHandle {
     }
 
     /// 合并到会话集合（对齐 Go updateConversation(lc, conversationSet)）
+    /// 注意：保留已有的 show_name 和 face_url（自己发消息时这些字段为空，不应覆盖已有值）
     fn update_conversation_in_set(lc: LocalConversation, set: &mut HashMap<String, LocalConversation>) {
         if let Some(old) = set.get_mut(&lc.conversation_id) {
             old.unread_count = (old.unread_count + lc.unread_count).max(0);
             if lc.latest_msg_send_time > old.latest_msg_send_time {
                 old.latest_msg = lc.latest_msg.clone();
                 old.latest_msg_send_time = lc.latest_msg_send_time;
+            }
+            // 只有新值非空时才更新 show_name 和 face_url
+            if !lc.show_name.is_empty() {
+                old.show_name = lc.show_name;
+            }
+            if !lc.face_url.is_empty() {
+                old.face_url = lc.face_url;
             }
         } else {
             set.insert(lc.conversation_id.clone(), lc);
@@ -597,7 +605,7 @@ impl ConversationHandle {
         for (id, server_conv) in server_map.iter() {
             if let Some(local_conv) = local_map.get(id) {
                 let mut server_conv = server_conv.clone();
-                self.fill_display_fields(&mut server_conv);
+                self.fill_display_fields(&mut server_conv).await;
                 let need_update = !self.conversations_equal(local_conv, &server_conv) || local_conv.unread_count != server_conv.unread_count || local_conv.max_seq != server_conv.max_seq;
                 if need_update {
                     self.upsert_conversation(&server_conv).await?;
@@ -606,7 +614,7 @@ impl ConversationHandle {
                 }
             } else {
                 let mut server_conv = server_conv.clone();
-                self.fill_display_fields(&mut server_conv);
+                self.fill_display_fields(&mut server_conv).await;
                 self.upsert_conversation(&server_conv).await?;
                 new_conversations.push(server_conv);
                 insert_count += 1;
@@ -658,7 +666,44 @@ impl ConversationHandle {
             && local.latest_msg_send_time == server.latest_msg_send_time
     }
 
-    fn fill_display_fields(&self, _conv: &mut LocalConversation) {}
+    /// 填充会话的显示字段（show_name 和 face_url）
+    /// 从好友信息、用户信息缓存或群组信息中获取
+    async fn fill_display_fields(&self, conv: &mut LocalConversation) {
+        if conv.conversation_type == constant::SINGLE_CHAT_TYPE || conv.conversation_type == constant::NOTIFICATION_CHAT_TYPE {
+            if let Ok(Some(f)) = self.repository.friend.get_friend_by_friend_user_id(&conv.user_id).await {
+                if let Some(u) = f.friend_user {
+                    if !u.face_url.is_empty() {
+                        conv.face_url = u.face_url;
+                    }
+                    if !u.nickname.is_empty() {
+                        conv.show_name = u.nickname;
+                    }
+                }
+            }
+            if conv.face_url.is_empty() || conv.show_name.is_empty() {
+                if let Ok(Some(u)) = self.get_user_info_with_cache(&conv.user_id).await {
+                    if conv.face_url.is_empty() && !u.face_url.is_empty() {
+                        conv.face_url = u.face_url.clone();
+                    }
+                    if conv.show_name.is_empty() && !u.nickname.is_empty() {
+                        conv.show_name = u.nickname.clone();
+                    }
+                }
+            }
+            if conv.show_name.is_empty() {
+                conv.show_name = "UserNotFound".to_string();
+            }
+        } else if conv.conversation_type == constant::READ_GROUP_CHAT_TYPE {
+            if let Ok(Some(g)) = self.repository.group.get_group_info_by_group_id(&conv.group_id).await {
+                if !g.face_url.is_empty() {
+                    conv.face_url = g.face_url.clone();
+                }
+                if !g.group_name.is_empty() {
+                    conv.show_name = g.group_name.clone();
+                }
+            }
+        }
+    }
 
     /// 增量同步会话（对应 Go 版本的 IncrSyncConversations）
     #[instrument(skip(self))]
