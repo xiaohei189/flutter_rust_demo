@@ -217,27 +217,52 @@ class ChatListItem extends StatelessWidget {
       s.startsWith('si_') || s.startsWith('sg_') || s.startsWith('sn_');
 
   User _getUser() {
-    final userId = conversation.userId.isNotEmpty
-        ? conversation.userId
-        : conversation.groupId;
-    final profile = cachedUserProfile;
-    final profileName = profile?.nickname ?? '';
+    String userId;
+    String displayName;
+    String? avatarUrl;
     
-    // 如果是当前用户自己的对话，优先使用本地头像路径
-    String? profileAvatar;
-    if (userId == currentUserId && currentUserLocalAvatarPath != null && currentUserLocalAvatarPath!.isNotEmpty) {
-      profileAvatar = currentUserLocalAvatarPath;
+    if (conversation.conversationType == 1) {
+      // 单聊：展示对方的信息
+      if (conversation.userId.isNotEmpty && conversation.userId != currentUserId) {
+        userId = conversation.userId;
+        displayName = cachedUserProfile?.nickname ?? 
+            (conversation.showName.isNotEmpty ? conversation.showName : '用户 $userId');
+        avatarUrl = cachedUserProfile?.faceUrl;
+      } else if (currentUserId != null && conversation.conversationId.startsWith('si_')) {
+        // 从会话ID中解析对方ID
+        final parts = conversation.conversationId.substring(3).split('_');
+        if (parts.length >= 2) {
+          final otherId = parts[0] == currentUserId ? parts[1] : parts[0];
+          userId = otherId;
+          displayName = cachedUserProfile?.nickname ?? 
+              (conversation.showName.isNotEmpty ? conversation.showName : '用户 $otherId');
+          avatarUrl = cachedUserProfile?.faceUrl;
+        } else {
+          userId = conversation.userId.isNotEmpty ? conversation.userId : conversation.conversationId;
+          displayName = conversation.showName.isNotEmpty ? conversation.showName : '未知用户';
+          avatarUrl = conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null;
+        }
+      } else {
+        userId = conversation.userId.isNotEmpty ? conversation.userId : conversation.conversationId;
+        displayName = conversation.showName.isNotEmpty ? conversation.showName : '未知用户';
+        avatarUrl = conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null;
+      }
     } else {
-      profileAvatar = profile?.faceUrl;
+      // 群聊或其他类型：展示群组信息
+      userId = conversation.groupId.isNotEmpty ? conversation.groupId : conversation.conversationId;
+      displayName = conversation.showName.isNotEmpty 
+          ? conversation.showName 
+          : _conversationDisplayName;
+      avatarUrl = conversation.faceUrl.isNotEmpty ? conversation.faceUrl : cachedUserProfile?.faceUrl;
     }
     
-    final convFace = conversation.faceUrl;
+    // 优先使用缓存的用户资料头像，其次使用会话头像
+    final finalAvatar = (avatarUrl != null && avatarUrl.isNotEmpty) ? avatarUrl : null;
+    
     return User(
       id: userId,
-      name: profileName.isNotEmpty ? profileName : _conversationDisplayName,
-      avatar: (profileAvatar != null && profileAvatar.isNotEmpty)
-          ? profileAvatar
-          : (convFace.isNotEmpty ? convFace : null),
+      name: displayName,
+      avatar: finalAvatar,
       status: null,
     );
   }
