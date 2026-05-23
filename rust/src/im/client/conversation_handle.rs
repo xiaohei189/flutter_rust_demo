@@ -470,7 +470,8 @@ impl ConversationHandle {
         }
         let conv_id = self.get_conversation_id_by_session_type(&self.config.user_id, constant::SINGLE_CHAT_TYPE);
         let _ = self.repository.conversation.update_show_name_and_face_url(&conv_id, &new_local.nickname, &new_local.face_url).await;
-        if let Ok(ids) = self.repository.conversation.get_all_single_conversation_ids().await {
+        // 更新所有会话（包括单聊和群聊）中的消息发送者信息
+        if let Ok(ids) = self.repository.conversation.get_all_conversation_ids().await {
             for cid in ids {
                 let _ = self
                     .repository
