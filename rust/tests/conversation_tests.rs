@@ -73,7 +73,7 @@ async fn test_conversation_pinned_private() {
     let conv_id = &convs[0].conversation_id;
 
     println!("置顶会话...");
-    match sdk.set_conversation_pinned(conv_id.clone(), true).await {
+    match sdk.set_conversation_pinned(conv_id, true).await {
         Ok(_) => println!("  ✅ 置顶成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -85,10 +85,10 @@ async fn test_conversation_pinned_private() {
     }
 
     println!("取消置顶...");
-    let _ = sdk.set_conversation_pinned(conv_id.to_string(), false).await;
+    let _ = sdk.set_conversation_pinned(conv_id, false).await;
 
     println!("设置私聊...");
-    match sdk.set_conversation_private(conv_id.to_string(), true).await {
+    match sdk.set_conversation_private(conv_id, true).await {
         Ok(_) => println!("  ✅ 设置成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -118,7 +118,7 @@ async fn test_conversation_delete() {
 
     let conv_id = &convs[0].conversation_id;
     println!("删除会话...");
-    match sdk.delete_conversation(conv_id.to_string()).await {
+    match sdk.delete_conversation(conv_id).await {
         Ok(_) => println!("  ✅ 删除成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -177,22 +177,22 @@ async fn test_user_state_conversation_management() {
     if !convs.is_empty() {
         let cid = &convs[0].conversation_id;
 
-        let _ = sdk.set_conversation_pinned(cid.to_string(), true).await;
+        let _ = sdk.set_conversation_pinned(cid, true).await;
         println!("设置置顶完成");
 
         let pinned = sdk.get_pinned_conversations().await;
         match pinned {
-            Ok(p) => println!("置顶会话数: {}", p.len()),
+            Ok(_) => println!("置顶会话数"),
             Err(e) => println!("获取置顶失败: {:?}", e),
         }
 
-        let _ = sdk.set_conversation_draft(cid.clone(), "Draft".to_string()).await;
+        let _ = sdk.set_conversation_draft(cid, "Draft").await;
         println!("设置草稿完成");
 
-        let _ = sdk.clear_conversation_draft(cid.clone()).await;
+        let _ = sdk.clear_conversation_draft(cid).await;
         println!("清除草稿完成");
 
-        let _ = sdk.delete_conversation(cid.clone()).await;
+        let _ = sdk.delete_conversation(cid).await;
         println!("删除会话完成");
     }
 

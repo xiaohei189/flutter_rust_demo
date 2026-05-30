@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../domain/config.dart';
+import '../domain/constant/enums.dart';
 import '../domain/event/types.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
@@ -13,9 +14,8 @@ import '../frb_generated.dart';
 import '../infra/database/models.dart';
 import '../lib.dart';
 import '../sdk/client.dart';
+import '../sdk/client/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
 Future<String> uploadFile({
   required String filePath,
@@ -130,8 +130,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> revokeMessage({required RevokeMessageReq req});
 
   Future<List<LocalChatLog>> searchLocalMessages({
-    required String conversationId,
-    required String keyword,
+    required SearchMessagesReq req,
   });
 
   Future<MsgData> sendMessage({required SendMessageReq req});
@@ -167,151 +166,4 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     String? faceUrl,
     String? ex,
   });
-}
-
-class DeleteMessagesReq {
-  final String conversationId;
-  final List<String> clientMsgIds;
-
-  const DeleteMessagesReq({
-    required this.conversationId,
-    required this.clientMsgIds,
-  });
-
-  @override
-  int get hashCode => conversationId.hashCode ^ clientMsgIds.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DeleteMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          clientMsgIds == other.clientMsgIds;
-}
-
-class GetHistoryMessagesReq {
-  final String conversationId;
-  final PlatformInt64 startSeq;
-  final PlatformInt64 count;
-
-  const GetHistoryMessagesReq({
-    required this.conversationId,
-    required this.startSeq,
-    required this.count,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^ startSeq.hashCode ^ count.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GetHistoryMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          startSeq == other.startSeq &&
-          count == other.count;
-}
-
-class MarkMessagesAsReadReq {
-  final String conversationId;
-  final int sessionType;
-  final PlatformInt64 hasReadSeq;
-  final Int64List seqs;
-
-  const MarkMessagesAsReadReq({
-    required this.conversationId,
-    required this.sessionType,
-    required this.hasReadSeq,
-    required this.seqs,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      sessionType.hashCode ^
-      hasReadSeq.hashCode ^
-      seqs.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MarkMessagesAsReadReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          sessionType == other.sessionType &&
-          hasReadSeq == other.hasReadSeq &&
-          seqs == other.seqs;
-}
-
-class RevokeMessageReq {
-  final String conversationId;
-  final PlatformInt64 seq;
-  final String clientMsgId;
-  final int sessionType;
-
-  const RevokeMessageReq({
-    required this.conversationId,
-    required this.seq,
-    required this.clientMsgId,
-    required this.sessionType,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      seq.hashCode ^
-      clientMsgId.hashCode ^
-      sessionType.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is RevokeMessageReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          seq == other.seq &&
-          clientMsgId == other.clientMsgId &&
-          sessionType == other.sessionType;
-}
-
-class SendMessageReq {
-  final String recvId;
-  final String groupId;
-  final int sessionType;
-  final int contentType;
-  final String content;
-  final String? clientMsgId;
-
-  const SendMessageReq({
-    required this.recvId,
-    required this.groupId,
-    required this.sessionType,
-    required this.contentType,
-    required this.content,
-    this.clientMsgId,
-  });
-
-  @override
-  int get hashCode =>
-      recvId.hashCode ^
-      groupId.hashCode ^
-      sessionType.hashCode ^
-      contentType.hashCode ^
-      content.hashCode ^
-      clientMsgId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SendMessageReq &&
-          runtimeType == other.runtimeType &&
-          recvId == other.recvId &&
-          groupId == other.groupId &&
-          sessionType == other.sessionType &&
-          contentType == other.contentType &&
-          content == other.content &&
-          clientMsgId == other.clientMsgId;
 }

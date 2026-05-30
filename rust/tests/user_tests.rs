@@ -122,7 +122,7 @@ async fn test_user_state_via_sdk() {
     println!("  好友数量: {}", friends.len());
 
     println!("6. 获取用户信息...");
-    match sdk.get_users_info(vec![user_id.clone()]).await {
+    match sdk.get_users_info(&vec![user_id.clone()]).await {
         Ok(users) => {
             println!("  昵称: {}", users.first().map(|u| &u.nickname).unwrap_or(&"unknown".into()));
         }
@@ -145,7 +145,7 @@ async fn test_get_user_online_status() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let status = sdk.get_user_status(vec![user1.user_id.clone()]).await;
+    let status = sdk.get_user_status(&vec![user1.user_id.clone()]).await;
     println!("在线状态: {:?}", status);
     println!("✅ 获取用户在线状态测试通过");
 }

@@ -8,6 +8,7 @@ import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'domain/config.dart';
+import 'domain/constant/enums.dart';
 import 'domain/event/types.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
@@ -20,6 +21,7 @@ import 'infra/database/models.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'sdk/client.dart';
+import 'sdk/client/types.dart';
 
 /// Main entrypoint of the Rust API
 class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
@@ -265,8 +267,7 @@ abstract class RustLibApi extends BaseApi {
   Future<List<LocalChatLog>>
   crateApiBridgeClientOpenImBridgeClientSearchLocalMessages({
     required OpenImBridgeClient that,
-    required String conversationId,
-    required String keyword,
+    required SearchMessagesReq req,
   });
 
   Future<MsgData> crateApiBridgeClientOpenImBridgeClientSendMessage({
@@ -1716,8 +1717,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<List<LocalChatLog>>
   crateApiBridgeClientOpenImBridgeClientSearchLocalMessages({
     required OpenImBridgeClient that,
-    required String conversationId,
-    required String keyword,
+    required SearchMessagesReq req,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -1727,8 +1727,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             that,
             serializer,
           );
-          sse_encode_String(conversationId, serializer);
-          sse_encode_String(keyword, serializer);
+          sse_encode_box_autoadd_search_messages_req(req, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -1742,7 +1741,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         ),
         constMeta:
             kCrateApiBridgeClientOpenImBridgeClientSearchLocalMessagesConstMeta,
-        argValues: [that, conversationId, keyword],
+        argValues: [that, req],
         apiImpl: this,
       ),
     );
@@ -1752,7 +1751,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   get kCrateApiBridgeClientOpenImBridgeClientSearchLocalMessagesConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_search_local_messages",
-        argNames: ["that", "conversationId", "keyword"],
+        argNames: ["that", "req"],
       );
 
   @override
@@ -2332,6 +2331,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_search_messages_req(raw);
+  }
+
+  @protected
   SendMessageReq dco_decode_box_autoadd_send_message_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_send_message_req(raw);
@@ -2352,6 +2357,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       uploadUrl: dco_decode_opt_String(arr[5]),
       dataDir: dco_decode_String(arr[6]),
     );
+  }
+
+  @protected
+  ContentType dco_decode_content_type(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return ContentType.values[raw as int];
   }
 
   @protected
@@ -2622,7 +2633,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return MarkMessagesAsReadReq(
       conversationId: dco_decode_String(arr[0]),
-      sessionType: dco_decode_i_32(arr[1]),
+      sessionType: dco_decode_session_type(arr[1]),
       hasReadSeq: dco_decode_i_64(arr[2]),
       seqs: dco_decode_list_prim_i_64_strict(arr[3]),
     );
@@ -2681,7 +2692,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       conversationId: dco_decode_String(arr[0]),
       seq: dco_decode_i_64(arr[1]),
       clientMsgId: dco_decode_String(arr[2]),
-      sessionType: dco_decode_i_32(arr[3]),
+      sessionType: dco_decode_session_type(arr[3]),
+    );
+  }
+
+  @protected
+  SearchMessagesReq dco_decode_search_messages_req(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return SearchMessagesReq(
+      conversationId: dco_decode_String(arr[0]),
+      keyword: dco_decode_String(arr[1]),
     );
   }
 
@@ -2694,11 +2717,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return SendMessageReq(
       recvId: dco_decode_String(arr[0]),
       groupId: dco_decode_String(arr[1]),
-      sessionType: dco_decode_i_32(arr[2]),
-      contentType: dco_decode_i_32(arr[3]),
+      sessionType: dco_decode_session_type(arr[2]),
+      contentType: dco_decode_content_type(arr[3]),
       content: dco_decode_String(arr[4]),
       clientMsgId: dco_decode_opt_String(arr[5]),
     );
+  }
+
+  @protected
+  SessionType dco_decode_session_type(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return SessionType.values[raw as int];
   }
 
   @protected
@@ -2905,6 +2934,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SearchMessagesReq sse_decode_box_autoadd_search_messages_req(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_search_messages_req(deserializer));
+  }
+
+  @protected
   SendMessageReq sse_decode_box_autoadd_send_message_req(
     SseDeserializer deserializer,
   ) {
@@ -2931,6 +2968,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       uploadUrl: var_uploadUrl,
       dataDir: var_dataDir,
     );
+  }
+
+  @protected
+  ContentType sse_decode_content_type(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return ContentType.values[inner];
   }
 
   @protected
@@ -3334,7 +3378,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_conversationId = sse_decode_String(deserializer);
-    var var_sessionType = sse_decode_i_32(deserializer);
+    var var_sessionType = sse_decode_session_type(deserializer);
     var var_hasReadSeq = sse_decode_i_64(deserializer);
     var var_seqs = sse_decode_list_prim_i_64_strict(deserializer);
     return MarkMessagesAsReadReq(
@@ -3420,7 +3464,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_conversationId = sse_decode_String(deserializer);
     var var_seq = sse_decode_i_64(deserializer);
     var var_clientMsgId = sse_decode_String(deserializer);
-    var var_sessionType = sse_decode_i_32(deserializer);
+    var var_sessionType = sse_decode_session_type(deserializer);
     return RevokeMessageReq(
       conversationId: var_conversationId,
       seq: var_seq,
@@ -3430,12 +3474,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SearchMessagesReq sse_decode_search_messages_req(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_keyword = sse_decode_String(deserializer);
+    return SearchMessagesReq(
+      conversationId: var_conversationId,
+      keyword: var_keyword,
+    );
+  }
+
+  @protected
   SendMessageReq sse_decode_send_message_req(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_recvId = sse_decode_String(deserializer);
     var var_groupId = sse_decode_String(deserializer);
-    var var_sessionType = sse_decode_i_32(deserializer);
-    var var_contentType = sse_decode_i_32(deserializer);
+    var var_sessionType = sse_decode_session_type(deserializer);
+    var var_contentType = sse_decode_content_type(deserializer);
     var var_content = sse_decode_String(deserializer);
     var var_clientMsgId = sse_decode_opt_String(deserializer);
     return SendMessageReq(
@@ -3446,6 +3503,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       content: var_content,
       clientMsgId: var_clientMsgId,
     );
+  }
+
+  @protected
+  SessionType sse_decode_session_type(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return SessionType.values[inner];
   }
 
   @protected
@@ -3680,6 +3744,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_search_messages_req(
+    SearchMessagesReq self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_search_messages_req(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_send_message_req(
     SendMessageReq self,
     SseSerializer serializer,
@@ -3698,6 +3771,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.apiBaseUrl, serializer);
     sse_encode_opt_String(self.uploadUrl, serializer);
     sse_encode_String(self.dataDir, serializer);
+  }
+
+  @protected
+  void sse_encode_content_type(ContentType self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -4002,7 +4081,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.conversationId, serializer);
-    sse_encode_i_32(self.sessionType, serializer);
+    sse_encode_session_type(self.sessionType, serializer);
     sse_encode_i_64(self.hasReadSeq, serializer);
     sse_encode_list_prim_i_64_strict(self.seqs, serializer);
   }
@@ -4063,7 +4142,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.conversationId, serializer);
     sse_encode_i_64(self.seq, serializer);
     sse_encode_String(self.clientMsgId, serializer);
-    sse_encode_i_32(self.sessionType, serializer);
+    sse_encode_session_type(self.sessionType, serializer);
+  }
+
+  @protected
+  void sse_encode_search_messages_req(
+    SearchMessagesReq self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_String(self.keyword, serializer);
   }
 
   @protected
@@ -4074,10 +4163,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.recvId, serializer);
     sse_encode_String(self.groupId, serializer);
-    sse_encode_i_32(self.sessionType, serializer);
-    sse_encode_i_32(self.contentType, serializer);
+    sse_encode_session_type(self.sessionType, serializer);
+    sse_encode_content_type(self.contentType, serializer);
     sse_encode_String(self.content, serializer);
     sse_encode_opt_String(self.clientMsgId, serializer);
+  }
+
+  @protected
+  void sse_encode_session_type(SessionType self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -4376,13 +4471,11 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
       );
 
   Future<List<LocalChatLog>> searchLocalMessages({
-    required String conversationId,
-    required String keyword,
+    required SearchMessagesReq req,
   }) => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientSearchLocalMessages(
         that: this,
-        conversationId: conversationId,
-        keyword: keyword,
+        req: req,
       );
 
   Future<MsgData> sendMessage({required SendMessageReq req}) => RustLib

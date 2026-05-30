@@ -11,6 +11,7 @@ import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'domain/config.dart';
+import 'domain/constant/enums.dart';
 import 'domain/event/types.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
@@ -21,6 +22,7 @@ import 'infra/database/models.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'sdk/client.dart';
+import 'sdk/client/types.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({
@@ -122,10 +124,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
 
   @protected
+  SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw);
+
+  @protected
   SendMessageReq dco_decode_box_autoadd_send_message_req(dynamic raw);
 
   @protected
   ClientConfig dco_decode_client_config(dynamic raw);
+
+  @protected
+  ContentType dco_decode_content_type(dynamic raw);
 
   @protected
   DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw);
@@ -212,7 +220,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
 
   @protected
+  SearchMessagesReq dco_decode_search_messages_req(dynamic raw);
+
+  @protected
   SendMessageReq dco_decode_send_message_req(dynamic raw);
+
+  @protected
+  SessionType dco_decode_session_type(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -317,12 +331,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SearchMessagesReq sse_decode_box_autoadd_search_messages_req(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   SendMessageReq sse_decode_box_autoadd_send_message_req(
     SseDeserializer deserializer,
   );
 
   @protected
   ClientConfig sse_decode_client_config(SseDeserializer deserializer);
+
+  @protected
+  ContentType sse_decode_content_type(SseDeserializer deserializer);
 
   @protected
   DeleteMessagesReq sse_decode_delete_messages_req(
@@ -425,7 +447,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
 
   @protected
+  SearchMessagesReq sse_decode_search_messages_req(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   SendMessageReq sse_decode_send_message_req(SseDeserializer deserializer);
+
+  @protected
+  SessionType sse_decode_session_type(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -547,6 +577,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_search_messages_req(
+    SearchMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_send_message_req(
     SendMessageReq self,
     SseSerializer serializer,
@@ -554,6 +590,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_client_config(ClientConfig self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_content_type(ContentType self, SseSerializer serializer);
 
   @protected
   void sse_encode_delete_messages_req(
@@ -694,10 +733,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_search_messages_req(
+    SearchMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_send_message_req(
     SendMessageReq self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_session_type(SessionType self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);

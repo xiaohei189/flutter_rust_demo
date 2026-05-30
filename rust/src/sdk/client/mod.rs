@@ -4,6 +4,7 @@ mod conversation;
 mod friend;
 mod group;
 mod online_status;
+pub mod types;
 mod user;
 
 pub use self::lifecycle::*;

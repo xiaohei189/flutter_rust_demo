@@ -1,38 +1,33 @@
-use crate::core::message::sender::PendingMessage;
 use crate::domain::error::types::Result;
 use crate::domain::error::types::SdkError;
 use crate::domain::model::message::MessageInfo;
 use crate::infra::database::models::LocalChatLog;
+use crate::sdk::client::types::{
+    DeleteMessagesReq, GetHistoryMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
+    SearchMessagesReq, SendMessageReq,
+};
 use crate::sdk::client::OpenIMClient;
+use crate::core::message::sender::PendingMessage;
 use openim_protocol::sdkws::MsgData;
 
 impl OpenIMClient {
-    /// 发送消息
-    pub async fn send_message(
-        &self,
-        recv_id: String,
-        group_id: String,
-        session_type: i32,
-        content_type: i32,
-        content: String,
-        client_msg_id: Option<String>,
-    ) -> std::result::Result<MsgData, SdkError> {
-        let client_msg_id = client_msg_id.unwrap_or_else(|| {
+    pub async fn send_message(&self, req: SendMessageReq) -> std::result::Result<MsgData, SdkError> {
+        let client_msg_id = req.client_msg_id.unwrap_or_else(|| {
             format!("msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
         });
 
         let pending_msg = PendingMessage {
             client_msg_id: client_msg_id.clone(),
             send_id: self.context.user_id.lock().unwrap().clone(),
-            recv_id,
-            group_id,
+            recv_id: req.recv_id,
+            group_id: req.group_id,
             sender_platform_id: self.context.config.platform_id,
             sender_nickname: String::new(),
             sender_face_url: String::new(),
-            session_type,
+            session_type: req.session_type.into(),
             msg_from: 100,
-            content_type,
-            content,
+            content_type: req.content_type.into(),
+            content: req.content,
         };
 
         self.message_sender.send_message(pending_msg).await?;
@@ -47,16 +42,15 @@ impl OpenIMClient {
             send_id: self.context.user_id.lock().unwrap().clone(),
             send_time,
             create_time: send_time,
-            content_type,
-            session_type,
+            content_type: 0,
+            session_type: 0,
             ..Default::default()
         })
     }
 
-    /// 获取历史消息
-    pub async fn get_history_messages(&self, conversation_id: String, start_seq: i64, count: i64) -> std::result::Result<Vec<MessageInfo>, SdkError> {
+    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<Vec<MessageInfo>, SdkError> {
         let messages = self.message_handler.message_dao()
-            .get_by_conversation(&conversation_id, start_seq, start_seq + count)
+            .get_by_conversation(&req.conversation_id, req.start_seq, req.start_seq + req.count)
             .await?;
 
         let msg_info_list: Vec<MessageInfo> = messages.into_iter()
@@ -86,27 +80,39 @@ impl OpenIMClient {
         Ok(msg_info_list)
     }
 
-    /// 撤回消息
-    pub async fn revoke_message(&self, conversation_id: String, seq: i64, client_msg_id: String, session_type: i32) -> Result<()> {
-        self.message_service.revoke_message(conversation_id, seq, client_msg_id, session_type).await
+    pub async fn revoke_message(&self, req: RevokeMessageReq) -> Result<()> {
+        self.message_service.revoke_message(
+            req.conversation_id,
+            req.seq,
+            req.client_msg_id,
+            req.session_type.into(),
+        ).await
     }
 
-    /// 删除消息
-    pub async fn delete_messages(&self, conversation_id: String, client_msg_ids: Vec<String>) -> Result<()> {
-        self.message_service.delete_messages(conversation_id, client_msg_ids).await
+    pub async fn delete_messages(&self, req: DeleteMessagesReq) -> Result<()> {
+        self.message_service.delete_messages(
+            req.conversation_id,
+            req.client_msg_ids,
+        ).await
     }
 
-    /// 标记消息已读
-    pub async fn mark_messages_as_read(&self, conversation_id: String, session_type: i32, has_read_seq: i64, seqs: Vec<i64>) -> Result<()> {
-        self.message_service.mark_messages_as_read(conversation_id, session_type, has_read_seq, seqs).await
+    pub async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()> {
+        self.message_service.mark_messages_as_read(
+            req.conversation_id,
+            req.session_type.into(),
+            req.has_read_seq,
+            req.seqs,
+        ).await
     }
 
-    /// 本地搜索消息
-    pub async fn search_local_messages(&self, conversation_id: String, keyword: String) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
-        self.message_service.search_local_messages(conversation_id, keyword, 100).await
+    pub async fn search_local_messages(&self, req: SearchMessagesReq) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
+        self.message_service.search_local_messages(
+            req.conversation_id,
+            req.keyword,
+            100,
+        ).await
     }
 
-    /// 发送 PendingMessage（测试用，直接传入已构建的消息对象）
     pub async fn send_pending_message(&self, msg: PendingMessage) -> std::result::Result<(), SdkError> {
         self.message_sender.send_message(msg).await
     }

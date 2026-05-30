@@ -48,7 +48,7 @@ async fn test_websocket_reconnection() {
                     Some(SdkEvent::Connected) => println!("  ✅ Connected"),
                     Some(SdkEvent::Connecting) => println!("  🔄 Connecting"),
                     Some(SdkEvent::Disconnected { reason }) => println!("  ❌ Disconnected: {}", reason),
-                    Some(_) => {}
+                    Some(_) => {},
                     None => break,
                 }
             }
@@ -130,7 +130,7 @@ async fn test_connection_state_transitions() {
                     Some(SdkEvent::Connected) => { println!("  ✅ Connected"); events.push("Connected"); }
                     Some(SdkEvent::Connecting) => { println!("  🔄 Connecting"); events.push("Connecting"); }
                     Some(SdkEvent::Disconnected { .. }) => { println!("  ❌ Disconnected"); events.push("Disconnected"); }
-                    Some(_) => {}
+                    Some(_) => {},
                     None => break,
                 }
             }
