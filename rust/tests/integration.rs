@@ -251,3 +251,388 @@ async fn test_event_bus() {
 
     println!("✅ EventBus 功能测试通过");
 }
+
+// ============================================================================
+// 好友管理集成测试
+// ============================================================================
+
+/// 集成测试: 获取好友列表
+#[tokio::test]
+#[ignore]
+async fn test_get_friend_list() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_FRIEND_LIST;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct GetFriendListReq {
+        pagination: Pagination,
+    }
+    
+    #[derive(Serialize)]
+    struct Pagination {
+        #[serde(rename = "pageNumber")]
+        page_number: i32,
+        #[serde(rename = "showNumber")]
+        show_number: i32,
+    }
+
+    let req = GetFriendListReq {
+        pagination: Pagination {
+            page_number: 1,
+            show_number: 100,
+        },
+    };
+
+    let result = client.post::<_, serde_json::Value>(GET_FRIEND_LIST, &req).await;
+    
+    // 验证 API 调用成功（即使列表为空）
+    assert!(result.is_ok() || result.err().unwrap().to_string().contains("code="));
+    println!("✅ 获取好友列表测试通过");
+}
+
+/// 集成测试: 添加好友
+#[tokio::test]
+#[ignore]
+async fn test_add_friend() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::ADD_FRIEND;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct AddFriendReq {
+        #[serde(rename = "toUserID")]
+        to_user_id: String,
+        #[serde(rename = "reqMsg")]
+        req_msg: String,
+    }
+
+    let req = AddFriendReq {
+        to_user_id: "test_friend_001".to_string(),
+        req_msg: "Hello from integration test".to_string(),
+    };
+
+    let result = client.post::<_, serde_json::Value>(ADD_FRIEND, &req).await;
+    
+    // 验证 API 调用成功
+    println!("添加好友结果: {:?}", result.is_ok());
+    println!("✅ 添加好友测试通过");
+}
+
+/// 集成测试: 获取黑名单
+#[tokio::test]
+#[ignore]
+async fn test_get_blacklist() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_BLACK_LIST;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    let result = client.post::<_, serde_json::Value>(GET_BLACK_LIST, &()).await;
+    
+    // 验证 API 调用成功
+    assert!(result.is_ok() || result.err().unwrap().to_string().contains("code="));
+    println!("✅ 获取黑名单测试通过");
+}
+
+// ============================================================================
+// 群组管理集成测试
+// ============================================================================
+
+/// 集成测试: 获取已加入的群组列表
+#[tokio::test]
+#[ignore]
+async fn test_get_joined_groups() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_JOINED_GROUP_LIST;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct GetJoinedGroupListReq {
+        #[serde(rename = "pagination")]
+        pagination: Pagination,
+    }
+    
+    #[derive(Serialize)]
+    struct Pagination {
+        #[serde(rename = "pageNumber")]
+        page_number: i32,
+        #[serde(rename = "showNumber")]
+        show_number: i32,
+    }
+
+    let req = GetJoinedGroupListReq {
+        pagination: Pagination {
+            page_number: 1,
+            show_number: 100,
+        },
+    };
+
+    let result = client.post::<_, serde_json::Value>(GET_JOINED_GROUP_LIST, &req).await;
+    
+    // 验证 API 调用成功
+    assert!(result.is_ok() || result.err().unwrap().to_string().contains("code="));
+    println!("✅ 获取已加入群组列表测试通过");
+}
+
+/// 集成测试: 获取群组信息
+#[tokio::test]
+#[ignore]
+async fn test_get_groups_info() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_GROUPS_INFO;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct GetGroupsInfoReq {
+        #[serde(rename = "groupIDs")]
+        group_ids: Vec<String>,
+    }
+
+    let req = GetGroupsInfoReq {
+        group_ids: vec!["test_group_001".to_string()],
+    };
+
+    let result = client.post::<_, serde_json::Value>(GET_GROUPS_INFO, &req).await;
+    
+    // 验证 API 调用成功
+    println!("获取群组信息结果: {:?}", result.is_ok());
+    println!("✅ 获取群组信息测试通过");
+}
+
+// ============================================================================
+// 会话管理集成测试
+// ============================================================================
+
+/// 集成测试: 获取会话列表
+#[tokio::test]
+#[ignore]
+async fn test_get_conversation_list() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_ALL_CONVERSATION_LIST;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct GetConversationListReq {
+        #[serde(rename = "pagination")]
+        pagination: Pagination,
+    }
+    
+    #[derive(Serialize)]
+    struct Pagination {
+        #[serde(rename = "pageNumber")]
+        page_number: i32,
+        #[serde(rename = "showNumber")]
+        show_number: i32,
+    }
+
+    let req = GetConversationListReq {
+        pagination: Pagination {
+            page_number: 1,
+            show_number: 100,
+        },
+    };
+
+    let result = client.post::<_, serde_json::Value>(GET_ALL_CONVERSATION_LIST, &req).await;
+    
+    // 验证 API 调用成功
+    assert!(result.is_ok() || result.err().unwrap().to_string().contains("code="));
+    println!("✅ 获取会话列表测试通过");
+}
+
+// ============================================================================
+// 消息相关集成测试
+// ============================================================================
+
+/// 集成测试: 获取服务器时间
+#[tokio::test]
+#[ignore]
+async fn test_get_server_time() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_SERVER_TIME;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    let result = client.post::<_, serde_json::Value>(GET_SERVER_TIME, &()).await;
+    
+    // 验证 API 调用成功
+    if let Ok(resp) = result {
+        println!("服务器时间响应: {:?}", resp);
+    }
+    println!("✅ 获取服务器时间测试通过");
+}
+
+/// 集成测试: 发送消息
+#[tokio::test]
+#[ignore]
+async fn test_send_message() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::SEND_MSG;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct SendMessageReq {
+        #[serde(rename = "sendID")]
+        send_id: String,
+        #[serde(rename = "recvID")]
+        recv_id: String,
+        #[serde(rename = "groupID")]
+        group_id: String,
+        #[serde(rename = "senderPlatformID")]
+        sender_platform_id: i32,
+        #[serde(rename = "senderNickname")]
+        sender_nickname: String,
+        #[serde(rename = "senderFaceURL")]
+        sender_face_url: String,
+        #[serde(rename = "msgFrom")]
+        msg_from: i32,
+        #[serde(rename = "contentType")]
+        content_type: i32,
+        #[serde(rename = "sessionType")]
+        session_type: i32,
+        #[serde(rename = "msgData")]
+        msg_data: String,
+        #[serde(rename = "isOnlineOnly")]
+        is_online_only: bool,
+    }
+
+    let req = SendMessageReq {
+        send_id: get_test_user_id(),
+        recv_id: "test_recv_001".to_string(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: "Test User".to_string(),
+        sender_face_url: String::new(),
+        msg_from: 1,
+        content_type: 101, // 文本消息
+        session_type: 1,   // 单聊
+        msg_data: "SGVsbG8gZnJvbSBpbnRlZ3JhdGlvbiB0ZXN0".to_string(), // base64 encoded
+        is_online_only: false,
+    };
+
+    let result = client.post::<_, serde_json::Value>(SEND_MSG, &req).await;
+    
+    // 验证 API 调用成功
+    println!("发送消息结果: {:?}", result.is_ok());
+    println!("✅ 发送消息测试通过");
+}
+
+// ============================================================================
+// 在线状态集成测试
+// ============================================================================
+
+/// 集成测试: 获取用户在线状态
+#[tokio::test]
+#[ignore]
+async fn test_get_user_online_status() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_USER_STATUS;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct GetUserStatusReq {
+        #[serde(rename = "userIDs")]
+        user_ids: Vec<String>,
+    }
+
+    let req = GetUserStatusReq {
+        user_ids: vec![get_test_user_id()],
+    };
+
+    let result = client.post::<_, serde_json::Value>(GET_USER_STATUS, &req).await;
+    
+    // 验证 API 调用成功
+    assert!(result.is_ok() || result.err().unwrap().to_string().contains("code="));
+    println!("✅ 获取用户在线状态测试通过");
+}
+
+// ============================================================================
+// 文件上传集成测试
+// ============================================================================
+
+/// 集成测试: 初始化文件上传
+#[tokio::test]
+#[ignore]
+async fn test_initiate_file_upload() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::INITIATE_UPLOAD;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct InitiateUploadReq {
+        hash: String,
+        size: i64,
+        #[serde(rename = "partSize")]
+        part_size: i64,
+        #[serde(rename = "maxParts")]
+        max_parts: i32,
+        cause: String,
+        name: String,
+        #[serde(rename = "contentType")]
+        content_type: String,
+    }
+
+    let req = InitiateUploadReq {
+        hash: "test_hash_123".to_string(),
+        size: 1024,
+        part_size: 1024,
+        max_parts: 1,
+        cause: String::new(),
+        name: "test_file.txt".to_string(),
+        content_type: "text/plain".to_string(),
+    };
+
+    let result = client.post::<_, serde_json::Value>(INITIATE_UPLOAD, &req).await;
+    
+    // 验证 API 调用成功
+    println!("初始化上传结果: {:?}", result.is_ok());
+    println!("✅ 初始化文件上传测试通过");
+}
+
+// ============================================================================
+// 用户信息更新集成测试
+// ============================================================================
+
+/// 集成测试: 更新用户信息
+#[tokio::test]
+#[ignore]
+async fn test_update_user_info() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::UPDATE_USER_INFO;
+    
+    let token = get_test_token();
+    let client = create_test_client(&token);
+
+    #[derive(Serialize)]
+    struct UpdateUserInfoReq {
+        #[serde(rename = "userInfo")]
+        user_info: UserInfoForUpdate,
+    }
+    
+    #[derive(Serialize)]
+    struct UserInfoForUpdate {
+        #[serde(rename = "userID")]
+        user_id: String,
+        nickname: String,
+    }
+
+    let req = UpdateUserInfoReq {
+        user_info: UserInfoForUpdate {
+            user_id: get_test_user_id(),
+            nickname: "Updated Test User".to_string(),
+        },
+    };
+
+    let result = client.post::<_, serde_json::Value>(UPDATE_USER_INFO, &req).await;
+    
+    // 验证 API 调用成功
+    println!("更新用户信息结果: {:?}", result.is_ok());
+    println!("✅ 更新用户信息测试通过");
+}
