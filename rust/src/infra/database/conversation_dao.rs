@@ -126,6 +126,81 @@ impl ConversationDao {
         .map_err(|e| SdkError::database(format!("query seq pairs: {}", e)))?;
         Ok(rows)
     }
+
+    pub async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET is_pinned = ? WHERE conversation_id = ?",
+        )
+        .bind(if is_pinned { 1 } else { 0 })
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("set pinned: {}", e)))?;
+        Ok(())
+    }
+
+    pub async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET is_private_chat = ? WHERE conversation_id = ?",
+        )
+        .bind(if is_private { 1 } else { 0 })
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("set private chat: {}", e)))?;
+        Ok(())
+    }
+
+    pub async fn update_unread_count(&self, conversation_id: &str, unread_count: i32) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET unread_count = ? WHERE conversation_id = ?",
+        )
+        .bind(unread_count)
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("update unread count: {}", e)))?;
+        Ok(())
+    }
+
+    pub async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET draft_text = ?, draft_text_time = ? WHERE conversation_id = ?",
+        )
+        .bind(draft_text)
+        .bind(draft_time)
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("set draft: {}", e)))?;
+        Ok(())
+    }
+
+    pub async fn get_pinned(&self) -> Result<Vec<LocalConversation>> {
+        let rows = sqlx::query_as::<_, LocalConversation>(
+            "SELECT * FROM local_conversations WHERE is_pinned = 1 ORDER BY latest_msg_send_time DESC",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query pinned: {}", e)))?;
+        Ok(rows)
+    }
+
+    pub async fn count(&self) -> Result<usize> {
+        let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM local_conversations")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("count conversations: {}", e)))?;
+        Ok(row.0 as usize)
+    }
+
+    pub async fn clear_all(&self) -> Result<()> {
+        sqlx::query("DELETE FROM local_conversations")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("clear all: {}", e)))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -77,7 +77,10 @@ impl OpenIMClient {
         let user = Arc::new(UserManager::new(event_bus.clone()));
         let friend = Arc::new(FriendManager::new(event_bus.clone()));
         let group = Arc::new(GroupManager::new(event_bus.clone()));
-        let conversation = Arc::new(ConversationManager::new(event_bus.clone()));
+        let conversation = Arc::new(ConversationManager::new(
+            context.conversation_dao.clone(),
+            event_bus.clone(),
+        ));
         let online_status = Arc::new(OnlineStatusManager::new(event_bus.clone()));
 
         let http_client = Arc::new(HttpApiClient::new(
@@ -163,7 +166,7 @@ impl OpenIMClient {
         self.user.clear().await;
         self.friend.clear().await;
         self.group.clear().await;
-        self.conversation.clear().await;
+        self.conversation.clear_all().await;
         self.online_status.clear().await;
         
         self.event_bus.publish(SdkEvent::Logout);
