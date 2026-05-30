@@ -10,7 +10,6 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 flutter_rust_bridge = { version = "=2.11.1", optional = true }
 openim-protocol = { path = "../../protocol" }
 tokio = { version = "1.48", features = ["full","tracing"] }
-console-subscriber = "0.5.0"
 tokio-util = { version = "0.7" }
 tokio-stream = { version = "0.1", features = ["sync"] }
 tokio-tungstenite = "0.24"
