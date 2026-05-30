@@ -3,6 +3,7 @@ use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
 use crate::infra::database::pool::create_pool;
 use crate::infra::database::{ConversationDao, MessageDao};
+use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
@@ -25,6 +26,8 @@ pub struct RuntimeContext {
     pub message_dao: Arc<MessageDao>,
     /// 会话 DAO
     pub conversation_dao: Arc<ConversationDao>,
+    /// HTTP API 客户端
+    pub http_client: Arc<HttpApiClient>,
 }
 
 impl RuntimeContext {
@@ -41,6 +44,12 @@ impl RuntimeContext {
         let message_dao = Arc::new(MessageDao::new(db_pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(db_pool.clone()));
 
+        let http_client = Arc::new(HttpApiClient::new(
+            config.api_base_url.clone(),
+            config.token.clone(),
+            operation_id.clone(),
+        ));
+
         Ok(Self {
             config,
             event_bus,
@@ -50,6 +59,7 @@ impl RuntimeContext {
             db_pool,
             message_dao,
             conversation_dao,
+            http_client,
         })
     }
 
