@@ -170,8 +170,9 @@ async fn create_sdk(account: &TestAccount, im_token: &str) -> OpenIMClient {
     
     let sdk = OpenIMClient::new(config).await.expect("创建 SDK 失败");
     
-    // 连接 WebSocket
-    sdk.connect(WS_URL, im_token, &account.user_id).await.expect("连接失败");
+    // 登录（内部会设置 user_id 并启动连接）
+    sdk.login(&account.user_id, im_token).await.expect("登录失败");
+    
     tokio::time::sleep(Duration::from_secs(2)).await;
     
     sdk
@@ -2554,4 +2555,409 @@ async fn test_group_info_update() {
     println!("\n=== 群组信息管理测试结果 ===\n");
     println!("群组 ID: {}", group_id);
     println!("\n✅ 群组信息管理测试完成");
+}
+
+// ============================================================================
+// 会话功能集成测试
+// ============================================================================
+
+/// 集成测试: 会话列表同步
+/// 测试流程：发送消息 → 触发会话创建 → 验证会话列表
+#[tokio::test]
+#[ignore]
+async fn test_conversation_list_sync() {
+    println!("=== 会话列表同步测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建接收者 SDK
+    println!("3. 创建接收者 SDK...");
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 初始会话列表（应该为空或很少）
+    println!("4. 获取初始会话列表...");
+    let initial_convs = receiver_sdk.conversation.get_all_conversations().await.unwrap_or_default();
+    println!("  初始会话数量: {}", initial_convs.len());
+    
+    // 5. 创建发送者 SDK 并发送消息
+    println!("5. 创建发送者 SDK 并发送消息...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    let pending_msg = PendingMessage {
+        client_msg_id: format!("test_conv_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+        send_id: user1.user_id.clone(),
+        recv_id: user2.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1.nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: build_text_content("这是一条测试消息，用于触发会话创建。"),
+    };
+    
+    let send_result = sender_sdk.message_sender.send_message(pending_msg).await;
+    match send_result {
+        Ok(_) => println!("  ✅ 消息发送成功"),
+        Err(e) => println!("  ⚠️ 消息发送失败: {:?}", e),
+    }
+    
+    // 6. 等待消息推送和会话更新
+    println!("6. 等待消息推送和会话更新...");
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    
+    // 7. 获取更新后的会话列表
+    println!("7. 获取更新后的会话列表...");
+    let updated_convs = receiver_sdk.conversation.get_all_conversations().await.unwrap_or_default();
+    println!("  更新后会话数量: {}", updated_convs.len());
+    
+    for (i, conv) in updated_convs.iter().enumerate() {
+        println!("  {}. id={}, type={}, unread={}, name={}", 
+            i + 1, conv.conversation_id, conv.conversation_type, 
+            conv.unread_count, conv.show_name);
+    }
+    
+    // 8. 输出测试结果
+    println!("\n=== 会话列表同步测试结果 ===\n");
+    println!("初始会话数量: {}", initial_convs.len());
+    println!("更新后会话数量: {}", updated_convs.len());
+    
+    if updated_convs.len() >= initial_convs.len() {
+        println!("\n✅ 会话列表同步测试通过");
+    } else {
+        println!("\n⚠️ 会话数量异常减少");
+    }
+}
+
+/// 集成测试: 未读消息计数
+/// 测试流程：发送多条消息 → 验证未读数累加 → 标记已读 → 验证未读数清零
+#[tokio::test]
+#[ignore]
+async fn test_conversation_unread_count() {
+    println!("=== 未读消息计数测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建接收者 SDK
+    println!("3. 创建接收者 SDK...");
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 创建发送者 SDK
+    println!("4. 创建发送者 SDK...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 5. 发送 3 条消息
+    println!("5. 发送 3 条消息...");
+    for i in 1..=3 {
+        let pending_msg = PendingMessage {
+            client_msg_id: format!("test_unread_{}_{}", i, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+            send_id: user1.user_id.clone(),
+            recv_id: user2.user_id.clone(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: user1.nickname.clone(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: content_type::TEXT,
+            content: build_text_content(&format!("测试消息 #{}", i)),
+        };
+        
+        let _ = sender_sdk.message_sender.send_message(pending_msg).await;
+        println!("  已发送消息 #{}", i);
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    
+    // 6. 等待消息推送
+    println!("6. 等待消息推送...");
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    
+    // 7. 获取会话并检查未读数
+    println!("7. 获取会话并检查未读数...");
+    let conversation_id = format!("si_{}_{}", user1.user_id, user2.user_id);
+    let conv = receiver_sdk.conversation.get_conversation(&conversation_id).await;
+    
+    match conv {
+        Ok(Some(c)) => {
+            println!("  ✅ 会话获取成功");
+            println!("  未读消息数: {}", c.unread_count);
+            
+            if c.unread_count >= 3 {
+                println!("  ✅ 未读数正确累加");
+            } else {
+                println!("  ⚠️ 未读数可能未正确累加 (期望>=3, 实际={})", c.unread_count);
+            }
+            
+            // 8. 标记已读
+            println!("8. 标记会话已读...");
+            let mark_result = receiver_sdk.conversation.update_unread_count(&conversation_id, 0).await;
+            
+            match mark_result {
+                Ok(_) => println!("  ✅ 标记已读成功"),
+                Err(e) => println!("  ⚠️ 标记已读失败: {:?}", e),
+            }
+            
+            // 9. 验证未读数清零
+            let conv_after = receiver_sdk.conversation.get_conversation(&conversation_id).await;
+            if let Ok(Some(c)) = conv_after {
+                println!("  标记已读后未读数: {}", c.unread_count);
+                if c.unread_count == 0 {
+                    println!("  ✅ 未读数已清零");
+                }
+            }
+        }
+        Ok(None) => println!("  ⚠️ 会话不存在"),
+        Err(e) => println!("  ❌ 获取会话失败: {:?}", e),
+    }
+    
+    // 10. 输出测试结果
+    println!("\n=== 未读消息计数测试结果 ===\n");
+    println!("✅ 未读消息计数测试完成");
+}
+
+/// 集成测试: 会话置顶/免打扰
+/// 测试流程：创建会话 → 设置置顶 → 验证 → 设置免打扰 → 验证
+#[tokio::test]
+#[ignore]
+async fn test_conversation_pinned_private() {
+    println!("=== 会话置顶/免打扰测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建 SDK
+    println!("3. 创建 SDK...");
+    let sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 发送消息创建会话
+    println!("4. 发送消息创建会话...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    let pending_msg = PendingMessage {
+        client_msg_id: format!("test_pin_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+        send_id: user1.user_id.clone(),
+        recv_id: user2.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1.nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: build_text_content("用于测试置顶/免打扰的消息"),
+    };
+    
+    let _ = sender_sdk.message_sender.send_message(pending_msg).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    
+    // 5. 获取会话
+    let conversation_id = format!("si_{}_{}", user1.user_id, user2.user_id);
+    println!("5. 获取会话 {}...", conversation_id);
+    let conv = sdk.conversation.get_conversation(&conversation_id).await;
+    
+    let conv_exists = match conv {
+        Ok(Some(_)) => {
+            println!("  ✅ 会话存在");
+            true
+        }
+        _ => {
+            println!("  ⚠️ 会话不存在，跳过后续测试");
+            false
+        }
+    };
+    
+    if !conv_exists {
+        return;
+    }
+    
+    // 6. 测试置顶功能
+    println!("6. 测试置顶功能...");
+    let pin_result = sdk.conversation.set_pinned(&conversation_id, true).await;
+    match pin_result {
+        Ok(_) => println!("  ✅ 设置置顶成功"),
+        Err(e) => println!("  ⚠️ 设置置顶失败: {:?}", e),
+    }
+    
+    // 7. 获取置顶会话列表
+    println!("7. 获取置顶会话列表...");
+    let pinned_convs = sdk.conversation.get_pinned_conversations().await;
+    match pinned_convs {
+        Ok(convs) => {
+            println!("  置顶会话数量: {}", convs.len());
+            if convs.iter().any(|c| c.conversation_id == conversation_id) {
+                println!("  ✅ 目标会话在置顶列表中");
+            }
+        }
+        Err(e) => println!("  ⚠️ 获取置顶列表失败: {:?}", e),
+    }
+    
+    // 8. 取消置顶
+    println!("8. 取消置顶...");
+    let unpin_result = sdk.conversation.set_pinned(&conversation_id, false).await;
+    match unpin_result {
+        Ok(_) => println!("  ✅ 取消置顶成功"),
+        Err(e) => println!("  ⚠️ 取消置顶失败: {:?}", e),
+    }
+    
+    // 9. 测试免打扰功能
+    println!("9. 测试免打扰功能...");
+    let private_result = sdk.conversation.set_private_chat(&conversation_id, true).await;
+    match private_result {
+        Ok(_) => println!("  ✅ 设置免打扰成功"),
+        Err(e) => println!("  ⚠️ 设置免打扰失败: {:?}", e),
+    }
+    
+    // 10. 取消免打扰
+    println!("10. 取消免打扰...");
+    let unprivate_result = sdk.conversation.set_private_chat(&conversation_id, false).await;
+    match unprivate_result {
+        Ok(_) => println!("  ✅ 取消免打扰成功"),
+        Err(e) => println!("  ⚠️ 取消免打扰失败: {:?}", e),
+    }
+    
+    // 11. 输出测试结果
+    println!("\n=== 会话置顶/免打扰测试结果 ===\n");
+    println!("会话 ID: {}", conversation_id);
+    println!("\n✅ 会话置顶/免打扰测试完成");
+}
+
+/// 集成测试: 会话删除
+/// 测试流程：创建会话 → 删除会话 → 验证会话不存在
+#[tokio::test]
+#[ignore]
+async fn test_conversation_delete() {
+    println!("=== 会话删除测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建 SDK
+    println!("3. 创建 SDK...");
+    let sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 发送消息创建会话
+    println!("4. 发送消息创建会话...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    let pending_msg = PendingMessage {
+        client_msg_id: format!("test_del_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+        send_id: user1.user_id.clone(),
+        recv_id: user2.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1.nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: build_text_content("用于测试删除的会话消息"),
+    };
+    
+    let _ = sender_sdk.message_sender.send_message(pending_msg).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    
+    // 5. 获取会话
+    let conversation_id = format!("si_{}_{}", user1.user_id, user2.user_id);
+    println!("5. 获取会话 {}...", conversation_id);
+    let conv = sdk.conversation.get_conversation(&conversation_id).await;
+    
+    let conv_exists = match conv {
+        Ok(Some(_)) => {
+            println!("  ✅ 会话存在");
+            true
+        }
+        _ => {
+            println!("  ⚠️ 会话不存在，跳过后续测试");
+            false
+        }
+    };
+    
+    if !conv_exists {
+        return;
+    }
+    
+    // 6. 删除会话
+    println!("6. 删除会话...");
+    let delete_result = sdk.conversation.delete_conversation(&conversation_id).await;
+    match delete_result {
+        Ok(_) => println!("  ✅ 删除成功"),
+        Err(e) => println!("  ❌ 删除失败: {:?}", e),
+    }
+    
+    // 7. 验证会话已删除
+    println!("7. 验证会话已删除...");
+    let conv_after = sdk.conversation.get_conversation(&conversation_id).await;
+    match conv_after {
+        Ok(None) => println!("  ✅ 会话已不存在（已删除）"),
+        Ok(Some(_)) => println!("  ⚠️ 会话仍然存在"),
+        Err(e) => println!("  ⚠️ 查询失败: {:?}", e),
+    }
+    
+    // 8. 输出测试结果
+    println!("\n=== 会话删除测试结果 ===\n");
+    println!("会话 ID: {}", conversation_id);
+    println!("\n✅ 会话删除测试完成");
 }

@@ -32,7 +32,7 @@ pub struct ServerUserInfo {
     pub ex: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetUsersInfoResp {
     #[serde(rename = "usersInfo")]
     pub users_info: Vec<ServerUserInfo>,
@@ -50,7 +50,7 @@ pub struct UpdateUserInfoReq {
     pub ex: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserInfoResp {}
 
 pub struct UserManager {

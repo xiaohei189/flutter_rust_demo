@@ -15,7 +15,7 @@ use tracing::info;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetJoinedGroupListReq {
-    #[serde(rename = "userID")]
+    #[serde(rename = "fromUserID")]
     pub user_id: String,
     #[serde(rename = "pagination")]
     pub pagination: Pagination,
@@ -29,36 +29,39 @@ pub struct Pagination {
     pub show_number: i32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct ServerGroupInfo {
-    #[serde(rename = "groupID")]
+    #[serde(rename = "groupID", default)]
     pub group_id: String,
-    #[serde(rename = "groupName")]
+    #[serde(rename = "groupName", default)]
     pub group_name: String,
-    #[serde(rename = "notification")]
+    #[serde(rename = "notification", default)]
     pub notification: String,
-    #[serde(rename = "introduction")]
+    #[serde(rename = "introduction", default)]
     pub introduction: String,
-    #[serde(rename = "faceURL")]
+    #[serde(rename = "faceURL", default)]
     pub face_url: String,
-    #[serde(rename = "ownerUserID")]
+    #[serde(rename = "ownerUserID", default)]
     pub owner_user_id: String,
-    #[serde(rename = "createTime")]
+    #[serde(rename = "createTime", default)]
     pub create_time: i64,
-    #[serde(rename = "memberCount")]
+    #[serde(rename = "memberCount", default)]
     pub member_count: u32,
+    #[serde(default)]
     pub status: i32,
-    #[serde(rename = "creatorUserID")]
+    #[serde(rename = "creatorUserID", default)]
     pub creator_user_id: String,
-    #[serde(rename = "groupType")]
+    #[serde(rename = "groupType", default)]
     pub group_type: i32,
+    #[serde(default)]
     pub ex: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetJoinedGroupListResp {
-    pub groups: Vec<ServerGroupInfo>,
-    #[serde(rename = "total")]
+    #[serde(default)]
+    pub groups: Option<Vec<ServerGroupInfo>>,
+    #[serde(rename = "total", default)]
     pub total: i32,
 }
 
@@ -68,9 +71,9 @@ pub struct GetGroupsInfoReq {
     pub group_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetGroupsInfoResp {
-    #[serde(rename = "groupsInfo")]
+    #[serde(rename = "groupInfos", default)]
     pub groups_info: Vec<ServerGroupInfo>,
 }
 
@@ -99,8 +102,9 @@ pub struct CreateGroupInfo {
     pub ex: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct CreateGroupResp {
+    #[serde(rename = "groupInfo", default)]
     pub group: ServerGroupInfo,
 }
 
@@ -146,10 +150,10 @@ pub struct GetGroupMemberListReq {
     pub group_id: String,
     #[serde(rename = "filter")]
     pub filter: i32,
-    #[serde(rename = "offset")]
-    pub offset: u32,
-    #[serde(rename = "count")]
-    pub count: u32,
+    #[serde(rename = "pagination")]
+    pub pagination: Pagination,
+    #[serde(rename = "keyword", default, skip_serializing_if = "String::is_empty")]
+    pub keyword: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -172,10 +176,11 @@ pub struct ServerGroupMember {
     pub ex: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetGroupMemberListResp {
-    pub members: Vec<ServerGroupMember>,
-    #[serde(rename = "total")]
+    #[serde(default)]
+    pub members: Option<Vec<ServerGroupMember>>,
+    #[serde(rename = "total", default)]
     pub total: u32,
 }
 
@@ -187,9 +192,9 @@ pub struct GetGroupMembersInfoReq {
     pub user_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetGroupMembersInfoResp {
-    #[serde(rename = "membersInfo")]
+    #[serde(rename = "membersInfo", default)]
     pub members_info: Vec<ServerGroupMember>,
 }
 
@@ -197,8 +202,9 @@ pub struct GetGroupMembersInfoResp {
 pub struct KickGroupMemberReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
-    #[serde(rename = "userIDList")]
+    #[serde(rename = "kickedUserIDs")]
     pub user_id_list: Vec<String>,
+    #[serde(rename = "reason", default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
 
@@ -206,8 +212,9 @@ pub struct KickGroupMemberReq {
 pub struct InviteUserToGroupReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
-    #[serde(rename = "userIDList")]
+    #[serde(rename = "invitedUserIDs")]
     pub user_id_list: Vec<String>,
+    #[serde(rename = "reason", default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
 
@@ -228,7 +235,7 @@ pub struct SetGroupMemberInfoReq {
 pub struct GroupManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
-    user_id: String,
+    user_id: Arc<RwLock<String>>,
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
 }
@@ -238,10 +245,15 @@ impl GroupManager {
         Self {
             http_client,
             event_bus,
-            user_id,
+            user_id: Arc::new(RwLock::new(user_id)),
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
         }
+    }
+
+    pub async fn set_user_id(&self, user_id: String) {
+        *self.user_id.write().await = user_id.clone();
+        info!("GroupManager user_id 已更新为: {}", user_id);
     }
 
     pub async fn get_joined_group_list(&self) -> Vec<GroupInfo> {
@@ -249,8 +261,9 @@ impl GroupManager {
     }
 
     pub async fn sync_groups(&self) -> Result<()> {
+        let user_id = self.user_id.read().await.clone();
         let req = GetJoinedGroupListReq {
-            user_id: self.user_id.clone(),
+            user_id,
             pagination: Pagination {
                 page_number: 1,
                 show_number: 1000,
@@ -261,6 +274,7 @@ impl GroupManager {
 
         let groups: Vec<GroupInfo> = resp
             .groups
+            .unwrap_or_default()
             .into_iter()
             .map(|s| server_to_group_info(s))
             .collect();
@@ -423,14 +437,18 @@ impl GroupManager {
         let req = GetGroupMemberListReq {
             group_id: group_id.clone(),
             filter,
-            offset,
-            count,
+            pagination: Pagination {
+                page_number: if offset == 0 { 1 } else { offset as i32 },
+                show_number: count as i32,
+            },
+            keyword: String::new(),
         };
 
         let resp: GetGroupMemberListResp = self.http_client.post(GET_GROUP_MEMBER_LIST, &req).await?;
 
         let members: Vec<GroupMember> = resp
             .members
+            .unwrap_or_default()
             .into_iter()
             .map(|s| server_to_group_member(s))
             .collect();
@@ -619,6 +637,7 @@ mod tests {
     #[test]
     fn test_get_joined_group_list_req_serialization() {
         let req = GetJoinedGroupListReq {
+            user_id: "test_user".to_string(),
             pagination: Pagination {
                 page_number: 1,
                 show_number: 100,
@@ -661,7 +680,7 @@ mod tests {
 
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("groupID"));
-        assert!(json.contains("userIDList"));
+        assert!(json.contains("kickedUserIDs"));
         assert!(json.contains("violation"));
     }
 }

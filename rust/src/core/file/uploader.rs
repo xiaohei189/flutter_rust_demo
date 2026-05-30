@@ -63,8 +63,9 @@ pub struct UploadInfo {
     pub expire_time: i64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct InitiateMultipartUploadResp {
+    #[serde(default)]
     pub url: String,
     pub upload: Option<UploadInfo>,
 }
@@ -96,18 +97,19 @@ pub struct CompleteMultipartUploadReq {
     pub cause: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct CompleteMultipartUploadResp {
+    #[serde(default)]
     pub url: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PartLimitResp {
-    #[serde(rename = "minPartSize")]
+    #[serde(rename = "minPartSize", default)]
     pub min_part_size: i64,
-    #[serde(rename = "maxPartSize")]
+    #[serde(rename = "maxPartSize", default)]
     pub max_part_size: i64,
-    #[serde(rename = "maxNumSize")]
+    #[serde(rename = "maxNumSize", default)]
     pub max_num_size: i64,
 }
 

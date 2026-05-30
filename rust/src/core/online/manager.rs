@@ -25,9 +25,9 @@ pub struct UserStatusItem {
     pub platform_ids: Vec<i32>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetUserStatusResp {
-    #[serde(rename = "usersStatus")]
+    #[serde(rename = "usersStatus", default)]
     pub users_status: Vec<UserStatusItem>,
 }
 
@@ -37,9 +37,9 @@ pub struct SubscribeUsersStatusReq {
     pub user_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SubscribeUsersStatusResp {
-    #[serde(rename = "usersStatus")]
+    #[serde(rename = "usersStatus", default)]
     pub users_status: Vec<UserStatusItem>,
 }
 
@@ -49,9 +49,9 @@ pub struct UnsubscribeUsersStatusReq {
     pub user_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetSubscribeUsersStatusResp {
-    #[serde(rename = "usersStatus")]
+    #[serde(rename = "usersStatus", default)]
     pub users_status: Vec<UserStatusItem>,
 }
 

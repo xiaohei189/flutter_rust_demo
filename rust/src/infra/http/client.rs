@@ -14,9 +14,12 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
-    pub fn into_result(self) -> Result<T> {
+    pub fn into_result(self) -> Result<T> 
+    where
+        T: Default,
+    {
         if self.err_code == 0 {
-            self.data.ok_or_else(|| SdkError::unknown("响应数据为空"))
+            Ok(self.data.unwrap_or_default())
         } else {
             Err(SdkError::api(self.err_code, &self.err_msg))
         }
@@ -53,12 +56,16 @@ impl HttpApiClient {
         self
     }
 
-    pub async fn post<T: Serialize, R: for<'de> Deserialize<'de>>(
+    pub async fn post<T: Serialize, R: for<'de> Deserialize<'de> + Default>(
         &self,
         route: &str,
         body: &T,
     ) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
+
+        // 调试：打印请求信息
+        let body_json = serde_json::to_string(body).unwrap_or_default();
+        tracing::debug!("HTTP POST {} - Body: {}", route, body_json);
 
         let response = self
             .client
@@ -73,14 +80,24 @@ impl HttpApiClient {
         let status = response.status().as_u16();
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
+            tracing::error!("HTTP POST {} failed - Status: {}, Body: {}", route, status, body);
             return Err(SdkError::http(status, format!("HTTP 错误: {}", body)));
         }
 
-        let api_resp: ApiResponse<R> = response.json().await?;
+        // 先读取原始响应，再解析
+        let raw_bytes = response.bytes().await?;
+        let raw_str = String::from_utf8_lossy(&raw_bytes);
+        tracing::debug!("HTTP POST {} - Raw Response: {}", route, raw_str);
+
+        let api_resp: ApiResponse<R> = serde_json::from_slice(&raw_bytes)
+            .map_err(|e| {
+                tracing::error!("Failed to parse response: {} - Raw: {}", e, raw_str);
+                SdkError::unknown(&format!("响应解析错误: {}", e))
+            })?;
         api_resp.into_result()
     }
 
-    pub async fn post_no_auth<T: Serialize, R: for<'de> Deserialize<'de>>(
+    pub async fn post_no_auth<T: Serialize, R: for<'de> Deserialize<'de> + Default>(
         &self,
         route: &str,
         body: &T,
@@ -105,7 +122,7 @@ impl HttpApiClient {
         api_resp.into_result()
     }
 
-    pub async fn get<R: for<'de> Deserialize<'de>>(&self, route: &str) -> Result<R> {
+    pub async fn get<R: for<'de> Deserialize<'de> + Default>(&self, route: &str) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
         let response = self

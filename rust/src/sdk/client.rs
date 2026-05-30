@@ -315,6 +315,15 @@ impl OpenIMClient {
     /// 登录
     pub async fn login(&self, user_id: &str, token: &str) -> Result<()> {
         self.context.set_user_id(user_id.to_string());
+        self.friend.set_user_id(user_id.to_string()).await;
+        self.group.set_user_id(user_id.to_string()).await;
+        
+        // 启动 WebSocket 连接
+        if let Some(ws_url) = &self.context.config.ws_url {
+            self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
+            self.spawn_push_message_handler();
+        }
+        
         self.event_bus.publish(SdkEvent::LoginSuccess {
             user_id: user_id.to_string(),
         });

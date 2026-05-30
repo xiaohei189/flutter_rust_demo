@@ -1,8 +1,9 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::model::conversation::Conversation;
 use crate::infra::database::{ConversationDao, MessageDao};
-use crate::infra::database::models::LocalChatLog;
+use crate::infra::database::models::{LocalChatLog, LocalConversation};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -85,14 +86,57 @@ impl MessageHandler {
         let mut seen_convs = std::collections::HashSet::new();
         for msg in &messages {
             if seen_convs.insert(&msg.conversation_id) {
-                self.conversation_dao
-                    .update_after_new_message(
-                        &msg.conversation_id,
-                        &msg.content,
-                        msg.send_time,
-                        msg.seq,
-                    )
-                    .await?;
+                // 先检查会话是否存在，不存在则创建
+                let existing = self.conversation_dao.get_by_id(&msg.conversation_id).await?;
+                if existing.is_none() {
+                    // 创建新会话
+                    let show_name = if msg.session_type == 1 {
+                        // 单聊：使用发送者昵称
+                        msg.sender_nick_name.clone()
+                    } else {
+                        // 群聊：使用群 ID
+                        format!("Group_{}", msg.group_id)
+                    };
+                    
+                    let conv = LocalConversation {
+                        conversation_id: msg.conversation_id.clone(),
+                        conversation_type: msg.session_type,
+                        user_id: if msg.session_type == 1 { msg.send_id.clone() } else { String::new() },
+                        group_id: if msg.session_type == 2 { msg.group_id.clone() } else { String::new() },
+                        show_name,
+                        face_url: msg.sender_face_url.clone(),
+                        latest_msg: msg.content.clone(),
+                        latest_msg_send_time: msg.send_time,
+                        unread_count: 1,
+                        recv_msg_opt: 0,
+                        is_pinned: 0,
+                        is_private_chat: 0,
+                        burn_duration: 0,
+                        group_at_type: 0,
+                        is_not_in_group: 0,
+                        update_unread_count_time: 0,
+                        attached_info: String::new(),
+                        ex: String::new(),
+                        draft_text: String::new(),
+                        draft_text_time: 0,
+                        max_seq: msg.seq,
+                        min_seq: 0,
+                        is_msg_destruct: 0,
+                        msg_destruct_time: 0,
+                    };
+                    self.conversation_dao.upsert(&conv).await?;
+                    info!("创建新会话: {}", msg.conversation_id);
+                } else {
+                    // 更新已有会话
+                    self.conversation_dao
+                        .update_after_new_message(
+                            &msg.conversation_id,
+                            &msg.content,
+                            msg.send_time,
+                            msg.seq,
+                        )
+                        .await?;
+                }
             }
 
             self.event_bus.publish(SdkEvent::NewMessage {

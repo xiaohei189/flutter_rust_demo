@@ -44,11 +44,11 @@ pub struct FriendServerInfo {
     pub ex: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetFriendListResp {
-    #[serde(rename = "friendsInfo")]
-    pub friends_info: Vec<FriendServerInfo>,
-    #[serde(rename = "total")]
+    #[serde(rename = "friendsInfo", default)]
+    pub friends_info: Option<Vec<FriendServerInfo>>,
+    #[serde(rename = "total", default)]
     pub total: i32,
 }
 
@@ -84,9 +84,9 @@ pub struct RemoveBlackReq {
     pub to_user_id: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetBlackListResp {
-    #[serde(rename = "blacksInfo")]
+    #[serde(rename = "blacksInfo", default)]
     pub blacks_info: Vec<BlackServerInfo>,
 }
 
@@ -105,7 +105,7 @@ pub struct BlackServerInfo {
 pub struct FriendManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
-    user_id: String,
+    user_id: Arc<RwLock<String>>,
     friends: Arc<RwLock<Vec<FriendInfo>>>,
     blacks: Arc<RwLock<Vec<String>>>,
 }
@@ -115,10 +115,15 @@ impl FriendManager {
         Self {
             http_client,
             event_bus,
-            user_id,
+            user_id: Arc::new(RwLock::new(user_id)),
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
         }
+    }
+
+    pub async fn set_user_id(&self, user_id: String) {
+        *self.user_id.write().await = user_id.clone();
+        info!("FriendManager user_id 已更新为: {}", user_id);
     }
 
     pub async fn get_friend_list(&self) -> Vec<FriendInfo> {
@@ -135,8 +140,9 @@ impl FriendManager {
     }
 
     pub async fn sync_friends(&self) -> Result<()> {
+        let user_id = self.user_id.read().await.clone();
         let req = GetFriendListReq {
-            user_id: self.user_id.clone(),
+            user_id,
             pagination: Pagination {
                 page_number: 1,
                 show_number: 1000,
@@ -147,6 +153,7 @@ impl FriendManager {
 
         let friends: Vec<FriendInfo> = resp
             .friends_info
+            .unwrap_or_default()
             .into_iter()
             .map(|s| server_to_friend(s))
             .collect();
@@ -302,6 +309,7 @@ mod tests {
     #[test]
     fn test_get_friend_list_req_serialization() {
         let req = GetFriendListReq {
+            user_id: "test_user".to_string(),
             pagination: Pagination {
                 page_number: 1,
                 show_number: 100,
