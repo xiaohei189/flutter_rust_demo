@@ -1,5 +1,6 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::message::handler::{MessageHandler, ReceivedMessage};
+use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
@@ -8,7 +9,7 @@ use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Semaphore;
+use tokio::sync::{RwLock, Semaphore};
 use tracing::{debug, error, info, warn};
 
 #[derive(Clone, Serialize, Deserialize, Message)]
@@ -126,6 +127,8 @@ pub struct MessageSyncer {
     max_concurrent_pulls: usize,
     pull_msg_num: i64,
     user_id: String,
+    /// 已同步的最大 seq（conversation_id -> max_seq），用于推送消息 seq 连续性校验
+    synced_max_seqs: Arc<RwLock<HashMap<String, i64>>>,
 }
 
 impl MessageSyncer {
@@ -146,7 +149,100 @@ impl MessageSyncer {
             max_concurrent_pulls: 5,
             pull_msg_num: 50,
             user_id,
+            synced_max_seqs: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+
+    /// 从服务端获取所有会话的最新 maxSeq
+    pub async fn get_server_max_seqs(&self) -> Result<HashMap<String, i64>> {
+        use openim_protocol::sdkws::{GetMaxSeqReq, GetMaxSeqResp};
+
+        let req = GetMaxSeqReq {
+            user_id: self.user_id.clone(),
+        };
+        let resp: GetMaxSeqResp = self.connection
+            .send_rpc(ws_req_identifier::GET_NEWEST_SEQ, &req)
+            .await
+            .map_err(|e| SdkError::network(format!("get server max seqs failed: {}", e)))?;
+
+        Ok(resp.max_seqs)
+    }
+
+    /// 重连后增量同步：先从服务端获取 maxSeq，再与本地对比拉取消息
+    pub async fn sync_after_reconnect(&self) -> Result<()> {
+        info!("重连后开始增量同步消息");
+        self.event_bus.publish(SdkEvent::SyncStarted);
+
+        let server_max_seqs = self.get_server_max_seqs().await?;
+        if server_max_seqs.is_empty() {
+            info!("服务端无会话 seq，跳过同步");
+            self.event_bus.publish(SdkEvent::SyncFinished);
+            return Ok(());
+        }
+
+        // 更新本地 conversation 的 max_seq
+        for (conv_id, max_seq) in &server_max_seqs {
+            let _ = self.conversation_dao.update_max_seq(conv_id, *max_seq).await;
+        }
+
+        self.sync_incremental_messages(&server_max_seqs).await?;
+
+        self.event_bus.publish(SdkEvent::SyncFinished);
+        info!("重连后增量同步完成");
+        Ok(())
+    }
+
+    /// 推送消息触发同步：检测 seq 连续性，不连续时自动补拉
+    pub async fn push_trigger_and_sync(
+        &self,
+        conv_id: &str,
+        pushed_seqs: &[i64],
+    ) -> Result<()> {
+        if pushed_seqs.is_empty() {
+            return Ok(());
+        }
+
+        let min_seq = *pushed_seqs.iter().min().unwrap_or(&0);
+        let max_seq = *pushed_seqs.iter().max().unwrap_or(&0);
+
+        let expected_last = {
+            let synced = self.synced_max_seqs.read().await;
+            synced.get(conv_id).copied().unwrap_or(0)
+        } + pushed_seqs.len() as i64;
+
+        if max_seq == expected_last || max_seq <= expected_last {
+            // seq 连续，无需补拉
+            self.synced_max_seqs.write().await.insert(conv_id.to_string(), max_seq);
+            return Ok(());
+        }
+
+        // seq 不连续，需要补拉
+        info!(
+            "推送消息 seq 不连续: conv={}, expected_last={}, actual_max={}, min={}",
+            conv_id, expected_last, max_seq, min_seq
+        );
+
+        let begin = expected_last + 1;
+        if begin <= max_seq {
+            let mut seq_map = HashMap::new();
+            seq_map.insert(conv_id.to_string(), (begin, max_seq));
+            self.batch_pull_messages(&seq_map).await?;
+        }
+
+        self.synced_max_seqs.write().await.insert(conv_id.to_string(), max_seq);
+        Ok(())
+    }
+
+    /// 从本地 DB 加载已同步的 max_seq 到内存
+    pub async fn load_synced_max_seqs(&self) -> Result<()> {
+        let conv_seqs = self.conversation_dao.get_all_seq_pairs().await?;
+        let mut map = self.synced_max_seqs.write().await;
+        for (conv_id, seq) in conv_seqs {
+            let local_max = self.message_dao.get_max_seq(&conv_id).await.unwrap_or(0);
+            map.insert(conv_id, local_max);
+        }
+        info!("已加载 {} 个会话的 synced_max_seqs", map.len());
+        Ok(())
     }
 
     pub async fn sync_all_conversations(&self, reinstalled: bool) -> Result<()> {
@@ -154,19 +250,27 @@ impl MessageSyncer {
 
         self.event_bus.publish(SdkEvent::SyncStarted);
 
-        let conv_seqs = self.conversation_dao.get_all_seq_pairs().await?;
-        if conv_seqs.is_empty() {
-            info!("本地无会话记录，跳过同步");
+        // 先从服务端获取最新 maxSeq
+        let server_max_seqs = self.get_server_max_seqs().await?;
+
+        if server_max_seqs.is_empty() {
+            info!("服务端无会话记录，跳过同步");
             self.event_bus.publish(SdkEvent::SyncFinished);
             return Ok(());
         }
 
-        let max_seq_to_sync: HashMap<String, i64> = conv_seqs.into_iter().collect();
+        // 更新本地 conversation 的 max_seq
+        for (conv_id, max_seq) in &server_max_seqs {
+            let _ = self.conversation_dao.update_max_seq(conv_id, *max_seq).await;
+        }
+
+        // 加载已同步 seq 到内存
+        self.load_synced_max_seqs().await?;
 
         if reinstalled {
-            self.sync_all_messages_reinstall(&max_seq_to_sync).await?;
+            self.sync_all_messages_reinstall(&server_max_seqs).await?;
         } else {
-            self.sync_incremental_messages(&max_seq_to_sync).await?;
+            self.sync_incremental_messages(&server_max_seqs).await?;
         }
 
         self.event_bus.publish(SdkEvent::SyncFinished);
@@ -389,6 +493,15 @@ impl MessageSyncer {
                 };
                 all_messages.push(received_msg);
             }
+
+            // 更新 synced_max_seqs：取当前批次消息的最大 seq
+            if let Some(max_seq_in_batch) = pull_msgs.msgs.iter().map(|m| m.seq).max() {
+                let mut synced = self.synced_max_seqs.write().await;
+                let current = synced.get(conv_id).copied().unwrap_or(0);
+                if max_seq_in_batch > current {
+                    synced.insert(conv_id.clone(), max_seq_in_batch);
+                }
+            }
         }
 
         if !all_messages.is_empty() {
@@ -408,6 +521,7 @@ impl MessageSyncer {
             max_concurrent_pulls: self.max_concurrent_pulls,
             pull_msg_num: self.pull_msg_num,
             user_id: self.user_id.clone(),
+            synced_max_seqs: self.synced_max_seqs.clone(),
         })
     }
 }

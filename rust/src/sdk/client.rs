@@ -179,10 +179,11 @@ impl OpenIMClient {
         Ok(())
     }
     
-    /// 启动推送消息处理器（后台任务监听 PushMessage 事件并调用 MessageHandler）
+    /// 启动推送消息处理器 + 重连消息同步监听
     fn spawn_push_message_handler(&self) {
         let event_bus = self.event_bus.clone();
         let message_handler = self.message_handler.clone();
+        let message_syncer = self.message_syncer.clone();
         let cancel_token = self.context.cancel_token.clone();
         
         tokio::spawn(async move {
@@ -196,19 +197,22 @@ impl OpenIMClient {
                     }
                     event = subscription.next() => {
                         match event {
+                            Some(SdkEvent::Connected) => {
+                                info!("push_message_handler: connection established, starting message sync");
+                                if let Err(e) = message_syncer.sync_after_reconnect().await {
+                                    warn!("push_message_handler: sync after reconnect failed: {:?}", e);
+                                }
+                            }
                             Some(SdkEvent::PushMessage { data, req_identifier }) => {
                                 info!("push_message_handler: received PushMessage event, req_identifier={}, data_len={}", req_identifier, data.len());
-                                // 使用 protobuf 解码推送消息
                                 match PushMessages::decode(data.as_slice()) {
                                     Ok(push_messages) => {
                                         info!("push_message_handler: decoded successfully, msgs={}, notification_msgs={}", 
                                             push_messages.msgs.len(), push_messages.notification_msgs.len());
-                                        // 处理普通消息和通知消息
                                         let all_msgs = push_messages.msgs.iter().chain(push_messages.notification_msgs.iter());
                                         
                                         for (conv_id, pull_msgs) in all_msgs {
                                             let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
-                                                // 将 content 从 Vec<u8> 转换为 String
                                                 let content_str = String::from_utf8_lossy(&msg.content).to_string();
                                                 
                                                 Some(ReceivedMessage {
@@ -230,11 +234,22 @@ impl OpenIMClient {
                                                     group_id: msg.group_id.clone(),
                                                 })
                                             }).collect();
+
+                                            let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
                                             
                                             if !messages.is_empty() {
                                                 info!("push_message_handler: handling {} messages for {}", messages.len(), conv_id);
                                                 if let Err(e) = message_handler.handle_messages(messages).await {
                                                     warn!("failed to handle push messages for {}: {:?}", conv_id, e);
+                                                }
+                                                // seq 连续性校验
+                                                if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                                    warn!("push_trigger_and_sync failed for {}: {:?}", conv_id, e);
+                                                }
+                                            } else if !seqs.is_empty() {
+                                                // seq 0 消息（仅通知，不入库）也更新 synced_max_seqs
+                                                if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                                    warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
                                                 }
                                             }
                                         }
@@ -269,11 +284,17 @@ impl OpenIMClient {
                                         group_id: msg.group_id.clone(),
                                     })
                                 }).collect();
+
+                                let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
                                 
                                 if !messages.is_empty() {
                                     info!("push_message_handler: handling {} messages for {}", messages.len(), conversation_id);
                                     if let Err(e) = message_handler.handle_messages(messages).await {
                                         warn!("failed to handle push messages for {}: {:?}", conversation_id, e);
+                                    }
+                                    // seq 连续性校验
+                                    if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
+                                        warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
                                     }
                                 }
                             }
@@ -303,10 +324,16 @@ impl OpenIMClient {
                                     })
                                 }).collect();
                                 
+                                let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+                                
                                 if !messages.is_empty() {
                                     info!("push_message_handler: handling {} notification messages for {}", messages.len(), conversation_id);
                                     if let Err(e) = message_handler.handle_messages(messages).await {
                                         warn!("failed to handle push notification messages for {}: {:?}", conversation_id, e);
+                                    }
+                                    // 通知消息也做 seq 连续性校验
+                                    if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
+                                        warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
                                     }
                                 }
                             }
