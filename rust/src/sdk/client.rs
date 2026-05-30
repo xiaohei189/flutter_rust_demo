@@ -147,7 +147,7 @@ impl OpenIMClient {
 
     /// 连接到服务器
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
-        self.connection.connect(ws_url, token, user_id).await
+        self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await
     }
 
     /// 断开连接

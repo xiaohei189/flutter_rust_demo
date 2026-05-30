@@ -11,7 +11,7 @@ use tracing::{debug, info};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetUsersInfoReq {
-    #[serde(rename = "userIDList")]
+    #[serde(rename = "userIDs")]
     pub user_id_list: Vec<String>,
 }
 
@@ -22,9 +22,13 @@ pub struct ServerUserInfo {
     pub nickname: String,
     #[serde(rename = "faceURL")]
     pub face_url: String,
+    #[serde(default)]
     pub gender: i32,
+    #[serde(default)]
     pub telephone: String,
+    #[serde(default)]
     pub email: String,
+    #[serde(default)]
     pub ex: String,
 }
 

@@ -49,6 +49,7 @@ pub struct ConnectionManager {
     token: RwLock<String>,
     send_id: RwLock<String>,
     ws_url: RwLock<String>,
+    platform_id: RwLock<i32>,
 }
 
 impl ConnectionManager {
@@ -63,13 +64,15 @@ impl ConnectionManager {
             token: RwLock::new(String::new()),
             send_id: RwLock::new(String::new()),
             ws_url: RwLock::new(String::new()),
+            platform_id: RwLock::new(1),
         }
     }
 
-    pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
+    pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str, platform_id: i32) -> Result<()> {
         *self.token.write().await = token.to_string();
         *self.send_id.write().await = user_id.to_string();
         *self.ws_url.write().await = ws_url.to_string();
+        *self.platform_id.write().await = platform_id;
 
         self.do_connect().await
     }
@@ -81,12 +84,20 @@ impl ConnectionManager {
         let ws_url = self.ws_url.read().await;
         let token = self.token.read().await;
         let send_id = self.send_id.read().await;
+        let platform_id = self.platform_id.read().await;
+        let operation_id = format!("conn_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
 
-        let full_url = format!("{}?token={}&sendID={}", *ws_url, *token, *send_id);
+        let full_url = format!(
+            "{}/?token={}&sendID={}&platformID={}&operationID={}&isBackground=false&isMsgResp=true&sdkType=js",
+            *ws_url, *token, *send_id, *platform_id, operation_id
+        );
 
         let (ws_stream, _) = connect_async(&full_url)
             .await
-            .map_err(|e| SdkError::connection(format!("WebSocket connect failed: {}", e)))?;
+            .map_err(|e| {
+                error!("WebSocket connect failed: {}, url={}", e, full_url);
+                SdkError::connection(format!("WebSocket connect failed: {}", e))
+            })?;
 
         let (write, read) = ws_stream.split();
         

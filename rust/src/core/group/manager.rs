@@ -298,7 +298,7 @@ impl GroupManager {
                 face_url,
                 introduction,
                 notification,
-                group_type: 0,
+                group_type: 2,  // 2 = 普通群（与 Go SDK 一致）
                 ex: None,
             },
             member_user_ids,
