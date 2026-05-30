@@ -11,6 +11,10 @@ pub enum SdkEvent {
     ConnectFailed {
         error: String,
     },
+    PushMessage {
+        req_identifier: i32,
+        data: Vec<u8>,
+    },
     SyncStarted,
     SyncProgress {
         progress: u8,
@@ -146,6 +150,7 @@ impl SdkEvent {
             SdkEvent::Connected => "connected",
             SdkEvent::Disconnected { .. } => "disconnected",
             SdkEvent::ConnectFailed { .. } => "connect_failed",
+            SdkEvent::PushMessage { .. } => "push_message",
             SdkEvent::SyncStarted => "sync_started",
             SdkEvent::SyncProgress { .. } => "sync_progress",
             SdkEvent::SyncFinished => "sync_finished",

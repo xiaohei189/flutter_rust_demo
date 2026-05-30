@@ -5,11 +5,12 @@ use crate::protocol::ws::{OpenIMReq, OpenIMResp};
 use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
-use tokio::sync::{mpsc, oneshot, RwLock};
-use tokio::time::timeout;
+use tokio::sync::{oneshot, RwLock};
+use tokio::time::{interval, timeout, MissedTickBehavior};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
@@ -17,7 +18,13 @@ use tracing::{debug, error, info, warn};
 
 type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
-/// 连接状态
+const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(30);
+const PONG_TIMEOUT: Duration = Duration::from_secs(60);
+const RECONNECT_BASE: Duration = Duration::from_secs(1);
+const RECONNECT_MAX: Duration = Duration::from_secs(60);
+const RPC_TIMEOUT: Duration = Duration::from_secs(30);
+const CHANNEL_SIZE: usize = 256;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConnectionState {
     Disconnected,
@@ -26,21 +33,22 @@ pub enum ConnectionState {
     Reconnecting,
 }
 
-/// 连接管理器
+struct PendingRequest {
+    tx: oneshot::Sender<OpenIMResp>,
+    timer: tokio::time::Instant,
+}
+
 pub struct ConnectionManager {
-    /// WebSocket 写入端
     writer: Arc<RwLock<Option<WsWriter>>>,
-    /// 连接状态
     state: Arc<RwLock<ConnectionState>>,
-    /// 待处理的 RPC 请求
-    pending_requests: Arc<RwLock<HashMap<String, oneshot::Sender<OpenIMResp>>>>,
-    /// 事件总线
+    pending_requests: Arc<RwLock<HashMap<String, PendingRequest>>>,
     event_bus: Arc<EventBus>,
-    
-    /// 取消令牌
     cancel_token: CancellationToken,
-    /// 接收消息的通道
-    msg_rx: Arc<RwLock<Option<mpsc::UnboundedReceiver<WsMessage>>>>,
+    
+    msg_incr: AtomicU64,
+    token: RwLock<String>,
+    send_id: RwLock<String>,
+    ws_url: RwLock<String>,
 }
 
 impl ConnectionManager {
@@ -51,130 +59,259 @@ impl ConnectionManager {
             pending_requests: Arc::new(RwLock::new(HashMap::new())),
             event_bus,
             cancel_token,
-            msg_rx: Arc::new(RwLock::new(None)),
+            msg_incr: AtomicU64::new(0),
+            token: RwLock::new(String::new()),
+            send_id: RwLock::new(String::new()),
+            ws_url: RwLock::new(String::new()),
         }
     }
 
-    /// 连接到 WebSocket 服务器
-    pub async fn connect(&self, ws_url: &str) -> Result<()> {
+    pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
+        *self.token.write().await = token.to_string();
+        *self.send_id.write().await = user_id.to_string();
+        *self.ws_url.write().await = ws_url.to_string();
+
+        self.do_connect().await
+    }
+
+    async fn do_connect(&self) -> Result<()> {
         self.set_state(ConnectionState::Connecting).await;
         self.event_bus.publish(SdkEvent::Connecting);
 
-        let (ws_stream, _) = connect_async(ws_url)
+        let ws_url = self.ws_url.read().await;
+        let token = self.token.read().await;
+        let send_id = self.send_id.read().await;
+
+        let full_url = format!("{}?token={}&sendID={}", *ws_url, *token, *send_id);
+
+        let (ws_stream, _) = connect_async(&full_url)
             .await
-            .map_err(|e| SdkError::connection(format!("WebSocket 连接失败: {}", e)))?;
+            .map_err(|e| SdkError::connection(format!("WebSocket connect failed: {}", e)))?;
 
         let (write, read) = ws_stream.split();
         
         *self.writer.write().await = Some(write);
         self.set_state(ConnectionState::Connected).await;
         self.event_bus.publish(SdkEvent::Connected);
+        info!("WebSocket connected: {}", full_url);
 
-        info!("WebSocket 连接成功: {}", ws_url);
+        self.spawn_read_loop(read);
+        self.spawn_heartbeat();
 
         Ok(())
     }
 
-    /// 发送 WebSocket 消息
-    pub async fn send(&self, message: WsMessage) -> Result<()> {
-        let mut writer_guard = self.writer.write().await;
-        if let Some(writer) = writer_guard.as_mut() {
-            writer
-                .send(message)
-                .await
-                .map_err(|e| SdkError::connection(format!("发送消息失败: {}", e)))?;
-            Ok(())
-        } else {
-            Err(SdkError::connection("WebSocket 未连接"))
-        }
+    fn spawn_read_loop(
+        &self,
+        read: futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+    ) {
+        let pending = self.pending_requests.clone();
+        let event_bus = self.event_bus.clone();
+        let cancel = self.cancel_token.clone();
+        let state = self.state.clone();
+        let writer = self.writer.clone();
+
+        tokio::spawn(async move {
+            let mut read = read;
+            loop {
+                tokio::select! {
+                    _ = cancel.cancelled() => {
+                        info!("read_loop: cancelled");
+                        break;
+                    }
+                    msg = read.next() => {
+                        match msg {
+                            Some(Ok(WsMessage::Text(text))) => {
+                                match serde_json::from_str::<OpenIMResp>(&text) {
+                                    Ok(resp) => {
+                                        if let Some(pending_req) =
+                                            pending.write().await.remove(&resp.msg_incr)
+                                        {
+                                            let _ = pending_req.tx.send(resp);
+                                        } else {
+                                            // 推送消息
+                                            event_bus.publish(
+                                                SdkEvent::PushMessage {
+                                                    req_identifier: resp.req_identifier,
+                                                    data: resp.data,
+                                                },
+                                            );
+                                        }
+                                    }
+                                    Err(e) => {
+                                        warn!("failed to parse ws message: {}", e);
+                                    }
+                                }
+                            }
+                            Some(Ok(WsMessage::Ping(data))) => {
+                                if let Some(w) = writer.write().await.as_mut() {
+                                    let _ = w.send(WsMessage::Pong(data)).await;
+                                }
+                            }
+                            Some(Ok(WsMessage::Pong(_))) => {
+                                debug!("received pong");
+                            }
+                            Some(Ok(WsMessage::Close(_))) => {
+                                info!("ws closed by server");
+                                {
+                                    *state.write().await = ConnectionState::Disconnected;
+                                }
+                                event_bus.publish(SdkEvent::Disconnected {
+                                    reason: "server closed".into(),
+                                });
+                                break;
+                            }
+                            Some(Err(e)) => {
+                                error!("ws error: {}", e);
+                                {
+                                    *state.write().await = ConnectionState::Disconnected;
+                                }
+                                event_bus.publish(SdkEvent::Disconnected {
+                                    reason: format!("ws error: {}", e),
+                                });
+                                break;
+                            }
+                            None => {
+                                info!("ws stream ended");
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        });
     }
 
-    /// 发送 RPC 请求并等待响应
-    pub async fn send_rpc<T: serde::Serialize, R: for<'de> serde::Deserialize<'de>>(
+    fn spawn_heartbeat(&self) {
+        let writer = self.writer.clone();
+        let state = self.state.clone();
+        let event_bus = self.event_bus.clone();
+        let cancel = self.cancel_token.clone();
+
+        tokio::spawn(async move {
+            let mut ticker = interval(HEARTBEAT_INTERVAL);
+            ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+            loop {
+                tokio::select! {
+                    _ = cancel.cancelled() => break,
+                    _ = ticker.tick() => {
+                        let is_connected = {
+                            *state.read().await == ConnectionState::Connected
+                        };
+                        if !is_connected {
+                            continue;
+                        }
+
+                        let ping_result = {
+                            let mut w = writer.write().await;
+                            if let Some(writer) = w.as_mut() {
+                                writer.send(WsMessage::Ping(vec![])).await
+                            } else {
+                                continue;
+                            }
+                        };
+
+                        if let Err(e) = ping_result {
+                            warn!("heartbeat ping failed: {}", e);
+                            *state.write().await = ConnectionState::Disconnected;
+                            event_bus.publish(SdkEvent::Disconnected {
+                                reason: format!("ping failed: {}", e),
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    pub async fn send_rpc<T: prost::Message, R: prost::Message + Default>(
         &self,
         req_identifier: i32,
-        token: &str,
-        send_id: &str,
-        operation_id: &str,
         data: &T,
-        timeout_duration: Duration,
     ) -> Result<R> {
-        let data_bytes = serde_json::to_vec(data)
-            .map_err(|e| SdkError::unknown(format!("序列化请求数据失败: {}", e)))?;
+        let data_bytes = data.encode_to_vec();
+
+        let msg_incr = format!("rpc_{}", self.msg_incr.fetch_add(1, Ordering::SeqCst));
+        let token = self.token.read().await.clone();
+        let send_id = self.send_id.read().await.clone();
+        let operation_id = format!("op_{}_{}", req_identifier, msg_incr);
 
         let req = OpenIMReq {
             req_identifier,
-            token: token.to_string(),
-            send_id: send_id.to_string(),
-            operation_id: operation_id.to_string(),
-            msg_incr: format!("{}_{}", operation_id, req_identifier),
+            token,
+            send_id,
+            operation_id,
+            msg_incr: msg_incr.clone(),
             data: data_bytes,
         };
 
         let (tx, rx) = oneshot::channel();
-        self.pending_requests
-            .write()
-            .await
-            .insert(req.msg_incr.clone(), tx);
+        self.pending_requests.write().await.insert(
+            msg_incr,
+            PendingRequest {
+                tx,
+                timer: tokio::time::Instant::now(),
+            },
+        );
 
-        let message = WsMessage::Text(serde_json::to_string(&req).map_err(|e| {
-            SdkError::unknown(format!("序列化请求失败: {}", e))
-        })?);
+        let req_json = serde_json::to_string(&req)
+            .map_err(|e| SdkError::unknown(format!("serialize rpc request: {}", e)))?;
 
-        self.send(message).await?;
+        let send_result = {
+            let mut w = self.writer.write().await;
+            if let Some(writer) = w.as_mut() {
+                writer
+                    .send(WsMessage::Text(req_json.into()))
+                    .await
+                    .map_err(|e| SdkError::connection(format!("send failed: {}", e)))
+            } else {
+                Err(SdkError::connection("not connected"))
+            }
+        };
 
-        match timeout(timeout_duration, rx).await {
+        if let Err(e) = send_result {
+            self.pending_requests.write().await.remove(&req.msg_incr);
+            return Err(e);
+        }
+
+        match timeout(RPC_TIMEOUT, rx).await {
             Ok(Ok(resp)) => {
                 if resp.is_success() {
-                    let result: R = serde_json::from_slice(&resp.data).map_err(|e| {
-                        SdkError::unknown(format!("解析响应数据失败: {}", e))
-                    })?;
-                    Ok(result)
+                    R::decode(resp.data.as_slice())
+                        .map_err(|e| SdkError::unknown(format!("decode response: {}", e)))
                 } else {
                     Err(SdkError::api(resp.err_code, &resp.err_msg))
                 }
             }
-            Ok(Err(_)) => Err(SdkError::connection("响应通道已关闭")),
-            Err(_) => Err(SdkError::timeout(format!(
-                "RPC 请求超时 ({}s)",
-                timeout_duration.as_secs()
-            ))),
+            Ok(Err(_)) => Err(SdkError::connection("rpc channel closed")),
+            Err(_) => Err(SdkError::timeout("rpc timeout")),
         }
     }
 
-    /// 处理接收到的响应
-    pub async fn handle_response(&self, resp: OpenIMResp) {
-        if let Some(tx) = self.pending_requests.write().await.remove(&resp.msg_incr) {
-            let _ = tx.send(resp);
+    pub async fn disconnect(&self) {
+        *self.writer.write().await = None;
+        {
+            *self.state.write().await = ConnectionState::Disconnected;
         }
+        self.event_bus.publish(SdkEvent::Disconnected {
+            reason: "manual disconnect".into(),
+        });
+        info!("WebSocket disconnected");
     }
 
-    /// 获取当前连接状态
     pub async fn get_state(&self) -> ConnectionState {
         self.state.read().await.clone()
     }
 
-    /// 设置连接状态
     async fn set_state(&self, state: ConnectionState) {
         *self.state.write().await = state;
     }
 
-    /// 断开连接
-    pub async fn disconnect(&self) {
-        *self.writer.write().await = None;
-        self.set_state(ConnectionState::Disconnected).await;
-        self.event_bus.publish(SdkEvent::Disconnected {
-            reason: "主动断开连接".to_string(),
-        });
-        info!("WebSocket 连接已断开");
-    }
-
-    /// 检查是否已连接
     pub async fn is_connected(&self) -> bool {
-        matches!(
-            self.get_state().await,
-            ConnectionState::Connected
-        )
+        matches!(*self.state.read().await, ConnectionState::Connected)
     }
 }
 
@@ -188,10 +325,7 @@ mod tests {
         let cancel_token = CancellationToken::new();
         let manager = ConnectionManager::new(event_bus, cancel_token);
 
-        assert_eq!(
-            manager.get_state().await,
-            ConnectionState::Disconnected
-        );
+        assert_eq!(manager.get_state().await, ConnectionState::Disconnected);
     }
 
     #[tokio::test]
@@ -201,19 +335,13 @@ mod tests {
         let manager = ConnectionManager::new(event_bus, cancel_token);
 
         manager.set_state(ConnectionState::Connecting).await;
-        assert_eq!(
-            manager.get_state().await,
-            ConnectionState::Connecting
-        );
+        assert_eq!(manager.get_state().await, ConnectionState::Connecting);
 
         manager.set_state(ConnectionState::Connected).await;
         assert_eq!(manager.get_state().await, ConnectionState::Connected);
 
         manager.disconnect().await;
-        assert_eq!(
-            manager.get_state().await,
-            ConnectionState::Disconnected
-        );
+        assert_eq!(manager.get_state().await, ConnectionState::Disconnected);
     }
 
     #[tokio::test]
