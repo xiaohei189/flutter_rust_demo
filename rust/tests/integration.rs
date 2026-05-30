@@ -678,6 +678,116 @@ async fn test_send_message() {
     println!("✅ 发送消息测试通过");
 }
 
+/// 集成测试: 用户态完整功能测试（注册 + 登录 + 获取用户信息）
+#[tokio::test]
+#[ignore]
+async fn test_user_state_full_functionality() {
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_USERS_INFO;
+    
+    // 1. 注册测试用户
+    let phone = generate_virtual_phone("userstate");
+    let nickname = format!("TestUser_State_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    
+    println!("1. 注册测试用户...");
+    let cert = register_user(&phone, &nickname).await;
+    assert!(cert.is_ok(), "注册失败: {:?}", cert.err());
+    let cert = cert.unwrap();
+    let user_id = cert.user_id.clone();
+    let token = cert.im_token.clone();
+    
+    println!("  用户: user_id={}, nickname={}", user_id, nickname);
+    
+    // 2. 创建客户端
+    println!("2. 创建 HTTP 客户端...");
+    let client = create_test_client(&token);
+    
+    // 3. 获取自己的用户信息
+    println!("3. 获取自己的用户信息...");
+    
+    #[derive(Serialize)]
+    struct GetUsersInfoReq {
+        #[serde(rename = "userIDs")]
+        user_ids: Vec<String>,
+    }
+    
+    let req = GetUsersInfoReq {
+        user_ids: vec![user_id.clone()],
+    };
+    
+    let result = client.post::<_, serde_json::Value>(GET_USERS_INFO, &req).await;
+    
+    match &result {
+        Ok(resp) => {
+            println!("  ✅ 获取用户信息成功!");
+            if let Some(data) = resp.get("data") {
+                if let Some(users) = data.as_array() {
+                    println!("  用户数量: {}", users.len());
+                    if let Some(user) = users.first() {
+                        if let Some(nick) = user.get("nickname") {
+                            println!("  昵称: {}", nick.as_str().unwrap_or(""));
+                        }
+                        if let Some(uid) = user.get("userID") {
+                            println!("  user_id: {}", uid.as_str().unwrap_or(""));
+                        }
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            println!("  ❌ 获取用户信息失败: {:?}", e);
+        }
+    }
+    
+    assert!(result.is_ok(), "获取用户信息失败");
+    
+    // 4. 获取好友列表（应该为空）
+    println!("4. 获取好友列表...");
+    use rust_lib_flutter_rust_demo::infra::http::routes::GET_FRIEND_LIST;
+    
+    #[derive(Serialize)]
+    struct GetFriendListReq {
+        #[serde(rename = "userID")]
+        user_id: String,
+        pagination: PaginationReq,
+    }
+    
+    #[derive(Serialize)]
+    struct PaginationReq {
+        #[serde(rename = "pageNumber")]
+        page_number: i32,
+        #[serde(rename = "showNumber")]
+        show_number: i32,
+    }
+    
+    let req = GetFriendListReq {
+        user_id: user_id.clone(),
+        pagination: PaginationReq {
+            page_number: 1,
+            show_number: 100,
+        },
+    };
+    
+    let friend_result = client.post::<_, serde_json::Value>(GET_FRIEND_LIST, &req).await;
+    
+    match &friend_result {
+        Ok(resp) => {
+            println!("  ✅ 获取好友列表成功!");
+            if let Some(data) = resp.get("data") {
+                if let Some(friends) = data.get("friendList") {
+                    println!("  好友数量: {}", friends.as_array().map_or(0, |v| v.len()));
+                }
+            }
+        }
+        Err(e) => {
+            println!("  ❌ 获取好友列表失败: {:?}", e);
+        }
+    }
+    
+    assert!(friend_result.is_ok(), "获取好友列表失败");
+    
+    println!("✅ 用户态功能测试完成");
+}
+
 // ============================================================================
 // 在线状态集成测试
 // ============================================================================
