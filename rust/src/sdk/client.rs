@@ -88,12 +88,19 @@ impl OpenIMClient {
 
         let message_sender = Arc::new(MessageSender::new(event_bus.clone()));
 
-        let message_syncer = Arc::new(MessageSyncer::new(event_bus.clone()));
-
         let message_handler = Arc::new(MessageHandler::new(
             context.message_dao.clone(),
             context.conversation_dao.clone(),
             event_bus.clone(),
+        ));
+
+        let message_syncer = Arc::new(MessageSyncer::new(
+            connection.clone(),
+            context.conversation_dao.clone(),
+            context.message_dao.clone(),
+            message_handler.clone(),
+            event_bus.clone(),
+            config.user_id.clone(),
         ));
 
         let conversation_syncer = Arc::new(ConversationSyncer::new(event_bus.clone()));
