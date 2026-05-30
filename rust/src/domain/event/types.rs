@@ -50,8 +50,13 @@ pub enum SdkEvent {
         error: String,
     },
     MessageRevoked {
+        conversation_id: String,
+        seq: i64,
         client_msg_id: String,
-        revoker_user_id: String,
+    },
+    MessagesDeleted {
+        conversation_id: String,
+        client_msg_ids: Vec<String>,
     },
     ConversationChanged {
         conversations: Vec<serde_json::Value>,
@@ -178,6 +183,7 @@ impl SdkEvent {
             SdkEvent::MessageSent { .. } => "message_sent",
             SdkEvent::MessageSendFailed { .. } => "message_send_failed",
             SdkEvent::MessageRevoked { .. } => "message_revoked",
+            SdkEvent::MessagesDeleted { .. } => "messages_deleted",
             SdkEvent::ConversationChanged { .. } => "conversation_changed",
             SdkEvent::NewConversation { .. } => "new_conversation",
             SdkEvent::TotalUnreadCountChanged { .. } => "total_unread_count_changed",

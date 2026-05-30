@@ -97,6 +97,46 @@ impl MessageDao {
             .map_err(|e| SdkError::database(format!("delete messages: {}", e)))?;
         Ok(())
     }
+
+    pub async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM local_chat_logs WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete message by client_msg_id: {}", e)))?;
+        Ok(())
+    }
+
+    pub async fn update_content_type(&self, conversation_id: &str, client_msg_id: &str, content_type: i32) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET content_type = ? WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(content_type)
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update content_type: {}", e)))?;
+        Ok(())
+    }
+
+    pub async fn mark_as_read_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> {
+        if seqs.is_empty() {
+            return Ok(());
+        }
+        let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq IN ({})",
+            placeholders
+        );
+        let mut query = sqlx::query(&sql).bind(conversation_id);
+        for seq in seqs {
+            query = query.bind(seq);
+        }
+        query.execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("mark as read: {}", e)))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

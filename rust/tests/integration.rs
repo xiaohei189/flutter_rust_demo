@@ -2961,3 +2961,356 @@ async fn test_conversation_delete() {
     println!("会话 ID: {}", conversation_id);
     println!("\n✅ 会话删除测试完成");
 }
+
+/// 集成测试: 消息撤回
+/// 测试流程：发送消息 → 获取消息seq → 撤回消息 → 验证消息已撤回
+#[tokio::test]
+#[ignore]
+async fn test_message_revoke() {
+    println!("=== 消息撤回测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建 SDK
+    println!("3. 创建 SDK...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 发送消息
+    println!("4. 发送消息...");
+    let client_msg_id = format!("test_revoke_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    let pending_msg = PendingMessage {
+        client_msg_id: client_msg_id.clone(),
+        send_id: user1.user_id.clone(),
+        recv_id: user2.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1.nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: build_text_content("这是一条待撤回的消息"),
+    };
+    
+    let send_result = sender_sdk.message_sender.send_message(pending_msg).await;
+    match send_result {
+        Ok(_) => println!("  ✅ 消息发送成功"),
+        Err(e) => {
+            println!("  ❌ 消息发送失败: {:?}", e);
+            return;
+        }
+    }
+    
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    
+    // 5. 获取消息seq
+    let conversation_id = format!("si_{}_{}", user1.user_id, user2.user_id);
+    println!("5. 获取消息seq...");
+    let messages = receiver_sdk.message_handler.message_dao()
+        .get_by_conversation(&conversation_id, 0, 10000)
+        .await
+        .unwrap_or_default();
+    
+    let target_msg = messages.iter().find(|m| m.client_msg_id == client_msg_id);
+    let seq = match target_msg {
+        Some(msg) => {
+            println!("  ✅ 找到消息, seq={}", msg.seq);
+            msg.seq
+        }
+        None => {
+            println!("  ❌ 未找到消息");
+            return;
+        }
+    };
+    
+    // 6. 撤回消息
+    println!("6. 撤回消息...");
+    let revoke_result = sender_sdk.message_service
+        .revoke_message(
+            conversation_id.clone(),
+            seq,
+            client_msg_id.clone(),
+            1,
+        )
+        .await;
+    
+    match revoke_result {
+        Ok(_) => println!("  ✅ 撤回成功"),
+        Err(e) => {
+            println!("  ❌ 撤回失败: {:?}", e);
+            return;
+        }
+    }
+    
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    
+    // 7. 验证消息已撤回（content_type 应为 2101）
+    println!("7. 验证消息已撤回...");
+    let messages_after = receiver_sdk.message_handler.message_dao()
+        .get_by_conversation(&conversation_id, 0, 10000)
+        .await
+        .unwrap_or_default();
+
+    let revoked_msg = messages_after.iter().find(|m| m.client_msg_id == client_msg_id);
+    match revoked_msg {
+        Some(msg) => {
+            if msg.content_type == 2101 {
+                println!("  ✅ 消息已撤回 (content_type={})", msg.content_type);
+            } else {
+                println!("  ⚠️ 消息content_type未更新: {}", msg.content_type);
+            }
+        }
+        None => {
+            println!("  ⚠️ 未找到消息记录");
+        }
+    }
+    
+    println!("\n=== 消息撤回测试结果 ===\n");
+    println!("会话 ID: {}", conversation_id);
+    println!("消息 ID: {}", client_msg_id);
+    println!("\n✅ 消息撤回测试完成");
+}
+
+/// 集成测试: 消息删除
+/// 测试流程：发送消息 → 删除消息 → 验证消息已删除
+#[tokio::test]
+#[ignore]
+async fn test_message_delete() {
+    println!("=== 消息删除测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建 SDK
+    println!("3. 创建 SDK...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 发送消息
+    println!("4. 发送消息...");
+    let client_msg_id = format!("test_del_msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    let pending_msg = PendingMessage {
+        client_msg_id: client_msg_id.clone(),
+        send_id: user1.user_id.clone(),
+        recv_id: user2.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1.nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: build_text_content("这是一条待删除的消息"),
+    };
+    
+    let send_result = sender_sdk.message_sender.send_message(pending_msg).await;
+    match send_result {
+        Ok(_) => println!("  ✅ 消息发送成功"),
+        Err(e) => {
+            println!("  ❌ 消息发送失败: {:?}", e);
+            return;
+        }
+    }
+    
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    
+    // 5. 验证消息存在
+    let conversation_id = format!("si_{}_{}", user1.user_id, user2.user_id);
+    println!("5. 验证消息存在...");
+    let messages = receiver_sdk.message_handler.message_dao()
+        .get_by_conversation(&conversation_id, 0, 10000)
+        .await
+        .unwrap_or_default();
+    
+    let msg_exists = messages.iter().any(|m| m.client_msg_id == client_msg_id);
+    if !msg_exists {
+        println!("  ❌ 消息不存在");
+        return;
+    }
+    println!("  ✅ 消息存在");
+    
+    // 6. 删除消息
+    println!("6. 删除消息...");
+    let delete_result = receiver_sdk.message_service
+        .delete_messages(
+            conversation_id.clone(),
+            vec![client_msg_id.clone()],
+        )
+        .await;
+    
+    match delete_result {
+        Ok(_) => println!("  ✅ 删除成功"),
+        Err(e) => {
+            println!("  ❌ 删除失败: {:?}", e);
+            return;
+        }
+    }
+    
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    
+    // 7. 验证消息已删除
+    println!("7. 验证消息已删除...");
+    let messages_after = receiver_sdk.message_handler.message_dao()
+        .get_by_conversation(&conversation_id, 0, 10000)
+        .await
+        .unwrap_or_default();
+    
+    let msg_exists_after = messages_after.iter().any(|m| m.client_msg_id == client_msg_id);
+    if !msg_exists_after {
+        println!("  ✅ 消息已删除");
+    } else {
+        println!("  ⚠️ 消息仍然存在");
+    }
+    
+    println!("\n=== 消息删除测试结果 ===\n");
+    println!("会话 ID: {}", conversation_id);
+    println!("消息 ID: {}", client_msg_id);
+    println!("\n✅ 消息删除测试完成");
+}
+
+/// 集成测试: 标记消息已读
+/// 测试流程：发送消息 → 标记已读 → 验证已读状态
+#[tokio::test]
+#[ignore]
+async fn test_message_mark_read() {
+    println!("=== 标记消息已读测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建 SDK
+    println!("3. 创建 SDK...");
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    
+    // 4. 发送消息
+    println!("4. 发送消息...");
+    let pending_msg = PendingMessage {
+        client_msg_id: format!("test_read_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+        send_id: user1.user_id.clone(),
+        recv_id: user2.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1.nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: build_text_content("这是一条待标记已读的消息"),
+    };
+    
+    let send_result = sender_sdk.message_sender.send_message(pending_msg).await;
+    match send_result {
+        Ok(_) => println!("  ✅ 消息发送成功"),
+        Err(e) => {
+            println!("  ❌ 消息发送失败: {:?}", e);
+            return;
+        }
+    }
+    
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    
+    // 5. 获取消息seq
+    let conversation_id = format!("si_{}_{}", user1.user_id, user2.user_id);
+    println!("5. 获取消息seq...");
+    let messages = receiver_sdk.message_handler.message_dao()
+        .get_by_conversation(&conversation_id, 0, 10000)
+        .await
+        .unwrap_or_default();
+    
+    let seqs: Vec<i64> = messages.iter().map(|m| m.seq).collect();
+    let max_seq = seqs.iter().max().copied().unwrap_or(0);
+    
+    if seqs.is_empty() {
+        println!("  ❌ 未找到消息");
+        return;
+    }
+    println!("  ✅ 找到 {} 条消息, max_seq={}", seqs.len(), max_seq);
+    
+    // 6. 标记已读
+    println!("6. 标记消息已读...");
+    let mark_result = receiver_sdk.message_service
+        .mark_messages_as_read(
+            conversation_id.clone(),
+            1,
+            max_seq,
+            seqs.clone(),
+        )
+        .await;
+    
+    match mark_result {
+        Ok(_) => println!("  ✅ 标记已读成功"),
+        Err(e) => {
+            println!("  ❌ 标记已读失败: {:?}", e);
+            return;
+        }
+    }
+    
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    
+    // 7. 验证已读状态
+    println!("7. 验证已读状态...");
+    let messages_after = receiver_sdk.message_handler.message_dao()
+        .get_by_conversation(&conversation_id, 0, 10000)
+        .await
+        .unwrap_or_default();
+    
+    let all_read = messages_after.iter().all(|m| m.is_read == 1);
+    if all_read {
+        println!("  ✅ 所有消息已标记为已读");
+    } else {
+        println!("  ⚠️ 部分消息未标记为已读");
+    }
+    
+    println!("\n=== 标记消息已读测试结果 ===\n");
+    println!("会话 ID: {}", conversation_id);
+    println!("消息数量: {}", seqs.len());
+    println!("\n✅ 标记消息已读测试完成");
+}

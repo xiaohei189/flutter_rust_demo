@@ -47,6 +47,10 @@ impl MessageHandler {
         }
     }
 
+    pub fn message_dao(&self) -> Arc<MessageDao> {
+        self.message_dao.clone()
+    }
+
     pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
         if messages.is_empty() {
             return Ok(());

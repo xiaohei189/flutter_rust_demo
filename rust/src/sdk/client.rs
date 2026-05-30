@@ -6,6 +6,7 @@ use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::message::handler::{MessageHandler, ReceivedMessage};
 use crate::core::message::sender::MessageSender;
+use crate::core::message::service::MessageService;
 use crate::core::message::syncer::MessageSyncer;
 use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
@@ -50,6 +51,8 @@ pub struct OpenIMClient {
     pub online_status: Arc<OnlineStatusManager>,
     /// 文件上传服务
     pub file_uploader: Arc<FileUploader>,
+    /// 消息服务（撤回、删除、已读等）
+    pub message_service: Arc<MessageService>,
     /// 事件总线
     pub event_bus: Arc<EventBus>,
     /// 缓存管理器
@@ -131,6 +134,13 @@ impl OpenIMClient {
             context.http_client.clone(),
         ));
 
+        let message_service = Arc::new(MessageService::new(
+            context.message_dao.clone(),
+            event_bus.clone(),
+            context.http_client.clone(),
+            config.user_id.clone(),
+        ));
+
         info!("OpenIM SDK 初始化完成");
 
         Ok(Self {
@@ -146,6 +156,7 @@ impl OpenIMClient {
             conversation_syncer,
             online_status,
             file_uploader,
+            message_service,
             event_bus,
             cache,
         })
@@ -317,6 +328,7 @@ impl OpenIMClient {
         self.context.set_user_id(user_id.to_string());
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
+        self.message_service.set_user_id(user_id.to_string());
         
         // 启动 WebSocket 连接
         if let Some(ws_url) = &self.context.config.ws_url {

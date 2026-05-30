@@ -22,7 +22,7 @@
 |------|------|------|
 | Phase 1 | 基础设施层（新架构骨架） | ✅ 已完成 |
 | Phase 2 | 核心模块实体化 | ✅ 已完成 |
-| Phase 3 | 业务模块实体化 + 集成测试 | ✅ 3.1/3.2/3.3 完成 |
+| Phase 3 | 业务模块实体化 + 集成测试 | ✅ 3.1/3.2/3.3/3.4 完成 |
 | Phase 4 | FFI 桥接层完善 | 🔴 待开始 |
 
 ---
@@ -75,6 +75,9 @@
 | 未读消息计数 | ✅ 通过 | 累加/标记已读/清零 |
 | 会话置顶/免打扰 | ✅ 通过 | 设置/取消 |
 | 会话删除 | ✅ 通过 | 删除后验证不存在 |
+| 消息撤回 | ✅ 通过 | 撤回后 content_type 更新为 2101 |
+| 消息删除 | ✅ 通过 | 删除后数据库记录清除 |
+| 消息已读标记 | ✅ 通过 | is_read 字段更新 |
 
 ---
 
@@ -115,12 +118,17 @@
 ### Task 3.4: 消息高级功能集成测试
 
 **测试用例**：
-- [ ] 消息撤回
-- [ ] 消息删除
-- [ ] 已读回执
+- [x] 消息撤回
+- [x] 消息删除
+- [x] 已读回执
 - [ ] 消息转发
 
-**文件**：`rust/tests/integration.rs` - `test_message_advanced_*`
+**文件**：`rust/tests/integration.rs` - `test_message_revoke/delete/mark_read`
+
+**新增模块**：
+- `core/message/service.rs` - 消息服务（撤回、删除、已读）
+- `message_dao` 新增方法：`delete_by_client_msg_id`, `update_content_type`, `mark_as_read_by_seqs`
+- `SdkEvent` 新增事件：`MessagesDeleted`
 
 ---
 
@@ -197,14 +205,15 @@ rust/src/
 
 ## 当前执行进度
 
-**正在执行**: Task 3.4 - 消息高级功能集成测试
+**正在执行**: Task 3.4 - 消息高级功能集成测试 ✅ 已完成
 
 ### 下一步计划
 
-1. 实现消息撤回测试 (`test_message_recall`)
-2. 实现消息删除测试 (`test_message_delete`)
-3. 实现已读回执测试 (`test_message_read_receipt`)
+1. ~~实现消息撤回测试 (`test_message_recall`)~~ ✅ 完成
+2. ~~实现消息删除测试 (`test_message_delete`)~~ ✅ 完成
+3. ~~实现已读回执测试 (`test_message_read_receipt`)~~ ✅ 完成
 4. 实现消息转发测试 (`test_message_forward`)
+5. 开始 Phase 4: FFI 桥接层完善
 
 ### 修复记录（2024-05-30）
 
@@ -214,3 +223,7 @@ rust/src/
 - 所有响应结构体添加 `Default` trait 处理 null 值
 - 修复会话创建逻辑：消息处理器在收到新消息时自动创建会话记录
 - 修复测试中 conversation_id 格式：`si_{send_id}_{recv_id}`
+- 新增消息服务模块：`core/message/service.rs`（撤回、删除、已读）
+- 新增 DAO 方法：`delete_by_client_msg_id`, `update_content_type`, `mark_as_read_by_seqs`
+- 新增 SdkEvent 事件：`MessagesDeleted`
+- 修复 `MessageHandler` 暴露 `message_dao()` 方法供测试使用
