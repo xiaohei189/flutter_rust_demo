@@ -3,6 +3,7 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
+import '../domain/config.dart';
 import '../domain/event/types.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
@@ -11,12 +12,11 @@ import '../domain/model/user.dart';
 import '../frb_generated.dart';
 import '../infra/database/models.dart';
 import '../lib.dart';
+import '../sdk/client.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `map_err`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
-/// 上传文件
 Future<String> uploadFile({
   required String filePath,
   required String fileName,
@@ -25,7 +25,6 @@ Future<String> uploadFile({
   fileName: fileName,
 );
 
-/// 上传文件并返回进度
 Future<String> uploadFileWithProgress({
   required String filePath,
   required String fileName,
@@ -36,121 +35,133 @@ Future<String> uploadFileWithProgress({
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
-  /// 添加到黑名单
+  Future<void> acceptFriendApplication({required String userId});
+
+  Future<void> acceptGroupApplication({
+    required String groupId,
+    required String userId,
+  });
+
   Future<void> addBlack({required String userId});
 
-  /// 添加好友
   Future<void> addFriend({required String userId, required String reqMsg});
 
-  /// 创建群组
   Future<GroupInfo> createGroup({
     required String groupName,
     required int groupType,
     required List<String> memberIds,
   });
 
-  /// 删除会话
   Future<void> deleteConversation({required String conversationId});
 
-  /// 删除好友
   Future<void> deleteFriend({required String userId});
 
-  /// 删除消息
   Future<void> deleteMessages({required DeleteMessagesReq req});
 
-  /// 断开连接并清理资源
   Future<void> disconnect();
 
-  /// 事件流。Dart 端得到 Stream<SdkEvent> 并 listen。
+  Future<void> dismissGroup({required String groupId});
+
   Stream<SdkEvent> eventStream();
 
-  /// 获取黑名单
   Future<List<String>> getBlackList();
 
-  /// 获取单个会话
   Future<LocalConversation?> getConversation({required String conversationId});
 
-  /// 获取所有会话列表
   Future<List<LocalConversation>> getConversations();
 
-  /// 获取好友列表
+  Future<List<FriendApplyInfo>> getFriendApplyList();
+
   Future<List<FriendInfo>> getFriendList();
 
-  /// 获取群组列表
+  Future<List<GroupApplyInfo>> getGroupApplicationList();
+
   Future<List<GroupInfo>> getGroupList();
 
-  /// 获取群组成员
   Future<List<GroupMember>> getGroupMembers({required String groupId});
 
-  /// 获取历史消息
+  Future<List<GroupMember>> getGroupMembersInfo({
+    required String groupId,
+    required List<String> userIds,
+  });
+
+  Future<List<GroupInfo>> getGroupsInfo({required List<String> groupIds});
+
   Future<List<MessageInfo>> getHistoryMessages({
     required GetHistoryMessagesReq req,
   });
 
-  /// 获取用户信息
   Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
 
-  /// 邀请成员
   Future<void> inviteGroupMembers({
     required String groupId,
     required List<String> memberIds,
   });
 
-  /// 加入群组
+  Future<bool> isFriend({required String userId});
+
   Future<void> joinGroup({required String groupId, required String reqMsg});
 
-  /// 踢出成员
   Future<void> kickGroupMembers({
     required String groupId,
     required List<String> memberIds,
   });
 
-  /// 标记消息已读
   Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req});
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-  /// 创建新的 SDK 客户端实例
   static Future<OpenImBridgeClient> newInstance({
-    required String userId,
-    required String token,
-    required int platformId,
-    String? wsUrl,
-    String? apiBaseUrl,
-    String? dataDir,
+    required ClientConfig config,
   }) => RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientNew(
-    userId: userId,
-    token: token,
-    platformId: platformId,
-    wsUrl: wsUrl,
-    apiBaseUrl: apiBaseUrl,
-    dataDir: dataDir,
+    config: config,
   );
 
-  /// 退出群组
   Future<void> quitGroup({required String groupId});
 
-  /// 从黑名单移除
+  Future<void> refuseFriendApplication({required String userId});
+
+  Future<void> refuseGroupApplication({
+    required String groupId,
+    required String userId,
+  });
+
   Future<void> removeBlack({required String userId});
 
-  /// 撤回消息
   Future<void> revokeMessage({required RevokeMessageReq req});
 
-  /// 发送消息
+  Future<List<LocalChatLog>> searchLocalMessages({
+    required String conversationId,
+    required String keyword,
+  });
+
   Future<MsgData> sendMessage({required SendMessageReq req});
 
-  /// 设置会话置顶
+  Future<void> setConversationDraft({
+    required String conversationId,
+    required String draftText,
+  });
+
   Future<void> setConversationPinned({
     required String conversationId,
     required bool isPinned,
   });
 
-  /// 更新会话未读数
+  Future<void> setConversationPrivate({
+    required String conversationId,
+    required bool isPrivate,
+  });
+
+  Future<void> setGroupInfo({
+    required String groupId,
+    String? groupName,
+    String? faceUrl,
+  });
+
   Future<void> updateConversationUnreadCount({
     required String conversationId,
     required PlatformInt64 unreadCount,
   });
 
-  /// 更新用户资料
   Future<void> updateUserProfile({
     String? nickname,
     String? faceUrl,
@@ -158,7 +169,6 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   });
 }
 
-/// 删除消息请求
 class DeleteMessagesReq {
   final String conversationId;
   final List<String> clientMsgIds;
@@ -180,7 +190,6 @@ class DeleteMessagesReq {
           clientMsgIds == other.clientMsgIds;
 }
 
-/// 获取历史消息请求
 class GetHistoryMessagesReq {
   final String conversationId;
   final PlatformInt64 startSeq;
@@ -206,7 +215,6 @@ class GetHistoryMessagesReq {
           count == other.count;
 }
 
-/// 标记已读请求
 class MarkMessagesAsReadReq {
   final String conversationId;
   final int sessionType;
@@ -238,7 +246,6 @@ class MarkMessagesAsReadReq {
           seqs == other.seqs;
 }
 
-/// 撤回消息请求
 class RevokeMessageReq {
   final String conversationId;
   final PlatformInt64 seq;
@@ -270,7 +277,6 @@ class RevokeMessageReq {
           sessionType == other.sessionType;
 }
 
-/// 发送消息请求
 class SendMessageReq {
   final String recvId;
   final String groupId;

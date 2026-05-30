@@ -17,7 +17,7 @@ async fn test_conversation_list_sync() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let convs = sdk.conversation.get_all_conversations().await;
+    let convs = sdk.get_conversations().await;
     match &convs {
         Ok(list) => println!("会话数量: {}", list.len()),
         Err(e) => println!("获取失败: {:?}", e),
@@ -40,7 +40,7 @@ async fn test_conversation_unread_count() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let convs = sdk.conversation.get_all_conversations().await.unwrap_or_default();
+    let convs = sdk.get_conversations().await.unwrap_or_default();
     println!("会话数量: {}", convs.len());
 
     for conv in &convs {
@@ -64,7 +64,7 @@ async fn test_conversation_pinned_private() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let convs = sdk.conversation.get_all_conversations().await.unwrap_or_default();
+    let convs = sdk.get_conversations().await.unwrap_or_default();
     if convs.is_empty() {
         println!("无会话，跳过");
         return;
@@ -73,22 +73,22 @@ async fn test_conversation_pinned_private() {
     let conv_id = &convs[0].conversation_id;
 
     println!("置顶会话...");
-    match sdk.conversation.set_pinned(conv_id, true).await {
+    match sdk.set_conversation_pinned(conv_id.clone(), true).await {
         Ok(_) => println!("  ✅ 置顶成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
 
-    let pinned = sdk.conversation.get_pinned_conversations().await;
+    let pinned = sdk.get_pinned_conversations().await;
     match pinned {
         Ok(p) => println!("置顶会话数: {}", p.len()),
         Err(e) => println!("获取置顶失败: {:?}", e),
     }
 
     println!("取消置顶...");
-    let _ = sdk.conversation.set_pinned(conv_id, false).await;
+    let _ = sdk.set_conversation_pinned(conv_id.to_string(), false).await;
 
     println!("设置私聊...");
-    match sdk.conversation.set_private_chat(conv_id, true).await {
+    match sdk.set_conversation_private(conv_id.to_string(), true).await {
         Ok(_) => println!("  ✅ 设置成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -110,7 +110,7 @@ async fn test_conversation_delete() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let convs = sdk.conversation.get_all_conversations().await.unwrap_or_default();
+    let convs = sdk.get_conversations().await.unwrap_or_default();
     if convs.is_empty() {
         println!("无会话，跳过");
         return;
@@ -118,7 +118,7 @@ async fn test_conversation_delete() {
 
     let conv_id = &convs[0].conversation_id;
     println!("删除会话...");
-    match sdk.conversation.delete_conversation(conv_id).await {
+    match sdk.delete_conversation(conv_id.to_string()).await {
         Ok(_) => println!("  ✅ 删除成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -168,31 +168,31 @@ async fn test_user_state_conversation_management() {
         content_type: 101,
         content: r#"{"content":"Test conversation"}"#.to_string(),
     };
-    sdk.message_sender.send_message(msg).await.unwrap();
+    sdk.send_pending_message(msg).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    let convs = sdk.conversation.get_all_conversations().await.unwrap_or_default();
+    let convs = sdk.get_conversations().await.unwrap_or_default();
     println!("会话数量: {}", convs.len());
 
     if !convs.is_empty() {
         let cid = &convs[0].conversation_id;
 
-        let _ = sdk.conversation.set_pinned(cid, true).await;
+        let _ = sdk.set_conversation_pinned(cid.to_string(), true).await;
         println!("设置置顶完成");
 
-        let pinned = sdk.conversation.get_pinned_conversations().await;
+        let pinned = sdk.get_pinned_conversations().await;
         match pinned {
             Ok(p) => println!("置顶会话数: {}", p.len()),
             Err(e) => println!("获取置顶失败: {:?}", e),
         }
 
-        let _ = sdk.conversation.set_draft(cid, "Draft").await;
+        let _ = sdk.set_conversation_draft(cid.clone(), "Draft".to_string()).await;
         println!("设置草稿完成");
 
-        let _ = sdk.conversation.clear_draft(cid).await;
+        let _ = sdk.clear_conversation_draft(cid.clone()).await;
         println!("清除草稿完成");
 
-        let _ = sdk.conversation.delete_conversation(cid).await;
+        let _ = sdk.delete_conversation(cid.clone()).await;
         println!("删除会话完成");
     }
 

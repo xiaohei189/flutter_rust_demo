@@ -39,7 +39,7 @@ async fn test_history_message_pull() {
             content_type: 101,
             content: format!("{{\"content\":\"历史消息测试 {}\"}}", i),
         };
-        let _ = sender_sdk.message_sender.send_message(msg).await;
+        let _ = sender_sdk.send_pending_message(msg).await;
         tokio::time::sleep(Duration::from_millis(300)).await;
     }
 
@@ -50,7 +50,7 @@ async fn test_history_message_pull() {
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
 
     println!("3. 获取会话列表...");
-    let convs = receiver_sdk.conversation.get_all_conversations().await;
+    let convs = receiver_sdk.get_conversations().await;
     match &convs {
         Ok(list) => {
             println!("  会话数量: {}", list.len());
@@ -102,16 +102,16 @@ async fn test_message_revoke() {
         content: r#"{"content":"将被撤回的消息"}"#.to_string(),
     };
 
-    match sdk.message_sender.send_message(msg).await {
+    match sdk.send_pending_message(msg).await {
         Ok(_) => {
             println!("  ✅ 发送成功");
             tokio::time::sleep(Duration::from_secs(2)).await;
 
             // 获取会话列表以获取 conv_id
-            if let Ok(convs) = sdk.conversation.get_all_conversations().await {
+            if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
                     println!("撤回消息...");
-                    match sdk.message_service.revoke_message(
+                    match sdk.revoke_message(
                         conv.conversation_id.clone(), 0, client_msg_id, 1
                     ).await {
                         Ok(_) => println!("  ✅ 撤回成功"),
@@ -158,15 +158,15 @@ async fn test_message_delete() {
         content: r#"{"content":"将被删除的消息"}"#.to_string(),
     };
 
-    match sdk.message_sender.send_message(msg).await {
+    match sdk.send_pending_message(msg).await {
         Ok(_) => {
             println!("  ✅ 发送成功");
             tokio::time::sleep(Duration::from_secs(2)).await;
 
-            if let Ok(convs) = sdk.conversation.get_all_conversations().await {
+            if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
                     println!("删除消息...");
-                    match sdk.message_service.delete_messages(
+                    match sdk.delete_messages(
                         conv.conversation_id.clone(), vec![client_msg_id]
                     ).await {
                         Ok(_) => println!("  ✅ 删除成功"),
@@ -213,14 +213,14 @@ async fn test_message_mark_read() {
         content: r#"{"content":"标记已读测试"}"#.to_string(),
     };
 
-    match sdk.message_sender.send_message(msg).await {
+    match sdk.send_pending_message(msg).await {
         Ok(_) => {
             println!("  ✅ 发送成功");
             tokio::time::sleep(Duration::from_secs(2)).await;
 
-            if let Ok(convs) = sdk.conversation.get_all_conversations().await {
+            if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
-                    match sdk.message_service.mark_messages_as_read(
+                    match sdk.mark_messages_as_read(
                         conv.conversation_id.clone(), 1, 0, vec![]
                     ).await {
                         Ok(_) => println!("  ✅ 标记已读成功"),
@@ -266,14 +266,14 @@ async fn test_message_read_receipt() {
         content: r#"{"content":"已读回执测试"}"#.to_string(),
     };
 
-    match sdk.message_sender.send_message(msg).await {
+    match sdk.send_pending_message(msg).await {
         Ok(_) => {
             println!("  ✅ 消息发送成功");
             tokio::time::sleep(Duration::from_secs(2)).await;
 
-            if let Ok(convs) = sdk.conversation.get_all_conversations().await {
+            if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
-                    match sdk.message_service.mark_messages_as_read(
+                    match sdk.mark_messages_as_read(
                         conv.conversation_id.clone(), 1, 0, vec![]
                     ).await {
                         Ok(_) => println!("  ✅ 已读回执处理成功"),
@@ -318,14 +318,14 @@ async fn test_local_message_search() {
         content_type: 101,
         content: r#"{"content":"搜索测试消息"}"#.to_string(),
     };
-    let _ = sdk.message_sender.send_message(msg).await;
+    let _ = sdk.send_pending_message(msg).await;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    if let Ok(convs) = sdk.conversation.get_all_conversations().await {
+    if let Ok(convs) = sdk.get_conversations().await {
         if let Some(conv) = convs.first() {
             println!("搜索本地消息...");
-            match sdk.message_service.search_local_messages(
-                conv.conversation_id.clone(), "test".to_string(), 100
+            match sdk.search_local_messages(
+                conv.conversation_id.clone(), "test".to_string(),
             ).await {
                 Ok(results) => println!("  搜索结果数: {}", results.len()),
                 Err(e) => println!("  ❌ 搜索失败: {:?}", e),

@@ -30,12 +30,12 @@ async fn test_add_friend() {
     }, &cert1.im_token).await;
 
     println!("添加好友...");
-    match sdk.friend.add_friend(cert2.user_id.clone(), Some("Hello!".into())).await {
+    match sdk.add_friend(cert2.user_id.clone(), Some("Hello!".into())).await {
         Ok(_) => println!("  ✅ 好友申请发送成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
 
-    let is_friend = sdk.friend.is_friend(&cert2.user_id).await;
+    let is_friend = sdk.is_friend(&cert2.user_id).await;
     println!("是否好友: {}", is_friend);
     println!("✅ 添加好友测试完成");
 }
@@ -67,11 +67,11 @@ async fn test_delete_friend() {
     }, &cert1.im_token).await;
 
     println!("添加好友...");
-    let _ = sdk.friend.add_friend(cert2.user_id.clone(), Some("Add me".into())).await;
+    let _ = sdk.add_friend(cert2.user_id.clone(), Some("Add me".into())).await;
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     println!("删除好友...");
-    match sdk.friend.delete_friend(cert2.user_id.clone()).await {
+    match sdk.delete_friend(cert2.user_id.clone()).await {
         Ok(_) => println!("  ✅ 删除成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
@@ -103,22 +103,22 @@ async fn test_blacklist_management() {
         chat_token: None,
     }, &cert1.im_token).await;
 
-    let initial = sdk.friend.get_blacklist().await;
+    let initial = sdk.get_black_list().await;
     println!("初始黑名单: {}", initial.len());
 
     println!("拉黑用户...");
-    match sdk.friend.add_black(cert2.user_id.clone()).await {
+    match sdk.add_black(cert2.user_id.clone()).await {
         Ok(_) => println!("  ✅ 拉黑成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    let after_add = sdk.friend.get_blacklist().await;
+    let after_add = sdk.get_black_list().await;
     println!("拉黑后数量: {}", after_add.len());
 
     println!("移出黑名单...");
-    match sdk.friend.remove_black(cert2.user_id.clone()).await {
+    match sdk.remove_black(cert2.user_id.clone()).await {
         Ok(_) => println!("  ✅ 移出成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
@@ -141,11 +141,11 @@ async fn test_friend_list_sync() {
     let sdk = create_sdk(&user1, &im_token).await;
 
     println!("获取好友列表...");
-    let friends = sdk.friend.get_friend_list().await;
+    let friends = sdk.get_friend_list().await;
     println!("好友数量: {}", friends.len());
 
     println!("获取好友 ID 列表...");
-    let ids = sdk.friend.get_friend_id_list().await;
+    let ids = sdk.get_friend_id_list().await;
     println!("好友 ID 数量: {}", ids.len());
 
     println!("✅ 好友列表同步测试完成");
@@ -189,11 +189,11 @@ async fn test_user_state_friend_management() {
     sdk.connect(WS_URL, &cert1.im_token, &cert1.user_id).await.expect("连接失败");
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    let friends = sdk.friend.get_friend_list().await;
+    let friends = sdk.get_friend_list().await;
     println!("好友数量: {}", friends.len());
     assert!(friends.is_empty(), "新用户应该没有好友");
 
-    let _ = sdk.friend.add_friend(cert2.user_id.clone(), Some("Hello!".into())).await;
+    let _ = sdk.add_friend(cert2.user_id.clone(), Some("Hello!".into())).await;
     println!("✅ 好友管理测试完成");
 }
 
@@ -236,7 +236,7 @@ async fn test_friend_application_flow() {
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("用户1申请添加用户2...");
-    let result = sdk1.friend.add_friend(cert2.user_id.clone(), Some("Add me".into())).await;
+    let result = sdk1.add_friend(cert2.user_id.clone(), Some("Add me".into())).await;
     match &result {
         Ok(_) => println!("  ✅ 申请已发送"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
@@ -244,28 +244,28 @@ async fn test_friend_application_flow() {
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("用户2获取好友申请列表...");
-    let apply_resp = sdk2.friend.get_friend_apply_list().await;
+    let apply_resp = sdk2.get_friend_apply_list().await;
     match &apply_resp {
         Ok(resp) => {
-            let infos = resp.apply_infos.as_deref().unwrap_or(&[]);
-            println!("  申请数量: {}", infos.len());
-            for app in infos {
-                println!("    申请者: {}, handle_result={}", app.nickname, app.handle_result);
+            let infos = resp;
+            assert!(!infos.is_empty(), "应有好友申请");
+            for info in infos {
+                println!("  申请: {} - {}", info.nickname, info.req_msg.as_deref().unwrap_or("无"));
             }
         }
         Err(e) => println!("  ❌ 获取失败: {:?}", e),
     }
 
     println!("用户2接受申请...");
-    match sdk2.friend.accept_friend_application(cert1.user_id.clone(), None).await {
+    match sdk2.accept_friend_application(cert1.user_id.clone(), None).await {
         Ok(_) => println!("  ✅ 接受成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("验证好友关系...");
-    let friends1 = sdk1.friend.get_friend_list().await;
-    let friends2 = sdk2.friend.get_friend_list().await;
+    let friends1 = sdk1.get_friend_list().await;
+    let friends2 = sdk2.get_friend_list().await;
     let has1 = friends1.iter().any(|f| f.user_id == cert2.user_id);
     let has2 = friends2.iter().any(|f| f.user_id == cert1.user_id);
     println!("用户1-用户2: {} (期望 true)", has1);
@@ -274,10 +274,10 @@ async fn test_friend_application_flow() {
     println!("\n=== 拒绝测试 ===");
     let phone3 = generate_virtual_phone("fapp3");
     let cert3 = register_user(&phone3, "FApp3").await.expect("注册失败");
-    let _ = sdk1.friend.add_friend(cert3.user_id.clone(), Some("Hello".into())).await;
+    let _ = sdk1.add_friend(cert3.user_id.clone(), Some("Hello".into())).await;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    match sdk1.friend.refuse_friend_application(cert3.user_id.clone(), None).await {
+    match sdk1.refuse_friend_application(cert3.user_id.clone(), None).await {
         Ok(_) => println!("  ✅ 拒绝成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }

@@ -22,7 +22,7 @@ async fn test_message_types() {
     let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
 
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut event_subscription = receiver_sdk.event_bus.subscribe();
+    let mut event_subscription = receiver_sdk.event_bus().subscribe();
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
 
@@ -54,7 +54,7 @@ async fn test_message_types() {
             content: content.clone(),
         };
 
-        match sender_sdk.message_sender.send_message(msg).await {
+        match sender_sdk.send_pending_message(msg).await {
             Ok(_) => println!("  ✅ 发送成功"),
             Err(e) => println!("  ❌ 发送失败: {:?}", e),
         }
@@ -103,7 +103,7 @@ async fn test_multiple_message_types() {
     let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
 
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut event_subscription = receiver_sdk.event_bus.subscribe();
+    let mut event_subscription = receiver_sdk.event_bus().subscribe();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
@@ -126,7 +126,7 @@ async fn test_multiple_message_types() {
         TestCase { name: "位置消息", content_type: 109, content: r#"{"description":"北京市朝阳区","longitude":116.48,"latitude":39.99}"#.to_string() },
         TestCase { name: "引用消息", content_type: 114, content: r#"{"text":"回复内容","quoteMessage":{"clientMsgID":"qid","content":"{}","contentType":101}}"#.to_string() },
         TestCase { name: "表情消息", content_type: 115, content: r#"{"index":1,"data":"😀"}"#.to_string() },
-        TestCase { name: "自定义消息", content_type: 110, content: r#"{"data":"{\"type\":\"custom\"}""#.to_string() },
+        TestCase { name: "自定义消息", content_type: 110, content: r#"{"data":"{\"type\":\"custom\"}"#.to_string() },
     ];
 
     println!("发送 {} 种类型的消息...", test_cases.len());
@@ -151,7 +151,7 @@ async fn test_multiple_message_types() {
         };
 
         println!("  [{}] {}...", i + 1, tc.name);
-        let ok = sender_sdk.message_sender.send_message(msg).await.is_ok();
+        let ok = sender_sdk.send_pending_message(msg).await.is_ok();
         sent_results.push((tc.name, tc.content_type, ok));
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
@@ -221,7 +221,7 @@ async fn test_send_message_persistence() {
         content: r#"{"content":"持久化测试消息"}"#.to_string(),
     };
 
-    let result = sdk.message_sender.send_message(msg).await;
+    let result = sdk.send_pending_message(msg).await;
     assert!(result.is_ok(), "发送失败: {:?}", result.err());
     println!("  ✅ 消息发送并持久化成功");
     println!("✅ 消息发送持久化测试完成");
@@ -247,7 +247,7 @@ async fn test_message_sync() {
     let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
 
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut event_subscription = receiver_sdk.event_bus.subscribe();
+    let mut event_subscription = receiver_sdk.event_bus().subscribe();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
@@ -268,7 +268,7 @@ async fn test_message_sync() {
             content: format!("{{\"content\":\"同步测试消息 {}\"}}", i),
         };
 
-        match sender_sdk.message_sender.send_message(msg).await {
+        match sender_sdk.send_pending_message(msg).await {
             Ok(_) => println!("  ✅ 消息 {} 发送成功", i),
             Err(e) => println!("  ❌ 消息 {} 发送失败: {:?}", i, e),
         }

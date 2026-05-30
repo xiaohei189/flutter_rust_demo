@@ -27,11 +27,10 @@ async fn test_create_group() {
 
     let group_name = format!("TestGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
 
-    let result = sdk.group.create_group(
+    let result = sdk.create_group(
         group_name.clone(),
-        None, None, None,
-        vec![cert.user_id.clone()], vec![],
-        cert.user_id.clone(),
+        0,
+        vec![cert.user_id.clone()],
     ).await;
 
     match result {
@@ -68,28 +67,27 @@ async fn test_join_and_quit_group() {
     }, &cert2.im_token).await;
 
     let group_name = format!("JQGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.group.create_group(
-        group_name, None, None, None,
-        vec![cert1.user_id.clone()], vec![],
-        cert1.user_id.clone(),
+    let group = sdk1.create_group(
+        group_name, 0,
+        vec![cert1.user_id.clone()],
     ).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入...");
-    match sdk2.group.join_group(group.group_id.clone(), None).await {
+    match sdk2.join_group(group.group_id.clone(), None).await {
         Ok(_) => println!("  ✅ 加入成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     println!("用户1邀请用户2...");
-    match sdk1.group.invite_user_to_group(group.group_id.clone(), vec![cert2.user_id.clone()], None).await {
+    match sdk1.invite_group_members(group.group_id.clone(), vec![cert2.user_id.clone()], None).await {
         Ok(_) => println!("  ✅ 邀请成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
 
     println!("用户2退出群组...");
-    match sdk2.group.quit_group(group.group_id.clone()).await {
+    match sdk2.quit_group(group.group_id.clone()).await {
         Ok(_) => println!("  ✅ 退出成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -115,20 +113,19 @@ async fn test_group_member_management() {
         im_token: Some(cert.im_token.clone()), chat_token: None,
     }, &cert.im_token).await;
 
-    let group = sdk.group.create_group(
-        "MemberTestGroup".into(), None, None, None,
-        vec![cert.user_id.clone()], vec![],
-        cert.user_id.clone(),
+    let group = sdk.create_group(
+        "MemberTestGroup".into(), 0,
+        vec![cert.user_id.clone()],
     ).await.expect("创建群组失败");
 
     println!("获取群成员...");
-    match sdk.group.get_group_member_list(group.group_id.clone(), 0, 0, 1000).await {
+    match sdk.get_group_members(group.group_id.clone()).await {
         Ok(members) => println!("  成员数: {}", members.len()),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
 
     println!("获取群成员 ID 列表...");
-    match sdk.group.get_group_member_ids(group.group_id.clone()).await {
+    match sdk.get_group_members(group.group_id.clone()).await.map(|members| members.into_iter().map(|m| m.user_id.clone()).collect::<Vec<_>>()) {
         Ok(ids) => println!("  成员 ID 数: {}", ids.len()),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -154,29 +151,20 @@ async fn test_group_info_update() {
         im_token: Some(cert.im_token.clone()), chat_token: None,
     }, &cert.im_token).await;
 
-    let group = sdk.group.create_group(
-        "InfoTestGroup".into(), None, None, None,
-        vec![cert.user_id.clone()], vec![],
-        cert.user_id.clone(),
+    let group = sdk.create_group(
+        "InfoTestGroup".into(), 0,
+        vec![cert.user_id.clone()],
     ).await.expect("创建失败");
     println!("群: {} ({})", group.group_name, group.group_id);
 
-    use rust_lib_flutter_rust_demo::domain::model::group::SetGroupInfoFields;
     println!("更新群名称...");
-    match sdk.group.set_group_info(SetGroupInfoFields {
-        group_id: group.group_id.clone(),
-        group_name: Some("UpdatedName".into()),
-        face_url: None,
-        introduction: None,
-        notification: None,
-        ex: None,
-    }).await {
+    match sdk.set_group_info(group.group_id.clone(), Some("UpdatedName".into()), None).await {
         Ok(_) => println!("  ✅ 更新成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
 
     println!("获取群信息...");
-    match sdk.group.get_groups_info(vec![group.group_id.clone()]).await {
+    match sdk.get_groups_info(vec![group.group_id.clone()]).await {
         Ok(info) => println!("  群名称: {}", info.first().map(|i| &i.group_name).unwrap_or(&"?".into())),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
@@ -198,7 +186,7 @@ async fn test_group_list_sync() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let groups = sdk.group.get_joined_group_list().await;
+    let groups = sdk.get_group_list().await;
     println!("已加入群组数: {}", groups.len());
 
     println!("✅ 群列表同步测试完成");
@@ -233,10 +221,9 @@ async fn test_user_state_group_management() {
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let group_name = format!("UGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let result = sdk.group.create_group(
-        group_name, None, None, None,
-        vec![cert.user_id.clone()], vec![],
-        cert.user_id.clone(),
+    let result = sdk.create_group(
+        group_name, 0,
+        vec![cert.user_id.clone()],
     ).await;
 
     match result {
@@ -244,7 +231,7 @@ async fn test_user_state_group_management() {
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
 
-    let groups = sdk.group.get_joined_group_list().await;
+    let groups = sdk.get_group_list().await;
     println!("群组数量: {}", groups.len());
     println!("✅ 群组管理测试完成");
 }
@@ -288,35 +275,34 @@ async fn test_group_application_flow() {
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let group_name = format!("GAppGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.group.create_group(
-        group_name, None, None, None,
-        vec![cert1.user_id.clone()], vec![],
-        cert1.user_id.clone(),
+    let group = sdk1.create_group(
+        group_name, 0,
+        vec![cert1.user_id.clone()],
     ).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入群组...");
-    match sdk2.group.join_group(group.group_id.clone(), None).await {
+    match sdk2.join_group(group.group_id.clone(), None).await {
         Ok(_) => println!("  ✅ 申请成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("用户1获取群组申请列表...");
-    match sdk1.group.get_group_application_list().await {
-        Ok(resp) => println!("  ✅ 申请数: {}", resp.group_requests.as_deref().unwrap_or(&[]).len()),
+    match sdk1.get_group_application_list().await {
+        Ok(resp) => println!("  ✅ 申请数: {}", resp.len()),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
 
     println!("用户1审批用户2的申请...");
-    match sdk1.group.accept_group_application(group.group_id.clone(), cert2.user_id.clone()).await {
+    match sdk1.accept_group_application(group.group_id.clone(), cert2.user_id.clone()).await {
         Ok(_) => println!("  ✅ 同意申请"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
     }
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("验证成员列表...");
-    match sdk1.group.get_group_member_list(group.group_id.clone(), 0, 0, 1000).await {
+    match sdk1.get_group_members(group.group_id.clone()).await {
         Ok(members) => {
             println!("  成员数: {} (期望 >= 2)", members.len());
             for m in &members {

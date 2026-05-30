@@ -10,6 +10,7 @@ import 'api/bridge_client.dart';
 import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'domain/config.dart';
 import 'domain/event/types.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
@@ -19,6 +20,7 @@ import 'frb_generated.dart';
 import 'infra/database/models.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
+import 'sdk/client.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({
@@ -98,6 +100,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  ClientConfig dco_decode_box_autoadd_client_config(dynamic raw);
+
+  @protected
   DeleteMessagesReq dco_decode_box_autoadd_delete_messages_req(dynamic raw);
 
   @protected
@@ -120,13 +125,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SendMessageReq dco_decode_box_autoadd_send_message_req(dynamic raw);
 
   @protected
+  ClientConfig dco_decode_client_config(dynamic raw);
+
+  @protected
   DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw);
+
+  @protected
+  FriendApplyInfo dco_decode_friend_apply_info(dynamic raw);
 
   @protected
   FriendInfo dco_decode_friend_info(dynamic raw);
 
   @protected
   GetHistoryMessagesReq dco_decode_get_history_messages_req(dynamic raw);
+
+  @protected
+  GroupApplyInfo dco_decode_group_apply_info(dynamic raw);
 
   @protected
   GroupInfo dco_decode_group_info(dynamic raw);
@@ -144,13 +158,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
+  List<FriendApplyInfo> dco_decode_list_friend_apply_info(dynamic raw);
+
+  @protected
   List<FriendInfo> dco_decode_list_friend_info(dynamic raw);
+
+  @protected
+  List<GroupApplyInfo> dco_decode_list_group_apply_info(dynamic raw);
 
   @protected
   List<GroupInfo> dco_decode_list_group_info(dynamic raw);
 
   @protected
   List<GroupMember> dco_decode_list_group_member(dynamic raw);
+
+  @protected
+  List<LocalChatLog> dco_decode_list_local_chat_log(dynamic raw);
 
   @protected
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
@@ -166,6 +189,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<UserInfo> dco_decode_list_user_info(dynamic raw);
+
+  @protected
+  LocalChatLog dco_decode_local_chat_log(dynamic raw);
 
   @protected
   LocalConversation dco_decode_local_conversation(dynamic raw);
@@ -261,6 +287,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  ClientConfig sse_decode_box_autoadd_client_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   DeleteMessagesReq sse_decode_box_autoadd_delete_messages_req(
     SseDeserializer deserializer,
   );
@@ -291,9 +322,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  ClientConfig sse_decode_client_config(SseDeserializer deserializer);
+
+  @protected
   DeleteMessagesReq sse_decode_delete_messages_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  FriendApplyInfo sse_decode_friend_apply_info(SseDeserializer deserializer);
 
   @protected
   FriendInfo sse_decode_friend_info(SseDeserializer deserializer);
@@ -302,6 +339,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GetHistoryMessagesReq sse_decode_get_history_messages_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  GroupApplyInfo sse_decode_group_apply_info(SseDeserializer deserializer);
 
   @protected
   GroupInfo sse_decode_group_info(SseDeserializer deserializer);
@@ -319,13 +359,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
+  List<FriendApplyInfo> sse_decode_list_friend_apply_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<FriendInfo> sse_decode_list_friend_info(SseDeserializer deserializer);
+
+  @protected
+  List<GroupApplyInfo> sse_decode_list_group_apply_info(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<GroupInfo> sse_decode_list_group_info(SseDeserializer deserializer);
 
   @protected
   List<GroupMember> sse_decode_list_group_member(SseDeserializer deserializer);
+
+  @protected
+  List<LocalChatLog> sse_decode_list_local_chat_log(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<LocalConversation> sse_decode_list_local_conversation(
@@ -343,6 +398,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<UserInfo> sse_decode_list_user_info(SseDeserializer deserializer);
+
+  @protected
+  LocalChatLog sse_decode_local_chat_log(SseDeserializer deserializer);
 
   @protected
   LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
@@ -453,6 +511,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_client_config(
+    ClientConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_delete_messages_req(
     DeleteMessagesReq self,
     SseSerializer serializer,
@@ -489,8 +553,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_client_config(ClientConfig self, SseSerializer serializer);
+
+  @protected
   void sse_encode_delete_messages_req(
     DeleteMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_friend_apply_info(
+    FriendApplyInfo self,
     SseSerializer serializer,
   );
 
@@ -500,6 +573,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_get_history_messages_req(
     GetHistoryMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_group_apply_info(
+    GroupApplyInfo self,
     SseSerializer serializer,
   );
 
@@ -519,8 +598,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_friend_apply_info(
+    List<FriendApplyInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_friend_info(
     List<FriendInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_apply_info(
+    List<GroupApplyInfo> self,
     SseSerializer serializer,
   );
 
@@ -533,6 +624,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_group_member(
     List<GroupMember> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_local_chat_log(
+    List<LocalChatLog> self,
     SseSerializer serializer,
   );
 
@@ -562,6 +659,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_user_info(List<UserInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_local_chat_log(LocalChatLog self, SseSerializer serializer);
 
   @protected
   void sse_encode_local_conversation(

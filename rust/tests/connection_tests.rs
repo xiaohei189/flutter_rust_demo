@@ -30,7 +30,7 @@ async fn test_websocket_reconnection() {
         Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir),
     )).await.unwrap();
 
-    let mut event_sub = sdk.event_bus.subscribe();
+    let mut event_sub = sdk.event_bus().subscribe();
 
     sdk.connect(WS_URL, &cert.im_token, &cert.user_id).await.unwrap();
     println!("  ✅ 初始连接成功");
@@ -115,7 +115,7 @@ async fn test_connection_state_transitions() {
     )).await.unwrap();
 
     let mut events = Vec::new();
-    let mut event_sub = sdk.event_bus.subscribe();
+    let mut event_sub = sdk.event_bus().subscribe();
 
     println!("连接...");
     sdk.connect(WS_URL, &cert.im_token, &cert.user_id).await.unwrap();

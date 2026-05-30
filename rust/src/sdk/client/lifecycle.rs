@@ -15,49 +15,14 @@ use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::infra::cache::memory::CacheManager;
-use crate::infra::http::client::HttpApiClient;
 use crate::protocol::sdkws::PushMessages;
+use crate::sdk::client::OpenIMClient;
 use crate::sdk::context::RuntimeContext;
 use prost::Message as ProstMessage;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::{info, warn, debug};
-
-/// SDK 门面，提供统一的 API 入口
-pub struct OpenIMClient {
-    /// 运行时上下文
-    pub context: Arc<RuntimeContext>,
-    /// 连接管理器
-    pub connection: Arc<ConnectionManager>,
-    /// 用户管理器
-    pub user: Arc<UserManager>,
-    /// 好友管理器
-    pub friend: Arc<FriendManager>,
-    /// 群组管理器
-    pub group: Arc<GroupManager>,
-    /// 会话管理器
-    pub conversation: Arc<ConversationManager>,
-    /// 消息发送器
-    pub message_sender: Arc<MessageSender>,
-    /// 消息同步器
-    pub message_syncer: Arc<MessageSyncer>,
-    /// 消息处理器
-    pub message_handler: Arc<MessageHandler>,
-    /// 会话同步器
-    pub conversation_syncer: Arc<ConversationSyncer>,
-    /// 在线状态管理器
-    pub online_status: Arc<OnlineStatusManager>,
-    /// 文件上传服务
-    pub file_uploader: Arc<FileUploader>,
-    /// 消息服务（撤回、删除、已读等）
-    pub message_service: Arc<MessageService>,
-    /// 事件总线
-    pub event_bus: Arc<EventBus>,
-    /// 缓存管理器
-    pub cache: Arc<CacheManager>,
-}
 
 impl OpenIMClient {
     /// 创建新的 SDK 实例
@@ -172,20 +137,17 @@ impl OpenIMClient {
     /// 连接到服务器
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
         self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
-        
-        // 启动推送消息处理器
         self.spawn_push_message_handler();
-        
         Ok(())
     }
-    
+
     /// 启动推送消息处理器 + 重连消息同步监听
     fn spawn_push_message_handler(&self) {
         let event_bus = self.event_bus.clone();
         let message_handler = self.message_handler.clone();
         let message_syncer = self.message_syncer.clone();
         let cancel_token = self.context.cancel_token.clone();
-        
+
         tokio::spawn(async move {
             let mut subscription = event_bus.subscribe();
             info!("push_message_handler: started");
@@ -207,14 +169,14 @@ impl OpenIMClient {
                                 info!("push_message_handler: received PushMessage event, req_identifier={}, data_len={}", req_identifier, data.len());
                                 match PushMessages::decode(data.as_slice()) {
                                     Ok(push_messages) => {
-                                        info!("push_message_handler: decoded successfully, msgs={}, notification_msgs={}", 
+                                        info!("push_message_handler: decoded successfully, msgs={}, notification_msgs={}",
                                             push_messages.msgs.len(), push_messages.notification_msgs.len());
                                         let all_msgs = push_messages.msgs.iter().chain(push_messages.notification_msgs.iter());
-                                        
+
                                         for (conv_id, pull_msgs) in all_msgs {
                                             let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
                                                 let content_str = String::from_utf8_lossy(&msg.content).to_string();
-                                                
+
                                                 Some(ReceivedMessage {
                                                     server_msg_id: msg.server_msg_id.clone(),
                                                     client_msg_id: msg.client_msg_id.clone(),
@@ -236,18 +198,16 @@ impl OpenIMClient {
                                             }).collect();
 
                                             let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-                                            
+
                                             if !messages.is_empty() {
                                                 info!("push_message_handler: handling {} messages for {}", messages.len(), conv_id);
                                                 if let Err(e) = message_handler.handle_messages(messages).await {
                                                     warn!("failed to handle push messages for {}: {:?}", conv_id, e);
                                                 }
-                                                // seq 连续性校验
                                                 if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
                                                     warn!("push_trigger_and_sync failed for {}: {:?}", conv_id, e);
                                                 }
                                             } else if !seqs.is_empty() {
-                                                // seq 0 消息（仅通知，不入库）也更新 synced_max_seqs
                                                 if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
                                                     warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
                                                 }
@@ -261,10 +221,10 @@ impl OpenIMClient {
                             }
                             Some(SdkEvent::PushMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
                                 info!("push_message_handler: received PushMessages event for {}, msg_count={}", conversation_id, msgs.len());
-                                
+
                                 let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
                                     let content_str = String::from_utf8_lossy(&msg.content).to_string();
-                                    
+
                                     Some(ReceivedMessage {
                                         server_msg_id: msg.server_msg_id.clone(),
                                         client_msg_id: msg.client_msg_id.clone(),
@@ -286,13 +246,12 @@ impl OpenIMClient {
                                 }).collect();
 
                                 let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-                                
+
                                 if !messages.is_empty() {
                                     info!("push_message_handler: handling {} messages for {}", messages.len(), conversation_id);
                                     if let Err(e) = message_handler.handle_messages(messages).await {
                                         warn!("failed to handle push messages for {}: {:?}", conversation_id, e);
                                     }
-                                    // seq 连续性校验
                                     if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
                                         warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
                                     }
@@ -300,10 +259,10 @@ impl OpenIMClient {
                             }
                             Some(SdkEvent::PushNotificationMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
                                 info!("push_message_handler: received PushNotificationMessages event for {}, msg_count={}", conversation_id, msgs.len());
-                                
+
                                 let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
                                     let content_str = String::from_utf8_lossy(&msg.content).to_string();
-                                    
+
                                     Some(ReceivedMessage {
                                         server_msg_id: msg.server_msg_id.clone(),
                                         client_msg_id: msg.client_msg_id.clone(),
@@ -323,15 +282,14 @@ impl OpenIMClient {
                                         group_id: msg.group_id.clone(),
                                     })
                                 }).collect();
-                                
+
                                 let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-                                
+
                                 if !messages.is_empty() {
                                     info!("push_message_handler: handling {} notification messages for {}", messages.len(), conversation_id);
                                     if let Err(e) = message_handler.handle_messages(messages).await {
                                         warn!("failed to handle push notification messages for {}: {:?}", conversation_id, e);
                                     }
-                                    // 通知消息也做 seq 连续性校验
                                     if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
                                         warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
                                     }
@@ -364,18 +322,16 @@ impl OpenIMClient {
         self.group.set_user_id(user_id.to_string()).await;
         self.message_service.set_user_id(user_id.to_string());
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
-        
-        // 启动 WebSocket 连接
+
         if let Some(ws_url) = &self.context.config.ws_url {
             self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
             self.spawn_push_message_handler();
         }
-        
-        // 登录成功后全量同步会话
+
         if let Err(e) = self.conversation_syncer.sync_full().await {
             warn!("登录后会话全量同步失败: {}", e);
         }
-        
+
         self.event_bus.publish(SdkEvent::LoginSuccess {
             user_id: user_id.to_string(),
         });
@@ -390,13 +346,13 @@ impl OpenIMClient {
         self.group.clear().await;
         self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
-        
+
         self.event_bus.publish(SdkEvent::Logout);
         info!("用户登出成功");
         Ok(())
     }
 
-    /// 获取事件总线
+    /// 获取事件总线（内部使用）
     pub fn event_bus(&self) -> Arc<EventBus> {
         self.event_bus.clone()
     }

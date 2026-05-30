@@ -6,6 +6,105 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+class LocalChatLog {
+  final String conversationId;
+  final String clientMsgId;
+  final String serverMsgId;
+  final String sendId;
+  final String recvId;
+  final int senderPlatformId;
+  final String senderNickName;
+  final String senderFaceUrl;
+  final int sessionType;
+  final int msgFrom;
+  final int contentType;
+  final String content;
+  final int isRead;
+  final int status;
+  final PlatformInt64 seq;
+  final PlatformInt64 sendTime;
+  final PlatformInt64 createTime;
+  final String attachedInfo;
+  final String ex;
+  final String localEx;
+  final String groupId;
+
+  const LocalChatLog({
+    required this.conversationId,
+    required this.clientMsgId,
+    required this.serverMsgId,
+    required this.sendId,
+    required this.recvId,
+    required this.senderPlatformId,
+    required this.senderNickName,
+    required this.senderFaceUrl,
+    required this.sessionType,
+    required this.msgFrom,
+    required this.contentType,
+    required this.content,
+    required this.isRead,
+    required this.status,
+    required this.seq,
+    required this.sendTime,
+    required this.createTime,
+    required this.attachedInfo,
+    required this.ex,
+    required this.localEx,
+    required this.groupId,
+  });
+
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^
+      clientMsgId.hashCode ^
+      serverMsgId.hashCode ^
+      sendId.hashCode ^
+      recvId.hashCode ^
+      senderPlatformId.hashCode ^
+      senderNickName.hashCode ^
+      senderFaceUrl.hashCode ^
+      sessionType.hashCode ^
+      msgFrom.hashCode ^
+      contentType.hashCode ^
+      content.hashCode ^
+      isRead.hashCode ^
+      status.hashCode ^
+      seq.hashCode ^
+      sendTime.hashCode ^
+      createTime.hashCode ^
+      attachedInfo.hashCode ^
+      ex.hashCode ^
+      localEx.hashCode ^
+      groupId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LocalChatLog &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          clientMsgId == other.clientMsgId &&
+          serverMsgId == other.serverMsgId &&
+          sendId == other.sendId &&
+          recvId == other.recvId &&
+          senderPlatformId == other.senderPlatformId &&
+          senderNickName == other.senderNickName &&
+          senderFaceUrl == other.senderFaceUrl &&
+          sessionType == other.sessionType &&
+          msgFrom == other.msgFrom &&
+          contentType == other.contentType &&
+          content == other.content &&
+          isRead == other.isRead &&
+          status == other.status &&
+          seq == other.seq &&
+          sendTime == other.sendTime &&
+          createTime == other.createTime &&
+          attachedInfo == other.attachedInfo &&
+          ex == other.ex &&
+          localEx == other.localEx &&
+          groupId == other.groupId;
+}
+
 class LocalConversation {
   final String conversationId;
   final int conversationType;
