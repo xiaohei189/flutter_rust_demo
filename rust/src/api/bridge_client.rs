@@ -76,6 +76,30 @@ pub struct MarkMessagesAsReadReq {
     pub seqs: Vec<i64>,
 }
 
+/// 好友申请信息（FFI 桥接类型）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FriendApplyInfoBridge {
+    pub user_id: String,
+    pub nickname: String,
+    pub face_url: String,
+    pub create_time: i64,
+    pub req_msg: Option<String>,
+    pub handle_result: i32,
+}
+
+/// 群申请信息（FFI 桥接类型）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupApplyInfoBridge {
+    pub group_id: String,
+    pub user_id: String,
+    pub nickname: String,
+    pub face_url: String,
+    pub reason: String,
+    pub handle_result: i32,
+}
+
 // ============================================================================
 // Helper: 将 SdkError 转换为 anyhow::Error
 // ============================================================================
@@ -265,6 +289,20 @@ impl OpenIMBridgeClient {
         )
     }
 
+    /// 本地搜索消息
+    #[flutter_rust_bridge::frb]
+    pub async fn search_local_messages(
+        &self,
+        conversation_id: String,
+        keyword: String,
+    ) -> Result<Vec<crate::infra::database::models::LocalChatLog>> {
+        map_err(
+            self.inner.message_service
+                .search_local_messages(conversation_id, keyword, 100)
+                .await
+        )
+    }
+
     // ========== 会话操作 ==========
 
     /// 获取所有会话列表
@@ -311,6 +349,26 @@ impl OpenIMBridgeClient {
         )
     }
 
+    /// 设置会话草稿
+    #[flutter_rust_bridge::frb]
+    pub async fn set_conversation_draft(&self, conversation_id: String, draft_text: String) -> Result<()> {
+        map_err(
+            self.inner.conversation
+                .set_draft(&conversation_id, &draft_text)
+                .await
+        )
+    }
+
+    /// 设置会话私聊模式
+    #[flutter_rust_bridge::frb]
+    pub async fn set_conversation_private(&self, conversation_id: String, is_private: bool) -> Result<()> {
+        map_err(
+            self.inner.conversation
+                .set_private_chat(&conversation_id, is_private)
+                .await
+        )
+    }
+
     // ========== 好友操作 ==========
 
     /// 获取好友列表
@@ -337,6 +395,12 @@ impl OpenIMBridgeClient {
         Ok(self.inner.friend.get_blacklist().await)
     }
 
+    /// 判断是否为好友
+    #[flutter_rust_bridge::frb]
+    pub async fn is_friend(&self, user_id: String) -> bool {
+        self.inner.friend.is_friend(&user_id).await
+    }
+
     /// 添加到黑名单
     #[flutter_rust_bridge::frb]
     pub async fn add_black(&self, user_id: String) -> Result<()> {
@@ -347,6 +411,32 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn remove_black(&self, user_id: String) -> Result<()> {
         map_err(self.inner.friend.remove_black(user_id).await)
+    }
+
+    /// 获取好友申请列表
+    #[flutter_rust_bridge::frb]
+    pub async fn get_friend_apply_list(&self) -> Result<Vec<FriendApplyInfoBridge>> {
+        let resp = map_err(self.inner.friend.get_friend_apply_list().await)?;
+        Ok(resp.apply_infos.unwrap_or_default().into_iter().map(|a| FriendApplyInfoBridge {
+            user_id: a.user_id,
+            nickname: a.nickname,
+            face_url: a.face_url,
+            create_time: a.create_time,
+            req_msg: a.req_msg,
+            handle_result: a.handle_result,
+        }).collect())
+    }
+
+    /// 接受好友申请
+    #[flutter_rust_bridge::frb]
+    pub async fn accept_friend_application(&self, user_id: String) -> Result<()> {
+        map_err(self.inner.friend.accept_friend_application(user_id, None).await)
+    }
+
+    /// 拒绝好友申请
+    #[flutter_rust_bridge::frb]
+    pub async fn refuse_friend_application(&self, user_id: String) -> Result<()> {
+        map_err(self.inner.friend.refuse_friend_application(user_id, None).await)
     }
 
     // ========== 群组操作 ==========
@@ -419,6 +509,69 @@ impl OpenIMBridgeClient {
                 .kick_group_member(group_id, member_ids, None)
                 .await
         )
+    }
+
+    /// 获取群组信息
+    #[flutter_rust_bridge::frb]
+    pub async fn get_groups_info(&self, group_ids: Vec<String>) -> Result<Vec<crate::domain::model::group::GroupInfo>> {
+        Ok(self.inner.group.get_groups_info(group_ids).await?)
+    }
+
+    /// 设置群组信息
+    #[flutter_rust_bridge::frb]
+    pub async fn set_group_info(&self, group_id: String, group_name: Option<String>, face_url: Option<String>) -> Result<()> {
+        map_err(
+            self.inner.group.set_group_info(
+                crate::domain::model::group::SetGroupInfoFields {
+                    group_id,
+                    group_name,
+                    face_url,
+                    introduction: None,
+                    notification: None,
+                    ex: None,
+                }
+            ).await
+        )
+    }
+
+    /// 获取群组成员信息
+    #[flutter_rust_bridge::frb]
+    pub async fn get_group_members_info(&self, group_id: String, user_ids: Vec<String>) -> Result<Vec<crate::domain::model::group::GroupMember>> {
+        map_err(
+            self.inner.group.get_group_members_info(group_id, user_ids).await
+        )
+    }
+
+    /// 解散群组
+    #[flutter_rust_bridge::frb]
+    pub async fn dismiss_group(&self, group_id: String) -> Result<()> {
+        map_err(self.inner.group.dismiss_group(group_id).await)
+    }
+
+    /// 获取群申请列表
+    #[flutter_rust_bridge::frb]
+    pub async fn get_group_application_list(&self) -> Result<Vec<GroupApplyInfoBridge>> {
+        let resp = map_err(self.inner.group.get_group_application_list().await)?;
+        Ok(resp.group_requests.unwrap_or_default().into_iter().map(|a| GroupApplyInfoBridge {
+            group_id: a.group_id,
+            user_id: a.user_id,
+            nickname: a.nickname,
+            face_url: a.face_url,
+            reason: a.reason,
+            handle_result: a.handle_result,
+        }).collect())
+    }
+
+    /// 接受群申请
+    #[flutter_rust_bridge::frb]
+    pub async fn accept_group_application(&self, group_id: String, user_id: String) -> Result<()> {
+        map_err(self.inner.group.accept_group_application(group_id, user_id).await)
+    }
+
+    /// 拒绝群申请
+    #[flutter_rust_bridge::frb]
+    pub async fn refuse_group_application(&self, group_id: String, user_id: String) -> Result<()> {
+        map_err(self.inner.group.refuse_group_application(group_id, user_id).await)
     }
 
     // ========== 用户操作 ==========

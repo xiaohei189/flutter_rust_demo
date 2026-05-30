@@ -119,6 +119,20 @@ impl MessageDao {
         Ok(())
     }
 
+    pub async fn search_by_keyword(&self, conversation_id: &str, keyword: &str, max_count: i64) -> Result<Vec<LocalChatLog>> {
+        let pattern = format!("%{}%", keyword);
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND content LIKE ? ORDER BY send_time DESC LIMIT ?",
+        )
+        .bind(conversation_id)
+        .bind(&pattern)
+        .bind(max_count)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("search messages: {}", e)))?;
+        Ok(rows)
+    }
+
     pub async fn mark_as_read_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> {
         if seqs.is_empty() {
             return Ok(());

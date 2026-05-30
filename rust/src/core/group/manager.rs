@@ -1,12 +1,13 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::model::group::{GroupInfo, GroupMember};
+use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,
     DISMISS_GROUP, GET_GROUP_MEMBER_LIST, GET_GROUP_MEMBERS_INFO, SET_GROUP_MEMBER_INFO,
     KICK_GROUP_MEMBER, GET_JOINED_GROUP_LIST, INVITE_USER_TO_GROUP,
+    GET_GROUP_APPLICATION_LIST, ACCEPT_GROUP_APPLICATION, REFUSE_GROUP_APPLICATION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -230,6 +231,58 @@ pub struct SetGroupMemberInfoReq {
     #[serde(rename = "roleLevel")]
     pub role_level: Option<i32>,
     pub ex: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupApplicationListReq {
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
+    #[serde(rename = "pagination")]
+    pub pagination: Pagination,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetGroupApplicationListResp {
+    #[serde(rename = "groupRequests", default)]
+    pub group_requests: Option<Vec<GroupApplyInfo>>,
+    #[serde(rename = "total", default)]
+    pub total: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GroupApplyInfo {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    pub nickname: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    #[serde(default)]
+    pub reason: String,
+    #[serde(rename = "handleResult")]
+    pub handle_result: i32,
+    pub ex: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AcceptGroupApplicationReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
+    #[serde(rename = "handleMsg")]
+    pub handle_msg: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RefuseGroupApplicationReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
+    #[serde(rename = "handleMsg")]
+    pub handle_msg: Option<String>,
 }
 
 pub struct GroupManager {
@@ -534,6 +587,41 @@ impl GroupManager {
         Ok(())
     }
 
+    pub async fn get_group_application_list(&self) -> Result<GetGroupApplicationListResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetGroupApplicationListReq {
+            from_user_id: user_id,
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 1000,
+            },
+        };
+        let resp: GetGroupApplicationListResp = self.http_client.post(GET_GROUP_APPLICATION_LIST, &req).await?;
+        Ok(resp)
+    }
+
+    pub async fn accept_group_application(&self, group_id: String, user_id: String) -> Result<()> {
+        let req = AcceptGroupApplicationReq {
+            group_id,
+            from_user_id: user_id,
+            handle_msg: None,
+        };
+        let _resp: serde_json::Value = self.http_client.post(ACCEPT_GROUP_APPLICATION, &req).await?;
+        info!("群组申请已接受");
+        Ok(())
+    }
+
+    pub async fn refuse_group_application(&self, group_id: String, user_id: String) -> Result<()> {
+        let req = RefuseGroupApplicationReq {
+            group_id,
+            from_user_id: user_id,
+            handle_msg: None,
+        };
+        let _resp: serde_json::Value = self.http_client.post(REFUSE_GROUP_APPLICATION, &req).await?;
+        info!("群组申请已拒绝");
+        Ok(())
+    }
+
     pub async fn clear(&self) {
         self.groups.write().await.clear();
         self.members.write().await.clear();
@@ -565,16 +653,6 @@ fn server_to_group_member(s: ServerGroupMember) -> GroupMember {
         join_time: s.join_time,
         join_source: s.join_source.to_string(),
     }
-}
-
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct SetGroupInfoFields {
-    pub group_id: String,
-    pub group_name: Option<String>,
-    pub face_url: Option<String>,
-    pub introduction: Option<String>,
-    pub notification: Option<String>,
-    pub ex: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]

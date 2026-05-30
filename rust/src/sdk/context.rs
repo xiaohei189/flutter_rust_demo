@@ -1,5 +1,5 @@
 use crate::domain::config::ClientConfig;
-use crate::domain::error::types::Result;
+use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::infra::database::pool::create_pool;
 use crate::infra::database::{ConversationDao, MessageDao};
@@ -39,6 +39,9 @@ impl RuntimeContext {
     ) -> Result<Self> {
         let operation_id = format!("op_{}", chrono::Utc::now().timestamp_millis());
 
+        // 确保数据目录存在，否则 SQLite 无法创建数据库文件
+        std::fs::create_dir_all(&config.data_dir)
+            .map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
         let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
         let db_pool = create_pool(&db_url).await?;
         let message_dao = Arc::new(MessageDao::new(db_pool.clone()));

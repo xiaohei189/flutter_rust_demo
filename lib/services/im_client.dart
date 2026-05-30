@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:path_provider/path_provider.dart';
+
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/simple.dart';
 import '../utils/app_logger.dart';
@@ -71,12 +73,16 @@ class ImClient {
       
       // 创建客户端实例
       appLog.i('[ImClient] 创建客户端实例，用户ID: $userId');
+      final docDir = await getApplicationDocumentsDirectory();
+      final dataDir = '${docDir.path}/openim_data';
+      appLog.i('[ImClient] 数据目录: $dataDir');
       _client = await OpenImBridgeClient.newInstance(
         userId: userId,
         token: token,
         platformId: platformId,
         wsUrl: wsUrl,
         apiBaseUrl: apiBaseUrl,
+        dataDir: dataDir,
       );
       
       appLog.i('[ImClient] 客户端创建成功');

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/models/chat.dart';
 import 'package:flutter_rust_demo/models/message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -358,12 +359,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       this.state = this.state.copyWith(currentUserId: resolvedUserId);
 
       appLog.i('[MessageService] 即将调用 OpenImBridgeClient.newInstance');
+      final docDir = await getApplicationDocumentsDirectory();
+      final dataDir = '${docDir.path}/openim_data';
+      appLog.i('[MessageService] 数据目录: $dataDir');
       _client = await OpenImBridgeClient.newInstance(
         userId: resolvedUserId,
         token: resolvedImToken,
         platformId: 5,
         wsUrl: wsUrl,
         apiBaseUrl: apiBaseUrl,
+        dataDir: dataDir,
       );
       appLog.i('[MessageService] newInstance 完成');
 

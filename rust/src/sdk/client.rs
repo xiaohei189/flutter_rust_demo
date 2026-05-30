@@ -109,6 +109,8 @@ impl OpenIMClient {
             event_bus.clone(),
             config.user_id.clone(),
             config.platform_id,
+            context.message_dao.clone(),
+            context.conversation_dao.clone(),
         );
         message_sender.start_workers();
         let message_sender = Arc::new(message_sender);
@@ -128,7 +130,12 @@ impl OpenIMClient {
             config.user_id.clone(),
         ));
 
-        let conversation_syncer = Arc::new(ConversationSyncer::new(event_bus.clone()));
+        let conversation_syncer = Arc::new(ConversationSyncer::new(
+            context.http_client.clone(),
+            context.conversation_dao.clone(),
+            event_bus.clone(),
+            config.user_id.clone(),
+        ));
 
         let file_uploader = Arc::new(FileUploader::new(
             context.http_client.clone(),
@@ -329,11 +336,17 @@ impl OpenIMClient {
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
         self.message_service.set_user_id(user_id.to_string());
+        self.conversation_syncer.set_user_id(user_id.to_string());
         
         // 启动 WebSocket 连接
         if let Some(ws_url) = &self.context.config.ws_url {
             self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
             self.spawn_push_message_handler();
+        }
+        
+        // 登录成功后全量同步会话
+        if let Err(e) = self.conversation_syncer.sync_full().await {
+            warn!("登录后会话全量同步失败: {}", e);
         }
         
         self.event_bus.publish(SdkEvent::LoginSuccess {

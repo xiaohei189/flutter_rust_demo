@@ -98,6 +98,25 @@ impl ConversationDao {
         Ok(())
     }
 
+    pub async fn update_after_sent_message(
+        &self,
+        conversation_id: &str,
+        latest_msg: &str,
+        latest_msg_send_time: i64,
+    ) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ?, unread_count = 0 WHERE conversation_id = ? AND latest_msg_send_time < ?",
+        )
+        .bind(latest_msg)
+        .bind(latest_msg_send_time)
+        .bind(conversation_id)
+        .bind(latest_msg_send_time)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("update conversation after sent: {}", e)))?;
+        Ok(())
+    }
+
     pub async fn delete(&self, conversation_id: &str) -> Result<()> {
         sqlx::query("DELETE FROM local_conversations WHERE conversation_id = ?")
             .bind(conversation_id)
@@ -257,6 +276,22 @@ mod tests {
         dao.update_max_seq("conv_1", 42).await.unwrap();
         let seq = dao.get_max_seq("conv_1").await.unwrap();
         assert_eq!(seq, 42);
+    }
+
+    #[tokio::test]
+    async fn test_update_after_sent_message() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = ConversationDao::new(pool);
+
+        dao.upsert(&make_conv("conv_1")).await.unwrap();
+        dao.update_after_sent_message("conv_1", "{\"text\":\"hello\"}", 3000)
+            .await
+            .unwrap();
+
+        let conv = dao.get_by_id("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg_send_time, 3000);
+        assert_eq!(conv.unread_count, 0);
+        assert_eq!(conv.latest_msg, "{\"text\":\"hello\"}");
     }
 
     #[tokio::test]

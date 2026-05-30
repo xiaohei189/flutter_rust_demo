@@ -41,3 +41,14 @@ pub struct GroupMember {
     /// 加入来源
     pub join_source: String,
 }
+
+/// 设置群组信息字段（仅设置需要修改的字段）
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct SetGroupInfoFields {
+    pub group_id: String,
+    pub group_name: Option<String>,
+    pub face_url: Option<String>,
+    pub introduction: Option<String>,
+    pub notification: Option<String>,
+    pub ex: Option<String>,
+}

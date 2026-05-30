@@ -5,7 +5,7 @@ use crate::domain::model::friend::FriendInfo;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     ADD_FRIEND, DELETE_FRIEND, GET_FRIEND_LIST, GET_FRIEND_ID_LIST, ADD_BLACK, REMOVE_BLACK,
-    GET_BLACK_LIST,
+    GET_BLACK_LIST, GET_FRIEND_APPLY_LIST, ACCEPT_FRIEND_APPLICATION, REFUSE_FRIEND_APPLICATION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -100,6 +100,56 @@ pub struct BlackServerInfo {
     #[serde(rename = "createTime")]
     pub create_time: i64,
     pub ex: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetFriendApplyListReq {
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
+    #[serde(rename = "pagination")]
+    pub pagination: Pagination,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetFriendApplyListResp {
+    #[serde(rename = "applyInfos", default)]
+    pub apply_infos: Option<Vec<FriendApplyInfo>>,
+    #[serde(rename = "total", default)]
+    pub total: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FriendApplyInfo {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    pub nickname: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    pub gender: i32,
+    #[serde(rename = "createTime")]
+    pub create_time: i64,
+    #[serde(rename = "addSource")]
+    pub add_source: i32,
+    pub ex: String,
+    pub req_msg: Option<String>,
+    pub handle_result: i32,
+    pub handle_msg: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AcceptFriendApplicationReq {
+    #[serde(rename = "toUserID")]
+    pub to_user_id: String,
+    #[serde(rename = "handleMsg")]
+    pub handle_msg: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RefuseFriendApplicationReq {
+    #[serde(rename = "toUserID")]
+    pub to_user_id: String,
+    #[serde(rename = "handleMsg")]
+    pub handle_msg: Option<String>,
 }
 
 pub struct FriendManager {
@@ -261,6 +311,39 @@ impl FriendManager {
 
     pub async fn is_in_blacklist(&self, user_id: &str) -> bool {
         self.blacks.read().await.iter().any(|id| id == user_id)
+    }
+
+    pub async fn get_friend_apply_list(&self) -> Result<GetFriendApplyListResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetFriendApplyListReq {
+            from_user_id: user_id,
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 1000,
+            },
+        };
+        let resp: GetFriendApplyListResp = self.http_client.post(GET_FRIEND_APPLY_LIST, &req).await?;
+        Ok(resp)
+    }
+
+    pub async fn accept_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        let req = AcceptFriendApplicationReq {
+            to_user_id: user_id.clone(),
+            handle_msg,
+        };
+        let _resp: serde_json::Value = self.http_client.post(ACCEPT_FRIEND_APPLICATION, &req).await?;
+        info!("好友申请已接受: {}", user_id);
+        Ok(())
+    }
+
+    pub async fn refuse_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        let req = RefuseFriendApplicationReq {
+            to_user_id: user_id.clone(),
+            handle_msg,
+        };
+        let _resp: serde_json::Value = self.http_client.post(REFUSE_FRIEND_APPLICATION, &req).await?;
+        info!("好友申请已拒绝: {}", user_id);
+        Ok(())
     }
 
     pub async fn clear(&self) {

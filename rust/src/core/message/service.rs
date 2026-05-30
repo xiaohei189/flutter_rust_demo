@@ -3,6 +3,7 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::infra::database::MessageDao;
+use crate::infra::database::models::LocalChatLog;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_MSGS_AS_READ, REVOKE_MSG};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -161,5 +162,17 @@ impl MessageService {
 
         info!("消息已标记为已读: conversation_id={}, seq_count={}", conversation_id, seqs.len());
         Ok(())
+    }
+
+    /// 本地搜索消息
+    pub async fn search_local_messages(
+        &self,
+        conversation_id: String,
+        keyword: String,
+        max_count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        let results = self.message_dao.search_by_keyword(&conversation_id, &keyword, max_count).await?;
+        info!("本地搜索消息: conv={}, keyword={}, count={}", conversation_id, keyword, results.len());
+        Ok(results)
     }
 }
