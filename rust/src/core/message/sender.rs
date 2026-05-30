@@ -1,155 +1,224 @@
+use crate::core::connection::manager::ConnectionManager;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::{mpsc, RwLock};
-use tokio::time::timeout;
-use tracing::{debug, error, info, warn};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::mpsc;
+use tracing::{error, info};
 
-/// 消息发送状态
-#[derive(Clone, Debug, PartialEq, Default)]
-pub enum SendStatus {
-    #[default]
-    Pending,
-    Sending,
-    Sent { server_msg_id: String, send_time: i64 },
-    Failed { error: String },
-}
-
-/// 待发送消息
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PendingMessage {
-    /// 客户端消息 ID
-    pub client_msg_id: String,
-    /// 发送者 ID
+#[derive(Clone, Serialize, Deserialize, Message)]
+pub struct SendMsgReq {
+    #[prost(string, tag = "1")]
+    #[serde(rename = "sendID")]
     pub send_id: String,
-    /// 接收者 ID
+    #[prost(string, tag = "2")]
+    #[serde(rename = "recvID")]
     pub recv_id: String,
-    /// 会话类型 (1:单聊, 2:群聊, 3:超级群, 4:通知)
+    #[prost(string, tag = "3")]
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[prost(int32, tag = "4")]
+    #[serde(rename = "senderPlatformID")]
+    pub sender_platform_id: i32,
+    #[prost(string, tag = "5")]
+    #[serde(rename = "senderNickname")]
+    pub sender_nickname: String,
+    #[prost(string, tag = "6")]
+    #[serde(rename = "senderFaceURL")]
+    pub sender_face_url: String,
+    #[prost(int32, tag = "7")]
+    #[serde(rename = "sessionType")]
     pub session_type: i32,
-    /// 消息内容 (JSON)
-    pub content: String,
-    /// 消息类型
+    #[prost(int32, tag = "8")]
+    #[serde(rename = "msgFrom")]
+    pub msg_from: i32,
+    #[prost(int32, tag = "9")]
+    #[serde(rename = "contentType")]
     pub content_type: i32,
-    /// 操作 ID
-    pub operation_id: String,
-    /// 发送状态
-    #[serde(skip)]
-    pub status: SendStatus,
+    #[prost(string, tag = "10")]
+    pub content: String,
+    #[prost(string, tag = "11")]
+    #[serde(rename = "clientMsgID")]
+    pub client_msg_id: String,
+    #[prost(int64, tag = "12")]
+    #[serde(rename = "sendTime")]
+    pub send_time: i64,
 }
 
-/// 消息发送通道
-struct SendChannel {
-    /// 文本消息通道
-    text_tx: mpsc::UnboundedSender<PendingMessage>,
-    /// 媒体消息通道
-    media_tx: mpsc::UnboundedSender<PendingMessage>,
+#[derive(Clone, Serialize, Deserialize, Message)]
+pub struct SendMsgResp {
+    #[prost(string, tag = "1")]
+    #[serde(rename = "serverMsgID")]
+    pub server_msg_id: String,
+    #[prost(string, tag = "2")]
+    #[serde(rename = "clientMsgID")]
+    pub client_msg_id: String,
+    #[prost(int64, tag = "3")]
+    #[serde(rename = "sendTime")]
+    pub send_time: i64,
 }
 
-/// 消息发送队列管理器
+#[derive(Clone, Debug)]
+pub struct PendingMessage {
+    pub client_msg_id: String,
+    pub send_id: String,
+    pub recv_id: String,
+    pub group_id: String,
+    pub sender_platform_id: i32,
+    pub sender_nickname: String,
+    pub sender_face_url: String,
+    pub session_type: i32,
+    pub msg_from: i32,
+    pub content_type: i32,
+    pub content: String,
+}
+
+struct MessageChannels {
+    text_tx: mpsc::Sender<PendingMessage>,
+    text_rx: Option<mpsc::Receiver<PendingMessage>>,
+    media_tx: mpsc::Sender<PendingMessage>,
+    media_rx: Option<mpsc::Receiver<PendingMessage>>,
+}
+
 pub struct MessageSender {
-    /// 发送通道
-    channels: SendChannel,
-    /// 事件总线
+    connection: Arc<ConnectionManager>,
     event_bus: Arc<EventBus>,
-    /// 发送超时时间
-    timeout: Duration,
-    /// 最大重试次数
-    max_retries: u32,
+    channels: MessageChannels,
+    user_id: String,
+    platform_id: i32,
 }
 
 impl MessageSender {
-    pub fn new(event_bus: Arc<EventBus>) -> Self {
-        let (text_tx, text_rx) = mpsc::unbounded_channel::<PendingMessage>();
-        let (media_tx, media_rx) = mpsc::unbounded_channel::<PendingMessage>();
-
-        let channels = SendChannel { text_tx, media_tx };
+    pub fn new(
+        connection: Arc<ConnectionManager>,
+        event_bus: Arc<EventBus>,
+        user_id: String,
+        platform_id: i32,
+    ) -> Self {
+        let (text_tx, text_rx) = mpsc::channel(100);
+        let (media_tx, media_rx) = mpsc::channel(100);
 
         Self {
-            channels,
+            connection,
             event_bus,
-            timeout: Duration::from_secs(3),
-            max_retries: 100,
+            channels: MessageChannels {
+                text_tx,
+                text_rx: Some(text_rx),
+                media_tx,
+                media_rx: Some(media_rx),
+            },
+            user_id,
+            platform_id,
         }
     }
 
-    /// 发送文本消息（保证有序）
-    pub async fn send_text_message(&self, msg: PendingMessage) -> Result<()> {
-        debug!("发送文本消息: client_msg_id={}", msg.client_msg_id);
-        
-        self.channels
-            .text_tx
-            .send(msg)
-            .map_err(|e| SdkError::message_send(format!("发送文本消息失败: {}", e)))?;
+    pub fn start_workers(&mut self) {
+        let text_rx = self.channels.text_rx.take().expect("text_rx already taken");
+        let media_rx = self.channels.media_rx.take().expect("media_rx already taken");
+        let sender_clone = Arc::new(self.clone_for_worker());
+        let sender_clone_for_media = sender_clone.clone();
 
-        Ok(())
+        tokio::spawn(async move {
+            let mut rx = text_rx;
+            while let Some(msg) = rx.recv().await {
+                let sender = sender_clone.clone();
+                tokio::spawn(async move {
+                    match sender.do_send_message(msg).await {
+                        Ok(resp) => {
+                            info!("消息发送成功: client_msg_id={}", resp.client_msg_id);
+                        }
+                        Err(e) => {
+                            error!("消息发送失败: {}", e);
+                        }
+                    }
+                });
+            }
+        });
+
+        tokio::spawn(async move {
+            let mut rx = media_rx;
+            while let Some(msg) = rx.recv().await {
+                let sender = sender_clone_for_media.clone();
+                tokio::spawn(async move {
+                    match sender.do_send_message(msg).await {
+                        Ok(resp) => {
+                            info!("媒体消息发送成功: client_msg_id={}", resp.client_msg_id);
+                        }
+                        Err(e) => {
+                            error!("媒体消息发送失败: {}", e);
+                        }
+                    }
+                });
+            }
+        });
+
+        info!("消息发送 Workers 已启动");
     }
 
-    /// 发送媒体消息（图片、视频、文件等）
-    pub async fn send_media_message(&self, msg: PendingMessage) -> Result<()> {
-        debug!("发送媒体消息: client_msg_id={}", msg.client_msg_id);
-        
-        self.channels
-            .media_tx
-            .send(msg)
-            .map_err(|e| SdkError::message_send(format!("发送媒体消息失败: {}", e)))?;
-
-        Ok(())
-    }
-
-    /// 根据消息类型自动选择发送通道
     pub async fn send_message(&self, msg: PendingMessage) -> Result<()> {
         match msg.content_type {
             101 | 106 | 113 | 114 | 115 | 117 | 118 => {
-                self.send_text_message(msg).await
+                self.channels.text_tx.send(msg).await
+                    .map_err(|e| SdkError::message_send(format!("send text message failed: {}", e)))
             }
-            _ => self.send_media_message(msg).await,
+            _ => {
+                self.channels.media_tx.send(msg).await
+                    .map_err(|e| SdkError::message_send(format!("send media message failed: {}", e)))
+            }
         }
     }
 
-    /// 启动发送 Worker
-    pub fn start_workers<F, Fut>(
-        &self,
-        send_fn: F,
-    ) -> (tokio::task::JoinHandle<()>, tokio::task::JoinHandle<()>)
-    where
-        F: Fn(PendingMessage) -> Fut + Send + Clone + 'static,
-        Fut: std::future::Future<Output = Result<PendingMessage>> + Send,
-    {
-        let text_rx = self.channels.text_tx.clone();
-        let media_rx = self.channels.media_tx.clone();
-        let event_bus = self.event_bus.clone();
-        let timeout = self.timeout;
-        let max_retries = self.max_retries;
+    async fn do_send_message(&self, msg: PendingMessage) -> Result<SendMsgResp> {
+        let send_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_millis() as i64)
+            .unwrap_or(0);
 
-        let text_worker = tokio::spawn(async move {
-            info!("文本消息发送 Worker 已启动");
-        });
-
-        let media_worker = tokio::spawn(async move {
-            info!("媒体消息发送 Worker 已启动");
-        });
-
-        (text_worker, media_worker)
-    }
-
-    /// 通知消息发送成功
-    fn notify_message_sent(&self, client_msg_id: String, server_msg_id: String, send_time: i64) {
-        self.event_bus.publish(SdkEvent::MessageSent {
-            client_msg_id,
-            server_msg_id,
+        let req = SendMsgReq {
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            group_id: msg.group_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: msg.content.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
             send_time,
+        };
+
+        let resp: SendMsgResp = self.connection
+            .send_rpc(1001, &req)
+            .await
+            .map_err(|e| SdkError::message_send(format!("send message via ws failed: {}", e)))?;
+
+        self.event_bus.publish(SdkEvent::MessageSent {
+            client_msg_id: resp.client_msg_id.clone(),
+            server_msg_id: resp.server_msg_id.clone(),
+            send_time: resp.send_time,
         });
+
+        Ok(resp)
     }
 
-    /// 通知消息发送失败
-    fn notify_message_failed(&self, client_msg_id: String, error: String) {
-        self.event_bus.publish(SdkEvent::MessageSendFailed {
-            client_msg_id,
-            error,
-        });
+    fn clone_for_worker(&self) -> Self {
+        Self {
+            connection: self.connection.clone(),
+            event_bus: self.event_bus.clone(),
+            channels: MessageChannels {
+                text_tx: self.channels.text_tx.clone(),
+                text_rx: None,
+                media_tx: self.channels.media_tx.clone(),
+                media_rx: None,
+            },
+            user_id: self.user_id.clone(),
+            platform_id: self.platform_id,
+        }
     }
 }
 
@@ -158,48 +227,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_message_sender_creation() {
-        let event_bus = Arc::new(EventBus::new());
-        let sender = MessageSender::new(event_bus);
-        assert_eq!(sender.timeout, Duration::from_secs(3));
-        assert_eq!(sender.max_retries, 100);
-    }
-
-    #[test]
     fn test_pending_message_creation() {
         let msg = PendingMessage {
             client_msg_id: "msg_123".to_string(),
             send_id: "user_1".to_string(),
             recv_id: "user_2".to_string(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: String::new(),
+            sender_face_url: String::new(),
             session_type: 1,
-            content: r#"{"text":"hello"}"#.to_string(),
+            msg_from: 100,
             content_type: 101,
-            operation_id: "op_123".to_string(),
-            status: SendStatus::Pending,
+            content: r#"{"text":"hello"}"#.to_string(),
         };
 
         assert_eq!(msg.client_msg_id, "msg_123");
         assert_eq!(msg.content_type, 101);
-        assert_eq!(msg.status, SendStatus::Pending);
     }
 
     #[test]
-    fn test_send_status_transitions() {
-        let mut status = SendStatus::Pending;
-        assert_eq!(status, SendStatus::Pending);
-
-        status = SendStatus::Sending;
-        assert_eq!(status, SendStatus::Sending);
-
-        status = SendStatus::Sent {
-            server_msg_id: "server_123".to_string(),
+    fn test_send_msg_req_serialization() {
+        let req = SendMsgReq {
+            send_id: "user_1".to_string(),
+            recv_id: "user_2".to_string(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: "Test".to_string(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: r#"{"text":"hello"}"#.to_string(),
+            client_msg_id: "msg_123".to_string(),
             send_time: 1234567890,
         };
-        assert!(matches!(status, SendStatus::Sent { .. }));
 
-        status = SendStatus::Failed {
-            error: "timeout".to_string(),
-        };
-        assert!(matches!(status, SendStatus::Failed { .. }));
+        let bytes = req.encode_to_vec();
+        assert!(!bytes.is_empty());
+
+        let decoded = SendMsgReq::decode(bytes.as_slice()).unwrap();
+        assert_eq!(decoded.client_msg_id, "msg_123");
+        assert_eq!(decoded.content_type, 101);
+    }
+
+    #[test]
+    fn test_send_msg_resp_deserialization() {
+        let json = r#"{"serverMsgID":"srv_123","clientMsgID":"cli_123","sendTime":1234567890}"#;
+        let resp: SendMsgResp = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.server_msg_id, "srv_123");
+        assert_eq!(resp.client_msg_id, "cli_123");
+        assert_eq!(resp.send_time, 1234567890);
     }
 }

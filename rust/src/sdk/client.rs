@@ -86,7 +86,14 @@ impl OpenIMClient {
             context.operation_id.clone(),
         ));
 
-        let message_sender = Arc::new(MessageSender::new(event_bus.clone()));
+        let mut message_sender = MessageSender::new(
+            connection.clone(),
+            event_bus.clone(),
+            config.user_id.clone(),
+            config.platform_id,
+        );
+        message_sender.start_workers();
+        let message_sender = Arc::new(message_sender);
 
         let message_handler = Arc::new(MessageHandler::new(
             context.message_dao.clone(),
