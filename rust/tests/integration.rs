@@ -61,6 +61,161 @@ fn get_test_token() -> String {
     std::env::var("OPENIM_TEST_TOKEN").unwrap_or_else(|_| "test_token_placeholder".to_string())
 }
 
+/// Chat 服务 API 基础 URL（用于注册和登录）
+const CHAT_API_BASE_URL: &str = "http://localhost:10008";
+
+/// 默认验证码（开发环境）
+const DEFAULT_VERIFICATION_CODE: &str = "666666";
+
+/// 生成虚拟手机号
+fn generate_virtual_phone(test_name: &str) -> String {
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    format!("138{:08}{}", timestamp % 100000000, test_name.chars().next().unwrap_or('t') as u32 % 10)
+}
+
+/// 登录证书响应（注册 API 返回格式）
+#[derive(Deserialize, Debug)]
+struct RegisterResponse {
+    #[serde(rename = "userID")]
+    user_id: String,
+    #[serde(rename = "imToken")]
+    im_token: String,
+    #[serde(rename = "chatToken")]
+    chat_token: String,
+}
+
+/// 登录证书响应（登录 API 返回格式，与注册相同）
+#[derive(Deserialize, Debug)]
+struct LoginCertificate {
+    #[serde(rename = "userID")]
+    user_id: String,
+    #[serde(rename = "imToken")]
+    im_token: String,
+    #[serde(rename = "chatToken")]
+    chat_token: String,
+}
+
+/// 发送验证码
+async fn send_verification_code(phone: &str) -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let operation_id = format!("test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    
+    let resp = client
+        .post(&format!("{}/account/code", CHAT_API_BASE_URL))
+        .header("operationID", &operation_id)
+        .json(&serde_json::json!({
+            "phone": phone,
+            "areaCode": "+86",
+            "usedFor": "register"
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("发送验证码失败: {}", e))?;
+    
+    let status = resp.status();
+    if status.is_success() {
+        Ok(())
+    } else {
+        // 开发环境可能直接成功或返回验证码已发送
+        println!("发送验证码响应状态: {}", status);
+        Ok(())
+    }
+}
+
+/// 注册用户
+async fn register_user(phone: &str, nickname: &str) -> Result<RegisterResponse, String> {
+    let client = reqwest::Client::new();
+    let operation_id = format!("test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    
+    let resp = client
+        .post(&format!("{}/account/register", CHAT_API_BASE_URL))
+        .header("operationID", &operation_id)
+        .json(&serde_json::json!({
+            "verifyCode": DEFAULT_VERIFICATION_CODE,
+            "platform": 1,
+            "autoLogin": true,
+            "user": {
+                "nickname": nickname,
+                "phoneNumber": phone,
+                "areaCode": "+86",
+                "password": ""
+            }
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("注册请求失败: {}", e))?;
+    
+    let status = resp.status();
+    let body = resp.text().await.map_err(|e| format!("读取响应失败: {}", e))?;
+    
+    if status.is_success() {
+        // 解析外层响应
+        let outer: serde_json::Value = serde_json::from_str(&body)
+            .map_err(|e| format!("解析外层响应失败: {}, body={}", e, body))?;
+        
+        // 检查 errCode
+        if let Some(err_code) = outer.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                return Err(format!("注册失败: errCode={}, body={}", err_code, body));
+            }
+        }
+        
+        // 解析 data 字段
+        let data = outer.get("data").ok_or_else(|| format!("响应缺少 data 字段: body={}", body))?;
+        let cert: RegisterResponse = serde_json::from_value(data.clone())
+            .map_err(|e| format!("解析响应失败: {}, body={}", e, body))?;
+        Ok(cert)
+    } else {
+        Err(format!("注册失败: status={}, body={}", status, body))
+    }
+}
+
+/// 登录用户
+async fn login_user(phone: &str) -> Result<LoginCertificate, String> {
+    let client = reqwest::Client::new();
+    let operation_id = format!("test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+    
+    let resp = client
+        .post(&format!("{}/account/login", CHAT_API_BASE_URL))
+        .header("operationID", &operation_id)
+        .json(&serde_json::json!({
+            "phoneNumber": phone,
+            "areaCode": "+86",
+            "verifyCode": DEFAULT_VERIFICATION_CODE,
+            "platform": 1
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("登录请求失败: {}", e))?;
+    
+    let status = resp.status();
+    let body = resp.text().await.map_err(|e| format!("读取响应失败: {}", e))?;
+    
+    if status.is_success() {
+        // 解析外层响应
+        let outer: serde_json::Value = serde_json::from_str(&body)
+            .map_err(|e| format!("解析外层响应失败: {}, body={}", e, body))?;
+        
+        // 检查 errCode
+        if let Some(err_code) = outer.get("errCode").and_then(|v| v.as_i64()) {
+            if err_code != 0 {
+                return Err(format!("登录失败: errCode={}, body={}", err_code, body));
+            }
+        }
+        
+        // 解析 data 字段
+        let data = outer.get("data").ok_or_else(|| format!("响应缺少 data 字段: body={}", body))?;
+        let cert: LoginCertificate = serde_json::from_value(data.clone())
+            .map_err(|e| format!("解析响应失败: {}, body={}", e, body))?;
+        Ok(cert)
+    } else {
+        Err(format!("登录失败: status={}, body={}", status, body))
+    }
+}
+
 /// 创建测试 HTTP 客户端
 fn create_test_client(token: &str) -> HttpApiClient {
     HttpApiClient::new(
@@ -635,4 +790,93 @@ async fn test_update_user_info() {
     // 验证 API 调用成功
     println!("更新用户信息结果: {:?}", result.is_ok());
     println!("✅ 更新用户信息测试通过");
+}
+
+// ============================================================================
+// 认证集成测试（注册+登录）
+// ============================================================================
+
+/// 集成测试: 用户注册
+#[tokio::test]
+#[ignore]
+async fn test_user_registration() {
+    let phone = generate_virtual_phone("reg");
+    let nickname = format!("TestUser_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    
+    // 注册用户
+    let cert = register_user(&phone, &nickname).await;
+    assert!(cert.is_ok(), "注册失败: {:?}", cert.err());
+    
+    let cert = cert.unwrap();
+    assert!(!cert.user_id.is_empty(), "user_id 为空");
+    assert!(!cert.im_token.is_empty(), "im_token 为空");
+    assert!(!cert.chat_token.is_empty(), "chat_token 为空");
+    
+    println!("✅ 用户注册测试通过");
+    println!("  user_id: {}", cert.user_id);
+    println!("  im_token: {}...", &cert.im_token[..20.min(cert.im_token.len())]);
+    println!("  chat_token: {}...", &cert.chat_token[..20.min(cert.chat_token.len())]);
+}
+
+/// 集成测试: 用户登录
+#[tokio::test]
+#[ignore]
+async fn test_user_login() {
+    let phone = generate_virtual_phone("login");
+    let nickname = "TestUser_Login".to_string();
+    
+    // 先注册
+    let _ = register_user(&phone, &nickname).await;
+    
+    // 等待注册完成
+    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    
+    // 登录
+    let cert = login_user(&phone).await;
+    assert!(cert.is_ok(), "登录失败: {:?}", cert.err());
+    
+    let cert = cert.unwrap();
+    assert!(!cert.user_id.is_empty(), "user_id 为空");
+    assert!(!cert.im_token.is_empty(), "im_token 为空");
+    assert!(!cert.chat_token.is_empty(), "chat_token 为空");
+    
+    println!("✅ 用户登录测试通过");
+    println!("  user_id: {}", cert.user_id);
+    println!("  im_token: {}...", &cert.im_token[..20.min(cert.im_token.len())]);
+}
+
+/// 集成测试: 完整注册+登录流程
+#[tokio::test]
+#[ignore]
+async fn test_full_registration_and_functionality() {
+    let phone = generate_virtual_phone("full");
+    let nickname = format!("TestUser_Full_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    
+    // 1. 注册
+    println!("1. 注册用户...");
+    let cert = register_user(&phone, &nickname).await;
+    assert!(cert.is_ok(), "注册失败: {:?}", cert.err());
+    let cert = cert.unwrap();
+    let user_id = cert.user_id.clone();
+    let im_token = cert.im_token.clone();
+    
+    println!("  注册成功: user_id={}", user_id);
+    println!("  im_token: {}...", &im_token[..20.min(im_token.len())]);
+    
+    // 2. 等待用户数据同步
+    println!("2. 等待用户数据同步...");
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    
+    // 3. 使用新 token 登录
+    println!("3. 登录用户...");
+    let login_cert = login_user(&phone).await;
+    assert!(login_cert.is_ok(), "登录失败: {:?}", login_cert.err());
+    let login_cert = login_cert.unwrap();
+    
+    assert_eq!(login_cert.user_id, user_id, "登录返回的 user_id 不匹配");
+    assert!(!login_cert.im_token.is_empty(), "im_token 为空");
+    
+    println!("  登录成功: user_id={}", login_cert.user_id);
+    
+    println!("✅ 完整注册+登录流程测试通过");
 }
