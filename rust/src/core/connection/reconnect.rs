@@ -49,7 +49,11 @@ impl ReconnectStrategy {
         let exponential_delay = self.initial_delay_ms * self.backoff_factor.pow(self.attempt - 1);
         let delay_ms = exponential_delay.min(self.max_delay_ms);
         
-        let jitter = rand::random::<u64>() % self.jitter_ms;
+        let jitter = if self.jitter_ms > 0 {
+            rand::random::<u64>() % self.jitter_ms
+        } else {
+            0
+        };
         let final_delay = delay_ms + jitter;
         
         info!(

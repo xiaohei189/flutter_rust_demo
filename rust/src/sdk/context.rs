@@ -93,18 +93,27 @@ mod tests {
 
     #[tokio::test]
     async fn test_runtime_context_creation() {
-        let config = ClientConfig::new(
-            "user123".to_string(),
-            "token123".to_string(),
-            1,
-            Some("ws://localhost:10001".to_string()),
-            Some("http://localhost:10002".to_string()),
-            Some("./test_data".to_string()),
-        );
+        let data_dir = std::env::temp_dir()
+            .join(format!("openim_test_{}", chrono::Utc::now().timestamp_millis()))
+            .to_string_lossy()
+            .to_string();
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        let config = ClientConfig {
+            user_id: "user123".to_string(),
+            token: "token123".to_string(),
+            platform_id: 1,
+            ws_url: Some("ws://localhost:10001".to_string()),
+            api_base_url: "http://localhost:10002".to_string(),
+            upload_url: Some("http://localhost:10003".to_string()),
+            data_dir: data_dir.clone(),
+        };
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
 
         let context = RuntimeContext::new(config, event_bus, cancel_token).await;
         assert!(context.is_ok());
+
+        let _ = std::fs::remove_dir_all(&data_dir);
     }
 }

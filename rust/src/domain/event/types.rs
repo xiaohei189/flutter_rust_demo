@@ -216,7 +216,7 @@ mod tests {
     fn test_sdk_event_serialization() {
         let event = SdkEvent::LoginSuccess { user_id: "user_123".into() };
         let json = serde_json::to_string(&event).unwrap();
-        assert!(json.contains("login_success"));
+        assert!(json.contains("loginSuccess"));
         assert!(json.contains("user_123"));
     }
 
