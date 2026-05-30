@@ -196,13 +196,14 @@ struct UserInfoResp {
     face_url: String,
 }
 
-/// 生成虚拟手机号
+/// 生成虚拟手机号（基于测试名+时间戳，保证唯一性）
 fn generate_virtual_phone(test_name: &str) -> String {
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
-        .as_millis();
-    format!("138{:08}{}", timestamp % 100000000, test_name.chars().next().unwrap_or('t') as u32 % 10)
+        .as_nanos();
+    let name_hash: u64 = test_name.bytes().fold(0u64, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u64));
+    format!("138{:07}{:02}", timestamp % 10000000, name_hash % 100)
 }
 
 /// 登录证书响应（注册 API 返回格式）
@@ -2521,7 +2522,7 @@ async fn test_group_info_update() {
     
     // 5. 修改群组信息
     println!("5. 修改群组信息...");
-    use rust_lib_flutter_rust_demo::core::group::manager::SetGroupInfoFields;
+    use rust_lib_flutter_rust_demo::domain::model::group::SetGroupInfoFields;
     let update_result = sdk.group.set_group_info(SetGroupInfoFields {
         group_id: group_id.clone(),
         group_name: Some(format!("{}_Updated", group_name)),
@@ -3313,4 +3314,374 @@ async fn test_message_mark_read() {
     println!("会话 ID: {}", conversation_id);
     println!("消息数量: {}", seqs.len());
     println!("\n✅ 标记消息已读测试完成");
+}
+
+// ============================================================================
+// 好友申请/接受/拒绝集成测试
+// ============================================================================
+
+/// 集成测试: 好友申请、接受、拒绝完整流程
+/// 测试流程：用户1申请 → 用户2获取申请列表 → 用户2接受/拒绝 → 验证好友关系
+#[tokio::test]
+#[ignore]
+async fn test_friend_application_flow() {
+    println!("=== 好友申请/接受/拒绝完整流程测试 ===\n");
+
+    // 1. 注册两个用户
+    let user1_phone = generate_virtual_phone("fapply1");
+    let user1_nickname = format!("TestUser_FApply1_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let user2_phone = generate_virtual_phone("fapply2");
+    let user2_nickname = format!("TestUser_FApply2_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+
+    println!("1. 注册用户...");
+    let user1_cert = register_user(&user1_phone, &user1_nickname).await.expect("用户1注册失败");
+    let user2_cert = register_user(&user2_phone, &user2_nickname).await.expect("用户2注册失败");
+    println!("  用户1: {} 用户2: {}", user1_cert.user_id, user2_cert.user_id);
+
+    // 2. 创建 SDK
+    println!("2. 创建 SDK...");
+    let sdk1 = create_sdk(&TestAccount { user_id: user1_cert.user_id.clone(), phone: user1_phone.clone(), nickname: user1_nickname.clone(), im_token: Some(user1_cert.im_token.clone()), chat_token: Some(user1_cert.chat_token.clone()) }, &user1_cert.im_token).await;
+    let sdk2 = create_sdk(&TestAccount { user_id: user2_cert.user_id.clone(), phone: user2_phone.clone(), nickname: user2_nickname.clone(), im_token: Some(user2_cert.im_token.clone()), chat_token: Some(user2_cert.chat_token.clone()) }, &user2_cert.im_token).await;
+
+    // 3. 用户1向用户2发送好友申请
+    println!("3. 用户1申请添加用户2为好友...");
+    let add_result = sdk1.friend.add_friend(user2_cert.user_id.clone(), Some("你好，做朋友吧".to_string())).await;
+    match &add_result {
+        Ok(_) => println!("  ✅ 好友申请发送成功"),
+        Err(e) => println!("  ❌ 好友申请发送失败: {:?}", e),
+    }
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 4. 用户2获取好友申请列表
+    println!("4. 用户2获取好友申请列表...");
+    let apply_resp = sdk2.friend.get_friend_apply_list().await;
+    match &apply_resp {
+        Ok(resp) => {
+            let infos = resp.apply_infos.as_deref().unwrap_or(&[]);
+            println!("  ✅ 获取成功，申请数量: {}", infos.len());
+            for app in infos {
+                println!("    申请者: {} ({:?}), handle_result={}", app.nickname, app.req_msg, app.handle_result);
+            }
+        }
+        Err(e) => println!("  ❌ 获取失败: {:?}", e),
+    }
+
+    // 5. 用户2接受好友申请
+    println!("5. 用户2接受好友申请...");
+    let accept_result = sdk2.friend.accept_friend_application(user1_cert.user_id.clone(), None).await;
+    match &accept_result {
+        Ok(_) => println!("  ✅ 接受好友申请成功"),
+        Err(e) => println!("  ❌ 接受好友申请失败: {:?}", e),
+    }
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 6. 用户1同步好友列表，验证好友关系
+    println!("6. 用户1同步好友列表...");
+    let _ = sdk1.friend.sync_friends().await;
+    let is_friend = sdk1.friend.is_friend(&user2_cert.user_id).await;
+    println!("  用户1的好友中是否有用户2: {}", is_friend);
+
+    // 7. 用户2同步好友列表
+    let _ = sdk2.friend.sync_friends().await;
+    let is_friend2 = sdk2.friend.is_friend(&user1_cert.user_id).await;
+    println!("  用户2的好友中是否有用户1: {}", is_friend2);
+
+    // 8. 拒绝测试：用另一个用户3
+    println!("8. 再注册用户3并发送拒绝测试...");
+    let user3_phone = generate_virtual_phone("fapply3");
+    let user3_nickname = format!("TestUser_FApply3_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let user3_cert = register_user(&user3_phone, &user3_nickname).await.expect("用户3注册失败");
+    let sdk3 = create_sdk(&TestAccount { user_id: user3_cert.user_id.clone(), phone: user3_phone.clone(), nickname: user3_nickname.clone(), im_token: Some(user3_cert.im_token.clone()), chat_token: Some(user3_cert.chat_token.clone()) }, &user3_cert.im_token).await;
+
+    // 用户3申请加用户2
+    let _ = sdk3.friend.add_friend(user2_cert.user_id.clone(), Some("通过测试".to_string())).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 用户2拒绝用户3
+    let refuse_result = sdk2.friend.refuse_friend_application(user3_cert.user_id.clone(), None).await;
+    match &refuse_result {
+        Ok(_) => println!("  ✅ 拒绝好友申请成功"),
+        Err(e) => println!("  ❌ 拒绝好友申请失败: {:?}", e),
+    }
+
+    println!("\n=== 好友申请流程测试完成 ===");
+    println!("用户1-用户2好友关系: {} (期望 true)", is_friend);
+    println!("用户2-用户1好友关系: {} (期望 true)", is_friend2);
+    println!("用户3-用户2: 已被拒绝");
+}
+
+// ============================================================================
+// 群组申请/接受/拒绝集成测试
+// ============================================================================
+
+/// 集成测试: 群组申请、接受、拒绝完整流程
+#[tokio::test]
+#[ignore]
+async fn test_group_application_flow() {
+    println!("=== 群组申请/接受/拒绝完整流程测试 ===\n");
+
+    // 1. 注册用户
+    let owner_phone = generate_virtual_phone("gapply1");
+    let owner_nickname = format!("TestUser_GOwner_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let member_phone = generate_virtual_phone("gapply2");
+    let member_nickname = format!("TestUser_GMember_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+
+    println!("1. 注册用户...");
+    let owner_cert = register_user(&owner_phone, &owner_nickname).await.expect("群主注册失败");
+    let member_cert = register_user(&member_phone, &member_nickname).await.expect("成员注册失败");
+    println!("  群主: {} 成员: {}", owner_cert.user_id, member_cert.user_id);
+
+    // 2. 创建 SDK
+    println!("2. 创建 SDK...");
+    let owner_sdk = create_sdk(&TestAccount { user_id: owner_cert.user_id.clone(), phone: owner_phone.clone(), nickname: owner_nickname.clone(), im_token: Some(owner_cert.im_token.clone()), chat_token: Some(owner_cert.chat_token.clone()) }, &owner_cert.im_token).await;
+    let member_sdk = create_sdk(&TestAccount { user_id: member_cert.user_id.clone(), phone: member_phone.clone(), nickname: member_nickname.clone(), im_token: Some(member_cert.im_token.clone()), chat_token: Some(member_cert.chat_token.clone()) }, &member_cert.im_token).await;
+
+    // 3. 群主创建群组
+    println!("3. 群主创建群组...");
+    let group_name = format!("TestGroup_Apply_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let create_result = owner_sdk.group.create_group(
+        group_name.clone(), None, None, None, vec![], vec![], owner_cert.user_id.clone(),
+    ).await;
+    let group_id = match create_result {
+        Ok(g) => { println!("  ✅ 群组创建成功: {}", g.group_id); g.group_id }
+        Err(e) => { println!("  ❌ 创建失败: {:?}", e); return; }
+    };
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    // 4. 成员申请加入群组
+    println!("4. 成员申请加入群组...");
+    let join_result = member_sdk.group.join_group(group_id.clone(), Some("请批准我加入".to_string())).await;
+    match &join_result {
+        Ok(_) => println!("  ✅ 申请加入成功"),
+        Err(e) => println!("  ❌ 申请加入失败: {:?}", e),
+    }
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 5. 群主获取群申请列表
+    println!("5. 群主获取群申请列表...");
+    let apply_resp = owner_sdk.group.get_group_application_list().await;
+    match &apply_resp {
+        Ok(resp) => {
+            let infos = resp.group_requests.as_deref().unwrap_or(&[]);
+            println!("  ✅ 获取成功，申请数量: {}", infos.len());
+            for app in infos {
+                println!("    申请者: {} ({}), reason={}, handle_result={}", app.nickname, app.user_id, app.reason, app.handle_result);
+            }
+        }
+        Err(e) => println!("  ❌ 获取失败: {:?}", e),
+    }
+
+    // 6. 群主接受申请
+    println!("6. 群主接受申请...");
+    let accept_result = owner_sdk.group.accept_group_application(group_id.clone(), member_cert.user_id.clone()).await;
+    match &accept_result {
+        Ok(_) => println!("  ✅ 接受群申请成功"),
+        Err(e) => println!("  ❌ 接受群申请失败: {:?}", e),
+    }
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 7. 验证成员已加入群组
+    println!("7. 验证成员是否已加入群组...");
+    let member_in_group = member_sdk.group.is_in_group(&group_id).await;
+    println!("  成员是否在群组中: {} (期望 true)", member_in_group);
+
+    // 8. 拒绝测试：再注册用户3，申请后拒绝
+    println!("8. 拒绝测试...");
+    let user3_phone = generate_virtual_phone("gapply3");
+    let user3_nickname = format!("TestUser_GRefuse_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let user3_cert = register_user(&user3_phone, &user3_nickname).await.expect("用户3注册失败");
+    let sdk3 = create_sdk(&TestAccount { user_id: user3_cert.user_id.clone(), phone: user3_phone.clone(), nickname: user3_nickname.clone(), im_token: Some(user3_cert.im_token.clone()), chat_token: Some(user3_cert.chat_token.clone()) }, &user3_cert.im_token).await;
+
+    // 用户3申请加入群
+    let _ = sdk3.group.join_group(group_id.clone(), Some("测试拒绝".to_string())).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    // 群主拒绝用户3
+    let refuse_result = owner_sdk.group.refuse_group_application(group_id.clone(), user3_cert.user_id.clone()).await;
+    match &refuse_result {
+        Ok(_) => println!("  ✅ 拒绝群申请成功"),
+        Err(e) => println!("  ❌ 拒绝群申请失败: {:?}", e),
+    }
+
+    let user3_in_group = sdk3.group.is_in_group(&group_id).await;
+    println!("  用户3是否在群组中: {} (期望 false)", user3_in_group);
+
+    println!("\n=== 群组申请流程测试完成 ===");
+    println!("群组成员是否在群: {} (期望 true)", member_in_group);
+    println!("用户3是否在群: {} (期望 false)", user3_in_group);
+}
+
+// ============================================================================
+// 消息发送本地持久化集成测试
+// ============================================================================
+
+/// 集成测试: 发送消息后验证本地数据库持久化
+#[tokio::test]
+#[ignore]
+async fn test_send_message_persistence() {
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+
+    println!("=== 消息发送本地持久化测试 ===\n");
+
+    // 1. 注册用户
+    let user1_phone = generate_virtual_phone("persist1");
+    let user1_nickname = format!("TestUser_Persist1_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let user2_phone = generate_virtual_phone("persist2");
+    let user2_nickname = format!("TestUser_Persist2_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+
+    println!("1. 注册用户...");
+    let user1_cert = register_user(&user1_phone, &user1_nickname).await.expect("用户1注册失败");
+    let user2_cert = register_user(&user2_phone, &user2_nickname).await.expect("用户2注册失败");
+    println!("  用户1: {} 用户2: {}", user1_cert.user_id, user2_cert.user_id);
+
+    // 2. 创建 SDK
+    println!("2. 创建 SDK...");
+    let sdk1 = create_sdk(&TestAccount { user_id: user1_cert.user_id.clone(), phone: user1_phone.clone(), nickname: user1_nickname.clone(), im_token: Some(user1_cert.im_token.clone()), chat_token: Some(user1_cert.chat_token.clone()) }, &user1_cert.im_token).await;
+
+    // 3. 发送消息
+    println!("3. 发送文本消息...");
+    let msg_content = r#"{"content":"持久化测试消息"}"#.to_string();
+    let client_msg_id = format!("persist_test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+
+    let pending_msg = PendingMessage {
+        client_msg_id: client_msg_id.clone(),
+        send_id: user1_cert.user_id.clone(),
+        recv_id: user2_cert.user_id.clone(),
+        group_id: String::new(),
+        sender_platform_id: 1,
+        sender_nickname: user1_nickname.clone(),
+        sender_face_url: String::new(),
+        session_type: 1,
+        msg_from: 100,
+        content_type: content_type::TEXT,
+        content: msg_content.clone(),
+    };
+
+    let send_result = sdk1.message_sender.send_message(pending_msg).await;
+    assert!(send_result.is_ok(), "消息发送失败: {:?}", send_result.err());
+    println!("  ✅ 消息发送成功, client_msg_id={}", client_msg_id);
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 4. 从本地数据库查询消息
+    println!("4. 从本地数据库查询发送的消息...");
+    let conversation_id = format!("si_{}_{}", user1_cert.user_id, user2_cert.user_id);
+    let dao = sdk1.message_handler.message_dao();
+    let local_msgs = dao.get_by_conversation(&conversation_id, 0, 10000).await.expect("查询本地消息失败");
+
+    let found = local_msgs.iter().find(|m| m.client_msg_id == client_msg_id);
+    match found {
+        Some(msg) => {
+            println!("  ✅ 在本地数据库中找到消息");
+            println!("     seq={}, send_time={}, content_type={}, is_read={}, status={}",
+                msg.seq, msg.send_time, msg.content_type, msg.is_read, msg.status);
+        }
+        None => println!("  ❌ 未在本地数据库中找到消息"),
+    }
+
+    // 5. 验证会话已更新
+    println!("5. 验证会话是否已更新...");
+    let conv_dao = sdk1.context.conversation_dao.clone();
+    let conv = conv_dao.get_by_id(&conversation_id).await.expect("查询会话失败");
+    match conv {
+        Some(c) => {
+            println!("  ✅ 会话存在: id={}", c.conversation_id);
+            println!("     latest_msg={}, latest_msg_send_time={}", c.latest_msg, c.latest_msg_send_time);
+        }
+        None => println!("  ⚠️ 会话未创建（预期行为取决于服务端实现）"),
+    }
+
+    println!("\n=== 消息持久化测试完成 ===");
+}
+
+// ============================================================================
+// 本地消息搜索集成测试
+// ============================================================================
+
+/// 集成测试: 本地消息搜索功能
+#[tokio::test]
+#[ignore]
+async fn test_local_message_search() {
+    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
+    use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
+
+    println!("=== 本地消息搜索测试 ===\n");
+
+    // 1. 注册用户
+    let user1_phone = generate_virtual_phone("search1");
+    let user1_nickname = format!("TestUser_Search1_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let user2_phone = generate_virtual_phone("search2");
+    let user2_nickname = format!("TestUser_Search2_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+
+    println!("1. 注册用户...");
+    let user1_cert = register_user(&user1_phone, &user1_nickname).await.expect("用户1注册失败");
+    let user2_cert = register_user(&user2_phone, &user2_nickname).await.expect("用户2注册失败");
+    println!("  用户1: {} 用户2: {}", user1_cert.user_id, user2_cert.user_id);
+
+    // 2. 创建 SDK
+    println!("2. 创建 SDK...");
+    let sdk1 = create_sdk(&TestAccount { user_id: user1_cert.user_id.clone(), phone: user1_phone.clone(), nickname: user1_nickname.clone(), im_token: Some(user1_cert.im_token.clone()), chat_token: Some(user1_cert.chat_token.clone()) }, &user1_cert.im_token).await;
+
+    // 3. 发送包含特定关键词的多条消息
+    println!("3. 发送包含关键词的消息...");
+    let messages = vec![
+        ("这是一条关于苹果的消息", "apple_1"),
+        ("香蕉是很好吃的水果", "banana_1"),
+        ("苹果和香蕉都是水果", "apple_banana_1"),
+        ("今天天气真好", "weather_1"),
+        ("再来一个苹果吧", "apple_2"),
+    ];
+
+    let conversation_id = format!("si_{}_{}", user1_cert.user_id, user2_cert.user_id);
+
+    for (text, tag) in &messages {
+        let pending_msg = PendingMessage {
+            client_msg_id: format!("search_test_{}_{}", tag, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
+            send_id: user1_cert.user_id.clone(),
+            recv_id: user2_cert.user_id.clone(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: user1_nickname.clone(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: content_type::TEXT,
+            content: format!("{{\"content\":\"{}\"}}", text),
+        };
+        let _ = sdk1.message_sender.send_message(pending_msg).await;
+        println!("  已发送: {}", text);
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+    tokio::time::sleep(Duration::from_secs(3)).await;
+
+    // 4. 搜索关键词 "苹果"
+    println!("4. 搜索关键词 '苹果'...");
+    let results = sdk1.message_service.search_local_messages(conversation_id.clone(), "苹果".to_string(), 100).await;
+    match &results {
+        Ok(msgs) => {
+            println!("  ✅ 找到 {} 条包含'苹果'的消息", msgs.len());
+            for m in msgs {
+                println!("     content={:?}", &m.content[..m.content.len().min(50)]);
+            }
+        }
+        Err(e) => println!("  ❌ 搜索失败: {:?}", e),
+    }
+
+    // 5. 搜索关键词 "香蕉"
+    println!("5. 搜索关键词 '香蕉'...");
+    let results2 = sdk1.message_service.search_local_messages(conversation_id.clone(), "香蕉".to_string(), 100).await;
+    match &results2 {
+        Ok(msgs) => println!("  ✅ 找到 {} 条包含'香蕉'的消息", msgs.len()),
+        Err(e) => println!("  ❌ 搜索失败: {:?}", e),
+    }
+
+    // 6. 搜索关键词 "天气"
+    println!("6. 搜索关键词 '天气'...");
+    let results3 = sdk1.message_service.search_local_messages(conversation_id.clone(), "天气".to_string(), 100).await;
+    match &results3 {
+        Ok(msgs) => println!("  ✅ 找到 {} 条包含'天气'的消息", msgs.len()),
+        Err(e) => println!("  ❌ 搜索失败: {:?}", e),
+    }
+
+    println!("\n=== 本地消息搜索测试完成 ===");
 }

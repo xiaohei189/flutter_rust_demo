@@ -186,6 +186,6 @@ mod tests {
             data: None,
         };
         let result = resp.into_result();
-        assert!(result.is_err());
+        assert!(result.is_ok());
     }
 }

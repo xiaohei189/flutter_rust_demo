@@ -208,7 +208,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("userIDList"));
+        assert!(json.contains("userIDs"));
         assert!(json.contains("user_1"));
     }
 

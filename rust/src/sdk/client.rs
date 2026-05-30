@@ -336,7 +336,7 @@ impl OpenIMClient {
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
         self.message_service.set_user_id(user_id.to_string());
-        self.conversation_syncer.set_user_id(user_id.to_string());
+        self.conversation_syncer.set_user_id(user_id.to_string()).await;
         
         // 启动 WebSocket 连接
         if let Some(ws_url) = &self.context.config.ws_url {

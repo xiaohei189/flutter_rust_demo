@@ -135,8 +135,8 @@ impl ConversationSyncer {
         }
     }
 
-    pub fn set_user_id(&self, user_id: String) {
-        let mut uid = self.user_id.blocking_write();
+    pub async fn set_user_id(&self, user_id: String) {
+        let mut uid = self.user_id.write().await;
         *uid = user_id;
     }
 
