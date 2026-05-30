@@ -14,6 +14,8 @@ use tracing::info;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetFriendListReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
     #[serde(rename = "pagination")]
     pub pagination: Pagination,
 }
@@ -103,15 +105,17 @@ pub struct BlackServerInfo {
 pub struct FriendManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
+    user_id: String,
     friends: Arc<RwLock<Vec<FriendInfo>>>,
     blacks: Arc<RwLock<Vec<String>>>,
 }
 
 impl FriendManager {
-    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
+    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>, user_id: String) -> Self {
         Self {
             http_client,
             event_bus,
+            user_id,
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
         }
@@ -132,6 +136,7 @@ impl FriendManager {
 
     pub async fn sync_friends(&self) -> Result<()> {
         let req = GetFriendListReq {
+            user_id: self.user_id.clone(),
             pagination: Pagination {
                 page_number: 1,
                 show_number: 1000,

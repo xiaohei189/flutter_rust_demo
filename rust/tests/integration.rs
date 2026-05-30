@@ -1897,3 +1897,245 @@ async fn test_connection_state_transitions() {
     
     println!("\n✅ 连接状态变更测试通过");
 }
+
+// ============================================================================
+// 好友功能集成测试
+// ============================================================================
+
+/// 集成测试: 好友列表同步
+/// 测试流程：连接 → 同步好友列表 → 验证好友数据
+#[tokio::test]
+#[ignore]
+async fn test_friend_list_sync() {
+    println!("=== 好友列表同步测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 同步好友列表
+    println!("4. 同步好友列表...");
+    match sdk.friend.sync_friends().await {
+        Ok(_) => println!("  ✅ 好友列表同步成功"),
+        Err(e) => println!("  ⚠️ 好友列表同步失败: {:?}", e),
+    }
+    
+    // 5. 获取好友列表
+    println!("5. 获取好友列表...");
+    let friends = sdk.friend.get_friend_list().await;
+    println!("  好友数量: {}", friends.len());
+    
+    for (i, friend) in friends.iter().enumerate() {
+        println!("  {}. user_id={}, nickname={}", i + 1, friend.user_id, friend.nickname);
+    }
+    
+    // 6. 获取好友 ID 列表
+    println!("6. 获取好友 ID 列表...");
+    let friend_ids = sdk.friend.get_friend_id_list().await;
+    println!("  好友 ID 数量: {}", friend_ids.len());
+    
+    // 7. 输出测试结果
+    println!("\n=== 好友列表同步测试结果 ===\n");
+    println!("好友数量: {}", friends.len());
+    println!("好友 ID 数量: {}", friend_ids.len());
+    
+    if friends.len() == friend_ids.len() {
+        println!("\n✅ 好友列表同步测试通过");
+    } else {
+        println!("\n⚠️ 好友数量与 ID 数量不一致");
+    }
+}
+
+/// 集成测试: 添加好友
+/// 测试流程：用户1添加用户2为好友 → 验证好友申请发送成功
+#[tokio::test]
+#[ignore]
+async fn test_add_friend() {
+    println!("=== 添加好友测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 添加好友
+    println!("4. 添加好友 {}...", user2.user_id);
+    let add_result = sdk.friend.add_friend(user2.user_id.clone(), Some("你好，我是测试好友".to_string())).await;
+    
+    match add_result {
+        Ok(_) => println!("  ✅ 好友申请发送成功"),
+        Err(ref e) => println!("  ❌ 好友申请发送失败: {:?}", e),
+    }
+    
+    // 5. 输出测试结果
+    println!("\n=== 添加好友测试结果 ===\n");
+    
+    if add_result.is_ok() {
+        println!("✅ 添加好友测试通过");
+    } else {
+        println!("❌ 添加好友测试失败");
+    }
+}
+
+/// 集成测试: 删除好友
+/// 测试流程：添加好友 → 删除好友 → 验证好友已删除
+#[tokio::test]
+#[ignore]
+async fn test_delete_friend() {
+    println!("=== 删除好友测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 先同步好友列表
+    println!("4. 同步好友列表...");
+    let _ = sdk.friend.sync_friends().await;
+    
+    let initial_count = sdk.friend.friend_count().await;
+    println!("  初始好友数量: {}", initial_count);
+    
+    // 5. 删除好友（如果存在）
+    println!("5. 删除好友 {}...", user2.user_id);
+    let delete_result = sdk.friend.delete_friend(user2.user_id.clone()).await;
+    
+    match delete_result {
+        Ok(_) => println!("  ✅ 好友删除成功"),
+        Err(e) => println!("  ⚠️ 好友删除失败: {:?}", e),
+    }
+    
+    // 6. 验证好友已删除
+    let final_count = sdk.friend.friend_count().await;
+    println!("  删除后好友数量: {}", final_count);
+    
+    let is_still_friend = sdk.friend.is_friend(&user2.user_id).await;
+    println!("  是否还是好友: {}", is_still_friend);
+    
+    // 7. 输出测试结果
+    println!("\n=== 删除好友测试结果 ===\n");
+    println!("初始好友数量: {}", initial_count);
+    println!("删除后好友数量: {}", final_count);
+    println!("是否还是好友: {}", is_still_friend);
+    
+    if !is_still_friend {
+        println!("\n✅ 删除好友测试通过");
+    } else {
+        println!("\n⚠️ 好友删除后仍在列表中");
+    }
+}
+
+/// 集成测试: 黑名单管理
+/// 测试流程：添加黑名单 → 验证黑名单 → 移除黑名单
+#[tokio::test]
+#[ignore]
+async fn test_blacklist_management() {
+    println!("=== 黑名单管理测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 同步黑名单
+    println!("4. 同步黑名单...");
+    match sdk.friend.sync_blacks().await {
+        Ok(_) => println!("  ✅ 黑名单同步成功"),
+        Err(e) => println!("  ⚠️ 黑名单同步失败: {:?}", e),
+    }
+    
+    let initial_blacklist = sdk.friend.get_blacklist().await;
+    println!("  初始黑名单数量: {}", initial_blacklist.len());
+    
+    // 5. 添加到黑名单
+    println!("5. 添加 {} 到黑名单...", user2.user_id);
+    let add_black_result = sdk.friend.add_black(user2.user_id.clone()).await;
+    
+    match add_black_result {
+        Ok(_) => println!("  ✅ 添加黑名单成功"),
+        Err(e) => println!("  ❌ 添加黑名单失败: {:?}", e),
+    }
+    
+    // 6. 验证在黑名单中
+    let is_in_blacklist = sdk.friend.is_in_blacklist(&user2.user_id).await;
+    println!("  是否在黑名单中: {}", is_in_blacklist);
+    
+    // 7. 从黑名单移除
+    println!("7. 从黑名单移除 {}...", user2.user_id);
+    let remove_black_result = sdk.friend.remove_black(user2.user_id.clone()).await;
+    
+    match remove_black_result {
+        Ok(_) => println!("  ✅ 移除黑名单成功"),
+        Err(e) => println!("  ❌ 移除黑名单失败: {:?}", e),
+    }
+    
+    // 8. 验证已移除
+    let is_still_in_blacklist = sdk.friend.is_in_blacklist(&user2.user_id).await;
+    println!("  是否仍在黑名单中: {}", is_still_in_blacklist);
+    
+    // 9. 输出测试结果
+    println!("\n=== 黑名单管理测试结果 ===\n");
+    println!("初始黑名单数量: {}", initial_blacklist.len());
+    println!("添加后是否在黑名单: {}", is_in_blacklist);
+    println!("移除后是否仍在黑名单: {}", is_still_in_blacklist);
+    
+    if is_in_blacklist && !is_still_in_blacklist {
+        println!("\n✅ 黑名单管理测试通过");
+    } else {
+        println!("\n❌ 黑名单管理测试失败");
+    }
+}
