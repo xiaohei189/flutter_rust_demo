@@ -15,6 +15,8 @@ pub struct ClientConfig {
     pub api_base_url: String,
     /// 文件上传 URL
     pub upload_url: Option<String>,
+    /// 数据存储目录
+    pub data_dir: String,
 }
 
 impl ClientConfig {
@@ -24,6 +26,7 @@ impl ClientConfig {
         platform_id: i32,
         ws_url: Option<String>,
         api_base_url: Option<String>,
+        data_dir: Option<String>,
     ) -> Self {
         Self {
             user_id,
@@ -32,6 +35,7 @@ impl ClientConfig {
             ws_url,
             api_base_url: api_base_url.unwrap_or_default(),
             upload_url: None,
+            data_dir: data_dir.unwrap_or_else(|| "./data".to_string()),
         }
     }
 }
@@ -48,6 +52,7 @@ mod tests {
             5,
             Some("wss://example.com/ws".to_string()),
             Some("https://api.example.com".to_string()),
+            Some("./test_data".to_string()),
         );
 
         assert_eq!(config.user_id, "user_123");
@@ -55,6 +60,7 @@ mod tests {
         assert_eq!(config.platform_id, 5);
         assert_eq!(config.ws_url, Some("wss://example.com/ws".to_string()));
         assert_eq!(config.api_base_url, "https://api.example.com");
+        assert_eq!(config.data_dir, "./test_data");
     }
 
     #[test]
@@ -65,11 +71,13 @@ mod tests {
             5,
             None,
             None,
+            None,
         );
 
         assert_eq!(config.api_base_url, "");
         assert!(config.ws_url.is_none());
         assert!(config.upload_url.is_none());
+        assert_eq!(config.data_dir, "./data");
     }
 
     #[test]
@@ -80,6 +88,7 @@ mod tests {
             5,
             Some("wss://example.com/ws".to_string()),
             Some("https://api.example.com".to_string()),
+            Some("./test_data".to_string()),
         );
 
         let json = serde_json::to_string(&config).unwrap();
@@ -90,5 +99,6 @@ mod tests {
         assert_eq!(deserialized.platform_id, config.platform_id);
         assert_eq!(deserialized.ws_url, config.ws_url);
         assert_eq!(deserialized.api_base_url, config.api_base_url);
+        assert_eq!(deserialized.data_dir, config.data_dir);
     }
 }

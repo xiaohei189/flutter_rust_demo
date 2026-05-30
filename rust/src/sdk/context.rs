@@ -1,6 +1,9 @@
 use crate::domain::config::ClientConfig;
 use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
+use crate::infra::database::pool::create_pool;
+use crate::infra::database::{ConversationDao, MessageDao};
+use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
 
@@ -16,6 +19,12 @@ pub struct RuntimeContext {
     pub user_id: Mutex<String>,
     /// 操作 ID（用于追踪请求）
     pub operation_id: String,
+    /// 数据库连接池
+    pub db_pool: SqlitePool,
+    /// 消息 DAO
+    pub message_dao: Arc<MessageDao>,
+    /// 会话 DAO
+    pub conversation_dao: Arc<ConversationDao>,
 }
 
 impl RuntimeContext {
@@ -27,12 +36,20 @@ impl RuntimeContext {
     ) -> Result<Self> {
         let operation_id = format!("op_{}", chrono::Utc::now().timestamp_millis());
 
+        let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
+        let db_pool = create_pool(&db_url).await?;
+        let message_dao = Arc::new(MessageDao::new(db_pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(db_pool.clone()));
+
         Ok(Self {
             config,
             event_bus,
             cancel_token,
             user_id: Mutex::new("".to_string()),
             operation_id,
+            db_pool,
+            message_dao,
+            conversation_dao,
         })
     }
 
@@ -72,6 +89,7 @@ mod tests {
             1,
             Some("ws://localhost:10001".to_string()),
             Some("http://localhost:10002".to_string()),
+            Some("./test_data".to_string()),
         );
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();

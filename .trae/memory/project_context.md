@@ -51,11 +51,11 @@
 
 | 项目路径 | 说明 | 用途 |
 |---------|------|------|
-| `D:\workspace\openim-docker` | Docker 服务配置 | 本地开发环境 |
-| `D:\workspace\chat-server` | 应用服务源码 | 后端参考 |
-| `D:\workspace\open-im-server` | IM 服务源码（Go） | 服务端参考 |
-| `D:\workspace\openim-sdk-core` | Go 版本 SDK | **主要参考实现** |
-| `D:\workspace\openim-flutter-demo` | 官方 Flutter 示例 | UI/交互参考 |
+| `C:\Users\11456\workspace\openim-docker` | Docker 服务配置 | 本地开发环境 |
+| `C:\Users\11456\workspace\chat-server` | 应用服务源码 | 后端参考 |
+| `C:\Users\11456\workspace\open-im-server` | IM 服务源码（Go） | 服务端参考 |
+| `C:\Users\11456\workspace\openim-sdk-core` | Go 版本 SDK | **主要参考实现** |
+| `C:\Users\11456\workspace\openim-flutter-demo` | 官方 Flutter 示例 | UI/交互参考 |
 
 ## 架构设计
 

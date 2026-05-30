@@ -134,16 +134,17 @@ impl OpenIMBridgeClient {
         ws_url: Option<String>,
         api_base_url: Option<String>,
     ) -> Result<Self> {
-        let mut config = ClientConfig::new(user_id, token, platform_id, ws_url, api_base_url);
-        config.conversation_db_url = format!(
-            "sqlite://{}/conversations_{}.db?mode=rwc",
-            std::env::temp_dir().as_path().to_string_lossy(),
-            config.user_id
-        );
-        let client = IMClient::new(config).await?;
-        let inner = Arc::new(RwLock::new(client));
-        *CURRENT_CLIENT_INNER.lock().unwrap() = Some(inner.clone());
-        Ok(Self { inner })
+        let config = ClientConfig::new(user_id, token, platform_id, ws_url, api_base_url, None);
+        // TODO: 旧代码待删除，重构后使用新的 SDK 初始化逻辑
+        // config.conversation_db_url = format!(
+        //     "sqlite://{}/conversations_{}.db?mode=rwc",
+        //     std::env::temp_dir().as_path().to_string_lossy(),
+        //     config.user_id
+        // );
+        // let client = IMClient::new(config).await?;
+        // let inner = Arc::new(RwLock::new(client));
+        // *CURRENT_CLIENT_INNER.lock().unwrap() = Some(inner.clone());
+        unimplemented!("旧 FFI 桥接代码待重构")
     }
 
     /// 关闭当前实例（停止 WebSocket 与同步任务），由 Flutter 在断开/重启前调用
