@@ -22,7 +22,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
-use tracing::{info, warn};
+use tracing::{info, warn, debug};
 
 /// SDK 门面，提供统一的 API 入口
 pub struct OpenIMClient {
@@ -166,6 +166,7 @@ impl OpenIMClient {
         
         tokio::spawn(async move {
             let mut subscription = event_bus.subscribe();
+            info!("push_message_handler: started");
             loop {
                 tokio::select! {
                     _ = cancel_token.cancelled() => {
@@ -174,10 +175,13 @@ impl OpenIMClient {
                     }
                     event = subscription.next() => {
                         match event {
-                            Some(SdkEvent::PushMessage { data, .. }) => {
+                            Some(SdkEvent::PushMessage { data, req_identifier }) => {
+                                info!("push_message_handler: received PushMessage event, req_identifier={}, data_len={}", req_identifier, data.len());
                                 // 使用 protobuf 解码推送消息
                                 match PushMessages::decode(data.as_slice()) {
                                     Ok(push_messages) => {
+                                        info!("push_message_handler: decoded successfully, msgs={}, notification_msgs={}", 
+                                            push_messages.msgs.len(), push_messages.notification_msgs.len());
                                         // 处理普通消息和通知消息
                                         let all_msgs = push_messages.msgs.iter().chain(push_messages.notification_msgs.iter());
                                         
@@ -207,6 +211,7 @@ impl OpenIMClient {
                                             }).collect();
                                             
                                             if !messages.is_empty() {
+                                                info!("push_message_handler: handling {} messages for {}", messages.len(), conv_id);
                                                 if let Err(e) = message_handler.handle_messages(messages).await {
                                                     warn!("failed to handle push messages for {}: {:?}", conv_id, e);
                                                 }
@@ -218,7 +223,75 @@ impl OpenIMClient {
                                     }
                                 }
                             }
-                            Some(_) => {}
+                            Some(SdkEvent::PushMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
+                                info!("push_message_handler: received PushMessages event for {}, msg_count={}", conversation_id, msgs.len());
+                                
+                                let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
+                                    let content_str = String::from_utf8_lossy(&msg.content).to_string();
+                                    
+                                    Some(ReceivedMessage {
+                                        server_msg_id: msg.server_msg_id.clone(),
+                                        client_msg_id: msg.client_msg_id.clone(),
+                                        send_id: msg.send_id.clone(),
+                                        recv_id: msg.recv_id.clone(),
+                                        sender_platform_id: msg.sender_platform_id,
+                                        sender_nick_name: msg.sender_nickname.clone(),
+                                        sender_face_url: msg.sender_face_url.clone(),
+                                        session_type: msg.session_type,
+                                        msg_from: msg.msg_from,
+                                        content_type: msg.content_type,
+                                        content: content_str,
+                                        seq: msg.seq,
+                                        send_time: msg.send_time,
+                                        create_time: msg.create_time,
+                                        conversation_id: conversation_id.clone(),
+                                        group_id: msg.group_id.clone(),
+                                    })
+                                }).collect();
+                                
+                                if !messages.is_empty() {
+                                    info!("push_message_handler: handling {} messages for {}", messages.len(), conversation_id);
+                                    if let Err(e) = message_handler.handle_messages(messages).await {
+                                        warn!("failed to handle push messages for {}: {:?}", conversation_id, e);
+                                    }
+                                }
+                            }
+                            Some(SdkEvent::PushNotificationMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
+                                info!("push_message_handler: received PushNotificationMessages event for {}, msg_count={}", conversation_id, msgs.len());
+                                
+                                let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
+                                    let content_str = String::from_utf8_lossy(&msg.content).to_string();
+                                    
+                                    Some(ReceivedMessage {
+                                        server_msg_id: msg.server_msg_id.clone(),
+                                        client_msg_id: msg.client_msg_id.clone(),
+                                        send_id: msg.send_id.clone(),
+                                        recv_id: msg.recv_id.clone(),
+                                        sender_platform_id: msg.sender_platform_id,
+                                        sender_nick_name: msg.sender_nickname.clone(),
+                                        sender_face_url: msg.sender_face_url.clone(),
+                                        session_type: msg.session_type,
+                                        msg_from: msg.msg_from,
+                                        content_type: msg.content_type,
+                                        content: content_str,
+                                        seq: msg.seq,
+                                        send_time: msg.send_time,
+                                        create_time: msg.create_time,
+                                        conversation_id: conversation_id.clone(),
+                                        group_id: msg.group_id.clone(),
+                                    })
+                                }).collect();
+                                
+                                if !messages.is_empty() {
+                                    info!("push_message_handler: handling {} notification messages for {}", messages.len(), conversation_id);
+                                    if let Err(e) = message_handler.handle_messages(messages).await {
+                                        warn!("failed to handle push notification messages for {}: {:?}", conversation_id, e);
+                                    }
+                                }
+                            }
+                            Some(other) => {
+                                debug!("push_message_handler: received other event: {:?}", other);
+                            }
                             None => {
                                 info!("push_message_handler: event stream closed");
                                 break;

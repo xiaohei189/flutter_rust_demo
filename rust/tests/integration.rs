@@ -32,6 +32,7 @@ use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use tracing_subscriber;
 
 /// 测试用 API 基础 URL
 const API_BASE_URL: &str = "http://localhost:10002";
@@ -475,6 +476,12 @@ async fn test_user_state_via_sdk() {
 #[tokio::test]
 #[ignore]
 async fn test_message_types() {
+    // 初始化 tracing 日志
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
     use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
     use rust_lib_flutter_rust_demo::domain::constant::types::content_type;
     
@@ -1069,10 +1076,16 @@ async fn test_get_user_online_status() {
 // ============================================================================
 
 /// 集成测试: 消息同步测试（离线消息/历史消息）
-/// 测试流程：用户1发送多条消息 → 用户2离线 → 用户2上线 → 验证收到所有消息
+/// 测试流程：用户2先上线 → 用户1发送多条消息 → 用户2实时接收
 #[tokio::test]
 #[ignore]
 async fn test_message_sync() {
+    // 初始化 tracing 日志
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
     use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
     
     println!("=== 消息同步测试 ===\n");
@@ -1087,8 +1100,17 @@ async fn test_message_sync() {
     let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
     let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
     
-    // 3. 创建发送者 SDK 并发送多条消息
-    println!("3. 创建发送者 SDK 并发送消息...");
+    // 3. 先创建接收者 SDK 并连接（确保在线）
+    println!("3. 创建接收者 SDK（先上线等待消息）...");
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut event_subscription = receiver_sdk.event_bus.subscribe();
+    println!("  ✅ 接收者已连接");
+    
+    // 等待接收者完全连接
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    
+    // 4. 创建发送者 SDK 并发送多条消息
+    println!("4. 创建发送者 SDK 并发送消息...");
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     
     // 发送 5 条测试消息
@@ -1116,14 +1138,6 @@ async fn test_message_sync() {
         
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
-    
-    println!("  等待消息到达服务器...");
-    tokio::time::sleep(Duration::from_secs(3)).await;
-    
-    // 4. 创建接收者 SDK（模拟上线）
-    println!("4. 创建接收者 SDK（模拟上线接收消息）...");
-    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut event_subscription = receiver_sdk.event_bus.subscribe();
     
     // 5. 等待并统计收到的消息
     println!("5. 等待接收消息（10秒超时）...");

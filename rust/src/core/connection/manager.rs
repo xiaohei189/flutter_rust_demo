@@ -1,9 +1,11 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::protocol::ws::{OpenIMReq, OpenIMResp};
+use crate::protocol::sdkws::PushMessages;
+use crate::protocol::ws::{OpenIMReq, OpenIMResp, WebSocketConnectResp};
 use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
+use prost::Message;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -133,6 +135,7 @@ impl ConnectionManager {
                     msg = read.next() => {
                         match msg {
                             Some(Ok(WsMessage::Text(text))) => {
+                                // 先尝试解析为 OpenIMResp（推送消息或 RPC 响应）
                                 match serde_json::from_str::<OpenIMResp>(&text) {
                                     Ok(resp) => {
                                         if let Some(pending_req) =
@@ -149,8 +152,85 @@ impl ConnectionManager {
                                             );
                                         }
                                     }
+                                    Err(_) => {
+                                        // 尝试解析为 WebSocketConnectResp（连接响应）
+                                        match serde_json::from_str::<WebSocketConnectResp>(&text) {
+                                            Ok(conn_resp) => {
+                                                if conn_resp.err_code == 0 {
+                                                    info!("WebSocket connection confirmed by server");
+                                                } else {
+                                                    warn!("WebSocket connection failed: errCode={}, errMsg={}", 
+                                                        conn_resp.err_code, conn_resp.err_msg);
+                                                    *state.write().await = ConnectionState::Disconnected;
+                                                    event_bus.publish(SdkEvent::Disconnected {
+                                                        reason: format!("server rejected: {}", conn_resp.err_msg),
+                                                    });
+                                                    break;
+                                                }
+                                            }
+                                            Err(e) => {
+                                                warn!("failed to parse ws message as OpenIMResp or WebSocketConnectResp: {}, text={}", e, &text[..text.len().min(100)]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Some(Ok(WsMessage::Binary(data))) => {
+                                // 服务器推送的消息（JSON 编码的 OpenIMResp，data 字段包含 protobuf 编码的 PushMessages）
+                                info!("received binary message, len={}", data.len());
+                                
+                                // 先尝试 JSON 解码为 OpenIMResp
+                                match serde_json::from_slice::<OpenIMResp>(&data) {
+                                    Ok(resp) => {
+                                        info!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}", 
+                                            resp.req_identifier, resp.err_code);
+                                        
+                                        if resp.err_code != 0 {
+                                            warn!("server error response: err_code={}, err_msg={}", resp.err_code, resp.err_msg);
+                                            continue;
+                                        }
+                                        
+                                        // 根据 req_identifier 判断消息类型
+                                        if resp.req_identifier == crate::domain::constant::types::ws_push_identifier::PUSH_MSG {
+                                            // data 字段是 protobuf 编码的 PushMessages
+                                            match PushMessages::decode(resp.data.as_slice()) {
+                                                Ok(push_msgs) => {
+                                                    info!("received push messages: {} conversations with msgs, {} with notifications", 
+                                                        push_msgs.msgs.len(), push_msgs.notification_msgs.len());
+                                                    
+                                                    // 发布普通消息推送事件
+                                                    for (conversation_id, pull_msgs) in push_msgs.msgs {
+                                                        event_bus.publish(SdkEvent::PushMessages {
+                                                            conversation_id,
+                                                            msgs: pull_msgs.msgs,
+                                                            is_end: pull_msgs.is_end,
+                                                            end_seq: pull_msgs.end_seq,
+                                                        });
+                                                    }
+                                                    
+                                                    // 发布通知消息推送事件
+                                                    for (conversation_id, pull_msgs) in push_msgs.notification_msgs {
+                                                        event_bus.publish(SdkEvent::PushNotificationMessages {
+                                                            conversation_id,
+                                                            msgs: pull_msgs.msgs,
+                                                            is_end: pull_msgs.is_end,
+                                                            end_seq: pull_msgs.end_seq,
+                                                        });
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    warn!("failed to decode push messages from protobuf: {}", e);
+                                                }
+                                            }
+                                        } else {
+                                            // 其他类型的响应，通知等待的通道
+                                            if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
+                                                let _ = req.tx.send(resp);
+                                            }
+                                        }
+                                    }
                                     Err(e) => {
-                                        warn!("failed to parse ws message: {}", e);
+                                        warn!("failed to decode binary message as OpenIMResp: {}", e);
                                     }
                                 }
                             }
@@ -275,7 +355,7 @@ impl ConnectionManager {
             let mut w = self.writer.write().await;
             if let Some(writer) = w.as_mut() {
                 writer
-                    .send(WsMessage::Text(req_json.into()))
+                    .send(WsMessage::Binary(req_json.into_bytes()))
                     .await
                     .map_err(|e| SdkError::connection(format!("send failed: {}", e)))
             } else {

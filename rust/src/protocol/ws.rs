@@ -1,5 +1,25 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use prost::Message as ProstMessage;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+fn deserialize_base64_or_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::String(s) => {
+            BASE64.decode(&s).map_err(|e| Error::custom(format!("base64 decode failed: {}", e)))
+        }
+        serde_json::Value::Array(arr) => {
+            arr.into_iter()
+                .map(|v| v.as_u64().map(|n| n as u8).ok_or_else(|| Error::custom("expected u8")))
+                .collect()
+        }
+        _ => Err(Error::custom("expected string or array")),
+    }
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpenIMReq {
@@ -28,7 +48,7 @@ pub struct OpenIMResp {
     pub err_code: i32,
     #[serde(rename = "errMsg")]
     pub err_msg: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_base64_or_bytes")]
     pub data: Vec<u8>,
 }
 

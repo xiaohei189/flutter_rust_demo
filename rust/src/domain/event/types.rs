@@ -1,3 +1,4 @@
+use crate::protocol::sdkws::MsgData;
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
@@ -14,6 +15,18 @@ pub enum SdkEvent {
     PushMessage {
         req_identifier: i32,
         data: Vec<u8>,
+    },
+    PushMessages {
+        conversation_id: String,
+        msgs: Vec<MsgData>,
+        is_end: bool,
+        end_seq: i64,
+    },
+    PushNotificationMessages {
+        conversation_id: String,
+        msgs: Vec<MsgData>,
+        is_end: bool,
+        end_seq: i64,
     },
     SyncStarted,
     SyncProgress {
@@ -151,6 +164,8 @@ impl SdkEvent {
             SdkEvent::Disconnected { .. } => "disconnected",
             SdkEvent::ConnectFailed { .. } => "connect_failed",
             SdkEvent::PushMessage { .. } => "push_message",
+            SdkEvent::PushMessages { .. } => "push_messages",
+            SdkEvent::PushNotificationMessages { .. } => "push_notification_messages",
             SdkEvent::SyncStarted => "sync_started",
             SdkEvent::SyncProgress { .. } => "sync_progress",
             SdkEvent::SyncFinished => "sync_finished",

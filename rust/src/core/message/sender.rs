@@ -2,6 +2,7 @@ use crate::core::connection::manager::ConnectionManager;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::protocol::sdkws::{MsgData, UserSendMsgResp};
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -9,54 +10,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use tracing::{error, info};
 
-#[derive(Clone, Serialize, Deserialize, Message)]
-pub struct SendMsgReq {
-    #[prost(string, tag = "1")]
-    #[serde(rename = "sendID")]
-    pub send_id: String,
-    #[prost(string, tag = "2")]
-    #[serde(rename = "recvID")]
-    pub recv_id: String,
-    #[prost(string, tag = "3")]
-    #[serde(rename = "groupID")]
-    pub group_id: String,
-    #[prost(int32, tag = "4")]
-    #[serde(rename = "senderPlatformID")]
-    pub sender_platform_id: i32,
-    #[prost(string, tag = "5")]
-    #[serde(rename = "senderNickname")]
-    pub sender_nickname: String,
-    #[prost(string, tag = "6")]
-    #[serde(rename = "senderFaceURL")]
-    pub sender_face_url: String,
-    #[prost(int32, tag = "7")]
-    #[serde(rename = "sessionType")]
-    pub session_type: i32,
-    #[prost(int32, tag = "8")]
-    #[serde(rename = "msgFrom")]
-    pub msg_from: i32,
-    #[prost(int32, tag = "9")]
-    #[serde(rename = "contentType")]
-    pub content_type: i32,
-    #[prost(string, tag = "10")]
-    pub content: String,
-    #[prost(string, tag = "11")]
-    #[serde(rename = "clientMsgID")]
-    pub client_msg_id: String,
-    #[prost(int64, tag = "12")]
-    #[serde(rename = "sendTime")]
-    pub send_time: i64,
-}
-
-#[derive(Clone, Serialize, Deserialize, Message)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct SendMsgResp {
-    #[prost(string, tag = "1")]
     #[serde(rename = "serverMsgID")]
     pub server_msg_id: String,
-    #[prost(string, tag = "2")]
     #[serde(rename = "clientMsgID")]
     pub client_msg_id: String,
-    #[prost(int64, tag = "3")]
     #[serde(rename = "sendTime")]
     pub send_time: i64,
 }
@@ -177,23 +136,33 @@ impl MessageSender {
             .map(|d| d.as_millis() as i64)
             .unwrap_or(0);
 
-        let req = SendMsgReq {
+        let msg_data = MsgData {
             send_id: msg.send_id.clone(),
             recv_id: msg.recv_id.clone(),
             group_id: msg.group_id.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: String::new(),
             sender_platform_id: msg.sender_platform_id,
             sender_nickname: msg.sender_nickname.clone(),
             sender_face_url: msg.sender_face_url.clone(),
             session_type: msg.session_type,
             msg_from: msg.msg_from,
             content_type: msg.content_type,
-            content: msg.content.clone(),
-            client_msg_id: msg.client_msg_id.clone(),
+            content: msg.content.clone().into_bytes(),
+            seq: 0,
             send_time,
+            create_time: send_time,
+            status: 0,
+            is_read: false,
+            options: std::collections::HashMap::new(),
+            offline_push_info: None,
+            at_user_id_list: vec![],
+            attached_info: String::new(),
+            ex: String::new(),
         };
 
-        let resp: SendMsgResp = self.connection
-            .send_rpc(1001, &req)
+        let resp: UserSendMsgResp = self.connection
+            .send_rpc(1003, &msg_data)
             .await
             .map_err(|e| SdkError::message_send(format!("send message via ws failed: {}", e)))?;
 
@@ -203,7 +172,11 @@ impl MessageSender {
             send_time: resp.send_time,
         });
 
-        Ok(resp)
+        Ok(SendMsgResp {
+            server_msg_id: resp.server_msg_id,
+            client_msg_id: resp.client_msg_id,
+            send_time: resp.send_time,
+        })
     }
 
     fn clone_for_worker(&self) -> Self {
@@ -247,26 +220,36 @@ mod tests {
     }
 
     #[test]
-    fn test_send_msg_req_serialization() {
-        let req = SendMsgReq {
+    fn test_msg_data_serialization() {
+        let msg_data = MsgData {
             send_id: "user_1".to_string(),
             recv_id: "user_2".to_string(),
             group_id: String::new(),
+            client_msg_id: "msg_123".to_string(),
+            server_msg_id: String::new(),
             sender_platform_id: 1,
             sender_nickname: "Test".to_string(),
             sender_face_url: String::new(),
             session_type: 1,
             msg_from: 100,
             content_type: 101,
-            content: r#"{"text":"hello"}"#.to_string(),
-            client_msg_id: "msg_123".to_string(),
+            content: r#"{"text":"hello"}"#.to_string().into_bytes(),
+            seq: 0,
             send_time: 1234567890,
+            create_time: 1234567890,
+            status: 0,
+            is_read: false,
+            options: std::collections::HashMap::new(),
+            offline_push_info: None,
+            at_user_id_list: vec![],
+            attached_info: String::new(),
+            ex: String::new(),
         };
 
-        let bytes = req.encode_to_vec();
+        let bytes = msg_data.encode_to_vec();
         assert!(!bytes.is_empty());
 
-        let decoded = SendMsgReq::decode(bytes.as_slice()).unwrap();
+        let decoded = MsgData::decode(bytes.as_slice()).unwrap();
         assert_eq!(decoded.client_msg_id, "msg_123");
         assert_eq!(decoded.content_type, 101);
     }
