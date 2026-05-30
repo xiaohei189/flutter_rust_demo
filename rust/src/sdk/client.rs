@@ -123,7 +123,6 @@ impl OpenIMClient {
 
         let file_uploader = Arc::new(FileUploader::new(
             context.http_client.clone(),
-            config.upload_url.clone().unwrap_or_default(),
         ));
 
         info!("OpenIM SDK 初始化完成");
