@@ -78,7 +78,10 @@ impl OpenIMClient {
             context.http_client.clone(),
             event_bus.clone(),
         ));
-        let friend = Arc::new(FriendManager::new(event_bus.clone()));
+        let friend = Arc::new(FriendManager::new(
+            context.http_client.clone(),
+            event_bus.clone(),
+        ));
         let group = Arc::new(GroupManager::new(event_bus.clone()));
         let conversation = Arc::new(ConversationManager::new(
             context.conversation_dao.clone(),
