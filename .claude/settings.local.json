@@ -1,5 +1,12 @@
 {
   "permissions": {
+    "additionalDirectories": [
+      "D:/workspace/openim-docker",
+      "D:/workspace/chat-server",
+      "D:/workspace/open-im-server",
+      "D:/workspace/openim-sdk-core",
+      "D:/workspace/openim-flutter-demo"
+    ],
     "allow": [
       "Bash(flutter pub *)",
       "Bash(flutter analyze *)",
@@ -7,7 +14,8 @@
       "Bash(xargs grep *)",
       "Bash(python3 *)",
       "Bash(cargo test *)",
-      "Bash(flutter_rust_bridge_codegen generate *)"
+      "Bash(flutter_rust_bridge_codegen generate *)",
+      "Bash(git *)"
     ]
   }
 }
