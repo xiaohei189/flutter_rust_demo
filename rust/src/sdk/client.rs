@@ -90,12 +90,9 @@ impl OpenIMClient {
             context.conversation_dao.clone(),
             event_bus.clone(),
         ));
-        let online_status = Arc::new(OnlineStatusManager::new(event_bus.clone()));
-
-        let http_client = Arc::new(HttpApiClient::new(
-            config.api_base_url.clone(),
-            config.token.clone(),
-            context.operation_id.clone(),
+        let online_status = Arc::new(OnlineStatusManager::new(
+            context.http_client.clone(),
+            event_bus.clone(),
         ));
 
         let mut message_sender = MessageSender::new(
@@ -125,7 +122,7 @@ impl OpenIMClient {
         let conversation_syncer = Arc::new(ConversationSyncer::new(event_bus.clone()));
 
         let file_uploader = Arc::new(FileUploader::new(
-            http_client.clone(),
+            context.http_client.clone(),
             config.upload_url.clone().unwrap_or_default(),
         ));
 
@@ -176,7 +173,7 @@ impl OpenIMClient {
         self.friend.clear().await;
         self.group.clear().await;
         self.conversation.clear_all().await;
-        self.online_status.clear().await;
+        self.online_status.clear_subscriptions().await?;
         
         self.event_bus.publish(SdkEvent::Logout);
         info!("用户登出成功");

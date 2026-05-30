@@ -1,136 +1,233 @@
-use crate::domain::error::types::Result;
-use crate::domain::event::EventBus;
+use crate::domain::error::types::{Result, SdkError};
+use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::routes::{GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS, GET_SUBSCRIBE_USERS_STATUS};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info};
+use tracing::info;
 
-/// 在线状态
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OnlineStatus {
-    /// 在线
-    Online,
-    /// 离线
-    Offline,
-    /// 忙碌
-    Busy,
-    /// 离开
-    Away,
-}
-
-/// 用户在线状态信息
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UserOnlineStatus {
-    /// 用户 ID
-    pub user_id: String,
-    /// 在线状态
-    pub status: OnlineStatus,
-    /// 平台列表 (PC, Mobile, Web 等)
-    pub platforms: Vec<String>,
-    /// 最后在线时间
-    pub last_seen: i64,
+pub struct GetUserStatusReq {
+    #[serde(rename = "userIDs")]
+    pub user_ids: Vec<String>,
 }
 
-/// 在线状态管理器
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UserStatusItem {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "status")]
+    pub status: i32,
+    #[serde(rename = "platformIDs")]
+    pub platform_ids: Vec<i32>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetUserStatusResp {
+    #[serde(rename = "usersStatus")]
+    pub users_status: Vec<UserStatusItem>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SubscribeUsersStatusReq {
+    #[serde(rename = "userIDs")]
+    pub user_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SubscribeUsersStatusResp {
+    #[serde(rename = "usersStatus")]
+    pub users_status: Vec<UserStatusItem>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UnsubscribeUsersStatusReq {
+    #[serde(rename = "userIDs")]
+    pub user_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetSubscribeUsersStatusResp {
+    #[serde(rename = "usersStatus")]
+    pub users_status: Vec<UserStatusItem>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OnlineStatus {
+    pub user_id: String,
+    pub status: i32,
+    pub platform_ids: Vec<i32>,
+}
+
+pub mod status {
+    pub const OFFLINE: i32 = 0;
+    pub const ONLINE: i32 = 1;
+}
+
 pub struct OnlineStatusManager {
-    /// 用户在线状态缓存
-    statuses: Arc<RwLock<HashMap<String, UserOnlineStatus>>>,
-    /// 事件总线
+    http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
+    subscribed_users: Arc<RwLock<HashSet<String>>>,
+    status_cache: Arc<RwLock<Vec<OnlineStatus>>>,
 }
 
 impl OnlineStatusManager {
-    pub fn new(event_bus: Arc<EventBus>) -> Self {
+    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
         Self {
-            statuses: Arc::new(RwLock::new(HashMap::new())),
+            http_client,
             event_bus,
+            subscribed_users: Arc::new(RwLock::new(HashSet::new())),
+            status_cache: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
-    /// 更新用户在线状态
-    pub async fn update_status(&self, user_id: String, status: OnlineStatus, platforms: Vec<String>) {
-        let now = chrono::Utc::now().timestamp_millis();
-        
-        let user_status = UserOnlineStatus {
-            user_id: user_id.clone(),
-            status: status.clone(),
-            platforms,
-            last_seen: now,
+    pub async fn get_user_status(&self, user_ids: Vec<String>) -> Result<Vec<OnlineStatus>> {
+        if user_ids.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let req = GetUserStatusReq {
+            user_ids: user_ids.clone(),
         };
 
-        self.statuses.write().await.insert(user_id.clone(), user_status);
+        let resp: GetUserStatusResp = self.http_client.post(GET_USER_STATUS, &req).await?;
 
-        let status_i32 = Self::status_to_i32(&status);
-        self.event_bus.publish(SdkEvent::UserStatusChanged {
-            user_id: user_id.clone(),
-            status: status_i32,
-            platform_ids: vec![],
-        });
-
-        info!("用户在线状态已更新: user={}, status={:?}", user_id, status);
-    }
-
-    /// 将 OnlineStatus 转换为 i32
-    fn status_to_i32(status: &OnlineStatus) -> i32 {
-        match status {
-            OnlineStatus::Online => 1,
-            OnlineStatus::Offline => 0,
-            OnlineStatus::Busy => 2,
-            OnlineStatus::Away => 3,
-        }
-    }
-
-    /// 获取用户在线状态
-    pub async fn get_status(&self, user_id: &str) -> Option<UserOnlineStatus> {
-        self.statuses.read().await.get(user_id).cloned()
-    }
-
-    /// 检查用户是否在线
-    pub async fn is_online(&self, user_id: &str) -> bool {
-        if let Some(status) = self.statuses.read().await.get(user_id) {
-            status.status == OnlineStatus::Online
-        } else {
-            false
-        }
-    }
-
-    /// 批量获取用户在线状态
-    pub async fn get_statuses(&self, user_ids: Vec<String>) -> Vec<UserOnlineStatus> {
-        let guard = self.statuses.read().await;
-        user_ids
+        let statuses: Vec<OnlineStatus> = resp
+            .users_status
             .into_iter()
-            .filter_map(|id| guard.get(&id).cloned())
-            .collect()
+            .map(|s| OnlineStatus {
+                user_id: s.user_id,
+                status: s.status,
+                platform_ids: s.platform_ids,
+            })
+            .collect();
+
+        Ok(statuses)
     }
 
-    /// 设置用户为在线
-    pub async fn set_online(&self, user_id: String, platform: String) {
-        self.update_status(user_id, OnlineStatus::Online, vec![platform]).await;
-    }
+    pub async fn subscribe_users_status(&self, user_ids: Vec<String>) -> Result<Vec<OnlineStatus>> {
+        if user_ids.is_empty() {
+            return Ok(vec![]);
+        }
 
-    /// 设置用户为离线
-    pub async fn set_offline(&self, user_id: &str) {
-        if let Some(mut status) = self.statuses.write().await.get(user_id).cloned() {
-            status.status = OnlineStatus::Offline;
-            status.last_seen = chrono::Utc::now().timestamp_millis();
-            self.statuses.write().await.insert(user_id.to_string(), status);
-            
+        let req = SubscribeUsersStatusReq {
+            user_ids: user_ids.clone(),
+        };
+
+        let resp: SubscribeUsersStatusResp = self.http_client.post(SUBSCRIBE_USERS_STATUS, &req).await?;
+
+        let statuses: Vec<OnlineStatus> = resp
+            .users_status
+            .into_iter()
+            .map(|s| OnlineStatus {
+                user_id: s.user_id,
+                status: s.status,
+                platform_ids: s.platform_ids,
+            })
+            .collect();
+
+        {
+            let mut subscribed = self.subscribed_users.write().await;
+            for user_id in &user_ids {
+                subscribed.insert(user_id.clone());
+            }
+        }
+
+        self.update_cache(&statuses).await;
+
+        for status in &statuses {
             self.event_bus.publish(SdkEvent::UserStatusChanged {
-                user_id: user_id.to_string(),
-                status: 0,
-                platform_ids: vec![],
+                user_id: status.user_id.clone(),
+                status: status.status,
+                platform_ids: status.platform_ids.clone(),
             });
-            
-            info!("用户已设置为离线: {}", user_id);
+        }
+
+        info!("已订阅用户在线状态, count={}", user_ids.len());
+        Ok(statuses)
+    }
+
+    pub async fn unsubscribe_users_status(&self, user_ids: Vec<String>) -> Result<()> {
+        if user_ids.is_empty() {
+            return Ok(());
+        }
+
+        let req = UnsubscribeUsersStatusReq {
+            user_ids: user_ids.clone(),
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(UNSUBSCRIBE_USERS_STATUS, &req).await?;
+
+        {
+            let mut subscribed = self.subscribed_users.write().await;
+            for user_id in &user_ids {
+                subscribed.remove(user_id);
+            }
+        }
+
+        self.remove_from_cache(&user_ids).await;
+
+        info!("已取消订阅用户在线状态, count={}", user_ids.len());
+        Ok(())
+    }
+
+    pub async fn get_subscribe_users_status(&self) -> Result<Vec<OnlineStatus>> {
+        let resp: GetSubscribeUsersStatusResp = self.http_client.post(GET_SUBSCRIBE_USERS_STATUS, &()).await?;
+
+        let statuses: Vec<OnlineStatus> = resp
+            .users_status
+            .into_iter()
+            .map(|s| OnlineStatus {
+                user_id: s.user_id,
+                status: s.status,
+                platform_ids: s.platform_ids,
+            })
+            .collect();
+
+        self.update_cache(&statuses).await;
+
+        Ok(statuses)
+    }
+
+    pub async fn get_subscribed_count(&self) -> usize {
+        self.subscribed_users.read().await.len()
+    }
+
+    pub async fn is_subscribed(&self, user_id: &str) -> bool {
+        self.subscribed_users.read().await.contains(user_id)
+    }
+
+    pub async fn clear_subscriptions(&self) -> Result<()> {
+        let user_ids: Vec<String> = {
+            let subscribed = self.subscribed_users.read().await;
+            subscribed.iter().cloned().collect()
+        };
+
+        if !user_ids.is_empty() {
+            self.unsubscribe_users_status(user_ids).await?;
+        }
+
+        self.status_cache.write().await.clear();
+        Ok(())
+    }
+
+    async fn update_cache(&self, statuses: &[OnlineStatus]) {
+        let mut cache = self.status_cache.write().await;
+        for status in statuses {
+            if let Some(existing) = cache.iter_mut().find(|s| s.user_id == status.user_id) {
+                *existing = status.clone();
+            } else {
+                cache.push(status.clone());
+            }
         }
     }
 
-    /// 清除所有状态
-    pub async fn clear(&self) {
-        self.statuses.write().await.clear();
-        info!("在线状态已清空");
+    async fn remove_from_cache(&self, user_ids: &[String]) {
+        let mut cache = self.status_cache.write().await;
+        cache.retain(|s| !user_ids.contains(&s.user_id));
     }
 }
 
@@ -138,49 +235,40 @@ impl OnlineStatusManager {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_online_status_manager_creation() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = OnlineStatusManager::new(event_bus);
+    #[test]
+    fn test_get_user_status_req_serialization() {
+        let req = GetUserStatusReq {
+            user_ids: vec!["user_1".to_string(), "user_2".to_string()],
+        };
 
-        assert!(!manager.is_online("user_1").await);
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userIDs"));
+        assert!(json.contains("user_1"));
     }
 
-    #[tokio::test]
-    async fn test_online_status_manager_update() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = OnlineStatusManager::new(event_bus);
+    #[test]
+    fn test_subscribe_users_status_req_serialization() {
+        let req = SubscribeUsersStatusReq {
+            user_ids: vec!["user_3".to_string()],
+        };
 
-        manager.set_online("user_1".to_string(), "PC".to_string()).await;
-        assert!(manager.is_online("user_1").await);
-
-        let status = manager.get_status("user_1").await;
-        assert!(status.is_some());
-        assert_eq!(status.unwrap().status, OnlineStatus::Online);
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userIDs"));
     }
 
-    // FIXME: 卡住，后续重构时修复
-    // #[tokio::test]
-    // async fn test_online_status_manager_set_offline() {
-    //     let event_bus = Arc::new(EventBus::new());
-    //     let manager = OnlineStatusManager::new(event_bus);
-    //
-    //     manager.set_online("user_1".to_string(), "PC".to_string()).await;
-    //     assert!(manager.is_online("user_1").await);
-    //
-    //     manager.set_offline("user_1").await;
-    //     assert!(!manager.is_online("user_1").await);
-    // }
+    #[test]
+    fn test_user_status_item_deserialization() {
+        let json = r#"{"userID":"user_1","status":1,"platformIDs":[1,2]}"#;
+        let item: UserStatusItem = serde_json::from_str(json).unwrap();
 
-    #[tokio::test]
-    async fn test_online_status_manager_batch() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = OnlineStatusManager::new(event_bus);
+        assert_eq!(item.user_id, "user_1");
+        assert_eq!(item.status, 1);
+        assert_eq!(item.platform_ids, vec![1, 2]);
+    }
 
-        manager.set_online("user_1".to_string(), "PC".to_string()).await;
-        manager.set_online("user_2".to_string(), "Mobile".to_string()).await;
-
-        let statuses = manager.get_statuses(vec!["user_1".to_string(), "user_2".to_string()]).await;
-        assert_eq!(statuses.len(), 2);
+    #[test]
+    fn test_online_status_constants() {
+        assert_eq!(status::OFFLINE, 0);
+        assert_eq!(status::ONLINE, 1);
     }
 }
