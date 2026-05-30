@@ -1,0 +1,71 @@
+pub const LOGIN: &str = "/auth/user_login";
+pub const REGISTER: &str = "/auth/user_register";
+
+pub const GET_USERS_INFO: &str = "/user/get_users_info";
+pub const GET_USERS_INFO_WITH_TOKEN: &str = "/user/get_users_info_with_token";
+pub const UPDATE_USER_INFO: &str = "/user/update_user_info";
+pub const GET_USER_STATUS: &str = "/user/get_user_status";
+pub const SUBSCRIBE_USERS_STATUS: &str = "/user/subscribe_users_status";
+pub const UNSUBSCRIBE_USERS_STATUS: &str = "/user/unsubscribe_users_status";
+pub const GET_SUBSCRIBE_USERS_STATUS: &str = "/user/get_subscribe_users_status";
+pub const SET_GLOBAL_MSG_RECV_OPT: &str = "/user/set_global_msg_recv_opt";
+
+pub const GET_FRIEND_LIST: &str = "/friend/get_friend_list";
+pub const ADD_FRIEND: &str = "/friend/add_friend";
+pub const DELETE_FRIEND: &str = "/friend/delete_friend";
+pub const GET_FRIEND_APPLY_LIST: &str = "/friend/get_friend_apply_list";
+pub const ACCEPT_FRIEND_APPLICATION: &str = "/friend/accept_friend_apply";
+pub const REFUSE_FRIEND_APPLICATION: &str = "/friend/refuse_friend_apply";
+pub const GET_FRIEND_ID_LIST: &str = "/friend/get_friend_id_list";
+pub const CHECK_FRIEND: &str = "/friend/check_friend";
+pub const ADD_BLACK: &str = "/friend/add_black";
+pub const REMOVE_BLACK: &str = "/friend/remove_black";
+pub const GET_BLACK_LIST: &str = "/friend/get_black_list";
+
+pub const CREATE_GROUP: &str = "/group/create_group";
+pub const GET_GROUPS_INFO: &str = "/group/get_groups_info";
+pub const GET_GROUP_INFO: &str = "/group/get_group_info";
+pub const SET_GROUP_INFO: &str = "/group/set_group_info";
+pub const JOIN_GROUP: &str = "/group/join_group";
+pub const QUIT_GROUP: &str = "/group/quit_group";
+pub const DISMISS_GROUP: &str = "/group/dismiss_group";
+pub const GET_GROUP_MEMBER_LIST: &str = "/group/get_group_member_list";
+pub const GET_GROUP_MEMBERS_INFO: &str = "/group/get_group_members_info";
+pub const SET_GROUP_MEMBER_INFO: &str = "/group/set_group_member_info";
+pub const KICK_GROUP_MEMBER: &str = "/group/kick_group_member";
+pub const TRANSFER_GROUP_OWNER: &str = "/group/transfer_group_owner";
+pub const MUTE_GROUP: &str = "/group/mute_group";
+pub const CANCEL_MUTE_GROUP: &str = "/group/cancel_mute_group";
+pub const MUTE_GROUP_MEMBER: &str = "/group/mute_group_member";
+pub const CANCEL_MUTE_GROUP_MEMBER: &str = "/group/cancel_mute_group_member";
+pub const GET_GROUP_APPLICATION_LIST: &str = "/group/get_group_application_list";
+pub const ACCEPT_GROUP_APPLICATION: &str = "/group/accept_group_application";
+pub const REFUSE_GROUP_APPLICATION: &str = "/group/refuse_group_application";
+pub const GET_JOINED_GROUP_LIST: &str = "/group/get_joined_group_list";
+pub const INVITE_USER_TO_GROUP: &str = "/group/invite_user_to_group";
+
+pub const GET_INCREMENTAL_CONVERSATION: &str = "/conversation/get_incremental_conversation";
+pub const GET_ALL_CONVERSATION_LIST: &str = "/conversation/get_all_conversation_list";
+pub const GET_CONVERSATION_LIST_SPLIT: &str = "/conversation/get_conversation_list_split";
+pub const GET_ONE_CONVERSATION: &str = "/conversation/get_one_conversation";
+pub const SET_CONVERSATION: &str = "/conversation/set_conversation";
+pub const GET_CONVERSATION_MAX_READ_SEQ: &str = "/conversation/get_conversation_max_read_seq";
+pub const GET_CONVERSATION_OFFLINE_PUSH_MAX_SEQ: &str = "/conversation/get_conversation_offline_push_max_seq";
+pub const CLEAR_CONVERSATION: &str = "/conversation/clear_conversation";
+pub const DELETE_CONVERSATION: &str = "/conversation/delete_conversation";
+pub const MARK_CONVERSATION_AS_READ: &str = "/conversation/mark_conversation_as_read";
+pub const GET_CONVERSATION_IDS: &str = "/conversation/get_conversation_ids";
+pub const SET_CONVERSATION_MAX_SEQ: &str = "/conversation/set_conversation_max_seq";
+pub const SET_CONVERSATION_MIN_SEQ: &str = "/conversation/set_conversation_min_seq";
+
+pub const SEND_MSG: &str = "/msg/send_msg";
+pub const REVOKE_MSG: &str = "/msg/revoke_msg";
+pub const DELETE_MSGS: &str = "/msg/delete_msgs";
+pub const MARK_MSGS_AS_READ: &str = "/msg/mark_msgs_as_read";
+pub const GET_SERVER_TIME: &str = "/msg/get_server_time";
+
+pub const INITIATE_UPLOAD: &str = "/third/initiate_upload";
+pub const COMPLETE_UPLOAD: &str = "/third/complete_upload";
+pub const UPLOAD_LOGS: &str = "/third/upload_logs";
+pub const GET_FCM_TOKEN: &str = "/third/get_fcm_token";
+pub const SET_FCM_TOKEN: &str = "/third/set_fcm_token";

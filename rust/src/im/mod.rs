@@ -2,12 +2,20 @@ pub mod client;
 pub mod dao;
 pub mod file;
 pub mod http_client;
+pub mod syncer;
+pub mod third;
 
 pub mod logger;
 pub mod model;
 pub mod serialization;
 pub mod trace_context;
 pub mod util;
+
+// 重新导出同步器框架
+pub use syncer::{Syncer, SyncerConfig, SyncerBuilder, Cache, CacheBuilder, UserCache, GroupCache, GroupMemberCache};
+
+// 重新导出第三方服务
+pub use third::ThirdService;
 
 // 重新导出认证相关函数（从 http_client 模块）
 pub use http_client::login_async;

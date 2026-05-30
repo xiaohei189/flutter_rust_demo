@@ -139,7 +139,7 @@ pub type FriendEventTx = Arc<std::sync::RwLock<Option<mpsc::UnboundedSender<Frie
 // ============== GroupEvent ==============
 
 /// 群组通知：当前仅群信息变更由服务端下发的 JSON 内容
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize)]
 pub enum GroupEvent {
     GroupInfoChanged { content: String },
 }

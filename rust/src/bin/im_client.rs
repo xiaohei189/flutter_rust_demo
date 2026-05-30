@@ -3,9 +3,8 @@
 //! 认证与测试一致，默认账号/密码，可直接：cargo run --bin im_client
 
 use clap::Parser;
-use rust_lib_flutter_rust_demo::im::client::client::{ClientConfig, IMClient};
-use rust_lib_flutter_rust_demo::im::logger::logger::{flush_tracer_provider, init_logger};
-use rust_lib_flutter_rust_demo::login_async;
+use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 use tracing::info;
 
 /// 与测试用例相同的默认密码
@@ -31,7 +30,7 @@ struct Args {
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    init_logger("info,rust_lib_flutter_rust_demo=debug");
+    tracing_subscriber::fmt::init();
 
     info!("登录中: {} {}", args.area_code, args.phone);
     let token_info = login_async(args.area_code.clone(), args.phone.clone(), args.password, args.platform).await?;

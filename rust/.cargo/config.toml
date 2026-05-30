@@ -1,3 +1,24 @@
 # 检查/构建时只输出 error，不输出 warning
 [build]
-rustflags = ["-A", "warnings","--cfg", "tokio_unstable"]
+rustflags = [
+  "-A", "warnings",
+  "--cfg", "tokio_unstable",
+]
+jobs = 8
+
+# lld-link 在 rustup toolchain 目录下，不额外配置，使用默认 MSVC 链接器
+
+# debug 构建优化：加快编译速度
+[profile.dev]
+opt-level = 0
+codegen-units = 16
+incremental = true
+split-debuginfo = "unpacked"
+lto = false
+
+# release 构建
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = true
+incremental = false

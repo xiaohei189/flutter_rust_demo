@@ -138,6 +138,8 @@ pub struct IMClient {
     message_pull_reverse_end_seq_map: Arc<RwLock<HashMap<(String, i32), i64>>>,
     /// 用户资料内存缓存（与 Go UserCache 对齐，其它用户仅内存）
     user_cache: Arc<RwLock<HashMap<String, UserInfoItem>>>,
+    /// 在线状态管理器（与 Go LongConnMgr 中的 subscription 对齐，start() 后初始化）
+    online_status_manager: Option<Arc<crate::im::client::online_status::OnlineStatusManager>>,
 }
 
 impl IMClient {
@@ -171,6 +173,7 @@ impl IMClient {
             message_pull_forward_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
             message_pull_reverse_end_seq_map: Arc::new(RwLock::new(HashMap::new())),
             user_cache: Arc::new(RwLock::new(HashMap::new())),
+            online_status_manager: None,
         })
     }
 
@@ -310,17 +313,24 @@ impl IMClient {
         self.local_repo.user.upsert_login_user(&new_local).await?;
         
         // 更新所有会话（包括单聊和群聊）中的消息发送者头像
-        if let Ok(ids) = self.local_repo.conversation.get_all_conversation_ids().await {
-            for cid in ids {
+        if let Ok(updated_convs) = self.local_repo.conversation.get_all_conversations().await {
+            for conv in &updated_convs {
                 let _ = self.local_repo.message
                     .update_sender_face_url_and_nickname(
-                        &cid, 
+                        &conv.conversation_id, 
                         &self.config.user_id, 
                         &new_local.face_url, 
                         &new_local.nickname
                     )
                     .await;
             }
+            
+            // 触发 ConversationChanged 事件通知 Flutter 层
+            self.callbacks.read().unwrap().try_emit_conversation_event(
+                crate::im::client::listeners::ConversationEvent::ConversationChanged {
+                    list: updated_convs,
+                }
+            );
         }
         
         Ok(())
@@ -992,6 +1002,278 @@ impl IMClient {
         Ok(self.local_repo.group.get_group_info_by_group_id(group_id).await?.is_some())
     }
 
+    /// 创建群组
+    pub async fn create_group(
+        &self,
+        group_name: String,
+        face_url: Option<String>,
+        introduction: Option<String>,
+        notification: Option<String>,
+        member_user_ids: Vec<String>,
+        admin_user_ids: Option<Vec<String>>,
+        need_verification: Option<i32>,
+    ) -> Result<LocalGroup> {
+        let resp = self.api.group.create_group(crate::im::http_client::group::CreateGroupReq {
+            member_user_i_ds: member_user_ids,
+            group_info: serde_json::json!({
+                "groupName": group_name,
+                "faceURL": face_url.unwrap_or_default(),
+                "introduction": introduction.unwrap_or_default(),
+                "notification": notification.unwrap_or_default(),
+                "needVerification": need_verification.unwrap_or(0),
+            }),
+            admin_user_i_ds: admin_user_ids.unwrap_or_default(),
+            owner_user_id: self.config.user_id.clone(),
+            send_message: Some(true),
+        }).await?;
+
+        if let Some(group_info) = resp.group_info {
+            let local_group = server_group_to_local(&group_info);
+            self.local_repo.group.upsert_group(&local_group).await?;
+            Ok(local_group)
+        } else {
+            Err(anyhow!("创建群组失败"))
+        }
+    }
+
+    /// 加入群组
+    pub async fn join_group(&self, group_id: String, req_msg: String, join_source: i32, ex: String) -> Result<()> {
+        self.api.group.join_group(crate::im::http_client::group::JoinGroupReq {
+            group_id,
+            req_message: req_msg,
+            join_source,
+            inviter_user_id: String::new(),
+            ex,
+        }).await?;
+        Ok(())
+    }
+
+    /// 退出群组
+    pub async fn quit_group(&self, group_id: String) -> Result<()> {
+        self.api.group.quit_group(&group_id).await?;
+        self.local_repo.group.delete_group(&group_id).await?;
+        self.local_repo.group_member.delete_group_members_by_group_id(&group_id).await?;
+        Ok(())
+    }
+
+    /// 解散群组
+    pub async fn dismiss_group(&self, group_id: String) -> Result<()> {
+        self.api.group.dismiss_group(crate::im::http_client::group::DismissGroupReq {
+            group_id,
+            delete_member: true,
+            send_message: Some(true),
+        }).await?;
+        Ok(())
+    }
+
+    /// 转让群组
+    pub async fn transfer_group_owner(&self, group_id: String, new_owner_id: String) -> Result<()> {
+        self.api.group.transfer_group(crate::im::http_client::group::TransferGroupReq {
+            group_id,
+            old_owner_user_id: self.config.user_id.clone(),
+            new_owner_id,
+        }).await?;
+        Ok(())
+    }
+
+    /// 获取群组信息
+    pub async fn get_groups_info(&self, group_ids: Vec<String>) -> Result<Vec<LocalGroup>> {
+        let mut result = Vec::new();
+        for group_id in &group_ids {
+            if let Some(g) = self.local_repo.group.get_group_by_id(group_id).await? {
+                result.push(g);
+            }
+        }
+        if result.len() < group_ids.len() {
+            let to_fetch: Vec<String> = group_ids.iter()
+                .filter(|id| !result.iter().any(|g| &g.group_id == *id))
+                .cloned()
+                .collect();
+            if !to_fetch.is_empty() {
+                let server_groups = self.api.group.get_groups_info(to_fetch).await?;
+                for sg in &server_groups {
+                    let local_group = LocalGroup {
+                        group_id: sg.group_id.clone(),
+                        group_name: sg.group_name.clone(),
+                        face_url: sg.face_url.clone(),
+                        owner_user_id: sg.owner_user_id.clone(),
+                        create_time: sg.create_time,
+                        member_count: sg.member_count as i32,
+                        status: sg.status,
+                        creator_user_id: sg.creator_user_id.clone(),
+                        group_type: sg.group_type,
+                        need_verification: sg.need_verification,
+                        notification: sg.notification.clone(),
+                        introduction: sg.introduction.clone(),
+                        ex: sg.ex.clone(),
+                    };
+                    self.local_repo.group.upsert_group(&local_group).await?;
+                    result.push(local_group);
+                }
+            }
+        }
+        Ok(result)
+    }
+
+    /// 搜索群组
+    pub async fn search_groups(&self, keyword: String, is_search_group_id: bool, is_search_group_name: bool) -> Result<Vec<LocalGroup>> {
+        self.local_repo.group.search_groups(&keyword, is_search_group_id, is_search_group_name).await
+    }
+
+    /// 分页获取已加入的群组列表
+    pub async fn get_joined_group_list_split(&self, offset: i32, count: i32) -> Result<Vec<LocalGroup>> {
+        self.local_repo.group.get_groups_split(offset, count).await
+    }
+
+    /// 邀请用户加入群组
+    pub async fn invite_users_to_group(&self, group_id: String, user_ids: Vec<String>, reason: String) -> Result<()> {
+        self.api.group.invite_user_to_group(crate::im::http_client::group::InviteUserToGroupReq {
+            group_id,
+            reason,
+            invited_user_i_ds: user_ids,
+            send_message: Some(true),
+        }).await?;
+        Ok(())
+    }
+
+    /// 踢出群组成员
+    pub async fn kick_group_member(&self, group_id: String, user_ids: Vec<String>, reason: String) -> Result<()> {
+        self.api.group.kick_group_member(crate::im::http_client::group::KickGroupMemberReq {
+            group_id,
+            kicked_user_i_ds: user_ids,
+            reason,
+            send_message: Some(true),
+        }).await?;
+        Ok(())
+    }
+
+    /// 获取群组成员列表（分页）
+    pub async fn get_group_member_list_page(&self, group_id: String, filter: i32, offset: i32, count: i32) -> Result<Vec<LocalGroupMember>> {
+        self.local_repo.group_member.get_group_members_split(&group_id, filter, offset, count).await
+    }
+
+    /// 获取指定群组成员信息
+    pub async fn get_group_members_info(&self, group_id: String, user_ids: Vec<String>) -> Result<Vec<LocalGroupMember>> {
+        let mut result = Vec::new();
+        for user_id in &user_ids {
+            if let Some(m) = self.local_repo.group_member.get_group_member(&group_id, user_id).await? {
+                result.push(m);
+            }
+        }
+        Ok(result)
+    }
+
+    /// 设置群成员角色
+    pub async fn set_group_member_role(&self, group_id: String, user_id: String, role_level: i32) -> Result<()> {
+        self.api.group.set_group_member_info(crate::im::http_client::group::SetGroupMemberInfoReq {
+            members: vec![crate::im::http_client::group::SetGroupMemberInfoItem {
+                group_id,
+                user_id,
+                nickname: None,
+                face_url: None,
+                role_level: Some(role_level),
+                ex: None,
+            }],
+        }).await?;
+        Ok(())
+    }
+
+    /// 禁言群成员
+    pub async fn set_group_member_mute(&self, group_id: String, user_id: String, mute_seconds: u32) -> Result<()> {
+        if mute_seconds > 0 {
+            self.api.group.mute_group_member(crate::im::http_client::group::MuteGroupMemberReq {
+                group_id,
+                user_id,
+                muted_seconds: mute_seconds,
+            }).await?;
+        } else {
+            self.api.group.cancel_mute_group_member(crate::im::http_client::group::CancelMuteGroupMemberReq {
+                group_id,
+                user_id,
+            }).await?;
+        }
+        Ok(())
+    }
+
+    /// 禁言群组
+    pub async fn set_group_mute(&self, group_id: String, mute: bool) -> Result<()> {
+        if mute {
+            self.api.group.mute_group(&group_id).await?;
+        } else {
+            self.api.group.cancel_mute_group(&group_id).await?;
+        }
+        Ok(())
+    }
+
+    /// 更新群组信息
+    pub async fn set_group_info(
+        &self,
+        group_id: String,
+        group_name: Option<String>,
+        notification: Option<String>,
+        introduction: Option<String>,
+        face_url: Option<String>,
+        ex: Option<String>,
+        need_verification: Option<i32>,
+    ) -> Result<()> {
+        self.api.group.set_group_info_ex(crate::im::http_client::group::SetGroupInfoExReq {
+            group_id,
+            group_name,
+            notification,
+            introduction,
+            face_url,
+            ex,
+            need_verification,
+            look_member_info: None,
+            apply_member_friend: None,
+        }).await?;
+        Ok(())
+    }
+
+    /// 获取群组申请列表（作为接收者）
+    pub async fn get_group_application_list_as_recipient(&self) -> Result<Vec<crate::im::http_client::group::GroupApplicationListResp>> {
+        let resp = self.api.group.get_recv_group_application_list(crate::im::http_client::group::GetRecvGroupApplicationListReq {
+            pagination: None,
+            from_user_id: self.config.user_id.clone(),
+            group_i_ds: vec![],
+            handle_results: vec![],
+        }).await?;
+        Ok(vec![resp])
+    }
+
+    /// 获取群组申请列表（作为申请者）
+    pub async fn get_group_application_list_as_applicant(&self) -> Result<Vec<crate::im::http_client::group::GroupApplicationListResp>> {
+        let resp = self.api.group.get_send_group_application_list(crate::im::http_client::group::GetSendGroupApplicationListReq {
+            pagination: None,
+            user_id: self.config.user_id.clone(),
+            group_i_ds: vec![],
+            handle_results: vec![],
+        }).await?;
+        Ok(vec![resp])
+    }
+
+    /// 接受群组申请
+    pub async fn accept_group_application(&self, group_id: String, user_id: String, handle_msg: String) -> Result<()> {
+        self.api.group.accept_group_application(crate::im::http_client::group::AcceptGroupApplicationReq {
+            group_id,
+            from_user_id: user_id,
+            handled_msg: handle_msg,
+            handle_result: 1,
+        }).await?;
+        Ok(())
+    }
+
+    /// 拒绝群组申请
+    pub async fn refuse_group_application(&self, group_id: String, user_id: String, handle_msg: String) -> Result<()> {
+        self.api.group.accept_group_application(crate::im::http_client::group::AcceptGroupApplicationReq {
+            group_id,
+            from_user_id: user_id,
+            handled_msg: handle_msg,
+            handle_result: -1,
+        }).await?;
+        Ok(())
+    }
+
     /// 从服务器获取好友列表（HTTP API）
     pub async fn get_all_friends(&self) -> Result<AllFriendsResp> {
         let raw = IMClient::create_http_client(&self.config)?;
@@ -1035,6 +1317,59 @@ impl IMClient {
     pub async fn delete_friend(&self, friend_user_id: &str) -> Result<()> {
         self.api.friend.delete_friend(friend_user_id).await?;
         self.local_repo.friend.delete_friend(friend_user_id).await
+    }
+
+    /// 获取好友申请列表（作为接收者）
+    pub async fn get_friend_requests(&self) -> Result<Vec<crate::im::model::friend::FriendRequest>> {
+        self.api.friend.get_friend_requests().await
+    }
+
+    /// 获取好友申请列表（作为申请者）
+    pub async fn get_self_friend_application_list(&self) -> Result<Vec<crate::im::model::friend::FriendRequest>> {
+        self.api.friend.get_self_friend_application_list(
+            crate::im::model::conversation::RequestPagination { page_number: 1, show_number: 100 },
+            vec![],
+        ).await
+    }
+
+    /// 接受好友申请
+    pub async fn accept_friend_application(&self, from_user_id: String, handle_msg: String) -> Result<()> {
+        self.api.friend.add_friend_response(&from_user_id, &self.config.user_id, 1, &handle_msg).await?;
+        Ok(())
+    }
+
+    /// 拒绝好友申请
+    pub async fn refuse_friend_application(&self, from_user_id: String, handle_msg: String) -> Result<()> {
+        self.api.friend.add_friend_response(&from_user_id, &self.config.user_id, -1, &handle_msg).await?;
+        Ok(())
+    }
+
+    /// 获取未处理的好友申请数量
+    pub async fn get_friend_application_unhandled_count(&self) -> Result<i64> {
+        self.api.friend.get_self_unhandled_apply_count(0).await
+    }
+
+    /// 添加黑名单
+    pub async fn add_black(&self, user_id: String) -> Result<()> {
+        self.api.friend.add_black(&user_id, "").await?;
+        let black = LocalBlack {
+            user_id,
+            create_time: chrono::Utc::now().timestamp_millis(),
+        };
+        self.local_repo.black.upsert_black(&black).await?;
+        Ok(())
+    }
+
+    /// 移除黑名单
+    pub async fn remove_black(&self, user_id: String) -> Result<()> {
+        self.api.friend.remove_black(&user_id).await?;
+        self.local_repo.black.delete_black(&user_id).await?;
+        Ok(())
+    }
+
+    /// 检查是否在黑名单中
+    pub async fn is_in_black_list(&self, user_id: &str) -> Result<bool> {
+        self.local_repo.black.is_in_black_list(user_id).await
     }
 
     /// 与 Go GetUserInfoWithCache 对齐：任意 userID，先本地，缺或昵称/头像为空则拉服务端并落库后返回

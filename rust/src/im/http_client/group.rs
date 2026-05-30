@@ -204,7 +204,7 @@ pub struct GetSendGroupApplicationListReq {
     pub handle_results: Vec<i32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupApplicationListResp {
     pub total: u32,
