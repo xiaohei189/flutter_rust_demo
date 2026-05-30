@@ -3,268 +3,289 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
+import '../domain/event/types.dart';
+import '../domain/model/friend.dart';
+import '../domain/model/group.dart';
+import '../domain/model/user.dart';
 import '../frb_generated.dart';
-import '../im/client/listeners.dart';
-import '../im/http_client/auth.dart';
-import '../im/model/conversation.dart';
-import '../im/model/message.dart';
+import '../infra/database/models.dart';
 import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`, `from`
-
-/// 获取当前客户端实例（供其他模块使用）
-Future<ArcImClient> getCurrentClient() =>
-    RustLib.instance.api.crateApiBridgeClientGetCurrentClient();
-
-/// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
-Future<void> closeCurrentClientIfAny() =>
-    RustLib.instance.api.crateApiBridgeClientCloseCurrentClientIfAny();
-
-/// 登录接口
-///
-/// 参考 openim-cli 的实现，先登录获取 token 信息
-Future<LoginData> loginAsync({
-  required String areaCode,
-  required String phoneNumber,
-  required String password,
-  required int platform,
-}) => RustLib.instance.api.crateApiBridgeClientLoginAsync(
-  areaCode: areaCode,
-  phoneNumber: phoneNumber,
-  password: password,
-  platform: platform,
-);
-
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Arc < RwLock < IMClient > >>>
-abstract class ArcImClient implements RustOpaqueInterface {}
-
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>
-abstract class MsgData implements RustOpaqueInterface {}
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
-  /// 消息变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<AdvancedMsgEvent> 并 listen。
-  Stream<AdvancedMsgEvent> advancedMsgStream();
+  /// 添加到黑名单
+  Future<void> addBlack({required String userId});
 
-  /// 关闭当前实例（停止 WebSocket 与同步任务），由 Flutter 在断开/重启前调用
-  Future<void> close();
+  /// 添加好友
+  Future<void> addFriend({required String userId, required String reqMsg});
 
-  /// 连接状态事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConnEvent> 并 listen。
-  Stream<ConnEvent> connStream();
-
-  /// 连接到服务器
-  ///
-  /// 建立 WebSocket 连接并启动消息监听。
-  Future<void> connect();
-
-  /// 会话变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConversationEvent> 并 listen。
-  Stream<ConversationEvent> conversationStream();
-
-  /// 创建自定义消息。
-  Future<MsgData> createCustomMessage({
-    required String data,
-    required String extension_,
-    required String description,
+  /// 创建群组
+  Future<GroupInfo> createGroup({
+    required String groupName,
+    required int groupType,
+    required List<String> memberIds,
   });
 
-  /// 创建文件消息。
-  Future<MsgData> createFileMessage({
-    required String filePath,
-    required String uuid,
-    required String sourceUrl,
-    required String fileName,
-    required PlatformInt64 fileSize,
-  });
+  /// 删除会话
+  Future<void> deleteConversation({required String conversationId});
 
-  /// 创建图片消息（简化：仅 URL + 宽高）。
-  Future<MsgData> createImageMessage({
-    required String url,
-    required int width,
-    required int height,
-  });
+  /// 删除好友
+  Future<void> deleteFriend({required String userId});
 
-  /// 创建位置消息。
-  Future<MsgData> createLocationMessage({
-    required String description,
-    required double longitude,
-    required double latitude,
-  });
+  /// 删除消息
+  Future<void> deleteMessages({required DeleteMessagesReq req});
 
-  /// 创建语音消息。
-  Future<MsgData> createSoundMessage({
-    required String uuid,
-    required String soundPath,
-    required String sourceUrl,
-    required PlatformInt64 dataSize,
-    required PlatformInt64 duration,
-  });
+  /// 断开连接并清理资源
+  Future<void> disconnect();
 
-  /// 创建文本消息（已填入 recv_id/group_id/session_type），返回 MsgData 可直接送 send_message 发送。
-  Future<MsgData> createTextMessage({
-    required String text,
-    required String recvId,
-    required String groupId,
-    required int sessionType,
-  });
+  /// 事件流。Dart 端得到 Stream<SdkEvent> 并 listen。
+  Stream<SdkEvent> eventStream();
 
-  /// 创建视频消息。
-  Future<MsgData> createVideoMessage({
-    required String videoPath,
-    required String videoUuid,
-    required String videoUrl,
-    required String videoType,
-    required PlatformInt64 videoSize,
-    required PlatformInt64 duration,
-    required String snapshotPath,
-    required String snapshotUuid,
-    required PlatformInt64 snapshotSize,
-    required String snapshotUrl,
-    required int snapshotWidth,
-    required int snapshotHeight,
-  });
+  /// 获取黑名单
+  Future<List<String>> getBlackList();
 
-  /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
-  Future<GetAdvancedHistoryMessageListCallback> getAdvancedHistoryMessageList({
-    required GetAdvancedHistoryMessageListParams req,
-  });
-
-  /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
-  Future<GetAdvancedHistoryMessageListCallback>
-  getAdvancedHistoryMessageListReverse({
-    required GetAdvancedHistoryMessageListParams req,
-  });
+  /// 获取单个会话
+  Future<LocalConversation?> getConversation({required String conversationId});
 
   /// 获取所有会话列表
-  Future<List<LocalConversation>> getAllConversations();
+  Future<List<LocalConversation>> getConversations();
 
-  /// 批量获取用户资料（优先内存缓存，缺失则拉服务端，与 Go GetUsersInfo 对齐）
-  Future<List<UserProfile>> getUsersInfo({required List<String> userIds});
+  /// 获取好友列表
+  Future<List<FriendInfo>> getFriendList();
+
+  /// 获取群组列表
+  Future<List<GroupInfo>> getGroupList();
+
+  /// 获取群组成员
+  Future<List<GroupMember>> getGroupMembers({required String groupId});
+
+  /// 获取历史消息
+  Future<List<MsgData>> getHistoryMessages({
+    required GetHistoryMessagesReq req,
+  });
+
+  /// 获取用户信息
+  Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
+
+  /// 邀请成员
+  Future<void> inviteGroupMembers({
+    required String groupId,
+    required List<String> memberIds,
+  });
+
+  /// 加入群组
+  Future<void> joinGroup({required String groupId, required String reqMsg});
+
+  /// 踢出成员
+  Future<void> kickGroupMembers({
+    required String groupId,
+    required List<String> memberIds,
+  });
+
+  /// 标记消息已读
+  Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req});
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-  /// 创建新的客户端实例
-  ///
-  /// # 参数
-  /// - `user_id`: 用户 ID
-  /// - `token`: 认证 token（从登录接口获取）
-  /// - `platform_id`: 平台 ID（例如：5 表示 Web）
-  /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
-  /// - `api_base_url`: HTTP API 基础地址（可选，默认 localhost:10002；Android 等可传单独地址）
+  /// 创建新的 SDK 客户端实例
   static Future<OpenImBridgeClient> newInstance({
     required String userId,
     required String token,
     required int platformId,
     String? wsUrl,
     String? apiBaseUrl,
+    String? dataDir,
   }) => RustLib.instance.api.crateApiBridgeClientOpenImBridgeClientNew(
     userId: userId,
     token: token,
     platformId: platformId,
     wsUrl: wsUrl,
     apiBaseUrl: apiBaseUrl,
+    dataDir: dataDir,
   );
 
-  /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
-  ///
-  /// **参数**
-  /// - `msg`: 已组装的 MsgData。
-  /// - `is_online_only`: 是否仅在线投递（不落库、不更新会话）；传 `false` 表示持久化，与 Go SDK 默认行为一致。
-  Future<void> sendMessage({required MsgData msg, required bool isOnlineOnly});
+  /// 退出群组
+  Future<void> quitGroup({required String groupId});
 
-  /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
-  Future<UserProfile> updateLoginUserProfile({required UserProfilePatch patch});
+  /// 从黑名单移除
+  Future<void> removeBlack({required String userId});
 
-  /// 上传文件到对象存储
-  ///
-  /// # 参数
-  /// - `file_path`: 本地文件路径
-  /// - `file_name`: 文件名（会自动添加用户ID前缀）
-  ///
-  /// # 返回值
-  /// - 成功：返回文件的 URL
-  /// - 失败：返回错误
-  Future<String> uploadFile({
-    required String filePath,
-    required String fileName,
+  /// 撤回消息
+  Future<void> revokeMessage({required RevokeMessageReq req});
+
+  /// 发送消息
+  Future<void> sendMessage({required SendMessageReq req});
+
+  /// 设置会话置顶
+  Future<void> setConversationPinned({
+    required String conversationId,
+    required bool isPinned,
+  });
+
+  /// 更新会话未读数
+  Future<void> updateConversationUnreadCount({
+    required String conversationId,
+    required PlatformInt64 unreadCount,
+  });
+
+  /// 更新用户资料
+  Future<void> updateUserProfile({
+    String? nickname,
+    String? faceUrl,
+    String? ex,
   });
 }
 
-/// 用户资料（Bridge 暴露给 Dart 的统一结构）
-class UserProfile {
-  final String userId;
-  final String nickname;
-  final String faceUrl;
-  final String ex;
-  final String attachedInfo;
-  final int globalRecvMsgOpt;
-  final PlatformInt64 createTime;
-  final int appMangerLevel;
+/// 删除消息请求
+class DeleteMessagesReq {
+  final String conversationId;
+  final List<String> clientMsgIds;
 
-  const UserProfile({
-    required this.userId,
-    required this.nickname,
-    required this.faceUrl,
-    required this.ex,
-    required this.attachedInfo,
-    required this.globalRecvMsgOpt,
-    required this.createTime,
-    required this.appMangerLevel,
+  const DeleteMessagesReq({
+    required this.conversationId,
+    required this.clientMsgIds,
   });
 
   @override
-  int get hashCode =>
-      userId.hashCode ^
-      nickname.hashCode ^
-      faceUrl.hashCode ^
-      ex.hashCode ^
-      attachedInfo.hashCode ^
-      globalRecvMsgOpt.hashCode ^
-      createTime.hashCode ^
-      appMangerLevel.hashCode;
+  int get hashCode => conversationId.hashCode ^ clientMsgIds.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is UserProfile &&
+      other is DeleteMessagesReq &&
           runtimeType == other.runtimeType &&
-          userId == other.userId &&
-          nickname == other.nickname &&
-          faceUrl == other.faceUrl &&
-          ex == other.ex &&
-          attachedInfo == other.attachedInfo &&
-          globalRecvMsgOpt == other.globalRecvMsgOpt &&
-          createTime == other.createTime &&
-          appMangerLevel == other.appMangerLevel;
+          conversationId == other.conversationId &&
+          clientMsgIds == other.clientMsgIds;
 }
 
-/// 用户资料更新补丁（仅更新传入字段）
-class UserProfilePatch {
-  final String? nickname;
-  final String? faceUrl;
-  final String? ex;
-  final int? globalRecvMsgOpt;
+/// 获取历史消息请求
+class GetHistoryMessagesReq {
+  final String conversationId;
+  final PlatformInt64 startSeq;
+  final PlatformInt64 count;
 
-  const UserProfilePatch({
-    this.nickname,
-    this.faceUrl,
-    this.ex,
-    this.globalRecvMsgOpt,
+  const GetHistoryMessagesReq({
+    required this.conversationId,
+    required this.startSeq,
+    required this.count,
   });
 
   @override
   int get hashCode =>
-      nickname.hashCode ^
-      faceUrl.hashCode ^
-      ex.hashCode ^
-      globalRecvMsgOpt.hashCode;
+      conversationId.hashCode ^ startSeq.hashCode ^ count.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is UserProfilePatch &&
+      other is GetHistoryMessagesReq &&
           runtimeType == other.runtimeType &&
-          nickname == other.nickname &&
-          faceUrl == other.faceUrl &&
-          ex == other.ex &&
-          globalRecvMsgOpt == other.globalRecvMsgOpt;
+          conversationId == other.conversationId &&
+          startSeq == other.startSeq &&
+          count == other.count;
+}
+
+/// 标记已读请求
+class MarkMessagesAsReadReq {
+  final String conversationId;
+  final int sessionType;
+  final PlatformInt64 hasReadSeq;
+  final Int64List seqs;
+
+  const MarkMessagesAsReadReq({
+    required this.conversationId,
+    required this.sessionType,
+    required this.hasReadSeq,
+    required this.seqs,
+  });
+
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^
+      sessionType.hashCode ^
+      hasReadSeq.hashCode ^
+      seqs.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarkMessagesAsReadReq &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          sessionType == other.sessionType &&
+          hasReadSeq == other.hasReadSeq &&
+          seqs == other.seqs;
+}
+
+/// 撤回消息请求
+class RevokeMessageReq {
+  final String conversationId;
+  final PlatformInt64 seq;
+  final String clientMsgId;
+  final int sessionType;
+
+  const RevokeMessageReq({
+    required this.conversationId,
+    required this.seq,
+    required this.clientMsgId,
+    required this.sessionType,
+  });
+
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^
+      seq.hashCode ^
+      clientMsgId.hashCode ^
+      sessionType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RevokeMessageReq &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          seq == other.seq &&
+          clientMsgId == other.clientMsgId &&
+          sessionType == other.sessionType;
+}
+
+/// 发送消息请求
+class SendMessageReq {
+  final String recvId;
+  final String groupId;
+  final int sessionType;
+  final int contentType;
+  final String content;
+  final String? clientMsgId;
+
+  const SendMessageReq({
+    required this.recvId,
+    required this.groupId,
+    required this.sessionType,
+    required this.contentType,
+    required this.content,
+    this.clientMsgId,
+  });
+
+  @override
+  int get hashCode =>
+      recvId.hashCode ^
+      groupId.hashCode ^
+      sessionType.hashCode ^
+      contentType.hashCode ^
+      content.hashCode ^
+      clientMsgId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SendMessageReq &&
+          runtimeType == other.runtimeType &&
+          recvId == other.recvId &&
+          groupId == other.groupId &&
+          sessionType == other.sessionType &&
+          contentType == other.contentType &&
+          content == other.content &&
+          clientMsgId == other.clientMsgId;
 }

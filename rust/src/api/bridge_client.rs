@@ -1,131 +1,95 @@
-//! IM 客户端 Flutter 桥接层
+//! OpenIM FFI 桥接层
 //!
-//! 按 flutter_rust_bridge_codegen 要求将 IMClient 暴露为 Flutter API。
-//! 使用 RustOpaque 包装 IMClient，通过 #[frb] 注解暴露方法。
+//! 基于新 SDK 架构的统一桥接客户端，所有操作集成到 OpenIMBridgeClient 上。
 //!
-//! 热重启：Flutter 在 initialize 前调用 close_current_client_if_any() 关闭旧连接，
-//! 避免同 token 重复连接导致 TokenKickedError(1506)。
-//!
-//! 消息流程：先通过 create_* 创建消息（得到 MsgData），设置 recv_id/group_id/session_type 后，
-//! 再调用 send_message(msg) 发送已创建的消息。
-//!
-//! 状态/会话/消息订阅：conn_stream、conversation_stream、advanced_msg_stream 需在 connect 前调用；
-//! 修改本文件后请执行 `dart run flutter_rust_bridge_codegen generate` 以生成 ConnEvent 等类型的 SseEncode。
+//! Dart 侧调用示例：
+//! ```dart
+//! final client = await OpenIMBridgeClient.new(...);
+//! await client.sendMessage(msg);
+//! await client.getConversations();
+//! await client.getFriendList();
+//! ```
 
-use crate::im::client::client::{ClientConfig, IMClient};
-use crate::im::client::listeners::{AdvancedMsgEvent, ConnEvent, ConversationEvent};
-use crate::im::http_client::auth::LoginData;
-use crate::im::model::conversation::LocalConversation;
-use crate::im::model::message::{
-    GetAdvancedHistoryMessageListCallback, GetAdvancedHistoryMessageListParams,
-};
+use crate::domain::config::ClientConfig;
+use crate::domain::constant::types::content_type;
+use crate::domain::event::types::SdkEvent;
+use crate::sdk::client::OpenIMClient;
 use anyhow::Result;
 use crate::frb_generated::StreamSink;
 use openim_protocol::sdkws::MsgData;
-use std::sync::Arc;
-use std::sync::Mutex;
-pub use tokio::sync::RwLock;
-use tokio_stream::StreamExt;
-use tracing;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tokio_stream::StreamExt;
 
-/// 热重启时由 Flutter 在创建新 client 前调用，关闭上一次的 client，避免 token 重复使用
-static CURRENT_CLIENT_INNER: Mutex<Option<Arc<RwLock<IMClient>>>> = Mutex::new(None);
+// ============================================================================
+// 请求/响应结构体
+// ============================================================================
 
-/// 获取当前客户端实例（供其他模块使用）
-pub async fn get_current_client() -> Result<Arc<RwLock<IMClient>>> {
-    let guard = CURRENT_CLIENT_INNER.lock().map_err(|e| anyhow::anyhow!("lock error: {}", e))?;
-    guard.as_ref().cloned().ok_or_else(|| anyhow::anyhow!("client not initialized"))
-}
-
-/// 关闭当前保存的 client（若有）。Flutter 热重启后、再次 initialize 前调用。
-#[flutter_rust_bridge::frb]
-pub async fn close_current_client_if_any() -> Result<()> {
-    let prev = CURRENT_CLIENT_INNER.lock().unwrap().take();
-    if let Some(inner) = prev {
-        inner.read().await.stop();
-    }
-    Ok(())
-}
-
-/// 登录接口
-///
-/// 参考 openim-cli 的实现，先登录获取 token 信息
-#[flutter_rust_bridge::frb]
-pub async fn login_async(
-    area_code: String,
-    phone_number: String,
-    password: String,
-    platform: i32,
-) -> Result<LoginData> {
-    crate::im::http_client::auth::login_async(area_code, phone_number, password, platform).await
-}
-
-/// 用户资料（Bridge 暴露给 Dart 的统一结构）
+/// 发送消息请求
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UserProfile {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    pub nickname: String,
-    #[serde(rename = "faceURL")]
-    pub face_url: String,
-    #[serde(default)]
-    pub ex: String,
-    #[serde(default)]
-    pub attached_info: String,
-    #[serde(default)]
-    pub global_recv_msg_opt: i32,
-    #[serde(default)]
-    pub create_time: i64,
-    #[serde(default)]
-    pub app_manger_level: i32,
+pub struct SendMessageReq {
+    pub recv_id: String,
+    pub group_id: String,
+    pub session_type: i32,
+    pub content_type: i32,
+    pub content: String,
+    pub client_msg_id: Option<String>,
 }
 
-/// 用户资料更新补丁（仅更新传入字段）
+/// 获取历史消息请求
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UserProfilePatch {
-    pub nickname: Option<String>,
-    #[serde(rename = "faceURL")]
-    pub face_url: Option<String>,
-    pub ex: Option<String>,
-    pub global_recv_msg_opt: Option<i32>,
+pub struct GetHistoryMessagesReq {
+    pub conversation_id: String,
+    pub start_seq: i64,
+    pub count: i64,
 }
 
-impl From<crate::im::http_client::user::UserInfoItem> for UserProfile {
-    fn from(v: crate::im::http_client::user::UserInfoItem) -> Self {
-        Self {
-            user_id: v.user_id,
-            nickname: v.nickname,
-            face_url: v.face_url,
-            ex: v.ex,
-            attached_info: v.attached_info,
-            global_recv_msg_opt: v.global_recv_msg_opt,
-            create_time: v.create_time,
-            app_manger_level: v.app_manger_level,
-        }
-    }
+/// 撤回消息请求
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RevokeMessageReq {
+    pub conversation_id: String,
+    pub seq: i64,
+    pub client_msg_id: String,
+    pub session_type: i32,
 }
 
-/// OpenIM 桥接客户端，包装 IMClient 供 Flutter 使用
-///
-/// 使用 #[frb(opaque)] 使该结构体在 Dart 端为不透明句柄，
-/// 仅能通过暴露的方法进行操作。
+/// 删除消息请求
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteMessagesReq {
+    pub conversation_id: String,
+    pub client_msg_ids: Vec<String>,
+}
+
+/// 标记已读请求
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarkMessagesAsReadReq {
+    pub conversation_id: String,
+    pub session_type: i32,
+    pub has_read_seq: i64,
+    pub seqs: Vec<i64>,
+}
+
+// ============================================================================
+// 桥接客户端
+// ============================================================================
+
+/// OpenIM SDK 桥接客户端
+/// 
+/// 所有操作集成到此结构体上，与内部 SDK 的 OpenIMClient 保持一致的设计。
 #[flutter_rust_bridge::frb(opaque)]
 pub struct OpenIMBridgeClient {
-    inner: Arc<RwLock<IMClient>>,
+    inner: Arc<OpenIMClient>,
 }
 
 impl OpenIMBridgeClient {
-    /// 创建新的客户端实例
-    ///
-    /// # 参数
-    /// - `user_id`: 用户 ID
-    /// - `token`: 认证 token（从登录接口获取）
-    /// - `platform_id`: 平台 ID（例如：5 表示 Web）
-    /// - `ws_url`: WebSocket 服务器 URL（可选，默认使用 localhost:10001）
-    /// - `api_base_url`: HTTP API 基础地址（可选，默认 localhost:10002；Android 等可传单独地址）
+    // ========== 客户端生命周期 ==========
+
+    /// 创建新的 SDK 客户端实例
     #[flutter_rust_bridge::frb]
     pub async fn new(
         user_id: String,
@@ -133,274 +97,291 @@ impl OpenIMBridgeClient {
         platform_id: i32,
         ws_url: Option<String>,
         api_base_url: Option<String>,
+        data_dir: Option<String>,
     ) -> Result<Self> {
-        let config = ClientConfig::new(user_id, token, platform_id, ws_url, api_base_url, None);
-        // TODO: 旧代码待删除，重构后使用新的 SDK 初始化逻辑
-        // config.conversation_db_url = format!(
-        //     "sqlite://{}/conversations_{}.db?mode=rwc",
-        //     std::env::temp_dir().as_path().to_string_lossy(),
-        //     config.user_id
-        // );
-        // let client = IMClient::new(config).await?;
-        // let inner = Arc::new(RwLock::new(client));
-        // *CURRENT_CLIENT_INNER.lock().unwrap() = Some(inner.clone());
-        unimplemented!("旧 FFI 桥接代码待重构")
+        let config = ClientConfig::new(
+            user_id.clone(),
+            token.clone(),
+            platform_id,
+            ws_url,
+            api_base_url,
+            data_dir,
+        );
+        
+        let client = OpenIMClient::new(config).await?;
+        client.login(&user_id, &token).await?;
+        
+        Ok(Self {
+            inner: Arc::new(client),
+        })
     }
 
-    /// 关闭当前实例（停止 WebSocket 与同步任务），由 Flutter 在断开/重启前调用
+    /// 断开连接并清理资源
     #[flutter_rust_bridge::frb]
-    pub async fn close(&self) -> Result<()> {
-        self.inner.read().await.stop();
+    pub async fn disconnect(&self) -> Result<()> {
+        self.inner.disconnect().await;
         Ok(())
     }
 
-    /// 连接状态事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConnEvent> 并 listen。
+    /// 事件流。Dart 端得到 Stream<SdkEvent> 并 listen。
     #[flutter_rust_bridge::frb]
-    pub async fn conn_stream(&self, sink: StreamSink<ConnEvent>) -> Result<()> {
-        let stream = self.inner.write().await.subscribe_conn_events();
+    pub async fn event_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
+        let event_bus = self.inner.event_bus.clone();
         tokio::spawn(async move {
-            let mut stream = stream;
-            while let Some(ev) = stream.next().await {
-                let _ = sink.add(ev);
+            let mut subscription = event_bus.subscribe();
+            while let Some(event) = subscription.next().await {
+                let _ = sink.add(event);
             }
         });
         Ok(())
     }
 
-    /// 会话变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<ConversationEvent> 并 listen。
+    // ========== 消息操作 ==========
+
+    /// 发送消息
     #[flutter_rust_bridge::frb]
-    pub async fn conversation_stream(&self, sink: StreamSink<ConversationEvent>) -> Result<()> {
-        let stream = self.inner.write().await.subscribe_conversation_events();
-        tokio::spawn(async move {
-            let mut stream = stream;
-            while let Some(ev) = stream.next().await {
-                let _ = sink.add(ev);
-            }
+    pub async fn send_message(&self, req: SendMessageReq) -> Result<()> {
+        let client_msg_id = req.client_msg_id.unwrap_or_else(|| {
+            format!("msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
         });
-        Ok(())
+        
+        let pending_msg = crate::core::message::sender::PendingMessage {
+            client_msg_id,
+            send_id: self.inner.context.user_id.lock().unwrap().clone(),
+            recv_id: req.recv_id,
+            group_id: req.group_id,
+            sender_platform_id: self.inner.context.config.platform_id,
+            sender_nickname: String::new(),
+            sender_face_url: String::new(),
+            session_type: req.session_type,
+            msg_from: 100,
+            content_type: req.content_type,
+            content: req.content,
+        };
+        
+        Ok(self.inner.message_sender.send_message(pending_msg).await?)
     }
 
-    /// 消息变动事件流。需在 connect() 之前调用；Dart 端得到 Stream<AdvancedMsgEvent> 并 listen。
+    /// 获取历史消息
     #[flutter_rust_bridge::frb]
-    pub async fn advanced_msg_stream(&self, sink: StreamSink<AdvancedMsgEvent>) -> Result<()> {
-        let stream = self.inner.write().await.subscribe_advanced_msg_events();
-        tokio::spawn(async move {
-            let mut stream = stream;
-            while let Some(ev) = stream.next().await {
-                if let Err(e) = sink.add(ev) {
-                    tracing::error!("[bridge] advanced_msg_stream sink.add 失败: {:?}", e);
-                }
-            }
-            tracing::warn!("[bridge] advanced_msg_stream 循环退出（rx 已关闭）");
-        });
-        Ok(())
+    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<Vec<MsgData>> {
+        let messages = self.inner.message_handler.message_dao()
+            .get_by_conversation(&req.conversation_id, req.start_seq, req.start_seq + req.count)
+            .await?;
+        
+        let msg_data_list: Vec<MsgData> = messages.into_iter().map(|m| MsgData {
+            server_msg_id: m.server_msg_id,
+            client_msg_id: m.client_msg_id,
+            send_id: m.send_id,
+            recv_id: m.recv_id,
+            sender_platform_id: m.sender_platform_id,
+            sender_nickname: m.sender_nick_name,
+            sender_face_url: m.sender_face_url,
+            session_type: m.session_type,
+            msg_from: m.msg_from,
+            content_type: m.content_type,
+            content: m.content.into_bytes(),
+            seq: m.seq,
+            send_time: m.send_time,
+            create_time: m.create_time,
+            group_id: m.group_id,
+            ..Default::default()
+        }).collect();
+        
+        Ok(msg_data_list)
     }
 
-    /// 连接到服务器
-    ///
-    /// 建立 WebSocket 连接并启动消息监听。
+    /// 撤回消息
     #[flutter_rust_bridge::frb]
-    pub async fn connect(&self) -> Result<()> {
-        self.inner.write().await.start().await
+    pub async fn revoke_message(&self, req: RevokeMessageReq) -> Result<()> {
+        Ok(self.inner.message_service
+            .revoke_message(
+                req.conversation_id,
+                req.seq,
+                req.client_msg_id,
+                req.session_type,
+            )
+            .await?)
     }
+
+    /// 删除消息
+    #[flutter_rust_bridge::frb]
+    pub async fn delete_messages(&self, req: DeleteMessagesReq) -> Result<()> {
+        Ok(self.inner.message_service
+            .delete_messages(req.conversation_id, req.client_msg_ids)
+            .await?)
+    }
+
+    /// 标记消息已读
+    #[flutter_rust_bridge::frb]
+    pub async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()> {
+        Ok(self.inner.message_service
+            .mark_messages_as_read(
+                req.conversation_id,
+                req.session_type,
+                req.has_read_seq,
+                req.seqs,
+            )
+            .await?)
+    }
+
+    // ========== 会话操作 ==========
 
     /// 获取所有会话列表
     #[flutter_rust_bridge::frb]
-    pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
-        self.inner.read().await.get_all_conversations().await
+    pub async fn get_conversations(&self) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+        let convs = self.inner.conversation.get_all_conversations().await?;
+        let local_convs: Vec<crate::infra::database::models::LocalConversation> = convs.into_iter().map(|c| {
+            crate::core::conversation::manager::domain_to_local(c)
+        }).collect();
+        Ok(local_convs)
     }
 
-    /// 获取高级历史消息列表（完全参考 Go SDK 的 GetAdvancedHistoryMessageList）
+    /// 获取单个会话
     #[flutter_rust_bridge::frb]
-    pub async fn get_advanced_history_message_list(
+    pub async fn get_conversation(&self, conversation_id: String) -> Result<Option<crate::infra::database::models::LocalConversation>> {
+        match self.inner.conversation.get_conversation(&conversation_id).await? {
+            Some(c) => Ok(Some(crate::core::conversation::manager::domain_to_local(c))),
+            None => Ok(None),
+        }
+    }
+
+    /// 更新会话未读数
+    #[flutter_rust_bridge::frb]
+    pub async fn update_conversation_unread_count(&self, conversation_id: String, unread_count: i64) -> Result<()> {
+        Ok(self.inner.conversation.update_unread_count(&conversation_id, unread_count as i32).await?)
+    }
+
+    /// 设置会话置顶
+    #[flutter_rust_bridge::frb]
+    pub async fn set_conversation_pinned(&self, conversation_id: String, is_pinned: bool) -> Result<()> {
+        Ok(self.inner.conversation.set_pinned(&conversation_id, is_pinned).await?)
+    }
+
+    /// 删除会话
+    #[flutter_rust_bridge::frb]
+    pub async fn delete_conversation(&self, conversation_id: String) -> Result<()> {
+        Ok(self.inner.conversation.delete_conversation(&conversation_id).await?)
+    }
+
+    // ========== 好友操作 ==========
+
+    /// 获取好友列表
+    #[flutter_rust_bridge::frb]
+    pub async fn get_friend_list(&self) -> Result<Vec<crate::domain::model::friend::FriendInfo>> {
+        Ok(self.inner.friend.get_friend_list().await)
+    }
+
+    /// 添加好友
+    #[flutter_rust_bridge::frb]
+    pub async fn add_friend(&self, user_id: String, req_msg: String) -> Result<()> {
+        Ok(self.inner.friend.add_friend(user_id, Some(req_msg)).await?)
+    }
+
+    /// 删除好友
+    #[flutter_rust_bridge::frb]
+    pub async fn delete_friend(&self, user_id: String) -> Result<()> {
+        Ok(self.inner.friend.delete_friend(user_id).await?)
+    }
+
+    /// 获取黑名单
+    #[flutter_rust_bridge::frb]
+    pub async fn get_black_list(&self) -> Result<Vec<String>> {
+        Ok(self.inner.friend.get_blacklist().await)
+    }
+
+    /// 添加到黑名单
+    #[flutter_rust_bridge::frb]
+    pub async fn add_black(&self, user_id: String) -> Result<()> {
+        Ok(self.inner.friend.add_black(user_id).await?)
+    }
+
+    /// 从黑名单移除
+    #[flutter_rust_bridge::frb]
+    pub async fn remove_black(&self, user_id: String) -> Result<()> {
+        Ok(self.inner.friend.remove_black(user_id).await?)
+    }
+
+    // ========== 群组操作 ==========
+
+    /// 获取群组列表
+    #[flutter_rust_bridge::frb]
+    pub async fn get_group_list(&self) -> Result<Vec<crate::domain::model::group::GroupInfo>> {
+        Ok(self.inner.group.get_joined_group_list().await)
+    }
+
+    /// 创建群组
+    #[flutter_rust_bridge::frb]
+    pub async fn create_group(
         &self,
-        req: GetAdvancedHistoryMessageListParams,
-    ) -> Result<GetAdvancedHistoryMessageListCallback> {
-        self.inner
-            .read()
-            .await
-            .get_advanced_history_message_list(req)
-            .await
+        group_name: String,
+        group_type: i32,
+        member_ids: Vec<String>,
+    ) -> Result<crate::domain::model::group::GroupInfo> {
+        let user_id = self.inner.context.user_id.lock().unwrap().clone();
+        Ok(self.inner.group.create_group(
+            group_name,
+            None,
+            None,
+            None,
+            member_ids,
+            vec![],
+            user_id,
+        ).await?)
     }
 
-    /// 获取高级历史消息列表（反向，完全参考 Go SDK 的 GetAdvancedHistoryMessageListReverse）
+    /// 加入群组
     #[flutter_rust_bridge::frb]
-    pub async fn get_advanced_history_message_list_reverse(
+    pub async fn join_group(&self, group_id: String, req_msg: String) -> Result<()> {
+        Ok(self.inner.group.join_group(group_id, Some(req_msg)).await?)
+    }
+
+    /// 退出群组
+    #[flutter_rust_bridge::frb]
+    pub async fn quit_group(&self, group_id: String) -> Result<()> {
+        Ok(self.inner.group.quit_group(group_id).await?)
+    }
+
+    /// 获取群组成员
+    #[flutter_rust_bridge::frb]
+    pub async fn get_group_members(&self, group_id: String) -> Result<Vec<crate::domain::model::group::GroupMember>> {
+        Ok(self.inner.group.get_group_member_list(group_id, 0, 0, 1000).await?)
+    }
+
+    /// 邀请成员
+    #[flutter_rust_bridge::frb]
+    pub async fn invite_group_members(&self, group_id: String, member_ids: Vec<String>) -> Result<()> {
+        Ok(self.inner.group.invite_user_to_group(group_id, member_ids, None).await?)
+    }
+
+    /// 踢出成员
+    #[flutter_rust_bridge::frb]
+    pub async fn kick_group_members(&self, group_id: String, member_ids: Vec<String>) -> Result<()> {
+        Ok(self.inner.group.kick_group_member(group_id, member_ids, None).await?)
+    }
+
+    // ========== 用户操作 ==========
+
+    /// 获取用户信息
+    #[flutter_rust_bridge::frb]
+    pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<crate::domain::model::user::UserInfo>> {
+        Ok(self.inner.user.get_users_info(user_ids).await?)
+    }
+
+    /// 更新用户资料
+    #[flutter_rust_bridge::frb]
+    pub async fn update_user_profile(
         &self,
-        req: GetAdvancedHistoryMessageListParams,
-    ) -> Result<GetAdvancedHistoryMessageListCallback> {
-        self.inner
-            .read()
-            .await
-            .get_advanced_history_message_list_reverse(req)
-            .await
-    }
-
-    // ---------- 创建消息（仅组包，不发送；发送前需设置 recv_id/group_id、session_type 后调用 send_message） ----------
-
-    /// 创建文本消息（已填入 recv_id/group_id/session_type），返回 MsgData 可直接送 send_message 发送。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_text_message(
-        &self,
-        text: String,
-        recv_id: String,
-        group_id: String,
-        session_type: i32,
-    ) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_text_message(&text, &recv_id, &group_id, session_type))
-    }
-
-    /// 创建自定义消息。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_custom_message(
-        &self,
-        data: String,
-        extension: String,
-        description: String,
-    ) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_custom_message(&data, &extension, &description))
-    }
-
-    /// 创建图片消息（简化：仅 URL + 宽高）。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_image_message(&self, url: String, width: i32, height: i32) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_image_message(&url, width, height))
-    }
-
-    /// 创建视频消息。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_video_message(
-        &self,
-        video_path: String,
-        video_uuid: String,
-        video_url: String,
-        video_type: String,
-        video_size: i64,
-        duration: i64,
-        snapshot_path: String,
-        snapshot_uuid: String,
-        snapshot_size: i64,
-        snapshot_url: String,
-        snapshot_width: i32,
-        snapshot_height: i32,
-    ) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_video_message(
-            &video_path,
-            &video_uuid,
-            &video_url,
-            &video_type,
-            video_size,
-            duration,
-            &snapshot_path,
-            &snapshot_uuid,
-            snapshot_size,
-            &snapshot_url,
-            snapshot_width,
-            snapshot_height,
-        ))
-    }
-
-    /// 创建语音消息。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_sound_message(
-        &self,
-        uuid: String,
-        sound_path: String,
-        source_url: String,
-        data_size: i64,
-        duration: i64,
-    ) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_sound_message(&uuid, &sound_path, &source_url, data_size, duration))
-    }
-
-    /// 创建文件消息。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_file_message(
-        &self,
-        file_path: String,
-        uuid: String,
-        source_url: String,
-        file_name: String,
-        file_size: i64,
-    ) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_file_message(
-            &file_path,
-            &uuid,
-            &source_url,
-            &file_name,
-            file_size,
-        ))
-    }
-
-    /// 创建位置消息。
-    #[flutter_rust_bridge::frb]
-    pub async fn create_location_message(
-        &self,
-        description: String,
-        longitude: f64,
-        latitude: f64,
-    ) -> Result<MsgData> {
-        let client = self.inner.read().await;
-        Ok(client.create_location_message(&description, longitude, latitude))
-    }
-
-    /// 发送已创建的消息。入参为 create_* 返回的 MsgData（如 create_text_message 已填 recv_id/group_id/session_type）。
-    ///
-    /// **参数**
-    /// - `msg`: 已组装的 MsgData。
-    /// - `is_online_only`: 是否仅在线投递（不落库、不更新会话）；传 `false` 表示持久化，与 Go SDK 默认行为一致。
-    #[flutter_rust_bridge::frb]
-    pub async fn send_message(&self, msg: MsgData, is_online_only: bool) -> Result<()> {
-        self.inner.read().await.send_message(msg, is_online_only).await?;
-        Ok(())
-    }
-
-    /// 批量获取用户资料（优先内存缓存，缺失则拉服务端，与 Go GetUsersInfo 对齐）
-    #[flutter_rust_bridge::frb]
-    pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<UserProfile>> {
-        let list = self.inner.read().await.get_users_info(user_ids).await?;
-        Ok(list.into_iter().map(UserProfile::from).collect())
-    }
-
-    /// 更新当前登录用户资料（仅更新 patch 中传入字段），返回最新资料
-    /// 同时会同步更新会话中的消息发送者头像
-    #[flutter_rust_bridge::frb]
-    pub async fn update_login_user_profile(&self, patch: UserProfilePatch) -> Result<UserProfile> {
-        let profile = self
-            .inner
-            .read()
-            .await
-            .update_login_user_profile(
-                patch.nickname,
-                patch.face_url,
-                patch.ex,
-                patch.global_recv_msg_opt,
-            )
-            .await?;
-        
-        // 更新成功后，同步更新所有会话中的消息发送者头像
-        let _ = self.inner.read().await.sync_login_user_info().await;
-        
-        Ok(profile.into())
-    }
-
-    /// 上传文件到对象存储
-    ///
-    /// # 参数
-    /// - `file_path`: 本地文件路径
-    /// - `file_name`: 文件名（会自动添加用户ID前缀）
-    ///
-    /// # 返回值
-    /// - 成功：返回文件的 URL
-    /// - 失败：返回错误
-    #[flutter_rust_bridge::frb]
-    pub async fn upload_file(&self, file_path: String, file_name: String) -> Result<String> {
-        self.inner.read().await.upload_file(&file_path, &file_name).await
+        nickname: Option<String>,
+        face_url: Option<String>,
+        ex: Option<String>,
+    ) -> Result<()> {
+        let updates = crate::core::user::manager::UpdateUserFields {
+            nickname,
+            face_url,
+            gender: None,
+            email: ex,
+        };
+        Ok(self.inner.user.update_self_user_info(updates).await?)
     }
 }

@@ -4,17 +4,15 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/bridge_client.dart';
-import 'api/file.dart';
-import 'api/simple.dart';
-import 'api/test_upload.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
+import 'domain/event/types.dart';
+import 'domain/model/friend.dart';
+import 'domain/model/group.dart';
+import 'domain/model/user.dart';
 import 'frb_generated.dart';
-import 'im/client/listeners.dart';
-import 'im/http_client/auth.dart';
-import 'im/model/conversation.dart';
-import 'im/model/message.dart';
+import 'infra/database/models.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 
@@ -27,39 +25,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_ArcImClientPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClientPtr;
-
-  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_MsgDataPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgDataPtr;
-
-  CrossPlatformFinalizerArg
-  get rust_arc_decrement_strong_count_OfflinePushInfoPtr => wire
-      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfoPtr;
 
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_OpenImBridgeClientPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClientPtr;
 
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_SdkEventPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEventPtr;
+
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw);
 
   @protected
-  ArcImClient
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-    dynamic raw,
-  );
-
-  @protected
   MsgData
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
-    dynamic raw,
-  );
-
-  @protected
-  OfflinePushInfo
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     dynamic raw,
   );
 
@@ -70,14 +52,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  OpenImBridgeClient
-  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+  SdkEvent
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
     dynamic raw,
   );
 
   @protected
-  ArcImClient
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+  OpenImBridgeClient
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   );
 
@@ -88,127 +70,65 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  OfflinePushInfo
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    dynamic raw,
-  );
-
-  @protected
   OpenImBridgeClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   );
 
   @protected
-  RustStreamSink<AdvancedMsgEvent> dco_decode_StreamSink_advanced_msg_event_Sse(
+  SdkEvent
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
     dynamic raw,
   );
 
   @protected
-  RustStreamSink<ConnEvent> dco_decode_StreamSink_conn_event_Sse(dynamic raw);
-
-  @protected
-  RustStreamSink<ConversationEvent>
-  dco_decode_StreamSink_conversation_event_Sse(dynamic raw);
+  RustStreamSink<SdkEvent>
+  dco_decode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
+    dynamic raw,
+  );
 
   @protected
   String dco_decode_String(dynamic raw);
 
   @protected
-  AdvancedMsgEvent dco_decode_advanced_msg_event(dynamic raw);
-
-  @protected
-  AtElem dco_decode_at_elem(dynamic raw);
-
-  @protected
-  AtInfo dco_decode_at_info(dynamic raw);
-
-  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
-  OfflinePushInfo
-  dco_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+  DeleteMessagesReq dco_decode_box_autoadd_delete_messages_req(dynamic raw);
+
+  @protected
+  GetHistoryMessagesReq dco_decode_box_autoadd_get_history_messages_req(
     dynamic raw,
   );
 
   @protected
-  AtElem dco_decode_box_autoadd_at_elem(dynamic raw);
+  LocalConversation dco_decode_box_autoadd_local_conversation(dynamic raw);
 
   @protected
-  bool dco_decode_box_autoadd_bool(dynamic raw);
+  MarkMessagesAsReadReq dco_decode_box_autoadd_mark_messages_as_read_req(
+    dynamic raw,
+  );
 
   @protected
-  CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw);
+  RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
 
   @protected
-  FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
+  SendMessageReq dco_decode_box_autoadd_send_message_req(dynamic raw);
 
   @protected
-  GetAdvancedHistoryMessageListParams
-  dco_decode_box_autoadd_get_advanced_history_message_list_params(dynamic raw);
+  DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw);
 
   @protected
-  int dco_decode_box_autoadd_i_32(dynamic raw);
+  FriendInfo dco_decode_friend_info(dynamic raw);
 
   @protected
-  LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
+  GetHistoryMessagesReq dco_decode_get_history_messages_req(dynamic raw);
 
   @protected
-  MessageRevokedInfo dco_decode_box_autoadd_message_revoked_info(dynamic raw);
+  GroupInfo dco_decode_group_info(dynamic raw);
 
   @protected
-  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
-
-  @protected
-  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
-
-  @protected
-  QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw);
-
-  @protected
-  SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw);
-
-  @protected
-  TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
-
-  @protected
-  TypingStatus dco_decode_box_autoadd_typing_status(dynamic raw);
-
-  @protected
-  UserProfilePatch dco_decode_box_autoadd_user_profile_patch(dynamic raw);
-
-  @protected
-  VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
-
-  @protected
-  MsgStruct dco_decode_box_msg_struct(dynamic raw);
-
-  @protected
-  ConnEvent dco_decode_conn_event(dynamic raw);
-
-  @protected
-  ConversationEvent dco_decode_conversation_event(dynamic raw);
-
-  @protected
-  CustomElem dco_decode_custom_elem(dynamic raw);
-
-  @protected
-  double dco_decode_f_64(dynamic raw);
-
-  @protected
-  FileElem dco_decode_file_elem(dynamic raw);
-
-  @protected
-  GetAdvancedHistoryMessageListCallback
-  dco_decode_get_advanced_history_message_list_callback(dynamic raw);
-
-  @protected
-  GetAdvancedHistoryMessageListParams
-  dco_decode_get_advanced_history_message_list_params(dynamic raw);
-
-  @protected
-  GroupReadReceiptItem dco_decode_group_read_receipt_item(dynamic raw);
+  GroupMember dco_decode_group_member(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -217,114 +137,55 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
+  List<MsgData>
+  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  );
+
+  @protected
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
-  List<AtInfo> dco_decode_list_at_info(dynamic raw);
+  List<FriendInfo> dco_decode_list_friend_info(dynamic raw);
 
   @protected
-  List<GroupReadReceiptItem> dco_decode_list_group_read_receipt_item(
-    dynamic raw,
-  );
+  List<GroupInfo> dco_decode_list_group_info(dynamic raw);
+
+  @protected
+  List<GroupMember> dco_decode_list_group_member(dynamic raw);
 
   @protected
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
 
   @protected
-  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw);
+  Int64List dco_decode_list_prim_i_64_strict(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
-  List<ReadReceiptItem> dco_decode_list_read_receipt_item(dynamic raw);
-
-  @protected
-  List<UserProfile> dco_decode_list_user_profile(dynamic raw);
+  List<UserInfo> dco_decode_list_user_info(dynamic raw);
 
   @protected
   LocalConversation dco_decode_local_conversation(dynamic raw);
 
   @protected
-  LocationElem dco_decode_location_elem(dynamic raw);
-
-  @protected
-  LoginData dco_decode_login_data(dynamic raw);
-
-  @protected
-  MessageRevokedInfo dco_decode_message_revoked_info(dynamic raw);
-
-  @protected
-  MsgStruct dco_decode_msg_struct(dynamic raw);
+  MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
-  OfflinePushInfo?
-  dco_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    dynamic raw,
-  );
+  LocalConversation? dco_decode_opt_box_autoadd_local_conversation(dynamic raw);
 
   @protected
-  AtElem? dco_decode_opt_box_autoadd_at_elem(dynamic raw);
+  RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
 
   @protected
-  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+  SendMessageReq dco_decode_send_message_req(dynamic raw);
 
   @protected
-  CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw);
-
-  @protected
-  FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw);
-
-  @protected
-  int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
-
-  @protected
-  LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw);
-
-  @protected
-  PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw);
-
-  @protected
-  QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw);
-
-  @protected
-  SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw);
-
-  @protected
-  TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw);
-
-  @protected
-  VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw);
-
-  @protected
-  MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw);
-
-  @protected
-  List<AtInfo>? dco_decode_opt_list_at_info(dynamic raw);
-
-  @protected
-  PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
-
-  @protected
-  PictureElem dco_decode_picture_elem(dynamic raw);
-
-  @protected
-  QuoteElem dco_decode_quote_elem(dynamic raw);
-
-  @protected
-  ReadReceiptItem dco_decode_read_receipt_item(dynamic raw);
-
-  @protected
-  SoundElem dco_decode_sound_elem(dynamic raw);
-
-  @protected
-  TextElem dco_decode_text_elem(dynamic raw);
-
-  @protected
-  TypingStatus dco_decode_typing_status(dynamic raw);
+  int dco_decode_u_32(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -333,35 +194,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
-  UserProfile dco_decode_user_profile(dynamic raw);
-
-  @protected
-  UserProfilePatch dco_decode_user_profile_patch(dynamic raw);
+  UserInfo dco_decode_user_info(dynamic raw);
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
 
   @protected
-  VideoElem dco_decode_video_elem(dynamic raw);
-
-  @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
-
-  @protected
-  ArcImClient
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-    SseDeserializer deserializer,
-  );
 
   @protected
   MsgData
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  OfflinePushInfo
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
     SseDeserializer deserializer,
   );
 
@@ -372,14 +215,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  OpenImBridgeClient
-  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+  SdkEvent
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
     SseDeserializer deserializer,
   );
 
   @protected
-  ArcImClient
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
+  OpenImBridgeClient
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
   );
 
@@ -390,145 +233,77 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  OfflinePushInfo
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   OpenImBridgeClient
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
   );
 
   @protected
-  RustStreamSink<AdvancedMsgEvent> sse_decode_StreamSink_advanced_msg_event_Sse(
+  SdkEvent
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
     SseDeserializer deserializer,
   );
 
   @protected
-  RustStreamSink<ConnEvent> sse_decode_StreamSink_conn_event_Sse(
+  RustStreamSink<SdkEvent>
+  sse_decode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
     SseDeserializer deserializer,
   );
-
-  @protected
-  RustStreamSink<ConversationEvent>
-  sse_decode_StreamSink_conversation_event_Sse(SseDeserializer deserializer);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
-  AdvancedMsgEvent sse_decode_advanced_msg_event(SseDeserializer deserializer);
-
-  @protected
-  AtElem sse_decode_at_elem(SseDeserializer deserializer);
-
-  @protected
-  AtInfo sse_decode_at_info(SseDeserializer deserializer);
-
-  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  OfflinePushInfo
-  sse_decode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+  DeleteMessagesReq sse_decode_box_autoadd_delete_messages_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  AtElem sse_decode_box_autoadd_at_elem(SseDeserializer deserializer);
-
-  @protected
-  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
-
-  @protected
-  CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer);
-
-  @protected
-  FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
-
-  @protected
-  GetAdvancedHistoryMessageListParams
-  sse_decode_box_autoadd_get_advanced_history_message_list_params(
+  GetHistoryMessagesReq sse_decode_box_autoadd_get_history_messages_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
-
-  @protected
-  LocationElem sse_decode_box_autoadd_location_elem(
+  LocalConversation sse_decode_box_autoadd_local_conversation(
     SseDeserializer deserializer,
   );
 
   @protected
-  MessageRevokedInfo sse_decode_box_autoadd_message_revoked_info(
+  MarkMessagesAsReadReq sse_decode_box_autoadd_mark_messages_as_read_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
-
-  @protected
-  PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
-
-  @protected
-  QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer);
-
-  @protected
-  SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer);
-
-  @protected
-  TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
-
-  @protected
-  TypingStatus sse_decode_box_autoadd_typing_status(
+  RevokeMessageReq sse_decode_box_autoadd_revoke_message_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  UserProfilePatch sse_decode_box_autoadd_user_profile_patch(
+  SendMessageReq sse_decode_box_autoadd_send_message_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
-
-  @protected
-  MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer);
-
-  @protected
-  ConnEvent sse_decode_conn_event(SseDeserializer deserializer);
-
-  @protected
-  ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer);
-
-  @protected
-  CustomElem sse_decode_custom_elem(SseDeserializer deserializer);
-
-  @protected
-  double sse_decode_f_64(SseDeserializer deserializer);
-
-  @protected
-  FileElem sse_decode_file_elem(SseDeserializer deserializer);
-
-  @protected
-  GetAdvancedHistoryMessageListCallback
-  sse_decode_get_advanced_history_message_list_callback(
+  DeleteMessagesReq sse_decode_delete_messages_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  GetAdvancedHistoryMessageListParams
-  sse_decode_get_advanced_history_message_list_params(
+  FriendInfo sse_decode_friend_info(SseDeserializer deserializer);
+
+  @protected
+  GetHistoryMessagesReq sse_decode_get_history_messages_req(
     SseDeserializer deserializer,
   );
 
   @protected
-  GroupReadReceiptItem sse_decode_group_read_receipt_item(
-    SseDeserializer deserializer,
-  );
+  GroupInfo sse_decode_group_info(SseDeserializer deserializer);
+
+  @protected
+  GroupMember sse_decode_group_member(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -537,15 +312,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
+  List<MsgData>
+  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
-  List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer);
+  List<FriendInfo> sse_decode_list_friend_info(SseDeserializer deserializer);
 
   @protected
-  List<GroupReadReceiptItem> sse_decode_list_group_read_receipt_item(
-    SseDeserializer deserializer,
-  );
+  List<GroupInfo> sse_decode_list_group_info(SseDeserializer deserializer);
+
+  @protected
+  List<GroupMember> sse_decode_list_group_member(SseDeserializer deserializer);
 
   @protected
   List<LocalConversation> sse_decode_list_local_conversation(
@@ -553,116 +335,38 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer);
+  Int64List sse_decode_list_prim_i_64_strict(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
-  List<ReadReceiptItem> sse_decode_list_read_receipt_item(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  List<UserProfile> sse_decode_list_user_profile(SseDeserializer deserializer);
+  List<UserInfo> sse_decode_list_user_info(SseDeserializer deserializer);
 
   @protected
   LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
   @protected
-  LocationElem sse_decode_location_elem(SseDeserializer deserializer);
-
-  @protected
-  LoginData sse_decode_login_data(SseDeserializer deserializer);
-
-  @protected
-  MessageRevokedInfo sse_decode_message_revoked_info(
+  MarkMessagesAsReadReq sse_decode_mark_messages_as_read_req(
     SseDeserializer deserializer,
   );
-
-  @protected
-  MsgStruct sse_decode_msg_struct(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
-  OfflinePushInfo?
-  sse_decode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
+  LocalConversation? sse_decode_opt_box_autoadd_local_conversation(
     SseDeserializer deserializer,
   );
 
   @protected
-  AtElem? sse_decode_opt_box_autoadd_at_elem(SseDeserializer deserializer);
+  RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
 
   @protected
-  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+  SendMessageReq sse_decode_send_message_req(SseDeserializer deserializer);
 
   @protected
-  CustomElem? sse_decode_opt_box_autoadd_custom_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer);
-
-  @protected
-  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
-
-  @protected
-  LocationElem? sse_decode_opt_box_autoadd_location_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  PictureElem? sse_decode_opt_box_autoadd_picture_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  QuoteElem? sse_decode_opt_box_autoadd_quote_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  SoundElem? sse_decode_opt_box_autoadd_sound_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer);
-
-  @protected
-  VideoElem? sse_decode_opt_box_autoadd_video_elem(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer);
-
-  @protected
-  List<AtInfo>? sse_decode_opt_list_at_info(SseDeserializer deserializer);
-
-  @protected
-  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
-
-  @protected
-  PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
-
-  @protected
-  QuoteElem sse_decode_quote_elem(SseDeserializer deserializer);
-
-  @protected
-  ReadReceiptItem sse_decode_read_receipt_item(SseDeserializer deserializer);
-
-  @protected
-  SoundElem sse_decode_sound_elem(SseDeserializer deserializer);
-
-  @protected
-  TextElem sse_decode_text_elem(SseDeserializer deserializer);
-
-  @protected
-  TypingStatus sse_decode_typing_status(SseDeserializer deserializer);
+  int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -671,27 +375,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
-  UserProfile sse_decode_user_profile(SseDeserializer deserializer);
-
-  @protected
-  UserProfilePatch sse_decode_user_profile_patch(SseDeserializer deserializer);
+  UserInfo sse_decode_user_info(SseDeserializer deserializer);
 
   @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
-  VideoElem sse_decode_video_elem(SseDeserializer deserializer);
-
-  @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-    ArcImClient self,
     SseSerializer serializer,
   );
 
@@ -704,15 +395,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    OfflinePushInfo self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
     SseSerializer serializer,
   );
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-    OpenImBridgeClient self,
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
+    SdkEvent self,
     SseSerializer serializer,
   );
 
@@ -725,22 +416,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-    ArcImClient self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
     MsgData self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    OfflinePushInfo self,
     SseSerializer serializer,
   );
 
@@ -752,20 +429,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_StreamSink_advanced_msg_event_Sse(
-    RustStreamSink<AdvancedMsgEvent> self,
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
+    SdkEvent self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_StreamSink_conn_event_Sse(
-    RustStreamSink<ConnEvent> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_StreamSink_conversation_event_Sse(
-    RustStreamSink<ConversationEvent> self,
+  void
+  sse_encode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
+    RustStreamSink<SdkEvent> self,
     SseSerializer serializer,
   );
 
@@ -773,152 +446,64 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
-  void sse_encode_advanced_msg_event(
-    AdvancedMsgEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_at_elem(AtElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_at_info(AtInfo self, SseSerializer serializer);
-
-  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
-  void
-  sse_encode_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    OfflinePushInfo self,
+  void sse_encode_box_autoadd_delete_messages_req(
+    DeleteMessagesReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_at_elem(AtElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_custom_elem(
-    CustomElem self,
+  void sse_encode_box_autoadd_get_history_messages_req(
+    GetHistoryMessagesReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_file_elem(
-    FileElem self,
+  void sse_encode_box_autoadd_local_conversation(
+    LocalConversation self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_get_advanced_history_message_list_params(
-    GetAdvancedHistoryMessageListParams self,
+  void sse_encode_box_autoadd_mark_messages_as_read_req(
+    MarkMessagesAsReadReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_location_elem(
-    LocationElem self,
+  void sse_encode_box_autoadd_revoke_message_req(
+    RevokeMessageReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_message_revoked_info(
-    MessageRevokedInfo self,
+  void sse_encode_box_autoadd_send_message_req(
+    SendMessageReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_msg_struct(
-    MsgStruct self,
+  void sse_encode_delete_messages_req(
+    DeleteMessagesReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_picture_elem(
-    PictureElem self,
+  void sse_encode_friend_info(FriendInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_get_history_messages_req(
+    GetHistoryMessagesReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_box_autoadd_quote_elem(
-    QuoteElem self,
-    SseSerializer serializer,
-  );
+  void sse_encode_group_info(GroupInfo self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_sound_elem(
-    SoundElem self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_text_elem(
-    TextElem self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_typing_status(
-    TypingStatus self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_user_profile_patch(
-    UserProfilePatch self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_video_elem(
-    VideoElem self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_conn_event(ConnEvent self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_conversation_event(
-    ConversationEvent self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_custom_elem(CustomElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_f_64(double self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_file_elem(FileElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_get_advanced_history_message_list_callback(
-    GetAdvancedHistoryMessageListCallback self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_get_advanced_history_message_list_params(
-    GetAdvancedHistoryMessageListParams self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_group_read_receipt_item(
-    GroupReadReceiptItem self,
-    SseSerializer serializer,
-  );
+  void sse_encode_group_member(GroupMember self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -927,14 +512,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
+  void
+  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    List<MsgData> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer);
+  void sse_encode_list_friend_info(
+    List<FriendInfo> self,
+    SseSerializer serializer,
+  );
 
   @protected
-  void sse_encode_list_group_read_receipt_item(
-    List<GroupReadReceiptItem> self,
+  void sse_encode_list_group_info(
+    List<GroupInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_member(
+    List<GroupMember> self,
     SseSerializer serializer,
   );
 
@@ -945,8 +546,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_list_msg_struct(
-    List<MsgStruct> self,
+  void sse_encode_list_prim_i_64_strict(
+    Int64List self,
     SseSerializer serializer,
   );
 
@@ -957,16 +558,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_list_read_receipt_item(
-    List<ReadReceiptItem> self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_list_user_profile(
-    List<UserProfile> self,
-    SseSerializer serializer,
-  );
+  void sse_encode_list_user_info(List<UserInfo> self, SseSerializer serializer);
 
   @protected
   void sse_encode_local_conversation(
@@ -975,125 +567,34 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_location_elem(LocationElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_login_data(LoginData self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_message_revoked_info(
-    MessageRevokedInfo self,
+  void sse_encode_mark_messages_as_read_req(
+    MarkMessagesAsReadReq self,
     SseSerializer serializer,
   );
-
-  @protected
-  void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
-  void
-  sse_encode_opt_box_autoadd_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    OfflinePushInfo? self,
+  void sse_encode_opt_box_autoadd_local_conversation(
+    LocalConversation? self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_opt_box_autoadd_at_elem(
-    AtElem? self,
+  void sse_encode_revoke_message_req(
+    RevokeMessageReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_custom_elem(
-    CustomElem? self,
+  void sse_encode_send_message_req(
+    SendMessageReq self,
     SseSerializer serializer,
   );
 
   @protected
-  void sse_encode_opt_box_autoadd_file_elem(
-    FileElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_location_elem(
-    LocationElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_picture_elem(
-    PictureElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_quote_elem(
-    QuoteElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_sound_elem(
-    SoundElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_text_elem(
-    TextElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_autoadd_video_elem(
-    VideoElem? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_opt_box_msg_struct(MsgStruct? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_list_at_info(
-    List<AtInfo>? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_picture_base_info(
-    PictureBaseInfo self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_read_receipt_item(
-    ReadReceiptItem self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_sound_elem(SoundElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_text_elem(TextElem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_typing_status(TypingStatus self, SseSerializer serializer);
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
@@ -1102,19 +603,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_unit(void self, SseSerializer serializer);
 
   @protected
-  void sse_encode_user_profile(UserProfile self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_user_profile_patch(
-    UserProfilePatch self,
-    SseSerializer serializer,
-  );
+  void sse_encode_user_info(UserInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_video_elem(VideoElem self, SseSerializer serializer);
 }
 
 // Section: wire_class
@@ -1130,40 +622,6 @@ class RustLibWire implements BaseWire {
   /// The symbols are looked up in [dynamicLibrary].
   RustLibWire(ffi.DynamicLibrary dynamicLibrary)
     : _lookup = dynamicLibrary.lookup;
-
-  void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClientPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClientPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClientPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClient =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerArcRwLockIMClientPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
@@ -1200,40 +658,6 @@ class RustLibWire implements BaseWire {
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void
-  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfoPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo',
-      );
-  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo =
-      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfoPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
-  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-    ffi.Pointer<ffi.Void> ptr,
-  ) {
-    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo(
-      ptr,
-    );
-  }
-
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfoPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
-        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo',
-      );
-  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfo =
-      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOfflinePushInfoPtr
-          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
-
-  void
   rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     ffi.Pointer<ffi.Void> ptr,
   ) {
@@ -1265,5 +689,39 @@ class RustLibWire implements BaseWire {
       );
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClientPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEventPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_flutter_rust_demo_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEventPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEventPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_flutter_rust_demo_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEventPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 }

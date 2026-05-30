@@ -1,4 +1,6 @@
+mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be accurate, and you can change it according to your needs. */
 // 新架构模块（渐进式迁移）
+pub mod api;
 pub mod sdk;
 pub mod core;
 pub mod domain;

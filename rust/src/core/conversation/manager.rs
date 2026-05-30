@@ -125,7 +125,7 @@ fn local_to_domain(lc: LocalConversation) -> Conversation {
     }
 }
 
-fn domain_to_local(conv: Conversation) -> LocalConversation {
+pub fn domain_to_local(conv: Conversation) -> LocalConversation {
     LocalConversation {
         conversation_id: conv.conversation_id,
         conversation_type: conv.conversation_type,
