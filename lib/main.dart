@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
-import 'package:flutter_rust_demo/src/rust/api/simple.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
+import 'package:flutter_rust_demo/src/rust/api/simple.dart' show setLogDirectory;
 
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'utils/host_config.dart';
 import 'utils/login_storage.dart';
+import 'services/im_client.dart';
 
 /// WebSocket 地址；Android 模拟器内用 10.0.2.2 访问宿主机
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
@@ -29,7 +29,7 @@ Future<void> main() async {
   await LoginStorage.clearCredentials();
 
   // 4. 热重启时先关闭之前的 client，避免同 token 重复连接导致 TokenKickedError(1506)
-  await closeCurrentClientIfAny();
+  await ImClient.instance.close();
 
   runApp(const MyApp());
 }

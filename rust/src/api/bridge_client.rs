@@ -12,7 +12,9 @@
 
 use crate::domain::config::ClientConfig;
 use crate::domain::constant::types::content_type;
+use crate::domain::error::types::SdkError;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::model::message::MessageInfo;
 use crate::sdk::client::OpenIMClient;
 use anyhow::Result;
 use crate::frb_generated::StreamSink;
@@ -75,6 +77,14 @@ pub struct MarkMessagesAsReadReq {
 }
 
 // ============================================================================
+// Helper: 将 SdkError 转换为 anyhow::Error
+// ============================================================================
+
+fn map_err<T>(r: std::result::Result<T, SdkError>) -> Result<T> {
+    r.map_err(|e| anyhow::anyhow!("{}", e))
+}
+
+// ============================================================================
 // 桥接客户端
 // ============================================================================
 
@@ -108,8 +118,10 @@ impl OpenIMBridgeClient {
             data_dir,
         );
         
-        let client = OpenIMClient::new(config).await?;
-        client.login(&user_id, &token).await?;
+        let client = OpenIMClient::new(config).await
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
+        client.login(&user_id, &token).await
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
         
         Ok(Self {
             inner: Arc::new(client),
@@ -140,13 +152,13 @@ impl OpenIMBridgeClient {
 
     /// 发送消息
     #[flutter_rust_bridge::frb]
-    pub async fn send_message(&self, req: SendMessageReq) -> Result<()> {
+    pub async fn send_message(&self, req: SendMessageReq) -> Result<MsgData> {
         let client_msg_id = req.client_msg_id.unwrap_or_else(|| {
             format!("msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
         });
         
         let pending_msg = crate::core::message::sender::PendingMessage {
-            client_msg_id,
+            client_msg_id: client_msg_id.clone(),
             send_id: self.inner.context.user_id.lock().unwrap().clone(),
             recv_id: req.recv_id,
             group_id: req.group_id,
@@ -159,70 +171,98 @@ impl OpenIMBridgeClient {
             content: req.content,
         };
         
-        Ok(self.inner.message_sender.send_message(pending_msg).await?)
+        map_err(self.inner.message_sender.send_message(pending_msg).await)?;
+        
+        // 返回一个基本的 MsgData（实际 serverMsgId 和 seq 会在发送完成后通过事件回调更新）
+        let send_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as i64)
+            .unwrap_or(0);
+        
+        Ok(MsgData {
+            client_msg_id,
+            send_id: self.inner.context.user_id.lock().unwrap().clone(),
+            send_time,
+            create_time: send_time,
+            content_type: req.content_type,
+            session_type: req.session_type,
+            ..Default::default()
+        })
     }
 
     /// 获取历史消息
     #[flutter_rust_bridge::frb]
-    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<Vec<MsgData>> {
+    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<Vec<MessageInfo>> {
         let messages = self.inner.message_handler.message_dao()
             .get_by_conversation(&req.conversation_id, req.start_seq, req.start_seq + req.count)
-            .await?;
+            .await
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
         
-        let msg_data_list: Vec<MsgData> = messages.into_iter().map(|m| MsgData {
-            server_msg_id: m.server_msg_id,
-            client_msg_id: m.client_msg_id,
-            send_id: m.send_id,
-            recv_id: m.recv_id,
-            sender_platform_id: m.sender_platform_id,
-            sender_nickname: m.sender_nick_name,
-            sender_face_url: m.sender_face_url,
-            session_type: m.session_type,
-            msg_from: m.msg_from,
-            content_type: m.content_type,
-            content: m.content.into_bytes(),
-            seq: m.seq,
-            send_time: m.send_time,
-            create_time: m.create_time,
-            group_id: m.group_id,
-            ..Default::default()
-        }).collect();
+        let msg_info_list: Vec<MessageInfo> = messages.into_iter()
+            .map(|m| {
+                let msg_data = MsgData {
+                    server_msg_id: m.server_msg_id,
+                    client_msg_id: m.client_msg_id,
+                    send_id: m.send_id,
+                    recv_id: m.recv_id,
+                    sender_platform_id: m.sender_platform_id,
+                    sender_nickname: m.sender_nick_name,
+                    sender_face_url: m.sender_face_url,
+                    session_type: m.session_type,
+                    msg_from: m.msg_from,
+                    content_type: m.content_type,
+                    content: m.content.into_bytes(),
+                    seq: m.seq,
+                    send_time: m.send_time,
+                    create_time: m.create_time,
+                    group_id: m.group_id,
+                    ..Default::default()
+                };
+                MessageInfo::from(msg_data)
+            })
+            .collect();
         
-        Ok(msg_data_list)
+        Ok(msg_info_list)
     }
 
     /// 撤回消息
     #[flutter_rust_bridge::frb]
     pub async fn revoke_message(&self, req: RevokeMessageReq) -> Result<()> {
-        Ok(self.inner.message_service
-            .revoke_message(
-                req.conversation_id,
-                req.seq,
-                req.client_msg_id,
-                req.session_type,
-            )
-            .await?)
+        map_err(
+            self.inner.message_service
+                .revoke_message(
+                    req.conversation_id,
+                    req.seq,
+                    req.client_msg_id,
+                    req.session_type,
+                )
+                .await
+        )
     }
 
     /// 删除消息
     #[flutter_rust_bridge::frb]
     pub async fn delete_messages(&self, req: DeleteMessagesReq) -> Result<()> {
-        Ok(self.inner.message_service
-            .delete_messages(req.conversation_id, req.client_msg_ids)
-            .await?)
+        map_err(
+            self.inner.message_service
+                .delete_messages(req.conversation_id, req.client_msg_ids)
+                .await
+        )
     }
 
     /// 标记消息已读
     #[flutter_rust_bridge::frb]
     pub async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()> {
-        Ok(self.inner.message_service
-            .mark_messages_as_read(
-                req.conversation_id,
-                req.session_type,
-                req.has_read_seq,
-                req.seqs,
-            )
-            .await?)
+        map_err(
+            self.inner.message_service
+                .mark_messages_as_read(
+                    req.conversation_id,
+                    req.session_type,
+                    req.has_read_seq,
+                    req.seqs,
+                )
+                .await
+        )
     }
 
     // ========== 会话操作 ==========
@@ -230,38 +270,45 @@ impl OpenIMBridgeClient {
     /// 获取所有会话列表
     #[flutter_rust_bridge::frb]
     pub async fn get_conversations(&self) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
-        let convs = self.inner.conversation.get_all_conversations().await?;
-        let local_convs: Vec<crate::infra::database::models::LocalConversation> = convs.into_iter().map(|c| {
-            crate::core::conversation::manager::domain_to_local(c)
-        }).collect();
-        Ok(local_convs)
+        let dao = self.inner.conversation.dao();
+        dao.get_all().await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     /// 获取单个会话
     #[flutter_rust_bridge::frb]
     pub async fn get_conversation(&self, conversation_id: String) -> Result<Option<crate::infra::database::models::LocalConversation>> {
-        match self.inner.conversation.get_conversation(&conversation_id).await? {
-            Some(c) => Ok(Some(crate::core::conversation::manager::domain_to_local(c))),
-            None => Ok(None),
-        }
+        let dao = self.inner.conversation.dao();
+        dao.get_by_id(&conversation_id).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     /// 更新会话未读数
     #[flutter_rust_bridge::frb]
     pub async fn update_conversation_unread_count(&self, conversation_id: String, unread_count: i64) -> Result<()> {
-        Ok(self.inner.conversation.update_unread_count(&conversation_id, unread_count as i32).await?)
+        map_err(
+            self.inner.conversation
+                .update_unread_count(&conversation_id, unread_count as i32)
+                .await
+        )
     }
 
     /// 设置会话置顶
     #[flutter_rust_bridge::frb]
     pub async fn set_conversation_pinned(&self, conversation_id: String, is_pinned: bool) -> Result<()> {
-        Ok(self.inner.conversation.set_pinned(&conversation_id, is_pinned).await?)
+        map_err(
+            self.inner.conversation
+                .set_pinned(&conversation_id, is_pinned)
+                .await
+        )
     }
 
     /// 删除会话
     #[flutter_rust_bridge::frb]
     pub async fn delete_conversation(&self, conversation_id: String) -> Result<()> {
-        Ok(self.inner.conversation.delete_conversation(&conversation_id).await?)
+        map_err(
+            self.inner.conversation
+                .delete_conversation(&conversation_id)
+                .await
+        )
     }
 
     // ========== 好友操作 ==========
@@ -275,13 +322,13 @@ impl OpenIMBridgeClient {
     /// 添加好友
     #[flutter_rust_bridge::frb]
     pub async fn add_friend(&self, user_id: String, req_msg: String) -> Result<()> {
-        Ok(self.inner.friend.add_friend(user_id, Some(req_msg)).await?)
+        map_err(self.inner.friend.add_friend(user_id, Some(req_msg)).await)
     }
 
     /// 删除好友
     #[flutter_rust_bridge::frb]
     pub async fn delete_friend(&self, user_id: String) -> Result<()> {
-        Ok(self.inner.friend.delete_friend(user_id).await?)
+        map_err(self.inner.friend.delete_friend(user_id).await)
     }
 
     /// 获取黑名单
@@ -293,13 +340,13 @@ impl OpenIMBridgeClient {
     /// 添加到黑名单
     #[flutter_rust_bridge::frb]
     pub async fn add_black(&self, user_id: String) -> Result<()> {
-        Ok(self.inner.friend.add_black(user_id).await?)
+        map_err(self.inner.friend.add_black(user_id).await)
     }
 
     /// 从黑名单移除
     #[flutter_rust_bridge::frb]
     pub async fn remove_black(&self, user_id: String) -> Result<()> {
-        Ok(self.inner.friend.remove_black(user_id).await?)
+        map_err(self.inner.friend.remove_black(user_id).await)
     }
 
     // ========== 群组操作 ==========
@@ -319,45 +366,59 @@ impl OpenIMBridgeClient {
         member_ids: Vec<String>,
     ) -> Result<crate::domain::model::group::GroupInfo> {
         let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(self.inner.group.create_group(
-            group_name,
-            None,
-            None,
-            None,
-            member_ids,
-            vec![],
-            user_id,
-        ).await?)
+        map_err(
+            self.inner.group.create_group(
+                group_name,
+                None,
+                None,
+                None,
+                member_ids,
+                vec![],
+                user_id,
+            ).await
+        )
     }
 
     /// 加入群组
     #[flutter_rust_bridge::frb]
     pub async fn join_group(&self, group_id: String, req_msg: String) -> Result<()> {
-        Ok(self.inner.group.join_group(group_id, Some(req_msg)).await?)
+        map_err(self.inner.group.join_group(group_id, Some(req_msg)).await)
     }
 
     /// 退出群组
     #[flutter_rust_bridge::frb]
     pub async fn quit_group(&self, group_id: String) -> Result<()> {
-        Ok(self.inner.group.quit_group(group_id).await?)
+        map_err(self.inner.group.quit_group(group_id).await)
     }
 
     /// 获取群组成员
     #[flutter_rust_bridge::frb]
     pub async fn get_group_members(&self, group_id: String) -> Result<Vec<crate::domain::model::group::GroupMember>> {
-        Ok(self.inner.group.get_group_member_list(group_id, 0, 0, 1000).await?)
+        map_err(
+            self.inner.group
+                .get_group_member_list(group_id, 0, 0, 1000)
+                .await
+        )
     }
 
     /// 邀请成员
     #[flutter_rust_bridge::frb]
     pub async fn invite_group_members(&self, group_id: String, member_ids: Vec<String>) -> Result<()> {
-        Ok(self.inner.group.invite_user_to_group(group_id, member_ids, None).await?)
+        map_err(
+            self.inner.group
+                .invite_user_to_group(group_id, member_ids, None)
+                .await
+        )
     }
 
     /// 踢出成员
     #[flutter_rust_bridge::frb]
     pub async fn kick_group_members(&self, group_id: String, member_ids: Vec<String>) -> Result<()> {
-        Ok(self.inner.group.kick_group_member(group_id, member_ids, None).await?)
+        map_err(
+            self.inner.group
+                .kick_group_member(group_id, member_ids, None)
+                .await
+        )
     }
 
     // ========== 用户操作 ==========
@@ -365,7 +426,7 @@ impl OpenIMBridgeClient {
     /// 获取用户信息
     #[flutter_rust_bridge::frb]
     pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<crate::domain::model::user::UserInfo>> {
-        Ok(self.inner.user.get_users_info(user_ids).await?)
+        map_err(self.inner.user.get_users_info(user_ids).await)
     }
 
     /// 更新用户资料
@@ -382,6 +443,18 @@ impl OpenIMBridgeClient {
             gender: None,
             email: ex,
         };
-        Ok(self.inner.user.update_self_user_info(updates).await?)
+        map_err(self.inner.user.update_self_user_info(updates).await)
     }
+}
+
+/// 上传文件
+#[flutter_rust_bridge::frb]
+pub async fn upload_file(file_path: String, file_name: String) -> Result<String> {
+    anyhow::bail!("文件上传功能暂未实现: {} / {}", file_path, file_name)
+}
+
+/// 上传文件并返回进度
+#[flutter_rust_bridge::frb]
+pub async fn upload_file_with_progress(file_path: String, file_name: String) -> Result<String> {
+    anyhow::bail!("文件上传（含进度）功能暂未实现: {} / {}", file_path, file_name)
 }

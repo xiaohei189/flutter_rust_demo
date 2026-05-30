@@ -7,8 +7,9 @@ import 'package:intl/intl.dart';
 import '../models/user.dart';
 import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import 'user_avatar.dart';
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
@@ -118,14 +119,14 @@ String latestMessagePreview(String latestMsgJson) {
 
 /// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
 class ChatListItem extends StatelessWidget {
-  final im_conv.LocalConversation conversation;
+  final LocalConversation conversation;
   final VoidCallback onTap;
   final bool isSelected;
   final String? currentUserId;
   final VoidCallback? onDelete;
   final VoidCallback? onPinToggle;
   final VoidCallback? onMarkRead;
-  final UserProfile? cachedUserProfile;
+  final UserInfo? cachedUserProfile;
   /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
   final String? currentUserLocalAvatarPath;
   /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
@@ -289,7 +290,7 @@ class ChatListItem extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     final user = _getUser();
     final unread = conversation.unreadCount;
-    final isPinned = conversation.isPinned;
+    final isPinned = conversation.isPinned == 1;
 
     return Material(
       color: isPinned
@@ -426,7 +427,7 @@ class ChatListItem extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.push_pin_outlined),
-              title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
+              title: Text(conversation.isPinned == 1 ? '取消置顶' : '置顶'),
               onTap: () {
                 AppRouter.goBack(ctx);
                 onPinToggle?.call();

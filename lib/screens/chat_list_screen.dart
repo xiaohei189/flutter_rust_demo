@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/providers.dart';
 import '../router/app_router.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../theme/app_theme.dart';
 import '../widgets/chat_list_header.dart';
 import '../widgets/chat_list_item.dart';
@@ -49,7 +49,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         .length;
   }
 
-  List<im_conv.LocalConversation> _getFilteredConversations(List<im_conv.LocalConversation> conversations) {
+  List<LocalConversation> _getFilteredConversations(List<LocalConversation> conversations) {
     switch (_activeFilter) {
       case GroupFilter.unread:
         return conversations.where((c) => c.unreadCount > 0).toList();

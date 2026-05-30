@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../router/app_router.dart';
-import '../services/auth_api.dart';
-import '../src/rust/api/bridge_client.dart';
+import '../services/auth_api.dart' show loginAsync, loginWithVerifyCode, sendVerificationCode, kAuthBaseUrl, usedForLogin;
 import '../utils/app_logger.dart';
 import '../utils/login_storage.dart';
 import '../providers/message_service_provider.dart';
+import '../services/message_service_notifier.dart';
 
 /// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
 class LoginScreen extends ConsumerStatefulWidget {

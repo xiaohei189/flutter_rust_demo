@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/message_service_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../widgets/chat_list_item.dart';
 
 /// 搜索分类
@@ -45,7 +45,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
-  List<im_conv.LocalConversation> get _searchResults {
+  List<LocalConversation> get _searchResults {
     if (_query.isEmpty) return [];
     final q = _query.toLowerCase();
     final conversations = ref.read(messageServiceProvider).conversations;

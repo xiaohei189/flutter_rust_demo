@@ -6,7 +6,7 @@ import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../models/user.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../widgets/chat_input.dart';
 import '../widgets/message_list.dart';
 import '../widgets/user_avatar.dart';
@@ -55,7 +55,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   }
 
   /// 获取会话信息
-  im_conv.LocalConversation? get _conversation {
+  LocalConversation? get _conversation {
     // 先尝试从新的 ConversationService 获取
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);
@@ -120,17 +120,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     try {
       final messageState = ref.read(messageListProvider(widget.conversationId));
       final currentMessages = messageState.messages;
-      String? startClientMsgId;
+      int startSeq = 0;
 
       if (isLoadMore && currentMessages.isNotEmpty) {
-        startClientMsgId = currentMessages.first.id;
+        // 使用最早消息的发送时间作为 startSeq
+        final earliestMsg = currentMessages.first;
+        startSeq = earliestMsg.timestamp.millisecondsSinceEpoch ~/ 1000;
       }
 
       final hasMore = await ref
           .read(messageListProvider(widget.conversationId).notifier)
           .loadHistoryMessages(
             count: 20,
-            startClientMsgId: startClientMsgId,
+            startSeq: startSeq,
           );
 
       _hasMoreHistory = hasMore;

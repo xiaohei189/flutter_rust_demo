@@ -108,3 +108,39 @@ Future<LoginResult> loginWithVerifyCode({
   }
   return LoginResult.fromJson(json);
 }
+
+/// 密码登录
+Future<LoginResult> loginAsync({
+  required String areaCode,
+  required String phoneNumber,
+  required String password,
+  required int platform,
+}) async {
+  final url = Uri.parse('$kAuthBaseUrl/account/login');
+  appLog.i('[AuthAPI] 密码登录 HTTP 请求发出: $url');
+  final resp = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'operationID': _nextOperationID(),
+    },
+    body: jsonEncode({
+      'areaCode': areaCode,
+      'phoneNumber': phoneNumber,
+      'password': password,
+      'platform': platform,
+    }),
+  );
+  appLog.i('[AuthAPI] 密码登录 HTTP 响应: statusCode=${resp.statusCode}');
+  if (resp.statusCode != 200) {
+    final body = jsonDecode(resp.body) as Map<String, dynamic>?;
+    final errMsg = body?['errMsg'] ?? body?['errDtl'] ?? resp.body;
+    throw Exception(errMsg);
+  }
+  final json = jsonDecode(resp.body) as Map<String, dynamic>?;
+  if (json == null) throw Exception('登录响应为空');
+  if (json['errCode'] != 0) {
+    throw Exception(json['errMsg']?.toString() ?? '登录失败');
+  }
+  return LoginResult.fromJson(json);
+}

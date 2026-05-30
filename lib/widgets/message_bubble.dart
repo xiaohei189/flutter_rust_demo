@@ -5,6 +5,7 @@ import '../models/message.dart';
 import '../models/user.dart';
 import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
 
@@ -13,8 +14,8 @@ class MessageBubble extends StatelessWidget {
   final Message message;
   final User otherUser;
   final String? currentUserId;
-  final UserProfile? cachedSenderProfile;
-  final UserProfile? cachedCurrentUserProfile;
+  final UserInfo? cachedSenderProfile;
+  final UserInfo? cachedCurrentUserProfile;
 
   const MessageBubble({
     super.key,

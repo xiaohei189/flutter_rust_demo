@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/services.dart';
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import 'message_service_provider.dart';
 
 // ==================== ImClient Provider ====================
@@ -104,25 +105,25 @@ final userServiceProvider = Provider<UserService>((ref) {
 });
 
 /// 当前登录用户资料流 Provider
-final loginUserStreamProvider = StreamProvider<UserProfile?>((ref) {
+final loginUserStreamProvider = StreamProvider<UserInfo?>((ref) {
   final service = ref.watch(userServiceProvider);
   return service.loginUserStream;
 });
 
 /// 当前登录用户资料 Provider
-final loginUserProvider = Provider<UserProfile?>((ref) {
+final loginUserProvider = Provider<UserInfo?>((ref) {
   final service = ref.watch(userServiceProvider);
   return service.loginUserProfile;
 });
 
 /// 用户资料缓存流 Provider
-final userProfilesStreamProvider = StreamProvider<Map<String, UserProfile>>((ref) {
+final userProfilesStreamProvider = StreamProvider<Map<String, UserInfo>>((ref) {
   final service = ref.watch(userServiceProvider);
   return service.profilesStream;
 });
 
 /// 指定用户资料 Provider（Family）（从新服务）
-final userProfileByIdProvider = Provider.family<UserProfile?, String>((ref, userId) {
+final userProfileByIdProvider = Provider.family<UserInfo?, String>((ref, userId) {
   final service = ref.watch(userServiceProvider);
   return service.getUserProfile(userId);
 });

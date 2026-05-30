@@ -6,6 +6,7 @@
 import '../domain/event/types.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
+import '../domain/model/message.dart';
 import '../domain/model/user.dart';
 import '../frb_generated.dart';
 import '../infra/database/models.dart';
@@ -13,6 +14,24 @@ import '../lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `clone`, `clone`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`
+
+/// 上传文件
+Future<String> uploadFile({
+  required String filePath,
+  required String fileName,
+}) => RustLib.instance.api.crateApiBridgeClientUploadFile(
+  filePath: filePath,
+  fileName: fileName,
+);
+
+/// 上传文件并返回进度
+Future<String> uploadFileWithProgress({
+  required String filePath,
+  required String fileName,
+}) => RustLib.instance.api.crateApiBridgeClientUploadFileWithProgress(
+  filePath: filePath,
+  fileName: fileName,
+);
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
@@ -63,7 +82,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<List<GroupMember>> getGroupMembers({required String groupId});
 
   /// 获取历史消息
-  Future<List<MsgData>> getHistoryMessages({
+  Future<List<MessageInfo>> getHistoryMessages({
     required GetHistoryMessagesReq req,
   });
 
@@ -116,7 +135,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> revokeMessage({required RevokeMessageReq req});
 
   /// 发送消息
-  Future<void> sendMessage({required SendMessageReq req});
+  Future<MsgData> sendMessage({required SendMessageReq req});
 
   /// 设置会话置顶
   Future<void> setConversationPinned({

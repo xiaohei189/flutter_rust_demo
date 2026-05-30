@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/message_service_notifier.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import 'message_service_provider.dart';
 
 /// 会话列表状态
 class ConversationListState {
-  final List<im_conv.LocalConversation> conversations;
+  final List<LocalConversation> conversations;
   final bool isSyncing;
   final int syncProgress;
   final bool isLoading;
@@ -21,7 +21,7 @@ class ConversationListState {
   });
 
   ConversationListState copyWith({
-    List<im_conv.LocalConversation>? conversations,
+    List<LocalConversation>? conversations,
     bool? isSyncing,
     int? syncProgress,
     bool? isLoading,
@@ -37,13 +37,13 @@ class ConversationListState {
   }
 
   /// 获取置顶会话列表
-  List<im_conv.LocalConversation> get pinnedConversations {
-    return conversations.where((c) => c.isPinned).toList();
+  List<LocalConversation> get pinnedConversations {
+    return conversations.where((c) => c.isPinned == 1).toList();
   }
 
   /// 获取未置顶会话列表
-  List<im_conv.LocalConversation> get unpinnedConversations {
-    return conversations.where((c) => !c.isPinned).toList();
+  List<LocalConversation> get unpinnedConversations {
+    return conversations.where((c) => c.isPinned == 0).toList();
   }
 
   /// 获取未读消息总数
@@ -95,7 +95,7 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
   }
 
   /// 获取指定会话
-  im_conv.LocalConversation? getConversation(String conversationId) {
+  LocalConversation? getConversation(String conversationId) {
     try {
       return state.conversations.firstWhere(
         (c) => c.conversationId == conversationId,
@@ -113,12 +113,12 @@ final conversationListProvider =
 });
 
 /// 当前会话列表 Provider（便捷访问）
-final conversationsProvider = Provider<List<im_conv.LocalConversation>>((ref) {
+final conversationsProvider = Provider<List<LocalConversation>>((ref) {
   return ref.watch(conversationListProvider).conversations;
 });
 
 /// 指定会话 Provider（按 ID）
-final conversationByIdProvider = Provider.family<im_conv.LocalConversation?, String>((ref, id) {
+final conversationByIdProvider = Provider.family<LocalConversation?, String>((ref, id) {
   final conversations = ref.watch(conversationsProvider);
   try {
     return conversations.firstWhere((c) => c.conversationId == id);

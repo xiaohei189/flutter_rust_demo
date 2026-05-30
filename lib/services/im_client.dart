@@ -89,51 +89,21 @@ class ImClient {
     }
   }
   
-  /// 连接到服务器
-  Future<void> connect() async {
-    if (_client == null) {
-      throw StateError('客户端未创建，请先调用 createClient');
-    }
-    
-    appLog.i('[ImClient] 连接到服务器');
-    await _client!.connect();
-    appLog.i('[ImClient] 连接请求已发送');
-    
-    // 等待流订阅就绪
-    await Future.delayed(const Duration(milliseconds: 300));
-  }
-  
   /// 关闭客户端
   Future<void> close() async {
     if (_client != null) {
       appLog.i('[ImClient] 关闭客户端');
-      await _client!.close();
+      await _client!.disconnect();
       _client = null;
     }
     _isInitializing = false;
   }
   
-  /// 获取连接状态流
-  Stream<dynamic> get connectionStream {
+  /// 获取统一事件流
+  Stream<dynamic> get eventStream {
     if (_client == null) {
       throw StateError('客户端未创建');
     }
-    return _client!.connStream();
-  }
-  
-  /// 获取会话事件流
-  Stream<dynamic> get conversationStream {
-    if (_client == null) {
-      throw StateError('客户端未创建');
-    }
-    return _client!.conversationStream();
-  }
-  
-  /// 获取消息事件流
-  Stream<dynamic> get messageStream {
-    if (_client == null) {
-      throw StateError('客户端未创建');
-    }
-    return _client!.advancedMsgStream();
+    return _client!.eventStream();
   }
 }

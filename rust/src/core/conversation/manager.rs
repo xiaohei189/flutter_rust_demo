@@ -17,6 +17,10 @@ impl ConversationManager {
         Self { dao, event_bus }
     }
 
+    pub fn dao(&self) -> Arc<ConversationDao> {
+        self.dao.clone()
+    }
+
     pub async fn get_all_conversations(&self) -> Result<Vec<Conversation>> {
         let local_convs = self.dao.get_all().await?;
         Ok(local_convs.into_iter().map(|lc| local_to_domain(lc)).collect())

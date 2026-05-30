@@ -4,13 +4,13 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../src/rust/api/bridge_client.dart';
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../utils/app_logger.dart';
 import 'message_service_provider.dart';
 
 /// 用户资料状态
 class UserProfileState {
-  final UserProfile? profile;
+  final UserInfo? profile;
   final String nickname;
   final String alias;
   final String signature;
@@ -29,7 +29,7 @@ class UserProfileState {
   });
 
   UserProfileState copyWith({
-    UserProfile? profile,
+    UserInfo? profile,
     String? nickname,
     String? alias,
     String? signature,
@@ -111,7 +111,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
               previous?.loginUserProfile?.nickname != next.loginUserProfile?.nickname ||
               previous?.loginUserProfile?.faceUrl != next.loginUserProfile?.faceUrl) {
             final profile = next.loginUserProfile!;
-            final exData = UserProfileState.parseEx(profile.ex);
+            final exData = UserProfileState.parseEx(profile.remark);
             appLog.i('[UserProfile] 监听器触发: faceUrl=${profile.faceUrl}, 当前 localAvatarPath=${state.localAvatarPath}');
 
             // 重要：如果已经有本地路径了，保留它！
@@ -222,7 +222,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   }
 
   /// 获取指定用户资料（从 MessageService 缓存）
-  UserProfile? getUserProfile(String userId) {
+  UserInfo? getUserProfile(String userId) {
     // 如果是当前登录用户，直接返回
     if (state.profile?.userId == userId) {
       return state.profile;
@@ -245,7 +245,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       final profile = messageService.loginUserProfile;
 
       if (profile != null) {
-        final exData = UserProfileState.parseEx(profile.ex);
+        final exData = UserProfileState.parseEx(profile.remark);
         
         // 保留本地路径的优先级：
         // 1. state 中已有本地路径（从 _init 的异步加载恢复的）
@@ -278,7 +278,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         // 如果 messageService 中没有登录用户资料，尝试从服务端获取
         final refreshedProfile = await _ref.read(messageServiceProvider.notifier).refreshLoginUserProfile();
         if (refreshedProfile != null) {
-          final exData = UserProfileState.parseEx(refreshedProfile.ex);
+          final exData = UserProfileState.parseEx(refreshedProfile.remark);
           // 同样的优先级：保留本地路径
           String? finalLocalPath;
           if (state.localAvatarPath != null && state.localAvatarPath!.isNotEmpty) {
@@ -351,7 +351,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final currentEx = state.profile?.ex ?? '';
+      final currentEx = state.profile?.remark ?? '';
       final newEx = UserProfileState.buildEx(
         currentEx: currentEx,
         alias: alias,
@@ -389,7 +389,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final currentEx = state.profile?.ex ?? '';
+      final currentEx = state.profile?.remark ?? '';
       final newEx = UserProfileState.buildEx(
         currentEx: currentEx,
         signature: signature,
@@ -442,15 +442,15 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         
         // 给头像 URL 添加时间戳参数，绕过缓存确保立即生效
         final cacheBustedUrl = _addCacheBuster(updated.faceUrl);
-        final profileWithCacheBuster = UserProfile(
+        final profileWithCacheBuster = UserInfo(
           userId: updated.userId,
           nickname: updated.nickname,
           faceUrl: cacheBustedUrl,
-          ex: updated.ex,
-          attachedInfo: updated.attachedInfo,
+          gender: updated.gender,
+          telephone: updated.telephone,
+          email: updated.email,
+          remark: updated.remark,
           globalRecvMsgOpt: updated.globalRecvMsgOpt,
-          createTime: updated.createTime,
-          appMangerLevel: updated.appMangerLevel,
         );
         
         // 只有当服务器确认更新了 faceUrl 且 URL 有效时才清除本地路径
@@ -531,7 +531,7 @@ final userProfileProvider =
 });
 
 /// 当前用户资料 Provider（仅返回 profile）
-final currentUserProfileProvider = Provider<UserProfile?>((ref) {
+final currentUserProfileProvider = Provider<UserInfo?>((ref) {
   return ref.watch(userProfileProvider).profile;
 });
 

@@ -6,7 +6,7 @@ import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../services/navigation_service.dart';
 import '../services/services.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../theme/app_theme.dart';
 import '../widgets/card_layout.dart';
 import '../widgets/list_row.dart';
@@ -27,7 +27,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   late String _groupDescription;
 
   /// 获取会话信息
-  im_conv.LocalConversation? get _conversation {
+  LocalConversation? get _conversation {
     // 先尝试从新的 ConversationService 获取
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);

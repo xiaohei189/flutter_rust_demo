@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
@@ -25,7 +25,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   bool _addToMark = false;
 
   /// 获取会话信息
-  im_conv.LocalConversation? get _conversation {
+  LocalConversation? get _conversation {
     // 先尝试从新的 ConversationService 获取
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);
@@ -82,7 +82,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final conversation = _conversation;
     if (conversation != null) {
       _muteNotification = conversation.recvMsgOpt == 1;
-      _pinChat = conversation.isPinned;
+      _pinChat = conversation.isPinned == 1;
     } else {
       _muteNotification = false;
       _pinChat = false;

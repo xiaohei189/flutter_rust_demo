@@ -12,7 +12,7 @@ import '../screens/search_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart' show LocalConversation;
 
 /// 应用路由配置
 class AppRouter {
@@ -166,7 +166,7 @@ class AppRouter {
   /// 导航到聊天详情页
   static void goToChatDetail(
     BuildContext context,
-    im_conv.LocalConversation conversation, {
+    LocalConversation conversation, {
     bool preLoaded = false,
   }) {
     final queryParams = preLoaded ? '?preLoaded=true' : '';
@@ -186,7 +186,7 @@ class AppRouter {
   /// 导航到聊天设置页
   static void goToChatSettings(
     BuildContext context,
-    im_conv.LocalConversation conversation,
+    LocalConversation conversation,
   ) {
     context.push('/chat/${conversation.conversationId}/settings');
   }
@@ -202,7 +202,7 @@ class AppRouter {
   /// 导航到群组信息页
   static void goToGroupInfo(
     BuildContext context,
-    im_conv.LocalConversation conversation,
+    LocalConversation conversation,
   ) {
     context.push('/group/${conversation.conversationId}/info');
   }

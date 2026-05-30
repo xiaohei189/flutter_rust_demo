@@ -55,10 +55,10 @@ class ConnectionService {
     if (_subscription != null) return;
 
     try {
-      _subscription = ImClient.instance.connectionStream.listen(
-        _handleConnectionEvent,
+      _subscription = ImClient.instance.eventStream.listen(
+        _handleEvent,
         onError: (error) {
-          appLog.e('[ConnectionService] 连接流错误: $error');
+          appLog.e('[ConnectionService] 事件流错误: $error');
           _updateStatus(ConnectionStatus.failed);
         },
       );
@@ -75,29 +75,27 @@ class ConnectionService {
     appLog.i('[ConnectionService] 停止监听连接状态');
   }
 
-  /// 处理连接事件
-  void _handleConnectionEvent(dynamic event) {
+  /// 处理统一事件
+  void _handleEvent(dynamic event) {
     if (event == null) return;
 
     final name = event.runtimeType.toString();
-    appLog.d('[ConnectionService] 收到连接事件: $name');
-
-    if (name.contains('ConnectSuccess') || name == 'ConnEvent_ConnectSuccess') {
+    
+    // 连接相关事件
+    if (name.contains('ConnectSuccess') || name.contains('Connected')) {
       _updateStatus(ConnectionStatus.connected);
-    } else if (name.contains('Connecting') || name == 'ConnEvent_Connecting') {
+    } else if (name.contains('Connecting') || name.contains('Reconnecting')) {
       _updateStatus(ConnectionStatus.connecting);
-    } else if (name.contains('ConnectFailed') ||
-        name == 'ConnEvent_ConnectFailed') {
+    } else if (name.contains('ConnectFailed') || name.contains('ConnectFailed')) {
       _updateStatus(ConnectionStatus.failed);
-    } else if (name.contains('KickedOffline') ||
-        name == 'ConnEvent_KickedOffline') {
+    } else if (name.contains('KickedOffline') || name.contains('Kicked')) {
       _updateStatus(ConnectionStatus.kickedOffline);
-    } else if (name.contains('UserTokenExpired') ||
-        name == 'ConnEvent_UserTokenExpired') {
+    } else if (name.contains('UserTokenExpired') || name.contains('TokenExpired')) {
       _updateStatus(ConnectionStatus.tokenExpired);
-    } else if (name.contains('UserTokenInvalid') ||
-        name == 'ConnEvent_UserTokenInvalid') {
+    } else if (name.contains('UserTokenInvalid') || name.contains('TokenInvalid')) {
       _updateStatus(ConnectionStatus.tokenExpired);
+    } else if (name.contains('ConnectFailed')) {
+      _updateStatus(ConnectionStatus.failed);
     }
   }
 

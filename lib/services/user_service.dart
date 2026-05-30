@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../src/rust/api/bridge_client.dart' show UserProfile, UserProfilePatch;
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../utils/app_logger.dart';
 import 'im_client.dart';
 
@@ -18,15 +18,15 @@ class UserService {
   static UserService get instance => _instance;
 
   // 用户资料缓存
-  final Map<String, UserProfile> _profiles = {};
+  final Map<String, UserInfo> _profiles = {};
 
   // 当前登录用户资料
-  UserProfile? _loginUserProfile;
+  UserInfo? _loginUserProfile;
   String _currentUserId = '';
 
   // 流控制器
-  final _profilesController = StreamController<Map<String, UserProfile>>.broadcast();
-  final _loginUserController = StreamController<UserProfile?>.broadcast();
+  final _profilesController = StreamController<Map<String, UserInfo>>.broadcast();
+  final _loginUserController = StreamController<UserInfo?>.broadcast();
 
   bool _isDisposed = false;
 
@@ -41,30 +41,30 @@ class UserService {
   String get currentUserId => _currentUserId;
 
   /// 当前登录用户资料
-  UserProfile? get loginUserProfile => _loginUserProfile;
+  UserInfo? get loginUserProfile => _loginUserProfile;
 
   /// 当前登录用户资料流
-  Stream<UserProfile?> get loginUserStream => _loginUserController.stream;
+  Stream<UserInfo?> get loginUserStream => _loginUserController.stream;
 
   /// 所有用户资料流
-  Stream<Map<String, UserProfile>> get profilesStream => _profilesController.stream;
+  Stream<Map<String, UserInfo>> get profilesStream => _profilesController.stream;
 
   /// 获取指定用户资料
-  UserProfile? getUserProfile(String userId) {
+  UserInfo? getUserProfile(String userId) {
     return _profiles[userId];
   }
 
   /// 获取多个用户资料
-  List<UserProfile> getUserProfiles(List<String> userIds) {
+  List<UserInfo> getUserProfiles(List<String> userIds) {
     return userIds
         .map((id) => _profiles[id])
         .where((profile) => profile != null)
-        .cast<UserProfile>()
+        .cast<UserInfo>()
         .toList();
   }
 
   /// 刷新当前登录用户资料
-  Future<UserProfile?> refreshLoginUserProfile() async {
+  Future<UserInfo?> refreshLoginUserProfile() async {
     final client = ImClient.instance.client;
     if (client == null || _currentUserId.isEmpty) {
       appLog.w('[UserService] 客户端为空或用户ID为空');
@@ -118,7 +118,7 @@ class UserService {
   }
 
   /// 获取单个用户资料（优先从缓存获取）
-  Future<UserProfile?> fetchUserProfile(String userId) async {
+  Future<UserInfo?> fetchUserProfile(String userId) async {
     // 先检查缓存
     if (_profiles.containsKey(userId)) {
       return _profiles[userId];
@@ -143,7 +143,7 @@ class UserService {
   }
 
   /// 更新当前登录用户资料
-  Future<UserProfile?> updateLoginUserProfile({
+  Future<UserInfo?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
     String? ex,
@@ -158,25 +158,15 @@ class UserService {
     try {
       appLog.i('[UserService] 更新当前用户资料');
 
-      // 创建 patch 对象
-      final patch = UserProfilePatch(
+      // 调用 Rust API 更新
+      await client.updateUserProfile(
         nickname: nickname,
         faceUrl: faceUrl,
         ex: ex,
-        globalRecvMsgOpt: globalRecvMsgOpt,
       );
 
-      // 调用 Rust API 更新
-      final updated = await client.updateLoginUserProfile(patch: patch);
-
-      _loginUserProfile = updated;
-      _profiles[updated.userId] = updated;
-
-      _notifyLoginUserChanged();
-      _notifyProfilesChanged();
-
-      appLog.i('[UserService] 当前用户资料更新成功');
-      return _loginUserProfile;
+      // 更新成功后重新获取
+      return await refreshLoginUserProfile();
     } catch (e) {
       appLog.e('[UserService] 更新当前用户资料失败: $e');
       return null;

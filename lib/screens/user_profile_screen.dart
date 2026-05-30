@@ -10,7 +10,7 @@ import '../services/navigation_service.dart';
 import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
-import '../src/rust/api/bridge_client.dart';
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../utils/app_logger.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
@@ -29,7 +29,7 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
-  UserProfile? _userProfile;
+  UserInfo? _userProfile;
   bool _isLoading = false;
   Map<String, String> _exData = {};
 
@@ -48,10 +48,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       if (userProfileState.profile != null && 
           userProfileState.profile!.userId == widget.user.id) {
         _userProfile = userProfileState.profile;
-        _exData = UserProfileState.parseEx(_userProfile?.ex);
+        _exData = UserProfileState.parseEx(_userProfile?.remark);
       } else {
         _userProfile = await UserService.instance.fetchUserProfile(widget.user.id);
-        _exData = UserProfileState.parseEx(_userProfile?.ex);
+        _exData = UserProfileState.parseEx(_userProfile?.remark);
       }
     } catch (e) {
       appLog.e('[UserProfileScreen] 加载用户资料失败: $e');
@@ -70,7 +70,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     
     // 总是使用最新的用户信息
     User displayUser = widget.user;
-    UserProfile? displayProfile = _userProfile;
+    UserInfo? displayProfile = _userProfile;
     
     // 如果是当前用户，优先使用 provider 中的信息
     if (userProfileState.profile != null && 
@@ -186,14 +186,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         _buildDivider(),
                         _buildInfoRow('个性签名', _exData['signature']!),
                       ],
-                      if (displayProfile != null && displayProfile.ex.isNotEmpty && 
+                      if (displayProfile != null && displayProfile.remark.isNotEmpty && 
                           _exData['alias'] == null && _exData['signature'] == null) ...[
                         _buildDivider(),
-                        _buildInfoRow('扩展信息', displayProfile.ex),
-                      ],
-                      if (displayProfile != null && displayProfile.attachedInfo.isNotEmpty) ...[
-                        _buildDivider(),
-                        _buildInfoRow('附加信息', displayProfile.attachedInfo),
+                        _buildInfoRow('备注信息', displayProfile.remark),
                       ],
                       if (displayUser.avatar != null && displayUser.avatar!.isNotEmpty) ...[
                         _buildDivider(),
@@ -213,10 +209,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildInfoRow('账号创建时间', _formatCreateTime(displayProfile.createTime)),
-                        _buildDivider(),
-                        _buildInfoRow('管理员级别', _formatAppManagerLevel(displayProfile.appMangerLevel)),
-                        _buildDivider(),
                         _buildInfoRow('消息接收设置', _formatRecvMsgOpt(displayProfile.globalRecvMsgOpt)),
                       ],
                     ),

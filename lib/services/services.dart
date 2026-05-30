@@ -17,4 +17,4 @@ export 'video_player_service.dart';
 export 'logger_service.dart';
 export 'network_service.dart';
 
-export '../src/rust/api/bridge_client.dart' show UserProfile, UserProfilePatch;
+export '../src/rust/domain/model/user.dart' show UserInfo;

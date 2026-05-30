@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/message.dart';
 import '../models/user.dart';
-import '../src/rust/api/bridge_client.dart' show UserProfile;
+import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
 import 'message_bubble.dart';
 import 'message_skeleton.dart';
@@ -26,8 +26,8 @@ class MessageList extends StatelessWidget {
   final String? currentUserId;
   final ScrollController scrollController;
   final bool isLoading;
-  final Map<String, UserProfile>? cachedSenderProfiles;
-  final UserProfile? cachedCurrentUserProfile;
+  final Map<String, UserInfo>? cachedSenderProfiles;
+  final UserInfo? cachedCurrentUserProfile;
 
   @override
   Widget build(BuildContext context) {

@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
 import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
-import '../src/rust/api/file.dart';
+import '../src/rust/api/bridge_client.dart' show uploadFile;
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../widgets/card_layout.dart';
