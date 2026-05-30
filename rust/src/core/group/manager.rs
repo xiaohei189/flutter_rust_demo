@@ -1,190 +1,516 @@
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::EventBus;
+use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::group::{GroupInfo, GroupMember};
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::routes::{
+    CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,
+    DISMISS_GROUP, GET_GROUP_MEMBER_LIST, GET_GROUP_MEMBERS_INFO, SET_GROUP_MEMBER_INFO,
+    KICK_GROUP_MEMBER, GET_JOINED_GROUP_LIST, INVITE_USER_TO_GROUP,
+};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info};
+use tracing::info;
 
-/// 群组管理器
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetJoinedGroupListReq {
+    #[serde(rename = "pagination")]
+    pub pagination: Pagination,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Pagination {
+    #[serde(rename = "pageNumber")]
+    pub page_number: i32,
+    #[serde(rename = "showNumber")]
+    pub show_number: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ServerGroupInfo {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "groupName")]
+    pub group_name: String,
+    #[serde(rename = "notification")]
+    pub notification: String,
+    #[serde(rename = "introduction")]
+    pub introduction: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "createTime")]
+    pub create_time: i64,
+    #[serde(rename = "memberCount")]
+    pub member_count: u32,
+    pub status: i32,
+    #[serde(rename = "creatorUserID")]
+    pub creator_user_id: String,
+    #[serde(rename = "groupType")]
+    pub group_type: i32,
+    pub ex: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetJoinedGroupListResp {
+    pub groups: Vec<ServerGroupInfo>,
+    #[serde(rename = "total")]
+    pub total: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupsInfoReq {
+    #[serde(rename = "groupIDs")]
+    pub group_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupsInfoResp {
+    #[serde(rename = "groupsInfo")]
+    pub groups_info: Vec<ServerGroupInfo>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateGroupReq {
+    #[serde(rename = "groupInfo")]
+    pub group_info: CreateGroupInfo,
+    #[serde(rename = "memberUserIDs")]
+    pub member_user_ids: Vec<String>,
+    #[serde(rename = "adminUserIDs")]
+    pub admin_user_ids: Vec<String>,
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateGroupInfo {
+    #[serde(rename = "groupName")]
+    pub group_name: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: Option<String>,
+    pub introduction: Option<String>,
+    pub notification: Option<String>,
+    #[serde(rename = "groupType")]
+    pub group_type: i32,
+    pub ex: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateGroupResp {
+    pub group: ServerGroupInfo,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct JoinGroupReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "reqMsg")]
+    pub req_msg: Option<String>,
+    #[serde(rename = "joinSource")]
+    pub join_source: i32,
+    pub ex: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct QuitGroupReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DismissGroupReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SetGroupInfoReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "groupName")]
+    pub group_name: Option<String>,
+    #[serde(rename = "faceURL")]
+    pub face_url: Option<String>,
+    pub introduction: Option<String>,
+    pub notification: Option<String>,
+    pub ex: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupMemberListReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "filter")]
+    pub filter: i32,
+    #[serde(rename = "offset")]
+    pub offset: u32,
+    #[serde(rename = "count")]
+    pub count: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ServerGroupMember {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    pub nickname: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    #[serde(rename = "roleLevel")]
+    pub role_level: i32,
+    #[serde(rename = "joinTime")]
+    pub join_time: i64,
+    #[serde(rename = "joinSource")]
+    pub join_source: i32,
+    #[serde(rename = "operatorUserID")]
+    pub operator_user_id: String,
+    pub ex: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupMemberListResp {
+    pub members: Vec<ServerGroupMember>,
+    #[serde(rename = "total")]
+    pub total: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupMembersInfoReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "userIDs")]
+    pub user_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetGroupMembersInfoResp {
+    #[serde(rename = "membersInfo")]
+    pub members_info: Vec<ServerGroupMember>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KickGroupMemberReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "userIDList")]
+    pub user_id_list: Vec<String>,
+    pub reason: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InviteUserToGroupReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "userIDList")]
+    pub user_id_list: Vec<String>,
+    pub reason: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SetGroupMemberInfoReq {
+    #[serde(rename = "groupID")]
+    pub group_id: String,
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    pub nickname: Option<String>,
+    #[serde(rename = "faceURL")]
+    pub face_url: Option<String>,
+    #[serde(rename = "roleLevel")]
+    pub role_level: Option<i32>,
+    pub ex: Option<String>,
+}
+
 pub struct GroupManager {
-    /// 群组列表缓存
-    groups: Arc<RwLock<HashMap<String, GroupInfo>>>,
-    /// 群成员缓存 (group_id -> members)
-    members: Arc<RwLock<HashMap<String, HashMap<String, GroupMember>>>>,
-    /// 事件总线
+    http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
+    groups: Arc<RwLock<Vec<GroupInfo>>>,
+    members: Arc<RwLock<Vec<GroupMember>>>,
 }
 
 impl GroupManager {
-    pub fn new(event_bus: Arc<EventBus>) -> Self {
+    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
         Self {
-            groups: Arc::new(RwLock::new(HashMap::new())),
-            members: Arc::new(RwLock::new(HashMap::new())),
+            http_client,
             event_bus,
+            groups: Arc::new(RwLock::new(Vec::new())),
+            members: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
-    /// 获取所有群组
     pub async fn get_joined_group_list(&self) -> Vec<GroupInfo> {
-        self.groups.read().await.values().cloned().collect()
+        self.groups.read().await.clone()
     }
 
-    /// 获取单个群组信息
-    pub async fn get_groups_info(&self, group_ids: Vec<String>) -> Vec<GroupInfo> {
-        let guard = self.groups.read().await;
-        group_ids
+    pub async fn sync_groups(&self) -> Result<()> {
+        let req = GetJoinedGroupListReq {
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 1000,
+            },
+        };
+
+        let resp: GetJoinedGroupListResp = self.http_client.post(GET_JOINED_GROUP_LIST, &req).await?;
+
+        let groups: Vec<GroupInfo> = resp
+            .groups
             .into_iter()
-            .filter_map(|id| guard.get(&id).cloned())
-            .collect()
+            .map(|s| server_to_group_info(s))
+            .collect();
+
+        *self.groups.write().await = groups.clone();
+
+        info!("群组列表已同步, count={}", groups.len());
+        Ok(())
     }
 
-    /// 添加群组
-    pub async fn add_group(&self, group: GroupInfo) {
-        let group_id = group.group_id.clone();
-        self.groups.write().await.insert(group_id.clone(), group);
-        
+    pub async fn get_groups_info(&self, group_ids: Vec<String>) -> Result<Vec<GroupInfo>> {
+        let req = GetGroupsInfoReq {
+            group_ids: group_ids.clone(),
+        };
+
+        let resp: GetGroupsInfoResp = self.http_client.post(GET_GROUPS_INFO, &req).await?;
+
+        let groups: Vec<GroupInfo> = resp
+            .groups_info
+            .into_iter()
+            .map(|s| server_to_group_info(s))
+            .collect();
+
+        Ok(groups)
+    }
+
+    pub async fn create_group(
+        &self,
+        group_name: String,
+        face_url: Option<String>,
+        introduction: Option<String>,
+        notification: Option<String>,
+        member_user_ids: Vec<String>,
+        admin_user_ids: Vec<String>,
+        owner_user_id: String,
+    ) -> Result<GroupInfo> {
+        let req = CreateGroupReq {
+            group_info: CreateGroupInfo {
+                group_name,
+                face_url,
+                introduction,
+                notification,
+                group_type: 0,
+                ex: None,
+            },
+            member_user_ids,
+            admin_user_ids,
+            owner_user_id,
+        };
+
+        let resp: CreateGroupResp = self.http_client.post(CREATE_GROUP, &req).await?;
+
+        let group = server_to_group_info(resp.group);
+        self.groups.write().await.push(group.clone());
+
         self.event_bus.publish(SdkEvent::GroupCreated {
-            group_id,
+            group_id: group.group_id.clone(),
         });
-        
-        info!("群组已添加");
+
+        info!("群组已创建: {}", group.group_id);
+        Ok(group)
     }
 
-    /// 批量添加群组
-    pub async fn add_groups(&self, groups: Vec<GroupInfo>) {
-        let mut guard = self.groups.write().await;
-        for group in groups {
-            guard.insert(group.group_id.clone(), group);
+    pub async fn join_group(&self, group_id: String, req_msg: Option<String>) -> Result<()> {
+        let req = JoinGroupReq {
+            group_id: group_id.clone(),
+            req_msg,
+            join_source: 1,
+            ex: None,
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(JOIN_GROUP, &req).await?;
+
+        info!("已申请加入群组: {}", group_id);
+        Ok(())
+    }
+
+    pub async fn quit_group(&self, group_id: String) -> Result<()> {
+        let req = QuitGroupReq {
+            group_id: group_id.clone(),
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(QUIT_GROUP, &req).await?;
+
+        self.groups.write().await.retain(|g| g.group_id != group_id);
+        self.members.write().await.retain(|m| m.group_id != group_id);
+
+        info!("已退出群组: {}", group_id);
+        Ok(())
+    }
+
+    pub async fn dismiss_group(&self, group_id: String) -> Result<()> {
+        let req = DismissGroupReq {
+            group_id: group_id.clone(),
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(DISMISS_GROUP, &req).await?;
+
+        self.groups.write().await.retain(|g| g.group_id != group_id);
+        self.members.write().await.retain(|m| m.group_id != group_id);
+
+        self.event_bus.publish(SdkEvent::GroupDismissed {
+            group_id: group_id.clone(),
+        });
+
+        info!("群组已解散: {}", group_id);
+        Ok(())
+    }
+
+    pub async fn set_group_info(&self, updates: SetGroupInfoFields) -> Result<()> {
+        let req = SetGroupInfoReq {
+            group_id: updates.group_id.clone(),
+            group_name: updates.group_name,
+            face_url: updates.face_url,
+            introduction: updates.introduction,
+            notification: updates.notification,
+            ex: updates.ex,
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(SET_GROUP_INFO, &req).await?;
+
+        if let Some(group) = self
+            .groups
+            .write()
+            .await
+            .iter_mut()
+            .find(|g| g.group_id == updates.group_id)
+        {
+            if let Some(name) = &req.group_name {
+                group.group_name = name.clone();
+            }
+            if let Some(url) = &req.face_url {
+                group.face_url = url.clone();
+            }
         }
+
+        self.event_bus.publish(SdkEvent::GroupInfoChanged {
+            group_id: updates.group_id.clone(),
+        });
+
+        info!("群组信息已更新: {}", updates.group_id);
+        Ok(())
     }
 
-    /// 更新群组信息
-    pub async fn update_group(&self, group_id: &str, updates: GroupInfoUpdate) -> Result<()> {
-        if let Some(group) = self.groups.write().await.get_mut(group_id) {
-            if let Some(name) = updates.group_name {
-                group.group_name = name;
-            }
-            if let Some(face_url) = updates.face_url {
-                group.face_url = face_url;
-            }
-            if let Some(intro) = updates.introduction {
-                group.introduction = intro;
-            }
-            if let Some(notice) = updates.notification {
-                group.notification = notice;
-            }
-            
-            self.event_bus.publish(SdkEvent::GroupInfoChanged {
-                group_id: group_id.to_string(),
-            });
-            
-            info!("群组信息已更新: {}", group_id);
-            Ok(())
-        } else {
-            Err(SdkError::unknown(format!("群组不存在: {}", group_id)))
-        }
-    }
-
-    /// 删除群组
-    pub async fn delete_group(&self, group_id: &str) -> bool {
-        let removed = self.groups.write().await.remove(group_id);
-        if removed.is_some() {
-            self.members.write().await.remove(group_id);
-            self.event_bus.publish(SdkEvent::GroupDismissed {
-                group_id: group_id.to_string(),
-            });
-            info!("群组已删除: {}", group_id);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// 检查是否在群组中
     pub async fn is_in_group(&self, group_id: &str) -> bool {
-        self.groups.read().await.contains_key(group_id)
+        self.groups.read().await.iter().any(|g| g.group_id == group_id)
     }
 
-    /// 获取群组数量
     pub async fn group_count(&self) -> usize {
         self.groups.read().await.len()
     }
 
-    // ========== 群成员管理 ==========
-
-    /// 获取群成员列表
-    pub async fn get_group_member_list(&self, group_id: &str) -> Vec<GroupMember> {
-        if let Some(members) = self.members.read().await.get(group_id) {
-            members.values().cloned().collect()
-        } else {
-            vec![]
-        }
-    }
-
-    /// 获取单个群成员
-    pub async fn get_group_member(&self, group_id: &str, user_id: &str) -> Option<GroupMember> {
-        self.members
-            .read()
-            .await
-            .get(group_id)
-            .and_then(|members| members.get(user_id).cloned())
-    }
-
-    /// 添加群成员
-    pub async fn add_group_members(&self, group_id: &str, members: Vec<GroupMember>) {
-        let count = members.len();
-        let mut guard = self.members.write().await;
-        let group_members = guard.entry(group_id.to_string()).or_insert_with(HashMap::new);
-        
-        for member in members {
-            let user_id = member.user_id.clone();
-            group_members.insert(user_id, member);
-        }
-        
-        info!("群成员已添加: group={}, count={}", group_id, count);
-    }
-
-    /// 删除群成员
-    pub async fn remove_group_members(&self, group_id: &str, user_ids: Vec<String>) {
-        let count = user_ids.len();
-        if let Some(members) = self.members.write().await.get_mut(group_id) {
-            for user_id in user_ids {
-                members.remove(&user_id);
-            }
-            info!("群成员已删除: group={}, count={}", group_id, count);
-        }
-    }
-
-    /// 更新群成员信息
-    pub async fn update_group_member(
+    pub async fn get_group_member_list(
         &self,
-        group_id: &str,
-        user_id: &str,
-        updates: GroupMemberUpdate,
-    ) -> Result<()> {
-        if let Some(members) = self.members.write().await.get_mut(group_id) {
-            if let Some(member) = members.get_mut(user_id) {
-                if let Some(nickname) = updates.nickname {
-                    member.nickname = nickname;
-                }
-                if let Some(role_level) = updates.role_level {
-                    member.role_level = role_level;
-                }
-                
-                info!("群成员信息已更新: group={}, user={}", group_id, user_id);
-                Ok(())
-            } else {
-                Err(SdkError::unknown(format!("群成员不存在: {}", user_id)))
-            }
-        } else {
-            Err(SdkError::unknown(format!("群组不存在: {}", group_id)))
-        }
+        group_id: String,
+        filter: i32,
+        offset: u32,
+        count: u32,
+    ) -> Result<Vec<GroupMember>> {
+        let req = GetGroupMemberListReq {
+            group_id: group_id.clone(),
+            filter,
+            offset,
+            count,
+        };
+
+        let resp: GetGroupMemberListResp = self.http_client.post(GET_GROUP_MEMBER_LIST, &req).await?;
+
+        let members: Vec<GroupMember> = resp
+            .members
+            .into_iter()
+            .map(|s| server_to_group_member(s))
+            .collect();
+
+        Ok(members)
     }
 
-    /// 清空所有数据
+    pub async fn get_group_members_info(
+        &self,
+        group_id: String,
+        user_ids: Vec<String>,
+    ) -> Result<Vec<GroupMember>> {
+        let req = GetGroupMembersInfoReq {
+            group_id: group_id.clone(),
+            user_ids,
+        };
+
+        let resp: GetGroupMembersInfoResp = self.http_client.post(GET_GROUP_MEMBERS_INFO, &req).await?;
+
+        let members: Vec<GroupMember> = resp
+            .members_info
+            .into_iter()
+            .map(|s| server_to_group_member(s))
+            .collect();
+
+        Ok(members)
+    }
+
+    pub async fn kick_group_member(
+        &self,
+        group_id: String,
+        user_ids: Vec<String>,
+        reason: Option<String>,
+    ) -> Result<()> {
+        let req = KickGroupMemberReq {
+            group_id: group_id.clone(),
+            user_id_list: user_ids,
+            reason,
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(KICK_GROUP_MEMBER, &req).await?;
+
+        self.members
+            .write()
+            .await
+            .retain(|m| m.group_id != group_id || !req.user_id_list.contains(&m.user_id));
+
+        info!("群成员已踢出: group={}", group_id);
+        Ok(())
+    }
+
+    pub async fn invite_user_to_group(
+        &self,
+        group_id: String,
+        user_ids: Vec<String>,
+        reason: Option<String>,
+    ) -> Result<()> {
+        let req = InviteUserToGroupReq {
+            group_id: group_id.clone(),
+            user_id_list: user_ids,
+            reason,
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(INVITE_USER_TO_GROUP, &req).await?;
+
+        info!("已邀请用户加入群组: group={}", group_id);
+        Ok(())
+    }
+
+    pub async fn set_group_member_info(&self, updates: SetGroupMemberFields) -> Result<()> {
+        let req = SetGroupMemberInfoReq {
+            group_id: updates.group_id.clone(),
+            user_id: updates.user_id.clone(),
+            nickname: updates.nickname,
+            face_url: updates.face_url,
+            role_level: updates.role_level,
+            ex: updates.ex,
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(SET_GROUP_MEMBER_INFO, &req).await?;
+
+        info!("群成员信息已更新: group={}, user={}", updates.group_id, updates.user_id);
+        Ok(())
+    }
+
     pub async fn clear(&self) {
         self.groups.write().await.clear();
         self.members.write().await.clear();
@@ -192,128 +518,145 @@ impl GroupManager {
     }
 }
 
-/// 群组信息更新
+fn server_to_group_info(s: ServerGroupInfo) -> GroupInfo {
+    GroupInfo {
+        group_id: s.group_id,
+        group_name: s.group_name,
+        face_url: s.face_url,
+        introduction: s.introduction,
+        notification: s.notification,
+        owner_user_id: s.owner_user_id,
+        create_time: s.create_time,
+        member_count: s.member_count,
+        status: s.status,
+    }
+}
+
+fn server_to_group_member(s: ServerGroupMember) -> GroupMember {
+    GroupMember {
+        group_id: s.group_id,
+        user_id: s.user_id,
+        nickname: s.nickname,
+        face_url: s.face_url,
+        role_level: s.role_level,
+        join_time: s.join_time,
+        join_source: s.join_source.to_string(),
+    }
+}
+
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct GroupInfoUpdate {
+pub struct SetGroupInfoFields {
+    pub group_id: String,
     pub group_name: Option<String>,
     pub face_url: Option<String>,
     pub introduction: Option<String>,
     pub notification: Option<String>,
+    pub ex: Option<String>,
 }
 
-/// 群成员信息更新
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct GroupMemberUpdate {
+pub struct SetGroupMemberFields {
+    pub group_id: String,
+    pub user_id: String,
     pub nickname: Option<String>,
+    pub face_url: Option<String>,
     pub role_level: Option<i32>,
+    pub ex: Option<String>,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn create_test_group(group_id: &str) -> GroupInfo {
-        GroupInfo {
-            group_id: group_id.to_string(),
-            group_name: format!("Group {}", group_id),
-            face_url: String::new(),
-            introduction: String::new(),
-            notification: String::new(),
+    #[test]
+    fn test_server_to_group_info_conversion() {
+        let server = ServerGroupInfo {
+            group_id: "group_123".to_string(),
+            group_name: "Test Group".to_string(),
+            face_url: "https://example.com/group.jpg".to_string(),
+            notification: "Welcome!".to_string(),
+            introduction: "A test group".to_string(),
             owner_user_id: "owner_1".to_string(),
-            create_time: 0,
-            member_count: 0,
+            create_time: 1234567890,
+            member_count: 10,
             status: 0,
-        }
+            creator_user_id: "owner_1".to_string(),
+            group_type: 0,
+            ex: String::new(),
+        };
+
+        let domain = server_to_group_info(server);
+        assert_eq!(domain.group_id, "group_123");
+        assert_eq!(domain.group_name, "Test Group");
+        assert_eq!(domain.member_count, 10);
     }
 
-    fn create_test_member(user_id: &str) -> GroupMember {
-        GroupMember {
-            group_id: "group_1".to_string(),
-            user_id: user_id.to_string(),
-            nickname: format!("Member {}", user_id),
-            face_url: String::new(),
+    #[test]
+    fn test_server_to_group_member_conversion() {
+        let server = ServerGroupMember {
+            group_id: "group_123".to_string(),
+            user_id: "user_456".to_string(),
+            nickname: "Test Member".to_string(),
+            face_url: "https://example.com/member.jpg".to_string(),
             role_level: 1,
-            join_time: 0,
-            join_source: String::new(),
-        }
+            join_time: 1234567890,
+            join_source: 1,
+            operator_user_id: "owner_1".to_string(),
+            ex: String::new(),
+        };
+
+        let domain = server_to_group_member(server);
+        assert_eq!(domain.group_id, "group_123");
+        assert_eq!(domain.user_id, "user_456");
+        assert_eq!(domain.nickname, "Test Member");
     }
 
-    #[tokio::test]
-    async fn test_group_manager_creation() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = GroupManager::new(event_bus);
+    #[test]
+    fn test_get_joined_group_list_req_serialization() {
+        let req = GetJoinedGroupListReq {
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 100,
+            },
+        };
 
-        assert_eq!(manager.group_count().await, 0);
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("pagination"));
+        assert!(json.contains("pageNumber"));
     }
 
-    #[tokio::test]
-    async fn test_group_manager_add_and_get() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = GroupManager::new(event_bus);
+    #[test]
+    fn test_create_group_req_serialization() {
+        let req = CreateGroupReq {
+            group_info: CreateGroupInfo {
+                group_name: "New Group".to_string(),
+                face_url: Some("https://example.com/group.jpg".to_string()),
+                introduction: None,
+                notification: None,
+                group_type: 0,
+                ex: None,
+            },
+            member_user_ids: vec!["user_1".to_string()],
+            admin_user_ids: vec![],
+            owner_user_id: "owner_1".to_string(),
+        };
 
-        let group = create_test_group("group_1");
-        manager.add_group(group).await;
-
-        assert_eq!(manager.group_count().await, 1);
-        assert!(manager.is_in_group("group_1").await);
-
-        let groups = manager.get_groups_info(vec!["group_1".to_string()]).await;
-        assert_eq!(groups.len(), 1);
-        assert_eq!(groups[0].group_id, "group_1");
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("groupInfo"));
+        assert!(json.contains("New Group"));
     }
 
-    #[tokio::test]
-    async fn test_group_manager_delete() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = GroupManager::new(event_bus);
+    #[test]
+    fn test_kick_group_member_req_serialization() {
+        let req = KickGroupMemberReq {
+            group_id: "group_123".to_string(),
+            user_id_list: vec!["user_456".to_string()],
+            reason: Some("violation".to_string()),
+        };
 
-        let group = create_test_group("group_1");
-        manager.add_group(group).await;
-        assert!(manager.is_in_group("group_1").await);
-
-        let deleted = manager.delete_group("group_1").await;
-        assert!(deleted);
-        assert!(!manager.is_in_group("group_1").await);
-    }
-
-    #[tokio::test]
-    async fn test_group_manager_members() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = GroupManager::new(event_bus);
-
-        let member1 = create_test_member("user_1");
-        let member2 = create_test_member("user_2");
-        
-        manager.add_group_members("group_1", vec![member1, member2]).await;
-
-        let members = manager.get_group_member_list("group_1").await;
-        assert_eq!(members.len(), 2);
-
-        let member = manager.get_group_member("group_1", "user_1").await;
-        assert!(member.is_some());
-
-        manager.remove_group_members("group_1", vec!["user_1".to_string()]).await;
-        let members = manager.get_group_member_list("group_1").await;
-        assert_eq!(members.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_group_manager_update() {
-        let event_bus = Arc::new(EventBus::new());
-        let manager = GroupManager::new(event_bus);
-
-        let group = create_test_group("group_1");
-        manager.add_group(group).await;
-
-        manager
-            .update_group("group_1", GroupInfoUpdate {
-                group_name: Some("New Group Name".to_string()),
-                ..Default::default()
-            })
-            .await
-            .unwrap();
-
-        let groups = manager.get_groups_info(vec!["group_1".to_string()]).await;
-        assert_eq!(groups[0].group_name, "New Group Name");
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("groupID"));
+        assert!(json.contains("userIDList"));
+        assert!(json.contains("violation"));
     }
 }
