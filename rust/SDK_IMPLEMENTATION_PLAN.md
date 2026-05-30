@@ -23,7 +23,7 @@
 | Phase 1 | 基础设施层（新架构骨架） | ✅ 已完成 |
 | Phase 2 | 核心模块实体化 | ✅ 已完成 |
 | Phase 3 | 业务模块实体化 + 集成测试 | ✅ 3.1/3.2/3.3/3.4 完成 |
-| Phase 4 | FFI 桥接层完善 | 🔴 待开始 |
+| Phase 4 | FFI 桥接层完善 | ✅ 已完成 |
 
 ---
 
@@ -132,16 +132,19 @@
 
 ---
 
-## Phase 4: FFI 桥接层完善
+## Phase 4: FFI 桥接层完善 ✅ 已完成
 
-### Task 4.1: 完善 FFI 桥接
+### Task 4.1: 完善 FFI 桥接 ✅ 已完成
 
-- [ ] 好友功能 FFI 完整对接
-- [ ] 群组功能 FFI 完整对接
-- [ ] 会话功能 FFI 完整对接
-- [ ] 消息高级功能 FFI 对接
+- [x] 重构为集成模式：所有操作集成到 OpenIMBridgeClient
+- [x] 清理无用桥接文件（bridge_friend, bridge_group, bridge_online, bridge_user, file, simple, test_upload）
+- [x] 好友功能 FFI 完整对接
+- [x] 群组功能 FFI 完整对接
+- [x] 会话功能 FFI 完整对接
+- [x] 消息高级功能 FFI 对接
+- [x] 用户功能 FFI 对接
 
-### Task 4.2: Flutter 对接
+### Task 4.2: Flutter 对接 🔴 待开始
 
 - [ ] Riverpod 状态管理
 - [ ] GoRouter 路由
@@ -227,3 +230,9 @@ rust/src/
 - 新增 DAO 方法：`delete_by_client_msg_id`, `update_content_type`, `mark_as_read_by_seqs`
 - 新增 SdkEvent 事件：`MessagesDeleted`
 - 修复 `MessageHandler` 暴露 `message_dao()` 方法供测试使用
+- **重构 FFI 桥接层为集成模式**：所有操作集成到 `OpenIMBridgeClient`
+- 删除无用桥接文件：bridge_friend, bridge_group, bridge_online, bridge_user, file, simple, test_upload
+- 修复类型引用：使用 domain model 替代不存在的内部类型（BlackInfo, GroupMemberInfo）
+- 修复方法签名：对齐内部 SDK 的实际方法签名
+- 会话操作返回 LocalConversation（FFB 可序列化）
+- 重新生成 FFI Dart 绑定代码
