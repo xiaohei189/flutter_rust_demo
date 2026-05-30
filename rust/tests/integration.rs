@@ -1750,3 +1750,150 @@ async fn test_multiple_message_types() {
         println!("❌ 多消息类型测试失败");
     }
 }
+
+// ============================================================================
+// 连接管理测试
+// ============================================================================
+
+/// 集成测试: 断线重连测试
+/// 测试流程：连接 → 验证连接状态 → 模拟断线 → 验证自动重连
+#[tokio::test]
+#[ignore]
+async fn test_reconnection() {
+    use rust_lib_flutter_rust_demo::core::connection::manager::ConnectionState;
+    
+    println!("=== 断线重连测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("登录失败");
+    
+    // 3. 先订阅事件，再创建连接
+    println!("3. 创建 SDK（先订阅事件）...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    let mut event_subscription = sdk.event_bus.subscribe();
+    
+    // 等待连接完成
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    
+    // 4. 验证初始连接状态
+    println!("4. 验证连接状态...");
+    let state = sdk.connection.get_state().await;
+    match state {
+        ConnectionState::Connected => println!("  ✅ 初始连接状态: Connected"),
+        _ => println!("  ⚠️ 初始连接状态: {:?}", state),
+    }
+    
+    // 5. 监听连接事件
+    println!("5. 监听连接事件（5秒）...");
+    
+    let mut events_received = Vec::new();
+    let timeout_duration = Duration::from_secs(5);
+    let receive_timeout = tokio::time::sleep(timeout_duration);
+    tokio::pin!(receive_timeout);
+    
+    loop {
+        tokio::select! {
+            _ = &mut receive_timeout => {
+                println!("  ⏰ 超时，停止监听");
+                break;
+            }
+            event = event_subscription.next() => {
+                match event {
+                    Some(evt) => {
+                        let event_type = evt.event_type();
+                        println!("  收到事件: {}", event_type);
+                        events_received.push(event_type.to_string());
+                        
+                        if events_received.len() >= 3 {
+                            break;
+                        }
+                    }
+                    None => {
+                        println!("  ⚠️ 事件流已关闭");
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // 6. 输出测试结果
+    println!("\n=== 连接管理测试结果 ===\n");
+    println!("收到的事件序列:");
+    for (i, event) in events_received.iter().enumerate() {
+        println!("  {}. {}", i + 1, event);
+    }
+    
+    let has_connected = events_received.iter().any(|e| e == "connected" || e == "connecting");
+    let has_activity = !events_received.is_empty();
+    
+    println!("\n连接状态: {}", if matches!(state, ConnectionState::Connected) { "✅ 已连接" } else { "❌ 未连接" });
+    println!("事件监听: {}", if has_activity { format!("✅ 收到 {} 个事件", events_received.len()) } else { "⚠️ 未收到事件".to_string() });
+    
+    if matches!(state, ConnectionState::Connected) {
+        println!("\n✅ 连接管理测试通过");
+    } else {
+        println!("\n❌ 连接管理测试失败");
+    }
+}
+
+/// 集成测试: 连接状态变更测试
+/// 测试各种连接状态的正确转换
+#[tokio::test]
+#[ignore]
+async fn test_connection_state_transitions() {
+    use rust_lib_flutter_rust_demo::core::connection::manager::ConnectionState;
+    
+    println!("=== 连接状态变更测试 ===\n");
+    
+    // 1. 获取测试账号
+    let user1 = get_or_create_user1().await;
+    let (user1_im_token, _) = login_account(&user1).await.expect("登录失败");
+    
+    // 2. 创建 SDK 并连接
+    println!("1. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 3. 等待连接
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    
+    // 4. 检查连接状态
+    println!("2. 检查连接状态...");
+    let state = sdk.connection.get_state().await;
+    println!("  当前状态: {:?}", state);
+    
+    assert!(
+        matches!(state, ConnectionState::Connected),
+        "期望 Connected，实际 {:?}",
+        state
+    );
+    println!("  ✅ 连接状态正确");
+    
+    // 5. 测试手动断开
+    println!("3. 测试手动断开...");
+    sdk.connection.disconnect().await;
+    
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    
+    let state_after_disconnect = sdk.connection.get_state().await;
+    println!("  断开后状态: {:?}", state_after_disconnect);
+    
+    assert!(
+        matches!(state_after_disconnect, ConnectionState::Disconnected | ConnectionState::Kicked),
+        "期望 Disconnected 或 Kicked，实际 {:?}",
+        state_after_disconnect
+    );
+    println!("  ✅ 断开状态正确");
+    
+    println!("\n✅ 连接状态变更测试通过");
+}

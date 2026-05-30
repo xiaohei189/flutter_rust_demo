@@ -7,12 +7,12 @@ use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use prost::Message;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::{oneshot, RwLock};
-use tokio::time::{interval, timeout, MissedTickBehavior};
+use tokio::time::{interval, timeout, sleep, MissedTickBehavior};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
@@ -22,8 +22,9 @@ type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(30);
 const PONG_TIMEOUT: Duration = Duration::from_secs(60);
-const RECONNECT_BASE: Duration = Duration::from_secs(1);
-const RECONNECT_MAX: Duration = Duration::from_secs(60);
+const RECONNECT_BASE_DELAY: Duration = Duration::from_secs(1);
+const RECONNECT_MAX_DELAY: Duration = Duration::from_secs(60);
+const MAX_RECONNECT_ATTEMPTS: u32 = 300;
 const RPC_TIMEOUT: Duration = Duration::from_secs(30);
 const CHANNEL_SIZE: usize = 256;
 
@@ -33,6 +34,7 @@ pub enum ConnectionState {
     Connecting,
     Connected,
     Reconnecting,
+    Kicked,
 }
 
 struct PendingRequest {
@@ -52,6 +54,9 @@ pub struct ConnectionManager {
     send_id: RwLock<String>,
     ws_url: RwLock<String>,
     platform_id: RwLock<i32>,
+    
+    reconnect_attempts: AtomicU32,
+    is_manual_disconnect: Arc<RwLock<bool>>,
 }
 
 impl ConnectionManager {
@@ -67,6 +72,8 @@ impl ConnectionManager {
             send_id: RwLock::new(String::new()),
             ws_url: RwLock::new(String::new()),
             platform_id: RwLock::new(1),
+            reconnect_attempts: AtomicU32::new(0),
+            is_manual_disconnect: Arc::new(RwLock::new(false)),
         }
     }
 
@@ -75,6 +82,8 @@ impl ConnectionManager {
         *self.send_id.write().await = user_id.to_string();
         *self.ws_url.write().await = ws_url.to_string();
         *self.platform_id.write().await = platform_id;
+        *self.is_manual_disconnect.write().await = false;
+        self.reconnect_attempts.store(0, Ordering::SeqCst);
 
         self.do_connect().await
     }
@@ -106,12 +115,131 @@ impl ConnectionManager {
         *self.writer.write().await = Some(write);
         self.set_state(ConnectionState::Connected).await;
         self.event_bus.publish(SdkEvent::Connected);
+        self.reconnect_attempts.store(0, Ordering::SeqCst);
         info!("WebSocket connected: {}", full_url);
 
         self.spawn_read_loop(read);
         self.spawn_heartbeat();
+        self.spawn_reconnect_loop();
 
         Ok(())
+    }
+
+    fn spawn_reconnect_loop(&self) {
+        let event_bus = self.event_bus.clone();
+        let cancel = self.cancel_token.clone();
+        let state = self.state.clone();
+        let is_manual = self.is_manual_disconnect.clone();
+        let self_clone = Arc::new(self.clone_shallow());
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = cancel.cancelled() => {
+                        info!("reconnect_loop: cancelled");
+                        break;
+                    }
+                    _ = async {
+                        loop {
+                            let current_state = state.read().await.clone();
+                            let manual = { *is_manual.read().await };
+                            
+                            if manual {
+                                info!("reconnect_loop: manual disconnect, stopping");
+                                return;
+                            }
+                            
+                            if current_state == ConnectionState::Disconnected || current_state == ConnectionState::Reconnecting {
+                                break;
+                            }
+                            
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                        }
+                    } => {
+                        let manual = { *is_manual.read().await };
+                        if manual {
+                            break;
+                        }
+
+                        let attempts = self_clone.reconnect_attempts.fetch_add(1, Ordering::SeqCst);
+                        if attempts >= MAX_RECONNECT_ATTEMPTS {
+                            error!("max reconnect attempts reached ({})", MAX_RECONNECT_ATTEMPTS);
+                            event_bus.publish(SdkEvent::Disconnected {
+                                reason: "max reconnect attempts".into(),
+                            });
+                            break;
+                        }
+
+                        let delay = self_clone.calculate_reconnect_delay(attempts);
+                        info!("reconnecting in {:?} (attempt {}/{})", delay, attempts + 1, MAX_RECONNECT_ATTEMPTS);
+                        event_bus.publish(SdkEvent::Reconnecting {
+                            attempt: attempts + 1,
+                            max_attempts: MAX_RECONNECT_ATTEMPTS,
+                        });
+
+                        tokio::select! {
+                            _ = cancel.cancelled() => break,
+                            _ = sleep(delay) => {}
+                        }
+
+                        let manual = { *is_manual.read().await };
+                        if manual {
+                            break;
+                        }
+
+                        {
+                            *state.write().await = ConnectionState::Reconnecting;
+                        }
+
+                        match self_clone.do_connect().await {
+                            Ok(_) => {
+                                info!("reconnected successfully");
+                                self_clone.reconnect_attempts.store(0, Ordering::SeqCst);
+                            }
+                            Err(e) => {
+                                warn!("reconnect failed: {:?}", e);
+                                {
+                                    *state.write().await = ConnectionState::Disconnected;
+                                }
+                                event_bus.publish(SdkEvent::Disconnected {
+                                    reason: format!("reconnect failed: {}", e),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    fn calculate_reconnect_delay(&self, attempt: u32) -> Duration {
+        let delay_secs = if attempt < 5 {
+            1 << attempt
+        } else if attempt < 10 {
+            16 + (attempt - 5) * 4
+        } else {
+            60
+        };
+        
+        let delay = Duration::from_secs(delay_secs as u64);
+        delay.min(RECONNECT_MAX_DELAY)
+    }
+
+    fn clone_shallow(&self) -> ConnectionManager {
+        ConnectionManager {
+            writer: self.writer.clone(),
+            state: self.state.clone(),
+            pending_requests: self.pending_requests.clone(),
+            event_bus: self.event_bus.clone(),
+            cancel_token: self.cancel_token.clone(),
+            msg_incr: AtomicU64::new(self.msg_incr.load(Ordering::SeqCst)),
+            token: RwLock::new(String::new()),
+            send_id: RwLock::new(String::new()),
+            ws_url: RwLock::new(String::new()),
+            platform_id: RwLock::new(0),
+            reconnect_attempts: AtomicU32::new(0),
+            is_manual_disconnect: self.is_manual_disconnect.clone(),
+        }
     }
 
     fn spawn_read_loop(
@@ -264,6 +392,12 @@ impl ConnectionManager {
                             }
                             None => {
                                 info!("ws stream ended");
+                                {
+                                    *state.write().await = ConnectionState::Disconnected;
+                                }
+                                event_bus.publish(SdkEvent::Disconnected {
+                                    reason: "stream ended".into(),
+                                });
                                 break;
                             }
                             _ => {}
@@ -383,6 +517,7 @@ impl ConnectionManager {
     }
 
     pub async fn disconnect(&self) {
+        *self.is_manual_disconnect.write().await = true;
         *self.writer.write().await = None;
         {
             *self.state.write().await = ConnectionState::Disconnected;
@@ -390,7 +525,19 @@ impl ConnectionManager {
         self.event_bus.publish(SdkEvent::Disconnected {
             reason: "manual disconnect".into(),
         });
-        info!("WebSocket disconnected");
+        info!("WebSocket disconnected (manual)");
+    }
+
+    pub async fn handle_kicked(&self, reason: String) {
+        *self.is_manual_disconnect.write().await = true;
+        *self.writer.write().await = None;
+        {
+            *self.state.write().await = ConnectionState::Kicked;
+        }
+        self.event_bus.publish(SdkEvent::KickedOffline {
+            reason: reason.clone(),
+        });
+        warn!("kicked offline: {}", reason);
     }
 
     pub async fn get_state(&self) -> ConnectionState {

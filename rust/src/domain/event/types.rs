@@ -145,6 +145,10 @@ pub enum SdkEvent {
     KickedOffline {
         reason: String,
     },
+    Reconnecting {
+        attempt: u32,
+        max_attempts: u32,
+    },
     TokenExpired,
     LoginSuccess {
         user_id: String,
@@ -202,6 +206,7 @@ impl SdkEvent {
             SdkEvent::UserInfoUpdated { .. } => "user_info_updated",
             SdkEvent::UserStatusChanged { .. } => "user_status_changed",
             SdkEvent::KickedOffline { .. } => "kicked_offline",
+            SdkEvent::Reconnecting { .. } => "reconnecting",
             SdkEvent::TokenExpired => "token_expired",
             SdkEvent::LoginSuccess { .. } => "login_success",
             SdkEvent::Logout => "logout",
