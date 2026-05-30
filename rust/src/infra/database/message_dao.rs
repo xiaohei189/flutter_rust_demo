@@ -1,0 +1,176 @@
+use super::models::LocalChatLog;
+use crate::domain::error::types::{Result, SdkError};
+use sqlx::SqlitePool;
+
+pub struct MessageDao {
+    pool: SqlitePool,
+}
+
+impl MessageDao {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn batch_insert(&self, logs: &[LocalChatLog]) -> Result<()> {
+        for log in logs {
+            sqlx::query(
+                "INSERT OR IGNORE INTO local_chat_logs (conversation_id, client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id, sender_nick_name, sender_face_url, session_type, msg_from, content_type, content, is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            )
+            .bind(&log.conversation_id)
+            .bind(&log.client_msg_id)
+            .bind(&log.server_msg_id)
+            .bind(&log.send_id)
+            .bind(&log.recv_id)
+            .bind(log.sender_platform_id)
+            .bind(&log.sender_nick_name)
+            .bind(&log.sender_face_url)
+            .bind(log.session_type)
+            .bind(log.msg_from)
+            .bind(log.content_type)
+            .bind(&log.content)
+            .bind(log.is_read)
+            .bind(log.status)
+            .bind(log.seq)
+            .bind(log.send_time)
+            .bind(log.create_time)
+            .bind(&log.attached_info)
+            .bind(&log.ex)
+            .bind(&log.local_ex)
+            .bind(&log.group_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("insert message: {}", e)))?;
+        }
+        Ok(())
+    }
+
+    pub async fn get_by_conversation(
+        &self,
+        conversation_id: &str,
+        start_seq: i64,
+        end_seq: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq >= ? AND seq <= ? ORDER BY seq ASC",
+        )
+        .bind(conversation_id)
+        .bind(start_seq)
+        .bind(end_seq)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query messages: {}", e)))?;
+        Ok(rows)
+    }
+
+    pub async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
+        let row: (Option<i64>,) = sqlx::query_as(
+            "SELECT MAX(seq) FROM local_chat_logs WHERE conversation_id = ?",
+        )
+        .bind(conversation_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query max seq: {}", e)))?;
+        Ok(row.0.unwrap_or(0))
+    }
+
+    pub async fn get_latest(
+        &self,
+        conversation_id: &str,
+        limit: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? ORDER BY send_time DESC LIMIT ?",
+        )
+        .bind(conversation_id)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query latest: {}", e)))?;
+        Ok(rows)
+    }
+
+    pub async fn delete_by_conversation(&self, conversation_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM local_chat_logs WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete messages: {}", e)))?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::infra::database::pool::create_pool_memory;
+
+    #[tokio::test]
+    async fn test_message_dao_batch_insert() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = MessageDao::new(pool);
+
+        let msg = LocalChatLog {
+            conversation_id: "conv_1".into(),
+            client_msg_id: "msg_1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_1".into(),
+            recv_id: "user_2".into(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: r#"{"text":"hello"}"#.into(),
+            is_read: 0,
+            status: 2,
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+
+        dao.batch_insert(&[msg]).await.unwrap();
+        let seq = dao.get_max_seq("conv_1").await.unwrap();
+        assert_eq!(seq, 1);
+    }
+
+    #[tokio::test]
+    async fn test_message_dao_dedup() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = MessageDao::new(pool);
+
+        let msg = LocalChatLog {
+            conversation_id: "conv_1".into(),
+            client_msg_id: "msg_1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_1".into(),
+            recv_id: "user_2".into(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: String::new(),
+            is_read: 0,
+            status: 2,
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+
+        dao.batch_insert(&[msg.clone()]).await.unwrap();
+        dao.batch_insert(&[msg]).await.unwrap();
+
+        let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
+        assert_eq!(msgs.len(), 1);
+    }
+}
