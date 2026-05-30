@@ -15,6 +15,8 @@ use tracing::info;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetJoinedGroupListReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
     #[serde(rename = "pagination")]
     pub pagination: Pagination,
 }
@@ -226,15 +228,17 @@ pub struct SetGroupMemberInfoReq {
 pub struct GroupManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
+    user_id: String,
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
 }
 
 impl GroupManager {
-    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
+    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>, user_id: String) -> Self {
         Self {
             http_client,
             event_bus,
+            user_id,
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
         }
@@ -246,6 +250,7 @@ impl GroupManager {
 
     pub async fn sync_groups(&self) -> Result<()> {
         let req = GetJoinedGroupListReq {
+            user_id: self.user_id.clone(),
             pagination: Pagination {
                 page_number: 1,
                 show_number: 1000,

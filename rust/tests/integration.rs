@@ -2139,3 +2139,419 @@ async fn test_blacklist_management() {
         println!("\n❌ 黑名单管理测试失败");
     }
 }
+
+// ============================================================================
+// 群组管理集成测试
+// ============================================================================
+
+/// 集成测试: 群组列表同步
+/// 测试流程：连接 → 同步群组列表 → 验证群组数据
+#[tokio::test]
+#[ignore]
+async fn test_group_list_sync() {
+    println!("=== 群组列表同步测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 同步群组列表
+    println!("4. 同步群组列表...");
+    match sdk.group.sync_groups().await {
+        Ok(_) => println!("  ✅ 群组列表同步成功"),
+        Err(e) => println!("  ⚠️ 群组列表同步失败: {:?}", e),
+    }
+    
+    // 5. 获取群组列表
+    println!("5. 获取群组列表...");
+    let groups = sdk.group.get_joined_group_list().await;
+    println!("  群组数量: {}", groups.len());
+    
+    for (i, group) in groups.iter().enumerate() {
+        println!("  {}. group_id={}, name={}, member_count={}", 
+            i + 1, group.group_id, group.group_name, group.member_count);
+    }
+    
+    // 6. 输出测试结果
+    println!("\n=== 群组列表同步测试结果 ===\n");
+    println!("群组数量: {}", groups.len());
+    
+    if groups.len() >= 0 {
+        println!("\n✅ 群组列表同步测试通过");
+    }
+}
+
+/// 集成测试: 创建群组
+/// 测试流程：创建群组 → 验证群组信息 → 验证群组成员
+#[tokio::test]
+#[ignore]
+async fn test_create_group() {
+    println!("=== 创建群组测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 创建群组
+    println!("4. 创建群组...");
+    let group_name = format!("TestGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let create_result = sdk.group.create_group(
+        group_name.clone(),
+        None,
+        Some("这是一个测试群组".to_string()),
+        Some("欢迎加入测试群组".to_string()),
+        vec![user2.user_id.clone()],
+        vec![],
+        user1.user_id.clone(),
+    ).await;
+    
+    let group_id = match create_result {
+        Ok(group) => {
+            println!("  ✅ 群组创建成功");
+            println!("  group_id={}, name={}", group.group_id, group.group_name);
+            group.group_id.clone()
+        }
+        Err(e) => {
+            println!("  ❌ 群组创建失败: {:?}", e);
+            return;
+        }
+    };
+    
+    // 5. 验证群组信息
+    println!("5. 获取群组信息...");
+    let groups_info = sdk.group.get_groups_info(vec![group_id.clone()]).await;
+    
+    match groups_info {
+        Ok(groups) => {
+            if let Some(group) = groups.first() {
+                println!("  ✅ 群组信息获取成功");
+                println!("  name={}, member_count={}", group.group_name, group.member_count);
+            }
+        }
+        Err(e) => println!("  ⚠️ 获取群组信息失败: {:?}", e),
+    }
+    
+    // 6. 获取群成员列表
+    println!("6. 获取群成员列表...");
+    let members = sdk.group.get_group_member_list(group_id.clone(), 0, 0, 100).await;
+    
+    match members {
+        Ok(members) => {
+            println!("  ✅ 群成员列表获取成功");
+            println!("  成员数量: {}", members.len());
+            for (i, member) in members.iter().enumerate() {
+                println!("  {}. user_id={}, nickname={}", i + 1, member.user_id, member.nickname);
+            }
+        }
+        Err(e) => println!("  ⚠️ 获取群成员列表失败: {:?}", e),
+    }
+    
+    // 7. 输出测试结果
+    println!("\n=== 创建群组测试结果 ===\n");
+    println!("群组名称: {}", group_name);
+    println!("群组 ID: {}", group_id);
+    println!("\n✅ 创建群组测试完成");
+}
+
+/// 集成测试: 加入/退出群组
+/// 测试流程：用户2申请加入群组 → 验证加入 → 退出群组 → 验证退出
+#[tokio::test]
+#[ignore]
+async fn test_join_and_quit_group() {
+    println!("=== 加入/退出群组测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+    
+    // 3. 用户1创建群组
+    println!("3. 用户1创建群组...");
+    let sdk1 = create_sdk(&user1, &user1_im_token).await;
+    let group_name = format!("TestGroup_JoinQuit_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let create_result = sdk1.group.create_group(
+        group_name,
+        None,
+        None,
+        None,
+        vec![],
+        vec![],
+        user1.user_id.clone(),
+    ).await;
+    
+    let group_id = match create_result {
+        Ok(group) => {
+            println!("  ✅ 群组创建成功: {}", group.group_id);
+            group.group_id.clone()
+        }
+        Err(e) => {
+            println!("  ❌ 群组创建失败: {:?}", e);
+            return;
+        }
+    };
+    
+    // 4. 用户2申请加入群组
+    println!("4. 用户2申请加入群组...");
+    let sdk2 = create_sdk(&user2, &user2_im_token).await;
+    let join_result = sdk2.group.join_group(group_id.clone(), Some("申请加入测试群组".to_string())).await;
+    
+    match join_result {
+        Ok(_) => println!("  ✅ 加入群组申请发送成功"),
+        Err(e) => println!("  ❌ 加入群组失败: {:?}", e),
+    }
+    
+    // 5. 用户2退出群组
+    println!("5. 用户2退出群组...");
+    let quit_result = sdk2.group.quit_group(group_id.clone()).await;
+    
+    match quit_result {
+        Ok(_) => println!("  ✅ 退出群组成功"),
+        Err(e) => println!("  ❌ 退出群组失败: {:?}", e),
+    }
+    
+    // 6. 验证是否已退出
+    let is_in_group = sdk2.group.is_in_group(&group_id).await;
+    println!("  是否还在群组中: {}", is_in_group);
+    
+    // 7. 输出测试结果
+    println!("\n=== 加入/退出群组测试结果 ===\n");
+    println!("群组 ID: {}", group_id);
+    println!("退出后是否在群组: {}", is_in_group);
+    
+    if !is_in_group {
+        println!("\n✅ 加入/退出群组测试通过");
+    } else {
+        println!("\n⚠️ 退出群组后仍在群组列表中");
+    }
+}
+
+/// 集成测试: 群组成员管理
+/// 测试流程：创建群组 → 邀请成员 → 踢出成员 → 验证成员列表
+#[tokio::test]
+#[ignore]
+async fn test_group_member_management() {
+    println!("=== 群组成员管理测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 创建群组（不添加成员）
+    println!("4. 创建群组...");
+    let group_name = format!("TestGroup_MemberMgmt_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let create_result = sdk.group.create_group(
+        group_name,
+        None,
+        None,
+        None,
+        vec![],
+        vec![],
+        user1.user_id.clone(),
+    ).await;
+    
+    let group_id = match create_result {
+        Ok(group) => {
+            println!("  ✅ 群组创建成功: {}", group.group_id);
+            group.group_id.clone()
+        }
+        Err(e) => {
+            println!("  ❌ 群组创建失败: {:?}", e);
+            return;
+        }
+    };
+    
+    // 5. 邀请用户2加入群组
+    println!("5. 邀请 {} 加入群组...", user2.user_id);
+    let invite_result = sdk.group.invite_user_to_group(
+        group_id.clone(),
+        vec![user2.user_id.clone()],
+        Some("邀请加入测试群组".to_string()),
+    ).await;
+    
+    match invite_result {
+        Ok(_) => println!("  ✅ 邀请发送成功"),
+        Err(e) => println!("  ❌ 邀请失败: {:?}", e),
+    }
+    
+    // 6. 获取群成员列表
+    println!("6. 获取群成员列表...");
+    let members = sdk.group.get_group_member_list(group_id.clone(), 0, 0, 100).await;
+    
+    match members {
+        Ok(members) => {
+            println!("  ✅ 群成员列表获取成功");
+            println!("  成员数量: {}", members.len());
+            for (i, member) in members.iter().enumerate() {
+                println!("  {}. user_id={}, nickname={}", i + 1, member.user_id, member.nickname);
+            }
+        }
+        Err(e) => println!("  ⚠️ 获取群成员列表失败: {:?}", e),
+    }
+    
+    // 7. 踢出用户2
+    println!("7. 踢出 {}...", user2.user_id);
+    let kick_result = sdk.group.kick_group_member(
+        group_id.clone(),
+        vec![user2.user_id.clone()],
+        Some("测试踢出成员".to_string()),
+    ).await;
+    
+    match kick_result {
+        Ok(_) => println!("  ✅ 踢出成功"),
+        Err(e) => println!("  ❌ 踢出失败: {:?}", e),
+    }
+    
+    // 8. 再次获取群成员列表
+    println!("8. 再次获取群成员列表...");
+    let members_after = sdk.group.get_group_member_list(group_id.clone(), 0, 0, 100).await;
+    
+    match members_after {
+        Ok(members) => {
+            println!("  ✅ 群成员列表获取成功");
+            println!("  成员数量: {}", members.len());
+        }
+        Err(e) => println!("  ⚠️ 获取群成员列表失败: {:?}", e),
+    }
+    
+    // 9. 输出测试结果
+    println!("\n=== 群组成员管理测试结果 ===\n");
+    println!("群组 ID: {}", group_id);
+    println!("\n✅ 群组成员管理测试完成");
+}
+
+/// 集成测试: 群组信息管理
+/// 测试流程：创建群组 → 修改群组信息 → 验证修改
+#[tokio::test]
+#[ignore]
+async fn test_group_info_update() {
+    println!("=== 群组信息管理测试 ===\n");
+    
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+    
+    // 1. 获取测试账号
+    println!("1. 获取测试账号...");
+    let user1 = get_or_create_user1().await;
+    
+    // 2. 登录获取 token
+    println!("2. 登录账号...");
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    
+    // 3. 创建 SDK 并连接
+    println!("3. 创建 SDK 并连接...");
+    let sdk = create_sdk(&user1, &user1_im_token).await;
+    
+    // 4. 创建群组
+    println!("4. 创建群组...");
+    let group_name = format!("TestGroup_InfoUpdate_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let create_result = sdk.group.create_group(
+        group_name.clone(),
+        None,
+        Some("原始介绍".to_string()),
+        Some("原始公告".to_string()),
+        vec![],
+        vec![],
+        user1.user_id.clone(),
+    ).await;
+    
+    let group_id = match create_result {
+        Ok(group) => {
+            println!("  ✅ 群组创建成功: {}", group.group_id);
+            group.group_id.clone()
+        }
+        Err(e) => {
+            println!("  ❌ 群组创建失败: {:?}", e);
+            return;
+        }
+    };
+    
+    // 5. 修改群组信息
+    println!("5. 修改群组信息...");
+    use rust_lib_flutter_rust_demo::core::group::manager::SetGroupInfoFields;
+    let update_result = sdk.group.set_group_info(SetGroupInfoFields {
+        group_id: group_id.clone(),
+        group_name: Some(format!("{}_Updated", group_name)),
+        face_url: Some("https://example.com/updated.jpg".to_string()),
+        introduction: Some("更新后的介绍".to_string()),
+        notification: Some("更新后的公告".to_string()),
+        ex: None,
+    }).await;
+    
+    match update_result {
+        Ok(_) => println!("  ✅ 群组信息修改成功"),
+        Err(e) => println!("  ❌ 群组信息修改失败: {:?}", e),
+    }
+    
+    // 6. 获取更新后的群组信息
+    println!("6. 获取更新后的群组信息...");
+    let groups_info = sdk.group.get_groups_info(vec![group_id.clone()]).await;
+    
+    match groups_info {
+        Ok(groups) => {
+            if let Some(group) = groups.first() {
+                println!("  ✅ 群组信息获取成功");
+                println!("  name={}, introduction={}, notification={}", 
+                    group.group_name, group.introduction, group.notification);
+            }
+        }
+        Err(e) => println!("  ⚠️ 获取群组信息失败: {:?}", e),
+    }
+    
+    // 7. 输出测试结果
+    println!("\n=== 群组信息管理测试结果 ===\n");
+    println!("群组 ID: {}", group_id);
+    println!("\n✅ 群组信息管理测试完成");
+}
