@@ -21,7 +21,7 @@ pub struct GetAllConversationsReq {
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetAllConversationsResp {
     #[serde(default)]
-    pub conversations: Vec<ServerConversation>,
+    pub conversations: Option<Vec<ServerConversation>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -219,7 +219,7 @@ impl ConversationSyncer {
             }
         };
 
-        let conversations: Vec<Conversation> = resp.conversations.into_iter()
+        let conversations: Vec<Conversation> = resp.conversations.unwrap_or_default().into_iter()
             .map(|s| server_to_domain(s))
             .collect();
 
@@ -257,7 +257,7 @@ impl ConversationSyncer {
         };
         debug!("从服务器拉取所有会话");
         let resp: GetAllConversationsResp = self.http_client.post(GET_ALL_CONVERSATION_LIST, &req).await?;
-        debug!("拉取到 {} 个会话", resp.conversations.len());
+        debug!("拉取到 {} 个会话", resp.conversations.as_ref().map_or(0, |v| v.len()));
         Ok(resp)
     }
 
