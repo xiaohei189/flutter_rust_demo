@@ -48,14 +48,15 @@ impl MessageDao {
         &self,
         conversation_id: &str,
         start_seq: i64,
-        end_seq: i64,
+        count: i64,
     ) -> Result<Vec<LocalChatLog>> {
         let rows = sqlx::query_as::<_, LocalChatLog>(
-            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq >= ? AND seq <= ? ORDER BY seq ASC",
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND (seq < ? OR ? = 0) ORDER BY seq DESC LIMIT ?",
         )
         .bind(conversation_id)
         .bind(start_seq)
-        .bind(end_seq)
+        .bind(start_seq)
+        .bind(count)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| SdkError::database(format!("query messages: {}", e)))?;
@@ -223,10 +224,8 @@ mod tests {
 
         dao.batch_insert(&[msg.clone()]).await.unwrap();
         dao.batch_insert(&[msg]).await.unwrap();
-
         let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
-        assert_eq!(msgs.len(), 1);
-    }
+        assert_eq!(msgs.len(), 1);    }
 
     #[tokio::test]
     async fn test_mark_as_read_by_seqs() {

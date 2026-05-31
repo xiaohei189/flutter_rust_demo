@@ -80,11 +80,8 @@ class UserAvatar extends StatelessWidget {
 
   /// 判断是否为本地文件路径
   bool _isLocalPath(String path) {
-    appLog.i('[UserAvatar] 检查是否为本地路径: $path');
-    
     // 先检查是否是网络协议（http://, https://, ftp:// 等）
     if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('ftp://')) {
-      appLog.i('[UserAvatar] 检测到网络 URL');
       return false;
     }
     

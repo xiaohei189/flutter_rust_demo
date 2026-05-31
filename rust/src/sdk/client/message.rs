@@ -49,10 +49,11 @@ impl OpenIMClient {
 
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<Vec<MessageInfo>, SdkError> {
         let messages = self.message_handler.message_dao()
-            .get_by_conversation(&req.conversation_id, req.start_seq, req.start_seq + req.count)
+            .get_by_conversation(&req.conversation_id, req.start_seq, req.count)
             .await?;
 
         let msg_info_list: Vec<MessageInfo> = messages.into_iter()
+            .rev()
             .map(|m| {
                 let msg_data = MsgData {
                     server_msg_id: m.server_msg_id,
