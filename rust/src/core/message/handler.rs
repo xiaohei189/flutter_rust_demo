@@ -2,31 +2,11 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
+use crate::domain::model::message::ReceivedMessage;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{debug, info, warn};
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ReceivedMessage {
-    pub server_msg_id: String,
-    pub client_msg_id: String,
-    pub send_id: String,
-    pub recv_id: String,
-    pub sender_platform_id: i32,
-    pub sender_nick_name: String,
-    pub sender_face_url: String,
-    pub session_type: i32,
-    pub msg_from: i32,
-    pub content_type: i32,
-    pub content: String,
-    pub seq: i64,
-    pub send_time: i64,
-    pub create_time: i64,
-    pub conversation_id: String,
-    pub group_id: String,
-}
 
 pub struct MessageHandler {
     message_dao: Arc<MessageDao>,
@@ -144,7 +124,7 @@ impl MessageHandler {
             }
 
             self.event_bus.publish(SdkEvent::NewMessage {
-                message: serde_json::to_value(msg).unwrap_or_default(),
+                message: msg.clone(),
             });
         }
 

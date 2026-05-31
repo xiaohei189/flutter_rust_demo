@@ -1,5 +1,6 @@
 use crate::core::connection::manager::ConnectionManager;
-use crate::core::message::handler::{MessageHandler, ReceivedMessage};
+use crate::core::message::handler::MessageHandler;
+use crate::domain::model::message::ReceivedMessage;
 use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;

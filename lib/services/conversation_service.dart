@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../src/rust/domain/event/types.dart' show SdkEvent;
 import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../utils/app_logger.dart';
 import 'im_client.dart';
@@ -108,33 +109,41 @@ class ConversationService {
   }
 
   /// 处理统一事件
-  void _handleEvent(dynamic event) {
-    if (event == null) return;
-    
-    final name = event.runtimeType.toString();
-    
-    // 会话相关事件
-    if (name.contains('SyncStart') || name.contains('ConversationSyncStart')) {
-      _updateSyncStatus(ConversationSyncStatus.syncing);
-      _updateSyncProgress(0);
-    } else if (name.contains('SyncFinish') || name.contains('ConversationSyncFinish')) {
-      _updateSyncStatus(ConversationSyncStatus.completed);
-      _updateSyncProgress(100);
-      loadConversations();
-    } else if (name.contains('SyncProgress') || name.contains('ConversationSyncProgress')) {
-      // 尝试提取进度值
-      _updateSyncProgress(50); // 默认中间值
-    } else if (name.contains('SyncFailed') || name.contains('ConversationSyncFailed')) {
-      _updateSyncStatus(ConversationSyncStatus.failed);
-    } else if (name.contains('NewConversation') || name.contains('ConversationChanged')) {
-      // 会话变更，重新加载
-      loadConversations();
-    } else if (name.contains('ConversationsCleared')) {
-      _conversations.clear();
-      _notifyConversationsChanged();
-    } else if (name.contains('UnreadCountChanged')) {
-      _notifyConversationsChanged();
-    }
+  void _handleEvent(SdkEvent event) {
+    event.maybeWhen(
+      syncStarted: () {
+        _updateSyncStatus(ConversationSyncStatus.syncing);
+        _updateSyncProgress(0);
+      },
+      syncFinished: () {
+        _updateSyncStatus(ConversationSyncStatus.completed);
+        _updateSyncProgress(100);
+        loadConversations();
+      },
+      syncProgress: (progress, message) {
+        _updateSyncStatus(ConversationSyncStatus.syncing);
+        _updateSyncProgress(progress);
+      },
+      syncFailed: (error) {
+        _updateSyncStatus(ConversationSyncStatus.failed);
+      },
+      newConversation: (conversations) {
+        loadConversations();
+      },
+      conversationChanged: (conversations) {
+        loadConversations();
+      },
+      conversationDeleted: (conversationIds) {
+        for (final id in conversationIds) {
+          _conversations.removeWhere((c) => c.conversationId == id);
+        }
+        _notifyConversationsChanged();
+      },
+      totalUnreadCountChanged: (count) {
+        _notifyConversationsChanged();
+      },
+      orElse: () {},
+    );
   }
 
   /// 更新或添加会话

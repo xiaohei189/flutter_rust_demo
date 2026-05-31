@@ -116,23 +116,30 @@ impl UserManager {
 
         let _resp: UpdateUserInfoResp = self.http_client.post(UPDATE_USER_INFO, &req).await?;
 
-        if let Some(user) = self.self_user.write().await.as_mut() {
-            if let Some(nickname) = updates.nickname {
-                user.nickname = nickname;
+        let updated_user = {
+            let mut guard = self.self_user.write().await;
+            if let Some(user) = guard.as_mut() {
+                if let Some(nickname) = updates.nickname {
+                    user.nickname = nickname;
+                }
+                if let Some(face_url) = updates.face_url {
+                    user.face_url = face_url;
+                }
+                if let Some(gender) = updates.gender {
+                    user.gender = gender;
+                }
+                if let Some(email) = updates.email {
+                    user.email = email;
+                }
+                Some(user.clone())
+            } else {
+                None
             }
-            if let Some(face_url) = updates.face_url {
-                user.face_url = face_url;
-            }
-            if let Some(gender) = updates.gender {
-                user.gender = gender;
-            }
-            if let Some(email) = updates.email {
-                user.email = email;
-            }
+        };
 
-            let user_json = serde_json::to_value(&user).unwrap_or_default();
+        if let Some(updated_user) = updated_user {
             self.event_bus.publish(SdkEvent::UserInfoUpdated {
-                user: user_json,
+                user: updated_user,
             });
         }
 

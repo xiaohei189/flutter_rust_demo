@@ -164,11 +164,8 @@ impl ConversationSyncer {
 
         for conv_id in &resp.delete {
             self.dao.delete(conv_id).await?;
-            self.event_bus.publish(SdkEvent::ConversationChanged {
-                conversations: vec![serde_json::json!({
-                    "conversationID": conv_id,
-                    "deleted": true
-                })],
+            self.event_bus.publish(SdkEvent::ConversationDeleted {
+                conversation_ids: vec![conv_id.clone()],
             });
         }
 
@@ -185,8 +182,8 @@ impl ConversationSyncer {
         }
 
         if !resp.update.is_empty() || !resp.insert.is_empty() {
-            let changed: Vec<serde_json::Value> = resp.update.iter().chain(resp.insert.iter())
-                .map(|s| serde_json::to_value(s).unwrap_or_default())
+            let changed: Vec<Conversation> = resp.update.iter().chain(resp.insert.iter())
+                .map(|s| server_to_domain(s.clone()))
                 .collect();
             self.event_bus.publish(SdkEvent::ConversationChanged {
                 conversations: changed,
@@ -229,11 +226,8 @@ impl ConversationSyncer {
             self.dao.upsert(&local).await?;
         }
 
-        let changed: Vec<serde_json::Value> = conversations.iter()
-            .map(|c| serde_json::to_value(c).unwrap_or_default())
-            .collect();
         self.event_bus.publish(SdkEvent::ConversationChanged {
-            conversations: changed,
+            conversations: conversations.clone(),
         });
 
         *self.is_first_sync.write().await = false;

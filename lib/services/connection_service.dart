@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../src/rust/domain/event/types.dart' show SdkEvent;
 import '../utils/app_logger.dart';
 import 'im_client.dart';
 
@@ -76,27 +77,31 @@ class ConnectionService {
   }
 
   /// 处理统一事件
-  void _handleEvent(dynamic event) {
-    if (event == null) return;
-
-    final name = event.runtimeType.toString();
-    
-    // 连接相关事件
-    if (name.contains('ConnectSuccess') || name.contains('Connected')) {
-      _updateStatus(ConnectionStatus.connected);
-    } else if (name.contains('Connecting') || name.contains('Reconnecting')) {
-      _updateStatus(ConnectionStatus.connecting);
-    } else if (name.contains('ConnectFailed') || name.contains('ConnectFailed')) {
-      _updateStatus(ConnectionStatus.failed);
-    } else if (name.contains('KickedOffline') || name.contains('Kicked')) {
-      _updateStatus(ConnectionStatus.kickedOffline);
-    } else if (name.contains('UserTokenExpired') || name.contains('TokenExpired')) {
-      _updateStatus(ConnectionStatus.tokenExpired);
-    } else if (name.contains('UserTokenInvalid') || name.contains('TokenInvalid')) {
-      _updateStatus(ConnectionStatus.tokenExpired);
-    } else if (name.contains('ConnectFailed')) {
-      _updateStatus(ConnectionStatus.failed);
-    }
+  void _handleEvent(SdkEvent event) {
+    event.maybeWhen(
+      connected: () {
+        _updateStatus(ConnectionStatus.connected);
+      },
+      connecting: () {
+        _updateStatus(ConnectionStatus.connecting);
+      },
+      disconnected: (reason) {
+        _updateStatus(ConnectionStatus.disconnected);
+      },
+      connectFailed: (error) {
+        _updateStatus(ConnectionStatus.failed);
+      },
+      reconnecting: (attempt, maxAttempts) {
+        _updateStatus(ConnectionStatus.connecting);
+      },
+      kickedOffline: (reason) {
+        _updateStatus(ConnectionStatus.kickedOffline);
+      },
+      tokenExpired: () {
+        _updateStatus(ConnectionStatus.tokenExpired);
+      },
+      orElse: () {},
+    );
   }
 
   /// 更新状态并通知监听者

@@ -164,9 +164,7 @@ async fn test_multiple_message_types() {
             event = event_subscription.next() => {
                 match event {
                     Some(SdkEvent::NewMessage { message }) => {
-                        if let Some(ct) = message.get("contentType").and_then(|v| v.as_i64()) {
-                            *received.entry(ct as i32).or_insert(0) += 1;
-                        }
+                        *received.entry(message.content_type).or_insert(0) += 1;
                     }
                     Some(_) => {}
                     None => break,

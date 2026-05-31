@@ -6,6 +6,7 @@
 import '../domain/config.dart';
 import '../domain/constant/enums.dart';
 import '../domain/event/types.dart';
+import '../domain/model/conversation.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
 import '../domain/model/message.dart';

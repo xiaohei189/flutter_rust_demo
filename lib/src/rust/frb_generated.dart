@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'domain/config.dart';
 import 'domain/constant/enums.dart';
 import 'domain/event/types.dart';
+import 'domain/model/conversation.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
 import 'domain/model/message.dart';
@@ -388,14 +389,6 @@ abstract class RustLibApi extends BaseApi {
 
   CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_OpenImBridgeClientPtr;
-
-  RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_SdkEvent;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_SdkEvent;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_SdkEventPtr;
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -1122,10 +1115,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
               that,
               serializer,
             );
-            sse_encode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
-              sink,
-              serializer,
-            );
+            sse_encode_StreamSink_sdk_event_Sse(sink, serializer);
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
@@ -2547,14 +2537,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   get rust_arc_decrement_strong_count_OpenImBridgeClient => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
 
-  RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_SdkEvent => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_SdkEvent => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent;
-
   @protected
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -2577,15 +2559,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  SdkEvent
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return SdkEventImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -2616,25 +2589,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  SdkEvent
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return SdkEventImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  RustStreamSink<SdkEvent>
-  dco_decode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
-    dynamic raw,
-  ) {
+  RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     throw UnimplementedError();
   }
 
   @protected
-  RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw) {
+  RustStreamSink<SdkEvent> dco_decode_StreamSink_sdk_event_Sse(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     throw UnimplementedError();
   }
@@ -2698,6 +2659,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ReceivedMessage dco_decode_box_autoadd_received_message(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_received_message(raw);
+  }
+
+  @protected
   RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_revoke_message_req(raw);
@@ -2713,6 +2680,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SendMessageReq dco_decode_box_autoadd_send_message_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_send_message_req(raw);
+  }
+
+  @protected
+  UserInfo dco_decode_box_autoadd_user_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_user_info(raw);
   }
 
   @protected
@@ -2736,6 +2709,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ContentType dco_decode_content_type(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return ContentType.values[raw as int];
+  }
+
+  @protected
+  Conversation dco_decode_conversation(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 19)
+      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
+    return Conversation(
+      conversationId: dco_decode_String(arr[0]),
+      conversationType: dco_decode_i_32(arr[1]),
+      userId: dco_decode_String(arr[2]),
+      groupId: dco_decode_String(arr[3]),
+      showName: dco_decode_String(arr[4]),
+      faceUrl: dco_decode_String(arr[5]),
+      recvMsgOpt: dco_decode_i_32(arr[6]),
+      unreadCount: dco_decode_i_32(arr[7]),
+      groupAtType: dco_decode_i_32(arr[8]),
+      latestMsgSeq: dco_decode_i_64(arr[9]),
+      latestMsg: dco_decode_String(arr[10]),
+      latestMsgSendTime: dco_decode_i_64(arr[11]),
+      draftText: dco_decode_String(arr[12]),
+      draftTextTime: dco_decode_i_64(arr[13]),
+      isPinned: dco_decode_bool(arr[14]),
+      isPrivateChat: dco_decode_bool(arr[15]),
+      isNotInGroup: dco_decode_bool(arr[16]),
+      updateFlag: dco_decode_i_32(arr[17]),
+      syncAction: dco_decode_opt_String(arr[18]),
+    );
   }
 
   @protected
@@ -2862,9 +2864,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<MsgData>
+  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(
+          dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData,
+        )
+        .toList();
+  }
+
+  @protected
   List<String> dco_decode_list_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
+  List<Conversation> dco_decode_list_conversation(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_conversation).toList();
   }
 
   @protected
@@ -2919,6 +2940,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<MessageInfo> dco_decode_list_message_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_message_info).toList();
+  }
+
+  @protected
+  Int32List dco_decode_list_prim_i_32_strict(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as Int32List;
   }
 
   @protected
@@ -3112,6 +3139,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ReceivedMessage dco_decode_received_message(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 16)
+      throw Exception('unexpected arr length: expect 16 but see ${arr.length}');
+    return ReceivedMessage(
+      serverMsgId: dco_decode_String(arr[0]),
+      clientMsgId: dco_decode_String(arr[1]),
+      sendId: dco_decode_String(arr[2]),
+      recvId: dco_decode_String(arr[3]),
+      senderPlatformId: dco_decode_i_32(arr[4]),
+      senderNickName: dco_decode_String(arr[5]),
+      senderFaceUrl: dco_decode_String(arr[6]),
+      sessionType: dco_decode_i_32(arr[7]),
+      msgFrom: dco_decode_i_32(arr[8]),
+      contentType: dco_decode_i_32(arr[9]),
+      content: dco_decode_String(arr[10]),
+      seq: dco_decode_i_64(arr[11]),
+      sendTime: dco_decode_i_64(arr[12]),
+      createTime: dco_decode_i_64(arr[13]),
+      conversationId: dco_decode_String(arr[14]),
+      groupId: dco_decode_String(arr[15]),
+    );
+  }
+
+  @protected
   RevokeMessageReq dco_decode_revoke_message_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -3123,6 +3176,203 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       clientMsgId: dco_decode_String(arr[2]),
       sessionType: dco_decode_session_type(arr[3]),
     );
+  }
+
+  @protected
+  SdkEvent dco_decode_sdk_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return SdkEvent_Connecting();
+      case 1:
+        return SdkEvent_Connected();
+      case 2:
+        return SdkEvent_Disconnected(reason: dco_decode_String(raw[1]));
+      case 3:
+        return SdkEvent_ConnectFailed(error: dco_decode_String(raw[1]));
+      case 4:
+        return SdkEvent_PushMessage(
+          reqIdentifier: dco_decode_i_32(raw[1]),
+          data: dco_decode_list_prim_u_8_strict(raw[2]),
+        );
+      case 5:
+        return SdkEvent_PushMessages(
+          conversationId: dco_decode_String(raw[1]),
+          msgs:
+              dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+                raw[2],
+              ),
+          isEnd: dco_decode_bool(raw[3]),
+          endSeq: dco_decode_i_64(raw[4]),
+        );
+      case 6:
+        return SdkEvent_PushNotificationMessages(
+          conversationId: dco_decode_String(raw[1]),
+          msgs:
+              dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+                raw[2],
+              ),
+          isEnd: dco_decode_bool(raw[3]),
+          endSeq: dco_decode_i_64(raw[4]),
+        );
+      case 7:
+        return SdkEvent_SyncStarted();
+      case 8:
+        return SdkEvent_SyncProgress(
+          progress: dco_decode_u_8(raw[1]),
+          message: dco_decode_String(raw[2]),
+        );
+      case 9:
+        return SdkEvent_SyncFinished();
+      case 10:
+        return SdkEvent_SyncFailed(error: dco_decode_String(raw[1]));
+      case 11:
+        return SdkEvent_NewMessage(
+          message: dco_decode_box_autoadd_received_message(raw[1]),
+        );
+      case 12:
+        return SdkEvent_MessageSent(
+          clientMsgId: dco_decode_String(raw[1]),
+          serverMsgId: dco_decode_String(raw[2]),
+          sendTime: dco_decode_i_64(raw[3]),
+        );
+      case 13:
+        return SdkEvent_MessageSendFailed(
+          clientMsgId: dco_decode_String(raw[1]),
+          error: dco_decode_String(raw[2]),
+        );
+      case 14:
+        return SdkEvent_MessageRevoked(
+          conversationId: dco_decode_String(raw[1]),
+          seq: dco_decode_i_64(raw[2]),
+          clientMsgId: dco_decode_String(raw[3]),
+        );
+      case 15:
+        return SdkEvent_MessagesDeleted(
+          conversationId: dco_decode_String(raw[1]),
+          clientMsgIds: dco_decode_list_String(raw[2]),
+        );
+      case 16:
+        return SdkEvent_ConversationChanged(
+          conversations: dco_decode_list_conversation(raw[1]),
+        );
+      case 17:
+        return SdkEvent_ConversationDeleted(
+          conversationIds: dco_decode_list_String(raw[1]),
+        );
+      case 18:
+        return SdkEvent_NewConversation(
+          conversations: dco_decode_list_conversation(raw[1]),
+        );
+      case 19:
+        return SdkEvent_TotalUnreadCountChanged(count: dco_decode_i_64(raw[1]));
+      case 20:
+        return SdkEvent_FriendApplicationAdded(
+          application: dco_decode_String(raw[1]),
+        );
+      case 21:
+        return SdkEvent_FriendApplicationApproved(
+          application: dco_decode_String(raw[1]),
+        );
+      case 22:
+        return SdkEvent_FriendApplicationRejected(
+          application: dco_decode_String(raw[1]),
+        );
+      case 23:
+        return SdkEvent_FriendAdded(
+          friends: dco_decode_list_friend_info(raw[1]),
+        );
+      case 24:
+        return SdkEvent_FriendDeleted(friendId: dco_decode_String(raw[1]));
+      case 25:
+        return SdkEvent_BlackAdded(userId: dco_decode_String(raw[1]));
+      case 26:
+        return SdkEvent_BlackDeleted(blackId: dco_decode_String(raw[1]));
+      case 27:
+        return SdkEvent_FriendInfoUpdated(userId: dco_decode_String(raw[1]));
+      case 28:
+        return SdkEvent_GroupCreated(groupId: dco_decode_String(raw[1]));
+      case 29:
+        return SdkEvent_GroupInfoChanged(groupId: dco_decode_String(raw[1]));
+      case 30:
+        return SdkEvent_GroupMemberAdded(
+          groupId: dco_decode_String(raw[1]),
+          memberIds: dco_decode_list_String(raw[2]),
+        );
+      case 31:
+        return SdkEvent_GroupMemberDeleted(
+          groupId: dco_decode_String(raw[1]),
+          memberIds: dco_decode_list_String(raw[2]),
+        );
+      case 32:
+        return SdkEvent_GroupApplicationAdded(
+          application: dco_decode_String(raw[1]),
+        );
+      case 33:
+        return SdkEvent_GroupApplicationApproved(
+          application: dco_decode_String(raw[1]),
+        );
+      case 34:
+        return SdkEvent_GroupApplicationRejected(
+          application: dco_decode_String(raw[1]),
+        );
+      case 35:
+        return SdkEvent_GroupDismissed(groupId: dco_decode_String(raw[1]));
+      case 36:
+        return SdkEvent_GroupMuted(groupId: dco_decode_String(raw[1]));
+      case 37:
+        return SdkEvent_GroupCancelMuted(groupId: dco_decode_String(raw[1]));
+      case 38:
+        return SdkEvent_GroupMemberMuted(
+          groupId: dco_decode_String(raw[1]),
+          userId: dco_decode_String(raw[2]),
+        );
+      case 39:
+        return SdkEvent_GroupMemberCancelMuted(
+          groupId: dco_decode_String(raw[1]),
+          userId: dco_decode_String(raw[2]),
+        );
+      case 40:
+        return SdkEvent_GroupMemberInfoChanged(
+          groupId: dco_decode_String(raw[1]),
+          userId: dco_decode_String(raw[2]),
+        );
+      case 41:
+        return SdkEvent_GroupOwnerTransferred(
+          groupId: dco_decode_String(raw[1]),
+          newOwnerId: dco_decode_String(raw[2]),
+        );
+      case 42:
+        return SdkEvent_UserInfoUpdated(
+          user: dco_decode_box_autoadd_user_info(raw[1]),
+        );
+      case 43:
+        return SdkEvent_UserStatusChanged(
+          userId: dco_decode_String(raw[1]),
+          status: dco_decode_i_32(raw[2]),
+          platformIds: dco_decode_list_prim_i_32_strict(raw[3]),
+        );
+      case 44:
+        return SdkEvent_KickedOffline(reason: dco_decode_String(raw[1]));
+      case 45:
+        return SdkEvent_Reconnecting(
+          attempt: dco_decode_u_32(raw[1]),
+          maxAttempts: dco_decode_u_32(raw[2]),
+        );
+      case 46:
+        return SdkEvent_TokenExpired();
+      case 47:
+        return SdkEvent_LoginSuccess(userId: dco_decode_String(raw[1]));
+      case 48:
+        return SdkEvent_Logout();
+      case 49:
+        return SdkEvent_CustomEvent(
+          eventType: dco_decode_String(raw[1]),
+          data: dco_decode_String(raw[2]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
   }
 
   @protected
@@ -3233,18 +3483,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  SdkEvent
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return SdkEventImpl.frbInternalSseDecode(
-      sse_decode_usize(deserializer),
-      sse_decode_i_32(deserializer),
-    );
-  }
-
-  @protected
   OpenImBridgeClient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
@@ -3281,20 +3519,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  SdkEvent
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return SdkEventImpl.frbInternalSseDecode(
-      sse_decode_usize(deserializer),
-      sse_decode_i_32(deserializer),
-    );
-  }
-
-  @protected
-  RustStreamSink<SdkEvent>
-  sse_decode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
+  RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -3302,7 +3527,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(
+  RustStreamSink<SdkEvent> sse_decode_StreamSink_sdk_event_Sse(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -3379,6 +3604,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ReceivedMessage sse_decode_box_autoadd_received_message(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_received_message(deserializer));
+  }
+
+  @protected
   RevokeMessageReq sse_decode_box_autoadd_revoke_message_req(
     SseDeserializer deserializer,
   ) {
@@ -3400,6 +3633,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_send_message_req(deserializer));
+  }
+
+  @protected
+  UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_user_info(deserializer));
   }
 
   @protected
@@ -3428,6 +3667,51 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return ContentType.values[inner];
+  }
+
+  @protected
+  Conversation sse_decode_conversation(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_conversationType = sse_decode_i_32(deserializer);
+    var var_userId = sse_decode_String(deserializer);
+    var var_groupId = sse_decode_String(deserializer);
+    var var_showName = sse_decode_String(deserializer);
+    var var_faceUrl = sse_decode_String(deserializer);
+    var var_recvMsgOpt = sse_decode_i_32(deserializer);
+    var var_unreadCount = sse_decode_i_32(deserializer);
+    var var_groupAtType = sse_decode_i_32(deserializer);
+    var var_latestMsgSeq = sse_decode_i_64(deserializer);
+    var var_latestMsg = sse_decode_String(deserializer);
+    var var_latestMsgSendTime = sse_decode_i_64(deserializer);
+    var var_draftText = sse_decode_String(deserializer);
+    var var_draftTextTime = sse_decode_i_64(deserializer);
+    var var_isPinned = sse_decode_bool(deserializer);
+    var var_isPrivateChat = sse_decode_bool(deserializer);
+    var var_isNotInGroup = sse_decode_bool(deserializer);
+    var var_updateFlag = sse_decode_i_32(deserializer);
+    var var_syncAction = sse_decode_opt_String(deserializer);
+    return Conversation(
+      conversationId: var_conversationId,
+      conversationType: var_conversationType,
+      userId: var_userId,
+      groupId: var_groupId,
+      showName: var_showName,
+      faceUrl: var_faceUrl,
+      recvMsgOpt: var_recvMsgOpt,
+      unreadCount: var_unreadCount,
+      groupAtType: var_groupAtType,
+      latestMsgSeq: var_latestMsgSeq,
+      latestMsg: var_latestMsg,
+      latestMsgSendTime: var_latestMsgSendTime,
+      draftText: var_draftText,
+      draftTextTime: var_draftTextTime,
+      isPinned: var_isPinned,
+      isPrivateChat: var_isPrivateChat,
+      isNotInGroup: var_isNotInGroup,
+      updateFlag: var_updateFlag,
+      syncAction: var_syncAction,
+    );
   }
 
   @protected
@@ -3578,6 +3862,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<MsgData>
+  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <MsgData>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(
+        sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+          deserializer,
+        ),
+      );
+    }
+    return ans_;
+  }
+
+  @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -3585,6 +3888,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <String>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<Conversation> sse_decode_list_conversation(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <Conversation>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_conversation(deserializer));
     }
     return ans_;
   }
@@ -3705,6 +4022,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       ans_.add(sse_decode_message_info(deserializer));
     }
     return ans_;
+  }
+
+  @protected
+  Int32List sse_decode_list_prim_i_32_strict(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var len_ = sse_decode_i_32(deserializer);
+    return deserializer.buffer.getInt32List(len_);
   }
 
   @protected
@@ -3994,6 +4318,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ReceivedMessage sse_decode_received_message(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_serverMsgId = sse_decode_String(deserializer);
+    var var_clientMsgId = sse_decode_String(deserializer);
+    var var_sendId = sse_decode_String(deserializer);
+    var var_recvId = sse_decode_String(deserializer);
+    var var_senderPlatformId = sse_decode_i_32(deserializer);
+    var var_senderNickName = sse_decode_String(deserializer);
+    var var_senderFaceUrl = sse_decode_String(deserializer);
+    var var_sessionType = sse_decode_i_32(deserializer);
+    var var_msgFrom = sse_decode_i_32(deserializer);
+    var var_contentType = sse_decode_i_32(deserializer);
+    var var_content = sse_decode_String(deserializer);
+    var var_seq = sse_decode_i_64(deserializer);
+    var var_sendTime = sse_decode_i_64(deserializer);
+    var var_createTime = sse_decode_i_64(deserializer);
+    var var_conversationId = sse_decode_String(deserializer);
+    var var_groupId = sse_decode_String(deserializer);
+    return ReceivedMessage(
+      serverMsgId: var_serverMsgId,
+      clientMsgId: var_clientMsgId,
+      sendId: var_sendId,
+      recvId: var_recvId,
+      senderPlatformId: var_senderPlatformId,
+      senderNickName: var_senderNickName,
+      senderFaceUrl: var_senderFaceUrl,
+      sessionType: var_sessionType,
+      msgFrom: var_msgFrom,
+      contentType: var_contentType,
+      content: var_content,
+      seq: var_seq,
+      sendTime: var_sendTime,
+      createTime: var_createTime,
+      conversationId: var_conversationId,
+      groupId: var_groupId,
+    );
+  }
+
+  @protected
   RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_conversationId = sse_decode_String(deserializer);
@@ -4006,6 +4369,248 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       clientMsgId: var_clientMsgId,
       sessionType: var_sessionType,
     );
+  }
+
+  @protected
+  SdkEvent sse_decode_sdk_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        return SdkEvent_Connecting();
+      case 1:
+        return SdkEvent_Connected();
+      case 2:
+        var var_reason = sse_decode_String(deserializer);
+        return SdkEvent_Disconnected(reason: var_reason);
+      case 3:
+        var var_error = sse_decode_String(deserializer);
+        return SdkEvent_ConnectFailed(error: var_error);
+      case 4:
+        var var_reqIdentifier = sse_decode_i_32(deserializer);
+        var var_data = sse_decode_list_prim_u_8_strict(deserializer);
+        return SdkEvent_PushMessage(
+          reqIdentifier: var_reqIdentifier,
+          data: var_data,
+        );
+      case 5:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_msgs =
+            sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+              deserializer,
+            );
+        var var_isEnd = sse_decode_bool(deserializer);
+        var var_endSeq = sse_decode_i_64(deserializer);
+        return SdkEvent_PushMessages(
+          conversationId: var_conversationId,
+          msgs: var_msgs,
+          isEnd: var_isEnd,
+          endSeq: var_endSeq,
+        );
+      case 6:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_msgs =
+            sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+              deserializer,
+            );
+        var var_isEnd = sse_decode_bool(deserializer);
+        var var_endSeq = sse_decode_i_64(deserializer);
+        return SdkEvent_PushNotificationMessages(
+          conversationId: var_conversationId,
+          msgs: var_msgs,
+          isEnd: var_isEnd,
+          endSeq: var_endSeq,
+        );
+      case 7:
+        return SdkEvent_SyncStarted();
+      case 8:
+        var var_progress = sse_decode_u_8(deserializer);
+        var var_message = sse_decode_String(deserializer);
+        return SdkEvent_SyncProgress(
+          progress: var_progress,
+          message: var_message,
+        );
+      case 9:
+        return SdkEvent_SyncFinished();
+      case 10:
+        var var_error = sse_decode_String(deserializer);
+        return SdkEvent_SyncFailed(error: var_error);
+      case 11:
+        var var_message = sse_decode_box_autoadd_received_message(deserializer);
+        return SdkEvent_NewMessage(message: var_message);
+      case 12:
+        var var_clientMsgId = sse_decode_String(deserializer);
+        var var_serverMsgId = sse_decode_String(deserializer);
+        var var_sendTime = sse_decode_i_64(deserializer);
+        return SdkEvent_MessageSent(
+          clientMsgId: var_clientMsgId,
+          serverMsgId: var_serverMsgId,
+          sendTime: var_sendTime,
+        );
+      case 13:
+        var var_clientMsgId = sse_decode_String(deserializer);
+        var var_error = sse_decode_String(deserializer);
+        return SdkEvent_MessageSendFailed(
+          clientMsgId: var_clientMsgId,
+          error: var_error,
+        );
+      case 14:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_seq = sse_decode_i_64(deserializer);
+        var var_clientMsgId = sse_decode_String(deserializer);
+        return SdkEvent_MessageRevoked(
+          conversationId: var_conversationId,
+          seq: var_seq,
+          clientMsgId: var_clientMsgId,
+        );
+      case 15:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_clientMsgIds = sse_decode_list_String(deserializer);
+        return SdkEvent_MessagesDeleted(
+          conversationId: var_conversationId,
+          clientMsgIds: var_clientMsgIds,
+        );
+      case 16:
+        var var_conversations = sse_decode_list_conversation(deserializer);
+        return SdkEvent_ConversationChanged(conversations: var_conversations);
+      case 17:
+        var var_conversationIds = sse_decode_list_String(deserializer);
+        return SdkEvent_ConversationDeleted(
+          conversationIds: var_conversationIds,
+        );
+      case 18:
+        var var_conversations = sse_decode_list_conversation(deserializer);
+        return SdkEvent_NewConversation(conversations: var_conversations);
+      case 19:
+        var var_count = sse_decode_i_64(deserializer);
+        return SdkEvent_TotalUnreadCountChanged(count: var_count);
+      case 20:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_FriendApplicationAdded(application: var_application);
+      case 21:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_FriendApplicationApproved(application: var_application);
+      case 22:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_FriendApplicationRejected(application: var_application);
+      case 23:
+        var var_friends = sse_decode_list_friend_info(deserializer);
+        return SdkEvent_FriendAdded(friends: var_friends);
+      case 24:
+        var var_friendId = sse_decode_String(deserializer);
+        return SdkEvent_FriendDeleted(friendId: var_friendId);
+      case 25:
+        var var_userId = sse_decode_String(deserializer);
+        return SdkEvent_BlackAdded(userId: var_userId);
+      case 26:
+        var var_blackId = sse_decode_String(deserializer);
+        return SdkEvent_BlackDeleted(blackId: var_blackId);
+      case 27:
+        var var_userId = sse_decode_String(deserializer);
+        return SdkEvent_FriendInfoUpdated(userId: var_userId);
+      case 28:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupCreated(groupId: var_groupId);
+      case 29:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupInfoChanged(groupId: var_groupId);
+      case 30:
+        var var_groupId = sse_decode_String(deserializer);
+        var var_memberIds = sse_decode_list_String(deserializer);
+        return SdkEvent_GroupMemberAdded(
+          groupId: var_groupId,
+          memberIds: var_memberIds,
+        );
+      case 31:
+        var var_groupId = sse_decode_String(deserializer);
+        var var_memberIds = sse_decode_list_String(deserializer);
+        return SdkEvent_GroupMemberDeleted(
+          groupId: var_groupId,
+          memberIds: var_memberIds,
+        );
+      case 32:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_GroupApplicationAdded(application: var_application);
+      case 33:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_GroupApplicationApproved(application: var_application);
+      case 34:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_GroupApplicationRejected(application: var_application);
+      case 35:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupDismissed(groupId: var_groupId);
+      case 36:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupMuted(groupId: var_groupId);
+      case 37:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupCancelMuted(groupId: var_groupId);
+      case 38:
+        var var_groupId = sse_decode_String(deserializer);
+        var var_userId = sse_decode_String(deserializer);
+        return SdkEvent_GroupMemberMuted(
+          groupId: var_groupId,
+          userId: var_userId,
+        );
+      case 39:
+        var var_groupId = sse_decode_String(deserializer);
+        var var_userId = sse_decode_String(deserializer);
+        return SdkEvent_GroupMemberCancelMuted(
+          groupId: var_groupId,
+          userId: var_userId,
+        );
+      case 40:
+        var var_groupId = sse_decode_String(deserializer);
+        var var_userId = sse_decode_String(deserializer);
+        return SdkEvent_GroupMemberInfoChanged(
+          groupId: var_groupId,
+          userId: var_userId,
+        );
+      case 41:
+        var var_groupId = sse_decode_String(deserializer);
+        var var_newOwnerId = sse_decode_String(deserializer);
+        return SdkEvent_GroupOwnerTransferred(
+          groupId: var_groupId,
+          newOwnerId: var_newOwnerId,
+        );
+      case 42:
+        var var_user = sse_decode_box_autoadd_user_info(deserializer);
+        return SdkEvent_UserInfoUpdated(user: var_user);
+      case 43:
+        var var_userId = sse_decode_String(deserializer);
+        var var_status = sse_decode_i_32(deserializer);
+        var var_platformIds = sse_decode_list_prim_i_32_strict(deserializer);
+        return SdkEvent_UserStatusChanged(
+          userId: var_userId,
+          status: var_status,
+          platformIds: var_platformIds,
+        );
+      case 44:
+        var var_reason = sse_decode_String(deserializer);
+        return SdkEvent_KickedOffline(reason: var_reason);
+      case 45:
+        var var_attempt = sse_decode_u_32(deserializer);
+        var var_maxAttempts = sse_decode_u_32(deserializer);
+        return SdkEvent_Reconnecting(
+          attempt: var_attempt,
+          maxAttempts: var_maxAttempts,
+        );
+      case 46:
+        return SdkEvent_TokenExpired();
+      case 47:
+        var var_userId = sse_decode_String(deserializer);
+        return SdkEvent_LoginSuccess(userId: var_userId);
+      case 48:
+        return SdkEvent_Logout();
+      case 49:
+        var var_eventType = sse_decode_String(deserializer);
+        var var_data = sse_decode_String(deserializer);
+        return SdkEvent_CustomEvent(eventType: var_eventType, data: var_data);
+      default:
+        throw UnimplementedError('');
+    }
   }
 
   @protected
@@ -4130,19 +4735,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
-    SdkEvent self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-      (self as SdkEventImpl).frbInternalSseEncode(move: true),
-      serializer,
-    );
-  }
-
-  @protected
-  void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
     SseSerializer serializer,
@@ -4181,38 +4773,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent(
-    SdkEvent self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-      (self as SdkEventImpl).frbInternalSseEncode(move: null),
-      serializer,
-    );
-  }
-
-  @protected
-  void
-  sse_encode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent_Sse(
-    RustStreamSink<SdkEvent> self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(
-      self.setupAndSerialize(
-        codec: SseCodec(
-          decodeSuccessData:
-              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSdkEvent,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-      ),
-      serializer,
-    );
-  }
-
-  @protected
   void sse_encode_StreamSink_i_32_Sse(
     RustStreamSink<int> self,
     SseSerializer serializer,
@@ -4222,6 +4782,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       self.setupAndSerialize(
         codec: SseCodec(
           decodeSuccessData: sse_decode_i_32,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_sdk_event_Sse(
+    RustStreamSink<SdkEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_sdk_event,
           decodeErrorData: sse_decode_AnyhowException,
         ),
       ),
@@ -4305,6 +4882,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_received_message(
+    ReceivedMessage self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_received_message(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_revoke_message_req(
     RevokeMessageReq self,
     SseSerializer serializer,
@@ -4332,6 +4918,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_user_info(
+    UserInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_user_info(self, serializer);
+  }
+
+  @protected
   void sse_encode_client_config(ClientConfig self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.userId, serializer);
@@ -4347,6 +4942,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_content_type(ContentType self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_conversation(Conversation self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_i_32(self.conversationType, serializer);
+    sse_encode_String(self.userId, serializer);
+    sse_encode_String(self.groupId, serializer);
+    sse_encode_String(self.showName, serializer);
+    sse_encode_String(self.faceUrl, serializer);
+    sse_encode_i_32(self.recvMsgOpt, serializer);
+    sse_encode_i_32(self.unreadCount, serializer);
+    sse_encode_i_32(self.groupAtType, serializer);
+    sse_encode_i_64(self.latestMsgSeq, serializer);
+    sse_encode_String(self.latestMsg, serializer);
+    sse_encode_i_64(self.latestMsgSendTime, serializer);
+    sse_encode_String(self.draftText, serializer);
+    sse_encode_i_64(self.draftTextTime, serializer);
+    sse_encode_bool(self.isPinned, serializer);
+    sse_encode_bool(self.isPrivateChat, serializer);
+    sse_encode_bool(self.isNotInGroup, serializer);
+    sse_encode_i_32(self.updateFlag, serializer);
+    sse_encode_opt_String(self.syncAction, serializer);
   }
 
   @protected
@@ -4450,11 +5069,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void
+  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    List<MsgData> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+        item,
+        serializer,
+      );
+    }
+  }
+
+  @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_conversation(
+    List<Conversation> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_conversation(item, serializer);
     }
   }
 
@@ -4564,6 +5211,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     for (final item in self) {
       sse_encode_message_info(item, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_list_prim_i_32_strict(
+    Int32List self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    serializer.buffer.putInt32List(self);
   }
 
   @protected
@@ -4767,6 +5424,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_received_message(
+    ReceivedMessage self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.serverMsgId, serializer);
+    sse_encode_String(self.clientMsgId, serializer);
+    sse_encode_String(self.sendId, serializer);
+    sse_encode_String(self.recvId, serializer);
+    sse_encode_i_32(self.senderPlatformId, serializer);
+    sse_encode_String(self.senderNickName, serializer);
+    sse_encode_String(self.senderFaceUrl, serializer);
+    sse_encode_i_32(self.sessionType, serializer);
+    sse_encode_i_32(self.msgFrom, serializer);
+    sse_encode_i_32(self.contentType, serializer);
+    sse_encode_String(self.content, serializer);
+    sse_encode_i_64(self.seq, serializer);
+    sse_encode_i_64(self.sendTime, serializer);
+    sse_encode_i_64(self.createTime, serializer);
+    sse_encode_String(self.conversationId, serializer);
+    sse_encode_String(self.groupId, serializer);
+  }
+
+  @protected
   void sse_encode_revoke_message_req(
     RevokeMessageReq self,
     SseSerializer serializer,
@@ -4776,6 +5457,242 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_64(self.seq, serializer);
     sse_encode_String(self.clientMsgId, serializer);
     sse_encode_session_type(self.sessionType, serializer);
+  }
+
+  @protected
+  void sse_encode_sdk_event(SdkEvent self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case SdkEvent_Connecting():
+        sse_encode_i_32(0, serializer);
+      case SdkEvent_Connected():
+        sse_encode_i_32(1, serializer);
+      case SdkEvent_Disconnected(reason: final reason):
+        sse_encode_i_32(2, serializer);
+        sse_encode_String(reason, serializer);
+      case SdkEvent_ConnectFailed(error: final error):
+        sse_encode_i_32(3, serializer);
+        sse_encode_String(error, serializer);
+      case SdkEvent_PushMessage(
+        reqIdentifier: final reqIdentifier,
+        data: final data,
+      ):
+        sse_encode_i_32(4, serializer);
+        sse_encode_i_32(reqIdentifier, serializer);
+        sse_encode_list_prim_u_8_strict(data, serializer);
+      case SdkEvent_PushMessages(
+        conversationId: final conversationId,
+        msgs: final msgs,
+        isEnd: final isEnd,
+        endSeq: final endSeq,
+      ):
+        sse_encode_i_32(5, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+          msgs,
+          serializer,
+        );
+        sse_encode_bool(isEnd, serializer);
+        sse_encode_i_64(endSeq, serializer);
+      case SdkEvent_PushNotificationMessages(
+        conversationId: final conversationId,
+        msgs: final msgs,
+        isEnd: final isEnd,
+        endSeq: final endSeq,
+      ):
+        sse_encode_i_32(6, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+          msgs,
+          serializer,
+        );
+        sse_encode_bool(isEnd, serializer);
+        sse_encode_i_64(endSeq, serializer);
+      case SdkEvent_SyncStarted():
+        sse_encode_i_32(7, serializer);
+      case SdkEvent_SyncProgress(
+        progress: final progress,
+        message: final message,
+      ):
+        sse_encode_i_32(8, serializer);
+        sse_encode_u_8(progress, serializer);
+        sse_encode_String(message, serializer);
+      case SdkEvent_SyncFinished():
+        sse_encode_i_32(9, serializer);
+      case SdkEvent_SyncFailed(error: final error):
+        sse_encode_i_32(10, serializer);
+        sse_encode_String(error, serializer);
+      case SdkEvent_NewMessage(message: final message):
+        sse_encode_i_32(11, serializer);
+        sse_encode_box_autoadd_received_message(message, serializer);
+      case SdkEvent_MessageSent(
+        clientMsgId: final clientMsgId,
+        serverMsgId: final serverMsgId,
+        sendTime: final sendTime,
+      ):
+        sse_encode_i_32(12, serializer);
+        sse_encode_String(clientMsgId, serializer);
+        sse_encode_String(serverMsgId, serializer);
+        sse_encode_i_64(sendTime, serializer);
+      case SdkEvent_MessageSendFailed(
+        clientMsgId: final clientMsgId,
+        error: final error,
+      ):
+        sse_encode_i_32(13, serializer);
+        sse_encode_String(clientMsgId, serializer);
+        sse_encode_String(error, serializer);
+      case SdkEvent_MessageRevoked(
+        conversationId: final conversationId,
+        seq: final seq,
+        clientMsgId: final clientMsgId,
+      ):
+        sse_encode_i_32(14, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_i_64(seq, serializer);
+        sse_encode_String(clientMsgId, serializer);
+      case SdkEvent_MessagesDeleted(
+        conversationId: final conversationId,
+        clientMsgIds: final clientMsgIds,
+      ):
+        sse_encode_i_32(15, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_list_String(clientMsgIds, serializer);
+      case SdkEvent_ConversationChanged(conversations: final conversations):
+        sse_encode_i_32(16, serializer);
+        sse_encode_list_conversation(conversations, serializer);
+      case SdkEvent_ConversationDeleted(conversationIds: final conversationIds):
+        sse_encode_i_32(17, serializer);
+        sse_encode_list_String(conversationIds, serializer);
+      case SdkEvent_NewConversation(conversations: final conversations):
+        sse_encode_i_32(18, serializer);
+        sse_encode_list_conversation(conversations, serializer);
+      case SdkEvent_TotalUnreadCountChanged(count: final count):
+        sse_encode_i_32(19, serializer);
+        sse_encode_i_64(count, serializer);
+      case SdkEvent_FriendApplicationAdded(application: final application):
+        sse_encode_i_32(20, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_FriendApplicationApproved(application: final application):
+        sse_encode_i_32(21, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_FriendApplicationRejected(application: final application):
+        sse_encode_i_32(22, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_FriendAdded(friends: final friends):
+        sse_encode_i_32(23, serializer);
+        sse_encode_list_friend_info(friends, serializer);
+      case SdkEvent_FriendDeleted(friendId: final friendId):
+        sse_encode_i_32(24, serializer);
+        sse_encode_String(friendId, serializer);
+      case SdkEvent_BlackAdded(userId: final userId):
+        sse_encode_i_32(25, serializer);
+        sse_encode_String(userId, serializer);
+      case SdkEvent_BlackDeleted(blackId: final blackId):
+        sse_encode_i_32(26, serializer);
+        sse_encode_String(blackId, serializer);
+      case SdkEvent_FriendInfoUpdated(userId: final userId):
+        sse_encode_i_32(27, serializer);
+        sse_encode_String(userId, serializer);
+      case SdkEvent_GroupCreated(groupId: final groupId):
+        sse_encode_i_32(28, serializer);
+        sse_encode_String(groupId, serializer);
+      case SdkEvent_GroupInfoChanged(groupId: final groupId):
+        sse_encode_i_32(29, serializer);
+        sse_encode_String(groupId, serializer);
+      case SdkEvent_GroupMemberAdded(
+        groupId: final groupId,
+        memberIds: final memberIds,
+      ):
+        sse_encode_i_32(30, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_list_String(memberIds, serializer);
+      case SdkEvent_GroupMemberDeleted(
+        groupId: final groupId,
+        memberIds: final memberIds,
+      ):
+        sse_encode_i_32(31, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_list_String(memberIds, serializer);
+      case SdkEvent_GroupApplicationAdded(application: final application):
+        sse_encode_i_32(32, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_GroupApplicationApproved(application: final application):
+        sse_encode_i_32(33, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_GroupApplicationRejected(application: final application):
+        sse_encode_i_32(34, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_GroupDismissed(groupId: final groupId):
+        sse_encode_i_32(35, serializer);
+        sse_encode_String(groupId, serializer);
+      case SdkEvent_GroupMuted(groupId: final groupId):
+        sse_encode_i_32(36, serializer);
+        sse_encode_String(groupId, serializer);
+      case SdkEvent_GroupCancelMuted(groupId: final groupId):
+        sse_encode_i_32(37, serializer);
+        sse_encode_String(groupId, serializer);
+      case SdkEvent_GroupMemberMuted(
+        groupId: final groupId,
+        userId: final userId,
+      ):
+        sse_encode_i_32(38, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_String(userId, serializer);
+      case SdkEvent_GroupMemberCancelMuted(
+        groupId: final groupId,
+        userId: final userId,
+      ):
+        sse_encode_i_32(39, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_String(userId, serializer);
+      case SdkEvent_GroupMemberInfoChanged(
+        groupId: final groupId,
+        userId: final userId,
+      ):
+        sse_encode_i_32(40, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_String(userId, serializer);
+      case SdkEvent_GroupOwnerTransferred(
+        groupId: final groupId,
+        newOwnerId: final newOwnerId,
+      ):
+        sse_encode_i_32(41, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_String(newOwnerId, serializer);
+      case SdkEvent_UserInfoUpdated(user: final user):
+        sse_encode_i_32(42, serializer);
+        sse_encode_box_autoadd_user_info(user, serializer);
+      case SdkEvent_UserStatusChanged(
+        userId: final userId,
+        status: final status,
+        platformIds: final platformIds,
+      ):
+        sse_encode_i_32(43, serializer);
+        sse_encode_String(userId, serializer);
+        sse_encode_i_32(status, serializer);
+        sse_encode_list_prim_i_32_strict(platformIds, serializer);
+      case SdkEvent_KickedOffline(reason: final reason):
+        sse_encode_i_32(44, serializer);
+        sse_encode_String(reason, serializer);
+      case SdkEvent_Reconnecting(
+        attempt: final attempt,
+        maxAttempts: final maxAttempts,
+      ):
+        sse_encode_i_32(45, serializer);
+        sse_encode_u_32(attempt, serializer);
+        sse_encode_u_32(maxAttempts, serializer);
+      case SdkEvent_TokenExpired():
+        sse_encode_i_32(46, serializer);
+      case SdkEvent_LoginSuccess(userId: final userId):
+        sse_encode_i_32(47, serializer);
+        sse_encode_String(userId, serializer);
+      case SdkEvent_Logout():
+        sse_encode_i_32(48, serializer);
+      case SdkEvent_CustomEvent(eventType: final eventType, data: final data):
+        sse_encode_i_32(49, serializer);
+        sse_encode_String(eventType, serializer);
+        sse_encode_String(data, serializer);
+    }
   }
 
   @protected
@@ -5247,24 +6164,4 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         faceUrl: faceUrl,
         ex: ex,
       );
-}
-
-@sealed
-class SdkEventImpl extends RustOpaque implements SdkEvent {
-  // Not to be used by end users
-  SdkEventImpl.frbInternalDcoDecode(List<dynamic> wire)
-    : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  SdkEventImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-    : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_SdkEvent,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_SdkEvent,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_SdkEventPtr,
-  );
 }

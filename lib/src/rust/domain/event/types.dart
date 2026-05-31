@@ -4,7 +4,160 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../../frb_generated.dart';
+import '../../lib.dart';
+import '../model/conversation.dart';
+import '../model/friend.dart';
+import '../model/message.dart';
+import '../model/user.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
+part 'types.freezed.dart';
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<SdkEvent>>
-abstract class SdkEvent implements RustOpaqueInterface {}
+@freezed
+sealed class SdkEvent with _$SdkEvent {
+  const SdkEvent._();
+
+  const factory SdkEvent.connecting() = SdkEvent_Connecting;
+  const factory SdkEvent.connected() = SdkEvent_Connected;
+  const factory SdkEvent.disconnected({required String reason}) =
+      SdkEvent_Disconnected;
+  const factory SdkEvent.connectFailed({required String error}) =
+      SdkEvent_ConnectFailed;
+  const factory SdkEvent.pushMessage({
+    required int reqIdentifier,
+    required Uint8List data,
+  }) = SdkEvent_PushMessage;
+  const factory SdkEvent.pushMessages({
+    required String conversationId,
+    required List<MsgData> msgs,
+    required bool isEnd,
+    required PlatformInt64 endSeq,
+  }) = SdkEvent_PushMessages;
+  const factory SdkEvent.pushNotificationMessages({
+    required String conversationId,
+    required List<MsgData> msgs,
+    required bool isEnd,
+    required PlatformInt64 endSeq,
+  }) = SdkEvent_PushNotificationMessages;
+  const factory SdkEvent.syncStarted() = SdkEvent_SyncStarted;
+  const factory SdkEvent.syncProgress({
+    required int progress,
+    required String message,
+  }) = SdkEvent_SyncProgress;
+  const factory SdkEvent.syncFinished() = SdkEvent_SyncFinished;
+  const factory SdkEvent.syncFailed({required String error}) =
+      SdkEvent_SyncFailed;
+  const factory SdkEvent.newMessage({required ReceivedMessage message}) =
+      SdkEvent_NewMessage;
+  const factory SdkEvent.messageSent({
+    required String clientMsgId,
+    required String serverMsgId,
+    required PlatformInt64 sendTime,
+  }) = SdkEvent_MessageSent;
+  const factory SdkEvent.messageSendFailed({
+    required String clientMsgId,
+    required String error,
+  }) = SdkEvent_MessageSendFailed;
+  const factory SdkEvent.messageRevoked({
+    required String conversationId,
+    required PlatformInt64 seq,
+    required String clientMsgId,
+  }) = SdkEvent_MessageRevoked;
+  const factory SdkEvent.messagesDeleted({
+    required String conversationId,
+    required List<String> clientMsgIds,
+  }) = SdkEvent_MessagesDeleted;
+  const factory SdkEvent.conversationChanged({
+    required List<Conversation> conversations,
+  }) = SdkEvent_ConversationChanged;
+  const factory SdkEvent.conversationDeleted({
+    required List<String> conversationIds,
+  }) = SdkEvent_ConversationDeleted;
+  const factory SdkEvent.newConversation({
+    required List<Conversation> conversations,
+  }) = SdkEvent_NewConversation;
+  const factory SdkEvent.totalUnreadCountChanged({
+    required PlatformInt64 count,
+  }) = SdkEvent_TotalUnreadCountChanged;
+  const factory SdkEvent.friendApplicationAdded({required String application}) =
+      SdkEvent_FriendApplicationAdded;
+  const factory SdkEvent.friendApplicationApproved({
+    required String application,
+  }) = SdkEvent_FriendApplicationApproved;
+  const factory SdkEvent.friendApplicationRejected({
+    required String application,
+  }) = SdkEvent_FriendApplicationRejected;
+  const factory SdkEvent.friendAdded({required List<FriendInfo> friends}) =
+      SdkEvent_FriendAdded;
+  const factory SdkEvent.friendDeleted({required String friendId}) =
+      SdkEvent_FriendDeleted;
+  const factory SdkEvent.blackAdded({required String userId}) =
+      SdkEvent_BlackAdded;
+  const factory SdkEvent.blackDeleted({required String blackId}) =
+      SdkEvent_BlackDeleted;
+  const factory SdkEvent.friendInfoUpdated({required String userId}) =
+      SdkEvent_FriendInfoUpdated;
+  const factory SdkEvent.groupCreated({required String groupId}) =
+      SdkEvent_GroupCreated;
+  const factory SdkEvent.groupInfoChanged({required String groupId}) =
+      SdkEvent_GroupInfoChanged;
+  const factory SdkEvent.groupMemberAdded({
+    required String groupId,
+    required List<String> memberIds,
+  }) = SdkEvent_GroupMemberAdded;
+  const factory SdkEvent.groupMemberDeleted({
+    required String groupId,
+    required List<String> memberIds,
+  }) = SdkEvent_GroupMemberDeleted;
+  const factory SdkEvent.groupApplicationAdded({required String application}) =
+      SdkEvent_GroupApplicationAdded;
+  const factory SdkEvent.groupApplicationApproved({
+    required String application,
+  }) = SdkEvent_GroupApplicationApproved;
+  const factory SdkEvent.groupApplicationRejected({
+    required String application,
+  }) = SdkEvent_GroupApplicationRejected;
+  const factory SdkEvent.groupDismissed({required String groupId}) =
+      SdkEvent_GroupDismissed;
+  const factory SdkEvent.groupMuted({required String groupId}) =
+      SdkEvent_GroupMuted;
+  const factory SdkEvent.groupCancelMuted({required String groupId}) =
+      SdkEvent_GroupCancelMuted;
+  const factory SdkEvent.groupMemberMuted({
+    required String groupId,
+    required String userId,
+  }) = SdkEvent_GroupMemberMuted;
+  const factory SdkEvent.groupMemberCancelMuted({
+    required String groupId,
+    required String userId,
+  }) = SdkEvent_GroupMemberCancelMuted;
+  const factory SdkEvent.groupMemberInfoChanged({
+    required String groupId,
+    required String userId,
+  }) = SdkEvent_GroupMemberInfoChanged;
+  const factory SdkEvent.groupOwnerTransferred({
+    required String groupId,
+    required String newOwnerId,
+  }) = SdkEvent_GroupOwnerTransferred;
+  const factory SdkEvent.userInfoUpdated({required UserInfo user}) =
+      SdkEvent_UserInfoUpdated;
+  const factory SdkEvent.userStatusChanged({
+    required String userId,
+    required int status,
+    required Int32List platformIds,
+  }) = SdkEvent_UserStatusChanged;
+  const factory SdkEvent.kickedOffline({required String reason}) =
+      SdkEvent_KickedOffline;
+  const factory SdkEvent.reconnecting({
+    required int attempt,
+    required int maxAttempts,
+  }) = SdkEvent_Reconnecting;
+  const factory SdkEvent.tokenExpired() = SdkEvent_TokenExpired;
+  const factory SdkEvent.loginSuccess({required String userId}) =
+      SdkEvent_LoginSuccess;
+  const factory SdkEvent.logout() = SdkEvent_Logout;
+  const factory SdkEvent.customEvent({
+    required String eventType,
+    required String data,
+  }) = SdkEvent_CustomEvent;
+}

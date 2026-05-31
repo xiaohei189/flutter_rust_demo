@@ -37,7 +37,7 @@ impl ConversationManager {
         let local = domain_to_local(conv.clone());
         self.dao.upsert(&local).await?;
         self.event_bus.publish(SdkEvent::ConversationChanged {
-            conversations: vec![serde_json::to_value(&conv).unwrap_or_default()],
+            conversations: vec![conv],
         });
         Ok(())
     }
@@ -51,11 +51,8 @@ impl ConversationManager {
 
     pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
         self.dao.delete(conversation_id).await?;
-        self.event_bus.publish(SdkEvent::ConversationChanged {
-            conversations: vec![serde_json::json!({
-                "conversation_id": conversation_id,
-                "deleted": true
-            })],
+        self.event_bus.publish(SdkEvent::ConversationDeleted {
+            conversation_ids: vec![conversation_id.to_string()],
         });
         Ok(())
     }

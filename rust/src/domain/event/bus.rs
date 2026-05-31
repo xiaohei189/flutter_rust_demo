@@ -73,6 +73,7 @@ impl EventSubscription {
 
 #[cfg(test)]
 mod tests {
+    use crate::domain::model::message::ReceivedMessage;
     use super::*;
 
     #[tokio::test]
@@ -97,7 +98,24 @@ mod tests {
         let mut sub2 = bus.subscribe();
 
         bus.publish(SdkEvent::NewMessage {
-            message: serde_json::json!({"content": "hello"}),
+            message: ReceivedMessage {
+                server_msg_id: String::new(),
+                client_msg_id: "msg_1".into(),
+                send_id: "user_1".into(),
+                recv_id: "user_2".into(),
+                sender_platform_id: 1,
+                sender_nick_name: String::new(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 100,
+                content_type: 101,
+                content: "{\"text\":\"hello\"}".into(),
+                seq: 1,
+                send_time: 1000,
+                create_time: 1000,
+                conversation_id: "conv_1".into(),
+                group_id: String::new(),
+            },
         });
 
         let event1 = sub1.try_next();

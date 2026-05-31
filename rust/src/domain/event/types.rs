@@ -1,8 +1,10 @@
+use crate::domain::model::conversation::Conversation;
+use crate::domain::model::friend::FriendInfo;
+use crate::domain::model::message::ReceivedMessage;
+use crate::domain::model::user::UserInfo;
 use crate::protocol::sdkws::MsgData;
-use serde::Serialize;
 
-#[derive(Clone, Debug, Serialize)]
-#[serde(tag = "type", content = "data", rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 pub enum SdkEvent {
     Connecting,
     Connected,
@@ -38,7 +40,7 @@ pub enum SdkEvent {
         error: String,
     },
     NewMessage {
-        message: serde_json::Value,
+        message: ReceivedMessage,
     },
     MessageSent {
         client_msg_id: String,
@@ -59,31 +61,34 @@ pub enum SdkEvent {
         client_msg_ids: Vec<String>,
     },
     ConversationChanged {
-        conversations: Vec<serde_json::Value>,
+        conversations: Vec<Conversation>,
+    },
+    ConversationDeleted {
+        conversation_ids: Vec<String>,
     },
     NewConversation {
-        conversations: Vec<serde_json::Value>,
+        conversations: Vec<Conversation>,
     },
     TotalUnreadCountChanged {
         count: i64,
     },
     FriendApplicationAdded {
-        application: serde_json::Value,
+        application: String,
     },
     FriendApplicationApproved {
-        application: serde_json::Value,
+        application: String,
     },
     FriendApplicationRejected {
-        application: serde_json::Value,
+        application: String,
     },
     FriendAdded {
-        friend: serde_json::Value,
+        friends: Vec<FriendInfo>,
     },
     FriendDeleted {
         friend_id: String,
     },
     BlackAdded {
-        black: serde_json::Value,
+        user_id: String,
     },
     BlackDeleted {
         black_id: String,
@@ -106,13 +111,13 @@ pub enum SdkEvent {
         member_ids: Vec<String>,
     },
     GroupApplicationAdded {
-        application: serde_json::Value,
+        application: String,
     },
     GroupApplicationApproved {
-        application: serde_json::Value,
+        application: String,
     },
     GroupApplicationRejected {
-        application: serde_json::Value,
+        application: String,
     },
     GroupDismissed {
         group_id: String,
@@ -140,7 +145,7 @@ pub enum SdkEvent {
         new_owner_id: String,
     },
     UserInfoUpdated {
-        user: serde_json::Value,
+        user: UserInfo,
     },
     UserStatusChanged {
         user_id: String,
@@ -161,7 +166,7 @@ pub enum SdkEvent {
     Logout,
     CustomEvent {
         event_type: String,
-        data: serde_json::Value,
+        data: String,
     },
 }
 
@@ -185,6 +190,7 @@ impl SdkEvent {
             SdkEvent::MessageRevoked { .. } => "message_revoked",
             SdkEvent::MessagesDeleted { .. } => "messages_deleted",
             SdkEvent::ConversationChanged { .. } => "conversation_changed",
+            SdkEvent::ConversationDeleted { .. } => "conversation_deleted",
             SdkEvent::NewConversation { .. } => "new_conversation",
             SdkEvent::TotalUnreadCountChanged { .. } => "total_unread_count_changed",
             SdkEvent::FriendApplicationAdded { .. } => "friend_application_added",
@@ -239,33 +245,28 @@ mod tests {
     }
 
     #[test]
-    fn test_sdk_event_serialization() {
-        let event = SdkEvent::LoginSuccess { user_id: "user_123".into() };
-        let json = serde_json::to_string(&event).unwrap();
-        assert!(json.contains("loginSuccess"));
-        assert!(json.contains("user_123"));
-    }
-
-    #[test]
-    fn test_sdk_event_user_status_changed() {
-        let event = SdkEvent::UserStatusChanged {
-            user_id: "user_1".into(),
-            status: 1,
-            platform_ids: vec![1, 2],
-        };
-        assert_eq!(event.event_type(), "user_status_changed");
-        let json = serde_json::to_string(&event).unwrap();
-        assert!(json.contains("user_1"));
-        assert!(json.contains("platform_ids"));
-    }
-
-    #[test]
     fn test_sdk_event_new_message() {
+        use crate::domain::model::message::ReceivedMessage;
         let event = SdkEvent::NewMessage {
-            message: serde_json::json!({"content": "hello", "type": 101}),
+            message: ReceivedMessage {
+                server_msg_id: "srv_1".into(),
+                client_msg_id: "msg_1".into(),
+                send_id: "user_1".into(),
+                recv_id: "user_2".into(),
+                sender_platform_id: 1,
+                sender_nick_name: "User1".into(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 100,
+                content_type: 101,
+                content: "{\"text\":\"hello\"}".into(),
+                seq: 1,
+                send_time: 1000,
+                create_time: 1000,
+                conversation_id: "conv_1".into(),
+                group_id: String::new(),
+            },
         };
         assert_eq!(event.event_type(), "new_message");
-        let json = serde_json::to_string(&event).unwrap();
-        assert!(json.contains("hello"));
     }
 }

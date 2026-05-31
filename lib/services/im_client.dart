@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/simple.dart';
+import '../src/rust/domain/event/types.dart' show SdkEvent;
 import '../src/rust/domain/config.dart';
 import '../utils/app_logger.dart';
 
@@ -109,7 +110,7 @@ class ImClient {
   }
   
   /// 获取统一事件流
-  Stream<dynamic> get eventStream {
+  Stream<SdkEvent> get eventStream {
     if (_client == null) {
       throw StateError('客户端未创建');
     }

@@ -210,13 +210,8 @@ impl FriendManager {
 
         *self.friends.write().await = friends.clone();
 
-        let friends_json: Vec<serde_json::Value> = friends
-            .iter()
-            .map(|f| serde_json::to_value(f).unwrap_or_default())
-            .collect();
-
         self.event_bus.publish(SdkEvent::FriendAdded {
-            friend: serde_json::json!({ "friends": friends_json, "sync": true }),
+            friends: friends.clone(),
         });
 
         info!("好友列表已同步, count={}", friends.len());
@@ -285,7 +280,7 @@ impl FriendManager {
         self.blacks.write().await.push(user_id.clone());
 
         self.event_bus.publish(SdkEvent::BlackAdded {
-            black: serde_json::json!({"user_id": user_id}),
+            user_id: user_id.clone(),
         });
 
         info!("已添加到黑名单: {}", user_id);

@@ -13,6 +13,7 @@ import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo
 import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/src/rust/domain/event/types.dart' show SdkEvent;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
 
@@ -104,8 +105,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 批量预加载用户资料（用于会话/消息展示昵称与头像）
-  /// 缓存逻辑由 Rust 侧 get_users_info 实现，Dart 直接传全部 userIds
+  /// 批量预加载用户资料
   Future<void> preloadUserProfiles(List<String> userIds) async {
     if (_client == null || userIds.isEmpty) return;
     final uniq = userIds.where((id) => id.isNotEmpty).toSet().toList();
@@ -122,7 +122,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 更新当前登录用户资料（仅更新 patch 中传入字段），并回写缓存
   Future<UserInfo?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
@@ -130,7 +129,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     int? globalRecvMsgOpt,
   }) async {
     if (_client == null) {
-      // 尝试重新初始化（如果有保存的凭证）
       try {
         appLog.i('[MessageService] _client 为 null，尝试重新初始化');
         final credentials = await LoginStorage.loadCredentials();
@@ -151,14 +149,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return null;
     
     try {
-      // 调用 Rust 层的更新方法（Rust 层使用 HTTP API）
       await _client!.updateUserProfile(
         nickname: nickname,
         faceUrl: faceUrl,
         ex: ex,
       );
-      
-      // 更新成功后，重新获取用户信息以确保状态一致性
       return await refreshLoginUserProfile();
     } catch (e) {
       appLog.e('[MessageService] 更新当前用户资料失败: $e');
@@ -166,11 +161,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 加载历史消息（首次加载或翻页）
-  ///
-  /// - `conversationId`: 会话 ID
-  /// - `count`: 每次加载的消息数量
-  /// - `startSeq`: 起始 seq（可选，用于翻页）
   Future<bool> loadHistoryMessages(
     String conversationId, {
     int count = 20,
@@ -214,7 +204,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 将 MessageInfo 转换为 Message
   Message _msgDataToMessage(MessageInfo msg) {
     final clientMsgId = msg.clientMsgId;
     final sendId = msg.sendId;
@@ -225,7 +214,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         final decoded = jsonDecode(content) as Map<String, dynamic>;
         content = decoded['content'] as String? ?? content;
       } catch (_) {
-        // keep raw content
       }
     }
 
@@ -248,9 +236,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     );
   }
 
-  /// 发送文本消息：先加入列表展示 -> 发送 -> 成功后更新状态
-  /// [conversationId] 必填，用于把乐观消息加入该会话列表
-  /// [groupId] 群聊时传群 ID，单聊传空字符串
   Future<void> sendTextMessage({
     required String recvId,
     required String text,
@@ -318,11 +303,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 初始化并连接服务
-  ///
-  /// [wsUrl] WebSocket 地址（可选，默认 localhost:10001）。
-  /// [apiBaseUrl] HTTP API 基础地址（可选，默认 localhost:10002；Android 等可传单独地址）。
-  /// [userId] / [imToken] 若都传入则使用本地凭证连接，不调登录接口；否则需在调用前通过登录页获取并传入。
   Future<void> initialize({
     String? wsUrl,
     String? apiBaseUrl,
@@ -377,7 +357,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       );
       appLog.i('[MessageService] newInstance 完成');
 
-      // 立即加载本地缓存的会话列表
       appLog.i('[MessageService] 立即加载本地缓存的会话列表');
       unawaited(_loadConversations());
 
@@ -390,7 +369,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       await Future.delayed(const Duration(milliseconds: 300));
       appLog.i('[MessageService] 300ms 完成');
 
-      // newInstance 内部已经完成了连接，这里直接标记为已连接
       this.state = this.state.copyWith(isConnected: true);
 
       appLog.i('✅ 客户端连接成功');
@@ -407,7 +385,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 更新或添加会话
   void _updateConversation(LocalConversation conv) {
     final newConversations = List<LocalConversation>.from(this.state.conversations);
     final index = newConversations.indexWhere(
@@ -433,43 +410,51 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 处理统一事件（连接、会话、消息）
-  void _handleEvent(dynamic event) {
-    if (event == null) return;
-    final name = event.runtimeType.toString();
-    
-    // 连接事件
-    if (name.contains('ConnectSuccess') || name.contains('Connected')) {
-      this.state = this.state.copyWith(isConnected: true);
-      appLog.i('[MessageService] 连接成功，主动拉取一次会话列表');
-      _loadConversations();
-    } else if (name.contains('ConnectFailed') ||
-        name.contains('KickedOffline') ||
-        name.contains('UserTokenExpired') ||
-        name.contains('UserTokenInvalid')) {
-      this.state = this.state.copyWith(isConnected: false);
-    }
-    // 会话事件
-    else if (name.contains('SyncStart') || name.contains('ConversationSyncStart')) {
-      this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: 0);
-    } else if (name.contains('SyncFinish') || name.contains('ConversationSyncFinish')) {
-      this.state = this.state.copyWith(isSyncingConversations: false, syncProgress: 100);
-      _loadConversations();
-    } else if (name.contains('SyncProgress') || name.contains('ConversationSyncProgress')) {
-      this.state = this.state.copyWith(syncProgress: 50);
-    } else if (name.contains('SyncFailed') || name.contains('ConversationSyncFailed')) {
-      this.state = this.state.copyWith(isSyncingConversations: false);
-    } else if (name.contains('NewConversation') || name.contains('ConversationChanged')) {
-      _loadConversations();
-    } else if (name.contains('ConversationsCleared')) {
-      this.state = this.state.copyWith(conversations: []);
-    }
-    // 消息事件
-    else if (name.contains('NewMessage') || name.contains('RecvMessage')) {
-      _loadConversations();
-    }
+  void _handleEvent(SdkEvent event) {
+    event.maybeWhen(
+      connected: () {
+        this.state = this.state.copyWith(isConnected: true);
+        appLog.i('[MessageService] 连接成功，主动拉取一次会话列表');
+        _loadConversations();
+      },
+      connectFailed: (error) {
+        this.state = this.state.copyWith(isConnected: false);
+      },
+      kickedOffline: (reason) {
+        this.state = this.state.copyWith(isConnected: false);
+      },
+      tokenExpired: () {
+        this.state = this.state.copyWith(isConnected: false);
+      },
+      syncStarted: () {
+        this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: 0);
+      },
+      syncFinished: () {
+        this.state = this.state.copyWith(isSyncingConversations: false, syncProgress: 100);
+        _loadConversations();
+      },
+      syncProgress: (progress, message) {
+        this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: progress);
+      },
+      syncFailed: (error) {
+        this.state = this.state.copyWith(isSyncingConversations: false);
+      },
+      newConversation: (conversations) {
+        _loadConversations();
+      },
+      conversationChanged: (conversations) {
+        _loadConversations();
+      },
+      conversationDeleted: (conversationIds) {
+        _loadConversations();
+      },
+      newMessage: (message) {
+        _loadConversations();
+      },
+      orElse: () {},
+    );
   }
 
-  /// 加载会话列表
   Future<void> _loadConversations() async {
     if (_client == null) {
       appLog.w('[MessageService] _loadConversations 跳过：client 为空');
@@ -497,12 +482,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  /// 刷新会话列表（供下拉刷新等场景调用）
   Future<void> refreshConversations() async {
     await _loadConversations();
   }
 
-  /// 从本地列表移除会话（左滑删除/长按删除时调用；服务端删除可后续对接 SDK）
   void removeConversation(String conversationId) {
     final newConversations = List<LocalConversation>.from(this.state.conversations);
     newConversations.removeWhere((c) => c.conversationId == conversationId);
@@ -514,7 +497,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     );
   }
 
-  /// 断开连接
   Future<void> disconnect() async {
     await _eventStreamSubscription?.cancel();
     _eventStreamSubscription = null;

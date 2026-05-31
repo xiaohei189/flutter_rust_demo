@@ -23,7 +23,7 @@ Future<void> main() async {
 
   // 2. 设置 Rust 日志目录（方案2：由 Dart 传入可写目录，在首次 init_logger 前设置即可）
   final dir = await getTemporaryDirectory();
-  setLogDirectory(path: dir.path);
+  setLogDirectory(path: dir.path);  
 
   // 3. 每次启动清除本地凭证，不自动复用 token，要求重新输入账号密码登录
   await LoginStorage.clearCredentials();
