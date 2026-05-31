@@ -19,7 +19,7 @@ pub struct Conversation {
     pub recv_msg_opt: i32,
     /// 未读消息数
     pub unread_count: i32,
-    /// 群组最新 seq
+    /// 群组 @ 类型
     pub group_at_type: i32,
     /// 最新消息 seq
     pub latest_msg_seq: i64,
@@ -42,4 +42,20 @@ pub struct Conversation {
     /// 同步操作 (insert/update/delete)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sync_action: Option<String>,
+    /// 已读未读更新时间
+    pub update_unread_count_time: i64,
+    /// 最大 seq
+    pub max_seq: i64,
+    /// 最小 seq
+    pub min_seq: i64,
+    /// 是否阅后即焚
+    pub is_msg_destruct: bool,
+    /// 阅后即焚时长
+    pub msg_destruct_time: i64,
+    /// 是否单聊（同 is_private_chat 兼容）
+    pub is_private: bool,
+    /// 消息免打扰（同 recv_msg_opt 兼容）
+    pub burn_duration: i32,
+    /// 扩展信息
+    pub ex: String,
 }

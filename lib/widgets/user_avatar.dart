@@ -18,7 +18,6 @@ class UserAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarUrl = user.avatar;
-    appLog.i('[UserAvatar] 构建头像, userId: ${user.id}, avatar: $avatarUrl');
 
     // 如果是本地文件路径
     if (avatarUrl != null && _isLocalPath(avatarUrl)) {
@@ -47,8 +46,6 @@ class UserAvatar extends StatelessWidget {
     // 如果有网络图片且可用
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       final urlWithCache = _buildCacheBustedUrl(avatarUrl);
-      appLog.i('[UserAvatar] 使用网络图片: $urlWithCache');
-
       return CircleAvatar(
         radius: radius,
         backgroundColor: Colors.grey[300],
@@ -61,7 +58,6 @@ class UserAvatar extends StatelessWidget {
     }
 
     // 使用默认头像
-    appLog.i('[UserAvatar] 使用默认头像');
     return _buildFallbackAvatar();
   }
 

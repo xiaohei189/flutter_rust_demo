@@ -2270,6 +2270,14 @@ impl SseDecode for crate::domain::model::conversation::Conversation {
         let mut var_isNotInGroup = <bool>::sse_decode(deserializer);
         let mut var_updateFlag = <i32>::sse_decode(deserializer);
         let mut var_syncAction = <Option<String>>::sse_decode(deserializer);
+        let mut var_updateUnreadCountTime = <i64>::sse_decode(deserializer);
+        let mut var_maxSeq = <i64>::sse_decode(deserializer);
+        let mut var_minSeq = <i64>::sse_decode(deserializer);
+        let mut var_isMsgDestruct = <bool>::sse_decode(deserializer);
+        let mut var_msgDestructTime = <i64>::sse_decode(deserializer);
+        let mut var_isPrivate = <bool>::sse_decode(deserializer);
+        let mut var_burnDuration = <i32>::sse_decode(deserializer);
+        let mut var_ex = <String>::sse_decode(deserializer);
         return crate::domain::model::conversation::Conversation {
             conversation_id: var_conversationId,
             conversation_type: var_conversationType,
@@ -2290,6 +2298,14 @@ impl SseDecode for crate::domain::model::conversation::Conversation {
             is_not_in_group: var_isNotInGroup,
             update_flag: var_updateFlag,
             sync_action: var_syncAction,
+            update_unread_count_time: var_updateUnreadCountTime,
+            max_seq: var_maxSeq,
+            min_seq: var_minSeq,
+            is_msg_destruct: var_isMsgDestruct,
+            msg_destruct_time: var_msgDestructTime,
+            is_private: var_isPrivate,
+            burn_duration: var_burnDuration,
+            ex: var_ex,
         };
     }
 }
@@ -3537,6 +3553,14 @@ impl flutter_rust_bridge::IntoDart for crate::domain::model::conversation::Conve
             self.is_not_in_group.into_into_dart().into_dart(),
             self.update_flag.into_into_dart().into_dart(),
             self.sync_action.into_into_dart().into_dart(),
+            self.update_unread_count_time.into_into_dart().into_dart(),
+            self.max_seq.into_into_dart().into_dart(),
+            self.min_seq.into_into_dart().into_dart(),
+            self.is_msg_destruct.into_into_dart().into_dart(),
+            self.msg_destruct_time.into_into_dart().into_dart(),
+            self.is_private.into_into_dart().into_dart(),
+            self.burn_duration.into_into_dart().into_dart(),
+            self.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -4267,6 +4291,14 @@ impl SseEncode for crate::domain::model::conversation::Conversation {
         <bool>::sse_encode(self.is_not_in_group, serializer);
         <i32>::sse_encode(self.update_flag, serializer);
         <Option<String>>::sse_encode(self.sync_action, serializer);
+        <i64>::sse_encode(self.update_unread_count_time, serializer);
+        <i64>::sse_encode(self.max_seq, serializer);
+        <i64>::sse_encode(self.min_seq, serializer);
+        <bool>::sse_encode(self.is_msg_destruct, serializer);
+        <i64>::sse_encode(self.msg_destruct_time, serializer);
+        <bool>::sse_encode(self.is_private, serializer);
+        <i32>::sse_encode(self.burn_duration, serializer);
+        <String>::sse_encode(self.ex, serializer);
     }
 }
 

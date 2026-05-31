@@ -123,6 +123,14 @@ fn local_to_domain(lc: LocalConversation) -> Conversation {
         is_not_in_group: lc.is_not_in_group != 0,
         update_flag: 0,
         sync_action: None,
+        update_unread_count_time: lc.update_unread_count_time,
+        max_seq: lc.max_seq,
+        min_seq: lc.min_seq,
+        is_msg_destruct: lc.is_msg_destruct != 0,
+        msg_destruct_time: lc.msg_destruct_time,
+        is_private: lc.is_private_chat != 0,
+        burn_duration: lc.burn_duration,
+        ex: lc.ex,
     }
 }
 
@@ -181,6 +189,14 @@ mod tests {
             is_not_in_group: false,
             update_flag: 0,
             sync_action: None,
+            update_unread_count_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+            is_private: false,
+            burn_duration: 0,
+            ex: String::new(),
         }
     }
 

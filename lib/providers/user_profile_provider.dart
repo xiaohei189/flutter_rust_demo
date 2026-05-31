@@ -180,7 +180,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 
   /// 检查 URL 是否为有效的头像 URL（不是模拟 URL）
   bool _isValidAvatarUrl(String? url) {
-    appLog.i('[UserProfile] _isValidAvatarUrl 被调用，url=$url');
     if (url == null || url.isEmpty) {
       appLog.i('[UserProfile] _isValidAvatarUrl: url 为空，返回 false');
       return false;
@@ -200,7 +199,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       appLog.i('[UserProfile] _isValidAvatarUrl: 是本地路径，返回 false');
       return false;
     }
-    appLog.i('[UserProfile] _isValidAvatarUrl: 返回 true');
     return true;
   }
 
@@ -214,10 +212,8 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     }
     // 如果服务器 URL 有效，使用服务器 URL
     if (_isValidAvatarUrl(state.profile?.faceUrl)) {
-      appLog.i('[UserProfile] getDisplayAvatarUrl: 使用服务器 URL=${state.profile?.faceUrl}');
       return state.profile?.faceUrl;
     }
-    appLog.i('[UserProfile] getDisplayAvatarUrl: 返回 null, localAvatarPath=${state.localAvatarPath}, faceUrl=${state.profile?.faceUrl}');
     return null;
   }
 

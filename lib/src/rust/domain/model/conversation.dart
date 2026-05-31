@@ -32,7 +32,7 @@ class Conversation {
   /// 未读消息数
   final int unreadCount;
 
-  /// 群组最新 seq
+  /// 群组 @ 类型
   final int groupAtType;
 
   /// 最新消息 seq
@@ -65,6 +65,30 @@ class Conversation {
   /// 同步操作 (insert/update/delete)
   final String? syncAction;
 
+  /// 已读未读更新时间
+  final PlatformInt64 updateUnreadCountTime;
+
+  /// 最大 seq
+  final PlatformInt64 maxSeq;
+
+  /// 最小 seq
+  final PlatformInt64 minSeq;
+
+  /// 是否阅后即焚
+  final bool isMsgDestruct;
+
+  /// 阅后即焚时长
+  final PlatformInt64 msgDestructTime;
+
+  /// 是否单聊（同 is_private_chat 兼容）
+  final bool isPrivate;
+
+  /// 消息免打扰（同 recv_msg_opt 兼容）
+  final int burnDuration;
+
+  /// 扩展信息
+  final String ex;
+
   const Conversation({
     required this.conversationId,
     required this.conversationType,
@@ -85,6 +109,14 @@ class Conversation {
     required this.isNotInGroup,
     required this.updateFlag,
     this.syncAction,
+    required this.updateUnreadCountTime,
+    required this.maxSeq,
+    required this.minSeq,
+    required this.isMsgDestruct,
+    required this.msgDestructTime,
+    required this.isPrivate,
+    required this.burnDuration,
+    required this.ex,
   });
 
   @override
@@ -107,7 +139,15 @@ class Conversation {
       isPrivateChat.hashCode ^
       isNotInGroup.hashCode ^
       updateFlag.hashCode ^
-      syncAction.hashCode;
+      syncAction.hashCode ^
+      updateUnreadCountTime.hashCode ^
+      maxSeq.hashCode ^
+      minSeq.hashCode ^
+      isMsgDestruct.hashCode ^
+      msgDestructTime.hashCode ^
+      isPrivate.hashCode ^
+      burnDuration.hashCode ^
+      ex.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -132,5 +172,13 @@ class Conversation {
           isPrivateChat == other.isPrivateChat &&
           isNotInGroup == other.isNotInGroup &&
           updateFlag == other.updateFlag &&
-          syncAction == other.syncAction;
+          syncAction == other.syncAction &&
+          updateUnreadCountTime == other.updateUnreadCountTime &&
+          maxSeq == other.maxSeq &&
+          minSeq == other.minSeq &&
+          isMsgDestruct == other.isMsgDestruct &&
+          msgDestructTime == other.msgDestructTime &&
+          isPrivate == other.isPrivate &&
+          burnDuration == other.burnDuration &&
+          ex == other.ex;
 }

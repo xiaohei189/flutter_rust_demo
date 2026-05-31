@@ -2763,8 +2763,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Conversation dco_decode_conversation(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 19)
-      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
+    if (arr.length != 27)
+      throw Exception('unexpected arr length: expect 27 but see ${arr.length}');
     return Conversation(
       conversationId: dco_decode_String(arr[0]),
       conversationType: dco_decode_i_32(arr[1]),
@@ -2785,6 +2785,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isNotInGroup: dco_decode_bool(arr[16]),
       updateFlag: dco_decode_i_32(arr[17]),
       syncAction: dco_decode_opt_String(arr[18]),
+      updateUnreadCountTime: dco_decode_i_64(arr[19]),
+      maxSeq: dco_decode_i_64(arr[20]),
+      minSeq: dco_decode_i_64(arr[21]),
+      isMsgDestruct: dco_decode_bool(arr[22]),
+      msgDestructTime: dco_decode_i_64(arr[23]),
+      isPrivate: dco_decode_bool(arr[24]),
+      burnDuration: dco_decode_i_32(arr[25]),
+      ex: dco_decode_String(arr[26]),
     );
   }
 
@@ -3749,6 +3757,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_isNotInGroup = sse_decode_bool(deserializer);
     var var_updateFlag = sse_decode_i_32(deserializer);
     var var_syncAction = sse_decode_opt_String(deserializer);
+    var var_updateUnreadCountTime = sse_decode_i_64(deserializer);
+    var var_maxSeq = sse_decode_i_64(deserializer);
+    var var_minSeq = sse_decode_i_64(deserializer);
+    var var_isMsgDestruct = sse_decode_bool(deserializer);
+    var var_msgDestructTime = sse_decode_i_64(deserializer);
+    var var_isPrivate = sse_decode_bool(deserializer);
+    var var_burnDuration = sse_decode_i_32(deserializer);
+    var var_ex = sse_decode_String(deserializer);
     return Conversation(
       conversationId: var_conversationId,
       conversationType: var_conversationType,
@@ -3769,6 +3785,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isNotInGroup: var_isNotInGroup,
       updateFlag: var_updateFlag,
       syncAction: var_syncAction,
+      updateUnreadCountTime: var_updateUnreadCountTime,
+      maxSeq: var_maxSeq,
+      minSeq: var_minSeq,
+      isMsgDestruct: var_isMsgDestruct,
+      msgDestructTime: var_msgDestructTime,
+      isPrivate: var_isPrivate,
+      burnDuration: var_burnDuration,
+      ex: var_ex,
     );
   }
 
@@ -5044,6 +5068,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.isNotInGroup, serializer);
     sse_encode_i_32(self.updateFlag, serializer);
     sse_encode_opt_String(self.syncAction, serializer);
+    sse_encode_i_64(self.updateUnreadCountTime, serializer);
+    sse_encode_i_64(self.maxSeq, serializer);
+    sse_encode_i_64(self.minSeq, serializer);
+    sse_encode_bool(self.isMsgDestruct, serializer);
+    sse_encode_i_64(self.msgDestructTime, serializer);
+    sse_encode_bool(self.isPrivate, serializer);
+    sse_encode_i_32(self.burnDuration, serializer);
+    sse_encode_String(self.ex, serializer);
   }
 
   @protected

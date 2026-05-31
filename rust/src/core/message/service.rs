@@ -2,6 +2,7 @@ use crate::domain::constant::types::notification_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::model::conversation::Conversation;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_MSGS_AS_READ, REVOKE_MSG};
@@ -152,6 +153,47 @@ impl MessageService {
 
         self.message_dao.mark_as_read_by_max_seq(&conversation_id, max_seq).await?;
         self.conversation_dao.update_unread_count(&conversation_id, 0).await?;
+
+        let updated_conv = self.conversation_dao.get_by_id(&conversation_id).await?;
+        if let Some(conv) = updated_conv {
+            let conversation = Conversation {
+                conversation_id: conv.conversation_id,
+                conversation_type: conv.conversation_type,
+                user_id: conv.user_id,
+                group_id: conv.group_id,
+                show_name: conv.show_name,
+                face_url: conv.face_url,
+                latest_msg: conv.latest_msg,
+                latest_msg_send_time: conv.latest_msg_send_time,
+                unread_count: conv.unread_count,
+                recv_msg_opt: conv.recv_msg_opt,
+                is_pinned: conv.is_pinned != 0,
+                is_not_in_group: conv.is_not_in_group != 0,
+                draft_text: conv.draft_text,
+                draft_text_time: conv.draft_text_time,
+                is_private_chat: conv.is_private_chat != 0,
+                burn_duration: conv.burn_duration as i32,
+                group_at_type: conv.group_at_type,
+                update_unread_count_time: conv.update_unread_count_time,
+                latest_msg_seq: conv.max_seq,
+                max_seq: conv.max_seq,
+                min_seq: conv.min_seq,
+                is_msg_destruct: conv.is_msg_destruct != 0,
+                msg_destruct_time: conv.msg_destruct_time,
+                update_flag: 0,
+                sync_action: None,
+                is_private: conv.is_private_chat != 0,
+                ex: conv.ex,
+            };
+            self.event_bus.publish(SdkEvent::ConversationChanged {
+                conversations: vec![conversation],
+            });
+        }
+
+        let total_unread = self.conversation_dao.get_total_unread_count().await?;
+        self.event_bus.publish(SdkEvent::TotalUnreadCountChanged {
+            count: total_unread,
+        });
 
         info!("会话已标记为已读: conversation_id={}, max_seq={}", conversation_id, max_seq);
         Ok(())

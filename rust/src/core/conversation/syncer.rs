@@ -104,6 +104,14 @@ fn server_to_domain(s: ServerConversation) -> Conversation {
         is_not_in_group: false,
         update_flag: 0,
         sync_action: None,
+        update_unread_count_time: 0,
+        max_seq: s.max_seq,
+        min_seq: s.min_seq,
+        is_msg_destruct: s.is_msg_destruct,
+        msg_destruct_time: s.msg_destruct_time,
+        is_private: s.is_private_chat,
+        burn_duration: s.burn_duration,
+        ex: s.ex,
     }
 }
 

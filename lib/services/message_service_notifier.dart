@@ -10,6 +10,7 @@ import 'package:flutter_rust_demo/src/rust/domain/config.dart';
 import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
 import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo, ReceivedMessage;
@@ -434,7 +435,34 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         _loadConversations();
       },
       conversationChanged: (conversations) {
-        _loadConversations();
+        for (final conv in conversations) {
+          _updateConversation(LocalConversation(
+            conversationId: conv.conversationId,
+            conversationType: conv.conversationType,
+            userId: conv.userId,
+            groupId: conv.groupId,
+            showName: conv.showName,
+            faceUrl: conv.faceUrl,
+            latestMsg: conv.latestMsg,
+            latestMsgSendTime: conv.latestMsgSendTime,
+            unreadCount: conv.unreadCount,
+            recvMsgOpt: conv.recvMsgOpt,
+            isPinned: conv.isPinned ? 1 : 0,
+            isNotInGroup: 0,
+            draftText: conv.draftText,
+            draftTextTime: conv.draftTextTime,
+            isPrivateChat: conv.isPrivateChat ? 1 : 0,
+            burnDuration: conv.burnDuration,
+            groupAtType: conv.groupAtType,
+            updateUnreadCountTime: conv.updateUnreadCountTime,
+            maxSeq: conv.maxSeq,
+            minSeq: conv.minSeq,
+            isMsgDestruct: conv.isMsgDestruct ? 1 : 0,
+            msgDestructTime: conv.msgDestructTime,
+            attachedInfo: '',
+            ex: '',
+          ));
+        }
       },
       conversationDeleted: (conversationIds) {
         _loadConversations();
