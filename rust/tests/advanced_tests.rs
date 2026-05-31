@@ -47,20 +47,14 @@ async fn test_history_message_pull() {
 
     println!("3. 获取会话列表...");
     let convs = receiver_sdk.get_conversations().await;
-    match &convs {
-        Ok(list) => {
-            println!("  会话数量: {}", list.len());
-            if !list.is_empty() {
-                for conv in list {
-                    println!("  会话: {} (未读: {})", conv.conversation_id, conv.unread_count);
-                }
-                println!("  ✅ 历史消息拉取测试通过");
-            } else {
-                println!("  ⚠️ 未找到会话");
-            }
-        }
-        Err(e) => println!("  ❌ 获取失败: {:?}", e),
+    assert!(convs.is_ok(), "获取会话失败: {:?}", convs.err());
+    let list = convs.unwrap();
+    assert!(!list.is_empty(), "会话列表不应为空");
+    println!("  会话数量: {}", list.len());
+    for conv in &list {
+        println!("  会话: {} (未读: {})", conv.conversation_id, conv.unread_count);
     }
+    println!("  ✅ 历史消息拉取测试通过");
 
     println!("✅ 历史消息拉取测试完成");
 }
@@ -103,17 +97,16 @@ async fn test_message_revoke() {
             if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
                     println!("撤回消息...");
-                    match sdk.revoke_message(
+                    let revoke_result = sdk.revoke_message(
                         rust_lib_flutter_rust_demo::sdk::client::types::RevokeMessageReq {
                             conversation_id: conv.conversation_id.clone(),
                             seq: 0,
                             client_msg_id,
                             session_type: SessionType::SingleChat,
                         }
-                    ).await {
-                        Ok(_) => println!("  ✅ 撤回成功"),
-                        Err(e) => println!("  ❌ 撤回失败: {:?}", e),
-                    }
+                    ).await;
+                    assert!(revoke_result.is_ok(), "撤回消息失败: {:?}", revoke_result.err());
+                    println!("  ✅ 撤回成功");
                 }
             }
         }
@@ -159,15 +152,14 @@ async fn test_message_delete() {
             if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
                     println!("删除消息...");
-                    match sdk.delete_messages(
+                    let delete_result = sdk.delete_messages(
                         rust_lib_flutter_rust_demo::sdk::client::types::DeleteMessagesReq {
                             conversation_id: conv.conversation_id.clone(),
                             client_msg_ids: vec![client_msg_id],
                         }
-                    ).await {
-                        Ok(_) => println!("  ✅ 删除成功"),
-                        Err(e) => println!("  ❌ 删除失败: {:?}", e),
-                    }
+                    ).await;
+                    assert!(delete_result.is_ok(), "删除消息失败: {:?}", delete_result.err());
+                    println!("  ✅ 删除成功");
                 }
             }
         }
@@ -252,17 +244,16 @@ async fn test_message_mark_read() {
 
             if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
-                    match sdk.mark_messages_as_read(
+                    let mark_result = sdk.mark_messages_as_read(
                         rust_lib_flutter_rust_demo::sdk::client::types::MarkMessagesAsReadReq {
                             conversation_id: conv.conversation_id.clone(),
                             session_type: SessionType::SingleChat,
                             has_read_seq: 0,
                             seqs: vec![],
                         }
-                    ).await {
-                        Ok(_) => println!("  ✅ 标记已读成功"),
-                        Err(e) => println!("  ❌ 标记已读失败: {:?}", e),
-                    }
+                    ).await;
+                    assert!(mark_result.is_ok(), "标记已读失败: {:?}", mark_result.err());
+                    println!("  ✅ 标记已读成功");
                 }
             }
         }
@@ -307,17 +298,16 @@ async fn test_message_read_receipt() {
 
             if let Ok(convs) = sdk.get_conversations().await {
                 if let Some(conv) = convs.first() {
-                    match sdk.mark_messages_as_read(
+                    let mark_result = sdk.mark_messages_as_read(
                         rust_lib_flutter_rust_demo::sdk::client::types::MarkMessagesAsReadReq {
                             conversation_id: conv.conversation_id.clone(),
                             session_type: SessionType::SingleChat,
                             has_read_seq: 0,
                             seqs: vec![],
                         }
-                    ).await {
-                        Ok(_) => println!("  ✅ 已读回执处理成功"),
-                        Err(e) => println!("  ❌ 处理失败: {:?}", e),
-                    }
+                    ).await;
+                    assert!(mark_result.is_ok(), "标记已读回执失败: {:?}", mark_result.err());
+                    println!("  ✅ 已读回执处理成功");
                 }
             }
         }
@@ -360,15 +350,15 @@ async fn test_local_message_search() {
     if let Ok(convs) = sdk.get_conversations().await {
         if let Some(conv) = convs.first() {
             println!("搜索本地消息...");
-            match sdk.search_local_messages(
+            let search_result = sdk.search_local_messages(
                 rust_lib_flutter_rust_demo::sdk::client::types::SearchMessagesReq {
                     conversation_id: conv.conversation_id.clone(),
                     keyword: "test".to_string(),
                 }
-            ).await {
-                Ok(results) => println!("  搜索结果数: {}", results.len()),
-                Err(e) => println!("  ❌ 搜索失败: {:?}", e),
-            }
+            ).await;
+            assert!(search_result.is_ok(), "本地搜索失败: {:?}", search_result.err());
+            let results = search_result.unwrap();
+            println!("  搜索结果数: {}", results.len());
         }
     }
 

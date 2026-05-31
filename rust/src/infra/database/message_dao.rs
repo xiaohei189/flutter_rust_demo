@@ -227,4 +227,41 @@ mod tests {
         let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
         assert_eq!(msgs.len(), 1);
     }
+
+    #[tokio::test]
+    async fn test_mark_as_read_by_seqs() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = MessageDao::new(pool);
+
+        let mut msg = LocalChatLog {
+            conversation_id: "conv_1".into(),
+            client_msg_id: "msg_1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_1".into(),
+            recv_id: "user_2".into(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: String::new(),
+            is_read: 0,
+            status: 2,
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+
+        dao.batch_insert(&[msg]).await.unwrap();
+        dao.mark_as_read_by_seqs("conv_1", &[1]).await.unwrap();
+
+        let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0].is_read, 1);
+    }
 }

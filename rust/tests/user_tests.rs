@@ -122,18 +122,16 @@ async fn test_user_state_via_sdk() {
     println!("  好友数量: {}", friends.len());
 
     println!("6. 获取用户信息...");
-    match sdk.get_users_info(&vec![user_id.clone()]).await {
-        Ok(users) => {
-            println!("  昵称: {}", users.first().map(|u| &u.nickname).unwrap_or(&"unknown".into()));
-        }
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let users_result = sdk.get_users_info(&vec![user_id.clone()]).await;
+    assert!(users_result.is_ok(), "get_users_info failed: {:?}", users_result.err());
+    let users = users_result.unwrap();
+    println!("  昵称: {}", users.first().map(|u| &u.nickname).unwrap_or(&"unknown".into()));
 
     println!("7. 获取会话列表...");
-    match sdk.get_conversations().await {
-        Ok(convs) => println!("  会话数量: {}", convs.len()),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let convs_result = sdk.get_conversations().await;
+    assert!(convs_result.is_ok(), "get_conversations failed: {:?}", convs_result.err());
+    let convs = convs_result.unwrap();
+    println!("  会话数量: {}", convs.len());
 
     println!("✅ SDK 功能测试完成");
 }
@@ -146,7 +144,10 @@ async fn test_get_user_online_status() {
     let sdk = create_sdk(&user1, &im_token).await;
 
     let status = sdk.get_user_status(&vec![user1.user_id.clone()]).await;
-    println!("在线状态: {:?}", status);
+    assert!(status.is_ok(), "获取在线状态失败: {:?}", status.err());
+    let list = status.unwrap();
+    assert!(!list.is_empty(), "在线状态列表为空");
+    println!("在线状态: {:?}", list);
     println!("✅ 获取用户在线状态测试通过");
 }
 
@@ -164,25 +165,25 @@ async fn test_update_user_profile() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
+    let new_nickname = format!("UpdatedNick_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    println!("  新昵称: {}", new_nickname);
+
     println!("更新昵称...");
-    match sdk.update_user_profile(
-        Some(&format!("UpdatedNick_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs())),
+    let update_result = sdk.update_user_profile(
+        Some(&new_nickname),
         None,
         None,
-    ).await {
-        Ok(_) => println!("  ✅ 昵称更新成功"),
-        Err(e) => println!("  ❌ 更新失败: {:?}", e),
-    }
+    ).await;
+    assert!(update_result.is_ok(), "更新用户资料失败: {:?}", update_result.err());
+    println!("  ✅ 昵称更新成功");
 
     println!("验证用户资料...");
-    match sdk.get_users_info(&vec![user1.user_id.clone()]).await {
-        Ok(users) => {
-            if let Some(user) = users.first() {
-                println!("  用户: id={}, 昵称={}", user.user_id, user.nickname);
-            }
-        }
-        Err(e) => println!("  ❌ 获取用户信息失败: {:?}", e),
-    }
+    let users_result = sdk.get_users_info(&vec![user1.user_id.clone()]).await;
+    assert!(users_result.is_ok(), "获取用户信息失败: {:?}", users_result.err());
+    let users = users_result.unwrap();
+    assert!(!users.is_empty(), "用户列表为空");
+    assert_eq!(users[0].nickname, new_nickname, "昵称更新验证失败");
+    println!("  用户: id={}, 昵称={}", users[0].user_id, users[0].nickname);
 
     println!("✅ 更新用户资料测试完成");
 }

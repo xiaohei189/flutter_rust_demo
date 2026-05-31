@@ -40,20 +40,24 @@ async fn test_websocket_reconnection() {
     let timeout = tokio::time::sleep(Duration::from_secs(5));
     tokio::pin!(timeout);
 
+    let mut events: Vec<&str> = Vec::new();
     loop {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = event_sub.next() => {
                 match event {
-                    Some(SdkEvent::Connected) => println!("  ✅ Connected"),
-                    Some(SdkEvent::Connecting) => println!("  🔄 Connecting"),
-                    Some(SdkEvent::Disconnected { reason }) => println!("  ❌ Disconnected: {}", reason),
+                    Some(SdkEvent::Connected) => { println!("  ✅ Connected"); events.push("Connected"); }
+                    Some(SdkEvent::Connecting) => { println!("  🔄 Connecting"); events.push("Connecting"); }
+                    Some(SdkEvent::Disconnected { reason }) => { println!("  ❌ Disconnected: {}", reason); events.push("Disconnected"); }
                     Some(_) => {},
                     None => break,
                 }
             }
         }
     }
+
+    assert!(!events.is_empty(), "应该收集到至少一个连接事件");
+    println!("事件序列: {:?}", events);
 
     println!("断开连接...");
     sdk.disconnect().await;

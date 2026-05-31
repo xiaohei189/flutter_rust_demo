@@ -309,4 +309,19 @@ mod tests {
         assert_eq!(conv.unread_count, 1);
         assert_eq!(conv.latest_msg_send_time, 2000);
     }
+
+    #[tokio::test]
+    async fn test_update_unread_count() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = ConversationDao::new(pool);
+
+        let mut conv = make_conv("conv_1");
+        conv.unread_count = 5;
+        dao.upsert(&conv).await.unwrap();
+
+        dao.update_unread_count("conv_1", 10).await.unwrap();
+
+        let result = dao.get_by_id("conv_1").await.unwrap().unwrap();
+        assert_eq!(result.unread_count, 10);
+    }
 }

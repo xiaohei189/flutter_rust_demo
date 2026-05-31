@@ -30,13 +30,16 @@ async fn test_add_friend() {
     }, &cert1.im_token).await;
 
     println!("添加好友...");
-    match sdk.add_friend(&cert2.user_id, Some("Hello!")).await {
+    let result = sdk.add_friend(&cert2.user_id, Some("Hello!")).await;
+    match &result {
         Ok(_) => println!("  ✅ 好友申请发送成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
+    assert!(result.is_ok());
 
     let is_friend = sdk.is_friend(&cert2.user_id).await;
     println!("是否好友: {}", is_friend);
+    assert!(is_friend);
     println!("✅ 添加好友测试完成");
 }
 
@@ -67,15 +70,21 @@ async fn test_delete_friend() {
     }, &cert1.im_token).await;
 
     println!("添加好友...");
-    let _ = sdk.add_friend(&cert2.user_id, Some("Add me")).await;
+    let add_result = sdk.add_friend(&cert2.user_id, Some("Add me")).await;
+    assert!(add_result.is_ok());
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     println!("删除好友...");
-    match sdk.delete_friend(&cert2.user_id).await {
+    let del_result = sdk.delete_friend(&cert2.user_id).await;
+    match &del_result {
         Ok(_) => println!("  ✅ 删除成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
+    assert!(del_result.is_ok());
 
+    let is_friend = sdk.is_friend(&cert2.user_id).await;
+    println!("是否还是好友: {}", is_friend);
+    assert!(!is_friend);
     println!("✅ 删除好友测试完成");
 }
 
@@ -107,10 +116,12 @@ async fn test_blacklist_management() {
     println!("初始黑名单: {}", initial.len());
 
     println!("拉黑用户...");
-    match sdk.add_black(&cert2.user_id).await {
+    let black_result = sdk.add_black(&cert2.user_id).await;
+    match &black_result {
         Ok(_) => println!("  ✅ 拉黑成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
+    assert!(black_result.is_ok());
 
     tokio::time::sleep(Duration::from_secs(1)).await;
 
@@ -118,10 +129,12 @@ async fn test_blacklist_management() {
     println!("拉黑后数量: {}", after_add.len());
 
     println!("移出黑名单...");
-    match sdk.remove_black(&cert2.user_id).await {
+    let remove_result = sdk.remove_black(&cert2.user_id).await;
+    match &remove_result {
         Ok(_) => println!("  ✅ 移出成功"),
         Err(e) => println!("  ⚠️ 失败: {:?}", e),
     }
+    assert!(remove_result.is_ok());
 
     println!("✅ 黑名单管理测试完成");
 }
@@ -147,6 +160,7 @@ async fn test_friend_list_sync() {
     println!("获取好友 ID 列表...");
     let ids = sdk.get_friend_id_list().await;
     println!("好友 ID 数量: {}", ids.len());
+    assert_eq!(friends.len(), ids.len(), "好友列表与好友ID列表数量应一致");
 
     println!("✅ 好友列表同步测试完成");
 }

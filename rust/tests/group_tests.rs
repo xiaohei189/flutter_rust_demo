@@ -34,10 +34,10 @@ async fn test_create_group() {
         &vec![cert.user_id.clone()],
     ).await;
 
-    match result {
-        Ok(g) => println!("  ✅ 创建成功: {} ({})", g.group_name, g.group_id),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
+    let group = result.unwrap();
+    assert!(!group.group_id.is_empty(), "群组ID不应为空");
+    println!("  ✅ 创建成功: {} ({})", group.group_name, group.group_id);
     println!("✅ 创建群组测试完成");
 }
 
@@ -75,23 +75,20 @@ async fn test_join_and_quit_group() {
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入...");
-    match sdk2.join_group(&group.group_id, None).await {
-        Ok(_) => println!("  ✅ 加入成功"),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let join_result = sdk2.join_group(&group.group_id, None).await;
+    assert!(join_result.is_ok(), "加入群组失败: {:?}", join_result.err());
+    println!("  ✅ 加入成功");
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     println!("用户1邀请用户2...");
-    match sdk1.invite_group_members(&group.group_id, &vec![cert2.user_id.clone()], None).await {
-        Ok(_) => println!("  ✅ 邀请成功"),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let invite_result = sdk1.invite_group_members(&group.group_id, &vec![cert2.user_id.clone()], None).await;
+    assert!(invite_result.is_ok(), "邀请失败: {:?}", invite_result.err());
+    println!("  ✅ 邀请成功");
 
     println!("用户2退出群组...");
-    match sdk2.quit_group(&group.group_id).await {
-        Ok(_) => println!("  ✅ 退出成功"),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let quit_result = sdk2.quit_group(&group.group_id).await;
+    assert!(quit_result.is_ok(), "退出失败: {:?}", quit_result.err());
+    println!("  ✅ 退出成功");
 
     println!("✅ 加入/退出群组测试完成");
 }
@@ -120,16 +117,18 @@ async fn test_group_member_management() {
     ).await.expect("创建群组失败");
 
     println!("获取群成员...");
-    match sdk.get_group_members(&group.group_id).await {
-        Ok(members) => println!("  成员数: {}", members.len()),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let members_result = sdk.get_group_members(&group.group_id).await;
+    assert!(members_result.is_ok(), "获取群成员失败: {:?}", members_result.err());
+    let members = members_result.unwrap();
+    assert!(!members.is_empty(), "群成员列表不应为空");
+    println!("  成员数: {}", members.len());
 
     println!("获取群成员 ID 列表...");
-    match sdk.get_group_members(&group.group_id).await.map(|members| members.into_iter().map(|m| m.user_id).collect::<Vec<_>>()) {
-        Ok(ids) => println!("  成员 ID 数: {}", ids.len()),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let ids_result = sdk.get_group_members(&group.group_id).await;
+    assert!(ids_result.is_ok(), "获取群成员失败: {:?}", ids_result.err());
+    let ids = ids_result.unwrap().into_iter().map(|m| m.user_id).collect::<Vec<_>>();
+    assert!(!ids.is_empty(), "群成员 ID 列表不应为空");
+    println!("  成员 ID 数: {}", ids.len());
 
     println!("✅ 群成员管理测试完成");
 }
@@ -159,16 +158,17 @@ async fn test_group_info_update() {
     println!("群: {} ({})", group.group_name, group.group_id);
 
     println!("更新群名称...");
-    match sdk.set_group_info(&group.group_id, Some("UpdatedName"), None).await {
-        Ok(_) => println!("  ✅ 更新成功"),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let set_result = sdk.set_group_info(&group.group_id, Some("UpdatedName"), None).await;
+    assert!(set_result.is_ok(), "更新群信息失败: {:?}", set_result.err());
+    println!("  ✅ 更新成功");
 
     println!("获取群信息...");
-    match sdk.get_groups_info(&vec![group.group_id.clone()]).await {
-        Ok(info) => println!("  群名称: {}", info.first().map(|i| &i.group_name).unwrap_or(&"?".into())),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let get_result = sdk.get_groups_info(&vec![group.group_id.clone()]).await;
+    assert!(get_result.is_ok(), "获取群信息失败: {:?}", get_result.err());
+    let info = get_result.unwrap();
+    let first = info.first().expect("群信息不应为空");
+    assert_eq!(first.group_name, "UpdatedName", "群名称应为 UpdatedName");
+    println!("  群名称: {}", first.group_name);
 
     println!("✅ 群信息更新测试完成");
 }
@@ -189,7 +189,6 @@ async fn test_group_list_sync() {
 
     let groups = sdk.get_group_list().await;
     println!("已加入群组数: {}", groups.len());
-
     println!("✅ 群列表同步测试完成");
 }
 
@@ -200,6 +199,8 @@ async fn test_user_state_group_management() {
         .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
         .try_init();
+
+    println!("=== 群组管理测试 ===\n");
 
     let phone = generate_virtual_phone("ugrp");
     let nickname = format!("UGroupUser_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
@@ -227,10 +228,10 @@ async fn test_user_state_group_management() {
         &vec![cert.user_id.clone()],
     ).await;
 
-    match result {
-        Ok(g) => println!("  ✅ 群组创建成功: {} ({})", g.group_name, g.group_id),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
+    let group = result.unwrap();
+    assert!(!group.group_id.is_empty(), "群组ID不应为空");
+    println!("  ✅ 群组创建成功: {} ({})", group.group_name, group.group_id);
 
     let groups = sdk.get_group_list().await;
     println!("群组数量: {}", groups.len());
@@ -283,34 +284,31 @@ async fn test_group_application_flow() {
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入群组...");
-    match sdk2.join_group(&group.group_id, None).await {
-        Ok(_) => println!("  ✅ 申请成功"),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let join_result = sdk2.join_group(&group.group_id, None).await;
+    assert!(join_result.is_ok(), "申请加入群组失败: {:?}", join_result.err());
+    println!("  ✅ 申请成功");
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("用户1获取群组申请列表...");
-    match sdk1.get_group_application_list().await {
-        Ok(resp) => println!("  ✅ 申请数: {}", resp.len()),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let app_list_result = sdk1.get_group_application_list().await;
+    assert!(app_list_result.is_ok(), "获取申请列表失败: {:?}", app_list_result.err());
+    let app_list = app_list_result.unwrap();
+    println!("  ✅ 申请数: {}", app_list.len());
 
     println!("用户1审批用户2的申请...");
-    match sdk1.accept_group_application(&group.group_id, &cert2.user_id).await {
-        Ok(_) => println!("  ✅ 同意申请"),
-        Err(e) => println!("  ❌ 失败: {:?}", e),
-    }
+    let accept_result = sdk1.accept_group_application(&group.group_id, &cert2.user_id).await;
+    assert!(accept_result.is_ok(), "审批失败: {:?}", accept_result.err());
+    println!("  ✅ 同意申请");
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("验证成员列表...");
-    match sdk1.get_group_members(&group.group_id).await {
-        Ok(members) => {
-            println!("  成员数: {} (期望 >= 2)", members.len());
-            for m in &members {
-                println!("    - {} ({})", m.nickname, m.user_id);
-            }
-        }
-        Err(e) => println!("  ❌ 失败: {:?}", e),
+    let members_result = sdk1.get_group_members(&group.group_id).await;
+    assert!(members_result.is_ok(), "获取成员列表失败: {:?}", members_result.err());
+    let members = members_result.unwrap();
+    println!("  成员数: {} (期望 >= 2)", members.len());
+    assert!(members.len() >= 2, "成员数应 >= 2");
+    for m in &members {
+        println!("    - {} ({})", m.nickname, m.user_id);
     }
 
     println!("✅ 群组申请流程测试完成");
