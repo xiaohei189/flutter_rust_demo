@@ -1,3 +1,4 @@
+use crate::domain::constant::types::content_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
@@ -31,6 +32,21 @@ impl MessageHandler {
         self.message_dao.clone()
     }
 
+    fn is_tip_message(content_type_val: i32) -> bool {
+        content_type_val >= content_type::NOTIFICATION_BEGIN && content_type_val <= content_type::NOTIFICATION_END
+    }
+
+    fn should_store_message(content_type_val: i32) -> bool {
+        !Self::is_tip_message(content_type_val)
+            && content_type_val != content_type::TYPING
+            && content_type_val != content_type::CUSTOM_MSG_ONLINE_ONLY
+    }
+
+    fn should_update_conversation(content_type_val: i32) -> bool {
+        Self::should_store_message(content_type_val)
+            && content_type_val != content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION
+    }
+
     pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
         if messages.is_empty() {
             return Ok(());
@@ -38,8 +54,9 @@ impl MessageHandler {
 
         info!("handling {} messages", messages.len());
 
-        let logs: Vec<LocalChatLog> = messages
+        let store_logs: Vec<LocalChatLog> = messages
             .iter()
+            .filter(|m| Self::should_store_message(m.content_type))
             .map(|m| LocalChatLog {
                 conversation_id: m.conversation_id.clone(),
                 client_msg_id: m.client_msg_id.clone(),
@@ -65,23 +82,25 @@ impl MessageHandler {
             })
             .collect();
 
-        self.message_dao.batch_insert(&logs).await?;
+        if !store_logs.is_empty() {
+            self.message_dao.batch_insert(&store_logs).await?;
+        }
 
         let mut seen_convs = std::collections::HashSet::new();
         for msg in &messages {
+            let is_conversation_update = Self::should_update_conversation(msg.content_type);
+
             if seen_convs.insert(&msg.conversation_id) {
-                // 先检查会话是否存在，不存在则创建
                 let existing = self.conversation_dao.get_by_id(&msg.conversation_id).await?;
                 if existing.is_none() {
-                    // 创建新会话
                     let show_name = if msg.session_type == 1 {
-                        // 单聊：使用发送者昵称
                         msg.sender_nick_name.clone()
                     } else {
-                        // 群聊：使用群 ID
                         format!("Group_{}", msg.group_id)
                     };
-                    
+
+                    let unread_count = if is_conversation_update { 1 } else { 0 };
+
                     let conv = LocalConversation {
                         conversation_id: msg.conversation_id.clone(),
                         conversation_type: msg.session_type,
@@ -89,9 +108,9 @@ impl MessageHandler {
                         group_id: if msg.session_type == 2 { msg.group_id.clone() } else { String::new() },
                         show_name,
                         face_url: msg.sender_face_url.clone(),
-                        latest_msg: msg.content.clone(),
-                        latest_msg_send_time: msg.send_time,
-                        unread_count: 1,
+                        latest_msg: if is_conversation_update { msg.content.clone() } else { String::new() },
+                        latest_msg_send_time: if is_conversation_update { msg.send_time } else { 0 },
+                        unread_count,
                         recv_msg_opt: 0,
                         is_pinned: 0,
                         is_private_chat: 0,
@@ -110,8 +129,7 @@ impl MessageHandler {
                     };
                     self.conversation_dao.upsert(&conv).await?;
                     info!("创建新会话: {}", msg.conversation_id);
-                } else {
-                    // 更新已有会话
+                } else if is_conversation_update {
                     self.conversation_dao
                         .update_after_new_message(
                             &msg.conversation_id,
@@ -123,9 +141,11 @@ impl MessageHandler {
                 }
             }
 
-            self.event_bus.publish(SdkEvent::NewMessage {
-                message: msg.clone(),
-            });
+            if msg.content_type != content_type::TYPING {
+                self.event_bus.publish(SdkEvent::NewMessage {
+                    message: msg.clone(),
+                });
+            }
         }
 
         info!("handled {} messages", messages.len());
