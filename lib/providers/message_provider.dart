@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/message.dart' show Message;
 import '../services/message_service_notifier.dart';
+import '../src/rust/domain/constant/enums.dart';
 import 'message_service_provider.dart';
 
 /// 消息列表状态
@@ -93,7 +94,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
   Future<bool> sendTextMessage({
     required String recvId,
     required String text,
-    required int sessionType,
+    required SessionType sessionType,
     String? groupId,
   }) async {
     try {

@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/simple.dart';
+import '../src/rust/domain/config.dart';
 import '../utils/app_logger.dart';
 
 /// IM 客户端管理 - 负责 OpenImBridgeClient 的创建和管理
@@ -77,12 +78,14 @@ class ImClient {
       final dataDir = '${docDir.path}/openim_data';
       appLog.i('[ImClient] 数据目录: $dataDir');
       _client = await OpenImBridgeClient.newInstance(
-        userId: userId,
-        token: token,
-        platformId: platformId,
-        wsUrl: wsUrl,
-        apiBaseUrl: apiBaseUrl,
-        dataDir: dataDir,
+        config: ClientConfig(
+          userId: userId,
+          token: token,
+          platformId: platformId,
+          wsUrl: wsUrl,
+          apiBaseUrl: apiBaseUrl!,
+          dataDir: dataDir,
+        ),
       );
       
       appLog.i('[ImClient] 客户端创建成功');

@@ -6,6 +6,9 @@ import 'package:flutter_rust_demo/models/chat.dart';
 import 'package:flutter_rust_demo/models/message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
+import 'package:flutter_rust_demo/src/rust/domain/config.dart';
+import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
+import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
 import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
 import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
@@ -251,7 +254,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   Future<void> sendTextMessage({
     required String recvId,
     required String text,
-    required int sessionType,
+    required SessionType sessionType,
     required String conversationId,
     String groupId = '',
   }) async {
@@ -283,7 +286,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           recvId: recvId,
           groupId: groupId,
           sessionType: sessionType,
-          contentType: 101, // 文本消息
+          contentType: ContentType.text,
           content: text,
         ),
       );
@@ -363,12 +366,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       final dataDir = '${docDir.path}/openim_data';
       appLog.i('[MessageService] 数据目录: $dataDir');
       _client = await OpenImBridgeClient.newInstance(
-        userId: resolvedUserId,
-        token: resolvedImToken,
-        platformId: 5,
-        wsUrl: wsUrl,
-        apiBaseUrl: apiBaseUrl,
-        dataDir: dataDir,
+        config: ClientConfig(
+          userId: resolvedUserId,
+          token: resolvedImToken,
+          platformId: 5,
+          wsUrl: wsUrl,
+          apiBaseUrl: apiBaseUrl!,
+          dataDir: dataDir,
+        ),
       );
       appLog.i('[MessageService] newInstance 完成');
 

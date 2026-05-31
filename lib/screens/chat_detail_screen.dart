@@ -6,6 +6,7 @@ import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../models/user.dart';
+import '../src/rust/domain/constant/enums.dart' show SessionType;
 import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../widgets/chat_input.dart';
 import '../widgets/message_list.dart';
@@ -52,6 +53,20 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 将 int 类型的会话类型转换为 SessionType 枚举
+  static SessionType _intToSessionType(int type) {
+    switch (type) {
+      case 1:
+        return SessionType.singleChat;
+      case 2:
+        return SessionType.writeGroupChat;
+      case 3:
+        return SessionType.readGroupChat;
+      default:
+        return SessionType.notificationChat;
+    }
   }
 
   /// 获取会话信息
@@ -239,7 +254,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         default:
           recvId = '';
       }
-      final sessionType = type;
+      final sessionType = _intToSessionType(type);
 
       if (recvId.isEmpty) {
         appLog.e(
@@ -257,7 +272,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
       _textController.clear();
 
-      final groupId = sessionType == 3 || sessionType == 2
+      final groupId = sessionType == SessionType.writeGroupChat || sessionType == SessionType.readGroupChat
           ? (conversation.groupId.isNotEmpty
               ? conversation.groupId
               : cid.startsWith('sg_')
