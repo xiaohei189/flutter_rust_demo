@@ -37,15 +37,13 @@ impl SyncVersionDao {
 
     /// 判断是否为重新安装（参考 Go SDK 的 reinstalled 逻辑）
     pub async fn is_reinstalled(&self) -> Result<bool> {
-        let is_empty = self.is_conversation_id_list_empty().await?;
-        if is_empty {
-            return Ok(true);
-        }
-
         let version_record = self.get_sdk_version().await?;
         match version_record {
             Some((_, installed)) => Ok(!installed),
-            None => Ok(true),
+            None => {
+                let is_empty = self.is_conversation_id_list_empty().await?;
+                Ok(is_empty)
+            }
         }
     }
 
