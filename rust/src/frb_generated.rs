@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1138517639;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1313925399;
 
 // Section: executor
 
@@ -1370,6 +1370,46 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok = crate::api::bridge_client::OpenIMBridgeClient::kick_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_as_read_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "OpenImBridgeClient_mark_conversation_as_read",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
+            let api_conversation_id = <String>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let mut api_that_guard = None;
+                        let decode_indices_ = flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![flutter_rust_bridge::for_generated::LockableOrderInfo::new(&api_that, 0, false)]);
+                        for i in decode_indices_ {
+                            match i {
+                                0 => api_that_guard = Some(api_that.lockable_decode_async_ref().await),
+                                _ => unreachable!(),
+                            }
+                        }
+                        let api_that_guard = api_that_guard.unwrap();
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mark_conversation_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3356,25 +3396,26 @@ fn pde_ffi_dispatcher_primary_impl(
         32 => wire__crate__api__bridge_client__OpenImBridgeClient_is_friend_impl(port, ptr, rust_vec_len, data_len),
         33 => wire__crate__api__bridge_client__OpenImBridgeClient_join_group_impl(port, ptr, rust_vec_len, data_len),
         34 => wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_impl(port, ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__bridge_client__OpenImBridgeClient_quit_group_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__bridge_client__OpenImBridgeClient_refuse_friend_application_impl(port, ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__bridge_client__OpenImBridgeClient_refuse_group_application_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__bridge_client__OpenImBridgeClient_remove_black_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__bridge_client__OpenImBridgeClient_revoke_message_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__bridge_client__OpenImBridgeClient_search_local_messages_impl(port, ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__bridge_client__OpenImBridgeClient_send_message_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_draft_impl(port, ptr, rust_vec_len, data_len),
-        45 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_pinned_impl(port, ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_private_impl(port, ptr, rust_vec_len, data_len),
-        47 => wire__crate__api__bridge_client__OpenImBridgeClient_set_group_info_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__bridge_client__OpenImBridgeClient_update_conversation_unread_count_impl(port, ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__bridge_client__OpenImBridgeClient_update_user_profile_impl(port, ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__simple__init_logger_impl(port, ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__simple__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_as_read_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__bridge_client__OpenImBridgeClient_quit_group_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__bridge_client__OpenImBridgeClient_refuse_friend_application_impl(port, ptr, rust_vec_len, data_len),
+        40 => wire__crate__api__bridge_client__OpenImBridgeClient_refuse_group_application_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__bridge_client__OpenImBridgeClient_remove_black_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__bridge_client__OpenImBridgeClient_revoke_message_impl(port, ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__bridge_client__OpenImBridgeClient_search_local_messages_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__bridge_client__OpenImBridgeClient_send_message_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_draft_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_pinned_impl(port, ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_private_impl(port, ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__bridge_client__OpenImBridgeClient_set_group_info_impl(port, ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__bridge_client__OpenImBridgeClient_update_conversation_unread_count_impl(port, ptr, rust_vec_len, data_len),
+        50 => wire__crate__api__bridge_client__OpenImBridgeClient_update_user_profile_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__simple__init_logger_impl(port, ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__simple__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }

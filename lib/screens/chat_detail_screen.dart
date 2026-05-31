@@ -44,7 +44,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       ref.read(selectedConversationIdProvider.notifier).state = widget.conversationId;
       if (!widget.preLoaded) _loadMessages();
       if (mounted) setState(() => _bodyReady = true);
+      _markConversationAsRead();
     });
+  }
+
+  Future<void> _markConversationAsRead() async {
+    final imClient = ref.read(imClientProvider);
+    final client = imClient.client;
+    if (client == null) return;
+    final conv = _conversation;
+    if (conv == null) return;
+    final sessionType = conv.sessionType;
+    try {
+      await client.markConversationAsRead(
+        conversationId: widget.conversationId,
+        sessionType: sessionType,
+      );
+    } catch (e) {
+      appLog.e('标记已读失败: $e');
+    }
   }
 
   @override

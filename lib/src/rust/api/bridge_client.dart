@@ -139,6 +139,11 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required List<String> memberIds,
   });
 
+  Future<void> markConversationAsRead({
+    required String conversationId,
+    required SessionType sessionType,
+  });
+
   Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req});
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.

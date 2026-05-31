@@ -2,7 +2,7 @@ use crate::domain::constant::types::notification_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::infra::database::MessageDao;
+use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_MSGS_AS_READ, REVOKE_MSG};
 use serde::{Deserialize, Serialize};
@@ -47,6 +47,7 @@ pub struct MarkMessagesAsReadReq {
 
 pub struct MessageService {
     message_dao: Arc<MessageDao>,
+    conversation_dao: Arc<ConversationDao>,
     event_bus: Arc<EventBus>,
     http_client: Arc<crate::infra::http::client::HttpApiClient>,
     user_id: Arc<std::sync::Mutex<String>>,
@@ -55,12 +56,14 @@ pub struct MessageService {
 impl MessageService {
     pub fn new(
         message_dao: Arc<MessageDao>,
+        conversation_dao: Arc<ConversationDao>,
         event_bus: Arc<EventBus>,
         http_client: Arc<crate::infra::http::client::HttpApiClient>,
         user_id: String,
     ) -> Self {
         Self {
             message_dao,
+            conversation_dao,
             event_bus,
             http_client,
             user_id: Arc::new(std::sync::Mutex::new(user_id)),
@@ -132,6 +135,25 @@ impl MessageService {
         });
 
         info!("消息已删除: conversation_id={}, count={}", conversation_id, client_msg_ids.len());
+        Ok(())
+    }
+
+    /// 标记会话消息已读（Go SDK 对应 markConversationMessageAsRead）
+    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
+        let max_seq = self.message_dao.get_max_seq(&conversation_id).await?;
+        if max_seq == 0 {
+            return Ok(());
+        }
+
+        let unread_count = self.conversation_dao.get_unread_count(&conversation_id).await?;
+        if unread_count == 0 {
+            return Ok(());
+        }
+
+        self.message_dao.mark_as_read_by_max_seq(&conversation_id, max_seq).await?;
+        self.conversation_dao.update_unread_count(&conversation_id, 0).await?;
+
+        info!("会话已标记为已读: conversation_id={}, max_seq={}", conversation_id, max_seq);
         Ok(())
     }
 

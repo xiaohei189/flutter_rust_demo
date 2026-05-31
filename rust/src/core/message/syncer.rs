@@ -163,6 +163,7 @@ impl MessageSyncer {
     /// 从服务端获取所有会话的最新 maxSeq
     pub async fn get_server_max_seqs(&self) -> Result<HashMap<String, i64>> {
         use openim_protocol::sdkws::{GetMaxSeqReq, GetMaxSeqResp};
+        info!(">>> 开始获取服务端 max seqs");
 
         let req = GetMaxSeqReq {
             user_id: self.user_id.clone(),
@@ -170,8 +171,12 @@ impl MessageSyncer {
         let resp: GetMaxSeqResp = self.connection
             .send_rpc(ws_req_identifier::GET_NEWEST_SEQ, &req)
             .await
-            .map_err(|e| SdkError::network(format!("get server max seqs failed: {}", e)))?;
+            .map_err(|e| {
+                error!("获取服务端 max seqs 失败: {}", e);
+                SdkError::network(format!("get server max seqs failed: {}", e))
+            })?;
 
+        info!("<<< 获取到服务端 max seqs 数量: {}", resp.max_seqs.len());
         Ok(resp.max_seqs)
     }
 
@@ -206,6 +211,7 @@ impl MessageSyncer {
 
     /// 登录后的全量同步（区分重装和普通模式）
     pub async fn sync_on_login(&self) -> Result<()> {
+        info!("=== 消息同步开始: sync_on_login ===");
         let _guard = self.sync_lock.try_lock();
         if _guard.is_err() {
             info!("消息同步已在进行中，跳过");
@@ -215,7 +221,16 @@ impl MessageSyncer {
         let reinstalled = self.sync_version_dao.is_reinstalled().await?;
         info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
 
-        self.sync_all_conversations(reinstalled).await
+        match self.sync_all_conversations(reinstalled).await {
+            Ok(()) => {
+                info!("=== 消息同步成功: sync_on_login ===");
+                Ok(())
+            }
+            Err(e) => {
+                error!("=== 消息同步失败: sync_on_login, error={} ===", e);
+                Err(e)
+            }
+        }
     }
 
     /// 推送消息触发同步：检测 seq 连续性，不连续时自动补拉
@@ -312,7 +327,9 @@ impl MessageSyncer {
             let local_max_seq = self.message_dao.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
-                let begin = if local_max_seq == 0 { 0 } else { local_max_seq + 1 };
+                let begin = local_max_seq + 1;
+                info!("会话 {} 需要同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
+                    conversation_id, local_max_seq, server_max_seq, begin, server_max_seq);
                 need_sync_seq_map.insert(conversation_id.clone(), (begin, *server_max_seq));
             }
         }
@@ -333,7 +350,9 @@ impl MessageSyncer {
             let local_max_seq = self.message_dao.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
-                let begin = if local_max_seq == 0 { 0 } else { local_max_seq + 1 };
+                let begin = local_max_seq + 1;
+                info!("会话 {} 重装同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
+                    conversation_id, local_max_seq, server_max_seq, begin, server_max_seq);
                 need_sync_seq_map.insert(conversation_id.clone(), (begin, *server_max_seq));
             }
         }

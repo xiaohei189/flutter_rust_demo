@@ -129,6 +129,19 @@ impl MessageDao {
         Ok(())
     }
 
+    pub async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq <= ? AND seq > 0 AND send_id != ?",
+        )
+            .bind(conversation_id)
+            .bind(max_seq)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("mark as read by max seq: {}", e)))?;
+        Ok(())
+    }
+
     pub async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
         sqlx::query("DELETE FROM local_chat_logs WHERE conversation_id = ? AND client_msg_id = ?")
             .bind(conversation_id)

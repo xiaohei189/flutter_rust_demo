@@ -111,6 +111,7 @@ impl OpenIMClient {
 
         let message_service = Arc::new(MessageService::new(
             context.message_dao.clone(),
+            context.conversation_dao.clone(),
             event_bus.clone(),
             context.http_client.clone(),
             config.user_id.clone(),

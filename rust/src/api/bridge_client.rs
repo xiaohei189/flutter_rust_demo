@@ -103,6 +103,12 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
+    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: SessionType) -> Result<()> {
+        self.inner.mark_conversation_as_read(conversation_id, session_type.into()).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
     pub async fn search_local_messages(&self, req: SearchMessagesReq) -> Result<Vec<crate::infra::database::models::LocalChatLog>> {
         self.inner.search_local_messages(req).await
             .map_err(|e| anyhow::anyhow!("{}", e))

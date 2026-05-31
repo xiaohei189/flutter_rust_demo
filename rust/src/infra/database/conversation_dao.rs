@@ -182,6 +182,17 @@ impl ConversationDao {
         Ok(())
     }
 
+    pub async fn get_unread_count(&self, conversation_id: &str) -> Result<i32> {
+        let row: (Option<i32>,) = sqlx::query_as(
+            "SELECT unread_count FROM local_conversations WHERE conversation_id = ?",
+        )
+        .bind(conversation_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query unread count: {}", e)))?;
+        Ok(row.0.unwrap_or(0))
+    }
+
     pub async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> {
         sqlx::query(
             "UPDATE local_conversations SET draft_text = ?, draft_text_time = ? WHERE conversation_id = ?",

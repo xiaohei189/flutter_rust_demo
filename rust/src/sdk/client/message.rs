@@ -105,6 +105,10 @@ impl OpenIMClient {
         ).await
     }
 
+    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
+        self.message_service.mark_conversation_as_read(conversation_id, session_type).await
+    }
+
     pub async fn search_local_messages(&self, req: SearchMessagesReq) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
         self.message_service.search_local_messages(
             req.conversation_id,
