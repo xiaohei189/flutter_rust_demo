@@ -7,7 +7,6 @@ use crate::sdk::client::types::{
     SearchMessagesReq, SendMessageReq,
 };
 use crate::sdk::client::OpenIMClient;
-use crate::core::message::sender::PendingMessage;
 use openim_protocol::sdkws::MsgData;
 
 impl OpenIMClient {
@@ -16,7 +15,7 @@ impl OpenIMClient {
             format!("msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
         });
 
-        let pending_msg = PendingMessage {
+        let pending_msg = crate::core::message::sender::PendingMessage {
             client_msg_id: client_msg_id.clone(),
             send_id: self.context.user_id.lock().unwrap().clone(),
             recv_id: req.recv_id,
@@ -111,9 +110,5 @@ impl OpenIMClient {
             req.keyword,
             100,
         ).await
-    }
-
-    pub async fn send_pending_message(&self, msg: PendingMessage) -> std::result::Result<(), SdkError> {
-        self.message_sender.send_message(msg).await
     }
 }

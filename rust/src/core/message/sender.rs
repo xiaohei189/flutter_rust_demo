@@ -1,4 +1,5 @@
 use crate::core::connection::manager::ConnectionManager;
+use crate::core::file::uploader::FileUploader;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
@@ -8,6 +9,8 @@ use crate::infra::database::models::LocalChatLog;
 use crate::protocol::sdkws::{MsgData, UserSendMsgResp};
 use prost::Message;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
@@ -53,6 +56,7 @@ pub struct MessageSender {
     platform_id: i32,
     message_dao: Arc<MessageDao>,
     conversation_dao: Arc<ConversationDao>,
+    file_uploader: Arc<FileUploader>,
 }
 
 impl MessageSender {
@@ -63,6 +67,7 @@ impl MessageSender {
         platform_id: i32,
         message_dao: Arc<MessageDao>,
         conversation_dao: Arc<ConversationDao>,
+        file_uploader: Arc<FileUploader>,
     ) -> Self {
         let (text_tx, text_rx) = mpsc::channel(100);
         let (media_tx, media_rx) = mpsc::channel(100);
@@ -80,6 +85,7 @@ impl MessageSender {
             platform_id,
             message_dao,
             conversation_dao,
+            file_uploader,
         }
     }
 
@@ -198,6 +204,8 @@ impl MessageSender {
             .map(|d| d.as_millis() as i64)
             .unwrap_or(0);
 
+        let content = self.process_media_content(&msg).await?;
+
         let msg_data = MsgData {
             send_id: msg.send_id.clone(),
             recv_id: msg.recv_id.clone(),
@@ -210,7 +218,7 @@ impl MessageSender {
             session_type: msg.session_type,
             msg_from: msg.msg_from,
             content_type: msg.content_type,
-            content: msg.content.clone().into_bytes(),
+            content: content.clone().into_bytes(),
             seq: 0,
             send_time,
             create_time: send_time,
@@ -253,6 +261,58 @@ impl MessageSender {
         })
     }
 
+    async fn process_media_content(&self, msg: &PendingMessage) -> Result<String> {
+        let media_types = [102, 103, 104, 105];
+        if !media_types.contains(&msg.content_type) {
+            return Ok(msg.content.clone());
+        }
+
+        let mut value: Value = match serde_json::from_str(&msg.content) {
+            Ok(v) => v,
+            Err(_) => return Ok(msg.content.clone()),
+        };
+
+        let source_path = match value.get("sourcePath").and_then(|v| v.as_str()) {
+            Some(p) => p.to_string(),
+            None => return Ok(msg.content.clone()),
+        };
+
+        let path = Path::new(&source_path);
+        if !path.exists() {
+            info!("sourcePath 文件不存在，跳过上传: {}", source_path);
+            return Ok(msg.content.clone());
+        }
+
+        let file_name = path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        info!("开始上传媒体文件: content_type={}, path={}", msg.content_type, source_path);
+
+        let upload_result = self.file_uploader.upload_file(&source_path, &file_name, None).await?;
+        let url = upload_result.url;
+
+        info!("媒体文件上传成功: url={}", url);
+
+        if msg.content_type == 102 {
+            let source_picture = json!({
+                "url": url,
+            });
+            value["sourcePicture"] = source_picture;
+        } else {
+            value["sourceUrl"] = json!(url);
+        }
+
+        value.as_object_mut()
+            .and_then(|map| map.remove("sourcePath"));
+
+        let new_content = serde_json::to_string(&value)
+            .unwrap_or_else(|_| msg.content.clone());
+
+        Ok(new_content)
+    }
+
     fn clone_for_worker(&self) -> Self {
         Self {
             connection: self.connection.clone(),
@@ -267,6 +327,7 @@ impl MessageSender {
             platform_id: self.platform_id,
             message_dao: self.message_dao.clone(),
             conversation_dao: self.conversation_dao.clone(),
+            file_uploader: self.file_uploader.clone(),
         }
     }
 }
@@ -274,6 +335,9 @@ impl MessageSender {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::infra::database::pool::create_pool_memory;
+    use crate::infra::http::client::HttpApiClient;
+    use tokio_util::sync::CancellationToken;
 
     #[test]
     fn test_pending_message_creation() {
@@ -337,5 +401,110 @@ mod tests {
         assert_eq!(resp.server_msg_id, "srv_123");
         assert_eq!(resp.client_msg_id, "cli_123");
         assert_eq!(resp.send_time, 1234567890);
+    }
+
+    #[test]
+    fn test_pending_message_content_type() {
+        let msg = PendingMessage {
+            client_msg_id: "msg_ct_101".to_string(),
+            send_id: "user_1".to_string(),
+            recv_id: "user_2".to_string(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: r#"{"content":"hello"}"#.to_string(),
+        };
+
+        assert_eq!(msg.content_type, 101);
+        assert_eq!(msg.content, r#"{"content":"hello"}"#);
+        assert_eq!(msg.client_msg_id, "msg_ct_101");
+        assert_eq!(msg.send_id, "user_1");
+        assert_eq!(msg.recv_id, "user_2");
+        assert_eq!(msg.session_type, 1);
+        assert_eq!(msg.msg_from, 100);
+        assert!(msg.group_id.is_empty());
+        assert!(msg.sender_nickname.is_empty());
+        assert!(msg.sender_face_url.is_empty());
+    }
+
+    async fn make_test_sender() -> MessageSender {
+        let event_bus = Arc::new(EventBus::new());
+        let cancel_token = CancellationToken::new();
+        let connection = Arc::new(ConnectionManager::new(event_bus.clone(), cancel_token));
+        let http_client = Arc::new(HttpApiClient::new(
+            "http://localhost".to_string(),
+            "test_token".to_string(),
+            "test_op".to_string(),
+        ));
+        let file_uploader = Arc::new(FileUploader::new(http_client));
+        let pool = create_pool_memory().await.unwrap();
+        let message_dao = Arc::new(MessageDao::new(pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(pool));
+
+        MessageSender::new(
+            connection,
+            event_bus,
+            "user_1".to_string(),
+            1,
+            message_dao,
+            conversation_dao,
+            file_uploader,
+        )
+    }
+
+    #[tokio::test]
+    async fn test_process_media_content_text() {
+        let sender = make_test_sender().await;
+        let content = r#"{"content":"hello"}"#.to_string();
+        let text_types = [101, 106, 113, 114, 115, 117, 118];
+
+        for &ct in &text_types {
+            let msg = PendingMessage {
+                client_msg_id: format!("msg_{}", ct),
+                send_id: "user_1".to_string(),
+                recv_id: "user_2".to_string(),
+                group_id: String::new(),
+                sender_platform_id: 1,
+                sender_nickname: String::new(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 100,
+                content_type: ct,
+                content: content.clone(),
+            };
+            let result = sender.process_media_content(&msg).await.unwrap();
+            assert_eq!(
+                result, content,
+                "content_type {} should pass through unchanged",
+                ct
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_process_media_content_picture() {
+        let sender = make_test_sender().await;
+        let content = r#"{"sourcePath":"/tmp/test.jpg"}"#.to_string();
+        let msg = PendingMessage {
+            client_msg_id: "msg_pic".to_string(),
+            send_id: "user_1".to_string(),
+            recv_id: "user_2".to_string(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 102,
+            content: content.clone(),
+        };
+
+        let result = sender.process_media_content(&msg).await;
+        assert!(result.is_ok(), "should handle gracefully even if file does not exist");
+        assert_eq!(result.unwrap(), content, "content should remain unchanged when sourcePath file is missing");
     }
 }

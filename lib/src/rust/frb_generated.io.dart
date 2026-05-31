@@ -20,6 +20,7 @@ import 'infra/database/models.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 import 'sdk/client.dart';
+import 'sdk/client/elements.dart';
 import 'sdk/client/types.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
@@ -94,6 +95,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw);
+
+  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
@@ -117,6 +121,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq dco_decode_box_autoadd_mark_messages_as_read_req(
     dynamic raw,
   );
+
+  @protected
+  PictureBaseInfo dco_decode_box_autoadd_picture_base_info(dynamic raw);
+
+  @protected
+  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
 
   @protected
   RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
@@ -185,6 +195,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
 
   @protected
+  List<MessageEntity> dco_decode_list_message_entity(dynamic raw);
+
+  @protected
   List<MessageInfo> dco_decode_list_message_info(dynamic raw);
 
   @protected
@@ -206,6 +219,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
   @protected
+  MessageEntity dco_decode_message_entity(dynamic raw);
+
+  @protected
   MessageInfo dco_decode_message_info(dynamic raw);
 
   @protected
@@ -213,6 +229,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LocalConversation? dco_decode_opt_box_autoadd_local_conversation(dynamic raw);
+
+  @protected
+  PictureBaseInfo? dco_decode_opt_box_autoadd_picture_base_info(dynamic raw);
+
+  @protected
+  PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
+
+  @protected
+  PictureElem dco_decode_picture_elem(dynamic raw);
 
   @protected
   RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
@@ -293,6 +318,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
@@ -322,6 +352,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq sse_decode_box_autoadd_mark_messages_as_read_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  PictureBaseInfo sse_decode_box_autoadd_picture_base_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
 
   @protected
   RevokeMessageReq sse_decode_box_autoadd_revoke_message_req(
@@ -408,6 +446,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<MessageEntity> sse_decode_list_message_entity(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<MessageInfo> sse_decode_list_message_info(SseDeserializer deserializer);
 
   @protected
@@ -431,6 +474,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
+
+  @protected
   MessageInfo sse_decode_message_info(SseDeserializer deserializer);
 
   @protected
@@ -440,6 +486,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation? sse_decode_opt_box_autoadd_local_conversation(
     SseDeserializer deserializer,
   );
+
+  @protected
+  PictureBaseInfo? sse_decode_opt_box_autoadd_picture_base_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
+
+  @protected
+  PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
 
   @protected
   RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
@@ -533,6 +590,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_StreamSink_i_32_Sse(
+    RustStreamSink<int> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
@@ -565,6 +628,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_mark_messages_as_read_req(
     MarkMessagesAsReadReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_picture_elem(
+    PictureElem self,
     SseSerializer serializer,
   );
 
@@ -677,6 +752,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_message_entity(
+    List<MessageEntity> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_message_info(
     List<MessageInfo> self,
     SseSerializer serializer,
@@ -713,6 +794,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);
+
+  @protected
   void sse_encode_message_info(MessageInfo self, SseSerializer serializer);
 
   @protected
@@ -723,6 +807,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     LocalConversation? self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_box_autoadd_picture_base_info(
+    PictureBaseInfo? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_revoke_message_req(

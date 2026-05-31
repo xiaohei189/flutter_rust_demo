@@ -134,9 +134,10 @@ async fn test_user_state_conversation_management() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::core::message::sender::PendingMessage;
     use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
+    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
 
     let phone1 = generate_virtual_phone("ucv1");
     let phone2 = generate_virtual_phone("ucv2");
@@ -155,20 +156,15 @@ async fn test_user_state_conversation_management() {
     sdk.connect(WS_URL, &cert1.im_token, &cert1.user_id).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    let msg = PendingMessage {
-        client_msg_id: format!("ucv_msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis()),
-        send_id: cert1.user_id.clone(),
+    let req = SendMessageReq {
         recv_id: cert2.user_id.clone(),
         group_id: String::new(),
-        sender_platform_id: 1,
-        sender_nickname: "UConv1".into(),
-        sender_face_url: String::new(),
-        session_type: 1,
-        msg_from: 100,
-        content_type: 101,
+        session_type: SessionType::SingleChat,
+        content_type: ContentType::Text,
         content: r#"{"content":"Test conversation"}"#.to_string(),
+        client_msg_id: Some(format!("ucv_msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
     };
-    sdk.send_pending_message(msg).await.unwrap();
+    sdk.send_message(req).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let convs = sdk.get_conversations().await.unwrap_or_default();

@@ -69,6 +69,10 @@ impl OpenIMClient {
             event_bus.clone(),
         ));
 
+        let file_uploader = Arc::new(FileUploader::new(
+            context.http_client.clone(),
+        ));
+
         let mut message_sender = MessageSender::new(
             connection.clone(),
             event_bus.clone(),
@@ -76,6 +80,7 @@ impl OpenIMClient {
             config.platform_id,
             context.message_dao.clone(),
             context.conversation_dao.clone(),
+            file_uploader.clone(),
         );
         message_sender.start_workers();
         let message_sender = Arc::new(message_sender);
@@ -100,10 +105,6 @@ impl OpenIMClient {
             context.conversation_dao.clone(),
             event_bus.clone(),
             config.user_id.clone(),
-        ));
-
-        let file_uploader = Arc::new(FileUploader::new(
-            context.http_client.clone(),
         ));
 
         let message_service = Arc::new(MessageService::new(

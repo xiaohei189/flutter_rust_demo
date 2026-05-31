@@ -149,3 +149,40 @@ async fn test_get_user_online_status() {
     println!("在线状态: {:?}", status);
     println!("✅ 获取用户在线状态测试通过");
 }
+
+#[tokio::test]
+#[ignore]
+async fn test_update_user_profile() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    println!("=== 更新用户资料测试 ===\n");
+
+    let user1 = get_or_create_user1().await;
+    let (im_token, _) = login_account(&user1).await.expect("登录失败");
+    let sdk = create_sdk(&user1, &im_token).await;
+
+    println!("更新昵称...");
+    match sdk.update_user_profile(
+        Some(&format!("UpdatedNick_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs())),
+        None,
+        None,
+    ).await {
+        Ok(_) => println!("  ✅ 昵称更新成功"),
+        Err(e) => println!("  ❌ 更新失败: {:?}", e),
+    }
+
+    println!("验证用户资料...");
+    match sdk.get_users_info(&vec![user1.user_id.clone()]).await {
+        Ok(users) => {
+            if let Some(user) = users.first() {
+                println!("  用户: id={}, 昵称={}", user.user_id, user.nickname);
+            }
+        }
+        Err(e) => println!("  ❌ 获取用户信息失败: {:?}", e),
+    }
+
+    println!("✅ 更新用户资料测试完成");
+}
