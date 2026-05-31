@@ -1,3 +1,4 @@
+use crate::domain::constant::enums::SessionType;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
@@ -51,6 +52,12 @@ pub struct LocalConversation {
     pub min_seq: i64,
     pub is_msg_destruct: i32,
     pub msg_destruct_time: i64,
+}
+
+impl LocalConversation {
+    pub fn session_type(&self) -> SessionType {
+        SessionType::from_i32(self.conversation_type)
+    }
 }
 
 #[derive(Debug, Clone, FromRow)]

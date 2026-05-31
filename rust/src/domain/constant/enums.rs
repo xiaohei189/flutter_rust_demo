@@ -27,6 +27,14 @@ impl From<SessionType> for i32 {
     }
 }
 
+impl sqlx::Type<sqlx::Sqlite> for SessionType {
+    fn type_info() -> <sqlx::Sqlite as sqlx::Database>::TypeInfo {
+        <i32 as sqlx::Type<sqlx::Sqlite>>::type_info()
+    }
+}
+
+
+
 /// 消息内容类型
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ContentType {
@@ -79,6 +87,14 @@ impl From<ContentType> for i32 {
         c as i32
     }
 }
+
+impl sqlx::Type<sqlx::Sqlite> for ContentType {
+    fn type_info() -> <sqlx::Sqlite as sqlx::Database>::TypeInfo {
+        <i32 as sqlx::Type<sqlx::Sqlite>>::type_info()
+    }
+}
+
+
 
 /// 消息来源
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
