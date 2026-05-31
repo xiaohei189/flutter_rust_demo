@@ -3235,6 +3235,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           clientMsgId: dco_decode_String(raw[1]),
           serverMsgId: dco_decode_String(raw[2]),
           sendTime: dco_decode_i_64(raw[3]),
+          status: dco_decode_i_32(raw[4]),
+          conversationId: dco_decode_String(raw[5]),
+          sendId: dco_decode_String(raw[6]),
+          recvId: dco_decode_String(raw[7]),
+          groupId: dco_decode_String(raw[8]),
+          sessionType: dco_decode_i_32(raw[9]),
+          contentType: dco_decode_i_32(raw[10]),
+          content: dco_decode_String(raw[11]),
+          senderNickname: dco_decode_String(raw[12]),
+          senderFaceUrl: dco_decode_String(raw[13]),
         );
       case 13:
         return SdkEvent_MessageSendFailed(
@@ -4443,10 +4453,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_clientMsgId = sse_decode_String(deserializer);
         var var_serverMsgId = sse_decode_String(deserializer);
         var var_sendTime = sse_decode_i_64(deserializer);
+        var var_status = sse_decode_i_32(deserializer);
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_sendId = sse_decode_String(deserializer);
+        var var_recvId = sse_decode_String(deserializer);
+        var var_groupId = sse_decode_String(deserializer);
+        var var_sessionType = sse_decode_i_32(deserializer);
+        var var_contentType = sse_decode_i_32(deserializer);
+        var var_content = sse_decode_String(deserializer);
+        var var_senderNickname = sse_decode_String(deserializer);
+        var var_senderFaceUrl = sse_decode_String(deserializer);
         return SdkEvent_MessageSent(
           clientMsgId: var_clientMsgId,
           serverMsgId: var_serverMsgId,
           sendTime: var_sendTime,
+          status: var_status,
+          conversationId: var_conversationId,
+          sendId: var_sendId,
+          recvId: var_recvId,
+          groupId: var_groupId,
+          sessionType: var_sessionType,
+          contentType: var_contentType,
+          content: var_content,
+          senderNickname: var_senderNickname,
+          senderFaceUrl: var_senderFaceUrl,
         );
       case 13:
         var var_clientMsgId = sse_decode_String(deserializer);
@@ -5529,11 +5559,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         clientMsgId: final clientMsgId,
         serverMsgId: final serverMsgId,
         sendTime: final sendTime,
+        status: final status,
+        conversationId: final conversationId,
+        sendId: final sendId,
+        recvId: final recvId,
+        groupId: final groupId,
+        sessionType: final sessionType,
+        contentType: final contentType,
+        content: final content,
+        senderNickname: final senderNickname,
+        senderFaceUrl: final senderFaceUrl,
       ):
         sse_encode_i_32(12, serializer);
         sse_encode_String(clientMsgId, serializer);
         sse_encode_String(serverMsgId, serializer);
         sse_encode_i_64(sendTime, serializer);
+        sse_encode_i_32(status, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_String(sendId, serializer);
+        sse_encode_String(recvId, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_i_32(sessionType, serializer);
+        sse_encode_i_32(contentType, serializer);
+        sse_encode_String(content, serializer);
+        sse_encode_String(senderNickname, serializer);
+        sse_encode_String(senderFaceUrl, serializer);
       case SdkEvent_MessageSendFailed(
         clientMsgId: final clientMsgId,
         error: final error,

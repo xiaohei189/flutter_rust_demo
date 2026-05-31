@@ -198,6 +198,48 @@ impl MessageSender {
         Ok(())
     }
 
+    /// 插入消息到本地数据库（发送前，Go SDK 对应 InsertMessage）
+    async fn insert_message_before_send(&self, msg: &PendingMessage, send_time: i64) -> Result<()> {
+        let conversation_id = self.conversation_id_for_msg(msg);
+
+        let content_str = msg.content.clone();
+
+        let local_log = LocalChatLog {
+            conversation_id: conversation_id.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: String::new(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: content_str,
+            is_read: 1,
+            status: 1,
+            seq: 0,
+            send_time,
+            create_time: send_time,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        };
+
+        self.message_dao.batch_insert(&[local_log]).await?;
+
+        self.conversation_dao.update_after_sent_message(
+            &conversation_id,
+            &msg.content,
+            send_time,
+        ).await?;
+
+        debug!("发送前插入消息: client_msg_id={}, conv={}", msg.client_msg_id, conversation_id);
+        Ok(())
+    }
+
     async fn do_send_message(&self, msg: PendingMessage) -> Result<SendMsgResp> {
         let send_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -205,6 +247,8 @@ impl MessageSender {
             .unwrap_or(0);
 
         let content = self.process_media_content(&msg).await?;
+
+        self.insert_message_before_send(&msg, send_time).await?;
 
         let msg_data = MsgData {
             send_id: msg.send_id.clone(),
@@ -236,6 +280,7 @@ impl MessageSender {
         {
             Ok(r) => r,
             Err(e) => {
+                self.message_dao.update_send_status(&msg.client_msg_id, 3).await?;
                 self.event_bus.publish(SdkEvent::MessageSendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
                     error: format!("{}", e),
@@ -244,14 +289,26 @@ impl MessageSender {
             }
         };
 
-        if let Err(e) = self.persist_sent_message(&msg, &resp).await {
-            error!("持久化发送消息失败: {}", e);
+        if let Err(e) = self.message_dao.update_send_status(&msg.client_msg_id, 2).await {
+            error!("更新发送状态失败: {}", e);
         }
+
+        let conversation_id = self.conversation_id_for_msg(&msg);
 
         self.event_bus.publish(SdkEvent::MessageSent {
             client_msg_id: resp.client_msg_id.clone(),
             server_msg_id: resp.server_msg_id.clone(),
             send_time: resp.send_time,
+            status: 2,
+            conversation_id,
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            group_id: msg.group_id.clone(),
+            session_type: msg.session_type,
+            content_type: msg.content_type,
+            content: msg.content.clone(),
+            sender_nickname: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
         });
 
         Ok(SendMsgResp {

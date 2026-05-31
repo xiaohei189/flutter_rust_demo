@@ -96,6 +96,7 @@ impl OpenIMClient {
             connection.clone(),
             context.conversation_dao.clone(),
             context.message_dao.clone(),
+            context.sync_version_dao.clone(),
             message_handler.clone(),
             event_bus.clone(),
             config.user_id.clone(),
@@ -333,6 +334,16 @@ impl OpenIMClient {
         if let Err(e) = self.conversation_syncer.sync_full().await {
             warn!("登录后会话全量同步失败: {}", e);
         }
+
+        tokio::spawn({
+            let message_syncer = self.message_syncer.clone();
+            async move {
+                info!("登录后异步触发消息同步");
+                if let Err(e) = message_syncer.sync_on_login().await {
+                    warn!("登录后消息同步失败: {}", e);
+                }
+            }
+        });
 
         self.event_bus.publish(SdkEvent::LoginSuccess {
             user_id: user_id.to_string(),

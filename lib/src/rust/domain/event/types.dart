@@ -53,6 +53,16 @@ sealed class SdkEvent with _$SdkEvent {
     required String clientMsgId,
     required String serverMsgId,
     required PlatformInt64 sendTime,
+    required int status,
+    required String conversationId,
+    required String sendId,
+    required String recvId,
+    required String groupId,
+    required int sessionType,
+    required int contentType,
+    required String content,
+    required String senderNickname,
+    required String senderFaceUrl,
   }) = SdkEvent_MessageSent;
   const factory SdkEvent.messageSendFailed({
     required String clientMsgId,

@@ -47,6 +47,16 @@ mixin _$SdkEvent {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -127,7 +137,21 @@ mixin _$SdkEvent {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -197,7 +221,21 @@ mixin _$SdkEvent {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -535,6 +573,16 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -619,7 +667,21 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -693,7 +755,21 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -1035,6 +1111,16 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -1119,7 +1205,21 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -1193,7 +1293,21 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -1566,6 +1680,16 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -1650,7 +1774,21 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -1724,7 +1862,21 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -2106,6 +2258,16 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -2190,7 +2352,21 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -2264,7 +2440,21 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -2661,6 +2851,16 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -2745,7 +2945,21 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -2819,7 +3033,21 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -3254,6 +3482,16 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -3338,7 +3576,21 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -3412,7 +3664,21 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -3854,6 +4120,16 @@ class _$SdkEvent_PushNotificationMessagesImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -3938,7 +4214,21 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -4012,7 +4302,21 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -4373,6 +4677,16 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -4457,7 +4771,21 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -4531,7 +4859,21 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -4915,6 +5257,16 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -4999,7 +5351,21 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -5073,7 +5439,21 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -5428,6 +5808,16 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -5512,7 +5902,21 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -5586,7 +5990,21 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -5958,6 +6376,16 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -6042,7 +6470,21 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -6116,7 +6558,21 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -6497,6 +6953,16 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -6581,7 +7047,21 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -6655,7 +7135,21 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -6942,7 +7436,21 @@ abstract class _$$SdkEvent_MessageSentImplCopyWith<$Res> {
     $Res Function(_$SdkEvent_MessageSentImpl) then,
   ) = __$$SdkEvent_MessageSentImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String clientMsgId, String serverMsgId, int sendTime});
+  $Res call({
+    String clientMsgId,
+    String serverMsgId,
+    int sendTime,
+    int status,
+    String conversationId,
+    String sendId,
+    String recvId,
+    String groupId,
+    int sessionType,
+    int contentType,
+    String content,
+    String senderNickname,
+    String senderFaceUrl,
+  });
 }
 
 /// @nodoc
@@ -6962,6 +7470,16 @@ class __$$SdkEvent_MessageSentImplCopyWithImpl<$Res>
     Object? clientMsgId = null,
     Object? serverMsgId = null,
     Object? sendTime = null,
+    Object? status = null,
+    Object? conversationId = null,
+    Object? sendId = null,
+    Object? recvId = null,
+    Object? groupId = null,
+    Object? sessionType = null,
+    Object? contentType = null,
+    Object? content = null,
+    Object? senderNickname = null,
+    Object? senderFaceUrl = null,
   }) {
     return _then(
       _$SdkEvent_MessageSentImpl(
@@ -6977,6 +7495,46 @@ class __$$SdkEvent_MessageSentImplCopyWithImpl<$Res>
             ? _value.sendTime
             : sendTime // ignore: cast_nullable_to_non_nullable
                   as int,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as int,
+        conversationId: null == conversationId
+            ? _value.conversationId
+            : conversationId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        sendId: null == sendId
+            ? _value.sendId
+            : sendId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        recvId: null == recvId
+            ? _value.recvId
+            : recvId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        groupId: null == groupId
+            ? _value.groupId
+            : groupId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        sessionType: null == sessionType
+            ? _value.sessionType
+            : sessionType // ignore: cast_nullable_to_non_nullable
+                  as int,
+        contentType: null == contentType
+            ? _value.contentType
+            : contentType // ignore: cast_nullable_to_non_nullable
+                  as int,
+        content: null == content
+            ? _value.content
+            : content // ignore: cast_nullable_to_non_nullable
+                  as String,
+        senderNickname: null == senderNickname
+            ? _value.senderNickname
+            : senderNickname // ignore: cast_nullable_to_non_nullable
+                  as String,
+        senderFaceUrl: null == senderFaceUrl
+            ? _value.senderFaceUrl
+            : senderFaceUrl // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -6989,6 +7547,16 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required this.clientMsgId,
     required this.serverMsgId,
     required this.sendTime,
+    required this.status,
+    required this.conversationId,
+    required this.sendId,
+    required this.recvId,
+    required this.groupId,
+    required this.sessionType,
+    required this.contentType,
+    required this.content,
+    required this.senderNickname,
+    required this.senderFaceUrl,
   }) : super._();
 
   @override
@@ -6997,10 +7565,30 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
   final String serverMsgId;
   @override
   final int sendTime;
+  @override
+  final int status;
+  @override
+  final String conversationId;
+  @override
+  final String sendId;
+  @override
+  final String recvId;
+  @override
+  final String groupId;
+  @override
+  final int sessionType;
+  @override
+  final int contentType;
+  @override
+  final String content;
+  @override
+  final String senderNickname;
+  @override
+  final String senderFaceUrl;
 
   @override
   String toString() {
-    return 'SdkEvent.messageSent(clientMsgId: $clientMsgId, serverMsgId: $serverMsgId, sendTime: $sendTime)';
+    return 'SdkEvent.messageSent(clientMsgId: $clientMsgId, serverMsgId: $serverMsgId, sendTime: $sendTime, status: $status, conversationId: $conversationId, sendId: $sendId, recvId: $recvId, groupId: $groupId, sessionType: $sessionType, contentType: $contentType, content: $content, senderNickname: $senderNickname, senderFaceUrl: $senderFaceUrl)';
   }
 
   @override
@@ -7013,12 +7601,41 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
             (identical(other.serverMsgId, serverMsgId) ||
                 other.serverMsgId == serverMsgId) &&
             (identical(other.sendTime, sendTime) ||
-                other.sendTime == sendTime));
+                other.sendTime == sendTime) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.conversationId, conversationId) ||
+                other.conversationId == conversationId) &&
+            (identical(other.sendId, sendId) || other.sendId == sendId) &&
+            (identical(other.recvId, recvId) || other.recvId == recvId) &&
+            (identical(other.groupId, groupId) || other.groupId == groupId) &&
+            (identical(other.sessionType, sessionType) ||
+                other.sessionType == sessionType) &&
+            (identical(other.contentType, contentType) ||
+                other.contentType == contentType) &&
+            (identical(other.content, content) || other.content == content) &&
+            (identical(other.senderNickname, senderNickname) ||
+                other.senderNickname == senderNickname) &&
+            (identical(other.senderFaceUrl, senderFaceUrl) ||
+                other.senderFaceUrl == senderFaceUrl));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, clientMsgId, serverMsgId, sendTime);
+  int get hashCode => Object.hash(
+    runtimeType,
+    clientMsgId,
+    serverMsgId,
+    sendTime,
+    status,
+    conversationId,
+    sendId,
+    recvId,
+    groupId,
+    sessionType,
+    contentType,
+    content,
+    senderNickname,
+    senderFaceUrl,
+  );
 
   /// Create a copy of SdkEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -7063,6 +7680,16 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -7117,7 +7744,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult Function() logout,
     required TResult Function(String eventType, String data) customEvent,
   }) {
-    return messageSent(clientMsgId, serverMsgId, sendTime);
+    return messageSent(
+      clientMsgId,
+      serverMsgId,
+      sendTime,
+      status,
+      conversationId,
+      sendId,
+      recvId,
+      groupId,
+      sessionType,
+      contentType,
+      content,
+      senderNickname,
+      senderFaceUrl,
+    );
   }
 
   @override
@@ -7147,7 +7788,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -7191,7 +7846,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult? Function()? logout,
     TResult? Function(String eventType, String data)? customEvent,
   }) {
-    return messageSent?.call(clientMsgId, serverMsgId, sendTime);
+    return messageSent?.call(
+      clientMsgId,
+      serverMsgId,
+      sendTime,
+      status,
+      conversationId,
+      sendId,
+      recvId,
+      groupId,
+      sessionType,
+      contentType,
+      content,
+      senderNickname,
+      senderFaceUrl,
+    );
   }
 
   @override
@@ -7221,7 +7890,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -7267,7 +7950,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult orElse(),
   }) {
     if (messageSent != null) {
-      return messageSent(clientMsgId, serverMsgId, sendTime);
+      return messageSent(
+        clientMsgId,
+        serverMsgId,
+        sendTime,
+        status,
+        conversationId,
+        sendId,
+        recvId,
+        groupId,
+        sessionType,
+        contentType,
+        content,
+        senderNickname,
+        senderFaceUrl,
+      );
     }
     return orElse();
   }
@@ -7492,12 +8189,32 @@ abstract class SdkEvent_MessageSent extends SdkEvent {
     required final String clientMsgId,
     required final String serverMsgId,
     required final int sendTime,
+    required final int status,
+    required final String conversationId,
+    required final String sendId,
+    required final String recvId,
+    required final String groupId,
+    required final int sessionType,
+    required final int contentType,
+    required final String content,
+    required final String senderNickname,
+    required final String senderFaceUrl,
   }) = _$SdkEvent_MessageSentImpl;
   const SdkEvent_MessageSent._() : super._();
 
   String get clientMsgId;
   String get serverMsgId;
   int get sendTime;
+  int get status;
+  String get conversationId;
+  String get sendId;
+  String get recvId;
+  String get groupId;
+  int get sessionType;
+  int get contentType;
+  String get content;
+  String get senderNickname;
+  String get senderFaceUrl;
 
   /// Create a copy of SdkEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -7618,6 +8335,16 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -7702,7 +8429,21 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -7776,7 +8517,21 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -8185,6 +8940,16 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -8269,7 +9034,21 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -8343,7 +9122,21 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -8753,6 +9546,16 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -8837,7 +9640,21 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -8911,7 +9728,21 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -9311,6 +10142,16 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -9395,7 +10236,21 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -9469,7 +10324,21 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -9869,6 +10738,16 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -9953,7 +10832,21 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -10027,7 +10920,21 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -10425,6 +11332,16 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -10509,7 +11426,21 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -10583,7 +11514,21 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -10969,6 +11914,16 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -11053,7 +12008,21 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -11127,7 +12096,21 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -11515,6 +12498,16 @@ class _$SdkEvent_FriendApplicationAddedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -11599,7 +12592,21 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -11673,7 +12680,21 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -12063,6 +13084,16 @@ class _$SdkEvent_FriendApplicationApprovedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -12147,7 +13178,21 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -12221,7 +13266,21 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -12611,6 +13670,16 @@ class _$SdkEvent_FriendApplicationRejectedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -12695,7 +13764,21 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -12769,7 +13852,21 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -13162,6 +14259,16 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -13246,7 +14353,21 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -13320,7 +14441,21 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -13704,6 +14839,16 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -13788,7 +14933,21 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -13862,7 +15021,21 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -14243,6 +15416,16 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -14327,7 +15510,21 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -14401,7 +15598,21 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -14783,6 +15994,16 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -14867,7 +16088,21 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -14941,7 +16176,21 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -15322,6 +16571,16 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -15406,7 +16665,21 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -15480,7 +16753,21 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -15862,6 +17149,16 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -15946,7 +17243,21 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -16020,7 +17331,21 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -16401,6 +17726,16 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -16485,7 +17820,21 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -16559,7 +17908,21 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -16963,6 +18326,16 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -17047,7 +18420,21 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -17121,7 +18508,21 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -17528,6 +18929,16 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -17612,7 +19023,21 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -17686,7 +19111,21 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -18075,6 +19514,16 @@ class _$SdkEvent_GroupApplicationAddedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -18159,7 +19608,21 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -18233,7 +19696,21 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -18623,6 +20100,16 @@ class _$SdkEvent_GroupApplicationApprovedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -18707,7 +20194,21 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -18781,7 +20282,21 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -19171,6 +20686,16 @@ class _$SdkEvent_GroupApplicationRejectedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -19255,7 +20780,21 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -19329,7 +20868,21 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -19713,6 +21266,16 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -19797,7 +21360,21 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -19871,7 +21448,21 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -20252,6 +21843,16 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -20336,7 +21937,21 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -20410,7 +22025,21 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -20791,6 +22420,16 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -20875,7 +22514,21 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -20949,7 +22602,21 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -21340,6 +23007,16 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -21424,7 +23101,21 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -21498,7 +23189,21 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -21895,6 +23600,16 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -21979,7 +23694,21 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -22053,7 +23782,21 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -22452,6 +24195,16 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -22536,7 +24289,21 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -22610,7 +24377,21 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -23010,6 +24791,16 @@ class _$SdkEvent_GroupOwnerTransferredImpl
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -23094,7 +24885,21 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -23168,7 +24973,21 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -23554,6 +25373,16 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -23638,7 +25467,21 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -23712,7 +25555,21 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -24123,6 +25980,16 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -24207,7 +26074,21 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -24281,7 +26162,21 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -24668,6 +26563,16 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -24752,7 +26657,21 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -24826,7 +26745,21 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -25219,6 +27152,16 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -25303,7 +27246,21 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -25377,7 +27334,21 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -25732,6 +27703,16 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -25816,7 +27797,21 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -25890,7 +27885,21 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -26263,6 +28272,16 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -26347,7 +28366,21 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -26421,7 +28454,21 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -26772,6 +28819,16 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -26856,7 +28913,21 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -26930,7 +29001,21 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?
@@ -27314,6 +29399,16 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
       String clientMsgId,
       String serverMsgId,
       int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
     )
     messageSent,
     required TResult Function(String clientMsgId, String error)
@@ -27398,7 +29493,21 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult? Function()? syncFinished,
     TResult? Function(String error)? syncFailed,
     TResult? Function(ReceivedMessage message)? newMessage,
-    TResult? Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
@@ -27472,7 +29581,21 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult Function()? syncFinished,
     TResult Function(String error)? syncFailed,
     TResult Function(ReceivedMessage message)? newMessage,
-    TResult Function(String clientMsgId, String serverMsgId, int sendTime)?
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
     TResult Function(String conversationId, int seq, String clientMsgId)?

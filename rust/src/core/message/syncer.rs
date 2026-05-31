@@ -5,12 +5,12 @@ use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::infra::database::{ConversationDao, MessageDao};
+use crate::infra::database::{ConversationDao, MessageDao, SyncVersionDao};
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, Semaphore};
+use tokio::sync::{Mutex, RwLock, Semaphore};
 use tracing::{debug, error, info, warn};
 
 #[derive(Clone, Serialize, Deserialize, Message)]
@@ -123,6 +123,7 @@ pub struct MessageSyncer {
     connection: Arc<ConnectionManager>,
     conversation_dao: Arc<ConversationDao>,
     message_dao: Arc<MessageDao>,
+    sync_version_dao: Arc<SyncVersionDao>,
     message_handler: Arc<MessageHandler>,
     event_bus: Arc<EventBus>,
     max_concurrent_pulls: usize,
@@ -130,6 +131,8 @@ pub struct MessageSyncer {
     user_id: String,
     /// 已同步的最大 seq（conversation_id -> max_seq），用于推送消息 seq 连续性校验
     synced_max_seqs: Arc<RwLock<HashMap<String, i64>>>,
+    /// 防止重复同步的锁（参考 Go SDK 的 startSync 加锁机制）
+    sync_lock: Arc<Mutex<()>>,
 }
 
 impl MessageSyncer {
@@ -137,6 +140,7 @@ impl MessageSyncer {
         connection: Arc<ConnectionManager>,
         conversation_dao: Arc<ConversationDao>,
         message_dao: Arc<MessageDao>,
+        sync_version_dao: Arc<SyncVersionDao>,
         message_handler: Arc<MessageHandler>,
         event_bus: Arc<EventBus>,
         user_id: String,
@@ -145,12 +149,14 @@ impl MessageSyncer {
             connection,
             conversation_dao,
             message_dao,
+            sync_version_dao,
             message_handler,
             event_bus,
             max_concurrent_pulls: 5,
             pull_msg_num: 50,
             user_id,
             synced_max_seqs: Arc::new(RwLock::new(HashMap::new())),
+            sync_lock: Arc::new(Mutex::new(())),
         }
     }
 
@@ -171,6 +177,12 @@ impl MessageSyncer {
 
     /// 重连后增量同步：先从服务端获取 maxSeq，再与本地对比拉取消息
     pub async fn sync_after_reconnect(&self) -> Result<()> {
+        let _guard = self.sync_lock.try_lock();
+        if _guard.is_err() {
+            info!("消息同步已在进行中，跳过");
+            return Ok(());
+        }
+
         info!("重连后开始增量同步消息");
         self.event_bus.publish(SdkEvent::SyncStarted);
 
@@ -181,7 +193,6 @@ impl MessageSyncer {
             return Ok(());
         }
 
-        // 更新本地 conversation 的 max_seq
         for (conv_id, max_seq) in &server_max_seqs {
             let _ = self.conversation_dao.update_max_seq(conv_id, *max_seq).await;
         }
@@ -191,6 +202,20 @@ impl MessageSyncer {
         self.event_bus.publish(SdkEvent::SyncFinished);
         info!("重连后增量同步完成");
         Ok(())
+    }
+
+    /// 登录后的全量同步（区分重装和普通模式）
+    pub async fn sync_on_login(&self) -> Result<()> {
+        let _guard = self.sync_lock.try_lock();
+        if _guard.is_err() {
+            info!("消息同步已在进行中，跳过");
+            return Ok(());
+        }
+
+        let reinstalled = self.sync_version_dao.is_reinstalled().await?;
+        info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
+
+        self.sync_all_conversations(reinstalled).await
     }
 
     /// 推送消息触发同步：检测 seq 连续性，不连续时自动补拉
@@ -270,6 +295,7 @@ impl MessageSyncer {
 
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs).await?;
+            self.sync_version_dao.mark_reinstall_complete("1.0.0").await?;
         } else {
             self.sync_incremental_messages(&server_max_seqs).await?;
         }
@@ -517,12 +543,14 @@ impl MessageSyncer {
             connection: self.connection.clone(),
             conversation_dao: self.conversation_dao.clone(),
             message_dao: self.message_dao.clone(),
+            sync_version_dao: self.sync_version_dao.clone(),
             message_handler: self.message_handler.clone(),
             event_bus: self.event_bus.clone(),
             max_concurrent_pulls: self.max_concurrent_pulls,
             pull_msg_num: self.pull_msg_num,
             user_id: self.user_id.clone(),
             synced_max_seqs: self.synced_max_seqs.clone(),
+            sync_lock: self.sync_lock.clone(),
         })
     }
 }

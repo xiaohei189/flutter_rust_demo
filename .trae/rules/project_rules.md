@@ -275,6 +275,31 @@ rust/src/
 
 ---
 
+## 核心开发原则（强制）
+
+### 1. 参考 Go SDK 实现
+
+当需要实现 IM 相关功能时，**必须参考 `D:\workspace\openim-sdk-core` 中的对应实现**。核心原则：
+
+- **不能自己随意创建逻辑** — 所有 IM 核心逻辑（消息收发、去重、乐观更新、会话同步、事件处理等）必须严格对齐 Go SDK
+- **Go SDK 是唯一权威参考** — 当遇到设计决策时，优先查看 Go SDK 如何处理，直接移植而非重新设计
+- **数据模型、字段含义、事件类型**必须与 Go SDK 保持一致
+
+### 2. IM 核心逻辑在 Rust SDK 中实现
+
+- **核心 IM 功能必须下沉到 Rust SDK**（`rust/src/sdk/` 和 `rust/src/core/`）
+- **Flutter/Dart 层只做 UI 展示和状态绑定**，不扩散 IM 业务逻辑
+- **消息去重、clientMsgId 匹配、乐观更新、发送状态管理**等逻辑必须在 Rust SDK 中完成
+- Flutter 侧只负责：调用 FFI 函数、监听事件流、更新 UI 状态
+
+### 3. 禁止事项
+
+- 禁止在 Flutter 层创建 IM 核心业务逻辑（如消息去重、发送队列、clientMsgId 生成等）
+- 禁止脱离 Go SDK 自行设计 IM 相关逻辑
+- 禁止在 Dart 侧生成临时 ID（如 `sending_xxx`）来模拟乐观更新
+
+---
+
 ## 开发流程
 
 ### 1. 修改 Rust 代码后

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/message.dart' show Message;
@@ -49,9 +51,17 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
 
   final MessageServiceNotifier _messageService;
   final String _conversationId;
+  StreamSubscription<MessageServiceState>? _serviceSubscription;
 
   void _init() {
     _syncState();
+    _serviceSubscription = _messageService.stream.listen((_) => _syncState());
+  }
+
+  @override
+  void dispose() {
+    _serviceSubscription?.cancel();
+    super.dispose();
   }
 
   void _syncState() {

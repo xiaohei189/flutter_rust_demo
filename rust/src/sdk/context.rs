@@ -2,7 +2,7 @@ use crate::domain::config::ClientConfig;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::infra::database::pool::create_pool;
-use crate::infra::database::{ConversationDao, MessageDao};
+use crate::infra::database::{ConversationDao, MessageDao, SyncVersionDao};
 use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
@@ -26,6 +26,8 @@ pub struct RuntimeContext {
     pub message_dao: Arc<MessageDao>,
     /// 会话 DAO
     pub conversation_dao: Arc<ConversationDao>,
+    /// 同步版本 DAO
+    pub sync_version_dao: Arc<SyncVersionDao>,
     /// HTTP API 客户端
     pub http_client: Arc<HttpApiClient>,
 }
@@ -39,13 +41,13 @@ impl RuntimeContext {
     ) -> Result<Self> {
         let operation_id = format!("op_{}", chrono::Utc::now().timestamp_millis());
 
-        // 确保数据目录存在，否则 SQLite 无法创建数据库文件
         std::fs::create_dir_all(&config.data_dir)
             .map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
         let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
         let db_pool = create_pool(&db_url).await?;
         let message_dao = Arc::new(MessageDao::new(db_pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(db_pool.clone()));
+        let sync_version_dao = Arc::new(SyncVersionDao::new(db_pool.clone()));
 
         let http_client = Arc::new(HttpApiClient::new(
             config.api_base_url.clone(),
@@ -62,6 +64,7 @@ impl RuntimeContext {
             db_pool,
             message_dao,
             conversation_dao,
+            sync_version_dao,
             http_client,
         })
     }

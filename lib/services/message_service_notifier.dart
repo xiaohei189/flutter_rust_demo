@@ -188,7 +188,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       final newMessages = Map<String, List<Message>>.from(this.state.messages);
       final currentMessages = newMessages.putIfAbsent(conversationId, () => []);
 
-      currentMessages.insertAll(0, messages.reversed);
+      currentMessages.insertAll(0, messages);
 
       final seenIds = <String>{};
       newMessages[conversationId] = currentMessages
@@ -282,57 +282,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       throw ArgumentError('recvId 与 groupId 至少填一个');
     }
 
-    final tempId = 'sending_${DateTime.now().millisecondsSinceEpoch}';
-    final optimisticMessage = Message(
-      id: tempId,
-      senderId: this.state.currentUserId,
-      content: text,
-      type: MessageType.text,
-      timestamp: DateTime.now(),
-      isSent: true,
-      sendStatus: MessageSendStatus.sending,
+    final jsonContent = jsonEncode({'content': text});
+    await _client!.sendMessage(
+      req: SendMessageReq(
+        recvId: recvId,
+        groupId: groupId,
+        sessionType: sessionType,
+        contentType: ContentType.text,
+        content: jsonContent,
+      ),
     );
-    final newMessages = Map<String, List<Message>>.from(this.state.messages);
-    final list = newMessages.putIfAbsent(conversationId, () => []);
-    list.add(optimisticMessage);
-    this.state = this.state.copyWith(messages: newMessages);
-
-    try {
-      await _client!.sendMessage(
-        req: SendMessageReq(
-          recvId: recvId,
-          groupId: groupId,
-          sessionType: sessionType,
-          contentType: ContentType.text,
-          content: text,
-        ),
-      );
-      _updateMessageSendStatus(conversationId, tempId, MessageSendStatus.sent);
-    } catch (e) {
-      appLog.e('dart MessageService 发送失败: $e');
-      _updateMessageSendStatus(
-        conversationId,
-        tempId,
-        MessageSendStatus.failed,
-      );
-      rethrow;
-    }
-  }
-
-  void _updateMessageSendStatus(
-    String conversationId,
-    String messageId,
-    MessageSendStatus status,
-  ) {
-    final list = this.state.messages[conversationId];
-    if (list == null) return;
-    final index = list.indexWhere((m) => m.id == messageId);
-    if (index >= 0) {
-      final newMessages = Map<String, List<Message>>.from(this.state.messages);
-      newMessages[conversationId] = List<Message>.from(list);
-      newMessages[conversationId]![index] = list[index].copyWith(sendStatus: status);
-      this.state = this.state.copyWith(messages: newMessages);
-    }
   }
 
   Future<void> initialize({
@@ -484,11 +443,77 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         _loadConversations();
         final convId = message.conversationId;
         if (convId.isEmpty) return;
+        final sendId = message.sendId;
+        if (sendId == this.state.currentUserId) {
+          return;
+        }
         final msg = _receivedMessageToMessage(message);
         final newMessages = Map<String, List<Message>>.from(this.state.messages);
         final list = newMessages.putIfAbsent(convId, () => []);
         list.add(msg);
         newMessages[convId] = List<Message>.from(list);
+        this.state = this.state.copyWith(messages: newMessages);
+      },
+      messageSent: (
+        clientMsgId,
+        serverMsgId,
+        sendTime,
+        status,
+        conversationId,
+        sendId,
+        recvId,
+        groupId,
+        sessionType,
+        contentType,
+        content,
+        senderNickname,
+        senderFaceUrl,
+      ) {
+        final newMessages = Map<String, List<Message>>.from(this.state.messages);
+        final list = newMessages.putIfAbsent(conversationId, () => []);
+        final existingIndex = list.indexWhere((m) => m.id == clientMsgId);
+        String displayContent = content;
+        if (contentType == 101 && content.startsWith('{')) {
+          try {
+            final decoded = jsonDecode(content) as Map<String, dynamic>;
+            displayContent = decoded['content'] as String? ?? content;
+          } catch (_) {}
+        }
+        final msg = Message(
+          id: clientMsgId,
+          senderId: sendId,
+          content: displayContent,
+          type: MessageType.text,
+          timestamp: sendTime.toInt() > 0
+              ? DateTime.fromMillisecondsSinceEpoch(sendTime.toInt())
+              : DateTime.now(),
+          isSent: true,
+          sendStatus: status == 2 ? MessageSendStatus.sent : MessageSendStatus.sending,
+          senderNickname: senderNickname,
+          senderFaceUrl: senderFaceUrl,
+        );
+        if (existingIndex >= 0) {
+          list[existingIndex] = msg;
+        } else {
+          list.add(msg);
+        }
+        newMessages[conversationId] = List<Message>.from(list);
+        this.state = this.state.copyWith(messages: newMessages);
+      },
+      messageSendFailed: (clientMsgId, error) {
+        appLog.e('dart MessageService ❌ 消息发送失败: $clientMsgId, error=$error');
+        final newMessages = Map<String, List<Message>>.from(this.state.messages);
+        for (final entry in newMessages.entries) {
+          final list = entry.value;
+          final index = list.indexWhere((m) => m.id == clientMsgId);
+          if (index >= 0) {
+            newMessages[entry.key] = List<Message>.from(list);
+            newMessages[entry.key]![index] = list[index].copyWith(
+              sendStatus: MessageSendStatus.failed,
+            );
+            break;
+          }
+        }
         this.state = this.state.copyWith(messages: newMessages);
       },
       orElse: () {},

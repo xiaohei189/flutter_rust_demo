@@ -74,6 +74,25 @@ impl MessageDao {
         Ok(row.0.unwrap_or(0))
     }
 
+    pub async fn get_by_client_msg_ids(&self, client_msg_ids: &[String]) -> Result<Vec<LocalChatLog>> {
+        if client_msg_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let placeholders = client_msg_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+        let query = format!(
+            "SELECT * FROM local_chat_logs WHERE client_msg_id IN ({})",
+            placeholders
+        );
+        let mut builder = sqlx::query_as::<_, LocalChatLog>(&query);
+        for id in client_msg_ids {
+            builder = builder.bind(id);
+        }
+        let rows = builder.fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query by client_msg_ids: {}", e)))?;
+        Ok(rows)
+    }
+
     pub async fn get_latest(
         &self,
         conversation_id: &str,
@@ -95,7 +114,18 @@ impl MessageDao {
             .bind(conversation_id)
             .execute(&self.pool)
             .await
-            .map_err(|e| SdkError::database(format!("delete messages: {}", e)))?;
+            .map_err(|e| SdkError::database(format!("delete by conversation: {}", e)))?;
+
+        Ok(())
+    }
+
+    pub async fn update_send_status(&self, client_msg_id: &str, status: i32) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET status = ? WHERE client_msg_id = ?")
+            .bind(status)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update send status: {}", e)))?;
         Ok(())
     }
 

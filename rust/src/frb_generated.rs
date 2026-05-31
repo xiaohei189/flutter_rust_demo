@@ -2984,10 +2984,30 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                 let mut var_clientMsgId = <String>::sse_decode(deserializer);
                 let mut var_serverMsgId = <String>::sse_decode(deserializer);
                 let mut var_sendTime = <i64>::sse_decode(deserializer);
+                let mut var_status = <i32>::sse_decode(deserializer);
+                let mut var_conversationId = <String>::sse_decode(deserializer);
+                let mut var_sendId = <String>::sse_decode(deserializer);
+                let mut var_recvId = <String>::sse_decode(deserializer);
+                let mut var_groupId = <String>::sse_decode(deserializer);
+                let mut var_sessionType = <i32>::sse_decode(deserializer);
+                let mut var_contentType = <i32>::sse_decode(deserializer);
+                let mut var_content = <String>::sse_decode(deserializer);
+                let mut var_senderNickname = <String>::sse_decode(deserializer);
+                let mut var_senderFaceUrl = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::MessageSent {
                     client_msg_id: var_clientMsgId,
                     server_msg_id: var_serverMsgId,
                     send_time: var_sendTime,
+                    status: var_status,
+                    conversation_id: var_conversationId,
+                    send_id: var_sendId,
+                    recv_id: var_recvId,
+                    group_id: var_groupId,
+                    session_type: var_sessionType,
+                    content_type: var_contentType,
+                    content: var_content,
+                    sender_nickname: var_senderNickname,
+                    sender_face_url: var_senderFaceUrl,
                 };
             }
             13 => {
@@ -3893,11 +3913,31 @@ impl flutter_rust_bridge::IntoDart for crate::domain::event::types::SdkEvent {
                 client_msg_id,
                 server_msg_id,
                 send_time,
+                status,
+                conversation_id,
+                send_id,
+                recv_id,
+                group_id,
+                session_type,
+                content_type,
+                content,
+                sender_nickname,
+                sender_face_url,
             } => [
                 12.into_dart(),
                 client_msg_id.into_into_dart().into_dart(),
                 server_msg_id.into_into_dart().into_dart(),
                 send_time.into_into_dart().into_dart(),
+                status.into_into_dart().into_dart(),
+                conversation_id.into_into_dart().into_dart(),
+                send_id.into_into_dart().into_dart(),
+                recv_id.into_into_dart().into_dart(),
+                group_id.into_into_dart().into_dart(),
+                session_type.into_into_dart().into_dart(),
+                content_type.into_into_dart().into_dart(),
+                content.into_into_dart().into_dart(),
+                sender_nickname.into_into_dart().into_dart(),
+                sender_face_url.into_into_dart().into_dart(),
             ]
             .into_dart(),
             crate::domain::event::types::SdkEvent::MessageSendFailed { client_msg_id, error } => {
@@ -4702,11 +4742,31 @@ impl SseEncode for crate::domain::event::types::SdkEvent {
                 client_msg_id,
                 server_msg_id,
                 send_time,
+                status,
+                conversation_id,
+                send_id,
+                recv_id,
+                group_id,
+                session_type,
+                content_type,
+                content,
+                sender_nickname,
+                sender_face_url,
             } => {
                 <i32>::sse_encode(12, serializer);
                 <String>::sse_encode(client_msg_id, serializer);
                 <String>::sse_encode(server_msg_id, serializer);
                 <i64>::sse_encode(send_time, serializer);
+                <i32>::sse_encode(status, serializer);
+                <String>::sse_encode(conversation_id, serializer);
+                <String>::sse_encode(send_id, serializer);
+                <String>::sse_encode(recv_id, serializer);
+                <String>::sse_encode(group_id, serializer);
+                <i32>::sse_encode(session_type, serializer);
+                <i32>::sse_encode(content_type, serializer);
+                <String>::sse_encode(content, serializer);
+                <String>::sse_encode(sender_nickname, serializer);
+                <String>::sse_encode(sender_face_url, serializer);
             }
             crate::domain::event::types::SdkEvent::MessageSendFailed { client_msg_id, error } => {
                 <i32>::sse_encode(13, serializer);
