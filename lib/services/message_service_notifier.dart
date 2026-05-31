@@ -12,7 +12,7 @@ import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
 import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
 import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
-import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo, ReceivedMessage;
 import 'package:flutter_rust_demo/src/rust/domain/event/types.dart' show SdkEvent;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
@@ -202,6 +202,38 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
       return false;
     }
+  }
+
+  Message _receivedMessageToMessage(ReceivedMessage msg) {
+    final clientMsgId = msg.clientMsgId;
+    final sendId = msg.sendId;
+
+    String content = msg.content;
+    if (msg.contentType == 101 && content.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(content) as Map<String, dynamic>;
+        content = decoded['content'] as String? ?? content;
+      } catch (_) {
+      }
+    }
+
+    final sendTime = msg.sendTime.toInt();
+    final isSent = sendId == this.state.currentUserId;
+
+    return Message(
+      id: clientMsgId.isNotEmpty
+          ? clientMsgId
+          : DateTime.now().millisecondsSinceEpoch.toString(),
+      senderId: sendId,
+      content: content,
+      type: MessageType.text,
+      timestamp: sendTime > 0
+          ? DateTime.fromMillisecondsSinceEpoch(sendTime)
+          : DateTime.now(),
+      isSent: isSent,
+      senderNickname: msg.senderNickName,
+      senderFaceUrl: msg.senderFaceUrl,
+    );
   }
 
   Message _msgDataToMessage(MessageInfo msg) {
@@ -448,8 +480,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       conversationDeleted: (conversationIds) {
         _loadConversations();
       },
-      newMessage: (message) {
+            newMessage: (message) {
         _loadConversations();
+        final convId = message.conversationId;
+        if (convId.isEmpty) return;
+        final msg = _receivedMessageToMessage(message);
+        final newMessages = Map<String, List<Message>>.from(this.state.messages);
+        final list = newMessages.putIfAbsent(convId, () => []);
+        list.add(msg);
+        newMessages[convId] = List<Message>.from(list);
+        this.state = this.state.copyWith(messages: newMessages);
       },
       orElse: () {},
     );
