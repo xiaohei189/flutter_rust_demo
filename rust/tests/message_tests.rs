@@ -465,3 +465,257 @@ async fn test_conversation_change_event() {
     assert_eq!(new_msg_count, 3, "应收到3条新消息");
     assert!(conv_changed, "应收到 ConversationChanged 事件");
 }
+
+#[tokio::test]
+async fn test_message_read_status_in_db() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut user2_events = user2_sdk.event_bus().subscribe();
+
+    for i in 1..=3 {
+        let req = SendMessageReq {
+            recv_id: user2.user_id.clone(),
+            group_id: String::new(),
+            session_type: SessionType::SingleChat,
+            content_type: ContentType::Text,
+            content: format!("{{\"content\":\"已读状态测试消息 {}\"}}", i),
+            client_msg_id: Some(format!("read_status_{}_{}", i, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
+        };
+        let _ = user1_sdk.send_message(req).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut new_msg_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    new_msg_count += 1;
+                    if new_msg_count >= 3 { break; }
+                }
+            }
+        }
+    }
+    assert_eq!(new_msg_count, 3, "应收到3条新消息");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv_id = format!("si_{}_{}", user2.user_id, user1.user_id);
+    let mark_result = user2_sdk.mark_conversation_as_read(conv_id.clone(), 1).await;
+    assert!(mark_result.is_ok(), "标记已读失败");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let history_req = rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_seq: 0,
+        count: 20,
+    };
+    let messages = user2_sdk.get_history_messages(history_req).await;
+    assert!(messages.is_ok(), "查询历史消息失败: {:?}", messages.err());
+
+    let messages = messages.unwrap();
+    assert!(!messages.is_empty(), "历史消息不应为空");
+
+    let unread_count = messages.iter().filter(|m| !m.is_read).count();
+    let read_count = messages.iter().filter(|m| m.is_read).count();
+    assert_eq!(read_count, messages.len(), "所有消息应标记为已读，实际未读 {} 条，已读 {} 条", unread_count, read_count);
+}
+
+#[tokio::test]
+async fn test_get_history_messages() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::sdk::client::types::{SendMessageReq, GetHistoryMessagesReq};
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut user2_events = user2_sdk.event_bus().subscribe();
+
+    let message_count = 10;
+    for i in 1..=message_count {
+        let req = SendMessageReq {
+            recv_id: user2.user_id.clone(),
+            group_id: String::new(),
+            session_type: SessionType::SingleChat,
+            content_type: ContentType::Text,
+            content: format!("{{\"content\":\"历史消息测试 {}\"}}", i),
+            client_msg_id: Some(format!("history_{}_{}", i, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
+        };
+        let result = user1_sdk.send_message(req).await;
+        assert!(result.is_ok(), "发送消息 {} 失败: {:?}", i, result.err());
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
+    let timeout = tokio::time::sleep(Duration::from_secs(20));
+    tokio::pin!(timeout);
+    let mut received_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    received_count += 1;
+                    if received_count >= message_count { break; }
+                }
+            }
+        }
+    }
+    assert_eq!(received_count, message_count, "应收到 {} 条消息，实际 {}", message_count, received_count);
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv_id = format!("si_{}_{}", user2.user_id, user1.user_id);
+
+    let history_req = GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_seq: 0,
+        count: 5,
+    };
+    let page1 = user2_sdk.get_history_messages(history_req).await;
+    assert!(page1.is_ok(), "查询历史消息失败");
+    let page1 = page1.unwrap();
+    assert_eq!(page1.len(), 5, "第一页应返回5条消息，实际 {}", page1.len());
+
+    let max_seq = page1.iter().map(|m| m.seq).max().unwrap_or(0);
+    let history_req2 = GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_seq: max_seq,
+        count: 10,
+    };
+    let page2 = user2_sdk.get_history_messages(history_req2).await;
+    assert!(page2.is_ok(), "分页查询失败");
+    let page2 = page2.unwrap();
+    assert_eq!(page2.len(), 5, "第二页应返回剩余5条消息，实际 {}", page2.len());
+
+    let all_texts: Vec<_> = page1.iter().chain(page2.iter())
+        .map(|m| {
+            let content = &m.content;
+            if content.contains("历史消息测试") {
+                Some(content.clone())
+            } else {
+                None
+            }
+        })
+        .filter(|c| c.is_some())
+        .collect();
+    assert_eq!(all_texts.len(), 10, "应查询到10条历史消息");
+}
+
+#[tokio::test]
+async fn test_unread_count_increment_and_clear() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut user2_events = user2_sdk.event_bus().subscribe();
+
+    for i in 1..=5 {
+        let req = SendMessageReq {
+            recv_id: user2.user_id.clone(),
+            group_id: String::new(),
+            session_type: SessionType::SingleChat,
+            content_type: ContentType::Text,
+            content: format!("{{\"content\":\"未读递增测试消息 {}\"}}", i),
+            client_msg_id: Some(format!("unread_inc_{}_{}", i, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
+        };
+        let _ = user1_sdk.send_message(req).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    let mut new_msg_count = 0;
+    let mut unread_counts = Vec::new();
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = user2_events.next() => {
+                match event {
+                    Some(SdkEvent::NewMessage { .. }) => {
+                        new_msg_count += 1;
+                    }
+                    Some(SdkEvent::ConversationChanged { conversations }) => {
+                        if !conversations.is_empty() {
+                            unread_counts.push(conversations[0].unread_count);
+                        }
+                    }
+                    Some(_) => {}
+                    None => break,
+                }
+            }
+        }
+        if new_msg_count >= 5 { break; }
+    }
+    assert_eq!(new_msg_count, 5, "应收到5条新消息");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv_id = format!("si_{}_{}", user2.user_id, user1.user_id);
+    let mark_result = user2_sdk.mark_conversation_as_read(conv_id.clone(), 1).await;
+    assert!(mark_result.is_ok(), "标记已读失败");
+
+    let timeout2 = tokio::time::sleep(Duration::from_secs(5));
+    tokio::pin!(timeout2);
+    let mut final_unread = -1;
+    loop {
+        tokio::select! {
+            _ = &mut timeout2 => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::ConversationChanged { conversations }) = event {
+                    for conv in &conversations {
+                        if conv.conversation_id == conv_id {
+                            final_unread = conv.unread_count;
+                            break;
+                        }
+                    }
+                    if final_unread >= 0 { break; }
+                }
+            }
+        }
+    }
+
+    assert_eq!(final_unread, 0, "标记已读后未读计数应为0，实际: {}", final_unread);
+}
