@@ -128,26 +128,13 @@ async fn test_send_message_to_nonexistent_user() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     println!("=== 向不存在用户发消息测试 ===\n");
 
     let user1 = get_or_create_user1().await;
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let req = SendMessageReq {
-        recv_id: "nonexistent_user_99999".to_string(),
-        group_id: String::new(),
-        session_type: SessionType::SingleChat,
-        content_type: ContentType::Text,
-        content: r#"{"content":"发给不存在用户"}"#.to_string(),
-        client_msg_id: Some(format!("nonexistent_recv_{}",
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
-    };
-
-    let result = sdk.send_message(req).await;
+    let result = sdk.send_text_message("发给不存在用户", "nonexistent_user_99999", "", 1).await;
 
     if let Err(e) = &result {
         println!("  发送失败（符合预期）: {:?}", e);

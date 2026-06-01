@@ -6,8 +6,6 @@ mod group;
 mod online_status;
 pub mod types;
 mod user;
-pub mod elements;
-mod create_message;
 
 pub use self::lifecycle::*;
 pub use self::message::*;
@@ -16,8 +14,6 @@ pub use self::friend::*;
 pub use self::group::*;
 pub use self::online_status::*;
 pub use self::user::*;
-pub use self::elements::*;
-pub use self::create_message::*;
 
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::conversation::manager::ConversationManager;

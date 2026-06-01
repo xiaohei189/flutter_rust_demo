@@ -11,9 +11,6 @@ async fn test_history_message_pull() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     println!("=== 历史消息拉取测试 ===\n");
 
     let user1 = get_or_create_user1().await;
@@ -26,16 +23,7 @@ async fn test_history_message_pull() {
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
 
     for i in 1..=3 {
-        let req = SendMessageReq {
-            recv_id: user2.user_id.clone(),
-            group_id: String::new(),
-            session_type: SessionType::SingleChat,
-            content_type: ContentType::Text,
-            content: format!("{{\"content\":\"历史消息测试 {}\"}}", i),
-            client_msg_id: Some(format!("history_{}_{}", i,
-                std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
-        };
-        let _ = sender_sdk.send_message(req).await;
+        let _ = sender_sdk.send_text_message(&format!("历史消息测试 {}", i), &user2.user_id, "", 1).await;
         tokio::time::sleep(Duration::from_millis(300)).await;
     }
 
@@ -62,9 +50,6 @@ async fn test_history_message_pull() {
 #[tokio::test]
 #[ignore]
 async fn test_message_revoke() {
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
@@ -78,19 +63,12 @@ async fn test_message_revoke() {
     let sdk = create_sdk(&user1, &im_token).await;
 
     println!("发送消息...");
-    let client_msg_id = format!("revoke_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
-    let req = SendMessageReq {
-        recv_id: user2.user_id.clone(),
-        group_id: String::new(),
-        session_type: SessionType::SingleChat,
-        content_type: ContentType::Text,
-        content: r#"{"content":"将被撤回的消息"}"#.to_string(),
-        client_msg_id: Some(client_msg_id.clone()),
-    };
+    let send_result = sdk.send_text_message("将被撤回的消息", &user2.user_id, "", 1).await;
 
-    match sdk.send_message(req).await {
-        Ok(_) => {
+    match send_result {
+        Ok(msg_data) => {
             println!("  ✅ 发送成功");
+            let client_msg_id = msg_data.client_msg_id;
             tokio::time::sleep(Duration::from_secs(2)).await;
 
             // 获取会话列表以获取 conv_id
@@ -102,7 +80,7 @@ async fn test_message_revoke() {
                             conversation_id: conv.conversation_id.clone(),
                             seq: 0,
                             client_msg_id,
-                            session_type: SessionType::SingleChat,
+                            session_type: 1,
                         }
                     ).await;
                     assert!(revoke_result.is_ok(), "撤回消息失败: {:?}", revoke_result.err());
@@ -119,9 +97,6 @@ async fn test_message_revoke() {
 #[tokio::test]
 #[ignore]
 async fn test_message_delete() {
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
@@ -134,19 +109,12 @@ async fn test_message_delete() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let client_msg_id = format!("delete_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
-    let req = SendMessageReq {
-        recv_id: user2.user_id.clone(),
-        group_id: String::new(),
-        session_type: SessionType::SingleChat,
-        content_type: ContentType::Text,
-        content: r#"{"content":"将被删除的消息"}"#.to_string(),
-        client_msg_id: Some(client_msg_id.clone()),
-    };
+    let send_result = sdk.send_text_message("将被删除的消息", &user2.user_id, "", 1).await;
 
-    match sdk.send_message(req).await {
-        Ok(_) => {
+    match send_result {
+        Ok(msg_data) => {
             println!("  ✅ 发送成功");
+            let client_msg_id = msg_data.client_msg_id;
             tokio::time::sleep(Duration::from_secs(2)).await;
 
             if let Ok(convs) = sdk.get_conversations().await {
@@ -177,9 +145,7 @@ async fn test_advanced_text_message() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
-    use rust_lib_flutter_rust_demo::sdk::client::elements::MessageEntity;
-    use rust_lib_flutter_rust_demo::domain::constant::enums::SessionType;
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MessageEntity;
 
     println!("=== 高级文本消息测试 ===\n");
 
@@ -190,7 +156,7 @@ async fn test_advanced_text_message() {
 
     let entities = vec![
         MessageEntity {
-            r#type: "url".to_string(),
+            entity_type: "url".to_string(),
             offset: 0,
             length: 5,
             url: "https://example.com".to_string(),
@@ -198,11 +164,7 @@ async fn test_advanced_text_message() {
         },
     ];
 
-    let mut req = OpenIMClient::create_advanced_text_message("hello", entities);
-    req.recv_id = user2.user_id.clone();
-    req.session_type = SessionType::SingleChat;
-
-    let result = sdk.send_message(req).await;
+    let result = sdk.send_advanced_text_message("hello", entities, &user2.user_id, "", 1).await;
     assert!(result.is_ok(), "发送高级文本消息失败: {:?}", result.err());
     println!("  ✅ 高级文本消息发送成功");
 
@@ -212,9 +174,6 @@ async fn test_advanced_text_message() {
 #[tokio::test]
 #[ignore]
 async fn test_message_mark_read() {
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
@@ -227,17 +186,9 @@ async fn test_message_mark_read() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let client_msg_id = format!("read_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
-    let req = SendMessageReq {
-        recv_id: user2.user_id.clone(),
-        group_id: String::new(),
-        session_type: SessionType::SingleChat,
-        content_type: ContentType::Text,
-        content: r#"{"content":"标记已读测试"}"#.to_string(),
-        client_msg_id: Some(client_msg_id.clone()),
-    };
+    let send_result = sdk.send_text_message("标记已读测试", &user2.user_id, "", 1).await;
 
-    match sdk.send_message(req).await {
+    match send_result {
         Ok(_) => {
             println!("  ✅ 发送成功");
             tokio::time::sleep(Duration::from_secs(2)).await;
@@ -247,7 +198,7 @@ async fn test_message_mark_read() {
                     let mark_result = sdk.mark_messages_as_read(
                         rust_lib_flutter_rust_demo::sdk::client::types::MarkMessagesAsReadReq {
                             conversation_id: conv.conversation_id.clone(),
-                            session_type: SessionType::SingleChat,
+                            session_type: 1,
                             has_read_seq: 0,
                             seqs: vec![],
                         }
@@ -271,9 +222,6 @@ async fn test_message_read_receipt() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     println!("=== 消息已读回执测试 ===\n");
 
     let user1 = get_or_create_user1().await;
@@ -281,17 +229,9 @@ async fn test_message_read_receipt() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let client_msg_id = format!("receipt_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
-    let req = SendMessageReq {
-        recv_id: user2.user_id.clone(),
-        group_id: String::new(),
-        session_type: SessionType::SingleChat,
-        content_type: ContentType::Text,
-        content: r#"{"content":"已读回执测试"}"#.to_string(),
-        client_msg_id: Some(client_msg_id.clone()),
-    };
+    let send_result = sdk.send_text_message("已读回执测试", &user2.user_id, "", 1).await;
 
-    match sdk.send_message(req).await {
+    match send_result {
         Ok(_) => {
             println!("  ✅ 消息发送成功");
             tokio::time::sleep(Duration::from_secs(2)).await;
@@ -301,7 +241,7 @@ async fn test_message_read_receipt() {
                     let mark_result = sdk.mark_messages_as_read(
                         rust_lib_flutter_rust_demo::sdk::client::types::MarkMessagesAsReadReq {
                             conversation_id: conv.conversation_id.clone(),
-                            session_type: SessionType::SingleChat,
+                            session_type: 1,
                             has_read_seq: 0,
                             seqs: vec![],
                         }
@@ -325,9 +265,6 @@ async fn test_local_message_search() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::constant::enums::{ContentType, SessionType};
-    use rust_lib_flutter_rust_demo::sdk::client::types::SendMessageReq;
-
     println!("=== 本地消息搜索测试 ===\n");
 
     let user1 = get_or_create_user1().await;
@@ -336,15 +273,7 @@ async fn test_local_message_search() {
     let sdk = create_sdk(&user1, &im_token).await;
 
     // 先发送消息确保有数据
-    let req = SendMessageReq {
-        recv_id: user2.user_id.clone(),
-        group_id: String::new(),
-        session_type: SessionType::SingleChat,
-        content_type: ContentType::Text,
-        content: r#"{"content":"搜索测试消息"}"#.to_string(),
-        client_msg_id: Some(format!("search_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
-    };
-    let _ = sdk.send_message(req).await;
+    let _ = sdk.send_text_message("搜索测试消息", &user2.user_id, "", 1).await;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     if let Ok(convs) = sdk.get_conversations().await {

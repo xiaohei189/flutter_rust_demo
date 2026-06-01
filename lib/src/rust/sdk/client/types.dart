@@ -3,7 +3,6 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../../domain/constant/enums.dart';
 import '../../domain/model/message.dart';
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
@@ -74,7 +73,7 @@ class GetHistoryMessagesResult {
 
 class MarkMessagesAsReadReq {
   final String conversationId;
-  final SessionType sessionType;
+  final int sessionType;
   final PlatformInt64 hasReadSeq;
   final Int64List seqs;
 
@@ -107,7 +106,7 @@ class RevokeMessageReq {
   final String conversationId;
   final PlatformInt64 seq;
   final String clientMsgId;
-  final SessionType sessionType;
+  final int sessionType;
 
   const RevokeMessageReq({
     required this.conversationId,
@@ -153,43 +152,4 @@ class SearchMessagesReq {
           runtimeType == other.runtimeType &&
           conversationId == other.conversationId &&
           keyword == other.keyword;
-}
-
-class SendMessageReq {
-  final String recvId;
-  final String groupId;
-  final SessionType sessionType;
-  final ContentType contentType;
-  final String content;
-  final String? clientMsgId;
-
-  const SendMessageReq({
-    required this.recvId,
-    required this.groupId,
-    required this.sessionType,
-    required this.contentType,
-    required this.content,
-    this.clientMsgId,
-  });
-
-  @override
-  int get hashCode =>
-      recvId.hashCode ^
-      groupId.hashCode ^
-      sessionType.hashCode ^
-      contentType.hashCode ^
-      content.hashCode ^
-      clientMsgId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SendMessageReq &&
-          runtimeType == other.runtimeType &&
-          recvId == other.recvId &&
-          groupId == other.groupId &&
-          sessionType == other.sessionType &&
-          contentType == other.contentType &&
-          content == other.content &&
-          clientMsgId == other.clientMsgId;
 }

@@ -7,6 +7,7 @@ use crate::domain::event::types::SdkEvent;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::MessageDao;
 use crate::infra::database::models::LocalChatLog;
+use crate::domain::model::msg_struct::MsgStruct;
 use crate::protocol::sdkws::{MsgData, UserSendMsgResp};
 use prost::Message;
 use serde::{Deserialize, Serialize};
@@ -27,26 +28,11 @@ pub struct SendMsgResp {
     pub send_time: i64,
 }
 
-#[derive(Clone, Debug)]
-pub struct PendingMessage {
-    pub client_msg_id: String,
-    pub send_id: String,
-    pub recv_id: String,
-    pub group_id: String,
-    pub sender_platform_id: i32,
-    pub sender_nickname: String,
-    pub sender_face_url: String,
-    pub session_type: i32,
-    pub msg_from: i32,
-    pub content_type: i32,
-    pub content: String,
-}
-
 struct MessageChannels {
-    text_tx: mpsc::Sender<PendingMessage>,
-    text_rx: Option<mpsc::Receiver<PendingMessage>>,
-    media_tx: mpsc::Sender<PendingMessage>,
-    media_rx: Option<mpsc::Receiver<PendingMessage>>,
+    text_tx: mpsc::Sender<MsgStruct>,
+    text_rx: Option<mpsc::Receiver<MsgStruct>>,
+    media_tx: mpsc::Sender<MsgStruct>,
+    media_rx: Option<mpsc::Receiver<MsgStruct>>,
 }
 
 pub struct MessageSender {
@@ -133,7 +119,7 @@ impl MessageSender {
         info!("消息发送 Workers 已启动");
     }
 
-    pub async fn send_message(&self, msg: PendingMessage) -> Result<()> {
+    pub async fn send_message(&self, msg: MsgStruct) -> Result<()> {
         match msg.content_type {
             101 | 106 | 113 | 114 | 115 | 117 | 118 => {
                 self.channels.text_tx.send(msg).await
@@ -146,7 +132,7 @@ impl MessageSender {
         }
     }
 
-    fn conversation_id_for_msg(&self, msg: &PendingMessage) -> String {
+    fn conversation_id_for_msg(&self, msg: &MsgStruct) -> String {
         if msg.session_type == 1 {
             // single chat: si_{send_id}_{recv_id}, ensure sorted order
             let mut ids = vec![msg.send_id.clone(), msg.recv_id.clone()];
@@ -158,7 +144,7 @@ impl MessageSender {
         }
     }
 
-    async fn persist_sent_message(&self, msg: &PendingMessage, resp: &UserSendMsgResp) -> Result<()> {
+    async fn persist_sent_message(&self, msg: &MsgStruct, resp: &UserSendMsgResp) -> Result<()> {
         let conversation_id = self.conversation_id_for_msg(msg);
 
         let content_str = msg.content.clone();
@@ -200,7 +186,7 @@ impl MessageSender {
     }
 
     /// 插入消息到本地数据库（发送前，Go SDK 对应 InsertMessage）
-    async fn insert_message_before_send(&self, msg: &PendingMessage, send_time: i64) -> Result<()> {
+    async fn insert_message_before_send(&self, msg: &MsgStruct, send_time: i64) -> Result<()> {
         let conversation_id = self.conversation_id_for_msg(msg);
 
         let content_str = msg.content.clone();
@@ -241,7 +227,7 @@ impl MessageSender {
         Ok(())
     }
 
-    async fn do_send_message(&self, msg: PendingMessage) -> Result<SendMsgResp> {
+    async fn do_send_message(&self, msg: MsgStruct) -> Result<SendMsgResp> {
         let send_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_millis() as i64)
@@ -319,7 +305,7 @@ impl MessageSender {
         })
     }
 
-    async fn process_media_content(&self, msg: &PendingMessage) -> Result<String> {
+    async fn process_media_content(&self, msg: &MsgStruct) -> Result<String> {
         let media_types = [102, 103, 104, 105];
         if !media_types.contains(&msg.content_type) {
             return Ok(msg.content.clone());
@@ -399,19 +385,13 @@ mod tests {
 
     #[test]
     fn test_pending_message_creation() {
-        let msg = PendingMessage {
-            client_msg_id: "msg_123".to_string(),
-            send_id: "user_1".to_string(),
-            recv_id: "user_2".to_string(),
-            group_id: String::new(),
-            sender_platform_id: 1,
-            sender_nickname: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 100,
-            content_type: 101,
-            content: r#"{"text":"hello"}"#.to_string(),
-        };
+        let mut msg = MsgStruct::new();
+        msg.client_msg_id = "msg_123".to_string();
+        msg.send_id = "user_1".to_string();
+        msg.recv_id = "user_2".to_string();
+        msg.session_type = 1;
+        msg.content_type = 101;
+        msg.content = r#"{"text":"hello"}"#.to_string();
 
         assert_eq!(msg.client_msg_id, "msg_123");
         assert_eq!(msg.content_type, 101);
@@ -463,19 +443,14 @@ mod tests {
 
     #[test]
     fn test_pending_message_content_type() {
-        let msg = PendingMessage {
-            client_msg_id: "msg_ct_101".to_string(),
-            send_id: "user_1".to_string(),
-            recv_id: "user_2".to_string(),
-            group_id: String::new(),
-            sender_platform_id: 1,
-            sender_nickname: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 100,
-            content_type: 101,
-            content: r#"{"content":"hello"}"#.to_string(),
-        };
+        let mut msg = MsgStruct::new();
+        msg.client_msg_id = "msg_ct_101".to_string();
+        msg.send_id = "user_1".to_string();
+        msg.recv_id = "user_2".to_string();
+        msg.session_type = 1;
+        msg.msg_from = 100;
+        msg.content_type = 101;
+        msg.content = r#"{"content":"hello"}"#.to_string();
 
         assert_eq!(msg.content_type, 101);
         assert_eq!(msg.content, r#"{"content":"hello"}"#);
@@ -484,9 +459,6 @@ mod tests {
         assert_eq!(msg.recv_id, "user_2");
         assert_eq!(msg.session_type, 1);
         assert_eq!(msg.msg_from, 100);
-        assert!(msg.group_id.is_empty());
-        assert!(msg.sender_nickname.is_empty());
-        assert!(msg.sender_face_url.is_empty());
     }
 
     async fn make_test_sender() -> MessageSender {
@@ -521,19 +493,13 @@ mod tests {
         let text_types = [101, 106, 113, 114, 115, 117, 118];
 
         for &ct in &text_types {
-            let msg = PendingMessage {
-                client_msg_id: format!("msg_{}", ct),
-                send_id: "user_1".to_string(),
-                recv_id: "user_2".to_string(),
-                group_id: String::new(),
-                sender_platform_id: 1,
-                sender_nickname: String::new(),
-                sender_face_url: String::new(),
-                session_type: 1,
-                msg_from: 100,
-                content_type: ct,
-                content: content.clone(),
-            };
+            let mut msg = MsgStruct::new();
+            msg.client_msg_id = format!("msg_{}", ct);
+            msg.send_id = "user_1".to_string();
+            msg.recv_id = "user_2".to_string();
+            msg.session_type = 1;
+            msg.content_type = ct;
+            msg.content = content.clone();
             let result = sender.process_media_content(&msg).await.unwrap();
             assert_eq!(
                 result, content,
@@ -547,19 +513,13 @@ mod tests {
     async fn test_process_media_content_picture() {
         let sender = make_test_sender().await;
         let content = r#"{"sourcePath":"/tmp/test.jpg"}"#.to_string();
-        let msg = PendingMessage {
-            client_msg_id: "msg_pic".to_string(),
-            send_id: "user_1".to_string(),
-            recv_id: "user_2".to_string(),
-            group_id: String::new(),
-            sender_platform_id: 1,
-            sender_nickname: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 100,
-            content_type: 102,
-            content: content.clone(),
-        };
+        let mut msg = MsgStruct::new();
+        msg.client_msg_id = "msg_pic".to_string();
+        msg.send_id = "user_1".to_string();
+        msg.recv_id = "user_2".to_string();
+        msg.session_type = 1;
+        msg.content_type = 102;
+        msg.content = content.clone();
 
         let result = sender.process_media_content(&msg).await;
         assert!(result.is_ok(), "should handle gracefully even if file does not exist");

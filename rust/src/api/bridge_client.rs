@@ -5,12 +5,9 @@
 use crate::domain::config::ClientConfig;
 use crate::domain::constant::enums::{ContentType, SessionType};
 use crate::domain::event::types::SdkEvent;
-use crate::sdk::client::elements::{
-    AdvancedTextElem, AtTextElem, FaceElem, MessageEntity, PictureBaseInfo, PictureElem, QuoteElem,
-};
 use crate::sdk::client::types::{
     DeleteMessagesReq, GetHistoryMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
-    SearchMessagesReq, SendMessageReq,
+    SearchMessagesReq,
 };
 use crate::sdk::client::{FriendApplyInfo, GroupApplyInfo, OpenIMClient};
 use anyhow::Result;
@@ -74,8 +71,15 @@ impl OpenIMBridgeClient {
     // ========== 消息操作 ==========
 
     #[flutter_rust_bridge::frb]
-    pub async fn send_message(&self, req: SendMessageReq) -> Result<MsgData> {
-        self.inner.send_message(req).await.map_err(|e| anyhow::anyhow!("{}", e))
+    pub async fn send_text_message(&self, text: String, recv_id: String, group_id: String, session_type: i32) -> Result<MsgData> {
+        self.inner.send_text_message(&text, &recv_id, &group_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_markdown_message(&self, text: String, recv_id: String, group_id: String, session_type: i32) -> Result<MsgData> {
+        self.inner.send_markdown_message(&text, &recv_id, &group_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
@@ -329,138 +333,32 @@ impl OpenIMBridgeClient {
     // ========== 创建消息方法 ==========
 
     #[flutter_rust_bridge::frb]
-    pub async fn create_and_send_image_message(
+    pub async fn send_image_message(
         &self,
         file_path: String,
         recv_id: String,
         group_id: String,
         session_type: i32,
     ) -> Result<MsgData> {
-        let st = SessionType::from_i32(session_type);
-        self.inner.create_and_send_image_message(file_path, recv_id, group_id, st).await
-            .map_err(|e| anyhow::anyhow!("{}", e))
-    }
-
-    #[flutter_rust_bridge::frb]
-    pub async fn create_text_message(&self, text: String) -> Result<MsgData> {
-        let req = OpenIMClient::create_text_message(&text);
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
-        let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(MsgData {
-            send_id: user_id,
-            content_type: req.content_type.into(),
-            content: req.content.into_bytes(),
-            send_time,
-            create_time: send_time,
-            ..Default::default()
-        })
-    }
-
-    #[flutter_rust_bridge::frb]
-    pub async fn create_image_message_by_url(&self, elem: PictureElem) -> Result<MsgData> {
-        let req = OpenIMClient::create_image_message_by_url(
-            elem.source_picture.unwrap_or(PictureBaseInfo {
-                width: 0, height: 0, type_: String::new(), size: 0, url: String::new(),
-            }),
-            elem.big_picture,
-            elem.snapshot_picture,
+        let send_id = self.inner.context.user_id.lock().unwrap().clone();
+        let platform_id = self.inner.context.config.platform_id;
+        let upload_result = self.inner.file_uploader
+            .upload_image(&file_path).await
+            .map_err(|e| anyhow::anyhow!("upload image failed: {}", e))?;
+        let source = crate::domain::model::msg_struct::PictureBaseInfo {
+            width: 0, height: 0, picture_type: String::new(),
+            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
+        };
+        let mut msg = crate::domain::model::msg_struct::MsgStruct::create_image_message(
+            &file_path, source,
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
+            &send_id, platform_id,
         );
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
-        let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(MsgData {
-            send_id: user_id,
-            content_type: req.content_type.into(),
-            content: req.content.into_bytes(),
-            send_time,
-            create_time: send_time,
-            ..Default::default()
-        })
-    }
-
-    #[flutter_rust_bridge::frb]
-    pub async fn create_advanced_text_message(
-        &self,
-        text: String,
-        message_entity_list: Vec<MessageEntity>,
-    ) -> Result<MsgData> {
-        let req = OpenIMClient::create_advanced_text_message(&text, message_entity_list);
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
-        let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(MsgData {
-            send_id: user_id,
-            content_type: req.content_type.into(),
-            content: req.content.into_bytes(),
-            send_time,
-            create_time: send_time,
-            ..Default::default()
-        })
-    }
-
-    #[flutter_rust_bridge::frb]
-    pub async fn create_quote_message(&self, text: String, quote_message: String) -> Result<MsgData> {
-        let req = OpenIMClient::create_quote_message(&text, &quote_message);
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
-        let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(MsgData {
-            send_id: user_id,
-            content_type: req.content_type.into(),
-            content: req.content.into_bytes(),
-            send_time,
-            create_time: send_time,
-            ..Default::default()
-        })
-    }
-
-    #[flutter_rust_bridge::frb]
-    pub async fn create_at_text_message(
-        &self,
-        text: String,
-        at_user_list: Vec<String>,
-    ) -> Result<MsgData> {
-        let req = OpenIMClient::create_at_text_message(&text, at_user_list);
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
-        let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(MsgData {
-            send_id: user_id,
-            content_type: req.content_type.into(),
-            content: req.content.into_bytes(),
-            send_time,
-            create_time: send_time,
-            ..Default::default()
-        })
-    }
-
-    #[flutter_rust_bridge::frb]
-    pub async fn create_face_message(&self, index: i32, data: String) -> Result<MsgData> {
-        let req = OpenIMClient::create_face_message(index, &data);
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
-        let user_id = self.inner.context.user_id.lock().unwrap().clone();
-        Ok(MsgData {
-            send_id: user_id,
-            content_type: req.content_type.into(),
-            content: req.content.into_bytes(),
-            send_time,
-            create_time: send_time,
-            ..Default::default()
-        })
+        msg.recv_id = recv_id;
+        msg.group_id = group_id;
+        msg.session_type = session_type;
+        self.inner.send_msg(msg).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 }
 

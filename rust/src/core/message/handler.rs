@@ -101,7 +101,13 @@ impl MessageHandler {
         }
 
         if !store_logs.is_empty() {
+            info!("准备插入 {} 条消息到数据库", store_logs.len());
+            for log in &store_logs {
+                info!("  待插入: conversation_id={}, client_msg_id={}, seq={}, send_time={}", 
+                      log.conversation_id, log.client_msg_id, log.seq, log.send_time);
+            }
             self.message_dao.batch_insert(&store_logs).await?;
+            info!("消息插入数据库完成");
         }
 
         let mut seen_convs = std::collections::HashSet::new();

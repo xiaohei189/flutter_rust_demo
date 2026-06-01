@@ -6,26 +6,5 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 消息内容类型
-enum ContentType {
-  text,
-  picture,
-  sound,
-  video,
-  file,
-  atText,
-  merger,
-  card,
-  location,
-  custom,
-  typing,
-  quote,
-  face,
-  advancedText,
-  markdownText,
-  customNoTrigger,
-  customOnlineOnly,
-}
-
 /// 会话类型
 enum SessionType { singleChat, writeGroupChat, readGroupChat, notificationChat }

@@ -170,6 +170,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return false;
 
     try {
+      appLog.d('dart MessageService 📜 加载历史消息: conversationId=$conversationId, startClientMsgId=$startClientMsgId, count=$count');
       final result = await _client!.getHistoryMessages(
         req: GetHistoryMessagesReq(
           conversationId: conversationId,
@@ -178,8 +179,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         ),
       );
 
+      appLog.d('dart MessageService 📜 getHistoryMessages 返回: messages=${result.messages.length}, isEnd=${result.isEnd}');
+
       if (result.messages.isEmpty) {
+        appLog.d('dart MessageService 📜 历史消息为空');
         return false;
+      }
+
+      for (final msg in result.messages) {
+        appLog.d('dart MessageService 📜 消息: id=${msg.clientMsgId}, sendId=${msg.sendId}, content=${msg.content.substring(0, msg.content.length > 30 ? 30 : msg.content.length)}, isRead=${msg.isRead}, status=${msg.status}');
       }
 
       final messages = result.messages
@@ -195,6 +203,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       newMessages[conversationId] = currentMessages
           .where((msg) => seenIds.add(msg.id))
           .toList();
+
+      appLog.d('dart MessageService 📜 合并后消息数: ${newMessages[conversationId]!.length}');
 
       this.state = this.state.copyWith(messages: newMessages);
 

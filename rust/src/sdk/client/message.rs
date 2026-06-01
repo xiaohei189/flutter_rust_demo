@@ -1,6 +1,7 @@
 use crate::domain::error::types::Result;
 use crate::domain::error::types::SdkError;
 use crate::domain::model::message::MessageInfo;
+use crate::domain::model::msg_struct::MsgStruct;
 use crate::infra::database::models::LocalChatLog;
 use crate::sdk::client::types::{
     DeleteMessagesReq, GetHistoryMessagesReq, GetHistoryMessagesResult, MarkMessagesAsReadReq, RevokeMessageReq,
@@ -8,58 +9,86 @@ use crate::sdk::client::types::{
 };
 use crate::sdk::client::OpenIMClient;
 use openim_protocol::sdkws::MsgData;
+use tracing::info;
 
 impl OpenIMClient {
-    pub async fn send_message(&self, req: SendMessageReq) -> std::result::Result<MsgData, SdkError> {
-        let client_msg_id = req.client_msg_id.unwrap_or_else(|| {
-            format!("msg_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
-        });
+    /// 发送消息（MsgStruct → channel → 发送）
+    pub async fn send_msg(&self, msg: MsgStruct) -> std::result::Result<MsgData, SdkError> {
+        self.message_sender.send_message(msg.clone()).await?;
 
-        let pending_msg = crate::core::message::sender::PendingMessage {
-            client_msg_id: client_msg_id.clone(),
-            send_id: self.context.user_id.lock().unwrap().clone(),
-            recv_id: req.recv_id,
-            group_id: req.group_id,
-            sender_platform_id: self.context.config.platform_id,
-            sender_nickname: String::new(),
-            sender_face_url: String::new(),
-            session_type: req.session_type.into(),
-            msg_from: 100,
-            content_type: req.content_type.into(),
-            content: req.content,
-        };
-
-        self.message_sender.send_message(pending_msg).await?;
-
-        let send_time = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
+        let send_time = msg.send_time;
 
         Ok(MsgData {
-            client_msg_id,
-            send_id: self.context.user_id.lock().unwrap().clone(),
+            client_msg_id: msg.client_msg_id,
+            send_id: msg.send_id,
             send_time,
-            create_time: send_time,
-            content_type: 0,
-            session_type: 0,
+            create_time: msg.create_time,
+            content_type: msg.content_type,
+            session_type: msg.session_type,
+            status: msg.status,
+            is_read: msg.is_read,
+            seq: msg.seq,
             ..Default::default()
         })
     }
 
+    /// 一步发送文本消息（Flutter 调用入口）
+    pub async fn send_text_message(&self, text: &str, recv_id: &str, group_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let send_id = self.context.user_id.lock().unwrap().clone();
+        let platform_id = self.context.config.platform_id;
+        let mut msg = MsgStruct::create_text_message(text, &send_id, platform_id);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        self.send_msg(msg).await
+    }
+
+    /// 一步发送 Markdown 消息
+    pub async fn send_markdown_message(&self, text: &str, recv_id: &str, group_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let send_id = self.context.user_id.lock().unwrap().clone();
+        let platform_id = self.context.config.platform_id;
+        let mut msg = MsgStruct::create_markdown_message(text, &send_id, platform_id);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        self.send_msg(msg).await
+    }
+
+    /// 一步发送富文本消息
+    pub async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, recv_id: &str, group_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let send_id = self.context.user_id.lock().unwrap().clone();
+        let platform_id = self.context.config.platform_id;
+        let mut msg = MsgStruct::create_advanced_text_message(text, entities, &send_id, platform_id);
+        msg.recv_id = recv_id.to_string();
+        msg.group_id = group_id.to_string();
+        msg.session_type = session_type;
+        self.send_msg(msg).await
+    }
+
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
+        info!("get_history_messages: conversation_id={}, start_client_msg_id={}, count={}", 
+              req.conversation_id, req.start_client_msg_id, req.count);
+        
         let start_time = if req.start_client_msg_id.is_empty() {
             0
         } else {
             let msg = self.message_handler.message_dao()
                 .get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id)
                 .await?;
-            msg.map(|m| m.send_time).unwrap_or(0)
+            let st = msg.as_ref().map(|m| m.send_time).unwrap_or(0);
+            info!("通过 client_msg_id 查询到 send_time={}", st);
+            st
         };
 
         let messages = self.message_handler.message_dao()
             .get_by_conversation(&req.conversation_id, start_time, req.count)
             .await?;
+
+        info!("数据库查询返回 {} 条消息", messages.len());
+        for m in &messages {
+            info!("  msg: client_msg_id={}, send_time={}, content_len={}", 
+                  m.client_msg_id, m.send_time, m.content.len());
+        }
 
         let is_end = messages.len() < req.count as usize;
 
@@ -103,7 +132,7 @@ impl OpenIMClient {
             req.conversation_id,
             req.seq,
             req.client_msg_id,
-            req.session_type.into(),
+            req.session_type,
         ).await
     }
 
@@ -117,7 +146,7 @@ impl OpenIMClient {
     pub async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()> {
         self.message_service.mark_messages_as_read(
             req.conversation_id,
-            req.session_type.into(),
+            req.session_type,
             req.has_read_seq,
             req.seqs,
         ).await

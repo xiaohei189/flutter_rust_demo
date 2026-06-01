@@ -15,7 +15,6 @@ import '../frb_generated.dart';
 import '../infra/database/models.dart';
 import '../lib.dart';
 import '../sdk/client.dart';
-import '../sdk/client/elements.dart';
 import '../sdk/client/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
@@ -50,39 +49,11 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> addFriend({required String userId, required String reqMsg});
 
-  Future<MsgData> createAdvancedTextMessage({
-    required String text,
-    required List<MessageEntity> messageEntityList,
-  });
-
-  Future<MsgData> createAndSendImageMessage({
-    required String filePath,
-    required String recvId,
-    required String groupId,
-    required int sessionType,
-  });
-
-  Future<MsgData> createAtTextMessage({
-    required String text,
-    required List<String> atUserList,
-  });
-
-  Future<MsgData> createFaceMessage({required int index, required String data});
-
   Future<GroupInfo> createGroup({
     required String groupName,
     required int groupType,
     required List<String> memberIds,
   });
-
-  Future<MsgData> createImageMessageByUrl({required PictureElem elem});
-
-  Future<MsgData> createQuoteMessage({
-    required String text,
-    required String quoteMessage,
-  });
-
-  Future<MsgData> createTextMessage({required String text});
 
   Future<void> deleteConversation({required String conversationId});
 
@@ -170,7 +141,26 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required SearchMessagesReq req,
   });
 
-  Future<MsgData> sendMessage({required SendMessageReq req});
+  Future<MsgData> sendImageMessage({
+    required String filePath,
+    required String recvId,
+    required String groupId,
+    required int sessionType,
+  });
+
+  Future<MsgData> sendMarkdownMessage({
+    required String text,
+    required String recvId,
+    required String groupId,
+    required int sessionType,
+  });
+
+  Future<MsgData> sendTextMessage({
+    required String text,
+    required String recvId,
+    required String groupId,
+    required int sessionType,
+  });
 
   Future<void> setConversationDraft({
     required String conversationId,

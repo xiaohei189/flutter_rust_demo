@@ -23,7 +23,6 @@ import 'infra/database/models.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'sdk/client.dart';
-import 'sdk/client/elements.dart';
 import 'sdk/client/types.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
@@ -107,12 +106,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  PictureBaseInfo dco_decode_box_autoadd_picture_base_info(dynamic raw);
-
-  @protected
-  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
-
-  @protected
   ReceivedMessage dco_decode_box_autoadd_received_message(dynamic raw);
 
   @protected
@@ -122,16 +115,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw);
 
   @protected
-  SendMessageReq dco_decode_box_autoadd_send_message_req(dynamic raw);
-
-  @protected
   UserInfo dco_decode_box_autoadd_user_info(dynamic raw);
 
   @protected
   ClientConfig dco_decode_client_config(dynamic raw);
-
-  @protected
-  ContentType dco_decode_content_type(dynamic raw);
 
   @protected
   Conversation dco_decode_conversation(dynamic raw);
@@ -200,9 +187,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
 
   @protected
-  List<MessageEntity> dco_decode_list_message_entity(dynamic raw);
-
-  @protected
   List<MessageInfo> dco_decode_list_message_info(dynamic raw);
 
   @protected
@@ -227,9 +211,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
   @protected
-  MessageEntity dco_decode_message_entity(dynamic raw);
-
-  @protected
   MessageInfo dco_decode_message_info(dynamic raw);
 
   @protected
@@ -237,15 +218,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LocalConversation? dco_decode_opt_box_autoadd_local_conversation(dynamic raw);
-
-  @protected
-  PictureBaseInfo? dco_decode_opt_box_autoadd_picture_base_info(dynamic raw);
-
-  @protected
-  PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
-
-  @protected
-  PictureElem dco_decode_picture_elem(dynamic raw);
 
   @protected
   ReceivedMessage dco_decode_received_message(dynamic raw);
@@ -258,9 +230,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SearchMessagesReq dco_decode_search_messages_req(dynamic raw);
-
-  @protected
-  SendMessageReq dco_decode_send_message_req(dynamic raw);
 
   @protected
   SessionType dco_decode_session_type(dynamic raw);
@@ -355,14 +324,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  PictureBaseInfo sse_decode_box_autoadd_picture_base_info(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
-
-  @protected
   ReceivedMessage sse_decode_box_autoadd_received_message(
     SseDeserializer deserializer,
   );
@@ -378,18 +339,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  SendMessageReq sse_decode_box_autoadd_send_message_req(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer);
 
   @protected
   ClientConfig sse_decode_client_config(SseDeserializer deserializer);
-
-  @protected
-  ContentType sse_decode_content_type(SseDeserializer deserializer);
 
   @protected
   Conversation sse_decode_conversation(SseDeserializer deserializer);
@@ -472,11 +425,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  List<MessageEntity> sse_decode_list_message_entity(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   List<MessageInfo> sse_decode_list_message_info(SseDeserializer deserializer);
 
   @protected
@@ -503,9 +451,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
-
-  @protected
   MessageInfo sse_decode_message_info(SseDeserializer deserializer);
 
   @protected
@@ -515,17 +460,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation? sse_decode_opt_box_autoadd_local_conversation(
     SseDeserializer deserializer,
   );
-
-  @protected
-  PictureBaseInfo? sse_decode_opt_box_autoadd_picture_base_info(
-    SseDeserializer deserializer,
-  );
-
-  @protected
-  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
-
-  @protected
-  PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
 
   @protected
   ReceivedMessage sse_decode_received_message(SseDeserializer deserializer);
@@ -540,9 +474,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SearchMessagesReq sse_decode_search_messages_req(
     SseDeserializer deserializer,
   );
-
-  @protected
-  SendMessageReq sse_decode_send_message_req(SseDeserializer deserializer);
 
   @protected
   SessionType sse_decode_session_type(SseDeserializer deserializer);
@@ -652,18 +583,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_box_autoadd_picture_base_info(
-    PictureBaseInfo self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_picture_elem(
-    PictureElem self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_box_autoadd_received_message(
     ReceivedMessage self,
     SseSerializer serializer,
@@ -682,12 +601,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_box_autoadd_send_message_req(
-    SendMessageReq self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_box_autoadd_user_info(
     UserInfo self,
     SseSerializer serializer,
@@ -695,9 +608,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_client_config(ClientConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_content_type(ContentType self, SseSerializer serializer);
 
   @protected
   void sse_encode_conversation(Conversation self, SseSerializer serializer);
@@ -806,12 +716,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_list_message_entity(
-    List<MessageEntity> self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_list_message_info(
     List<MessageInfo> self,
     SseSerializer serializer,
@@ -854,9 +758,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);
-
-  @protected
   void sse_encode_message_info(MessageInfo self, SseSerializer serializer);
 
   @protected
@@ -867,21 +768,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     LocalConversation? self,
     SseSerializer serializer,
   );
-
-  @protected
-  void sse_encode_opt_box_autoadd_picture_base_info(
-    PictureBaseInfo? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_picture_base_info(
-    PictureBaseInfo self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_received_message(
@@ -901,12 +787,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_search_messages_req(
     SearchMessagesReq self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_send_message_req(
-    SendMessageReq self,
     SseSerializer serializer,
   );
 
