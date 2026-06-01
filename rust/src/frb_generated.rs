@@ -2370,12 +2370,24 @@ impl SseDecode for crate::sdk::client::types::GetHistoryMessagesReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_conversationId = <String>::sse_decode(deserializer);
-        let mut var_startSeq = <i64>::sse_decode(deserializer);
+        let mut var_startClientMsgId = <String>::sse_decode(deserializer);
         let mut var_count = <i64>::sse_decode(deserializer);
         return crate::sdk::client::types::GetHistoryMessagesReq {
             conversation_id: var_conversationId,
-            start_seq: var_startSeq,
+            start_client_msg_id: var_startClientMsgId,
             count: var_count,
+        };
+    }
+}
+
+impl SseDecode for crate::sdk::client::types::GetHistoryMessagesResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_messages = <Vec<crate::domain::model::message::MessageInfo>>::sse_decode(deserializer);
+        let mut var_isEnd = <bool>::sse_decode(deserializer);
+        return crate::sdk::client::types::GetHistoryMessagesResult {
+            messages: var_messages,
+            is_end: var_isEnd,
         };
     }
 }
@@ -3630,7 +3642,7 @@ impl flutter_rust_bridge::IntoDart for crate::sdk::client::types::GetHistoryMess
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.conversation_id.into_into_dart().into_dart(),
-            self.start_seq.into_into_dart().into_dart(),
+            self.start_client_msg_id.into_into_dart().into_dart(),
             self.count.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -3639,6 +3651,18 @@ impl flutter_rust_bridge::IntoDart for crate::sdk::client::types::GetHistoryMess
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::types::GetHistoryMessagesReq {}
 impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::types::GetHistoryMessagesReq> for crate::sdk::client::types::GetHistoryMessagesReq {
     fn into_into_dart(self) -> crate::sdk::client::types::GetHistoryMessagesReq {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::sdk::client::types::GetHistoryMessagesResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [self.messages.into_into_dart().into_dart(), self.is_end.into_into_dart().into_dart()].into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::types::GetHistoryMessagesResult {}
+impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::types::GetHistoryMessagesResult> for crate::sdk::client::types::GetHistoryMessagesResult {
+    fn into_into_dart(self) -> crate::sdk::client::types::GetHistoryMessagesResult {
         self
     }
 }
@@ -4340,8 +4364,16 @@ impl SseEncode for crate::sdk::client::types::GetHistoryMessagesReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.conversation_id, serializer);
-        <i64>::sse_encode(self.start_seq, serializer);
+        <String>::sse_encode(self.start_client_msg_id, serializer);
         <i64>::sse_encode(self.count, serializer);
+    }
+}
+
+impl SseEncode for crate::sdk::client::types::GetHistoryMessagesResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::domain::model::message::MessageInfo>>::sse_encode(self.messages, serializer);
+        <bool>::sse_encode(self.is_end, serializer);
     }
 }
 

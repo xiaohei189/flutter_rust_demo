@@ -1,4 +1,5 @@
 use super::models::LocalChatLog;
+use crate::domain::constant::enums::MessageSendStatus;
 use crate::domain::error::types::{Result, SdkError};
 use sqlx::SqlitePool;
 
@@ -47,19 +48,20 @@ impl MessageDao {
     pub async fn get_by_conversation(
         &self,
         conversation_id: &str,
-        start_seq: i64,
+        start_time: i64,
         count: i64,
     ) -> Result<Vec<LocalChatLog>> {
         let rows = sqlx::query_as::<_, LocalChatLog>(
-            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND (seq < ? OR ? = 0) ORDER BY seq DESC LIMIT ?",
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND (send_time < ? OR ? = 0) ORDER BY send_time DESC LIMIT ?",
         )
         .bind(conversation_id)
-        .bind(start_seq)
-        .bind(start_seq)
+        .bind(start_time)
+        .bind(start_time)
         .bind(count)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| SdkError::database(format!("query messages: {}", e)))?;
+
         Ok(rows)
     }
 
@@ -72,6 +74,22 @@ impl MessageDao {
         .await
         .map_err(|e| SdkError::database(format!("query max seq: {}", e)))?;
         Ok(row.0.unwrap_or(0))
+    }
+
+    pub async fn get_by_client_msg_id(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+    ) -> Result<Option<LocalChatLog>> {
+        let row = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND client_msg_id = ?",
+        )
+        .bind(conversation_id)
+        .bind(client_msg_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query message by client_msg_id: {}", e)))?;
+        Ok(row)
     }
 
     pub async fn get_by_client_msg_ids(&self, client_msg_ids: &[String]) -> Result<Vec<LocalChatLog>> {
@@ -119,9 +137,9 @@ impl MessageDao {
         Ok(())
     }
 
-    pub async fn update_send_status(&self, client_msg_id: &str, status: i32) -> Result<()> {
+    pub async fn update_send_status(&self, client_msg_id: &str, status: MessageSendStatus) -> Result<()> {
         sqlx::query("UPDATE local_chat_logs SET status = ? WHERE client_msg_id = ?")
-            .bind(status)
+            .bind(status as i32)
             .bind(client_msg_id)
             .execute(&self.pool)
             .await
@@ -221,7 +239,7 @@ mod tests {
             content_type: 101,
             content: r#"{"text":"hello"}"#.into(),
             is_read: 0,
-            status: 2,
+            status: MessageSendStatus::SendSuccess as i32,
             seq: 1,
             send_time: 1000,
             create_time: 1000,
@@ -255,7 +273,7 @@ mod tests {
             content_type: 101,
             content: String::new(),
             is_read: 0,
-            status: 2,
+            status: MessageSendStatus::SendSuccess as i32,
             seq: 1,
             send_time: 1000,
             create_time: 1000,
@@ -289,7 +307,7 @@ mod tests {
             content_type: 101,
             content: String::new(),
             is_read: 0,
-            status: 2,
+            status: MessageSendStatus::SendSuccess as i32,
             seq: 1,
             send_time: 1000,
             create_time: 1000,

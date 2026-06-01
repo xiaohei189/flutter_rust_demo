@@ -147,6 +147,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GetHistoryMessagesReq dco_decode_get_history_messages_req(dynamic raw);
 
   @protected
+  GetHistoryMessagesResult dco_decode_get_history_messages_result(dynamic raw);
+
+  @protected
   GroupApplyInfo dco_decode_group_apply_info(dynamic raw);
 
   @protected
@@ -402,6 +405,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GetHistoryMessagesReq sse_decode_get_history_messages_req(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GetHistoryMessagesResult sse_decode_get_history_messages_result(
     SseDeserializer deserializer,
   );
 
@@ -710,6 +718,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_get_history_messages_req(
     GetHistoryMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_get_history_messages_result(
+    GetHistoryMessagesResult self,
     SseSerializer serializer,
   );
 

@@ -1,4 +1,4 @@
-use crate::domain::constant::enums::SessionType;
+use crate::domain::constant::enums::{MessageSendStatus, SessionType};
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
@@ -24,6 +24,12 @@ pub struct LocalChatLog {
     pub ex: String,
     pub local_ex: String,
     pub group_id: String,
+}
+
+impl LocalChatLog {
+    pub fn send_status(&self) -> MessageSendStatus {
+        MessageSendStatus::from_i32(self.status)
+    }
 }
 
 #[derive(Debug, Clone, FromRow)]

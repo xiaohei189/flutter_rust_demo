@@ -7,6 +7,7 @@ import '../router/app_router.dart';
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
+import 'message_status_indicator.dart';
 import 'user_avatar.dart';
 
 /// 消息气泡：我=左侧蓝色，对方=右侧浅灰；头像优先显示图片，无图片显示名字首字
@@ -115,7 +116,14 @@ class MessageBubble extends StatelessWidget {
             ),
             if (isFromMe && message.sendStatus != null) ...[
               const SizedBox(width: 4),
-              _buildSendStatusIcon(message.sendStatus!),
+              MessageStatusIndicator(
+                status: message.sendStatus!,
+                onRetry: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('重试发送功能开发中')),
+                  );
+                },
+              ),
             ],
           ],
         ),
@@ -164,37 +172,5 @@ class MessageBubble extends StatelessWidget {
       userId: user.id,
       user: user,
     );
-  }
-
-  Widget _buildSendStatusIcon(MessageSendStatus status) {
-    switch (status) {
-      case MessageSendStatus.sending:
-        return SizedBox(
-          width: 14,
-          height: 14,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppTheme.myMessageColor.withValues(alpha: 0.9),
-          ),
-        );
-      case MessageSendStatus.sent:
-        return Icon(
-          Icons.done_all,
-          size: 14,
-          color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
-        );
-      case MessageSendStatus.failed:
-        return Icon(
-          Icons.error_outline,
-          size: 14,
-          color: AppTheme.unreadRed.withValues(alpha: 0.9),
-        );
-      case MessageSendStatus.read:
-        return Icon(
-          Icons.done_all,
-          size: 14,
-          color: AppTheme.primaryColor,
-        );
-    }
   }
 }

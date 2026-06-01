@@ -72,7 +72,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
   /// 加载历史消息
   Future<bool> loadHistoryMessages({
     int count = 20,
-    int startSeq = 0,
+    String startClientMsgId = '',
   }) async {
     if (state.isLoading || !state.hasMore) return false;
 
@@ -82,7 +82,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
       final hasMore = await _messageService.loadHistoryMessages(
         _conversationId,
         count: count,
-        startSeq: startSeq,
+        startClientMsgId: startClientMsgId,
       );
 
       _syncState();

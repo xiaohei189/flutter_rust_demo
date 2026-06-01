@@ -1,5 +1,6 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::file::uploader::FileUploader;
+use crate::domain::constant::enums::MessageSendStatus;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
@@ -176,7 +177,7 @@ impl MessageSender {
             content_type: msg.content_type,
             content: content_str.clone(),
             is_read: 1,
-            status: 1,
+            status: MessageSendStatus::Sending as i32,
             seq: 0,
             send_time: resp.send_time,
             create_time: resp.send_time,
@@ -218,7 +219,7 @@ impl MessageSender {
             content_type: msg.content_type,
             content: content_str,
             is_read: 1,
-            status: 1,
+            status: MessageSendStatus::Sending as i32,
             seq: 0,
             send_time,
             create_time: send_time,
@@ -280,7 +281,7 @@ impl MessageSender {
         {
             Ok(r) => r,
             Err(e) => {
-                self.message_dao.update_send_status(&msg.client_msg_id, 3).await?;
+                self.message_dao.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed).await?;
                 self.event_bus.publish(SdkEvent::MessageSendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
                     error: format!("{}", e),
@@ -289,7 +290,7 @@ impl MessageSender {
             }
         };
 
-        if let Err(e) = self.message_dao.update_send_status(&msg.client_msg_id, 2).await {
+        if let Err(e) = self.message_dao.update_send_status(&msg.client_msg_id, MessageSendStatus::SendSuccess).await {
             error!("更新发送状态失败: {}", e);
         }
 

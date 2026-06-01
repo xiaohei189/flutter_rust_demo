@@ -140,19 +140,18 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     try {
       final messageState = ref.read(messageListProvider(widget.conversationId));
       final currentMessages = messageState.messages;
-      int startSeq = 0;
+      String startClientMsgId = '';
 
       if (isLoadMore && currentMessages.isNotEmpty) {
-        // 使用最早消息的发送时间作为 startSeq
         final earliestMsg = currentMessages.first;
-        startSeq = earliestMsg.timestamp.millisecondsSinceEpoch ~/ 1000;
+        startClientMsgId = earliestMsg.id;
       }
 
       final hasMore = await ref
           .read(messageListProvider(widget.conversationId).notifier)
           .loadHistoryMessages(
             count: 20,
-            startSeq: startSeq,
+            startClientMsgId: startClientMsgId,
           );
 
       _hasMoreHistory = hasMore;

@@ -165,7 +165,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   Future<bool> loadHistoryMessages(
     String conversationId, {
     int count = 20,
-    int startSeq = 0,
+    String startClientMsgId = '',
   }) async {
     if (_client == null) return false;
 
@@ -173,16 +173,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       final result = await _client!.getHistoryMessages(
         req: GetHistoryMessagesReq(
           conversationId: conversationId,
-          startSeq: startSeq,
+          startClientMsgId: startClientMsgId,
           count: count,
         ),
       );
 
-      if (result.isEmpty) {
+      if (result.messages.isEmpty) {
         return false;
       }
 
-      final messages = result
+      final messages = result.messages
           .map((msg) => _msgDataToMessage(msg))
           .toList();
 
@@ -198,7 +198,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
       this.state = this.state.copyWith(messages: newMessages);
 
-      return result.length >= count;
+      return !result.isEnd;
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
       return false;
@@ -253,6 +253,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     final sendTime = msg.sendTime.toInt();
     final isSent = sendId == this.state.currentUserId;
 
+    MessageSendStatus? sendStatus;
+    if (isSent) {
+      sendStatus = MessageSendStatus.fromValue(msg.status);
+    }
+
     return Message(
       id: clientMsgId.isNotEmpty
           ? clientMsgId
@@ -264,6 +269,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           ? DateTime.fromMillisecondsSinceEpoch(sendTime)
           : DateTime.now(),
       isSent: isSent,
+      sendStatus: sendStatus,
       senderNickname: msg.senderNickname,
       senderFaceUrl: msg.senderFaceUrl,
     );
@@ -516,7 +522,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
               ? DateTime.fromMillisecondsSinceEpoch(sendTime.toInt())
               : DateTime.now(),
           isSent: true,
-          sendStatus: status == 2 ? MessageSendStatus.sent : MessageSendStatus.sending,
+          sendStatus: MessageSendStatus.fromValue(status),
           senderNickname: senderNickname,
           senderFaceUrl: senderFaceUrl,
         );
@@ -537,7 +543,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           if (index >= 0) {
             newMessages[entry.key] = List<Message>.from(list);
             newMessages[entry.key]![index] = list[index].copyWith(
-              sendStatus: MessageSendStatus.failed,
+              sendStatus: MessageSendStatus.sendFailed,
             );
             break;
           }

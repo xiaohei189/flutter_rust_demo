@@ -3,7 +3,7 @@ use crate::domain::error::types::SdkError;
 use crate::domain::model::message::MessageInfo;
 use crate::infra::database::models::LocalChatLog;
 use crate::sdk::client::types::{
-    DeleteMessagesReq, GetHistoryMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
+    DeleteMessagesReq, GetHistoryMessagesReq, GetHistoryMessagesResult, MarkMessagesAsReadReq, RevokeMessageReq,
     SearchMessagesReq, SendMessageReq,
 };
 use crate::sdk::client::OpenIMClient;
@@ -47,10 +47,21 @@ impl OpenIMClient {
         })
     }
 
-    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<Vec<MessageInfo>, SdkError> {
+    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
+        let start_time = if req.start_client_msg_id.is_empty() {
+            0
+        } else {
+            let msg = self.message_handler.message_dao()
+                .get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id)
+                .await?;
+            msg.map(|m| m.send_time).unwrap_or(0)
+        };
+
         let messages = self.message_handler.message_dao()
-            .get_by_conversation(&req.conversation_id, req.start_seq, req.count)
+            .get_by_conversation(&req.conversation_id, start_time, req.count)
             .await?;
+
+        let is_end = messages.len() < req.count as usize;
 
         let msg_info_list: Vec<MessageInfo> = messages.into_iter()
             .rev()
@@ -70,14 +81,21 @@ impl OpenIMClient {
                     seq: m.seq,
                     send_time: m.send_time,
                     create_time: m.create_time,
+                    status: m.status,
+                    is_read: m.is_read != 0,
                     group_id: m.group_id,
+                    attached_info: m.attached_info,
+                    ex: m.ex,
                     ..Default::default()
                 };
                 MessageInfo::from(msg_data)
             })
             .collect();
 
-        Ok(msg_info_list)
+        Ok(GetHistoryMessagesResult {
+            messages: msg_info_list,
+            is_end,
+        })
     }
 
     pub async fn revoke_message(&self, req: RevokeMessageReq) -> Result<()> {

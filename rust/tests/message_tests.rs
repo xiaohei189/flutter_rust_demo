@@ -526,18 +526,18 @@ async fn test_message_read_status_in_db() {
 
     let history_req = rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq {
         conversation_id: conv_id.clone(),
-        start_seq: 0,
+        start_client_msg_id: String::new(),
         count: 20,
     };
-    let messages = user2_sdk.get_history_messages(history_req).await;
-    assert!(messages.is_ok(), "查询历史消息失败: {:?}", messages.err());
+    let result = user2_sdk.get_history_messages(history_req).await;
+    assert!(result.is_ok(), "查询历史消息失败: {:?}", result.err());
 
-    let messages = messages.unwrap();
-    assert!(!messages.is_empty(), "历史消息不应为空");
+    let result = result.unwrap();
+    assert!(!result.messages.is_empty(), "历史消息不应为空");
 
-    let unread_count = messages.iter().filter(|m| !m.is_read).count();
-    let read_count = messages.iter().filter(|m| m.is_read).count();
-    assert_eq!(read_count, messages.len(), "所有消息应标记为已读，实际未读 {} 条，已读 {} 条", unread_count, read_count);
+    let unread_count = result.messages.iter().filter(|m| !m.is_read).count();
+    let read_count = result.messages.iter().filter(|m| m.is_read).count();
+    assert_eq!(read_count, result.messages.len(), "所有消息应标记为已读，实际未读 {} 条，已读 {} 条", unread_count, read_count);
 }
 
 #[tokio::test]
@@ -562,14 +562,17 @@ async fn test_get_history_messages() {
     let mut user2_events = user2_sdk.event_bus().subscribe();
 
     let message_count = 10;
+    let mut client_msg_ids = Vec::new();
     for i in 1..=message_count {
+        let cmid = format!("history_{}_{}", i, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+        client_msg_ids.push(cmid.clone());
         let req = SendMessageReq {
             recv_id: user2.user_id.clone(),
             group_id: String::new(),
             session_type: SessionType::SingleChat,
             content_type: ContentType::Text,
             content: format!("{{\"content\":\"历史消息测试 {}\"}}", i),
-            client_msg_id: Some(format!("history_{}_{}", i, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())),
+            client_msg_id: Some(cmid),
         };
         let result = user1_sdk.send_message(req).await;
         assert!(result.is_ok(), "发送消息 {} 失败: {:?}", i, result.err());
@@ -598,26 +601,27 @@ async fn test_get_history_messages() {
 
     let history_req = GetHistoryMessagesReq {
         conversation_id: conv_id.clone(),
-        start_seq: 0,
+        start_client_msg_id: String::new(),
         count: 5,
     };
     let page1 = user2_sdk.get_history_messages(history_req).await;
     assert!(page1.is_ok(), "查询历史消息失败");
     let page1 = page1.unwrap();
-    assert_eq!(page1.len(), 5, "第一页应返回5条消息，实际 {}", page1.len());
+    assert_eq!(page1.messages.len(), 5, "第一页应返回5条消息，实际 {}", page1.messages.len());
+    assert!(!page1.is_end, "第一页 should not be end");
 
-    let max_seq = page1.iter().map(|m| m.seq).max().unwrap_or(0);
+    let earliest_msg_id = &page1.messages.first().unwrap().client_msg_id;
     let history_req2 = GetHistoryMessagesReq {
         conversation_id: conv_id.clone(),
-        start_seq: max_seq,
+        start_client_msg_id: earliest_msg_id.clone(),
         count: 10,
     };
     let page2 = user2_sdk.get_history_messages(history_req2).await;
     assert!(page2.is_ok(), "分页查询失败");
     let page2 = page2.unwrap();
-    assert_eq!(page2.len(), 5, "第二页应返回剩余5条消息，实际 {}", page2.len());
+    assert_eq!(page2.messages.len(), 5, "第二页应返回剩余5条消息，实际 {}", page2.messages.len());
 
-    let all_texts: Vec<_> = page1.iter().chain(page2.iter())
+    let all_texts: Vec<_> = page1.messages.iter().chain(page2.messages.iter())
         .map(|m| {
             let content = &m.content;
             if content.contains("历史消息测试") {

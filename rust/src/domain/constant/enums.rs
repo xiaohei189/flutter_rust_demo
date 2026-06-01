@@ -143,3 +143,37 @@ impl From<GroupType> for i32 {
         g as i32
     }
 }
+
+
+/// 消息发送状态（对齐 Go SDK 的 MsgStatus）
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MessageSendStatus {
+    Sending = 1,
+    SendSuccess = 2,
+    SendFailed = 3,
+    HasDeleted = 4,
+}
+
+impl MessageSendStatus {
+    pub fn from_i32(v: i32) -> Self {
+        match v {
+            1 => MessageSendStatus::Sending,
+            2 => MessageSendStatus::SendSuccess,
+            3 => MessageSendStatus::SendFailed,
+            4 => MessageSendStatus::HasDeleted,
+            _ => MessageSendStatus::Sending,
+        }
+    }
+}
+
+impl From<MessageSendStatus> for i32 {
+    fn from(s: MessageSendStatus) -> i32 {
+        s as i32
+    }
+}
+
+impl sqlx::Type<sqlx::Sqlite> for MessageSendStatus {
+    fn type_info() -> <sqlx::Sqlite as sqlx::Database>::TypeInfo {
+        <i32 as sqlx::Type<sqlx::Sqlite>>::type_info()
+    }
+}

@@ -4,6 +4,7 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../../domain/constant/enums.dart';
+import '../../domain/model/message.dart';
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
@@ -30,18 +31,18 @@ class DeleteMessagesReq {
 
 class GetHistoryMessagesReq {
   final String conversationId;
-  final PlatformInt64 startSeq;
+  final String startClientMsgId;
   final PlatformInt64 count;
 
   const GetHistoryMessagesReq({
     required this.conversationId,
-    required this.startSeq,
+    required this.startClientMsgId,
     required this.count,
   });
 
   @override
   int get hashCode =>
-      conversationId.hashCode ^ startSeq.hashCode ^ count.hashCode;
+      conversationId.hashCode ^ startClientMsgId.hashCode ^ count.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -49,8 +50,26 @@ class GetHistoryMessagesReq {
       other is GetHistoryMessagesReq &&
           runtimeType == other.runtimeType &&
           conversationId == other.conversationId &&
-          startSeq == other.startSeq &&
+          startClientMsgId == other.startClientMsgId &&
           count == other.count;
+}
+
+class GetHistoryMessagesResult {
+  final List<MessageInfo> messages;
+  final bool isEnd;
+
+  const GetHistoryMessagesResult({required this.messages, required this.isEnd});
+
+  @override
+  int get hashCode => messages.hashCode ^ isEnd.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetHistoryMessagesResult &&
+          runtimeType == other.runtimeType &&
+          messages == other.messages &&
+          isEnd == other.isEnd;
 }
 
 class MarkMessagesAsReadReq {

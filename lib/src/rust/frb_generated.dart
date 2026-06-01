@@ -242,7 +242,7 @@ abstract class RustLibApi extends BaseApi {
     required List<String> groupIds,
   });
 
-  Future<List<MessageInfo>>
+  Future<GetHistoryMessagesResult>
   crateApiBridgeClientOpenImBridgeClientGetHistoryMessages({
     required OpenImBridgeClient that,
     required GetHistoryMessagesReq req,
@@ -1545,7 +1545,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<List<MessageInfo>>
+  Future<GetHistoryMessagesResult>
   crateApiBridgeClientOpenImBridgeClientGetHistoryMessages({
     required OpenImBridgeClient that,
     required GetHistoryMessagesReq req,
@@ -1567,7 +1567,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_message_info,
+          decodeSuccessData: sse_decode_get_history_messages_result,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -2850,8 +2850,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return GetHistoryMessagesReq(
       conversationId: dco_decode_String(arr[0]),
-      startSeq: dco_decode_i_64(arr[1]),
+      startClientMsgId: dco_decode_String(arr[1]),
       count: dco_decode_i_64(arr[2]),
+    );
+  }
+
+  @protected
+  GetHistoryMessagesResult dco_decode_get_history_messages_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return GetHistoryMessagesResult(
+      messages: dco_decode_list_message_info(arr[0]),
+      isEnd: dco_decode_bool(arr[1]),
     );
   }
 
@@ -3857,13 +3869,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_conversationId = sse_decode_String(deserializer);
-    var var_startSeq = sse_decode_i_64(deserializer);
+    var var_startClientMsgId = sse_decode_String(deserializer);
     var var_count = sse_decode_i_64(deserializer);
     return GetHistoryMessagesReq(
       conversationId: var_conversationId,
-      startSeq: var_startSeq,
+      startClientMsgId: var_startClientMsgId,
       count: var_count,
     );
+  }
+
+  @protected
+  GetHistoryMessagesResult sse_decode_get_history_messages_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_messages = sse_decode_list_message_info(deserializer);
+    var var_isEnd = sse_decode_bool(deserializer);
+    return GetHistoryMessagesResult(messages: var_messages, isEnd: var_isEnd);
   }
 
   @protected
@@ -5122,8 +5144,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.conversationId, serializer);
-    sse_encode_i_64(self.startSeq, serializer);
+    sse_encode_String(self.startClientMsgId, serializer);
     sse_encode_i_64(self.count, serializer);
+  }
+
+  @protected
+  void sse_encode_get_history_messages_result(
+    GetHistoryMessagesResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_message_info(self.messages, serializer);
+    sse_encode_bool(self.isEnd, serializer);
   }
 
   @protected
@@ -6129,7 +6161,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         groupIds: groupIds,
       );
 
-  Future<List<MessageInfo>> getHistoryMessages({
+  Future<GetHistoryMessagesResult> getHistoryMessages({
     required GetHistoryMessagesReq req,
   }) => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientGetHistoryMessages(

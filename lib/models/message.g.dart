@@ -47,7 +47,7 @@ const _$MessageTypeEnumMap = {
 
 const _$MessageSendStatusEnumMap = {
   MessageSendStatus.sending: 'sending',
-  MessageSendStatus.sent: 'sent',
-  MessageSendStatus.failed: 'failed',
-  MessageSendStatus.read: 'read',
+  MessageSendStatus.sendSuccess: 'sendSuccess',
+  MessageSendStatus.sendFailed: 'sendFailed',
+  MessageSendStatus.hasDeleted: 'hasDeleted',
 };

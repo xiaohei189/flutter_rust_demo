@@ -119,7 +119,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<List<GroupInfo>> getGroupsInfo({required List<String> groupIds});
 
-  Future<List<MessageInfo>> getHistoryMessages({
+  Future<GetHistoryMessagesResult> getHistoryMessages({
     required GetHistoryMessagesReq req,
   });
 

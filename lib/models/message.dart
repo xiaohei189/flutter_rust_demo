@@ -12,11 +12,22 @@ enum MessageType {
   file,
 }
 
+/// 消息发送状态（与 Rust SDK MessageSendStatus 对齐）
 enum MessageSendStatus {
-  sending,
-  sent,
-  failed,
-  read,
+  sending(1),      // 发送中
+  sendSuccess(2),  // 发送成功
+  sendFailed(3),   // 发送失败
+  hasDeleted(4);   // 已删除
+
+  final int value;
+  const MessageSendStatus(this.value);
+
+  factory MessageSendStatus.fromValue(int value) {
+    return values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => sending,
+    );
+  }
 }
 
 @freezed

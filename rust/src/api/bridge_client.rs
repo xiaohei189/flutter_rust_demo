@@ -79,7 +79,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<Vec<crate::domain::model::message::MessageInfo>> {
+    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<crate::sdk::client::types::GetHistoryMessagesResult> {
         self.inner.get_history_messages(req).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
