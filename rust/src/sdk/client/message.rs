@@ -237,11 +237,30 @@ impl OpenIMClient {
         let upload_result = self.file_uploader.upload_file(&source_path, &file_name, None).await?;
         let url = upload_result.url;
 
+        // 临时文件清理（对齐 Go SDK 上传后删除本地临时文件）
+        if let Err(e) = std::fs::remove_file(&source_path) {
+            debug!("删除临时文件失败: path={}, err={}", source_path, e);
+        }
+
         info!("媒体文件上传成功: url={}", url);
 
         if msg.content_type == 102 {
+            // 图片消息：设置 SourcePicture + BigPicture + SnapshotPicture（对齐 Go SDK api.go L356-374）
             let source_picture = json!({ "url": url });
-            value["sourcePicture"] = source_picture;
+            value["sourcePicture"] = source_picture.clone();
+            value["bigPicture"] = source_picture;
+
+            // 生成快照URL：追加 ?type=image&width=640&height=640
+            let snapshot_url = if url.contains('?') {
+                format!("{}&type=image&width=640&height=640", url)
+            } else {
+                format!("{}?type=image&width=640&height=640", url)
+            };
+            value["snapshotPicture"] = json!({
+                "width": 640,
+                "height": 640,
+                "url": snapshot_url,
+            });
         } else {
             value["sourceUrl"] = json!(url);
         }
