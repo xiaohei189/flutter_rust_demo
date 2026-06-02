@@ -30,10 +30,26 @@ impl OpenIMClient {
         msg.send_time = now;
         msg.status = MSG_STATUS_SENDING;
         msg.is_read = false;
+
+        // 发送者昵称/头像注入（对齐 Go SDK initBasicInfo api.go L985-1003）
+        if let Ok(user_info) = self.user.get_self_user_info().await {
+            msg.sender_nickname = user_info.nickname;
+            msg.sender_face_url = user_info.face_url;
+        }
+
         if msg.session_type == 1 {
             msg.recv_id = source_id.to_string();
         } else {
             msg.group_id = source_id.to_string();
+        }
+
+        // 发送前去重（对齐 Go SDK api.go L293-321）
+        let conversation_id = self.conversation_id_for_msg(&msg);
+        if let Ok(Some(old_msg)) = self.context.message_dao.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
+            if old_msg.status != MessageSendStatus::SendFailed as i32 {
+                return Err(SdkError::msg_repeated("Only failed messages can be resent"));
+            }
+            // 失败重试：允许继续发送
         }
 
         let resp = self.do_send_message(msg.clone()).await?;

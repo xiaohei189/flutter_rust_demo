@@ -26,6 +26,9 @@ pub enum SdkError {
     #[error("消息发送失败: {message}")]
     MessageSendFailed { message: String },
 
+    #[error("消息重复: {message}")]
+    MsgRepeated { message: String },
+
     #[error("鉴权失败: {message}")]
     AuthFailed { message: String },
 
@@ -97,6 +100,12 @@ impl SdkError {
 
     pub fn message_send(message: impl Into<String>) -> Self {
         SdkError::MessageSendFailed {
+            message: message.into(),
+        }
+    }
+
+    pub fn msg_repeated(message: impl Into<String>) -> Self {
+        SdkError::MsgRepeated {
             message: message.into(),
         }
     }

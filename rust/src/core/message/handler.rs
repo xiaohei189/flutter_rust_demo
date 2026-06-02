@@ -1,11 +1,13 @@
 use crate::domain::constant::types::content_type;
+use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::model::conversation::Conversation;
 use crate::domain::model::message::ReceivedMessage;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
+use crate::protocol::sdkws::MarkAsReadTips;
+use prost::Message as ProstMessage;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 
@@ -13,6 +15,7 @@ pub struct MessageHandler {
     message_dao: Arc<MessageDao>,
     conversation_dao: Arc<ConversationDao>,
     event_bus: Arc<EventBus>,
+    user_id: std::sync::Mutex<String>,
 }
 
 impl MessageHandler {
@@ -25,7 +28,12 @@ impl MessageHandler {
             message_dao,
             conversation_dao,
             event_bus,
+            user_id: std::sync::Mutex::new(String::new()),
         }
+    }
+
+    pub fn set_user_id(&self, user_id: String) {
+        *self.user_id.lock().unwrap() = user_id;
     }
 
     pub fn message_dao(&self) -> Arc<MessageDao> {
@@ -54,7 +62,26 @@ impl MessageHandler {
 
         info!("handling {} messages", messages.len());
 
-        let client_msg_ids: Vec<String> = messages.iter().map(|m| m.client_msg_id.clone()).collect();
+        // 已读回执处理（对齐 Go SDK read_drawing.go L227-284）
+        for msg in &messages {
+            if msg.content_type == HAS_READ_RECEIPT {
+                if let Err(e) = self.handle_read_receipt(msg).await {
+                    warn!("处理已读回执失败: {}", e);
+                }
+                continue;
+            }
+        }
+
+        // 过滤掉已读回执，只处理普通消息
+        let normal_messages: Vec<ReceivedMessage> = messages.into_iter()
+            .filter(|m| m.content_type != HAS_READ_RECEIPT)
+            .collect();
+
+        if normal_messages.is_empty() {
+            return Ok(());
+        }
+
+        let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
         let existing_logs = self.message_dao.get_by_client_msg_ids(&client_msg_ids).await.unwrap_or_default();
         let existing_map: std::collections::HashSet<String> = existing_logs.into_iter()
             .map(|l| l.client_msg_id)
@@ -63,7 +90,7 @@ impl MessageHandler {
         let mut store_logs: Vec<LocalChatLog> = Vec::new();
         let mut to_notify: Vec<ReceivedMessage> = Vec::new();
 
-        for msg in &messages {
+        for msg in &normal_messages {
             if !Self::should_store_message(msg.content_type) {
                 continue;
             }
@@ -173,7 +200,35 @@ impl MessageHandler {
         }
 
         info!("handled {} messages ({} inserted, {} duplicates skipped)", 
-            messages.len(), store_logs.len(), messages.len() - store_logs.len());
+            normal_messages.len(), store_logs.len(), normal_messages.len() - store_logs.len());
+        Ok(())
+    }
+
+    /// 已读回执处理（对齐 Go SDK read_drawing.go doReadDrawing L227-284）
+    async fn handle_read_receipt(&self, msg: &ReceivedMessage) -> Result<()> {
+        let tips = MarkAsReadTips::decode(msg.content.as_bytes())
+            .map_err(|e| SdkError::invalid_argument(format!("解析 MarkAsReadTips 失败: {}", e)))?;
+
+        let login_user_id = self.user_id.lock().unwrap().clone();
+
+        if tips.mark_as_read_user_id != login_user_id {
+            // 别人发来的已读回执：标记我发的消息为已读
+            if tips.seqs.is_empty() {
+                return Ok(());
+            }
+
+            if msg.session_type == 1 {
+                // 单聊：标记消息已读（对齐 Go SDK read_drawing.go L251-280）
+                self.message_dao.mark_as_read_by_seqs(&tips.conversation_id, &tips.seqs).await?;
+            }
+            // 群聊和通知会话：更新未读数（对齐 Go SDK doUnreadCount）
+            self.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
+        } else {
+            // 自己的已读回执（其他设备同步过来的）：更新未读数
+            self.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
+        }
+
+        debug!("处理已读回执: conversation_id={}, seqs={}", tips.conversation_id, tips.seqs.len());
         Ok(())
     }
 }

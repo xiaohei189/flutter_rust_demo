@@ -310,6 +310,7 @@ impl OpenIMClient {
         self.context.set_user_id(user_id.to_string());
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
+        self.message_handler.set_user_id(user_id.to_string());
         self.message_service.set_user_id(user_id.to_string());
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
 
