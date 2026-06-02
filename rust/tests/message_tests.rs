@@ -876,8 +876,10 @@ async fn test_reconnect_sync() {
 // 综合测试：发送各种消息类型给指定用户
 // ============================================================================
 
-/// 场景：发送各种支持的消息类型给 7226915075（手机号 17764008283）
-/// 覆盖：文本、Markdown、高级文本、表情
+/// 场景：发送各种支持的消息类型给固定用户（手机号 17764008283）
+/// 覆盖：文本(101)、Markdown(118)、高级文本(117)、表情(115)、图片(102)、文件(105)、名片(108)
+/// 发送用户：手机号 17764008284，接收用户：手机号 17764008283
+/// 自动登录/创建用户，自动确保好友关系
 #[tokio::test]
 async fn test_send_all_message_types() {
     let _ = tracing_subscriber::fmt()
@@ -885,46 +887,84 @@ async fn test_send_all_message_types() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MessageEntity;
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::{MessageEntity, MsgStruct};
     use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
 
-    let user1 = get_or_create_user1().await;
+    // 接收用户：手机号 17764008283
+    let receiver = login_or_register_user("17764008283", "Receiver_17764008283").await;
+    println!("接收用户: user_id={}, phone={}", receiver.user_id, receiver.phone);
 
-    let (im_token, _) = login_account(&user1).await.expect("用户1登录失败");
-    let sdk = create_sdk(&user1, &im_token).await;
+    // 发送用户：手机号 17764008284
+    let sender = login_or_register_user("17764008284", "Sender_17764008284").await;
+    println!("发送用户: user_id={}, phone={}", sender.user_id, sender.phone);
 
-    // 手机号 17764008283 对应的 user_id
-    let target_user_id = "7226915075";
+    // 登录并创建 SDK
+    let (receiver_im_token, _) = login_account(&receiver).await.expect("接收用户登录失败");
+    let (sender_im_token, _) = login_account(&sender).await.expect("发送用户登录失败");
+
+    let receiver_sdk = create_sdk(&receiver, &receiver_im_token).await;
+    let sender_sdk = create_sdk(&sender, &sender_im_token).await;
+
+    // 确保双方是好友
+    println!("\n=== 确保好友关系 ===");
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    let target_user_id = &receiver.user_id;
     let session_type = 1i32; // 单聊
 
-    println!("\n=== 开始发送各种消息类型到 {} ===\n", target_user_id);
+    // 创建临时测试文件
+    let tmp_dir = std::env::temp_dir().join("openim_test_files");
+    std::fs::create_dir_all(&tmp_dir).ok();
 
-    // 1. 文本消息
-    println!("[1/4] 发送文本消息...");
-    let result = sdk.send_text_message(
-        "这是一条文本消息测试",
+    // 创建一个 1x1 红色 PNG 图片（最小有效 PNG，约 67 字节）
+    let png_path = tmp_dir.join("test_image.png");
+    let png_bytes: Vec<u8> = vec![
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+        0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT chunk
+        0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
+        0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC,
+        0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, // IEND chunk
+        0x44, 0xAE, 0x42, 0x60, 0x82,
+    ];
+    std::fs::write(&png_path, &png_bytes).expect("创建测试图片失败");
+
+    // 创建一个测试文本文件
+    let txt_path = tmp_dir.join("test_document.txt");
+    std::fs::write(&txt_path, "这是一个测试文件的内容。\nHello from OpenIM Rust SDK test! 🎉\n").expect("创建测试文件失败");
+
+    println!("\n=== 开始发送各种消息类型到 {} (phone: {}) ===\n", target_user_id, receiver.phone);
+
+    let mut send_count = 0u32;
+
+    // 1. 文本消息 (content_type=101) —— 带 emoji
+    println!("[1/7] 发送带 emoji 的文本消息...");
+    let result = sender_sdk.send_text_message(
+        "这是一条文本消息测试 😊🎉👍❤️🔥",
         target_user_id,
         session_type,
     ).await;
     assert!(result.is_ok(), "发送文本消息失败: {:?}", result.err());
     let msg_data = result.unwrap();
-    println!("  文本消息发送成功: server_msg_id={}, send_time={}",
-        msg_data.server_msg_id, msg_data.send_time);
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
 
-    // 2. Markdown 消息
-    println!("[2/4] 发送Markdown消息...");
-    let result = sdk.send_markdown_message(
-        "# 测试标题\n这是一条 **Markdown** 消息\n- 列表项1\n- 列表项2",
+    // 2. Markdown 消息 (content_type=118)
+    println!("[2/7] 发送Markdown消息...");
+    let result = sender_sdk.send_markdown_message(
+        "# 测试标题 📝\n这是一条 **Markdown** 消息\n- 列表项1 ✅\n- 列表项2 ✅",
         target_user_id,
         session_type,
     ).await;
     assert!(result.is_ok(), "发送Markdown消息失败: {:?}", result.err());
     let msg_data = result.unwrap();
-    println!("  Markdown消息发送成功: server_msg_id={}, send_time={}",
-        msg_data.server_msg_id, msg_data.send_time);
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
 
-    // 3. 高级文本消息（带 @提及）
-    println!("[3/4] 发送高级文本消息...");
+    // 3. 高级文本消息 (content_type=117)
+    println!("[3/7] 发送高级文本消息...");
     let entities = vec![
         MessageEntity {
             entity_type: "At".to_string(),
@@ -934,45 +974,152 @@ async fn test_send_all_message_types() {
             ex: String::new(),
         },
     ];
-    let result = sdk.send_advanced_text_message(
-        "你好，这是一条高级文本消息",
+    let result = sender_sdk.send_advanced_text_message(
+        "你好 👋 这是一条高级文本消息",
         entities,
         target_user_id,
         session_type,
     ).await;
     assert!(result.is_ok(), "发送高级文本消息失败: {:?}", result.err());
     let msg_data = result.unwrap();
-    println!("  高级文本消息发送成功: server_msg_id={}, send_time={}",
-        msg_data.server_msg_id, msg_data.send_time);
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
 
-    // 4. 表情消息（通过 send_msg 直接发送）
-    println!("[4/4] 发送表情消息...");
-    let mut face_msg = rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct::create_face_message(1, "smile");
+    // 4. 表情消息 (content_type=115)
+    println!("[4/7] 发送表情消息...");
+    let mut face_msg = MsgStruct::create_face_message(1, "smile");
     face_msg.session_type = session_type;
-    let result = sdk.send_msg(face_msg, target_user_id, None).await;
+    let result = sender_sdk.send_msg(face_msg, target_user_id, None).await;
     assert!(result.is_ok(), "发送表情消息失败: {:?}", result.err());
     let msg_data = result.unwrap();
-    println!("  表情消息发送成功: server_msg_id={}, send_time={}",
-        msg_data.server_msg_id, msg_data.send_time);
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
 
-    println!("\n=== 所有消息类型发送完成 ===\n");
+    // 5. 图片消息 (content_type=102) —— 真实上传
+    println!("[5/7] 发送图片消息（真实上传）...");
+    let result = sender_sdk.send_image_message(
+        png_path.to_str().unwrap(),
+        target_user_id,
+        session_type,
+    ).await;
+    assert!(result.is_ok(), "发送图片消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
+
+    // 6. 文件消息 (content_type=105) —— 真实上传
+    println!("[6/7] 发送文件消息（真实上传）...");
+    let result = sender_sdk.send_file_message(
+        txt_path.to_str().unwrap(),
+        target_user_id,
+        session_type,
+    ).await;
+    assert!(result.is_ok(), "发送文件消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
+
+    // 7. 名片消息 (content_type=108)
+    println!("[7/7] 发送名片消息...");
+    let card_elem = rust_lib_flutter_rust_demo::domain::model::msg_struct::CardElem {
+        user_id: sender.user_id.clone(),
+        nickname: sender.nickname.clone(),
+        face_url: "https://example.com/avatar.jpg".to_string(),
+        ex: String::new(),
+    };
+    let mut card_msg = MsgStruct::create_card_message(card_elem);
+    card_msg.session_type = session_type;
+    let result = sender_sdk.send_msg(card_msg, target_user_id, None).await;
+    assert!(result.is_ok(), "发送名片消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  OK: server_msg_id={}, send_time={}", msg_data.server_msg_id, msg_data.send_time);
+    send_count += 1;
+
+    println!("\n=== 全部 {} 种消息类型发送完成 ===\n", send_count);
 
     // 等待消息同步
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    // 5. 验证历史消息
+    // 验证历史消息
     println!("[验证] 查询历史消息...");
-    let history = sdk.get_history_messages(GetHistoryMessagesReq {
-        conversation_id: make_conversation_id(&user1.user_id, target_user_id),
+    let history = sender_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: make_conversation_id(&sender.user_id, target_user_id),
         start_client_msg_id: String::new(),
-        count: 20,
+        count: 50,
     }).await;
     assert!(history.is_ok(), "查询历史消息失败: {:?}", history.err());
     let history = history.unwrap();
-    println!("  历史消息数量: {}", history.messages.len());
-    for (i, msg) in history.messages.iter().enumerate() {
-        println!("  [{}] content_type={}, content={:.50}..., seq={}",
-            i + 1, msg.content_type, msg.content, msg.seq);
+    println!("  本次发送消息数: {}", send_count);
+    println!("  历史消息总数: {}", history.messages.len());
+
+    // 统计各 content_type 数量
+    let mut type_counts = std::collections::HashMap::new();
+    for msg in &history.messages {
+        *type_counts.entry(msg.content_type).or_insert(0) += 1;
     }
-    assert!(history.messages.len() >= 4, "历史消息应至少有4条，实际{}", history.messages.len());
+    println!("  消息类型分布:");
+    let mut types: Vec<_> = type_counts.iter().collect();
+    types.sort_by_key(|(k, _)| *k);
+    for (ct, count) in types {
+        let name = match *ct {
+            101 => "文本",
+            102 => "图片",
+            105 => "文件",
+            108 => "名片",
+            115 => "表情",
+            117 => "高级文本",
+            118 => "Markdown",
+            _ => "其他",
+        };
+        println!("    content_type={}: {} 条 ({})", ct, count, name);
+    }
+
+    // 验证本次发送的 7 种消息都在历史中
+    assert!(history.messages.iter().any(|m| m.content_type == 101), "缺少文本消息(101)");
+    assert!(history.messages.iter().any(|m| m.content_type == 118), "缺少Markdown消息(118)");
+    assert!(history.messages.iter().any(|m| m.content_type == 117), "缺少高级文本消息(117)");
+    assert!(history.messages.iter().any(|m| m.content_type == 115), "缺少表情消息(115)");
+    assert!(history.messages.iter().any(|m| m.content_type == 102), "缺少图片消息(102)");
+    assert!(history.messages.iter().any(|m| m.content_type == 105), "缺少文件消息(105)");
+    assert!(history.messages.iter().any(|m| m.content_type == 108), "缺少名片消息(108)");
+    println!("\n  全部 7 种消息类型验证通过!");
+}
+
+/// 场景：验证消息同步机制 —— 登录后等待同步完成，检查是否拉取到服务端所有消息
+#[tokio::test]
+async fn test_message_sync_from_server() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    let receiver = login_or_register_user("17764008283", "Receiver_17764008283").await;
+    let sender = login_or_register_user("17764008284", "Sender_17764008284").await;
+
+    let (receiver_im_token, _) = login_account(&receiver).await.expect("接收用户登录失败");
+    let receiver_sdk = create_sdk(&receiver, &receiver_im_token).await;
+
+    // 等待异步消息同步完成
+    println!("等待消息同步完成...");
+    tokio::time::sleep(Duration::from_secs(10)).await;
+
+    // 查询历史消息，应该包含 Web 端发送的消息
+    let history = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: make_conversation_id(&receiver.user_id, &sender.user_id),
+        start_client_msg_id: String::new(),
+        count: 100,
+    }).await;
+
+    assert!(history.is_ok(), "查询历史消息失败: {:?}", history.err());
+    let history = history.unwrap();
+    println!("同步后历史消息数量: {}", history.messages.len());
+    for (i, msg) in history.messages.iter().enumerate() {
+        println!("  [{}] content_type={}, seq={}, content={:.80}...",
+            i + 1, msg.content_type, msg.seq, msg.content);
+    }
+
+    // 服务端应该有更多消息（包括 Web 端发的）
+    assert!(history.messages.len() > 4, "同步后应有超过4条消息（含Web端消息），实际{}", history.messages.len());
 }

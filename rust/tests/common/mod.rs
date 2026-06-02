@@ -1,11 +1,16 @@
 use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
 use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 pub const API_BASE_URL: &str = "http://localhost:10002";
 pub const WS_URL: &str = "ws://localhost:10001";
 pub const CHAT_API_BASE_URL: &str = "http://localhost:10008";
 pub const DEFAULT_VERIFICATION_CODE: &str = "666666";
+
+// 固定测试手机号
+pub const SENDER_PHONE: &str = "17764008284";   // 发送方
+pub const RECEIVER_PHONE: &str = "17764008283"; // 接收方
 
 #[derive(Clone, Debug)]
 pub struct TestAccount {
@@ -157,31 +162,26 @@ pub async fn get_or_create_user1() -> TestAccount {
         std::env::var("OPENIM_TEST_USER1_ID"),
         std::env::var("OPENIM_TEST_USER1_PHONE"),
     ) {
-        println!("使用固定测试账号1: user_id={}, phone={}", user_id, phone);
+        println!("使用固定测试账号1(发送方): user_id={}, phone={}", user_id, phone);
         return TestAccount {
             user_id,
             phone,
-            nickname: "TestUser1".to_string(),
+            nickname: "TestSender".to_string(),
             im_token: None,
             chat_token: None,
         };
     }
 
-    println!("注册新测试账号1...");
-    let phone = generate_virtual_phone("user1");
-    let nickname = format!("TestUser1_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let cert = register_user(&phone, &nickname).await.expect("注册失败");
+    let phone = SENDER_PHONE;
+    let nickname = "TestSender";
+    println!("使用固定发送方手机号: {}", phone);
+    let account = login_or_register_user(phone, nickname).await;
+    println!("发送方账号: user_id={}, phone={}", account.user_id, phone);
 
-    println!("  export OPENIM_TEST_USER1_ID={}", cert.user_id);
+    println!("  export OPENIM_TEST_USER1_ID={}", account.user_id);
     println!("  export OPENIM_TEST_USER1_PHONE={}", phone);
 
-    TestAccount {
-        user_id: cert.user_id,
-        phone,
-        nickname,
-        im_token: Some(cert.im_token),
-        chat_token: Some(cert.chat_token),
-    }
+    account
 }
 
 pub async fn get_or_create_user2() -> TestAccount {
@@ -189,31 +189,26 @@ pub async fn get_or_create_user2() -> TestAccount {
         std::env::var("OPENIM_TEST_USER2_ID"),
         std::env::var("OPENIM_TEST_USER2_PHONE"),
     ) {
-        println!("使用固定测试账号2: user_id={}, phone={}", user_id, phone);
+        println!("使用固定测试账号2(接收方): user_id={}, phone={}", user_id, phone);
         return TestAccount {
             user_id,
             phone,
-            nickname: "TestUser2".to_string(),
+            nickname: "TestReceiver".to_string(),
             im_token: None,
             chat_token: None,
         };
     }
 
-    println!("注册新测试账号2...");
-    let phone = generate_virtual_phone("user2");
-    let nickname = format!("TestUser2_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let cert = register_user(&phone, &nickname).await.expect("注册失败");
+    let phone = RECEIVER_PHONE;
+    let nickname = "TestReceiver";
+    println!("使用固定接收方手机号: {}", phone);
+    let account = login_or_register_user(phone, nickname).await;
+    println!("接收方账号: user_id={}, phone={}", account.user_id, phone);
 
-    println!("  export OPENIM_TEST_USER2_ID={}", cert.user_id);
+    println!("  export OPENIM_TEST_USER2_ID={}", account.user_id);
     println!("  export OPENIM_TEST_USER2_PHONE={}", phone);
 
-    TestAccount {
-        user_id: cert.user_id,
-        phone,
-        nickname,
-        im_token: Some(cert.im_token),
-        chat_token: Some(cert.chat_token),
-    }
+    account
 }
 
 pub async fn create_sdk(account: &TestAccount, im_token: &str) -> OpenIMClient {
@@ -274,4 +269,122 @@ pub fn build_quote_content() -> String {
 
 pub fn build_face_content() -> String {
     r#"{"index":1,"data":"smile"}"#.to_string()
+}
+
+// ============================================================================
+// 固定手机号用户辅助函数
+// ============================================================================
+
+/// 使用指定手机号登录用户，如果用户不存在则自动注册
+pub async fn login_or_register_user(phone: &str, nickname: &str) -> TestAccount {
+    // 尝试登录
+    match login_user(phone).await {
+        Ok(cert) => {
+            println!("用户已存在，登录成功: phone={}, user_id={}", phone, cert.user_id);
+            TestAccount {
+                user_id: cert.user_id,
+                phone: phone.to_string(),
+                nickname: nickname.to_string(),
+                im_token: Some(cert.im_token),
+                chat_token: Some(cert.chat_token),
+            }
+        }
+        Err(e) => {
+            println!("用户不存在（{}），正在注册: phone={}", e, phone);
+            let reg = register_user(phone, nickname).await.expect("注册用户失败");
+            TestAccount {
+                user_id: reg.user_id,
+                phone: phone.to_string(),
+                nickname: nickname.to_string(),
+                im_token: Some(reg.im_token),
+                chat_token: Some(reg.chat_token),
+            }
+        }
+    }
+}
+
+/// 确保两个用户是好友关系
+/// 如果还不是好友，则 user1_sdk 向 user2 发送好友申请，user2_sdk 接受
+pub async fn ensure_friends(
+    user1_sdk: &OpenIMClient,
+    user1_id: &str,
+    user2_sdk: &OpenIMClient,
+    user2_id: &str,
+) {
+    // 先同步好友列表，确保 is_friend 检查准确
+    user1_sdk.sync_friends().await.ok();
+    user2_sdk.sync_friends().await.ok();
+
+    // 双向检查
+    let user1_is_friend_of_user2 = user1_sdk.is_friend(user2_id).await;
+    let user2_is_friend_of_user1 = user2_sdk.is_friend(user1_id).await;
+
+    if user1_is_friend_of_user2 && user2_is_friend_of_user1 {
+        println!("双方已经是好友: {} <-> {}", user1_id, user2_id);
+        return;
+    }
+
+    // user1 向 user2 发送好友申请
+    println!("{} 向 {} 发送好友申请...", user1_id, user2_id);
+    let add_result = user1_sdk.add_friend(user2_id, Some("测试加好友")).await;
+    match &add_result {
+        Ok(_) => {
+            println!("好友申请发送成功");
+        }
+        Err(e) => {
+            // errCode 1304 = RelationshipAlreadyError（已经是好友）
+            let msg = format!("{:?}", e);
+            if msg.contains("1304") || msg.contains("RelationshipAlready") {
+                println!("双方已经是好友（服务器返回 RelationshipAlready）");
+                return;
+            }
+            println!("发送好友申请失败: {:?}", e);
+            // 等一下再检查
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            user1_sdk.sync_friends().await.ok();
+            let still_not = !user1_sdk.is_friend(user2_id).await;
+            if still_not {
+                panic!("好友申请失败且仍不是好友: {:?}", e);
+            }
+            println!("实际上已经是好友了");
+            return;
+        }
+    }
+
+    // 等待好友申请送达
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // user2 查看待处理的好友申请并接受
+    println!("{} 正在处理好友申请...", user2_id);
+    let apply_list = user2_sdk.get_friend_apply_list().await;
+    match apply_list {
+        Ok(apply_infos) => {
+            for apply in apply_infos {
+                if apply.user_id == user1_id && apply.handle_result == 0 {
+                    println!("{} 接受 {} 的好友申请", user2_id, user1_id);
+                    let accept_result = user2_sdk
+                        .accept_friend_application(user1_id, Some("同意加好友"))
+                        .await;
+                    assert!(
+                        accept_result.is_ok(),
+                        "接受好友申请失败: {:?}",
+                        accept_result.err()
+                    );
+                    // 等待好友关系同步
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    println!("好友关系建立成功: {} <-> {}", user1_id, user2_id);
+                    return;
+                }
+            }
+            println!("未找到来自 {} 的待处理好友申请，可能已经是好友", user1_id);
+        }
+        Err(e) => {
+            println!("获取好友申请列表失败: {:?}，可能已经是好友", e);
+        }
+    }
+
+    // 最终验证
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    let final_check = user1_sdk.is_friend(user2_id).await;
+    println!("最终好友关系检查: {} -> {} = {}", user1_id, user2_id, final_check);
 }
