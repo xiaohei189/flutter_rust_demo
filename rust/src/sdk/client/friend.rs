@@ -8,6 +8,10 @@ impl OpenIMClient {
         self.friend.get_friend_list().await
     }
 
+    pub async fn sync_friends(&self) -> Result<()> {
+        self.friend.sync_friends().await
+    }
+
     pub async fn add_friend(&self, user_id: &str, req_msg: Option<&str>) -> Result<()> {
         self.friend.add_friend(user_id.to_string(), req_msg.map(|s| s.to_string())).await
     }

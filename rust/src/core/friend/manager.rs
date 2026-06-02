@@ -29,19 +29,34 @@ pub struct Pagination {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FriendServerInfo {
+pub struct FriendUserInfo {
     #[serde(rename = "userID")]
     pub user_id: String,
     pub nickname: String,
     #[serde(rename = "faceURL")]
     pub face_url: String,
-    pub gender: i32,
-    pub remark: String,
-    #[serde(rename = "createTime")]
-    pub create_time: i64,
-    #[serde(rename = "addSource")]
-    pub add_source: i32,
     pub ex: String,
+    #[serde(rename = "createTime", default)]
+    pub create_time: i64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FriendServerInfo {
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    pub remark: String,
+    #[serde(rename = "createTime", default)]
+    pub create_time: i64,
+    #[serde(rename = "friendUser")]
+    pub friend_user: FriendUserInfo,
+    #[serde(rename = "addSource", default)]
+    pub add_source: i32,
+    #[serde(rename = "operatorUserID", default)]
+    pub operator_user_id: String,
+    #[serde(default)]
+    pub ex: String,
+    #[serde(rename = "isPinned", default)]
+    pub is_pinned: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -54,6 +69,8 @@ pub struct GetFriendListResp {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AddFriendReq {
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
     #[serde(rename = "toUserID")]
     pub to_user_id: String,
     #[serde(rename = "reqMsg")]
@@ -219,7 +236,9 @@ impl FriendManager {
     }
 
     pub async fn add_friend(&self, user_id: String, req_msg: Option<String>) -> Result<()> {
+        let from_user_id = self.user_id.read().await.clone();
         let req = AddFriendReq {
+            from_user_id,
             to_user_id: user_id.clone(),
             req_msg,
         };
@@ -350,14 +369,14 @@ impl FriendManager {
 
 fn server_to_friend(s: FriendServerInfo) -> FriendInfo {
     FriendInfo {
-        user_id: s.user_id,
-        nickname: s.nickname,
-        face_url: s.face_url,
-        gender: s.gender,
+        user_id: s.friend_user.user_id,
+        nickname: s.friend_user.nickname,
+        face_url: s.friend_user.face_url,
+        gender: 0,
         remark: s.remark,
         create_time: s.create_time,
         add_source: s.add_source.to_string(),
-        ex: s.ex,
+        ex: s.friend_user.ex,
     }
 }
 
@@ -368,14 +387,20 @@ mod tests {
     #[test]
     fn test_server_to_friend_conversion() {
         let server = FriendServerInfo {
-            user_id: "user_123".to_string(),
-            nickname: "Test Friend".to_string(),
-            face_url: "https://example.com/avatar.jpg".to_string(),
-            gender: 1,
+            owner_user_id: "owner_123".to_string(),
             remark: "My Friend".to_string(),
             create_time: 1234567890,
+            friend_user: FriendUserInfo {
+                user_id: "user_123".to_string(),
+                nickname: "Test Friend".to_string(),
+                face_url: "https://example.com/avatar.jpg".to_string(),
+                ex: String::new(),
+                create_time: 0,
+            },
             add_source: 1,
+            operator_user_id: "owner_123".to_string(),
             ex: String::new(),
+            is_pinned: false,
         };
 
         let domain = server_to_friend(server);
@@ -402,12 +427,14 @@ mod tests {
     #[test]
     fn test_add_friend_req_serialization() {
         let req = AddFriendReq {
+            from_user_id: "user_123".to_string(),
             to_user_id: "user_456".to_string(),
             req_msg: Some("Hello!".to_string()),
         };
 
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("toUserID"));
+        assert!(json.contains("fromUserID"));
         assert!(json.contains("Hello!"));
     }
 
