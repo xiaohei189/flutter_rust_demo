@@ -6,118 +6,15 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::infra::database::{ConversationDao, MessageDao, SyncVersionDao};
-use prost::Message;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock, Semaphore};
 use tracing::{debug, error, info, warn};
 
-#[derive(Clone, Serialize, Deserialize, Message)]
-pub struct SeqRange {
-    #[prost(string, tag = "1")]
-    #[serde(rename = "conversationID")]
-    pub conversation_id: String,
-    #[prost(int64, tag = "2")]
-    pub begin: i64,
-    #[prost(int64, tag = "3")]
-    pub end: i64,
-    #[prost(int64, tag = "4")]
-    pub num: i64,
-}
-
-#[derive(Clone, Serialize, Deserialize, Message)]
-pub struct PullMessageBySeqsReq {
-    #[prost(string, tag = "1")]
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[prost(message, repeated, tag = "2")]
-    #[serde(rename = "seqRanges")]
-    pub seq_ranges: Vec<SeqRange>,
-    #[prost(enumeration = "PullOrder", tag = "3")]
-    #[serde(default)]
-    pub order: i32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, prost::Enumeration)]
-#[repr(i32)]
-pub enum PullOrder {
-    Asc = 0,
-    Desc = 1,
-}
-
-#[derive(Clone, Serialize, Deserialize, Message, PartialEq)]
-pub struct PullMsgs {
-    #[prost(message, repeated, tag = "1")]
-    #[serde(rename = "Msgs", default)]
-    pub msgs: Vec<ServerMsgData>,
-    #[prost(bool, tag = "2")]
-    #[serde(rename = "isEnd", default)]
-    pub is_end: bool,
-    #[prost(int64, tag = "3")]
-    #[serde(rename = "endSeq", default)]
-    pub end_seq: i64,
-}
-
-#[derive(Clone, Serialize, Deserialize, Message, PartialEq)]
-pub struct ServerMsgData {
-    #[prost(string, tag = "1")]
-    #[serde(rename = "serverMsgID")]
-    pub server_msg_id: String,
-    #[prost(string, tag = "2")]
-    #[serde(rename = "clientMsgID")]
-    pub client_msg_id: String,
-    #[prost(string, tag = "3")]
-    #[serde(rename = "sendID")]
-    pub send_id: String,
-    #[prost(string, tag = "4")]
-    #[serde(rename = "recvID")]
-    pub recv_id: String,
-    #[prost(int32, tag = "5")]
-    #[serde(rename = "senderPlatformID")]
-    pub sender_platform_id: i32,
-    #[prost(string, tag = "6")]
-    #[serde(rename = "senderNickname")]
-    pub sender_nick_name: String,
-    #[prost(string, tag = "7")]
-    #[serde(rename = "senderFaceUrl")]
-    pub sender_face_url: String,
-    #[prost(int32, tag = "8")]
-    #[serde(rename = "sessionType")]
-    pub session_type: i32,
-    #[prost(int32, tag = "9")]
-    #[serde(rename = "msgFrom")]
-    pub msg_from: i32,
-    #[prost(int32, tag = "10")]
-    #[serde(rename = "contentType")]
-    pub content_type: i32,
-    #[prost(string, tag = "11")]
-    pub content: String,
-    #[prost(int64, tag = "12")]
-    pub seq: i64,
-    #[prost(int64, tag = "13")]
-    #[serde(rename = "sendTime")]
-    pub send_time: i64,
-    #[prost(int64, tag = "14")]
-    #[serde(rename = "createTime")]
-    pub create_time: i64,
-    #[prost(string, tag = "15")]
-    #[serde(rename = "conversationID")]
-    pub conversation_id: String,
-    #[prost(string, tag = "16")]
-    #[serde(rename = "groupID")]
-    pub group_id: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Message, PartialEq)]
-pub struct PullMessageBySeqsResp {
-    #[prost(map = "string, message", tag = "1")]
-    #[serde(default)]
-    pub msgs: HashMap<String, PullMsgs>,
-    #[prost(map = "string, message", tag = "2")]
-    #[serde(rename = "notificationMsgs", default)]
-    pub notification_msgs: HashMap<String, PullMsgs>,
-}
+// 直接使用 openim-protocol crate 中的 pb 生成类型
+use openim_protocol::sdkws::{
+    MsgData, PullMsgs, PullMessageBySeqsResp, SeqRange, PullMessageBySeqsReq, PullOrder,
+};
 
 pub struct MessageSyncer {
     connection: Arc<ConnectionManager>,
@@ -519,18 +416,20 @@ impl MessageSyncer {
 
         for (conv_id, pull_msgs) in msgs {
             for msg_data in &pull_msgs.msgs {
+                // MsgData.content 是 bytes (Vec<u8>)，需要转为 String
+                let content = String::from_utf8_lossy(&msg_data.content).to_string();
                 let received_msg = ReceivedMessage {
                     server_msg_id: msg_data.server_msg_id.clone(),
                     client_msg_id: msg_data.client_msg_id.clone(),
                     send_id: msg_data.send_id.clone(),
                     recv_id: msg_data.recv_id.clone(),
                     sender_platform_id: msg_data.sender_platform_id,
-                    sender_nick_name: msg_data.sender_nick_name.clone(),
+                    sender_nick_name: msg_data.sender_nickname.clone(),
                     sender_face_url: msg_data.sender_face_url.clone(),
                     session_type: msg_data.session_type,
                     msg_from: msg_data.msg_from,
                     content_type: msg_data.content_type,
-                    content: msg_data.content.clone(),
+                    content,
                     seq: msg_data.seq,
                     send_time: msg_data.send_time,
                     create_time: msg_data.create_time,
@@ -577,9 +476,10 @@ impl MessageSyncer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use prost::Message;
 
     #[test]
-    fn test_seq_range_serialization() {
+    fn test_seq_range_protobuf_encode_decode() {
         let range = SeqRange {
             conversation_id: "conv_1".to_string(),
             begin: 1,
@@ -587,13 +487,20 @@ mod tests {
             num: 50,
         };
 
-        let json = serde_json::to_string(&range).unwrap();
-        assert!(json.contains("conversationID"));
-        assert!(json.contains("100"));
+        let mut buf = Vec::new();
+        range.encode(&mut buf).unwrap();
+        assert!(!buf.is_empty());
+
+        let decoded = SeqRange::decode(&buf[..]).unwrap();
+        assert_eq!(decoded.conversation_id, "conv_1");
+        assert_eq!(decoded.begin, 1);
+        assert_eq!(decoded.end, 100);
+        assert_eq!(decoded.num, 50);
     }
 
     #[test]
-    fn test_pull_request_serialization() {
+    fn test_pull_request_protobuf_encode() {
+        use openim_protocol::sdkws::PullOrder;
         let req = PullMessageBySeqsReq {
             user_id: "user_123".to_string(),
             seq_ranges: vec![SeqRange {
@@ -602,21 +509,16 @@ mod tests {
                 end: 100,
                 num: 50,
             }],
-            order: 0,
+            order: PullOrder::Asc as i32,
         };
 
-        let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("userID"));
-        assert!(json.contains("seqRanges"));
-        assert!(json.contains("user_123"));
-    }
+        let mut buf = Vec::new();
+        req.encode(&mut buf).unwrap();
+        assert!(!buf.is_empty());
 
-    #[test]
-    fn test_server_msg_data_deserialization() {
-        let json = r#"{"serverMsgID":"srv_1","clientMsgID":"cli_1","sendID":"user_1","recvID":"user_2","senderPlatformID":1,"senderNickname":"Test","senderFaceUrl":"","sessionType":1,"msgFrom":100,"contentType":101,"content":"{\"text\":\"hello\"}","seq":1,"sendTime":1000,"createTime":1000,"conversationID":"conv_1","groupID":""}"#;
-        let msg: ServerMsgData = serde_json::from_str(json).unwrap();
-        assert_eq!(msg.client_msg_id, "cli_1");
-        assert_eq!(msg.seq, 1);
-        assert_eq!(msg.conversation_id, "conv_1");
+        let decoded = PullMessageBySeqsReq::decode(&buf[..]).unwrap();
+        assert_eq!(decoded.user_id, "user_123");
+        assert_eq!(decoded.seq_ranges.len(), 1);
+        assert_eq!(decoded.seq_ranges[0].conversation_id, "conv_1");
     }
 }
