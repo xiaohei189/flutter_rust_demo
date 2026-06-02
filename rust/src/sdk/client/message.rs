@@ -308,6 +308,27 @@ impl OpenIMClient {
         self.send_msg(msg, source_id, None).await
     }
 
+    pub async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let path = std::path::Path::new(file_path);
+        let file_name = path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let upload_result = self.file_uploader.upload_file(file_path, &file_name, None).await
+            .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
+        let file_elem = crate::domain::model::msg_struct::FileElem {
+            file_path: file_path.to_string(),
+            uuid: upload_result.file_id.clone(),
+            source_url: upload_result.url,
+            file_name,
+            file_size: upload_result.size as i64,
+            file_type: upload_result.content_type,
+        };
+        let mut msg = MsgStruct::create_file_message(file_elem);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
         info!("get_history_messages: conversation_id={}, start_client_msg_id={}, count={}",
               req.conversation_id, req.start_client_msg_id, req.count);

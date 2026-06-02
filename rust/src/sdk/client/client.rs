@@ -313,6 +313,7 @@ impl OpenIMClient {
         self.message_handler.set_user_id(user_id.to_string());
         self.message_service.set_user_id(user_id.to_string());
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
+        self.file_uploader.set_login_user_id(user_id.to_string());
 
         // 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
         self.cleanup_sending_messages().await;
