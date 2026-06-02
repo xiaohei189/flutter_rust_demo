@@ -1,116 +1,60 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{INITIATE_UPLOAD, COMPLETE_UPLOAD};
+use crate::infra::http::routes::{INITIATE_FORM_DATA, COMPLETE_FORM_DATA};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::fs;
-use tokio::sync::RwLock;
 use tracing::info;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InitiateMultipartUploadReq {
-    pub hash: String,
+/// POST /object/initiate_form_data 请求
+#[derive(Clone, Debug, Serialize)]
+pub struct InitiateFormDataReq {
+    pub name: String,
     pub size: i64,
-    #[serde(rename = "partSize")]
-    pub part_size: i64,
-    #[serde(rename = "maxParts")]
-    pub max_parts: i32,
-    pub cause: String,
-    pub name: String,
     #[serde(rename = "contentType")]
     pub content_type: String,
+    pub group: String,
+    pub millisecond: i64,
+    pub absolute: bool,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SignPart {
-    #[serde(rename = "partNumber")]
-    pub part_number: i32,
+/// POST /object/initiate_form_data 响应
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct InitiateFormDataResp {
+    pub id: String,
     pub url: String,
-    pub query: Vec<QueryParam>,
-    pub header: Vec<HeaderParam>,
+    pub file: String,
+    #[serde(default)]
+    pub header: Option<Vec<KeyValue>>,
+    #[serde(rename = "formData")]
+    #[serde(default)]
+    pub form_data: HashMap<String, String>,
+    pub expires: i64,
+    #[serde(rename = "successCodes")]
+    #[serde(default)]
+    pub success_codes: Vec<i32>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct QueryParam {
+#[derive(Clone, Debug, Deserialize)]
+pub struct KeyValue {
     pub key: String,
     pub values: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct HeaderParam {
-    pub key: String,
-    pub values: Vec<String>,
+/// POST /object/complete_form_data 请求
+#[derive(Clone, Debug, Serialize)]
+pub struct CompleteFormDataReq {
+    pub id: String,
+    #[serde(rename = "urlPrefix")]
+    pub url_prefix: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AuthSignParts {
+/// POST /object/complete_form_data 响应
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct CompleteFormDataResp {
     pub url: String,
-    pub query: Vec<QueryParam>,
-    pub header: Vec<HeaderParam>,
-    pub parts: Vec<SignPart>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UploadInfo {
-    #[serde(rename = "uploadID")]
-    pub upload_id: String,
-    #[serde(rename = "partSize")]
-    pub part_size: i64,
-    #[serde(rename = "sign")]
-    pub sign: AuthSignParts,
-    #[serde(rename = "expireTime")]
-    pub expire_time: i64,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct InitiateMultipartUploadResp {
-    #[serde(default)]
-    pub url: String,
-    pub upload: Option<UploadInfo>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AuthSignReq {
-    #[serde(rename = "uploadID")]
-    pub upload_id: String,
-    #[serde(rename = "partNumbers")]
-    pub part_numbers: Vec<i32>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AuthSignResp {
-    pub url: String,
-    pub query: Vec<QueryParam>,
-    pub header: Vec<HeaderParam>,
-    pub parts: Vec<SignPart>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CompleteMultipartUploadReq {
-    #[serde(rename = "uploadID")]
-    pub upload_id: String,
-    pub parts: Vec<String>,
-    pub name: String,
-    #[serde(rename = "contentType")]
-    pub content_type: String,
-    pub cause: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct CompleteMultipartUploadResp {
-    #[serde(default)]
-    pub url: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct PartLimitResp {
-    #[serde(rename = "minPartSize", default)]
-    pub min_part_size: i64,
-    #[serde(rename = "maxPartSize", default)]
-    pub max_part_size: i64,
-    #[serde(rename = "maxNumSize", default)]
-    pub max_num_size: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -124,24 +68,22 @@ pub struct UploadResult {
 
 pub struct FileUploader {
     http_client: Arc<HttpApiClient>,
-    login_user_id: Arc<RwLock<String>>,
-    part_limit: Arc<RwLock<Option<PartLimitResp>>>,
+    login_user_id: std::sync::RwLock<String>,
 }
 
 impl FileUploader {
     pub fn new(http_client: Arc<HttpApiClient>) -> Self {
         Self {
             http_client,
-            login_user_id: Arc::new(RwLock::new(String::new())),
-            part_limit: Arc::new(RwLock::new(None)),
+            login_user_id: std::sync::RwLock::new(String::new()),
         }
     }
 
     pub fn set_login_user_id(&self, user_id: String) {
-        let mut guard = self.login_user_id.try_write().unwrap();
-        *guard = user_id;
+        *self.login_user_id.write().unwrap() = user_id;
     }
 
+    /// 使用 form-data 接口上传文件（适用于中小文件）
     pub async fn upload_file(&self, file_path: &str, name: &str, content_type: Option<String>) -> Result<UploadResult> {
         let path = Path::new(file_path);
         if !path.exists() {
@@ -152,79 +94,82 @@ impl FileUploader {
             .map_err(|e| SdkError::unknown(format!("读取文件失败: {}", e)))?;
 
         let file_size = file_data.len() as i64;
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown");
+        let detected_content_type = content_type.unwrap_or_else(|| {
+            self.detect_content_type(path.file_name().and_then(|n| n.to_str()).unwrap_or(""))
+        });
 
-        let detected_content_type = content_type.unwrap_or_else(|| self.detect_content_type(file_name));
-
-        let user_id = self.login_user_id.read().await.clone();
-        let prefix = format!("{}/", user_id);
-        let full_name = if name.starts_with(&prefix) {
+        // 服务端要求文件名以用户 ID 为前缀
+        let user_id = self.login_user_id.read().unwrap().clone();
+        let prefixed_name = if user_id.is_empty() {
             name.to_string()
         } else {
-            format!("{}{}", prefix, name)
+            format!("{}/{}", user_id, name)
         };
 
-        let file_md5 = Self::calculate_md5(&file_data);
-        let part_md5 = file_md5.clone();
+        info!("开始上传文件: name={}, size={}, type={}", prefixed_name, file_size, detected_content_type);
 
-        info!("开始上传文件: name={}, size={}, md5={}", full_name, file_size, file_md5);
-
-        let part_size = self.get_part_size(file_size).await?;
-        let part_num = self.get_part_num(file_size, part_size);
-
-        let req = InitiateMultipartUploadReq {
-            hash: part_md5.clone(),
+        // 1. 调用 initiate_form_data 获取上传信息
+        let req = InitiateFormDataReq {
+            name: prefixed_name,
             size: file_size,
-            part_size,
-            max_parts: std::cmp::min(20, part_num as i32),
-            cause: String::new(),
-            name: full_name.clone(),
             content_type: detected_content_type.clone(),
+            group: String::new(),
+            millisecond: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis() as i64,
+            absolute: false,
         };
 
-        let resp: InitiateMultipartUploadResp = self.http_client.post(INITIATE_UPLOAD, &req).await?;
+        let resp: InitiateFormDataResp = self.http_client.post(INITIATE_FORM_DATA, &req).await?;
+        info!("initiate_form_data 响应: id={}, url={}", resp.id, resp.url);
 
-        if resp.upload.is_none() {
-            info!("文件已存在，直接返回 URL");
-            return Ok(UploadResult {
-                url: resp.url,
-                file_id: part_md5,
-                size: file_size as u64,
-                content_type: detected_content_type,
-            });
+        // 2. 使用 multipart/form-data 上传文件
+        let client = reqwest::Client::new();
+        let mut form = reqwest::multipart::Form::new();
+
+        // 添加 form_data 中的隐藏字段
+        for (key, value) in &resp.form_data {
+            form = form.text(key.clone(), value.clone());
         }
 
-        let upload_info = resp.upload.unwrap();
+        // 添加文件字段（file 字段名从响应中获取）
+        let part = reqwest::multipart::Part::bytes(file_data)
+            .file_name(name.to_string())
+            .mime_str(&detected_content_type)
+            .map_err(|e| SdkError::unknown(format!("MIME 类型错误: {}", e)))?;
+        form = form.part(resp.file.clone(), part);
 
-        if part_num <= 1 {
-            let url = self.upload_single_part(&file_data, &upload_info).await?;
-            return Ok(UploadResult {
-                url,
-                file_id: part_md5,
-                size: file_size as u64,
-                content_type: detected_content_type,
-            });
+        let upload_url = resp.url.clone();
+        info!("上传到: {}", upload_url);
+
+        let upload_resp = client
+            .post(&upload_url)
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| SdkError::unknown(format!("上传请求失败: {}", e)))?;
+
+        let status = upload_resp.status();
+        let resp_body = upload_resp.text().await.unwrap_or_default();
+        info!("上传响应: status={}, body={:.200}", status, resp_body);
+
+        if !status.is_success() {
+            return Err(SdkError::unknown(format!("上传失败, 状态码: {}, body: {}", status, resp_body)));
         }
 
-        let part_md5s = self.calculate_part_md5s(&file_data, part_size, part_num);
-
-        let complete_req = CompleteMultipartUploadReq {
-            upload_id: upload_info.upload_id,
-            parts: part_md5s,
-            name: full_name,
-            content_type: detected_content_type.clone(),
-            cause: String::new(),
+        // 3. 调用 complete_form_data 获取最终 URL
+        let complete_req = CompleteFormDataReq {
+            id: resp.id,
+            url_prefix: String::new(),
         };
 
-        let complete_resp: CompleteMultipartUploadResp = self.http_client.post(COMPLETE_UPLOAD, &complete_req).await?;
-
-        info!("文件上传成功: url={}", complete_resp.url);
+        let complete_resp: CompleteFormDataResp = self.http_client.post(COMPLETE_FORM_DATA, &complete_req).await?;
+        info!("文件上传完成: url={}", complete_resp.url);
 
         Ok(UploadResult {
-            url: complete_resp.url,
-            file_id: part_md5,
+            url: complete_resp.url.clone(),
+            file_id: complete_resp.url,
             size: file_size as u64,
             content_type: detected_content_type,
         })
@@ -236,7 +181,8 @@ impl FileUploader {
             .and_then(|n| n.to_str())
             .unwrap_or("image.jpg")
             .to_string();
-        self.upload_file(file_path, &name, Some("image/jpeg".to_string())).await
+        let content_type = self.detect_content_type(&name);
+        self.upload_file(file_path, &name, Some(content_type)).await
     }
 
     pub async fn upload_video(&self, file_path: &str) -> Result<UploadResult> {
@@ -255,93 +201,6 @@ impl FileUploader {
             .unwrap_or("audio.mp3")
             .to_string();
         self.upload_file(file_path, &name, Some("audio/mpeg".to_string())).await
-    }
-
-    async fn get_part_size(&self, file_size: i64) -> Result<i64> {
-        let mut guard = self.part_limit.write().await;
-        if guard.is_none() {
-            let resp: PartLimitResp = self.http_client.post("/object/part_limit", &()).await?;
-            *guard = Some(resp);
-        }
-
-        let limit = guard.as_ref().unwrap();
-
-        if file_size <= 0 {
-            return Err(SdkError::unknown("文件大小必须大于 0"));
-        }
-
-        let max_total = limit.max_part_size * limit.max_num_size;
-        if file_size > max_total {
-            return Err(SdkError::unknown(format!("文件大小不能超过 {} 字节", max_total)));
-        }
-
-        if file_size <= limit.min_part_size * limit.max_num_size {
-            Ok(limit.min_part_size)
-        } else {
-            let part_size = file_size / limit.max_num_size;
-            if file_size % limit.max_num_size != 0 {
-                Ok(part_size + 1)
-            } else {
-                Ok(part_size)
-            }
-        }
-    }
-
-    fn get_part_num(&self, file_size: i64, part_size: i64) -> usize {
-        let part_num = (file_size / part_size) as usize;
-        if file_size % part_size != 0 {
-            part_num + 1
-        } else {
-            part_num
-        }
-    }
-
-    fn calculate_md5(data: &[u8]) -> String {
-        use md5::{Md5, Digest};
-        let mut hasher = Md5::new();
-        hasher.update(data);
-        format!("{:x}", hasher.finalize())
-    }
-
-    fn calculate_part_md5s(&self, data: &[u8], part_size: i64, part_num: usize) -> Vec<String> {
-        use md5::{Md5, Digest};
-        let mut part_md5s = Vec::with_capacity(part_num);
-
-        for i in 0..part_num {
-            let start = (i as i64 * part_size) as usize;
-            let end = std::cmp::min(start + part_size as usize, data.len());
-            let part_data = &data[start..end];
-
-            let mut hasher = Md5::new();
-            hasher.update(part_data);
-            let md5 = format!("{:x}", hasher.finalize());
-            part_md5s.push(md5);
-        }
-
-        part_md5s
-    }
-
-    async fn upload_single_part(&self, data: &[u8], upload_info: &UploadInfo) -> Result<String> {
-        let sign = &upload_info.sign;
-        let url = if sign.parts.is_empty() {
-            &sign.url
-        } else {
-            &sign.parts[0].url
-        };
-
-        let client = reqwest::Client::new();
-        let resp = client
-            .put(url)
-            .body(data.to_vec())
-            .send()
-            .await
-            .map_err(|e| SdkError::unknown(format!("上传失败: {}", e)))?;
-
-        if !resp.status().is_success() {
-            return Err(SdkError::unknown(format!("上传失败, 状态码: {}", resp.status())));
-        }
-
-        Ok(upload_info.sign.url.clone())
     }
 
     fn detect_content_type(&self, file_name: &str) -> String {
@@ -383,44 +242,5 @@ mod tests {
         assert_eq!(uploader.detect_content_type("audio.mp3"), "audio/mpeg");
         assert_eq!(uploader.detect_content_type("document.pdf"), "application/pdf");
         assert_eq!(uploader.detect_content_type("unknown.xyz"), "application/octet-stream");
-    }
-
-    #[test]
-    fn test_calculate_md5() {
-        let data = b"hello world";
-        let md5 = FileUploader::calculate_md5(data);
-        assert_eq!(md5.len(), 32);
-    }
-
-    #[test]
-    fn test_get_part_num() {
-        let http_client = Arc::new(HttpApiClient::new(
-            "http://example.com".to_string(),
-            "token".to_string(),
-            "op_id".to_string(),
-        ));
-        let uploader = FileUploader::new(http_client);
-
-        assert_eq!(uploader.get_part_num(1000, 500), 2);
-        assert_eq!(uploader.get_part_num(1000, 1000), 1);
-        assert_eq!(uploader.get_part_num(1001, 1000), 2);
-    }
-
-    #[test]
-    fn test_initiate_multipart_upload_req_serialization() {
-        let req = InitiateMultipartUploadReq {
-            hash: "abc123".to_string(),
-            size: 1000000,
-            part_size: 100000,
-            max_parts: 10,
-            cause: String::new(),
-            name: "user123/test.jpg".to_string(),
-            content_type: "image/jpeg".to_string(),
-        };
-
-        let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("partSize"));
-        assert!(json.contains("maxParts"));
-        assert!(json.contains("contentType"));
     }
 }

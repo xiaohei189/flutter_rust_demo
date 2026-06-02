@@ -64,8 +64,13 @@ pub const DELETE_MSGS: &str = "/msg/delete_msgs";
 pub const MARK_MSGS_AS_READ: &str = "/msg/mark_msgs_as_read";
 pub const GET_SERVER_TIME: &str = "/msg/get_server_time";
 
-pub const INITIATE_UPLOAD: &str = "/third/initiate_upload";
-pub const COMPLETE_UPLOAD: &str = "/third/complete_upload";
+pub const INITIATE_MULTIPART_UPLOAD: &str = "/object/initiate_multipart_upload";
+pub const AUTH_SIGN: &str = "/object/auth_sign";
+pub const COMPLETE_MULTIPART_UPLOAD: &str = "/object/complete_multipart_upload";
+pub const ACCESS_URL: &str = "/object/access_url";
+pub const INITIATE_FORM_DATA: &str = "/object/initiate_form_data";
+pub const COMPLETE_FORM_DATA: &str = "/object/complete_form_data";
+pub const PART_LIMIT: &str = "/object/part_limit";
 pub const UPLOAD_LOGS: &str = "/third/upload_logs";
 pub const GET_FCM_TOKEN: &str = "/third/get_fcm_token";
 pub const SET_FCM_TOKEN: &str = "/third/set_fcm_token";
