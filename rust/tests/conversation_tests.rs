@@ -266,7 +266,7 @@ async fn test_unread_count_after_message() {
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("A 向 B 发送消息...");
-    sdk_a.send_text_message("Hello from A to B", &cert_b.user_id, "", 1).await.expect("发送消息失败");
+    sdk_a.send_text_message("Hello from A to B", &cert_b.user_id, 1).await.expect("发送消息失败");
 
     println!("等待推送处理...");
     tokio::time::sleep(Duration::from_secs(5)).await;

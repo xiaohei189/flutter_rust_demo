@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::infra::database::models::LocalChatLog;
+use crate::protocol::sdkws::MsgData;
 
 /// 生成消息 ID（对齐 Go SDK utils.GetMsgID）
 /// Go: MD5(nanoTime + sendID + random)
@@ -460,6 +462,178 @@ impl MsgStruct {
         let elem = MarkdownTextElem { content: text.to_string() };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.markdown_text_elem = Some(elem);
+        msg
+    }
+
+    /// 根据 content_type 从 content 字段恢复 typed elem（对齐 Go SDK PopulateMsgStructByContentType）
+    pub fn populate_elem_by_content_type(&mut self) {
+        let content = self.content.clone();
+        match self.content_type {
+            101 => { let _ = serde_json::from_str::<TextElem>(&content).map(|e| { self.text_elem = Some(e); }); }
+            102 => { let _ = serde_json::from_str::<PictureElem>(&content).map(|e| { self.picture_elem = Some(e); }); }
+            103 => { let _ = serde_json::from_str::<SoundElem>(&content).map(|e| { self.sound_elem = Some(e); }); }
+            104 => { let _ = serde_json::from_str::<VideoElem>(&content).map(|e| { self.video_elem = Some(e); }); }
+            105 => { let _ = serde_json::from_str::<FileElem>(&content).map(|e| { self.file_elem = Some(e); }); }
+            106 => { let _ = serde_json::from_str::<AtTextElem>(&content).map(|e| { self.at_text_elem = Some(e); }); }
+            107 => { let _ = serde_json::from_str::<MergeElem>(&content).map(|e| { self.merge_elem = Some(e); }); }
+            108 => { let _ = serde_json::from_str::<CardElem>(&content).map(|e| { self.card_elem = Some(e); }); }
+            109 => { let _ = serde_json::from_str::<LocationElem>(&content).map(|e| { self.location_elem = Some(e); }); }
+            110 => { let _ = serde_json::from_str::<CustomElem>(&content).map(|e| { self.custom_elem = Some(e); }); }
+            114 => { let _ = serde_json::from_str::<QuoteElem>(&content).map(|e| { self.quote_elem = Some(e); }); }
+            115 => { let _ = serde_json::from_str::<FaceElem>(&content).map(|e| { self.face_elem = Some(e); }); }
+            117 => { let _ = serde_json::from_str::<AdvancedTextElem>(&content).map(|e| { self.advanced_text_elem = Some(e); }); }
+            118 => { let _ = serde_json::from_str::<MarkdownTextElem>(&content).map(|e| { self.markdown_text_elem = Some(e); }); }
+            _ => {}
+        }
+    }
+
+    /// MsgStruct → MsgData（对齐 Go SDK MsgStructToMsgData）
+    /// 基础字段映射，content 转为 bytes
+    pub fn to_msg_data(&self) -> MsgData {
+        MsgData::from(self)
+    }
+
+    /// MsgData → MsgStruct（对齐 Go SDK MsgDataToMsgStruct）
+    /// 基础字段映射，bytes 转回 content，自动恢复 typed elem
+    pub fn from_msg_data(data: &MsgData) -> Self {
+        MsgStruct::from(data)
+    }
+
+    /// MsgStruct → LocalChatLog（对齐 Go SDK MsgStructToLocalChatLog）
+    /// 根据 ContentType 序列化 elem 到 content 字段（string 存储）
+    pub fn to_local_chat_log(&self) -> LocalChatLog {
+        LocalChatLog::from(self)
+    }
+
+    /// LocalChatLog → MsgStruct（对齐 Go SDK LocalChatLogToMsgStruct）
+    /// 基础字段映射，自动恢复 typed elem
+    pub fn from_local_chat_log(log: &LocalChatLog) -> Self {
+        MsgStruct::from(log)
+    }
+}
+
+/// MsgStruct → MsgData（对齐 Go SDK MsgStructToMsgData）
+impl From<&MsgStruct> for MsgData {
+    fn from(msg: &MsgStruct) -> Self {
+        MsgData {
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            group_id: msg.group_id.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nickname: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: msg.content.as_bytes().to_vec(),
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            status: msg.status,
+            is_read: msg.is_read,
+            options: std::collections::HashMap::new(),
+            offline_push_info: None,
+            at_user_id_list: vec![],
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
+        }
+    }
+}
+
+/// MsgData → MsgStruct（对齐 Go SDK MsgDataToMsgStruct）
+impl From<&MsgData> for MsgStruct {
+    fn from(data: &MsgData) -> Self {
+        let mut msg = MsgStruct {
+            send_id: data.send_id.clone(),
+            recv_id: data.recv_id.clone(),
+            group_id: data.group_id.clone(),
+            client_msg_id: data.client_msg_id.clone(),
+            server_msg_id: data.server_msg_id.clone(),
+            sender_platform_id: data.sender_platform_id,
+            sender_nickname: data.sender_nickname.clone(),
+            sender_face_url: data.sender_face_url.clone(),
+            session_type: data.session_type,
+            msg_from: data.msg_from,
+            content_type: data.content_type,
+            content: String::from_utf8_lossy(&data.content).to_string(),
+            seq: data.seq,
+            send_time: data.send_time,
+            create_time: data.create_time,
+            status: data.status,
+            is_read: data.is_read,
+            attached_info: data.attached_info.clone(),
+            ex: data.ex.clone(),
+            ..Default::default()
+        };
+        msg.populate_elem_by_content_type();
+        msg
+    }
+}
+
+/// MsgStruct → LocalChatLog（对齐 Go SDK MsgStructToLocalChatLog）
+impl From<&MsgStruct> for LocalChatLog {
+    fn from(msg: &MsgStruct) -> Self {
+        let status = match msg.status {
+            0 | 1 | 2 => msg.status,
+            3 | 4 | 5 => 3,
+            10 => 10,
+            _ => 1,
+        };
+        LocalChatLog {
+            conversation_id: String::new(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: msg.content.clone(),
+            is_read: msg.is_read as i32,
+            status,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
+            local_ex: msg.local_ex.clone(),
+            group_id: msg.group_id.clone(),
+        }
+    }
+}
+
+/// LocalChatLog → MsgStruct（对齐 Go SDK LocalChatLogToMsgStruct）
+impl From<&LocalChatLog> for MsgStruct {
+    fn from(log: &LocalChatLog) -> Self {
+        let mut msg = MsgStruct {
+            client_msg_id: log.client_msg_id.clone(),
+            server_msg_id: log.server_msg_id.clone(),
+            session_type: log.session_type,
+            msg_from: log.msg_from,
+            send_id: log.send_id.clone(),
+            recv_id: log.recv_id.clone(),
+            group_id: log.group_id.clone(),
+            content_type: log.content_type,
+            content: log.content.clone(),
+            send_time: log.send_time,
+            create_time: log.create_time,
+            seq: log.seq,
+            status: log.status,
+            is_read: log.is_read != 0,
+            attached_info: log.attached_info.clone(),
+            ex: log.ex.clone(),
+            local_ex: log.local_ex.clone(),
+            sender_platform_id: log.sender_platform_id,
+            sender_nickname: log.sender_nick_name.clone(),
+            sender_face_url: log.sender_face_url.clone(),
+            ..Default::default()
+        };
+        msg.populate_elem_by_content_type();
         msg
     }
 }

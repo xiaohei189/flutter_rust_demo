@@ -147,6 +147,21 @@ impl MessageDao {
         Ok(())
     }
 
+    pub async fn update_after_send_success(&self, client_msg_id: &str, server_msg_id: &str, send_time: i64) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_chat_logs SET server_msg_id = ?, send_time = ?, create_time = ?, status = ? WHERE client_msg_id = ?"
+        )
+        .bind(server_msg_id)
+        .bind(send_time)
+        .bind(send_time)
+        .bind(MessageSendStatus::SendSuccess as i32)
+        .bind(client_msg_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("update after send success: {}", e)))?;
+        Ok(())
+    }
+
     pub async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64) -> Result<()> {
         sqlx::query(
             "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq <= ? AND seq > 0 AND send_id != ?",

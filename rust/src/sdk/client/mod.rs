@@ -22,7 +22,6 @@ use crate::core::file::uploader::FileUploader;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::message::handler::MessageHandler;
-use crate::core::message::sender::MessageSender;
 use crate::core::message::service::MessageService;
 use crate::core::message::syncer::MessageSyncer;
 use crate::core::online::manager::OnlineStatusManager;
@@ -66,7 +65,6 @@ pub struct OpenIMClient {
     pub(crate) friend: Arc<FriendManager>,
     pub(crate) group: Arc<GroupManager>,
     pub(crate) conversation: Arc<ConversationManager>,
-    pub(crate) message_sender: Arc<MessageSender>,
     pub(crate) message_syncer: Arc<MessageSyncer>,
     pub(crate) message_handler: Arc<MessageHandler>,
     pub(crate) conversation_syncer: Arc<ConversationSyncer>,
