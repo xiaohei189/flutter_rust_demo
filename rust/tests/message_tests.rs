@@ -871,3 +871,108 @@ async fn test_reconnect_sync() {
         offline_msg_count, offline_in_db, new_msg_count
     );
 }
+
+// ============================================================================
+// 综合测试：发送各种消息类型给指定用户
+// ============================================================================
+
+/// 场景：发送各种支持的消息类型给 7226915075（手机号 17764008283）
+/// 覆盖：文本、Markdown、高级文本、表情
+#[tokio::test]
+async fn test_send_all_message_types() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MessageEntity;
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    let user1 = get_or_create_user1().await;
+
+    let (im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let sdk = create_sdk(&user1, &im_token).await;
+
+    // 手机号 17764008283 对应的 user_id
+    let target_user_id = "7226915075";
+    let session_type = 1i32; // 单聊
+
+    println!("\n=== 开始发送各种消息类型到 {} ===\n", target_user_id);
+
+    // 1. 文本消息
+    println!("[1/4] 发送文本消息...");
+    let result = sdk.send_text_message(
+        "这是一条文本消息测试",
+        target_user_id,
+        session_type,
+    ).await;
+    assert!(result.is_ok(), "发送文本消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  文本消息发送成功: server_msg_id={}, send_time={}",
+        msg_data.server_msg_id, msg_data.send_time);
+
+    // 2. Markdown 消息
+    println!("[2/4] 发送Markdown消息...");
+    let result = sdk.send_markdown_message(
+        "# 测试标题\n这是一条 **Markdown** 消息\n- 列表项1\n- 列表项2",
+        target_user_id,
+        session_type,
+    ).await;
+    assert!(result.is_ok(), "发送Markdown消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  Markdown消息发送成功: server_msg_id={}, send_time={}",
+        msg_data.server_msg_id, msg_data.send_time);
+
+    // 3. 高级文本消息（带 @提及）
+    println!("[3/4] 发送高级文本消息...");
+    let entities = vec![
+        MessageEntity {
+            entity_type: "At".to_string(),
+            offset: 0,
+            length: 2,
+            url: target_user_id.to_string(),
+            ex: String::new(),
+        },
+    ];
+    let result = sdk.send_advanced_text_message(
+        "你好，这是一条高级文本消息",
+        entities,
+        target_user_id,
+        session_type,
+    ).await;
+    assert!(result.is_ok(), "发送高级文本消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  高级文本消息发送成功: server_msg_id={}, send_time={}",
+        msg_data.server_msg_id, msg_data.send_time);
+
+    // 4. 表情消息（通过 send_msg 直接发送）
+    println!("[4/4] 发送表情消息...");
+    let mut face_msg = rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct::create_face_message(1, "smile");
+    face_msg.session_type = session_type;
+    let result = sdk.send_msg(face_msg, target_user_id, None).await;
+    assert!(result.is_ok(), "发送表情消息失败: {:?}", result.err());
+    let msg_data = result.unwrap();
+    println!("  表情消息发送成功: server_msg_id={}, send_time={}",
+        msg_data.server_msg_id, msg_data.send_time);
+
+    println!("\n=== 所有消息类型发送完成 ===\n");
+
+    // 等待消息同步
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 5. 验证历史消息
+    println!("[验证] 查询历史消息...");
+    let history = sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: make_conversation_id(&user1.user_id, target_user_id),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await;
+    assert!(history.is_ok(), "查询历史消息失败: {:?}", history.err());
+    let history = history.unwrap();
+    println!("  历史消息数量: {}", history.messages.len());
+    for (i, msg) in history.messages.iter().enumerate() {
+        println!("  [{}] content_type={}, content={:.50}..., seq={}",
+            i + 1, msg.content_type, msg.content, msg.seq);
+    }
+    assert!(history.messages.len() >= 4, "历史消息应至少有4条，实际{}", history.messages.len());
+}

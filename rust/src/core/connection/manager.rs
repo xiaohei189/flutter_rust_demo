@@ -313,13 +313,8 @@ impl ConnectionManager {
                                         info!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}", 
                                             resp.req_identifier, resp.err_code);
                                         
-                                        if resp.err_code != 0 {
-                                            warn!("server error response: err_code={}, err_msg={}", resp.err_code, resp.err_msg);
-                                            continue;
-                                        }
-                                        
                                         // 根据 req_identifier 判断消息类型
-                                        if resp.req_identifier == crate::domain::constant::types::ws_push_identifier::PUSH_MSG {
+                                        if resp.req_identifier == crate::domain::constant::types::ws_push_identifier::PUSH_MSG && resp.err_code == 0 {
                                             // data 字段是 protobuf 编码的 PushMessages
                                             match PushMessages::decode(resp.data.as_slice()) {
                                                 Ok(push_msgs) => {
@@ -351,14 +346,22 @@ impl ConnectionManager {
                                                 }
                                             }
                                         } else {
-                                            // 其他类型的响应，通知等待的通道
+                                            // RPC 响应（包括错误响应），通知等待的通道
+                                            if resp.err_code != 0 {
+                                                warn!("server error response: req_identifier={}, err_code={}, err_msg={}", 
+                                                    resp.req_identifier, resp.err_code, resp.err_msg);
+                                            }
                                             if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
                                                 let _ = req.tx.send(resp);
                                             }
                                         }
                                     }
                                     Err(e) => {
-                                        warn!("failed to decode binary message as OpenIMResp: {}", e);
+                                        // 打印前200字节的hex用于调试编码格式
+                                        let preview: String = data.iter().take(200)
+                                            .map(|b| format!("{:02x}", b))
+                                            .collect();
+                                        warn!("failed to decode binary message as OpenIMResp: {}, len={}, hex[0:100]={}", e, data.len(), &preview[..preview.len().min(200)]);
                                     }
                                 }
                             }

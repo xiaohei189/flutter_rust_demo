@@ -10,14 +10,19 @@ where
     let value = serde_json::Value::deserialize(deserializer)?;
     match value {
         serde_json::Value::String(s) => {
-            BASE64.decode(&s).map_err(|e| Error::custom(format!("base64 decode failed: {}", e)))
+            if s.is_empty() {
+                Ok(Vec::new())
+            } else {
+                BASE64.decode(&s).map_err(|e| Error::custom(format!("base64 decode failed: {}", e)))
+            }
         }
         serde_json::Value::Array(arr) => {
             arr.into_iter()
                 .map(|v| v.as_u64().map(|n| n as u8).ok_or_else(|| Error::custom("expected u8")))
                 .collect()
         }
-        _ => Err(Error::custom("expected string or array")),
+        serde_json::Value::Null => Ok(Vec::new()),
+        _ => Err(Error::custom("expected string, array, or null")),
     }
 }
 
