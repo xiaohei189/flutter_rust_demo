@@ -14,10 +14,22 @@
 - `rust/src/im/http_client/` - HTTP API 客户端
 - `rust/src/im/model/` - 数据模型
 
-### 相关项目参考
-- `D:\workspace\openim-sdk-core` - Go 版本 SDK（参考实现）
-- `D:\workspace\openim-flutter-demo` - 官方 Flutter 示例
-- `D:\workspace\open-im-server` - IM 服务源码
+### 相关项目参考（均在 `../` 同级目录下）
+
+#### 核心参考
+- `../protocol` - OpenIM 协议定义项目（**数据模型与 API 契约的权威来源**，包含 `.proto` 和生成的 `.rs`/`.pb.go`）
+- `../openim-sdk-core` - Go 版本 SDK（**IM 核心逻辑参考实现**，所有业务逻辑对齐此项目）
+- `../open-im-server` - IM 服务端源码（消息路由、群组、推送等后端服务）
+
+#### 官方 Demo / 客户端示例
+- `../openim-flutter-demo` - 官方 Flutter 示例（登录/注册/聊天 UI 参考）
+- `../openim-electron-demo` - 官方 Electron 桌面端示例
+- `../open-im-android-demo` - 官方 Android 端示例
+
+#### 基础设施与配套服务
+- `../openim-docker` - Docker Compose 部署配置（一键启动所有服务）
+- `../chat` - 账号中间件服务（注册/登录/验证码/Token 管理，含 chat-api 和 chat-rpc）
+- `../chat-server` - WebSocket 网关服务（长连接管理、消息分发、频道/消息推送）
 
 ---
 
@@ -277,22 +289,35 @@ rust/src/
 
 ## 核心开发原则（强制）
 
-### 1. 参考 Go SDK 实现
+### 1. 参考 Protocol 协议定义
 
-当需要实现 IM 相关功能时，**必须参考 `D:\workspace\openim-sdk-core` 中的对应实现**。核心原则：
+`../protocol` 是 OpenIM 所有服务的**协议定义权威来源**，包含：
+- `.proto` 文件 — gRPC/Protobuf 接口和消息定义
+- `*.rs` 文件 — 已生成的 Rust 数据结构（如 `openim.msg.rs`、`openim.sdkws.rs` 等）
+- `*.pb.go` 文件 — 已生成的 Go 数据结构
+
+**核心原则：**
+- **Rust 侧的数据模型必须与 protocol 中的 `.rs` 文件对齐**（字段名、类型、枚举值）
+- 当不确定某个数据结构的字段含义时，**优先查看 protocol 中的 `.proto` 定义**
+- 如果 Rust 侧需要新增数据模型，必须先确认 protocol 中对应的 proto 定义是否已存在
+- protocol 中已生成的 Rust 结构体（如 `sdkws.rs`、`msg.rs`）可直接参考，确保字段一致性
+
+### 2. 参考 Go SDK 实现
+
+当需要实现 IM 相关功能时，**必须参考 `../openim-sdk-core` 中的对应实现**。核心原则：
 
 - **不能自己随意创建逻辑** — 所有 IM 核心逻辑（消息收发、去重、乐观更新、会话同步、事件处理等）必须严格对齐 Go SDK
 - **Go SDK 是唯一权威参考** — 当遇到设计决策时，优先查看 Go SDK 如何处理，直接移植而非重新设计
 - **数据模型、字段含义、事件类型**必须与 Go SDK 保持一致
 
-### 2. IM 核心逻辑在 Rust SDK 中实现
+### 3. IM 核心逻辑在 Rust SDK 中实现
 
 - **核心 IM 功能必须下沉到 Rust SDK**（`rust/src/sdk/` 和 `rust/src/core/`）
 - **Flutter/Dart 层只做 UI 展示和状态绑定**，不扩散 IM 业务逻辑
 - **消息去重、clientMsgId 匹配、乐观更新、发送状态管理**等逻辑必须在 Rust SDK 中完成
 - Flutter 侧只负责：调用 FFI 函数、监听事件流、更新 UI 状态
 
-### 3. 禁止事项
+### 4. 禁止事项
 
 - 禁止在 Flutter 层创建 IM 核心业务逻辑（如消息去重、发送队列、clientMsgId 生成等）
 - 禁止脱离 Go SDK 自行设计 IM 相关逻辑
@@ -317,7 +342,7 @@ flutter run
 
 ### 2. 参考 Go SDK 实现
 
-当需要实现新功能时，参考 `D:\workspace\openim-sdk-core` 中的对应实现：
+当需要实现新功能时，参考 `../openim-sdk-core` 中的对应实现：
 - 方法签名保持一致
 - 错误处理逻辑对齐
 - 数据模型字段对应
@@ -330,4 +355,5 @@ flutter run
 - [ ] 异步函数是否正确处理 `RwLock` 生命周期
 - [ ] 错误是否使用 `anyhow::Result` 返回
 - [ ] 新增数据库迁移是否正确命名
+- [ ] 数据模型是否与 protocol 中的 `.proto` / `.rs` 定义对齐
 - [ ] 模型是否与 Go SDK 对齐
