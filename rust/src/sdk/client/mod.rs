@@ -1,4 +1,4 @@
-mod lifecycle;
+mod client;
 mod message;
 mod conversation;
 mod friend;
@@ -7,7 +7,7 @@ mod online_status;
 pub mod types;
 mod user;
 
-pub use self::lifecycle::*;
+pub use self::client::*;
 pub use self::message::*;
 pub use self::conversation::*;
 pub use self::friend::*;

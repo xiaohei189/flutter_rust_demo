@@ -43,4 +43,8 @@ impl OpenIMClient {
     pub async fn clear_conversation_draft(&self, conversation_id: &str) -> Result<()> {
         self.conversation.clear_draft(conversation_id).await
     }
+
+    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
+        self.message_service.mark_conversation_as_read(conversation_id, session_type).await
+    }
 }

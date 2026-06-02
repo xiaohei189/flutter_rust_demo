@@ -1,7 +1,8 @@
 use crate::domain::error::types::Result;
 use crate::domain::error::types::SdkError;
 use crate::domain::model::message::MessageInfo;
-use crate::domain::model::msg_struct::MsgStruct;
+use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
+use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
 use crate::infra::database::models::LocalChatLog;
 use crate::sdk::client::types::{
     DeleteMessagesReq, GetHistoryMessagesReq, GetHistoryMessagesResult, MarkMessagesAsReadReq, RevokeMessageReq,
@@ -9,11 +10,28 @@ use crate::sdk::client::types::{
 };
 use crate::sdk::client::OpenIMClient;
 use openim_protocol::sdkws::MsgData;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::info;
 
 impl OpenIMClient {
-    /// 发送消息（MsgStruct → channel → 发送）
-    pub async fn send_msg(&self, msg: MsgStruct) -> std::result::Result<MsgData, SdkError> {
+    pub async fn send_msg(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgData, SdkError> {
+        let send_id = self.context.user_id.lock().unwrap().clone();
+        let platform_id = self.context.config.platform_id;
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
+
+        msg.send_id = send_id.clone();
+        msg.sender_platform_id = platform_id;
+        msg.client_msg_id = get_msg_id(&send_id);
+        msg.create_time = now;
+        msg.send_time = now;
+        msg.status = MSG_STATUS_SENDING;
+        msg.is_read = false;
+        if msg.session_type == 1 {
+            msg.recv_id = source_id.to_string();
+        } else {
+            msg.group_id = source_id.to_string();
+        }
+
         self.message_sender.send_message(msg.clone()).await?;
 
         let send_time = msg.send_time;
@@ -32,37 +50,38 @@ impl OpenIMClient {
         })
     }
 
-    /// 一步发送文本消息（Flutter 调用入口）
-    pub async fn send_text_message(&self, text: &str, recv_id: &str, group_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
-        let send_id = self.context.user_id.lock().unwrap().clone();
-        let platform_id = self.context.config.platform_id;
-        let mut msg = MsgStruct::create_text_message(text, &send_id, platform_id);
-        msg.recv_id = recv_id.to_string();
-        msg.group_id = group_id.to_string();
+    pub async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let mut msg = MsgStruct::create_text_message(text);
         msg.session_type = session_type;
-        self.send_msg(msg).await
+        self.send_msg(msg, source_id).await
     }
 
-    /// 一步发送 Markdown 消息
-    pub async fn send_markdown_message(&self, text: &str, recv_id: &str, group_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
-        let send_id = self.context.user_id.lock().unwrap().clone();
-        let platform_id = self.context.config.platform_id;
-        let mut msg = MsgStruct::create_markdown_message(text, &send_id, platform_id);
-        msg.recv_id = recv_id.to_string();
-        msg.group_id = group_id.to_string();
+    pub async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let mut msg = MsgStruct::create_markdown_message(text);
         msg.session_type = session_type;
-        self.send_msg(msg).await
+        self.send_msg(msg, source_id).await
     }
 
-    /// 一步发送富文本消息
-    pub async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, recv_id: &str, group_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
-        let send_id = self.context.user_id.lock().unwrap().clone();
-        let platform_id = self.context.config.platform_id;
-        let mut msg = MsgStruct::create_advanced_text_message(text, entities, &send_id, platform_id);
-        msg.recv_id = recv_id.to_string();
-        msg.group_id = group_id.to_string();
+    pub async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let mut msg = MsgStruct::create_advanced_text_message(text, entities);
         msg.session_type = session_type;
-        self.send_msg(msg).await
+        self.send_msg(msg, source_id).await
+    }
+
+    pub async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let upload_result = self.file_uploader.upload_image(file_path).await
+            .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
+        let source = crate::domain::model::msg_struct::PictureBaseInfo {
+            width: 0, height: 0, picture_type: String::new(),
+            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
+        };
+        let mut msg = MsgStruct::create_image_message(
+            file_path, source,
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
+        );
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id).await
     }
 
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
@@ -152,10 +171,6 @@ impl OpenIMClient {
         ).await
     }
 
-    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
-        self.message_service.mark_conversation_as_read(conversation_id, session_type).await
-    }
-
     pub async fn search_local_messages(&self, req: SearchMessagesReq) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
         self.message_service.search_local_messages(
             req.conversation_id,
@@ -164,3 +179,4 @@ impl OpenIMClient {
         ).await
     }
 }
+ 

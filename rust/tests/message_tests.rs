@@ -39,7 +39,6 @@ async fn test_send_text_message_basic() {
     let send_result = sender_sdk.send_text_message(
         "Hello! 这是一条文本消息测试。",
         &user2.user_id,
-        "",
         1,
     ).await;
     assert!(send_result.is_ok(), "发送消息失败: {:?}", send_result.err());
@@ -86,7 +85,7 @@ async fn test_message_deduplication() {
     let mut event_subscription = sender_sdk.event_bus().subscribe();
 
     let text = "自己发给自己测试";
-    let send_result = sender_sdk.send_text_message(text, &user1.user_id, "", 1).await;
+    let send_result = sender_sdk.send_text_message(text, &user1.user_id, 1).await;
     assert!(send_result.is_ok(), "发送消息失败: {:?}", send_result.err());
 
     let timeout = tokio::time::sleep(Duration::from_secs(5));
@@ -136,12 +135,12 @@ async fn test_bidirectional_messages() {
     let text_1_to_2 = "A→B 消息";
     let text_2_to_1 = "B→A 消息";
 
-    let send_1 = user1_sdk.send_text_message(text_1_to_2, &user2.user_id, "", 1).await;
+    let send_1 = user1_sdk.send_text_message(text_1_to_2, &user2.user_id, 1).await;
     assert!(send_1.is_ok(), "A→B 发送失败");
 
     tokio::time::sleep(Duration::from_millis(500)).await;
 
-    let send_2 = user2_sdk.send_text_message(text_2_to_1, &user1.user_id, "", 1).await;
+    let send_2 = user2_sdk.send_text_message(text_2_to_1, &user1.user_id, 1).await;
     assert!(send_2.is_ok(), "B→A 发送失败");
 
     let timeout = tokio::time::sleep(Duration::from_secs(10));
@@ -194,7 +193,7 @@ async fn test_message_status_flow() {
     let mut event_subscription = sender_sdk.event_bus().subscribe();
 
     let text = "状态流转测试";
-    let send_result = sender_sdk.send_text_message(text, &user2.user_id, "", 1).await;
+    let send_result = sender_sdk.send_text_message(text, &user2.user_id, 1).await;
     assert!(send_result.is_ok(), "发送消息失败: {:?}", send_result.err());
 
     let timeout = tokio::time::sleep(Duration::from_secs(10));
@@ -250,7 +249,7 @@ async fn test_mark_conversation_as_read() {
     let mut user2_events = user2_sdk.event_bus().subscribe();
 
     let text = "未读测试消息";
-    let send_result = user1_sdk.send_text_message(text, &user2.user_id, "", 1).await;
+    let send_result = user1_sdk.send_text_message(text, &user2.user_id, 1).await;
     assert!(send_result.is_ok(), "发送消息失败");
 
     let timeout = tokio::time::sleep(Duration::from_secs(10));
@@ -332,7 +331,7 @@ async fn test_conversation_change_event() {
 
     for i in 1..=3 {
         let text = format!("会话变更测试消息 {}", i);
-        let _ = user1_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let _ = user1_sdk.send_text_message(&text, &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -389,7 +388,7 @@ async fn test_unread_count_increment_and_clear() {
 
     for i in 1..=5 {
         let text = format!("未读递增测试消息 {}", i);
-        let _ = user1_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let _ = user1_sdk.send_text_message(&text, &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -466,7 +465,7 @@ async fn test_message_read_status_in_db() {
 
     for i in 1..=3 {
         let text = format!("已读状态测试消息 {}", i);
-        let _ = user1_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let _ = user1_sdk.send_text_message(&text, &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -541,7 +540,7 @@ async fn test_login_sync() {
     let message_count = 5;
     for i in 1..=message_count {
         let text = format!("离线消息 {}", i);
-        let result = sender_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let result = sender_sdk.send_text_message(&text, &user2.user_id, 1).await;
         assert!(result.is_ok(), "发送离线消息 {} 失败: {:?}", i, result.err());
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
@@ -616,7 +615,7 @@ async fn test_sent_messages_in_local_list() {
     let message_count = 5;
     for i in 1..=message_count {
         let text = format!("本地列表测试消息 {}", i);
-        let result = sender_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let result = sender_sdk.send_text_message(&text, &user2.user_id, 1).await;
         assert!(result.is_ok(), "消息 {} 发送失败: {:?}", i, result.err());
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
@@ -683,7 +682,7 @@ async fn test_get_history_messages() {
     let message_count = 10;
     for i in 1..=message_count {
         let text = format!("历史消息测试 {}", i);
-        let result = user1_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let result = user1_sdk.send_text_message(&text, &user2.user_id, 1).await;
         assert!(result.is_ok(), "发送消息 {} 失败: {:?}", i, result.err());
         tokio::time::sleep(Duration::from_millis(300)).await;
     }
@@ -769,7 +768,7 @@ async fn test_message_sync_seq_continuity() {
     let message_count = 10;
     for i in 1..=message_count {
         let text = format!("seq测试消息 {}", i);
-        let _ = sender_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let _ = sender_sdk.send_text_message(&text, &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
 
@@ -835,7 +834,7 @@ async fn test_reconnect_sync() {
     let offline_msg_count = 3;
     for i in 1..=offline_msg_count {
         let text = format!("离线期间消息 {}", i);
-        let _ = user1_sdk.send_text_message(&text, &user2.user_id, "", 1).await;
+        let _ = user1_sdk.send_text_message(&text, &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 

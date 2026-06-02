@@ -164,7 +164,7 @@ async fn test_advanced_text_message() {
         },
     ];
 
-    let result = sdk.send_advanced_text_message("hello", entities, &user2.user_id, "", 1).await;
+    let result = sdk.send_advanced_text_message("hello", entities, &user2.user_id, 1).await;
     assert!(result.is_ok(), "发送高级文本消息失败: {:?}", result.err());
     println!("  ✅ 高级文本消息发送成功");
 
@@ -229,7 +229,7 @@ async fn test_message_read_receipt() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let send_result = sdk.send_text_message("已读回执测试", &user2.user_id, "", 1).await;
+    let send_result = sdk.send_text_message("已读回执测试", &user2.user_id, 1).await;
 
     match send_result {
         Ok(_) => {
@@ -273,7 +273,7 @@ async fn test_local_message_search() {
     let sdk = create_sdk(&user1, &im_token).await;
 
     // 先发送消息确保有数据
-    let _ = sdk.send_text_message("搜索测试消息", &user2.user_id, "", 1).await;
+    let _ = sdk.send_text_message("搜索测试消息", &user2.user_id, 1).await;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     if let Ok(convs) = sdk.get_conversations().await {

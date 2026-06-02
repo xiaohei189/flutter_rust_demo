@@ -280,40 +280,22 @@ impl MsgStruct {
         Self::default()
     }
 
-    /// 初始化基础信息（对齐 Go SDK initBasicInfo）
-    pub fn init_basic_info(&mut self, content_type: i32, msg_from: i32, send_id: &str, platform_id: i32) {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as i64;
-        self.client_msg_id = get_msg_id(send_id);
-        self.create_time = now;
-        self.send_time = now;
-        self.send_id = send_id.to_string();
-        self.sender_platform_id = platform_id;
-        self.msg_from = msg_from;
-        self.content_type = content_type;
-        self.status = MSG_STATUS_SENDING;
-        self.is_read = false;
-    }
-
-    /// 创建文本消息（对齐 Go SDK CreateTextMessage）
-    pub fn create_text_message(text: &str, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_text_message(text: &str) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(101, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 101;
+        msg.msg_from = MSG_FROM_USER;
         let elem = TextElem { content: text.to_string() };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.text_elem = Some(elem);
         msg
     }
 
-    /// 创建图片消息（对齐 Go SDK CreateImageMessageByURL）
     pub fn create_image_message(
         source_path: &str, source: PictureBaseInfo, big: PictureBaseInfo, snapshot: PictureBaseInfo,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(102, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 102;
+        msg.msg_from = MSG_FROM_USER;
         let elem = PictureElem {
             source_path: source_path.to_string(),
             source_picture: source,
@@ -325,41 +307,40 @@ impl MsgStruct {
         msg
     }
 
-    /// 创建语音消息（对齐 Go SDK CreateSoundMessageByURL）
-    pub fn create_sound_message(elem: SoundElem, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_sound_message(elem: SoundElem) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(103, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 103;
+        msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.sound_elem = Some(elem);
         msg
     }
 
-    /// 创建视频消息（对齐 Go SDK CreateVideoMessageByURL）
-    pub fn create_video_message(elem: VideoElem, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_video_message(elem: VideoElem) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(104, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 104;
+        msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.video_elem = Some(elem);
         msg
     }
 
-    /// 创建文件消息（对齐 Go SDK CreateFileMessageByURL）
-    pub fn create_file_message(elem: FileElem, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_file_message(elem: FileElem) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(105, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 105;
+        msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.file_elem = Some(elem);
         msg
     }
 
-    /// 创建 @ 消息（对齐 Go SDK CreateTextAtMessage）
     pub fn create_at_text_message(
         text: &str, at_user_list: Vec<String>, at_users_info: Vec<AtInfo>,
         quote_msg: Option<Box<MsgStruct>>,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(106, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 106;
+        msg.msg_from = MSG_FROM_USER;
         let mut at_msg = quote_msg.clone();
         if let Some(ref mut qm) = at_msg {
             if qm.content_type == 114 {
@@ -379,13 +360,12 @@ impl MsgStruct {
         msg
     }
 
-    /// 创建合并转发消息（对齐 Go SDK CreateMergerMessage）
     pub fn create_merger_message(
         messages: Vec<MsgStruct>, title: &str, summaries: Vec<String>,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(107, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 107;
+        msg.msg_from = MSG_FROM_USER;
         let elem = MergeElem {
             title: title.to_string(),
             abstract_list: summaries,
@@ -396,35 +376,33 @@ impl MsgStruct {
         msg
     }
 
-    /// 创建名片消息（对齐 Go SDK CreateCardMessage）
-    pub fn create_card_message(elem: CardElem, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_card_message(elem: CardElem) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(108, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 108;
+        msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.card_elem = Some(elem);
         msg
     }
 
-    /// 创建位置消息（对齐 Go SDK CreateLocationMessage）
     pub fn create_location_message(
         description: &str, longitude: f64, latitude: f64,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(109, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 109;
+        msg.msg_from = MSG_FROM_USER;
         let elem = LocationElem { description: description.to_string(), longitude, latitude };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.location_elem = Some(elem);
         msg
     }
 
-    /// 创建自定义消息（对齐 Go SDK CreateCustomMessage）
     pub fn create_custom_message(
         data: &str, extension: &str, description: &str,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(110, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 110;
+        msg.msg_from = MSG_FROM_USER;
         let elem = CustomElem {
             data: data.to_string(),
             extension: extension.to_string(),
@@ -435,13 +413,12 @@ impl MsgStruct {
         msg
     }
 
-    /// 创建引用消息（对齐 Go SDK CreateQuoteMessage）
     pub fn create_quote_message(
         text: &str, quoted_msg: Box<MsgStruct>,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(114, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 114;
+        msg.msg_from = MSG_FROM_USER;
         let mut qm = *quoted_msg.clone();
         if qm.content_type == 114 {
             qm.content_type = 101;
@@ -454,33 +431,32 @@ impl MsgStruct {
         msg
     }
 
-    /// 创建表情消息（对齐 Go SDK CreateFaceMessage）
-    pub fn create_face_message(index: i32, data: &str, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_face_message(index: i32, data: &str) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(115, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 115;
+        msg.msg_from = MSG_FROM_USER;
         let elem = FaceElem { index, data: data.to_string() };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.face_elem = Some(elem);
         msg
     }
 
-    /// 创建富文本消息（对齐 Go SDK CreateAdvancedTextMessage）
     pub fn create_advanced_text_message(
         text: &str, entities: Vec<MessageEntity>,
-        send_id: &str, platform_id: i32,
     ) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(117, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 117;
+        msg.msg_from = MSG_FROM_USER;
         let elem = AdvancedTextElem { text: text.to_string(), message_entity_list: entities };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.advanced_text_elem = Some(elem);
         msg
     }
 
-    /// 创建 Markdown 消息
-    pub fn create_markdown_message(text: &str, send_id: &str, platform_id: i32) -> MsgStruct {
+    pub fn create_markdown_message(text: &str) -> MsgStruct {
         let mut msg = MsgStruct::new();
-        msg.init_basic_info(118, MSG_FROM_USER, send_id, platform_id);
+        msg.content_type = 118;
+        msg.msg_from = MSG_FROM_USER;
         let elem = MarkdownTextElem { content: text.to_string() };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.markdown_text_elem = Some(elem);

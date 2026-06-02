@@ -134,7 +134,7 @@ async fn test_send_message_to_nonexistent_user() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let result = sdk.send_text_message("发给不存在用户", "nonexistent_user_99999", "", 1).await;
+    let result = sdk.send_text_message("发给不存在用户", "nonexistent_user_99999", 1).await;
 
     if let Err(e) = &result {
         println!("  发送失败（符合预期）: {:?}", e);

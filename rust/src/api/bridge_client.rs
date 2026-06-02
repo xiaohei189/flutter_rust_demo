@@ -57,6 +57,12 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
+    pub async fn logout(&self) -> Result<()> {
+        self.inner.logout().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
     pub async fn event_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
         let event_bus = self.inner.event_bus();
         tokio::spawn(async move {
@@ -70,15 +76,23 @@ impl OpenIMBridgeClient {
 
     // ========== 消息操作 ==========
 
+
+
     #[flutter_rust_bridge::frb]
-    pub async fn send_text_message(&self, text: String, recv_id: String, group_id: String, session_type: i32) -> Result<MsgData> {
-        self.inner.send_text_message(&text, &recv_id, &group_id, session_type).await
+    pub async fn send_text_message(&self, text: String, source_id: String, session_type: i32) -> Result<MsgData> {
+        self.inner.send_text_message(&text, &source_id, session_type).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn send_markdown_message(&self, text: String, recv_id: String, group_id: String, session_type: i32) -> Result<MsgData> {
-        self.inner.send_markdown_message(&text, &recv_id, &group_id, session_type).await
+    pub async fn send_markdown_message(&self, text: String, source_id: String, session_type: i32) -> Result<MsgData> {
+        self.inner.send_markdown_message(&text, &source_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_advanced_text_message(&self, text: String, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: String, session_type: i32) -> Result<MsgData> {
+        self.inner.send_advanced_text_message(&text, entities, &source_id, session_type).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -162,6 +176,18 @@ impl OpenIMBridgeClient {
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    #[flutter_rust_bridge::frb]
+    pub async fn get_pinned_conversations(&self) -> Result<Vec<crate::domain::model::conversation::Conversation>> {
+        self.inner.get_pinned_conversations().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn clear_conversation_draft(&self, conversation_id: String) -> Result<()> {
+        self.inner.clear_conversation_draft(&conversation_id).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     // ========== 好友操作 ==========
 
     #[flutter_rust_bridge::frb]
@@ -219,6 +245,11 @@ impl OpenIMBridgeClient {
     pub async fn refuse_friend_application(&self, user_id: String) -> Result<()> {
         self.inner.refuse_friend_application(&user_id, None).await
             .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn get_friend_id_list(&self) -> Result<Vec<String>> {
+        Ok(self.inner.get_friend_id_list().await)
     }
 
     // ========== 群组操作 ==========
@@ -330,35 +361,23 @@ impl OpenIMBridgeClient {
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    #[flutter_rust_bridge::frb]
+    pub async fn get_user_status(&self, user_ids: Vec<String>) -> Result<Vec<crate::core::online::manager::OnlineStatus>> {
+        self.inner.get_user_status(&user_ids).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     // ========== 创建消息方法 ==========
 
     #[flutter_rust_bridge::frb]
     pub async fn send_image_message(
         &self,
         file_path: String,
-        recv_id: String,
-        group_id: String,
+        source_id: String,
         session_type: i32,
     ) -> Result<MsgData> {
-        let send_id = self.inner.context.user_id.lock().unwrap().clone();
-        let platform_id = self.inner.context.config.platform_id;
-        let upload_result = self.inner.file_uploader
-            .upload_image(&file_path).await
-            .map_err(|e| anyhow::anyhow!("upload image failed: {}", e))?;
-        let source = crate::domain::model::msg_struct::PictureBaseInfo {
-            width: 0, height: 0, picture_type: String::new(),
-            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
-        };
-        let mut msg = crate::domain::model::msg_struct::MsgStruct::create_image_message(
-            &file_path, source,
-            crate::domain::model::msg_struct::PictureBaseInfo::default(),
-            crate::domain::model::msg_struct::PictureBaseInfo::default(),
-            &send_id, platform_id,
-        );
-        msg.recv_id = recv_id;
-        msg.group_id = group_id;
-        msg.session_type = session_type;
-        self.inner.send_msg(msg).await.map_err(|e| anyhow::anyhow!("{}", e))
+        self.inner.send_image_message(&file_path, &source_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
     }
 }
 

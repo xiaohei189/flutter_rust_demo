@@ -184,7 +184,7 @@ async fn test_user_state_conversation_management() {
     sdk.connect(WS_URL, &cert1.im_token, &cert1.user_id).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    sdk.send_text_message("Test conversation", &cert2.user_id, "", 1).await.unwrap();
+    sdk.send_text_message("Test conversation", &cert2.user_id, 1).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let convs = sdk.get_conversations().await.unwrap_or_default();

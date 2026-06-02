@@ -1457,8 +1457,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
-            let api_recv_id = <String>::sse_decode(&mut deserializer);
-            let api_group_id = <String>::sse_decode(&mut deserializer);
+            let api_source_id = <String>::sse_decode(&mut deserializer);
             let api_session_type = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -1473,7 +1472,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_image_message(&*api_that_guard, api_file_path, api_recv_id, api_group_id, api_session_type).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_image_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1499,8 +1498,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_imp
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_text = <String>::sse_decode(&mut deserializer);
-            let api_recv_id = <String>::sse_decode(&mut deserializer);
-            let api_group_id = <String>::sse_decode(&mut deserializer);
+            let api_source_id = <String>::sse_decode(&mut deserializer);
             let api_session_type = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -1515,7 +1513,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_imp
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_markdown_message(&*api_that_guard, api_text, api_recv_id, api_group_id, api_session_type).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_markdown_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1541,8 +1539,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_text = <String>::sse_decode(&mut deserializer);
-            let api_recv_id = <String>::sse_decode(&mut deserializer);
-            let api_group_id = <String>::sse_decode(&mut deserializer);
+            let api_source_id = <String>::sse_decode(&mut deserializer);
             let api_session_type = <i32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -1557,7 +1554,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_text, api_recv_id, api_group_id, api_session_type).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,

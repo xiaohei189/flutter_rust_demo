@@ -262,7 +262,7 @@ impl OpenIMClient {
                                 }
                             }
                             Some(SdkEvent::PushNotificationMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
-                                info!("push_message_handler: received PushNotificationMessages event for {}, msg_count={}", conversation_id, msgs.len());
+                                info!("push_message_handler: received PushNotificationMessages for {}, msg_count={}", conversation_id, msgs.len());
 
                                 let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
                                     let content_str = String::from_utf8_lossy(&msg.content).to_string();
