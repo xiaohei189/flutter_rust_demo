@@ -2,7 +2,7 @@ use crate::domain::config::ClientConfig;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::infra::database::pool::create_pool;
-use crate::infra::database::{ConversationDao, MessageDao, SyncVersionDao};
+use crate::infra::database::{ConversationDao, MessageDao, SendingMessageDao, SyncVersionDao};
 use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
@@ -28,6 +28,8 @@ pub struct RuntimeContext {
     pub conversation_dao: Arc<ConversationDao>,
     /// 同步版本 DAO
     pub sync_version_dao: Arc<SyncVersionDao>,
+    /// 发送中消息 DAO（崩溃恢复）
+    pub sending_message_dao: Arc<SendingMessageDao>,
     /// HTTP API 客户端
     pub http_client: Arc<HttpApiClient>,
 }
@@ -48,6 +50,7 @@ impl RuntimeContext {
         let message_dao = Arc::new(MessageDao::new(db_pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(db_pool.clone()));
         let sync_version_dao = Arc::new(SyncVersionDao::new(db_pool.clone()));
+        let sending_message_dao = Arc::new(SendingMessageDao::new(db_pool.clone()));
 
         let http_client = Arc::new(HttpApiClient::new(
             config.api_base_url.clone(),
@@ -65,6 +68,7 @@ impl RuntimeContext {
             message_dao,
             conversation_dao,
             sync_version_dao,
+            sending_message_dao,
             http_client,
         })
     }

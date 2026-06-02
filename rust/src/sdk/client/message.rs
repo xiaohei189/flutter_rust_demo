@@ -5,8 +5,8 @@ use crate::domain::event::types::SdkEvent;
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
 use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
-use crate::infra::database::models::LocalChatLog;
-use crate::protocol::sdkws::{MsgData, UserSendMsgResp};
+use crate::infra::database::models::{LocalChatLog, LocalSendingMessage};
+use crate::protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
 use crate::sdk::client::types::{
     DeleteMessagesReq, GetHistoryMessagesReq, GetHistoryMessagesResult, MarkMessagesAsReadReq, RevokeMessageReq,
     SearchMessagesReq,
@@ -14,11 +14,11 @@ use crate::sdk::client::types::{
 use crate::sdk::client::OpenIMClient;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{info, error, debug};
+use tracing::{info, error, debug, warn};
 use serde_json::{json, Value};
 
 impl OpenIMClient {
-    pub async fn send_msg(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgData, SdkError> {
+    pub async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgData, SdkError> {
         let send_id = self.context.user_id.lock().unwrap().clone();
         let platform_id = self.context.config.platform_id;
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
@@ -52,7 +52,7 @@ impl OpenIMClient {
             // 失败重试：允许继续发送
         }
 
-        let resp = self.do_send_message(msg.clone()).await?;
+        let resp = self.do_send_message(msg.clone(), offline_push_info).await?;
 
         let mut result = MsgData::from(&msg);
         result.server_msg_id = resp.server_msg_id;
@@ -61,7 +61,7 @@ impl OpenIMClient {
         Ok(result)
     }
 
-    async fn do_send_message(&self, msg: MsgStruct) -> std::result::Result<UserSendMsgResp, SdkError> {
+    async fn do_send_message(&self, msg: MsgStruct, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<UserSendMsgResp, SdkError> {
         let send_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_millis() as i64)
@@ -75,10 +75,28 @@ impl OpenIMClient {
         msg_data.content = content.into_bytes();
         msg_data.send_time = send_time;
         msg_data.create_time = send_time;
+        msg_data.offline_push_info = offline_push_info;
+
+        let conversation_id = self.conversation_id_for_msg(&msg);
 
         let resp: UserSendMsgResp = match self.connection.send_rpc(1003, &msg_data).await {
             Ok(r) => r,
             Err(e) => {
+                // 网络超时二次确认（对齐 Go SDK api.go L682-698）
+                if let SdkError::Timeout { .. } = &e {
+                    if let Ok(Some(old_msg)) = self.context.message_dao
+                        .get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await
+                    {
+                        if old_msg.status == MessageSendStatus::SendSuccess as i32 {
+                            info!("消息超时但DB已标记成功: client_msg_id={}", msg.client_msg_id);
+                            return Ok(UserSendMsgResp {
+                                server_msg_id: old_msg.server_msg_id,
+                                client_msg_id: old_msg.client_msg_id,
+                                send_time: old_msg.send_time,
+                            });
+                        }
+                    }
+                }
                 self.context.message_dao.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed).await?;
                 self.event_bus.publish(SdkEvent::MessageSendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
@@ -92,7 +110,10 @@ impl OpenIMClient {
             error!("更新发送结果失败: {}", e);
         }
 
-        let conversation_id = self.conversation_id_for_msg(&msg);
+        // 发送成功，从 sending_messages 中移除（对齐 Go SDK api.go L167）
+        if let Err(e) = self.context.sending_message_dao.delete(&conversation_id, &msg.client_msg_id).await {
+            debug!("删除sending_message失败: {}", e);
+        }
 
         self.event_bus.publish(SdkEvent::MessageSent {
             client_msg_id: resp.client_msg_id.clone(),
@@ -133,11 +154,52 @@ impl OpenIMClient {
         local_log.status = MessageSendStatus::Sending as i32;
 
         self.context.message_dao.batch_insert(&[local_log]).await?;
+        self.context.sending_message_dao.insert(&LocalSendingMessage {
+            conversation_id: conversation_id.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
+            ex: String::new(),
+        }).await?;
         self.context.conversation_dao.update_after_sent_message(
             &conversation_id,
             &msg.content,
             send_time,
         ).await?;
+
+        // 会话乐观更新（对齐 Go SDK api.go L322-324）
+        if let Ok(Some(conv)) = self.context.conversation_dao.get_by_id(&conversation_id).await {
+            let conversation = crate::domain::model::conversation::Conversation {
+                conversation_id: conv.conversation_id,
+                conversation_type: conv.conversation_type,
+                user_id: conv.user_id,
+                group_id: conv.group_id,
+                show_name: conv.show_name,
+                face_url: conv.face_url,
+                latest_msg: conv.latest_msg,
+                latest_msg_send_time: conv.latest_msg_send_time,
+                unread_count: conv.unread_count,
+                recv_msg_opt: conv.recv_msg_opt,
+                is_pinned: conv.is_pinned != 0,
+                is_private_chat: conv.is_private_chat != 0,
+                burn_duration: conv.burn_duration as i32,
+                group_at_type: conv.group_at_type,
+                is_not_in_group: conv.is_not_in_group != 0,
+                update_unread_count_time: conv.update_unread_count_time,
+                latest_msg_seq: conv.max_seq,
+                max_seq: conv.max_seq,
+                min_seq: conv.min_seq,
+                is_msg_destruct: conv.is_msg_destruct != 0,
+                msg_destruct_time: conv.msg_destruct_time,
+                draft_text: conv.draft_text,
+                draft_text_time: conv.draft_text_time,
+                update_flag: 0,
+                sync_action: None,
+                is_private: conv.is_private_chat != 0,
+                ex: conv.ex,
+            };
+            self.event_bus.publish(SdkEvent::ConversationChanged {
+                conversations: vec![conversation],
+            });
+        }
 
         debug!("发送前插入消息: client_msg_id={}, conv={}", msg.client_msg_id, conversation_id);
         Ok(())
@@ -196,19 +258,19 @@ impl OpenIMClient {
     pub async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_text_message(text);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id).await
+        self.send_msg(msg, source_id, None).await
     }
 
     pub async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_markdown_message(text);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id).await
+        self.send_msg(msg, source_id, None).await
     }
 
     pub async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_advanced_text_message(text, entities);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id).await
+        self.send_msg(msg, source_id, None).await
     }
 
     pub async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
@@ -224,7 +286,7 @@ impl OpenIMClient {
             crate::domain::model::msg_struct::PictureBaseInfo::default(),
         );
         msg.session_type = session_type;
-        self.send_msg(msg, source_id).await
+        self.send_msg(msg, source_id, None).await
     }
 
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
@@ -295,5 +357,39 @@ impl OpenIMClient {
             req.keyword,
             100,
         ).await
+    }
+
+    /// 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
+    pub async fn cleanup_sending_messages(&self) {
+        let sending_messages = match self.context.sending_message_dao.get_all().await {
+            Ok(msgs) => msgs,
+            Err(e) => {
+                warn!("获取sending_messages失败: {}", e);
+                return;
+            }
+        };
+
+        for sm in &sending_messages {
+            // 查询消息当前状态
+            if let Ok(Some(msg)) = self.context.message_dao
+                .get_by_client_msg_id(&sm.conversation_id, &sm.client_msg_id).await
+            {
+                if msg.status == MessageSendStatus::Sending as i32 {
+                    // 状态仍为 Sending → 标记为 SendFailed
+                    if let Err(e) = self.context.message_dao
+                        .update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed).await
+                    {
+                        warn!("更新sending消息状态失败: client_msg_id={}, err={}", sm.client_msg_id, e);
+                    }
+                }
+            }
+            // 删除 sending_message 记录
+            let _ = self.context.sending_message_dao
+                .delete(&sm.conversation_id, &sm.client_msg_id).await;
+        }
+
+        if !sending_messages.is_empty() {
+            info!("登录时清理了 {} 条sending消息", sending_messages.len());
+        }
     }
 }

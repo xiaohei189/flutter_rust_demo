@@ -87,6 +87,8 @@ impl MessageHandler {
             .map(|l| l.client_msg_id)
             .collect();
 
+        let login_user_id = self.user_id.lock().unwrap().clone();
+
         let mut store_logs: Vec<LocalChatLog> = Vec::new();
         let mut to_notify: Vec<ReceivedMessage> = Vec::new();
 
@@ -95,9 +97,24 @@ impl MessageHandler {
                 continue;
             }
 
-            if msg.seq > 0 && existing_map.contains(&msg.client_msg_id) {
-                debug!("skip duplicate message: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
-                continue;
+            let is_self = msg.send_id == login_user_id;
+
+            if is_self {
+                // 自己发的消息（对齐 Go SDK conversation_msg.go L316-356）
+                if existing_map.contains(&msg.client_msg_id) {
+                    // 本地已有记录：更新 seq/status，不插入不增加未读数
+                    if msg.seq > 0 {
+                        debug!("更新自己消息的seq: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
+                    }
+                    continue;
+                }
+                // 本地无记录（其他终端同步过来的）：插入但不增加未读数
+            } else {
+                // 别人发的消息（对齐 Go SDK conversation_msg.go L357-398）
+                if msg.seq > 0 && existing_map.contains(&msg.client_msg_id) {
+                    debug!("skip duplicate message: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
+                    continue;
+                }
             }
 
             store_logs.push(LocalChatLog {
@@ -140,6 +157,7 @@ impl MessageHandler {
         let mut seen_convs = std::collections::HashSet::new();
         for msg in &to_notify {
             let is_conversation_update = Self::should_update_conversation(msg.content_type);
+            let is_self = msg.send_id == login_user_id;
 
             if seen_convs.insert(&msg.conversation_id) {
                 let existing = self.conversation_dao.get_by_id(&msg.conversation_id).await?;
@@ -150,7 +168,8 @@ impl MessageHandler {
                         format!("Group_{}", msg.group_id)
                     };
 
-                    let unread_count = if is_conversation_update { 1 } else { 0 };
+                    // 自己发的消息不增加未读数（对齐 Go SDK L336-L340）
+                    let unread_count = if is_conversation_update && !is_self { 1 } else { 0 };
 
                     let conv = LocalConversation {
                         conversation_id: msg.conversation_id.clone(),

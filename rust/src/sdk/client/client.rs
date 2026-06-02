@@ -314,6 +314,9 @@ impl OpenIMClient {
         self.message_service.set_user_id(user_id.to_string());
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
 
+        // 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
+        self.cleanup_sending_messages().await;
+
         if let Some(ws_url) = &self.context.config.ws_url {
             self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
             self.spawn_push_message_handler();
