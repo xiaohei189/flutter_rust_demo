@@ -1088,7 +1088,7 @@ pub async fn delete_message(
     client.message_service.delete_messages(
         conversation_id,
         vec![client_msg_id],
-    ).await
+    ).await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
