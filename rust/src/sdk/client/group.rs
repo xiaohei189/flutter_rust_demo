@@ -153,4 +153,79 @@ impl OpenIMClient {
     pub async fn mute_group_member(&self, group_id: &str, user_id: &str, muted_seconds: i64) -> Result<()> {
         self.group.mute_group_member(group_id.to_string(), user_id.to_string(), muted_seconds).await
     }
+
+    /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）
+    pub async fn set_group_member_info(
+        &self,
+        group_id: &str,
+        user_id: &str,
+        nickname: Option<&str>,
+        face_url: Option<&str>,
+        role_level: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()> {
+        self.group.set_group_member_info(crate::core::group::manager::SetGroupMemberFields {
+            group_id: group_id.to_string(),
+            user_id: user_id.to_string(),
+            nickname: nickname.map(|s| s.to_string()),
+            face_url: face_url.map(|s| s.to_string()),
+            role_level,
+            ex: ex.map(|s| s.to_string()),
+        }).await
+    }
+
+    /// 分页获取已加入群组列表（对齐 Go SDK `GetJoinedGroupListPage`）
+    pub async fn get_joined_group_list_page(&self, offset: i32, count: i32) -> Result<Vec<GroupInfo>> {
+        self.group.get_joined_group_list_page(offset, count).await
+    }
+
+    /// 搜索群组（对齐 Go SDK `SearchGroups`）
+    pub async fn search_groups(&self, keyword: &str) -> Vec<GroupInfo> {
+        self.group.search_groups(keyword).await
+    }
+
+    /// 获取群主和管理员列表（对齐 Go SDK `GetGroupMemberOwnerAndAdmin`）
+    pub async fn get_group_member_owner_and_admin(&self, group_id: &str) -> Result<Vec<GroupMember>> {
+        self.group.get_group_member_owner_and_admin(group_id.to_string()).await
+    }
+
+    /// 按加入时间筛选群成员（对齐 Go SDK `GetGroupMemberListByJoinTimeFilter`）
+    pub async fn get_group_member_list_by_join_time_filter(
+        &self,
+        group_id: &str,
+        offset: i32,
+        count: i32,
+        join_time_begin: i64,
+        join_time_end: i64,
+        filter_user_ids: Vec<String>,
+    ) -> Result<Vec<GroupMember>> {
+        self.group.get_group_member_list_by_join_time_filter(
+            group_id.to_string(),
+            offset,
+            count,
+            join_time_begin,
+            join_time_end,
+            filter_user_ids,
+        ).await
+    }
+
+    /// 搜索群成员（对齐 Go SDK `SearchGroupMembers`）
+    pub async fn search_group_members(&self, group_id: &str, keyword: &str) -> Vec<GroupMember> {
+        self.group.search_group_members(group_id, keyword).await
+    }
+
+    /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
+    pub async fn get_users_in_group(&self, group_id: &str, user_ids: Vec<String>) -> Vec<String> {
+        self.group.get_users_in_group(group_id, user_ids).await
+    }
+
+    /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
+    pub async fn check_local_group_full_sync(&self) -> bool {
+        self.group.check_local_group_full_sync().await
+    }
+
+    /// 检查群成员是否已全量同步（对齐 Go SDK `CheckGroupMemberFullSync`）
+    pub async fn check_group_member_full_sync(&self, group_id: &str) -> bool {
+        self.group.check_group_member_full_sync(group_id).await
+    }
 }

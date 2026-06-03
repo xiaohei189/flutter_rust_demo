@@ -2,11 +2,15 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
+use crate::infra::database::group_dao::GroupDao;
+use crate::infra::database::models::LocalGroup;
+use crate::infra::database::sync_version_dao::SyncVersionDao;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,
-    DISMISS_GROUP, GET_GROUP_MEMBER_LIST, GET_GROUP_MEMBERS_INFO, SET_GROUP_MEMBER_INFO,
-    KICK_GROUP_MEMBER, GET_JOINED_GROUP_LIST, INVITE_USER_TO_GROUP,
+    DISMISS_GROUP, GET_FULL_JOIN_GROUP_IDS, GET_GROUP_MEMBER_LIST, GET_GROUP_MEMBERS_INFO,
+    GET_INCREMENTAL_JOIN_GROUP, GET_JOINED_GROUP_LIST, INVITE_USER_TO_GROUP,
+    SET_GROUP_MEMBER_INFO, KICK_GROUP_MEMBER,
     GET_GROUP_APPLICATION_LIST, GET_RECV_GROUP_APPLICATION_LIST, GET_SEND_GROUP_APPLICATION_LIST,
     GET_GROUP_APPLICATION_UNHANDLED_COUNT,
     ACCEPT_GROUP_APPLICATION, REFUSE_GROUP_APPLICATION,
@@ -15,7 +19,7 @@ use crate::infra::http::routes::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetJoinedGroupListReq {
@@ -711,6 +715,175 @@ impl GroupManager {
         let route = if muted_seconds > 0 { MUTE_GROUP_MEMBER } else { CANCEL_MUTE_GROUP_MEMBER };
         let _resp: serde_json::Value = self.http_client.post(route, &req).await?;
         info!("群成员禁言状态已更新: group={}, user={}, seconds={}", group_id, user_id, muted_seconds);
+        Ok(())
+    }
+
+    /// 分页获取已加入群组列表（对齐 Go SDK `GetJoinedGroupListPage`）
+    ///
+    /// 优先从服务端分页获取，返回指定页的群组列表。
+    pub async fn get_joined_group_list_page(
+        &self,
+        offset: i32,
+        count: i32,
+    ) -> Result<Vec<GroupInfo>> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetJoinedGroupListReq {
+            user_id,
+            pagination: Pagination {
+                page_number: if offset == 0 { 1 } else { offset },
+                show_number: count,
+            },
+        };
+
+        let resp: GetJoinedGroupListResp = self.http_client.post(GET_JOINED_GROUP_LIST, &req).await?;
+
+        let groups: Vec<GroupInfo> = resp
+            .groups
+            .unwrap_or_default()
+            .into_iter()
+            .map(server_to_group_info)
+            .collect();
+
+        Ok(groups)
+    }
+
+    /// 搜索群组（对齐 Go SDK `SearchGroups`）
+    ///
+    /// 在本地缓存中按 group_id 或 group_name 模糊搜索。
+    pub async fn search_groups(&self, keyword: &str) -> Vec<GroupInfo> {
+        let kw = keyword.to_lowercase();
+        self.groups
+            .read()
+            .await
+            .iter()
+            .filter(|g| {
+                g.group_id.to_lowercase().contains(&kw)
+                    || g.group_name.to_lowercase().contains(&kw)
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// 获取群主和管理员列表（对齐 Go SDK `GetGroupMemberOwnerAndAdmin`）
+    ///
+    /// 从服务端获取 roleLevel >= 2（管理员和群主）的成员。
+    pub async fn get_group_member_owner_and_admin(
+        &self,
+        group_id: String,
+    ) -> Result<Vec<GroupMember>> {
+        // filter=3 表示获取群主+管理员
+        self.get_group_member_list(group_id, 3, 0, 1000).await
+    }
+
+    /// 按加入时间筛选群成员（对齐 Go SDK `GetGroupMemberListByJoinTimeFilter`）
+    ///
+    /// 从服务端分页获取指定加入时间范围内的群成员。
+    pub async fn get_group_member_list_by_join_time_filter(
+        &self,
+        group_id: String,
+        offset: i32,
+        count: i32,
+        join_time_begin: i64,
+        join_time_end: i64,
+        filter_user_ids: Vec<String>,
+    ) -> Result<Vec<GroupMember>> {
+        // 先从服务端获取全部成员（使用 filter=0 表示所有成员）
+        let all_members = self.get_group_member_list(group_id, 0, 0, 10000).await?;
+
+        let end_time = if join_time_end == 0 {
+            i64::MAX
+        } else {
+            join_time_end
+        };
+
+        let filter_set: std::collections::HashSet<String> = filter_user_ids.into_iter().collect();
+
+        let filtered: Vec<GroupMember> = all_members
+            .into_iter()
+            .filter(|m| {
+                m.join_time >= join_time_begin
+                    && m.join_time <= end_time
+                    && !filter_set.contains(&m.user_id)
+            })
+            .skip(offset.max(0) as usize)
+            .take(count.max(0) as usize)
+            .collect();
+
+        Ok(filtered)
+    }
+
+    /// 搜索群成员（对齐 Go SDK `SearchGroupMembers`）
+    ///
+    /// 在本地缓存中按 user_id 或 nickname 模糊搜索指定群组的成员。
+    pub async fn search_group_members(
+        &self,
+        group_id: &str,
+        keyword: &str,
+    ) -> Vec<GroupMember> {
+        let kw = keyword.to_lowercase();
+        self.members
+            .read()
+            .await
+            .iter()
+            .filter(|m| {
+                m.group_id == group_id
+                    && (m.user_id.to_lowercase().contains(&kw)
+                        || m.nickname.to_lowercase().contains(&kw))
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
+    ///
+    /// 返回传入 user_ids 中存在于该群组的用户 ID 列表。
+    pub async fn get_users_in_group(
+        &self,
+        group_id: &str,
+        user_ids: Vec<String>,
+    ) -> Vec<String> {
+        let members = self.members.read().await;
+        let member_set: std::collections::HashSet<String> = members
+            .iter()
+            .filter(|m| m.group_id == group_id)
+            .map(|m| m.user_id.clone())
+            .collect();
+
+        user_ids
+            .into_iter()
+            .filter(|uid| member_set.contains(uid))
+            .collect()
+    }
+
+    /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
+    ///
+    /// 简化实现：检查本地缓存中是否有群组数据。
+    pub async fn check_local_group_full_sync(&self) -> bool {
+        // 如果 groups 缓存非空，认为已同步
+        // 完整实现应比对版本同步表
+        !self.groups.read().await.is_empty()
+    }
+
+    /// 检查群成员是否已全量同步（对齐 Go SDK `CheckGroupMemberFullSync`）
+    ///
+    /// 简化实现：检查本地缓存中是否有该群组的成员数据。
+    pub async fn check_group_member_full_sync(&self, group_id: &str) -> bool {
+        self.members
+            .read()
+            .await
+            .iter()
+            .any(|m| m.group_id == group_id)
+    }
+
+    /// 同步指定群组的成员列表到本地缓存
+    pub async fn sync_group_members(&self, group_id: &str) -> Result<()> {
+        let members = self.get_group_member_list(group_id.to_string(), 0, 0, 10000).await?;
+
+        let mut cache = self.members.write().await;
+        cache.retain(|m| m.group_id != group_id);
+        cache.extend(members);
+
+        info!("群成员列表已同步: group={}", group_id);
         Ok(())
     }
 
