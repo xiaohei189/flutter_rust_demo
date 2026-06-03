@@ -387,7 +387,7 @@ impl OpenIMClient {
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
-        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress)).await
+        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress.clone())).await
             .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
         let file_elem = crate::domain::model::msg_struct::FileElem {
             file_path: file_path.to_string(),
@@ -430,7 +430,7 @@ impl OpenIMClient {
             .and_then(|n| n.to_str())
             .unwrap_or("audio")
             .to_string();
-        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress)).await
+        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress.clone())).await
             .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
         let sound_elem = crate::domain::model::msg_struct::SoundElem {
             uuid: upload_result.file_id.clone(),
@@ -484,7 +484,7 @@ impl OpenIMClient {
         // 上传视频文件（带进度回调）
         let v_path = std::path::Path::new(video_path);
         let v_name = v_path.file_name().and_then(|n| n.to_str()).unwrap_or("video").to_string();
-        let v_upload = self.file_uploader.upload_file_with_progress(video_path, &v_name, None, Some(progress)).await
+        let v_upload = self.file_uploader.upload_file_with_progress(video_path, &v_name, None, Some(progress.clone())).await
             .map_err(|e| SdkError::message_send(format!("upload video failed: {}", e)))?;
 
         // 上传封面图（无进度回调）

@@ -176,8 +176,8 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 好友通知处理 | `notification.go` | `notification/handler.rs` | ✅ |
 | 判断是否好友 | `api.go` | `manager.rs` + FFI | ✅ |
 | 获取未处理申请数 | `api.go` | `manager.rs` + FFI | ✅ |
-| **好友增量同步（VersionSynchronizer）** | `incremental_sync.go` | — | ❌ P1 |
-| **搜索好友** | `api.go` | — | ❌ P2 |
+| **好友增量同步（VersionSynchronizer）** | `incremental_sync.go` | `manager.rs` `sync_friends_incremental` | ✅ |
+| **搜索好友** | `api.go` | `manager.rs` `search_friends` + FFI | ✅ |
 
 ### 4.6 群组模块 `core/group/` — 100%
 
@@ -202,7 +202,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 按加入时间筛选成员 | `api.go` | `manager.rs` + FFI | ✅ |
 | 获取指定用户在群中 | `api.go` | `manager.rs` + FFI | ✅ |
 | 检查本地同步状态 | `api.go` | `manager.rs` + FFI | ✅ |
-| **群组增量同步** | `incremental_sync.go` | — | ❌ P1 |
+| **群组增量同步** | `incremental_sync.go` | `manager.rs` `sync_groups_incremental` | ✅ |
 
 ### 4.7 用户模块 `core/user/` — 90%
 
@@ -322,7 +322,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | `GetFriendApplicationUnhandledCount` | `get_friend_application_unhandled_count()` | ✅ |
 | `GetSpecifiedFriendsInfo` | — | ❌ |
 | `GetFriendListPage` | — | ❌ |
-| `SearchFriends` | — | ❌ |
+| `SearchFriends` | `search_friends()` | ✅ |
 | `UpdateFriends` | — | ❌ |
 
 #### 群组（28 个）
@@ -505,7 +505,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 |---|--------|----------|------|
 | `local_notification_seqs` | ✅ | ❌ | 通知 seq 追踪 |
 | `local_seq` | ✅ | ❌ | MinSeq 存储 |
-| `local_version_sync` | ✅ | ⚠️ 有 DAO 无完整表 | 版本同步（会话/好友/群组增量同步） |
+| `local_version_sync` | ✅ | ✅ | 版本同步（会话/好友/群组增量同步） |
 
 ---
 
