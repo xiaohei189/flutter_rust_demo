@@ -7,6 +7,11 @@ impl OpenIMClient {
         self.user.get_users_info(user_ids.to_vec()).await
     }
 
+    /// 获取当前登录用户的信息
+    pub async fn get_self_user_info(&self) -> Result<UserInfo> {
+        self.user.get_self_user_info().await
+    }
+
     pub async fn update_user_profile(
         &self,
         nickname: Option<&str>,
@@ -20,5 +25,10 @@ impl OpenIMClient {
             email: ex.map(|s| s.to_string()),
         };
         self.user.update_self_user_info(updates).await
+    }
+
+    /// 设置全局消息接收选项
+    pub async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()> {
+        self.user.set_global_msg_recv_opt(global_recv_opt).await
     }
 }

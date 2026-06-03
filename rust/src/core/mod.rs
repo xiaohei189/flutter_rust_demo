@@ -1,6 +1,7 @@
 pub mod connection;
 pub mod message;
 pub mod conversation;
+pub mod notification;
 pub mod user;
 pub mod friend;
 pub mod group;

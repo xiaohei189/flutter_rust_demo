@@ -3,6 +3,9 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
+import '../core/connection/manager.dart';
+import '../core/friend/manager.dart';
+import '../core/online/manager.dart';
 import '../domain/config.dart';
 import '../domain/constant/enums.dart';
 import '../domain/event/types.dart';
@@ -10,6 +13,7 @@ import '../domain/model/conversation.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
 import '../domain/model/message.dart';
+import '../domain/model/msg_struct.dart';
 import '../domain/model/user.dart';
 import '../frb_generated.dart';
 import '../infra/database/models.dart';
@@ -38,16 +42,24 @@ Stream<int> uploadFileWithProgress({
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
-  Future<void> acceptFriendApplication({required String userId});
+  Future<void> acceptFriendApplication({
+    required String userId,
+    String? handleMsg,
+  });
 
   Future<void> acceptGroupApplication({
     required String groupId,
     required String userId,
+    String? handleMsg,
   });
 
   Future<void> addBlack({required String userId});
 
   Future<void> addFriend({required String userId, required String reqMsg});
+
+  Future<List<CheckFriendResult>> checkFriend({required List<String> userIds});
+
+  Future<void> clearConversationDraft({required String conversationId});
 
   Future<GroupInfo> createGroup({
     required String groupName,
@@ -69,15 +81,29 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<List<String>> getBlackList();
 
+  Future<ConnectionState> getConnectionState();
+
   Future<LocalConversation?> getConversation({required String conversationId});
 
   Future<List<LocalConversation>> getConversations();
 
+  Future<int> getFriendApplicationUnhandledCount();
+
   Future<List<FriendApplyInfo>> getFriendApplyList();
+
+  Future<List<FriendApplyInfo>> getFriendApplyListAsApplicant();
+
+  Future<List<String>> getFriendIdList();
 
   Future<List<FriendInfo>> getFriendList();
 
   Future<List<GroupApplyInfo>> getGroupApplicationList();
+
+  Future<List<GroupApplyInfo>> getGroupApplicationListAsApplicant();
+
+  Future<List<GroupApplyInfo>> getGroupApplicationListAsRecipient();
+
+  Future<int> getGroupApplicationUnhandledCount();
 
   Future<List<GroupInfo>> getGroupList();
 
@@ -94,6 +120,12 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required GetHistoryMessagesReq req,
   });
 
+  Future<List<Conversation>> getPinnedConversations();
+
+  Future<UserInfo> getSelfUserInfo();
+
+  Future<List<OnlineStatus>> getUserStatus({required List<String> userIds});
+
   Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
 
   Future<void> inviteGroupMembers({
@@ -101,7 +133,13 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required List<String> memberIds,
   });
 
+  Future<bool> isConnected();
+
   Future<bool> isFriend({required String userId});
+
+  Future<bool> isInBlacklist({required String userId});
+
+  Future<bool> isInGroup({required String groupId});
 
   Future<void> joinGroup({required String groupId, required String reqMsg});
 
@@ -110,12 +148,22 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required List<String> memberIds,
   });
 
+  Future<void> logout();
+
   Future<void> markConversationAsRead({
     required String conversationId,
     required SessionType sessionType,
   });
 
   Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req});
+
+  Future<void> muteGroup({required String groupId, required bool isMute});
+
+  Future<void> muteGroupMember({
+    required String groupId,
+    required String userId,
+    required PlatformInt64 mutedSeconds,
+  });
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
   static Future<OpenImBridgeClient> newInstance({
@@ -126,11 +174,15 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> quitGroup({required String groupId});
 
-  Future<void> refuseFriendApplication({required String userId});
+  Future<void> refuseFriendApplication({
+    required String userId,
+    String? handleMsg,
+  });
 
   Future<void> refuseGroupApplication({
     required String groupId,
     required String userId,
+    String? handleMsg,
   });
 
   Future<void> removeBlack({required String userId});
@@ -141,25 +193,65 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required SearchMessagesReq req,
   });
 
+  Future<MsgData> sendAdvancedTextMessage({
+    required String text,
+    required List<MessageEntity> entities,
+    required String sourceId,
+    required int sessionType,
+  });
+
+  Future<MsgData> sendAtTextMessage({
+    required String text,
+    required List<String> atUserIds,
+    required String sourceId,
+    required int sessionType,
+  });
+
+  Future<MsgData> sendCustomMessage({
+    required String data,
+    required String desc,
+    required String extension_,
+    required String sourceId,
+    required int sessionType,
+  });
+
+  Future<MsgData> sendFileMessage({
+    required String filePath,
+    required String sourceId,
+    required int sessionType,
+  });
+
   Future<MsgData> sendImageMessage({
     required String filePath,
-    required String recvId,
-    required String groupId,
+    required String sourceId,
     required int sessionType,
   });
 
   Future<MsgData> sendMarkdownMessage({
     required String text,
-    required String recvId,
-    required String groupId,
+    required String sourceId,
     required int sessionType,
+  });
+
+  Future<MsgData> sendSoundMessage({
+    required String filePath,
+    required String sourceId,
+    required int sessionType,
+    required PlatformInt64 duration,
   });
 
   Future<MsgData> sendTextMessage({
     required String text,
-    required String recvId,
-    required String groupId,
+    required String sourceId,
     required int sessionType,
+  });
+
+  Future<MsgData> sendVideoMessage({
+    required String videoPath,
+    required String snapshotPath,
+    required String sourceId,
+    required int sessionType,
+    required PlatformInt64 duration,
   });
 
   Future<void> setConversationDraft({
@@ -177,10 +269,19 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required bool isPrivate,
   });
 
+  Future<void> setGlobalMsgRecvOpt({required int globalRecvOpt});
+
   Future<void> setGroupInfo({
     required String groupId,
     String? groupName,
     String? faceUrl,
+  });
+
+  Future<void> syncFriends();
+
+  Future<void> transferGroupOwner({
+    required String groupId,
+    required String newOwnerUserId,
   });
 
   Future<void> updateConversationUnreadCount({

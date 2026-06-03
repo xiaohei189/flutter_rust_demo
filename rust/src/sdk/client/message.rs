@@ -329,6 +329,82 @@ impl OpenIMClient {
         self.send_msg(msg, source_id, None).await
     }
 
+    /// 发送语音消息
+    pub async fn send_sound_message(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgData, SdkError> {
+        let path = std::path::Path::new(file_path);
+        let file_name = path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("audio")
+            .to_string();
+        let upload_result = self.file_uploader.upload_file(file_path, &file_name, None).await
+            .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
+        let sound_elem = crate::domain::model::msg_struct::SoundElem {
+            uuid: upload_result.file_id.clone(),
+            sound_path: file_path.to_string(),
+            source_url: upload_result.url,
+            data_size: upload_result.size as i64,
+            duration,
+            sound_type: upload_result.content_type,
+        };
+        let mut msg = MsgStruct::create_sound_message(sound_elem);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送视频消息
+    pub async fn send_video_message(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgData, SdkError> {
+        // 上传视频文件
+        let v_path = std::path::Path::new(video_path);
+        let v_name = v_path.file_name().and_then(|n| n.to_str()).unwrap_or("video").to_string();
+        let v_upload = self.file_uploader.upload_file(video_path, &v_name, None).await
+            .map_err(|e| SdkError::message_send(format!("upload video failed: {}", e)))?;
+
+        // 上传封面图
+        let s_path = std::path::Path::new(snapshot_path);
+        let s_name = s_path.file_name().and_then(|n| n.to_str()).unwrap_or("snapshot").to_string();
+        let s_upload = self.file_uploader.upload_file(snapshot_path, &s_name, None).await
+            .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
+
+        let video_elem = crate::domain::model::msg_struct::VideoElem {
+            video_path: video_path.to_string(),
+            video_uuid: v_upload.file_id.clone(),
+            video_url: v_upload.url,
+            video_type: v_upload.content_type,
+            video_size: v_upload.size as i64,
+            duration,
+            snapshot_path: snapshot_path.to_string(),
+            snapshot_uuid: s_upload.file_id,
+            snapshot_size: s_upload.size as i64,
+            snapshot_url: s_upload.url,
+            snapshot_width: 0,
+            snapshot_height: 0,
+            snapshot_type: String::new(),
+        };
+        let mut msg = MsgStruct::create_video_message(video_elem);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送 @ 消息
+    pub async fn send_at_text_message(&self, text: &str, at_user_ids: Vec<String>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let at_users_info: Vec<crate::domain::model::msg_struct::AtInfo> = at_user_ids.iter().map(|uid| {
+            crate::domain::model::msg_struct::AtInfo {
+                at_user_id: uid.clone(),
+                group_nickname: String::new(),
+            }
+        }).collect();
+        let mut msg = MsgStruct::create_at_text_message(text, at_user_ids, at_users_info, None);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送自定义消息
+    pub async fn send_custom_message(&self, data: &str, desc: &str, extension: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
+        let mut msg = MsgStruct::create_custom_message(data, desc, extension);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
         info!("get_history_messages: conversation_id={}, start_client_msg_id={}, count={}",
               req.conversation_id, req.start_client_msg_id, req.count);

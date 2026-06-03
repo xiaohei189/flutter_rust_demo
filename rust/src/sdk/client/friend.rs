@@ -28,12 +28,21 @@ impl OpenIMClient {
         self.friend.is_friend(user_id).await
     }
 
+    /// 批量检查好友关系状态
+    pub async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::core::friend::manager::CheckFriendResult>, SdkError> {
+        self.friend.check_friend(user_ids).await.map_err(SdkError::from)
+    }
+
     pub async fn add_black(&self, user_id: &str) -> Result<()> {
         self.friend.add_black(user_id.to_string()).await
     }
 
     pub async fn remove_black(&self, user_id: &str) -> Result<()> {
         self.friend.remove_black(user_id.to_string()).await
+    }
+
+    pub async fn is_in_blacklist(&self, user_id: &str) -> bool {
+        self.friend.is_in_blacklist(user_id).await
     }
 
     pub async fn get_friend_apply_list(&self) -> std::result::Result<Vec<FriendApplyInfo>, SdkError> {
@@ -46,6 +55,24 @@ impl OpenIMClient {
             req_msg: a.req_msg,
             handle_result: a.handle_result,
         }).collect())
+    }
+
+    /// 获取自己发出的好友申请列表
+    pub async fn get_friend_apply_list_as_applicant(&self) -> std::result::Result<Vec<FriendApplyInfo>, SdkError> {
+        let resp = self.friend.get_friend_apply_list_as_applicant().await?;
+        Ok(resp.apply_infos.unwrap_or_default().into_iter().map(|a| FriendApplyInfo {
+            user_id: a.user_id,
+            nickname: a.nickname,
+            face_url: a.face_url,
+            create_time: a.create_time,
+            req_msg: a.req_msg,
+            handle_result: a.handle_result,
+        }).collect())
+    }
+
+    /// 获取未处理的好友申请数量
+    pub async fn get_friend_application_unhandled_count(&self) -> Result<i32> {
+        self.friend.get_friend_application_unhandled_count().await
     }
 
     pub async fn accept_friend_application(&self, user_id: &str, handle_msg: Option<&str>) -> Result<()> {

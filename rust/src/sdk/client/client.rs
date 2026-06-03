@@ -5,6 +5,7 @@ use crate::core::file::uploader::FileUploader;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::message::handler::MessageHandler;
+use crate::core::notification::handler::NotificationHandler;
 use crate::domain::model::message::ReceivedMessage;
 use crate::core::message::service::MessageService;
 use crate::core::message::syncer::MessageSyncer;
@@ -104,6 +105,13 @@ impl OpenIMClient {
             config.user_id.clone(),
         ));
 
+        let notification_handler = Arc::new(NotificationHandler::new(
+            friend.clone(),
+            group.clone(),
+            user.clone(),
+            event_bus.clone(),
+        ));
+
         info!("OpenIM SDK 初始化完成");
 
         Ok(Self {
@@ -115,6 +123,7 @@ impl OpenIMClient {
             conversation,
             message_syncer,
             message_handler,
+            notification_handler,
             conversation_syncer,
             online_status,
             file_uploader,
@@ -136,6 +145,7 @@ impl OpenIMClient {
         let event_bus = self.event_bus.clone();
         let message_handler = self.message_handler.clone();
         let message_syncer = self.message_syncer.clone();
+        let notification_handler = self.notification_handler.clone();
         let cancel_token = self.context.cancel_token.clone();
 
         tokio::spawn(async move {
@@ -250,36 +260,12 @@ impl OpenIMClient {
                             Some(SdkEvent::PushNotificationMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
                                 info!("push_message_handler: received PushNotificationMessages for {}, msg_count={}", conversation_id, msgs.len());
 
-                                let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
-                                    let content_str = String::from_utf8_lossy(&msg.content).to_string();
+                                // 通知消息路由到 NotificationHandler（对齐 Go SDK DoNotification）
+                                notification_handler.handle_notifications(&msgs).await;
 
-                                    Some(ReceivedMessage {
-                                        server_msg_id: msg.server_msg_id.clone(),
-                                        client_msg_id: msg.client_msg_id.clone(),
-                                        send_id: msg.send_id.clone(),
-                                        recv_id: msg.recv_id.clone(),
-                                        sender_platform_id: msg.sender_platform_id,
-                                        sender_nick_name: msg.sender_nickname.clone(),
-                                        sender_face_url: msg.sender_face_url.clone(),
-                                        session_type: msg.session_type,
-                                        msg_from: msg.msg_from,
-                                        content_type: msg.content_type,
-                                        content: content_str,
-                                        seq: msg.seq,
-                                        send_time: msg.send_time,
-                                        create_time: msg.create_time,
-                                        conversation_id: conversation_id.clone(),
-                                        group_id: msg.group_id.clone(),
-                                    })
-                                }).collect();
-
+                                // 同步 seq
                                 let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-
-                                if !messages.is_empty() {
-                                    info!("push_message_handler: handling {} notification messages for {}", messages.len(), conversation_id);
-                                    if let Err(e) = message_handler.handle_messages(messages).await {
-                                        warn!("failed to handle push notification messages for {}: {:?}", conversation_id, e);
-                                    }
+                                if !seqs.is_empty() {
                                     if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
                                         warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
                                     }
@@ -310,6 +296,7 @@ impl OpenIMClient {
         self.context.set_user_id(user_id.to_string());
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
+        self.notification_handler.set_user_id(user_id.to_string());
         self.message_handler.set_user_id(user_id.to_string());
         self.message_service.set_user_id(user_id.to_string());
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
@@ -360,5 +347,15 @@ impl OpenIMClient {
     /// 获取事件总线（内部使用）
     pub fn event_bus(&self) -> Arc<EventBus> {
         self.event_bus.clone()
+    }
+
+    /// 获取连接状态
+    pub async fn get_connection_state(&self) -> crate::core::connection::manager::ConnectionState {
+        self.connection.get_state().await
+    }
+
+    /// 是否已连接
+    pub async fn is_connected(&self) -> bool {
+        self.connection.is_connected().await
     }
 }

@@ -5,6 +5,9 @@
 
 import 'api/bridge_client.dart';
 import 'api/simple.dart';
+import 'core/connection/manager.dart';
+import 'core/friend/manager.dart';
+import 'core/online/manager.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
@@ -15,6 +18,7 @@ import 'domain/model/conversation.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
 import 'domain/model/message.dart';
+import 'domain/model/msg_struct.dart';
 import 'domain/model/user.dart';
 import 'frb_generated.dart';
 import 'infra/database/models.dart';
@@ -116,7 +120,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   UserInfo dco_decode_box_autoadd_user_info(dynamic raw);
 
   @protected
+  CheckFriendResult dco_decode_check_friend_result(dynamic raw);
+
+  @protected
   ClientConfig dco_decode_client_config(dynamic raw);
+
+  @protected
+  ConnectionState dco_decode_connection_state(dynamic raw);
 
   @protected
   Conversation dco_decode_conversation(dynamic raw);
@@ -161,6 +171,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
+  List<CheckFriendResult> dco_decode_list_check_friend_result(dynamic raw);
+
+  @protected
   List<Conversation> dco_decode_list_conversation(dynamic raw);
 
   @protected
@@ -185,7 +198,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
 
   @protected
+  List<MessageEntity> dco_decode_list_message_entity(dynamic raw);
+
+  @protected
   List<MessageInfo> dco_decode_list_message_info(dynamic raw);
+
+  @protected
+  List<OnlineStatus> dco_decode_list_online_status(dynamic raw);
 
   @protected
   Int32List dco_decode_list_prim_i_32_strict(dynamic raw);
@@ -209,7 +228,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
   @protected
+  MessageEntity dco_decode_message_entity(dynamic raw);
+
+  @protected
   MessageInfo dco_decode_message_info(dynamic raw);
+
+  @protected
+  OnlineStatus dco_decode_online_status(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
@@ -340,7 +365,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer);
 
   @protected
+  CheckFriendResult sse_decode_check_friend_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ClientConfig sse_decode_client_config(SseDeserializer deserializer);
+
+  @protected
+  ConnectionState sse_decode_connection_state(SseDeserializer deserializer);
 
   @protected
   Conversation sse_decode_conversation(SseDeserializer deserializer);
@@ -391,6 +424,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
+  List<CheckFriendResult> sse_decode_list_check_friend_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<Conversation> sse_decode_list_conversation(SseDeserializer deserializer);
 
   @protected
@@ -423,7 +461,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<MessageEntity> sse_decode_list_message_entity(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<MessageInfo> sse_decode_list_message_info(SseDeserializer deserializer);
+
+  @protected
+  List<OnlineStatus> sse_decode_list_online_status(
+    SseDeserializer deserializer,
+  );
 
   @protected
   Int32List sse_decode_list_prim_i_32_strict(SseDeserializer deserializer);
@@ -449,7 +497,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
+
+  @protected
   MessageInfo sse_decode_message_info(SseDeserializer deserializer);
+
+  @protected
+  OnlineStatus sse_decode_online_status(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
@@ -605,7 +659,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_check_friend_result(
+    CheckFriendResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_client_config(ClientConfig self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_connection_state(
+    ConnectionState self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_conversation(Conversation self, SseSerializer serializer);
@@ -666,6 +732,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_check_friend_result(
+    List<CheckFriendResult> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_conversation(
     List<Conversation> self,
     SseSerializer serializer,
@@ -714,8 +786,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_message_entity(
+    List<MessageEntity> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_message_info(
     List<MessageInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_online_status(
+    List<OnlineStatus> self,
     SseSerializer serializer,
   );
 
@@ -756,7 +840,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);
+
+  @protected
   void sse_encode_message_info(MessageInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_online_status(OnlineStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);

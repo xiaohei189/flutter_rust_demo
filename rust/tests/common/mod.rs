@@ -11,6 +11,11 @@ pub const DEFAULT_VERIFICATION_CODE: &str = "666666";
 // 固定测试手机号
 pub const SENDER_PHONE: &str = "17764008284";   // 发送方
 pub const RECEIVER_PHONE: &str = "17764008283"; // 接收方
+// 群组测试固定手机号
+pub const GROUP_OWNER_PHONE: &str = "17764008280";   // 群主
+pub const GROUP_MEMBER1_PHONE: &str = "17764008281"; // 群成员1
+pub const GROUP_MEMBER2_PHONE: &str = "17764008282"; // 群成员2
+pub const GROUP_APPLICANT_PHONE: &str = "17764008285"; // 申请人
 
 #[derive(Clone, Debug)]
 pub struct TestAccount {
@@ -209,6 +214,22 @@ pub async fn get_or_create_user2() -> TestAccount {
     println!("  export OPENIM_TEST_USER2_PHONE={}", phone);
 
     account
+}
+
+pub async fn get_or_create_group_owner() -> TestAccount {
+    login_or_register_user(GROUP_OWNER_PHONE, "GroupOwner").await
+}
+
+pub async fn get_or_create_group_member1() -> TestAccount {
+    login_or_register_user(GROUP_MEMBER1_PHONE, "GroupMember1").await
+}
+
+pub async fn get_or_create_group_member2() -> TestAccount {
+    login_or_register_user(GROUP_MEMBER2_PHONE, "GroupMember2").await
+}
+
+pub async fn get_or_create_group_applicant() -> TestAccount {
+    login_or_register_user(GROUP_APPLICANT_PHONE, "GroupApplicant").await
 }
 
 pub async fn create_sdk(account: &TestAccount, im_token: &str) -> OpenIMClient {

@@ -7,7 +7,10 @@ use crate::infra::http::routes::{
     CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,
     DISMISS_GROUP, GET_GROUP_MEMBER_LIST, GET_GROUP_MEMBERS_INFO, SET_GROUP_MEMBER_INFO,
     KICK_GROUP_MEMBER, GET_JOINED_GROUP_LIST, INVITE_USER_TO_GROUP,
-    GET_GROUP_APPLICATION_LIST, ACCEPT_GROUP_APPLICATION, REFUSE_GROUP_APPLICATION,
+    GET_GROUP_APPLICATION_LIST, GET_RECV_GROUP_APPLICATION_LIST, GET_SEND_GROUP_APPLICATION_LIST,
+    GET_GROUP_APPLICATION_UNHANDLED_COUNT,
+    ACCEPT_GROUP_APPLICATION, REFUSE_GROUP_APPLICATION,
+    TRANSFER_GROUP_OWNER, MUTE_GROUP, CANCEL_MUTE_GROUP, MUTE_GROUP_MEMBER, CANCEL_MUTE_GROUP_MEMBER,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -600,25 +603,114 @@ impl GroupManager {
         Ok(resp)
     }
 
-    pub async fn accept_group_application(&self, group_id: String, user_id: String) -> Result<()> {
-        let req = AcceptGroupApplicationReq {
-            group_id,
+    /// 获取管理员收到的群组申请列表（对齐 Go SDK GetGroupApplicationListAsRecipient）
+    pub async fn get_group_application_list_as_recipient(&self) -> Result<GetGroupApplicationListResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetGroupApplicationListReq {
             from_user_id: user_id,
-            handle_msg: None,
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 1000,
+            },
+        };
+        let resp: GetGroupApplicationListResp = self.http_client.post(GET_RECV_GROUP_APPLICATION_LIST, &req).await?;
+        Ok(resp)
+    }
+
+    /// 获取自己发出的群组申请列表（对齐 Go SDK GetGroupApplicationListAsApplicant）
+    pub async fn get_group_application_list_as_applicant(&self) -> Result<GetGroupApplicationListResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetGroupApplicationListReq {
+            from_user_id: user_id,
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 1000,
+            },
+        };
+        let resp: GetGroupApplicationListResp = self.http_client.post(GET_SEND_GROUP_APPLICATION_LIST, &req).await?;
+        Ok(resp)
+    }
+
+    /// 获取未处理的群组申请数量（对齐 Go SDK GetGroupApplicationUnhandledCount）
+    pub async fn get_group_application_unhandled_count(&self) -> Result<i32> {
+        #[derive(Serialize)]
+        struct UnhandledCountReq {
+            user_id: String,
+        }
+        let user_id = self.user_id.read().await.clone();
+        let req = UnhandledCountReq { user_id };
+        #[derive(Deserialize, Default)]
+        struct UnhandledCountResp {
+            count: i32,
+        }
+        let resp: UnhandledCountResp = self.http_client.post(GET_GROUP_APPLICATION_UNHANDLED_COUNT, &req).await?;
+        Ok(resp.count)
+    }
+
+    pub async fn accept_group_application(&self, group_id: String, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        let req = AcceptGroupApplicationReq {
+            group_id: group_id.clone(),
+            from_user_id: user_id.clone(),
+            handle_msg,
         };
         let _resp: serde_json::Value = self.http_client.post(ACCEPT_GROUP_APPLICATION, &req).await?;
-        info!("群组申请已接受");
+
+        // 对齐 Go SDK: 接受群组申请后同步群组列表
+        if let Err(e) = self.sync_groups().await {
+            tracing::warn!("接受群组申请后同步群组列表失败: {}", e);
+        }
+
+        info!("群组申请已接受: group={}, user={}", group_id, user_id);
         Ok(())
     }
 
-    pub async fn refuse_group_application(&self, group_id: String, user_id: String) -> Result<()> {
+    pub async fn refuse_group_application(&self, group_id: String, user_id: String, handle_msg: Option<String>) -> Result<()> {
         let req = RefuseGroupApplicationReq {
-            group_id,
-            from_user_id: user_id,
-            handle_msg: None,
+            group_id: group_id.clone(),
+            from_user_id: user_id.clone(),
+            handle_msg,
         };
         let _resp: serde_json::Value = self.http_client.post(REFUSE_GROUP_APPLICATION, &req).await?;
-        info!("群组申请已拒绝");
+        info!("群组申请已拒绝: group={}, user={}", group_id, user_id);
+        Ok(())
+    }
+
+    /// 转让群主
+    pub async fn transfer_group_owner(&self, group_id: String, new_owner_user_id: String) -> Result<()> {
+        let req = serde_json::json!({
+            "groupID": group_id,
+            "newOwnerUserID": new_owner_user_id,
+        });
+        let _resp: serde_json::Value = self.http_client.post(TRANSFER_GROUP_OWNER, &req).await?;
+        if let Err(e) = self.sync_groups().await {
+            tracing::warn!("转让群主后同步群组列表失败: {}", e);
+        }
+        info!("群主已转让: group={}, new_owner={}", group_id, new_owner_user_id);
+        Ok(())
+    }
+
+    /// 全局禁言/解除禁言群组
+    pub async fn mute_group(&self, group_id: String, is_mute: bool) -> Result<()> {
+        let req = serde_json::json!({
+            "groupID": group_id,
+            "isMute": is_mute,
+        });
+        let route = if is_mute { MUTE_GROUP } else { CANCEL_MUTE_GROUP };
+        let _resp: serde_json::Value = self.http_client.post(route, &req).await?;
+        info!("群组禁言状态已更新: group={}, is_mute={}", group_id, is_mute);
+        Ok(())
+    }
+
+    /// 禁言/解除禁言群成员
+    pub async fn mute_group_member(&self, group_id: String, user_id: String, muted_seconds: i64) -> Result<()> {
+        let req = serde_json::json!({
+            "groupID": group_id,
+            "userID": user_id,
+            "mutedSeconds": muted_seconds,
+        });
+        let route = if muted_seconds > 0 { MUTE_GROUP_MEMBER } else { CANCEL_MUTE_GROUP_MEMBER };
+        let _resp: serde_json::Value = self.http_client.post(route, &req).await?;
+        info!("群成员禁言状态已更新: group={}, user={}, seconds={}", group_id, user_id, muted_seconds);
         Ok(())
     }
 

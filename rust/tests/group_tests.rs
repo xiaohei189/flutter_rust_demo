@@ -14,24 +14,16 @@ async fn test_create_group() {
 
     println!("=== 创建群组测试 ===\n");
 
-    let phone = generate_virtual_phone("cgrp");
-    let cert = register_user(&phone, "CreateGroupUser").await.expect("注册失败");
-    println!("用户: {}", cert.user_id);
-
-    let sdk = create_sdk(&TestAccount {
-        user_id: cert.user_id.clone(),
-        phone,
-        nickname: "CreateGroupUser".into(),
-        im_token: Some(cert.im_token.clone()),
-        chat_token: None,
-    }, &cert.im_token).await;
+    let account = get_or_create_group_owner().await;
+    let (im_token, _) = login_account(&account).await.expect("登录失败");
+    let sdk = create_sdk(&account, &im_token).await;
 
     let group_name = format!("TestGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
 
     let result = sdk.create_group(
         &group_name,
         GroupType::Normal,
-        &vec![cert.user_id.clone()],
+        &vec![account.user_id.clone()],
     ).await;
 
     assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
@@ -51,26 +43,18 @@ async fn test_join_and_quit_group() {
 
     println!("=== 加入/退出群组测试 ===\n");
 
-    let phone1 = generate_virtual_phone("jq1");
-    let phone2 = generate_virtual_phone("jq2");
+    let account1 = get_or_create_group_owner().await;
+    let account2 = get_or_create_group_member1().await;
+    let (im_token1, _) = login_account(&account1).await.expect("登录失败");
+    let (im_token2, _) = login_account(&account2).await.expect("登录失败");
 
-    let cert1 = register_user(&phone1, "JQUser1").await.expect("注册失败");
-    let cert2 = register_user(&phone2, "JQUser2").await.expect("注册失败");
-
-    let sdk1 = create_sdk(&TestAccount {
-        user_id: cert1.user_id.clone(), phone: phone1, nickname: "JQUser1".into(),
-        im_token: Some(cert1.im_token.clone()), chat_token: None,
-    }, &cert1.im_token).await;
-
-    let sdk2 = create_sdk(&TestAccount {
-        user_id: cert2.user_id.clone(), phone: phone2, nickname: "JQUser2".into(),
-        im_token: Some(cert2.im_token.clone()), chat_token: None,
-    }, &cert2.im_token).await;
+    let sdk1 = create_sdk(&account1, &im_token1).await;
+    let sdk2 = create_sdk(&account2, &im_token2).await;
 
     let group_name = format!("JQGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
     let group = sdk1.create_group(
         &group_name, GroupType::Normal,
-        &vec![cert1.user_id.clone()],
+        &vec![account1.user_id.clone()],
     ).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
@@ -81,7 +65,7 @@ async fn test_join_and_quit_group() {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     println!("用户1邀请用户2...");
-    let invite_result = sdk1.invite_group_members(&group.group_id, &vec![cert2.user_id.clone()], None).await;
+    let invite_result = sdk1.invite_group_members(&group.group_id, &vec![account2.user_id.clone()], None).await;
     assert!(invite_result.is_ok(), "邀请失败: {:?}", invite_result.err());
     println!("  ✅ 邀请成功");
 
@@ -103,17 +87,13 @@ async fn test_group_member_management() {
 
     println!("=== 群成员管理测试 ===\n");
 
-    let phone = generate_virtual_phone("gmem");
-    let cert = register_user(&phone, "GMemUser").await.expect("注册失败");
-
-    let sdk = create_sdk(&TestAccount {
-        user_id: cert.user_id.clone(), phone, nickname: "GMemUser".into(),
-        im_token: Some(cert.im_token.clone()), chat_token: None,
-    }, &cert.im_token).await;
+    let account = get_or_create_group_owner().await;
+    let (im_token, _) = login_account(&account).await.expect("登录失败");
+    let sdk = create_sdk(&account, &im_token).await;
 
     let group = sdk.create_group(
         "MemberTestGroup", GroupType::Normal,
-        &vec![cert.user_id.clone()],
+        &vec![account.user_id.clone()],
     ).await.expect("创建群组失败");
 
     println!("获取群成员...");
@@ -143,17 +123,13 @@ async fn test_group_info_update() {
 
     println!("=== 群信息更新测试 ===\n");
 
-    let phone = generate_virtual_phone("ginf");
-    let cert = register_user(&phone, "GInfoUser").await.expect("注册失败");
-
-    let sdk = create_sdk(&TestAccount {
-        user_id: cert.user_id.clone(), phone, nickname: "GInfoUser".into(),
-        im_token: Some(cert.im_token.clone()), chat_token: None,
-    }, &cert.im_token).await;
+    let account = get_or_create_group_owner().await;
+    let (im_token, _) = login_account(&account).await.expect("登录失败");
+    let sdk = create_sdk(&account, &im_token).await;
 
     let group = sdk.create_group(
         "InfoTestGroup", GroupType::Normal,
-        &vec![cert.user_id.clone()],
+        &vec![account.user_id.clone()],
     ).await.expect("创建失败");
     println!("群: {} ({})", group.group_name, group.group_id);
 
@@ -202,30 +178,14 @@ async fn test_user_state_group_management() {
 
     println!("=== 群组管理测试 ===\n");
 
-    let phone = generate_virtual_phone("ugrp");
-    let nickname = format!("UGroupUser_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-
-    println!("注册用户...");
-    let cert = register_user(&phone, &nickname).await.expect("注册失败");
-    println!("用户: {}", cert.user_id);
-
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
-
-    let data_dir = std::env::temp_dir().join(format!("ugrp_{}", cert.user_id)).to_string_lossy().to_string();
-    let _ = std::fs::create_dir_all(&data_dir);
-
-    let sdk = OpenIMClient::new(ClientConfig::new(
-        cert.user_id.clone(), cert.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir),
-    )).await.unwrap();
-    sdk.connect(WS_URL, &cert.im_token, &cert.user_id).await.unwrap();
-    tokio::time::sleep(Duration::from_secs(2)).await;
+    let account = get_or_create_group_owner().await;
+    let (im_token, _) = login_account(&account).await.expect("登录失败");
+    let sdk = create_sdk(&account, &im_token).await;
 
     let group_name = format!("UGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
     let result = sdk.create_group(
         &group_name, GroupType::Normal,
-        &vec![cert.user_id.clone()],
+        &vec![account.user_id.clone()],
     ).await;
 
     assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
@@ -248,38 +208,18 @@ async fn test_group_application_flow() {
 
     println!("=== 群组申请/审批流程测试 ===\n");
 
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+    let account1 = get_or_create_group_owner().await;
+    let account2 = get_or_create_group_applicant().await;
+    let (im_token1, _) = login_account(&account1).await.expect("登录失败");
+    let (im_token2, _) = login_account(&account2).await.expect("登录失败");
 
-    let phone1 = generate_virtual_phone("gapp1");
-    let phone2 = generate_virtual_phone("gapp2");
-
-    let cert1 = register_user(&phone1, "GAppOwner").await.expect("注册失败");
-    let cert2 = register_user(&phone2, "GAppUser").await.expect("注册失败");
-
-    let data_dir1 = std::env::temp_dir().join(format!("gapp_{}", cert1.user_id)).to_string_lossy().to_string();
-    let data_dir2 = std::env::temp_dir().join(format!("gapp_{}", cert2.user_id)).to_string_lossy().to_string();
-    let _ = std::fs::create_dir_all(&data_dir1);
-    let _ = std::fs::create_dir_all(&data_dir2);
-
-    let sdk1 = OpenIMClient::new(ClientConfig::new(
-        cert1.user_id.clone(), cert1.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir1),
-    )).await.unwrap();
-    sdk1.login(&cert1.user_id, &cert1.im_token).await.unwrap();
-    tokio::time::sleep(Duration::from_secs(2)).await;
-
-    let sdk2 = OpenIMClient::new(ClientConfig::new(
-        cert2.user_id.clone(), cert2.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir2),
-    )).await.unwrap();
-    sdk2.login(&cert2.user_id, &cert2.im_token).await.unwrap();
-    tokio::time::sleep(Duration::from_secs(2)).await;
+    let sdk1 = create_sdk(&account1, &im_token1).await;
+    let sdk2 = create_sdk(&account2, &im_token2).await;
 
     let group_name = format!("GAppGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
     let group = sdk1.create_group(
         &group_name, GroupType::Normal,
-        &vec![cert1.user_id.clone()],
+        &vec![account1.user_id.clone()],
     ).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
@@ -296,7 +236,7 @@ async fn test_group_application_flow() {
     println!("  ✅ 申请数: {}", app_list.len());
 
     println!("用户1审批用户2的申请...");
-    let accept_result = sdk1.accept_group_application(&group.group_id, &cert2.user_id).await;
+    let accept_result = sdk1.accept_group_application(&group.group_id, &account2.user_id, Some("同意加入")).await;
     assert!(accept_result.is_ok(), "审批失败: {:?}", accept_result.err());
     println!("  ✅ 同意申请");
     tokio::time::sleep(Duration::from_secs(2)).await;

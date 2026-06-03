@@ -230,20 +230,43 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
+    pub async fn is_in_blacklist(&self, user_id: String) -> Result<bool> {
+        Ok(self.inner.is_in_blacklist(&user_id).await)
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn check_friend(&self, user_ids: Vec<String>) -> Result<Vec<crate::core::friend::manager::CheckFriendResult>> {
+        self.inner.check_friend(user_ids).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
     pub async fn get_friend_apply_list(&self) -> Result<Vec<FriendApplyInfo>> {
         self.inner.get_friend_apply_list().await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn accept_friend_application(&self, user_id: String) -> Result<()> {
-        self.inner.accept_friend_application(&user_id, None).await
+    pub async fn get_friend_apply_list_as_applicant(&self) -> Result<Vec<FriendApplyInfo>> {
+        self.inner.get_friend_apply_list_as_applicant().await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn refuse_friend_application(&self, user_id: String) -> Result<()> {
-        self.inner.refuse_friend_application(&user_id, None).await
+    pub async fn get_friend_application_unhandled_count(&self) -> Result<i32> {
+        self.inner.get_friend_application_unhandled_count().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn accept_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        self.inner.accept_friend_application(&user_id, handle_msg.as_deref()).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn refuse_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        self.inner.refuse_friend_application(&user_id, handle_msg.as_deref()).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -280,6 +303,11 @@ impl OpenIMBridgeClient {
     pub async fn quit_group(&self, group_id: String) -> Result<()> {
         self.inner.quit_group(&group_id).await
             .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn is_in_group(&self, group_id: String) -> Result<bool> {
+        Ok(self.inner.is_in_group(&group_id).await)
     }
 
     #[flutter_rust_bridge::frb]
@@ -331,14 +359,50 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn accept_group_application(&self, group_id: String, user_id: String) -> Result<()> {
-        self.inner.accept_group_application(&group_id, &user_id).await
+    pub async fn get_group_application_list_as_recipient(&self) -> Result<Vec<GroupApplyInfo>> {
+        self.inner.get_group_application_list_as_recipient().await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn refuse_group_application(&self, group_id: String, user_id: String) -> Result<()> {
-        self.inner.refuse_group_application(&group_id, &user_id).await
+    pub async fn get_group_application_list_as_applicant(&self) -> Result<Vec<GroupApplyInfo>> {
+        self.inner.get_group_application_list_as_applicant().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn get_group_application_unhandled_count(&self) -> Result<i32> {
+        self.inner.get_group_application_unhandled_count().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn accept_group_application(&self, group_id: String, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        self.inner.accept_group_application(&group_id, &user_id, handle_msg.as_deref()).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn refuse_group_application(&self, group_id: String, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        self.inner.refuse_group_application(&group_id, &user_id, handle_msg.as_deref()).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn transfer_group_owner(&self, group_id: String, new_owner_user_id: String) -> Result<()> {
+        self.inner.transfer_group_owner(&group_id, &new_owner_user_id).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn mute_group(&self, group_id: String, is_mute: bool) -> Result<()> {
+        self.inner.mute_group(&group_id, is_mute).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn mute_group_member(&self, group_id: String, user_id: String, muted_seconds: i64) -> Result<()> {
+        self.inner.mute_group_member(&group_id, &user_id, muted_seconds).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -347,6 +411,12 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<crate::domain::model::user::UserInfo>> {
         self.inner.get_users_info(&user_ids).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn get_self_user_info(&self) -> Result<crate::domain::model::user::UserInfo> {
+        self.inner.get_self_user_info().await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -367,6 +437,28 @@ impl OpenIMBridgeClient {
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    #[flutter_rust_bridge::frb]
+    pub async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()> {
+        self.inner.set_global_msg_recv_opt(global_recv_opt).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn get_connection_state(&self) -> Result<crate::core::connection::manager::ConnectionState> {
+        Ok(self.inner.get_connection_state().await)
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn is_connected(&self) -> Result<bool> {
+        Ok(self.inner.is_connected().await)
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn sync_friends(&self) -> Result<()> {
+        self.inner.sync_friends().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     // ========== 创建消息方法 ==========
 
     #[flutter_rust_bridge::frb]
@@ -377,6 +469,67 @@ impl OpenIMBridgeClient {
         session_type: i32,
     ) -> Result<MsgData> {
         self.inner.send_image_message(&file_path, &source_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_file_message(
+        &self,
+        file_path: String,
+        source_id: String,
+        session_type: i32,
+    ) -> Result<MsgData> {
+        self.inner.send_file_message(&file_path, &source_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_sound_message(
+        &self,
+        file_path: String,
+        source_id: String,
+        session_type: i32,
+        duration: i64,
+    ) -> Result<MsgData> {
+        self.inner.send_sound_message(&file_path, &source_id, session_type, duration).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_video_message(
+        &self,
+        video_path: String,
+        snapshot_path: String,
+        source_id: String,
+        session_type: i32,
+        duration: i64,
+    ) -> Result<MsgData> {
+        self.inner.send_video_message(&video_path, &snapshot_path, &source_id, session_type, duration).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_at_text_message(
+        &self,
+        text: String,
+        at_user_ids: Vec<String>,
+        source_id: String,
+        session_type: i32,
+    ) -> Result<MsgData> {
+        self.inner.send_at_text_message(&text, at_user_ids, &source_id, session_type).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn send_custom_message(
+        &self,
+        data: String,
+        desc: String,
+        extension: String,
+        source_id: String,
+        session_type: i32,
+    ) -> Result<MsgData> {
+        self.inner.send_custom_message(&data, &desc, &extension, &source_id, session_type).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 }

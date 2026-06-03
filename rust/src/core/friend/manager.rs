@@ -4,8 +4,10 @@ use crate::domain::event::types::SdkEvent;
 use crate::domain::model::friend::FriendInfo;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
-    ADD_FRIEND, DELETE_FRIEND, GET_FRIEND_LIST, GET_FRIEND_ID_LIST, ADD_BLACK, REMOVE_BLACK,
-    GET_BLACK_LIST, GET_FRIEND_APPLY_LIST, ACCEPT_FRIEND_APPLICATION, REFUSE_FRIEND_APPLICATION,
+    ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND,
+    GET_BLACK_LIST, GET_FRIEND_APPLY_LIST, GET_FRIEND_ID_LIST, GET_FRIEND_LIST,
+    GET_SELF_FRIEND_APPLY_LIST, GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION,
+    REMOVE_BLACK, RESPOND_FRIEND_APPLY,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -169,6 +171,14 @@ pub struct RefuseFriendApplicationReq {
     pub handle_msg: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CheckFriendResult {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "result")]
+    pub result: i32,
+}
+
 pub struct FriendManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
@@ -270,6 +280,20 @@ impl FriendManager {
         self.friends.read().await.iter().any(|f| f.user_id == user_id)
     }
 
+    /// 批量检查好友关系状态（对齐 Go SDK CheckFriend）
+    pub async fn check_friend(&self, user_ids: Vec<String>) -> Result<Vec<CheckFriendResult>> {
+        let req = serde_json::json!({
+            "userIDList": user_ids,
+        });
+        #[derive(Deserialize, Default)]
+        struct CheckFriendResp {
+            #[serde(rename = "resultInfo")]
+            result_info: Vec<CheckFriendResult>,
+        }
+        let resp: CheckFriendResp = self.http_client.post(CHECK_FRIEND, &req).await?;
+        Ok(resp.result_info)
+    }
+
     pub async fn friend_count(&self) -> usize {
         self.friends.read().await.len()
     }
@@ -340,12 +364,48 @@ impl FriendManager {
         Ok(resp)
     }
 
+    /// 获取自己发出的好友申请列表（对齐 Go SDK GetFriendApplicationListAsApplicant）
+    pub async fn get_friend_apply_list_as_applicant(&self) -> Result<GetFriendApplyListResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetFriendApplyListReq {
+            from_user_id: user_id,
+            pagination: Pagination {
+                page_number: 1,
+                show_number: 1000,
+            },
+        };
+        let resp: GetFriendApplyListResp = self.http_client.post(GET_SELF_FRIEND_APPLY_LIST, &req).await?;
+        Ok(resp)
+    }
+
+    /// 获取未处理的好友申请数量（对齐 Go SDK GetFriendApplicationUnhandledCount）
+    pub async fn get_friend_application_unhandled_count(&self) -> Result<i32> {
+        #[derive(Serialize)]
+        struct UnhandledCountReq {
+            user_id: String,
+        }
+        let user_id = self.user_id.read().await.clone();
+        let req = UnhandledCountReq { user_id };
+        #[derive(Deserialize, Default)]
+        struct UnhandledCountResp {
+            count: i32,
+        }
+        let resp: UnhandledCountResp = self.http_client.post(GET_SELF_UNHANDLED_APPLY_COUNT, &req).await?;
+        Ok(resp.count)
+    }
+
     pub async fn accept_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
         let req = AcceptFriendApplicationReq {
             to_user_id: user_id.clone(),
             handle_msg,
         };
         let _resp: serde_json::Value = self.http_client.post(ACCEPT_FRIEND_APPLICATION, &req).await?;
+
+        // 对齐 Go SDK: 接受好友申请后同步好友列表（创建好友关系）
+        if let Err(e) = self.sync_friends().await {
+            tracing::warn!("接受好友申请后同步好友列表失败: {}", e);
+        }
+
         info!("好友申请已接受: {}", user_id);
         Ok(())
     }

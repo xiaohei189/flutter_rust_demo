@@ -2,8 +2,8 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::user::UserInfo;
-use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO};
+ use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -144,6 +144,18 @@ impl UserManager {
         }
 
         info!("用户信息已更新到服务器");
+        Ok(())
+    }
+
+    /// 设置全局消息接收选项
+    pub async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()> {
+        let user_id = self.get_user_id().await?;
+        let req = serde_json::json!({
+            "userID": user_id,
+            "globalRecvMsgOpt": global_recv_opt,
+        });
+        let _: serde_json::Value = self.http_client.post(SET_GLOBAL_MSG_RECV_OPT, &req).await?;
+        info!("全局消息接收选项已更新: opt={}", global_recv_opt);
         Ok(())
     }
 

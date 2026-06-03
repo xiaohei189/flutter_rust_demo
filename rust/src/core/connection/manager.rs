@@ -28,7 +28,7 @@ const MAX_RECONNECT_ATTEMPTS: u32 = 300;
 const RPC_TIMEOUT: Duration = Duration::from_secs(30);
 const CHANNEL_SIZE: usize = 256;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ConnectionState {
     Disconnected,
     Connecting,
