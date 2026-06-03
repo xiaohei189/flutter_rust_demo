@@ -292,22 +292,77 @@ pub struct RefuseGroupApplicationReq {
     pub handle_msg: Option<String>,
 }
 
+// ========== 增量同步类型 ==========
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetIncrementalJoinGroupReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub version: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetIncrementalJoinGroupResp {
+    pub version: u64,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub full: bool,
+    #[serde(default)]
+    pub delete: Vec<String>,
+    #[serde(default)]
+    pub insert: Vec<ServerGroupInfo>,
+    #[serde(default)]
+    pub update: Vec<ServerGroupInfo>,
+    #[serde(rename = "sortVersion", default)]
+    pub sort_version: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetFullJoinGroupIDsReq {
+    #[serde(rename = "idHash")]
+    pub id_hash: u64,
+    #[serde(rename = "userID")]
+    pub user_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetFullJoinGroupIDsResp {
+    pub version: u64,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub equal: bool,
+    #[serde(rename = "groupIDs", default)]
+    pub group_ids: Vec<String>,
+}
+
 pub struct GroupManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
     user_id: Arc<RwLock<String>>,
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
+    group_dao: Arc<GroupDao>,
+    sync_version_dao: Arc<SyncVersionDao>,
 }
 
 impl GroupManager {
-    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>, user_id: String) -> Self {
+    pub fn new(
+        http_client: Arc<HttpApiClient>,
+        event_bus: Arc<EventBus>,
+        user_id: String,
+        group_dao: Arc<GroupDao>,
+        sync_version_dao: Arc<SyncVersionDao>,
+    ) -> Self {
         Self {
             http_client,
             event_bus,
             user_id: Arc::new(RwLock::new(user_id)),
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
+            group_dao,
+            sync_version_dao,
         }
     }
 
@@ -320,10 +375,11 @@ impl GroupManager {
         self.groups.read().await.clone()
     }
 
+    /// 全量同步群组列表（对齐 Go SDK FullSync）
     pub async fn sync_groups(&self) -> Result<()> {
         let user_id = self.user_id.read().await.clone();
         let req = GetJoinedGroupListReq {
-            user_id,
+            user_id: user_id.clone(),
             pagination: Pagination {
                 page_number: 1,
                 show_number: 1000,
@@ -339,9 +395,115 @@ impl GroupManager {
             .map(|s| server_to_group_info(s))
             .collect();
 
+        // 持久化到数据库
+        for group in &groups {
+            let local = group_info_to_local(group);
+            if let Err(e) = self.group_dao.upsert_group(&local).await {
+                warn!("全量同步群组到数据库失败: {}", e);
+            }
+        }
+
+        // 更新内存缓存
         *self.groups.write().await = groups.clone();
 
-        info!("群组列表已同步, count={}", groups.len());
+        info!("群组列表已全量同步, count={}", groups.len());
+        Ok(())
+    }
+
+    /// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup / VersionSynchronizer）
+    ///
+    /// 1. 从 local_sync_version 读取本地版本
+    /// 2. 调用 get_incremental_join_groups 获取增量数据
+    /// 3. 如果 full=true 回退到全量同步
+    /// 4. 否则处理 delete/insert/update 增量合并
+    /// 5. 更新版本号
+    pub async fn sync_groups_incremental(&self) -> Result<()> {
+        let user_id = self.user_id.read().await.clone();
+        let table_name = "local_groups";
+
+        // 1. 获取本地版本
+        let (version_id, version) = match self.sync_version_dao.get_version_sync(table_name, &user_id).await? {
+            Some((vid, v)) => (vid, v),
+            None => (String::new(), 0),
+        };
+
+        info!("开始增量同步群组, version={}, version_id={}", version, version_id);
+
+        // 2. 请求增量数据
+        let req = GetIncrementalJoinGroupReq {
+            user_id: user_id.clone(),
+            version_id: version_id.clone(),
+            version,
+        };
+
+        let resp: GetIncrementalJoinGroupResp = match self.http_client.post(GET_INCREMENTAL_JOIN_GROUP, &req).await {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("增量同步群组请求失败, 回退全量同步: {}", e);
+                return self.sync_groups().await;
+            }
+        };
+
+        // 3. full=true 回退全量
+        if resp.full {
+            info!("服务端返回 full=true, 执行全量同步群组");
+            return self.sync_groups().await;
+        }
+
+        // 4. 处理增量变更
+
+        // 4a. 删除
+        if !resp.delete.is_empty() {
+            info!("增量同步: 删除 {} 个群组", resp.delete.len());
+            for group_id in &resp.delete {
+                if let Err(e) = self.group_dao.delete_group(group_id).await {
+                    warn!("增量删除群组数据库操作失败: {}", e);
+                }
+            }
+            self.groups.write().await.retain(|g| !resp.delete.contains(&g.group_id));
+        }
+
+        // 4b. 新增
+        for s in &resp.insert {
+            let group_info = server_to_group_info(s.clone());
+            let local = group_info_to_local(&group_info);
+            if let Err(e) = self.group_dao.upsert_group(&local).await {
+                warn!("增量插入群组数据库操作失败: {}", e);
+            }
+            self.groups.write().await.push(group_info);
+        }
+
+        // 4c. 更新
+        for s in &resp.update {
+            let group_info = server_to_group_info(s.clone());
+            let local = group_info_to_local(&group_info);
+            if let Err(e) = self.group_dao.upsert_group(&local).await {
+                warn!("增量更新群组数据库操作失败: {}", e);
+            }
+            let mut groups = self.groups.write().await;
+            if let Some(existing) = groups.iter_mut().find(|g| g.group_id == group_info.group_id) {
+                *existing = group_info;
+            } else {
+                groups.push(group_info);
+            }
+        }
+
+        // 4d. 排序版本变化时刷新内存列表
+        if resp.sort_version > 0 {
+            info!("群组排序版本变化 (sortVersion={}), 刷新内存列表", resp.sort_version);
+            if let Ok(local_groups) = self.group_dao.get_all_groups().await {
+                let groups: Vec<GroupInfo> = local_groups.iter().map(local_to_group_info).collect();
+                *self.groups.write().await = groups;
+            }
+        }
+
+        // 5. 更新版本号
+        if let Err(e) = self.sync_version_dao.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
+            warn!("更新群组同步版本失败: {}", e);
+        }
+
+        info!("增量同步群组完成, insert={}, update={}, delete={}",
+            resp.insert.len(), resp.update.len(), resp.delete.len());
         Ok(())
     }
 
@@ -917,6 +1079,43 @@ fn server_to_group_member(s: ServerGroupMember) -> GroupMember {
         role_level: s.role_level,
         join_time: s.join_time,
         join_source: s.join_source.to_string(),
+    }
+}
+
+fn group_info_to_local(g: &GroupInfo) -> LocalGroup {
+    LocalGroup {
+        group_id: g.group_id.clone(),
+        name: g.group_name.clone(),
+        notification: g.notification.clone(),
+        introduction: g.introduction.clone(),
+        face_url: g.face_url.clone(),
+        create_time: g.create_time,
+        status: g.status,
+        creator_user_id: String::new(),
+        group_type: 0,
+        owner_user_id: g.owner_user_id.clone(),
+        member_count: g.member_count as i32,
+        ex: String::new(),
+        attached_info: String::new(),
+        need_verification: 0,
+        look_member_info: 0,
+        apply_member_friend: 0,
+        notification_update_time: 0,
+        notification_user_id: String::new(),
+    }
+}
+
+fn local_to_group_info(l: &LocalGroup) -> GroupInfo {
+    GroupInfo {
+        group_id: l.group_id.clone(),
+        group_name: l.name.clone(),
+        face_url: l.face_url.clone(),
+        introduction: l.introduction.clone(),
+        notification: l.notification.clone(),
+        owner_user_id: l.owner_user_id.clone(),
+        create_time: l.create_time,
+        member_count: l.member_count as u32,
+        status: l.status,
     }
 }
 

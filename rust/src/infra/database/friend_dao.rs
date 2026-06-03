@@ -77,6 +77,32 @@ impl FriendDao {
         .map_err(|e| SdkError::database(format!("delete friend: {}", e)))?;
         Ok(())
     }
+
+    /// 批量删除好友记录
+    pub async fn batch_delete(&self, owner_user_id: &str, friend_user_ids: &[String]) -> Result<()> {
+        for fid in friend_user_ids {
+            self.delete(owner_user_id, fid).await?;
+        }
+        Ok(())
+    }
+
+    /// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
+    ///
+    /// 按 nickname / friend_user_id / remark 进行 LIKE 模糊匹配
+    pub async fn search_friends(&self, owner_user_id: &str, keyword: &str) -> Result<Vec<LocalFriend>> {
+        let like_pattern = format!("%{}%", keyword);
+        let rows = sqlx::query_as::<_, LocalFriend>(
+            "SELECT * FROM local_friends WHERE owner_user_id = ? AND (nickname LIKE ? OR friend_user_id LIKE ? OR remark LIKE ?) ORDER BY is_pinned DESC, create_time DESC",
+        )
+        .bind(owner_user_id)
+        .bind(&like_pattern)
+        .bind(&like_pattern)
+        .bind(&like_pattern)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("search friends: {}", e)))?;
+        Ok(rows)
+    }
 }
 
 #[cfg(test)]

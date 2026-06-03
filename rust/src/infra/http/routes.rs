@@ -51,6 +51,12 @@ pub const GROUP_APPLICATION_RESPONSE: &str = "/group/group_application_response"
 pub const GET_JOINED_GROUP_LIST: &str = "/group/get_joined_group_list";
 pub const INVITE_USER_TO_GROUP: &str = "/group/invite_user_to_group";
 
+pub const GET_INCREMENTAL_FRIENDS: &str = "/friend/get_incremental_friends";
+pub const GET_FULL_FRIEND_USER_IDS: &str = "/friend/get_full_friend_user_ids";
+
+pub const GET_INCREMENTAL_JOIN_GROUP: &str = "/group/get_incremental_join_groups";
+pub const GET_FULL_JOIN_GROUP_IDS: &str = "/group/get_full_join_group_ids";
+
 pub const GET_INCREMENTAL_CONVERSATION: &str = "/conversation/get_incremental_conversations";
 pub const GET_ALL_CONVERSATION_LIST: &str = "/conversation/get_all_conversations";
 pub const GET_CONVERSATION_LIST_SPLIT: &str = "/conversation/get_conversation_list_split";

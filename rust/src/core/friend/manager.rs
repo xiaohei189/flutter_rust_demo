@@ -2,17 +2,21 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::friend::FriendInfo;
+use crate::infra::database::friend_dao::FriendDao;
+use crate::infra::database::models::LocalFriend;
+use crate::infra::database::sync_version_dao::SyncVersionDao;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND,
     GET_BLACK_LIST, GET_FRIEND_APPLY_LIST, GET_FRIEND_ID_LIST, GET_FRIEND_LIST,
-    GET_SELF_FRIEND_APPLY_LIST, GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION,
-    REMOVE_BLACK, RESPOND_FRIEND_APPLY,
+    GET_FULL_FRIEND_USER_IDS, GET_INCREMENTAL_FRIENDS, GET_SELF_FRIEND_APPLY_LIST,
+    GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION, REMOVE_BLACK, RESPOND_FRIEND_APPLY,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetFriendListReq {
@@ -179,22 +183,107 @@ pub struct CheckFriendResult {
     pub result: i32,
 }
 
+// ========== 增量同步类型 ==========
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetIncrementalFriendsReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub version: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetIncrementalFriendsResp {
+    pub version: u64,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub full: bool,
+    #[serde(default)]
+    pub delete: Vec<String>,
+    #[serde(default)]
+    pub insert: Vec<FriendServerInfo>,
+    #[serde(default)]
+    pub update: Vec<FriendServerInfo>,
+    #[serde(rename = "sortVersion", default)]
+    pub sort_version: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetFullFriendUserIDsReq {
+    #[serde(rename = "idHash")]
+    pub id_hash: u64,
+    #[serde(rename = "userID")]
+    pub user_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetFullFriendUserIDsResp {
+    pub version: u64,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub equal: bool,
+    #[serde(rename = "userIDs", default)]
+    pub user_ids: Vec<String>,
+}
+
+// ========== 搜索好友类型（对齐 Go SDK SearchFriendsParam） ==========
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SearchFriendsParam {
+    #[serde(rename = "keywordList")]
+    pub keyword_list: Vec<String>,
+    #[serde(rename = "isSearchUserID", default)]
+    pub is_search_user_id: bool,
+    #[serde(rename = "isSearchNickname", default)]
+    pub is_search_nickname: bool,
+    #[serde(rename = "isSearchRemark", default)]
+    pub is_search_remark: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SearchFriendItem {
+    #[serde(rename = "friendUserID")]
+    pub friend_user_id: String,
+    pub nickname: String,
+    #[serde(rename = "faceURL")]
+    pub face_url: String,
+    pub remark: String,
+    pub ex: String,
+    #[serde(rename = "createTime")]
+    pub create_time: i64,
+    /// 1=好友, 2=黑名单
+    #[serde(rename = "relationship")]
+    pub relationship: i32,
+}
+
 pub struct FriendManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
     user_id: Arc<RwLock<String>>,
     friends: Arc<RwLock<Vec<FriendInfo>>>,
     blacks: Arc<RwLock<Vec<String>>>,
+    friend_dao: Arc<FriendDao>,
+    sync_version_dao: Arc<SyncVersionDao>,
 }
 
 impl FriendManager {
-    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>, user_id: String) -> Self {
+    pub fn new(
+        http_client: Arc<HttpApiClient>,
+        event_bus: Arc<EventBus>,
+        user_id: String,
+        friend_dao: Arc<FriendDao>,
+        sync_version_dao: Arc<SyncVersionDao>,
+    ) -> Self {
         Self {
             http_client,
             event_bus,
             user_id: Arc::new(RwLock::new(user_id)),
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
+            friend_dao,
+            sync_version_dao,
         }
     }
 
@@ -216,10 +305,13 @@ impl FriendManager {
             .collect()
     }
 
+    /// 全量同步好友列表（对齐 Go SDK FullSync）
+    ///
+    /// 从服务端拉取全部好友并覆盖本地内存 + 数据库
     pub async fn sync_friends(&self) -> Result<()> {
         let user_id = self.user_id.read().await.clone();
         let req = GetFriendListReq {
-            user_id,
+            user_id: user_id.clone(),
             pagination: Pagination {
                 page_number: 1,
                 show_number: 1000,
@@ -235,14 +327,157 @@ impl FriendManager {
             .map(|s| server_to_friend(s))
             .collect();
 
+        // 持久化到数据库
+        let local_friends: Vec<LocalFriend> = friends.iter().map(|f| friend_info_to_local(f, &user_id)).collect();
+        if let Err(e) = self.friend_dao.batch_upsert(&local_friends).await {
+            warn!("全量同步好友到数据库失败: {}", e);
+        }
+
+        // 更新内存缓存
         *self.friends.write().await = friends.clone();
 
         self.event_bus.publish(SdkEvent::FriendAdded {
             friends: friends.clone(),
         });
 
-        info!("好友列表已同步, count={}", friends.len());
+        info!("好友列表已全量同步, count={}", friends.len());
         Ok(())
+    }
+
+    /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends / VersionSynchronizer）
+    ///
+    /// 1. 从 local_sync_version 读取本地版本
+    /// 2. 调用 get_incremental_friends 获取增量数据
+    /// 3. 如果 full=true 回退到全量同步
+    /// 4. 否则处理 delete/insert/update 增量合并
+    /// 5. 更新版本号
+    pub async fn sync_friends_incremental(&self) -> Result<()> {
+        let user_id = self.user_id.read().await.clone();
+        let table_name = "local_friends";
+
+        // 1. 获取本地版本
+        let (version_id, version) = match self.sync_version_dao.get_version_sync(table_name, &user_id).await? {
+            Some((vid, v)) => (vid, v),
+            None => (String::new(), 0),
+        };
+
+        info!("开始增量同步好友, version={}, version_id={}", version, version_id);
+
+        // 2. 请求增量数据
+        let req = GetIncrementalFriendsReq {
+            user_id: user_id.clone(),
+            version_id: version_id.clone(),
+            version,
+        };
+
+        let resp: GetIncrementalFriendsResp = match self.http_client.post(GET_INCREMENTAL_FRIENDS, &req).await {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("增量同步好友请求失败, 回退全量同步: {}", e);
+                return self.sync_friends().await;
+            }
+        };
+
+        // 3. full=true 回退全量
+        if resp.full {
+            info!("服务端返回 full=true, 执行全量同步");
+            return self.sync_friends().await;
+        }
+
+        // 4. 处理增量变更
+
+        // 4a. 删除
+        if !resp.delete.is_empty() {
+            info!("增量同步: 删除 {} 个好友", resp.delete.len());
+            if let Err(e) = self.friend_dao.batch_delete(&user_id, &resp.delete).await {
+                warn!("增量删除好友数据库操作失败: {}", e);
+            }
+            // 更新内存
+            let del_set: HashSet<&String> = resp.delete.iter().collect();
+            self.friends.write().await.retain(|f| !del_set.contains(&f.user_id));
+        }
+
+        // 4b. 新增
+        for s in &resp.insert {
+            let friend_info = server_to_friend(s.clone());
+            let local = friend_info_to_local(&friend_info, &user_id);
+            if let Err(e) = self.friend_dao.upsert(&local).await {
+                warn!("增量插入好友数据库操作失败: {}", e);
+            }
+            self.friends.write().await.push(friend_info);
+        }
+
+        // 4c. 更新
+        for s in &resp.update {
+            let friend_info = server_to_friend(s.clone());
+            let local = friend_info_to_local(&friend_info, &user_id);
+            if let Err(e) = self.friend_dao.upsert(&local).await {
+                warn!("增量更新好友数据库操作失败: {}", e);
+            }
+            // 更新内存中的对应好友
+            let mut friends = self.friends.write().await;
+            if let Some(existing) = friends.iter_mut().find(|f| f.user_id == friend_info.user_id) {
+                *existing = friend_info;
+            } else {
+                // 本地不存在视为新增
+                friends.push(friend_info);
+            }
+        }
+
+        // 4d. 如果排序版本变化，从数据库刷新内存列表
+        if resp.sort_version > 0 {
+            info!("好友排序版本变化 (sortVersion={}), 刷新内存列表", resp.sort_version);
+            if let Ok(local_friends) = self.friend_dao.get_all(&user_id).await {
+                let friends: Vec<FriendInfo> = local_friends.iter().map(local_to_friend_info).collect();
+                *self.friends.write().await = friends;
+            }
+        }
+
+        // 5. 更新版本号
+        if let Err(e) = self.sync_version_dao.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
+            warn!("更新好友同步版本失败: {}", e);
+        }
+
+        // 发布事件
+        if !resp.insert.is_empty() || !resp.update.is_empty() {
+            let all_changed: Vec<FriendInfo> = resp.insert.iter().chain(resp.update.iter())
+                .map(|s| server_to_friend(s.clone()))
+                .collect();
+            self.event_bus.publish(SdkEvent::FriendAdded {
+                friends: all_changed,
+            });
+        }
+
+        info!("增量同步好友完成, insert={}, update={}, delete={}",
+            resp.insert.len(), resp.update.len(), resp.delete.len());
+        Ok(())
+    }
+
+    /// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
+    ///
+    /// keyword: 搜索关键词，匹配 nickname / user_id / remark
+    pub async fn search_friends(&self, keyword: String) -> Result<Vec<SearchFriendItem>> {
+        let user_id = self.user_id.read().await.clone();
+        let local_friends = self.friend_dao.search_friends(&user_id, &keyword).await?;
+
+        // 获取黑名单用于标记 relationship
+        let blacks = self.blacks.read().await;
+        let black_set: HashSet<&String> = blacks.iter().collect();
+
+        let items: Vec<SearchFriendItem> = local_friends.into_iter().map(|f| {
+            let relationship = if black_set.contains(&f.friend_user_id) { 2 } else { 1 };
+            SearchFriendItem {
+                friend_user_id: f.friend_user_id,
+                nickname: f.nickname,
+                face_url: f.face_url,
+                remark: f.remark,
+                ex: f.ex,
+                create_time: f.create_time,
+                relationship,
+            }
+        }).collect();
+
+        Ok(items)
     }
 
     pub async fn add_friend(&self, user_id: String, req_msg: Option<String>) -> Result<()> {
@@ -437,6 +672,35 @@ fn server_to_friend(s: FriendServerInfo) -> FriendInfo {
         create_time: s.create_time,
         add_source: s.add_source.to_string(),
         ex: s.friend_user.ex,
+    }
+}
+
+fn friend_info_to_local(f: &FriendInfo, owner_user_id: &str) -> LocalFriend {
+    LocalFriend {
+        owner_user_id: owner_user_id.to_string(),
+        friend_user_id: f.user_id.clone(),
+        remark: f.remark.clone(),
+        create_time: f.create_time,
+        add_source: f.add_source.parse::<i32>().unwrap_or(0),
+        operator_user_id: String::new(),
+        nickname: f.nickname.clone(),
+        face_url: f.face_url.clone(),
+        ex: f.ex.clone(),
+        attached_info: String::new(),
+        is_pinned: 0,
+    }
+}
+
+fn local_to_friend_info(l: &LocalFriend) -> FriendInfo {
+    FriendInfo {
+        user_id: l.friend_user_id.clone(),
+        nickname: l.nickname.clone(),
+        face_url: l.face_url.clone(),
+        gender: 0,
+        remark: l.remark.clone(),
+        create_time: l.create_time,
+        add_source: l.add_source.to_string(),
+        ex: l.ex.clone(),
     }
 }
 

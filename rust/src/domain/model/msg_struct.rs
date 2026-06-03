@@ -48,7 +48,7 @@ pub struct PictureElem {
 }
 
 /// 语音消息元素（对齐 Go SDK SoundElem）
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct SoundElem {
     pub uuid: String,
     pub sound_path: String,
@@ -59,7 +59,7 @@ pub struct SoundElem {
 }
 
 /// 视频消息元素（对齐 Go SDK VideoElem）
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct VideoElem {
     pub video_path: String,
     pub video_uuid: String,
@@ -77,7 +77,7 @@ pub struct VideoElem {
 }
 
 /// 文件消息元素（对齐 Go SDK FileElem）
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FileElem {
     pub file_path: String,
     pub uuid: String,
@@ -140,6 +140,13 @@ pub struct LocationElem {
 pub struct FaceElem {
     pub index: i32,
     pub data: String,
+}
+
+/// 正在输入元素（对齐 Go SDK TypingElem）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TypingElem {
+    /// "yes" 表示正在输入，"no" 表示停止输入
+    pub msg_tips: String,
 }
 
 /// 自定义元素（对齐 Go SDK CustomElem）
@@ -396,6 +403,15 @@ impl MsgStruct {
         let elem = LocationElem { description: description.to_string(), longitude, latitude };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.location_elem = Some(elem);
+        msg
+    }
+
+    pub fn create_typing_message(msg_tips: &str) -> MsgStruct {
+        let mut msg = MsgStruct::new();
+        msg.content_type = 113; // TYPING
+        msg.msg_from = MSG_FROM_USER;
+        let elem = TypingElem { msg_tips: msg_tips.to_string() };
+        msg.content = serde_json::to_string(&elem).unwrap();
         msg
     }
 

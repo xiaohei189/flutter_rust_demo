@@ -78,9 +78,9 @@ impl NotificationHandler {
             | notification_type::FRIEND_REMARK_SET
             | notification_type::FRIEND_INFO_UPDATED
             | notification_type::FRIENDS_INFO_UPDATE => {
-                info!("收到好友列表变更通知: content_type={}, 同步好友列表", ct);
-                if let Err(e) = self.friend_manager.sync_friends().await {
-                    warn!("同步好友列表失败: {}", e);
+                info!("收到好友列表变更通知: content_type={}, 增量同步好友列表", ct);
+                if let Err(e) = self.friend_manager.sync_friends_incremental().await {
+                    warn!("增量同步好友列表失败: {}", e);
                 }
             }
             notification_type::BLACK_ADDED => {
@@ -120,9 +120,9 @@ impl NotificationHandler {
             | notification_type::GROUP_MEMBER_SET_TO_ORDINARY_USER
             | notification_type::GROUP_INFO_SET_ANNOUNCEMENT
             | notification_type::GROUP_INFO_SET_NAME => {
-                info!("收到群组变更通知: content_type={}, 同步群组列表", ct);
-                if let Err(e) = self.group_manager.sync_groups().await {
-                    warn!("同步群组列表失败: {}", e);
+                info!("收到群组变更通知: content_type={}, 增量同步群组列表", ct);
+                if let Err(e) = self.group_manager.sync_groups_incremental().await {
+                    warn!("增量同步群组列表失败: {}", e);
                 }
             }
             notification_type::JOIN_GROUP_APPLICATION => {
@@ -157,9 +157,9 @@ impl NotificationHandler {
 
         let login_user_id = self.user_id.lock().unwrap().clone();
 
-        // 对齐 Go SDK: 接受后同步好友列表
-        if let Err(e) = self.friend_manager.sync_friends().await {
-            warn!("接受好友申请后同步好友列表失败: {}", e);
+        // 对齐 Go SDK: 接受后增量同步好友列表
+        if let Err(e) = self.friend_manager.sync_friends_incremental().await {
+            warn!("接受好友申请后增量同步好友列表失败: {}", e);
         }
 
         // 构建 FriendApplyInfo JSON 推送到 Flutter
@@ -320,9 +320,9 @@ impl NotificationHandler {
             user_info.user_id
         );
 
-        // 对齐 Go SDK: 接受后同步群组列表
-        if let Err(e) = self.group_manager.sync_groups().await {
-            warn!("接受群组申请后同步群组列表失败: {}", e);
+        // 对齐 Go SDK: 接受后增量同步群组列表
+        if let Err(e) = self.group_manager.sync_groups_incremental().await {
+            warn!("接受群组申请后增量同步群组列表失败: {}", e);
         }
 
         let application_json = serde_json::json!({
@@ -386,21 +386,24 @@ mod tests {
     use crate::core::group::manager::GroupManager;
     use crate::core::user::manager::UserManager;
     use crate::domain::event::EventBus;
+    use crate::infra::database::friend_dao::FriendDao;
+    use crate::infra::database::group_dao::GroupDao;
+    use crate::infra::database::sync_version_dao::SyncVersionDao;
+    use crate::infra::database::pool::create_pool_memory;
     use crate::infra::http::client::HttpApiClient;
 
-    fn make_handler() -> NotificationHandler {
+    #[tokio::test]
+    async fn test_notification_handler_creation() {
         let event_bus = Arc::new(EventBus::new());
         let http_client = Arc::new(HttpApiClient::new("http://localhost".to_string(), String::new(), String::new()));
-        let friend = Arc::new(FriendManager::new(http_client.clone(), event_bus.clone(), "user1".into()));
-        let group = Arc::new(GroupManager::new(http_client.clone(), event_bus.clone(), "user1".into()));
+        let pool = create_pool_memory().await.unwrap();
+        let friend_dao = Arc::new(FriendDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
+        let sync_version_dao = Arc::new(SyncVersionDao::new(pool.clone()));
+        let friend = Arc::new(FriendManager::new(http_client.clone(), event_bus.clone(), "user1".into(), friend_dao, sync_version_dao.clone()));
+        let group = Arc::new(GroupManager::new(http_client.clone(), event_bus.clone(), "user1".into(), group_dao, sync_version_dao));
         let user = Arc::new(UserManager::new(http_client.clone(), event_bus.clone()));
-        NotificationHandler::new(friend, group, user, event_bus)
-    }
-
-    #[test]
-    fn test_notification_handler_creation() {
-        let handler = make_handler();
+        let handler = NotificationHandler::new(friend, group, user, event_bus);
         handler.set_user_id("user1".into());
-        // 基本创建测试
     }
 }

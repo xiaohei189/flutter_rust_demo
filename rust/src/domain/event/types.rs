@@ -61,6 +61,12 @@ pub enum SdkEvent {
         client_msg_id: String,
         error: String,
     },
+    UploadProgress {
+        client_msg_id: String,
+        progress: u8,
+        total_size: u64,
+        uploaded_size: u64,
+    },
     MessageRevoked {
         conversation_id: String,
         seq: i64,
@@ -197,6 +203,7 @@ impl SdkEvent {
             SdkEvent::NewMessage { .. } => "new_message",
             SdkEvent::MessageSent { .. } => "message_sent",
             SdkEvent::MessageSendFailed { .. } => "message_send_failed",
+            SdkEvent::UploadProgress { .. } => "upload_progress",
             SdkEvent::MessageRevoked { .. } => "message_revoked",
             SdkEvent::MessagesDeleted { .. } => "messages_deleted",
             SdkEvent::ConversationChanged { .. } => "conversation_changed",

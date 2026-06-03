@@ -41,6 +41,16 @@ impl GroupDao {
         Ok(())
     }
 
+    pub async fn get_all_groups(&self) -> Result<Vec<LocalGroup>> {
+        let rows = sqlx::query_as::<_, LocalGroup>(
+            "SELECT * FROM local_groups ORDER BY create_time DESC",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query all groups: {}", e)))?;
+        Ok(rows)
+    }
+
     pub async fn get_group(&self, group_id: &str) -> Result<Option<LocalGroup>> {
         let row = sqlx::query_as::<_, LocalGroup>(
             "SELECT * FROM local_groups WHERE group_id = ?",

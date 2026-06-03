@@ -92,6 +92,18 @@ impl MessageDao {
         Ok(row)
     }
 
+    /// 按 seq 获取单条消息
+    pub async fn get_by_seq(&self, seq: i64) -> Result<Option<LocalChatLog>> {
+        let row = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE seq = ? LIMIT 1",
+        )
+        .bind(seq)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query message by seq: {}", e)))?;
+        Ok(row)
+    }
+
     pub async fn get_by_client_msg_ids(&self, client_msg_ids: &[String]) -> Result<Vec<LocalChatLog>> {
         if client_msg_ids.is_empty() {
             return Ok(Vec::new());
@@ -226,6 +238,70 @@ impl MessageDao {
         query.execute(&self.pool)
             .await
             .map_err(|e| SdkError::database(format!("mark as read: {}", e)))?;
+        Ok(())
+    }
+
+    /// 按会话 ASC 排序获取消息（用于倒序翻页，对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
+    pub async fn get_by_conversation_asc(
+        &self,
+        conversation_id: &str,
+        start_time: i64,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND (send_time > ? OR ? = 0) ORDER BY send_time ASC LIMIT ?",
+        )
+        .bind(conversation_id)
+        .bind(start_time)
+        .bind(start_time)
+        .bind(count)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query messages asc: {}", e)))?;
+
+        Ok(rows)
+    }
+
+    /// 更新消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
+    pub async fn update_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET local_ex = ? WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(local_ex)
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update local_ex: {}", e)))?;
+        Ok(())
+    }
+
+    /// 软删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
+    ///
+    /// 将状态标记为 MsgStatusHasDeleted (4)
+    pub async fn mark_as_deleted(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET status = 4 WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("mark as deleted: {}", e)))?;
+        Ok(())
+    }
+
+    /// 软删除指定会话的所有消息（对齐 Go SDK `DeleteAllMsgFromLocal`）
+    pub async fn mark_all_as_deleted(&self) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET status = 4")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("mark all as deleted: {}", e)))?;
+        Ok(())
+    }
+
+    /// 硬删除所有消息（对齐 Go SDK `DeleteAllMsgFromLocalAndSvr` 本地部分）
+    pub async fn delete_all(&self) -> Result<()> {
+        sqlx::query("DELETE FROM local_chat_logs")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete all messages: {}", e)))?;
         Ok(())
     }
 }

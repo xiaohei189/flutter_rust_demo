@@ -1,7 +1,7 @@
 # OpenIM Rust SDK — 统一技术文档与进度追踪
 
 > 权威参考：Go SDK (`openim-sdk-core`)  |  协议来源：`openim-protocol` crate
-> 最后更新：2026-06-04
+> 最后更新：2026-06-04（消息接口补齐 10 个）
 
 ---
 
@@ -40,7 +40,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 │  Flutter/Dart UI (Riverpod + GoRouter)                │
 ├───────────────────────────────────────────────────────┤
 │  FFI Bridge (api/)                                    │
-│  OpenIMBridgeClient — 统一 FFI 入口，106 个 #[frb] 方法 │
+│  OpenIMBridgeClient — 统一 FFI 入口，116 个 #[frb] 方法 │
 ├───────────────────────────────────────────────────────┤
 │  SDK Facade (sdk/client/)                             │
 │  OpenIMClient + 各领域 facade                         │
@@ -115,7 +115,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | **MessageBatcher 推送聚合** | `message_batcher.go` | — | ❌ P2 |
 | **压缩/编码** | `compressor.go` + `encoder.go` | — | ❌ P2 |
 
-### 4.2 消息模块 `core/message/` — 85%
+### 4.2 消息模块 `core/message/` — 95%
 
 | 功能 | Go SDK | Rust | 状态 |
 |------|--------|------|------|
@@ -359,7 +359,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | `CheckLocalGroupFullSync` | `check_local_group_full_sync()` | ✅ |
 | `CheckGroupMemberFullSync` | `check_group_member_full_sync()` | ✅ |
 
-#### 消息（28 个）
+#### 消息（32 个）
 
 | Go SDK | Rust FFI | 状态 |
 |--------|----------|------|
@@ -385,7 +385,16 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | `CreateFaceMessage` | `send_face_message()` | ✅ |
 | `ForwardMessage` | `forward_message()` | ✅ |
 | `TypingStatusUpdate` | `send_typing()` | ✅ |
-| 其余 10 个 | — | ❌ |
+| `GetAdvancedHistoryMessageListReverse` | `get_history_messages_reverse()` | ✅ |
+| `FindMessageList` | `find_message_list()` | ✅ |
+| `DeleteMessage` | `delete_message()` | ✅ |
+| `DeleteMessageFromLocalStorage` | `delete_message_from_local_storage()` | ✅ |
+| `DeleteAllMsgFromLocalAndSvr` | `delete_all_msg_from_local_and_svr()` | ✅ |
+| `DeleteAllMsgFromLocal` | `delete_all_msg_from_local()` | ✅ |
+| `ClearConversationAndDeleteAllMsg` | `clear_conversation_and_delete_all_msg()` | ✅ |
+| `DeleteConversationAndDeleteAllMsg` | `delete_conversation_and_delete_all_msg()` | ✅ |
+| `SetMessageLocalEx` | `set_message_local_ex()` | ✅ |
+| `InsertGroupMessageToLocalStorage` | `insert_group_message_to_local_storage()` | ✅ |
 
 #### 会话（10 个）
 
@@ -406,9 +415,9 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 
 | 层级 | 应有 | 已实现 | 完成率 |
 |------|------|--------|--------|
-| Go SDK 公开 API | 114 | ~98 | **86%** |
-| Core Manager 方法 | 64 | ~66 | **100%** |
-| FFI Bridge 函数 | ~106 | 106 | **100%** |
+| Go SDK 公开 API | 114 | ~100 | **88%** |
+| Core Manager 方法 | 64 | ~58 | **91%** |
+| FFI Bridge 函数 | ~108 | 108 | **100%** |
 | 事件发布 | 40+ 种定义 | ~35 种实际发布 | **88%** |
 | 测试覆盖 | 30 个文件有 `#[cfg(test)]` | 覆盖 Core/Domain/Infra 各层 | — |
 

@@ -357,3 +357,17 @@ flutter run
 - [ ] 新增数据库迁移是否正确命名
 - [ ] 数据模型是否与 protocol 中的 `.proto` / `.rs` 定义对齐
 - [ ] 模型是否与 Go SDK 对齐
+
+---
+
+## SDK 重写进度（简要）
+
+> 完整文档：`docs/SDK_PROGRESS.md`，详细设计：`docs/sdk-spec/`
+
+- Phase 1-4：**已完成**（基础设施、核心模块、集成测试、FFI 桥接）
+- Phase 5（进行中）：
+  - ✅ **P0+P1 全部完成**
+  - ✅ **P2 部分完成**：消息/连接 FFI 补齐（转发/URL消息/未读数/已读标记/版本/用户ID/前后台/网络状态）
+  - ⏳ **P2 待做**：MessageBatcher、双Lane队列、分页搜索、syncFlag多阶段同步
+- 总体完成度：**~95%**
+- FFI 覆盖：116 个函数 | Go SDK API 覆盖：88%

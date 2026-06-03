@@ -1,3 +1,4 @@
+use crate::core::friend::manager::SearchFriendItem;
 use crate::domain::error::types::Result;
 use crate::domain::error::types::SdkError;
 use crate::domain::model::friend::FriendInfo;
@@ -85,5 +86,15 @@ impl OpenIMClient {
 
     pub async fn get_friend_id_list(&self) -> Vec<String> {
         self.friend.get_friend_id_list().await
+    }
+
+    /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
+    pub async fn sync_friends_incremental(&self) -> Result<()> {
+        self.friend.sync_friends_incremental().await
+    }
+
+    /// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
+    pub async fn search_friends(&self, keyword: &str) -> Result<Vec<SearchFriendItem>> {
+        self.friend.search_friends(keyword.to_string()).await
     }
 }

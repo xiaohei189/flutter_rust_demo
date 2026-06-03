@@ -5,6 +5,7 @@ use crate::core::file::uploader::FileUploader;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::message::handler::MessageHandler;
+use crate::core::message::send_queue::MessageSendQueue;
 use crate::core::notification::handler::NotificationHandler;
 use crate::domain::model::message::ReceivedMessage;
 use crate::core::message::service::MessageService;
@@ -55,11 +56,15 @@ impl OpenIMClient {
             context.http_client.clone(),
             event_bus.clone(),
             user_id.clone(),
+            context.friend_dao.clone(),
+            context.sync_version_dao.clone(),
         ));
         let group = Arc::new(GroupManager::new(
             context.http_client.clone(),
             event_bus.clone(),
             user_id.clone(),
+            context.group_dao.clone(),
+            context.sync_version_dao.clone(),
         ));
         let conversation = Arc::new(ConversationManager::new(
             context.conversation_dao.clone(),
@@ -112,6 +117,8 @@ impl OpenIMClient {
             event_bus.clone(),
         ));
 
+        let send_queue = MessageSendQueue::new();
+
         info!("OpenIM SDK 初始化完成");
 
         Ok(Self {
@@ -130,6 +137,7 @@ impl OpenIMClient {
             message_service,
             event_bus,
             cache,
+            send_queue,
         })
     }
 
@@ -347,6 +355,18 @@ impl OpenIMClient {
     /// 获取事件总线（内部使用）
     pub fn event_bus(&self) -> Arc<EventBus> {
         self.event_bus.clone()
+    }
+
+    /// 获取当前登录用户 ID
+    pub fn login_user_id(&self) -> String {
+        self.context.get_user_id()
+    }
+
+    /// 同步所有会话的 Hash Read Seq（用于前台唤醒）
+    pub async fn sync_all_conversation_hash_read_seqs(&self) -> Result<()> {
+        self.conversation_syncer
+            .sync_conversation_hash_read_seqs(&self.message_handler.max_seq_recorder)
+            .await
     }
 
     /// 获取连接状态

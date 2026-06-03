@@ -47,6 +47,49 @@ impl SyncVersionDao {
         }
     }
 
+    /// 获取指定表+实体的同步版本信息（对齐 Go SDK `GetVersionSync`）
+    pub async fn get_version_sync(&self, table_name: &str, entity_id: &str) -> Result<Option<(String, u64)>> {
+        let row = sqlx::query_as::<_, (String, i64)>(
+            "SELECT version_id, version FROM local_sync_version WHERE table_name = ? AND entity_id = ?",
+        )
+        .bind(table_name)
+        .bind(entity_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("get version sync: {}", e)))?;
+
+        Ok(row.map(|(vid, v)| (vid, v as u64)))
+    }
+
+    /// 设置指定表+实体的同步版本信息（对齐 Go SDK `SetVersionSync`）
+    pub async fn set_version_sync(&self, table_name: &str, entity_id: &str, version_id: &str, version: u64) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO local_sync_version (table_name, entity_id, version_id, version) VALUES (?1, ?2, ?3, ?4) \
+             ON CONFLICT(table_name, entity_id) DO UPDATE SET version_id = excluded.version_id, version = excluded.version",
+        )
+        .bind(table_name)
+        .bind(entity_id)
+        .bind(version_id)
+        .bind(version as i64)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("set version sync: {}", e)))?;
+        Ok(())
+    }
+
+    /// 删除指定表+实体的同步版本记录
+    pub async fn delete_version_sync(&self, table_name: &str, entity_id: &str) -> Result<()> {
+        sqlx::query(
+            "DELETE FROM local_sync_version WHERE table_name = ? AND entity_id = ?",
+        )
+        .bind(table_name)
+        .bind(entity_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("delete version sync: {}", e)))?;
+        Ok(())
+    }
+
     /// 标记重装同步完成（设置 installed=1）
     pub async fn mark_reinstall_complete(&self, version: &str) -> Result<()> {
         sqlx::query(

@@ -1,4 +1,5 @@
 use crate::domain::constant::types::content_type;
+use crate::domain::constant::types::msg_status;
 use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
@@ -8,14 +9,56 @@ use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
 use crate::protocol::sdkws::MarkAsReadTips;
 use prost::Message as ProstMessage;
+use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, error};
+use rand::Rng;
+
+/// MaxSeqRecorder — 内存中记录每个会话的最大 seq，用于判断消息是否为"新消息"
+/// 对齐 Go SDK `max_seq_recorder.go` IsNewMsg/Incr/Set/Get
+pub struct MaxSeqRecorder {
+    seqs: std::sync::RwLock<HashMap<String, i64>>,
+}
+
+impl MaxSeqRecorder {
+    pub fn new() -> Self {
+        Self { seqs: std::sync::RwLock::new(HashMap::new()) }
+    }
+
+    /// 判断消息 seq 是否比当前记录更新（对齐 Go SDK IsNewMsg）
+    pub fn is_new_msg(&self, conversation_id: &str, seq: i64) -> bool {
+        let map = self.seqs.read().unwrap();
+        let current = map.get(conversation_id).copied().unwrap_or(0);
+        seq > current
+    }
+
+    /// 递增指定会话的 seq 记录（对齐 Go SDK Incr）
+    pub fn incr(&self, conversation_id: &str, num: i64) {
+        let mut map = self.seqs.write().unwrap();
+        let entry = map.entry(conversation_id.to_string()).or_insert(0);
+        *entry += num;
+    }
+
+    /// 直接设置会话的 seq 记录（对齐 Go SDK Set）
+    pub fn set(&self, conversation_id: &str, seq: i64) {
+        let mut map = self.seqs.write().unwrap();
+        map.insert(conversation_id.to_string(), seq);
+    }
+
+    /// 获取会话当前记录的 seq（对齐 Go SDK Get）
+    pub fn get(&self, conversation_id: &str) -> i64 {
+        let map = self.seqs.read().unwrap();
+        map.get(conversation_id).copied().unwrap_or(0)
+    }
+}
 
 pub struct MessageHandler {
     message_dao: Arc<MessageDao>,
     conversation_dao: Arc<ConversationDao>,
     event_bus: Arc<EventBus>,
     user_id: std::sync::Mutex<String>,
+    /// 内存 seq 记录器，用于准确判断未读数（对齐 Go SDK MaxSeqRecorder）
+    pub max_seq_recorder: Arc<MaxSeqRecorder>,
 }
 
 impl MessageHandler {
@@ -29,6 +72,7 @@ impl MessageHandler {
             conversation_dao,
             event_bus,
             user_id: std::sync::Mutex::new(String::new()),
+            max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
         }
     }
 
@@ -53,6 +97,96 @@ impl MessageHandler {
     fn should_update_conversation(content_type_val: i32) -> bool {
         Self::should_store_message(content_type_val)
             && content_type_val != content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION
+    }
+
+    /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
+    ///
+    /// 4 种异常类型：
+    /// - SEQ_GAP: 服务端占位符（Status=DELETED, ClientMsgID=""）
+    /// - DELETED: 服务端标记删除（Status=DELETED, ClientMsgID!=""）
+    /// - SEQ_DUP: Seq 重复（已存在消息的 Seq == 新消息 Seq）
+    /// - CLIENT_DUP: ClientMsgID 重复但 Seq 不同
+    ///
+    /// 异常消息不是丢弃，而是修改 ClientMsgID 后插入本地数据库（带特殊标记前缀）
+    fn handle_exception_messages(
+        &self,
+        existing_message: Option<&LocalChatLog>,
+        message: &mut LocalChatLog,
+    ) {
+        let (prefix, seq, client_msg_id) = match existing_message {
+            None if message.status == msg_status::HAS_DELETED as i32
+                && message.client_msg_id.is_empty() =>
+            {
+                ("[SEQ_GAP_+]".to_string(), message.seq, message.client_msg_id.clone())
+            }
+            None if message.status == msg_status::HAS_DELETED as i32 => {
+                ("[DELETED]".to_string(), message.seq, message.client_msg_id.clone())
+            }
+            Some(existing) if existing.seq == message.seq => {
+                ("[SEQ_DUP]".to_string(), message.seq, existing.client_msg_id.clone())
+            }
+            Some(existing) if existing.seq != message.seq => {
+                ("[CLIENT_DUP]".to_string(), message.seq, existing.client_msg_id.clone())
+            }
+            _ => return,
+        };
+
+        let random_suffix = Self::generate_random_id(8);
+        let new_client_msg_id = if client_msg_id.is_empty() {
+            format!("{}_{}", prefix, random_suffix)
+        } else {
+            format!("{}{}_{}", prefix, client_msg_id, random_suffix)
+        };
+
+        warn!(
+            "[MsgHandler] {} seq={}, oldClientMsgID={}, newClientMsgID={}",
+            prefix, seq, message.client_msg_id, new_client_msg_id
+        );
+
+        message.status = msg_status::HAS_DELETED as i32;
+        message.client_msg_id = new_client_msg_id;
+    }
+
+    /// 生成随机字符串（用于异常消息 ID 后缀）
+    fn generate_random_id(len: usize) -> String {
+        let mut rng = rand::thread_rng();
+        (0..len)
+            .map(|_| {
+                let idx = rng.gen_range(0..36);
+                if idx < 10 {
+                    (b'0' + idx) as char
+                } else {
+                    (b'a' + idx - 10) as char
+                }
+            })
+            .collect()
+    }
+
+    /// 将 ReceivedMessage 转为 LocalChatLog
+    fn received_to_local(&self, msg: &ReceivedMessage) -> LocalChatLog {
+        LocalChatLog {
+            conversation_id: msg.conversation_id.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nick_name.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: msg.content.clone(),
+            is_read: 0,
+            status: msg_status::SEND_SUCCESS as i32,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
     }
 
     pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
@@ -82,75 +216,89 @@ impl MessageHandler {
         }
 
         let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
+
+        // 批量查库去重（对齐 Go SDK pullMessageIntoTable L53-70）
         let existing_logs = self.message_dao.get_by_client_msg_ids(&client_msg_ids).await.unwrap_or_default();
-        let existing_map: std::collections::HashSet<String> = existing_logs.into_iter()
-            .map(|l| l.client_msg_id)
-            .collect();
+        let mut existing_map: HashMap<String, LocalChatLog> = HashMap::new();
+        for log in existing_logs {
+            existing_map.insert(log.client_msg_id.clone(), log);
+        }
 
         let login_user_id = self.user_id.lock().unwrap().clone();
-
-        let mut store_logs: Vec<LocalChatLog> = Vec::new();
+        let mut insert_list: Vec<LocalChatLog> = Vec::new();
+        let mut batch_update_list: Vec<String> = Vec::new();
         let mut to_notify: Vec<ReceivedMessage> = Vec::new();
+        let mut processed_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+        let mut is_trigger_unread_count = false;
 
         for msg in &normal_messages {
-            if !Self::should_store_message(msg.content_type) {
+            // 批次内重复 → 异常处理
+            if processed_ids.contains(&msg.client_msg_id) {
+                let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                self.handle_exception_messages(None, &mut local_msg);
+                insert_list.push(local_msg);
                 continue;
             }
+            processed_ids.insert(msg.client_msg_id.clone());
 
+            let exists = existing_map.get(&msg.client_msg_id);
             let is_self = msg.send_id == login_user_id;
 
             if is_self {
-                // 自己发的消息（对齐 Go SDK conversation_msg.go L316-356）
-                if existing_map.contains(&msg.client_msg_id) {
-                    // 本地已有记录：更新 seq/status，不插入不增加未读数
-                    if msg.seq > 0 {
-                        debug!("更新自己消息的seq: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
+                if let Some(existing) = exists {
+                    if existing.seq == 0 && msg.seq > 0 {
+                        // 本地发送消息尚未同步 seq → 更新
+                        batch_update_list.push(existing.client_msg_id.clone());
+                    } else {
+                        // CLIENT_DUP: client_msg_id 重复
+                        let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                        self.handle_exception_messages(Some(existing), &mut local_msg);
+                        insert_list.push(local_msg);
                     }
-                    continue;
+                } else {
+                    // 本端同步自己发的消息
+                    let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                    local_msg.status = msg_status::SEND_SUCCESS as i32;
+                    insert_list.push(local_msg);
                 }
-                // 本地无记录（其他终端同步过来的）：插入但不增加未读数
             } else {
-                // 别人发的消息（对齐 Go SDK conversation_msg.go L357-398）
-                if msg.seq > 0 && existing_map.contains(&msg.client_msg_id) {
-                    debug!("skip duplicate message: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
-                    continue;
+                if exists.is_none() {
+                    // 正常新消息：他人发送 → 入库
+                    let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                    local_msg.status = msg_status::SEND_SUCCESS as i32;
+                    // 使用 MaxSeqRecorder 判断是否贡献未读（对齐 Go SDK IsNewMsg）
+                    let conv_id = local_msg.conversation_id.clone();
+                    let msg_seq = local_msg.seq;
+                    insert_list.push(local_msg);
+                    to_notify.push(msg.clone());
+                    if self.max_seq_recorder.is_new_msg(&conv_id, msg_seq) {
+                        is_trigger_unread_count = true;
+                        self.max_seq_recorder.incr(&conv_id, 1);
+                    }
+                } else {
+                    // CLIENT_DUP: 重复消息
+                    let existing_ref = exists.unwrap();
+                    let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                    self.handle_exception_messages(Some(existing_ref), &mut local_msg);
+                    insert_list.push(local_msg);
                 }
             }
-
-            store_logs.push(LocalChatLog {
-                conversation_id: msg.conversation_id.clone(),
-                client_msg_id: msg.client_msg_id.clone(),
-                server_msg_id: msg.server_msg_id.clone(),
-                send_id: msg.send_id.clone(),
-                recv_id: msg.recv_id.clone(),
-                sender_platform_id: msg.sender_platform_id,
-                sender_nick_name: msg.sender_nick_name.clone(),
-                sender_face_url: msg.sender_face_url.clone(),
-                session_type: msg.session_type,
-                msg_from: msg.msg_from,
-                content_type: msg.content_type,
-                content: msg.content.clone(),
-                is_read: 0,
-                status: 2,
-                seq: msg.seq,
-                send_time: msg.send_time,
-                create_time: msg.create_time,
-                attached_info: String::new(),
-                ex: String::new(),
-                local_ex: String::new(),
-                group_id: msg.group_id.clone(),
-            });
-
-            to_notify.push(msg.clone());
         }
 
-        if !store_logs.is_empty() {
-            info!("准备插入 {} 条消息到数据库", store_logs.len());
-            for log in &store_logs {
-                info!("  待插入: conversation_id={}, client_msg_id={}, seq={}, send_time={}", 
-                      log.conversation_id, log.client_msg_id, log.seq, log.send_time);
+        // 批量更新 seq（对齐 Go SDK batchUpdateMessageList）
+        if !batch_update_list.is_empty() {
+            info!("batch update seq for {} messages", batch_update_list.len());
+            // TODO: implement batch seq update when message_dao supports it
+        }
+
+        // 批量插入消息（对齐 Go SDK batchInsertMessageList）
+        if !insert_list.is_empty() {
+            info!("准备插入 {} 条消息到数据库", insert_list.len());
+            for log in &insert_list {
+                debug!("  待插入: conv={}, client_msg_id={}, seq={}, status={}",
+                      log.conversation_id, log.client_msg_id, log.seq, log.status);
             }
-            self.message_dao.batch_insert(&store_logs).await?;
+            self.message_dao.batch_insert(&insert_list).await?;
             info!("消息插入数据库完成");
         }
 
@@ -219,7 +367,7 @@ impl MessageHandler {
         }
 
         info!("handled {} messages ({} inserted, {} duplicates skipped)", 
-            normal_messages.len(), store_logs.len(), normal_messages.len() - store_logs.len());
+            normal_messages.len(), insert_list.len(), normal_messages.len() - insert_list.len());
         Ok(())
     }
 

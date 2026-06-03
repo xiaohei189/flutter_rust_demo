@@ -154,6 +154,11 @@ impl OpenIMClient {
         self.group.mute_group_member(group_id.to_string(), user_id.to_string(), muted_seconds).await
     }
 
+    /// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup）
+    pub async fn sync_groups_incremental(&self) -> Result<()> {
+        self.group.sync_groups_incremental().await
+    }
+
     /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）
     pub async fn set_group_member_info(
         &self,

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// 会话模型
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Conversation {
     /// 会话 ID
     pub conversation_id: String,

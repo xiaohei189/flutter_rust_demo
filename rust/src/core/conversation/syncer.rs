@@ -5,10 +5,12 @@ use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_ALL_CONVERSATION_LIST, GET_INCREMENTAL_CONVERSATION};
-use serde::{Deserialize, Serialize};
+
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, error};
+use serde::{Deserialize, Serialize};
 
 // ========== Request/Response Structs ==========
 
@@ -123,6 +125,8 @@ pub struct ConversationSyncer {
     sync_version_id: Arc<RwLock<String>>,
     is_first_sync: Arc<RwLock<bool>>,
     user_id: Arc<RwLock<String>>,
+    /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
+    connection: Option<Arc<crate::core::connection::manager::ConnectionManager>>,
 }
 
 impl ConversationSyncer {
@@ -140,7 +144,13 @@ impl ConversationSyncer {
             sync_version_id: Arc::new(RwLock::new(String::new())),
             is_first_sync: Arc::new(RwLock::new(true)),
             user_id: Arc::new(RwLock::new(user_id)),
+            connection: None,
         }
+    }
+
+    /// 设置 WebSocket 连接管理器（用于 Hash Read Seq 同步）
+    pub fn set_connection(&mut self, connection: Arc<crate::core::connection::manager::ConnectionManager>) {
+        self.connection = Some(connection);
     }
 
     pub async fn set_user_id(&self, user_id: String) {
@@ -287,6 +297,98 @@ impl ConversationSyncer {
 
     pub async fn is_first_sync(&self) -> bool {
         *self.is_first_sync.read().await
+    }
+
+    /// 从服务端同步所有会话的 maxSeq 和 hasReadSeq（对齐 Go SDK `SyncAllConversationHashReadSeqs`）
+    ///
+    /// 用于准确计算未读数：unreadCount = maxSeq - hasReadSeq
+    /// 对齐 Go SDK `sync.go:11-151`
+    pub async fn sync_conversation_hash_read_seqs(
+        &self,
+        max_seq_recorder: &crate::core::message::handler::MaxSeqRecorder,
+    ) -> Result<()> {
+        let connection = match &self.connection {
+            Some(c) => c,
+            None => {
+                warn!("[ConvSync] sync_conversation_hash_read_seqs: connection 未设置，跳过");
+                return Ok(());
+            }
+        };
+
+        let user_id = self.user_id.read().await.clone();
+        use crate::domain::constant::types::ws_req_identifier;
+        use crate::protocol::msg::{
+            GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp,
+        };
+
+        let resp: GetConversationsHasReadAndMaxSeqResp = connection
+            .send_rpc(
+                ws_req_identifier::GET_CONV_MAX_READ_SEQ,
+                &GetConversationsHasReadAndMaxSeqReq {
+                    user_id,
+                    conversation_i_ds: vec![],
+                    return_pinned: false,
+                },
+            )
+            .await
+            .map_err(|e| {
+                error!("[ConvSync] 获取会话 Hash Read Seq 失败: {}", e);
+                SdkError::network(format!("sync hash read seq failed: {}", e))
+            })?;
+
+        if resp.seqs.is_empty() {
+            return Ok(());
+        }
+
+        let mut changed_ids: Vec<String> = Vec::new();
+
+        // 获取所有本地会话
+        let local_conversations = self.dao.get_all().await.unwrap_or_default();
+        let mut local_map: HashMap<String, crate::infra::database::models::LocalConversation> =
+            HashMap::new();
+        for conv in local_conversations {
+            local_map.insert(conv.conversation_id.clone(), conv);
+        }
+
+        // 遍历服务端返回的 seqs
+        for (conv_id, seq_info) in &resp.seqs {
+            // 更新 MaxSeqRecorder 内存记录（对齐 Go SDK maxSeqRecorder.Set）
+            max_seq_recorder.set(conv_id, seq_info.max_seq);
+
+            // 计算未读数：maxSeq - hasReadSeq
+            let unread_count = if seq_info.max_seq > seq_info.has_read_seq {
+                (seq_info.max_seq - seq_info.has_read_seq) as i32
+            } else {
+                0
+            };
+
+            if let Some(local_conv) = local_map.get(conv_id) {
+                // 本地存在该会话 → 检查是否需要更新未读数
+                if local_conv.unread_count != unread_count {
+                    if let Err(e) = self.dao.update_unread_count(conv_id, unread_count).await {
+                        error!(
+                            "[ConvSync] 更新会话 {} 未读数失败: {}",
+                            conv_id, e
+                        );
+                    }
+                    changed_ids.push(conv_id.clone());
+                }
+            }
+            // 本地不存在的会话会在后续的 full sync 中创建
+        }
+
+        // 发布未读数变更事件
+        if !changed_ids.is_empty() {
+            info!(
+                "[ConvSync] sync_conversation_hash_read_seqs: 更新了 {} 个会话的未读数",
+                changed_ids.len()
+            );
+            let _ = self
+                .event_bus
+                .publish(SdkEvent::TotalUnreadCountChanged { count: 0 });
+        }
+
+        Ok(())
     }
 }
 

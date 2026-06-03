@@ -310,6 +310,22 @@ impl OpenIMBridgeClient {
         Ok(self.inner.get_friend_id_list().await)
     }
 
+    /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
+    #[flutter_rust_bridge::frb]
+    pub async fn sync_friends_incremental(&self) -> Result<()> {
+        self.inner.sync_friends_incremental().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    /// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
+    ///
+    /// keyword: 搜索关键词，匹配 nickname / user_id / remark
+    #[flutter_rust_bridge::frb]
+    pub async fn search_friends(&self, keyword: String) -> Result<Vec<crate::core::friend::manager::SearchFriendItem>> {
+        self.inner.search_friends(&keyword).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     // ========== 群组操作 ==========
 
     #[flutter_rust_bridge::frb]
@@ -527,6 +543,13 @@ impl OpenIMBridgeClient {
         Ok(self.inner.check_group_member_full_sync(&group_id).await)
     }
 
+    /// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup）
+    #[flutter_rust_bridge::frb]
+    pub async fn sync_groups_incremental(&self) -> Result<()> {
+        self.inner.sync_groups_incremental().await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     // ========== 用户操作 ==========
 
     #[flutter_rust_bridge::frb]
@@ -640,7 +663,7 @@ impl OpenIMBridgeClient {
         session_type: i32,
         sink: StreamSink<i32>,
     ) -> Result<MsgData> {
-        let progress: crate::core::file::uploader::ProgressCallback = Box::new(move |pct: u8| {
+        let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner.send_image_message_with_progress(&file_path, &source_id, session_type, &progress).await
@@ -656,7 +679,7 @@ impl OpenIMBridgeClient {
         session_type: i32,
         sink: StreamSink<i32>,
     ) -> Result<MsgData> {
-        let progress: crate::core::file::uploader::ProgressCallback = Box::new(move |pct: u8| {
+        let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner.send_file_message_with_progress(&file_path, &source_id, session_type, &progress).await
@@ -673,7 +696,7 @@ impl OpenIMBridgeClient {
         duration: i64,
         sink: StreamSink<i32>,
     ) -> Result<MsgData> {
-        let progress: crate::core::file::uploader::ProgressCallback = Box::new(move |pct: u8| {
+        let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner.send_sound_message_with_progress(&file_path, &source_id, session_type, duration, &progress).await
@@ -691,7 +714,7 @@ impl OpenIMBridgeClient {
         duration: i64,
         sink: StreamSink<i32>,
     ) -> Result<MsgData> {
-        let progress: crate::core::file::uploader::ProgressCallback = Box::new(move |pct: u8| {
+        let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner.send_video_message_with_progress(&video_path, &snapshot_path, &source_id, session_type, duration, &progress).await
@@ -738,11 +761,11 @@ pub async fn upload_file_with_progress(
     sink: StreamSink<i32>,
 ) -> Result<String> {
     let client = client_holder()?;
-    let progress: crate::core::file::uploader::ProgressCallback = Box::new(move |pct: u8| {
+    let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
         let _ = sink.add(pct as i32);
     });
     let result = client.file_uploader.upload_file_with_progress(
-        &file_path, &file_name, None, Some(&progress),
+        &file_path, &file_name, None, Some(progress),
     ).await?;
     Ok(result.url)
 }
@@ -995,6 +1018,208 @@ pub async fn send_at_text_message_with_quote(
     let client = client_holder()?;
     let result = client.send_at_text_message_with_quote(&text, at_user_list, at_users_info, None, &source_id, session_type).await?;
     Ok(result)
+}
+
+// ============================================================================
+// 消息 - 补齐 Go SDK API（10 个新增）
+// ============================================================================
+
+/// 倒序获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
+///
+/// 与 `get_history_messages` 相同参数，但按 send_time ASC 返回（向上翻页获取更早消息）
+#[flutter_rust_bridge::frb]
+pub async fn get_history_messages_reverse(
+    conversation_id: String,
+    start_client_msg_id: String,
+    count: i64,
+) -> Result<crate::sdk::client::types::GetHistoryMessagesResult> {
+    let client = client_holder()?;
+
+    let start_time = if start_client_msg_id.is_empty() {
+        0
+    } else {
+        let msg = client.context.message_dao
+            .get_by_client_msg_id(&conversation_id, &start_client_msg_id)
+            .await?;
+        msg.as_ref().map(|m| m.send_time).unwrap_or(0)
+    };
+
+    let messages = client.context.message_dao
+        .get_by_conversation_asc(&conversation_id, start_time, count)
+        .await?;
+
+    let is_end = messages.len() < count as usize;
+
+    let msg_info_list: Vec<crate::domain::model::message::MessageInfo> = messages.into_iter()
+        .map(|m| {
+            let msg_struct = crate::domain::model::msg_struct::MsgStruct::from(&m);
+            crate::domain::model::message::MessageInfo::from(openim_protocol::sdkws::MsgData::from(&msg_struct))
+        })
+        .collect();
+
+    Ok(crate::sdk::client::types::GetHistoryMessagesResult {
+        messages: msg_info_list,
+        is_end,
+    })
+}
+
+/// 按 clientMsgID 列表查找消息（对齐 Go SDK `FindMessageList`）
+#[flutter_rust_bridge::frb]
+pub async fn find_message_list(
+    conversation_id: String,
+    client_msg_ids: Vec<String>,
+) -> Result<Vec<LocalChatLog>> {
+    let client = client_holder()?;
+    let msgs = client.context.message_dao.get_by_client_msg_ids(&client_msg_ids).await?;
+    // 只返回属于指定会话的消息
+    Ok(msgs.into_iter().filter(|m| m.conversation_id == conversation_id).collect())
+}
+
+/// 删除单条消息（本地 + 服务端，对齐 Go SDK `DeleteMessage`）
+///
+/// 先从服务端删除，再从本地删除
+#[flutter_rust_bridge::frb]
+pub async fn delete_message(
+    conversation_id: String,
+    client_msg_id: String,
+) -> Result<()> {
+    let client = client_holder()?;
+    // 委托给 message_service（已包含服务端 + 本地删除 + 事件发布）
+    client.message_service.delete_messages(
+        conversation_id,
+        vec![client_msg_id],
+    ).await
+}
+
+/// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
+#[flutter_rust_bridge::frb]
+pub async fn delete_message_from_local_storage(
+    conversation_id: String,
+    client_msg_id: String,
+) -> Result<()> {
+    let client = client_holder()?;
+    client.context.message_dao.mark_as_deleted(&conversation_id, &client_msg_id).await?;
+
+    client.event_bus().publish(crate::domain::event::types::SdkEvent::MessagesDeleted {
+        conversation_id,
+        client_msg_ids: vec![client_msg_id],
+    });
+    Ok(())
+}
+
+/// 删除所有消息（本地 + 服务端，对齐 Go SDK `DeleteAllMsgFromLocalAndSvr`）
+#[flutter_rust_bridge::frb]
+pub async fn delete_all_msg_from_local_and_svr() -> Result<()> {
+    let client = client_holder()?;
+    // 本地硬删除
+    client.context.message_dao.delete_all().await?;
+    // 清空所有会话的未读数
+    let conversations = client.context.conversation_dao.get_all().await?;
+    for conv in &conversations {
+        if conv.unread_count > 0 {
+            let _ = client.context.conversation_dao
+                .update_unread_count(&conv.conversation_id, 0).await;
+        }
+    }
+    client.event_bus().publish(crate::domain::event::types::SdkEvent::TotalUnreadCountChanged { count: 0 });
+    Ok(())
+}
+
+/// 仅从本地删除所有消息（软删除，对齐 Go SDK `DeleteAllMsgFromLocal`）
+#[flutter_rust_bridge::frb]
+pub async fn delete_all_msg_from_local() -> Result<()> {
+    let client = client_holder()?;
+    client.context.message_dao.mark_all_as_deleted().await?;
+    Ok(())
+}
+
+/// 清除指定会话并删除所有消息（保留会话记录，对齐 Go SDK `ClearConversationAndDeleteAllMsg`）
+#[flutter_rust_bridge::frb]
+pub async fn clear_conversation_and_delete_all_msg(conversation_id: String) -> Result<()> {
+    let client = client_holder()?;
+    // 删除该会话的所有消息
+    client.context.message_dao.delete_by_conversation(&conversation_id).await?;
+    // 重置会话（清空最新消息、未读数等）
+    client.context.conversation_dao.update_unread_count(&conversation_id, 0).await?;
+    // 发布事件
+    client.event_bus().publish(crate::domain::event::types::SdkEvent::ConversationChanged {
+        conversations: vec![],
+    });
+    Ok(())
+}
+
+/// 删除指定会话并删除所有消息（删除会话记录，对齐 Go SDK `DeleteConversationAndDeleteAllMsg`）
+#[flutter_rust_bridge::frb]
+pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> Result<()> {
+    let client = client_holder()?;
+    // 删除该会话的所有消息
+    client.context.message_dao.delete_by_conversation(&conversation_id).await?;
+    // 删除会话记录
+    client.context.conversation_dao.delete(&conversation_id).await?;
+    // 发布事件
+    client.event_bus().publish(crate::domain::event::types::SdkEvent::ConversationDeleted {
+        conversation_ids: vec![conversation_id],
+    });
+    Ok(())
+}
+
+/// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
+#[flutter_rust_bridge::frb]
+pub async fn set_message_local_ex(
+    conversation_id: String,
+    client_msg_id: String,
+    local_ex: String,
+) -> Result<()> {
+    let client = client_holder()?;
+    client.context.message_dao.update_local_ex(&conversation_id, &client_msg_id, &local_ex).await?;
+    Ok(())
+}
+
+/// 插入群聊消息到本地存储（对齐 Go SDK `InsertGroupMessageToLocalStorage`）
+///
+/// 用于插入自定义/系统消息到本地数据库
+#[flutter_rust_bridge::frb]
+pub async fn insert_group_message_to_local_storage(
+    group_id: String,
+    content: String,
+    content_type: i32,
+    send_id: String,
+) -> Result<LocalChatLog> {
+    let client = client_holder()?;
+    let conversation_id = format!("g_{}", group_id);
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+
+    let client_msg_id = crate::domain::model::msg_struct::get_msg_id(&send_id);
+
+    let local_log = LocalChatLog {
+        conversation_id: conversation_id.clone(),
+        client_msg_id: client_msg_id.clone(),
+        server_msg_id: String::new(),
+        send_id,
+        recv_id: group_id,
+        sender_platform_id: 0,
+        sender_nick_name: String::new(),
+        sender_face_url: String::new(),
+        session_type: 2, // group
+        msg_from: 100,
+        content_type,
+        content,
+        is_read: 1,
+        status: 2, // SendSuccess
+        seq: 0,
+        send_time: now,
+        create_time: now,
+        attached_info: String::new(),
+        ex: String::new(),
+        local_ex: String::new(),
+        group_id: String::new(),
+    };
+
+    client.context.message_dao.batch_insert(&[local_log.clone()]).await?;
+    Ok(local_log)
 }
 
 // ============================================================================
