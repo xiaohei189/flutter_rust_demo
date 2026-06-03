@@ -3,14 +3,23 @@ use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
+use crate::infra::database::sync_version_dao::SyncVersionDao;
 use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{GET_ALL_CONVERSATION_LIST, GET_INCREMENTAL_CONVERSATION};
+use crate::infra::http::routes::{
+    GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS,
+    GET_INCREMENTAL_CONVERSATION,
+};
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn, error};
 use serde::{Deserialize, Serialize};
+
+// ========== 常量 ==========
+
+/// 版本同步表名（对齐 Go SDK `model_struct.LocalConversation{}.TableName()`）
+const CONVERSATION_TABLE_NAME: &str = "local_conversations";
 
 // ========== Request/Response Structs ==========
 
@@ -47,6 +56,40 @@ pub struct GetIncrementalConversationResp {
     pub insert: Vec<ServerConversation>,
     #[serde(default)]
     pub update: Vec<ServerConversation>,
+}
+
+/// 按 ID 查询会话的请求（对齐 Go SDK `getConversationsByIDsFromServer`）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetConversationsByIDsReq {
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "conversationIDs")]
+    pub conversation_ids: Vec<String>,
+}
+
+/// 按 ID 查询会话的响应
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetConversationsByIDsResp {
+    #[serde(default)]
+    pub conversations: Option<Vec<ServerConversation>>,
+}
+
+/// 获取所有会话 ID 的请求（对齐 Go SDK `getAllConversationIDsFromServer`）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetFullConversationIDsReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+}
+
+/// 获取所有会话 ID 的响应（对齐 Go SDK `GetFullOwnerConversationIDsResp`）
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetFullConversationIDsResp {
+    pub version: u64,
+    #[serde(rename = "versionID")]
+    pub version_id: String,
+    pub equal: bool,
+    #[serde(default, rename = "conversationIDs")]
+    pub conversation_ids: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -121,12 +164,12 @@ pub struct ConversationSyncer {
     http_client: Arc<HttpApiClient>,
     dao: Arc<ConversationDao>,
     event_bus: Arc<EventBus>,
-    sync_version: Arc<RwLock<u64>>,
-    sync_version_id: Arc<RwLock<String>>,
-    is_first_sync: Arc<RwLock<bool>>,
+    sync_version_dao: Arc<SyncVersionDao>,
     user_id: Arc<RwLock<String>>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
     connection: Option<Arc<crate::core::connection::manager::ConnectionManager>>,
+    /// 增量同步互斥锁（对齐 Go SDK `conversationSyncMutex`）
+    sync_mutex: tokio::sync::Mutex<()>,
 }
 
 impl ConversationSyncer {
@@ -134,17 +177,17 @@ impl ConversationSyncer {
         http_client: Arc<HttpApiClient>,
         dao: Arc<ConversationDao>,
         event_bus: Arc<EventBus>,
+        sync_version_dao: Arc<SyncVersionDao>,
         user_id: String,
     ) -> Self {
         Self {
             http_client,
             dao,
             event_bus,
-            sync_version: Arc::new(RwLock::new(0)),
-            sync_version_id: Arc::new(RwLock::new(String::new())),
-            is_first_sync: Arc::new(RwLock::new(true)),
+            sync_version_dao,
             user_id: Arc::new(RwLock::new(user_id)),
             connection: None,
+            sync_mutex: tokio::sync::Mutex::new(()),
         }
     }
 
@@ -158,14 +201,36 @@ impl ConversationSyncer {
         *uid = user_id;
     }
 
+    // ========================================================================
+    // 增量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
+    // ========================================================================
+
+    /// 增量同步会话（版本号持久化到数据库，对齐 Go SDK `VersionSynchronizer.IncrementalSync`）
     pub async fn sync_incremental(&self) -> Result<Vec<Conversation>> {
-        let current_version = *self.sync_version.read().await;
-        let current_version_id = self.sync_version_id.read().await.clone();
-        info!("开始增量同步会话，版本: {}, version_id: {}", current_version, current_version_id);
+        let user_id = self.user_id.read().await.clone();
+
+        // 1. 从数据库获取本地版本信息（对齐 Go SDK `getVersionInfo`）
+        let (local_version_id, local_version) = match self
+            .sync_version_dao
+            .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
+            .await?
+        {
+            Some((vid, v)) => (vid, v),
+            None => (String::new(), 0),
+        };
+
+        info!(
+            "开始增量同步会话，版本: {}, version_id: {}",
+            local_version, local_version_id
+        );
 
         self.event_bus.publish(SdkEvent::SyncStarted);
 
-        let resp = match self.pull_incremental(current_version, &current_version_id).await {
+        // 2. 请求增量数据
+        let resp = match self
+            .pull_incremental(local_version, &local_version_id)
+            .await
+        {
             Ok(r) => r,
             Err(e) => {
                 self.event_bus.publish(SdkEvent::SyncFailed {
@@ -175,11 +240,13 @@ impl ConversationSyncer {
             }
         };
 
+        // 3. 如果服务端返回 full=true，回退到全量同步（对齐 Go SDK `FullSyncer`）
         if resp.full {
             info!("增量同步返回 full=true，执行全量同步");
             return self.sync_full().await;
         }
 
+        // 4. 处理增量变更
         for conv_id in &resp.delete {
             self.dao.delete(conv_id).await?;
             self.event_bus.publish(SdkEvent::ConversationDeleted {
@@ -189,18 +256,21 @@ impl ConversationSyncer {
 
         for s in &resp.update {
             let domain = server_to_domain(s.clone());
-            let local = crate::core::conversation::manager::domain_to_local(domain.clone());
+            let local = crate::core::conversation::manager::domain_to_local(domain);
             self.dao.upsert(&local).await?;
         }
 
         for s in &resp.insert {
             let domain = server_to_domain(s.clone());
-            let local = crate::core::conversation::manager::domain_to_local(domain.clone());
+            let local = crate::core::conversation::manager::domain_to_local(domain);
             self.dao.upsert(&local).await?;
         }
 
         if !resp.update.is_empty() || !resp.insert.is_empty() {
-            let changed: Vec<Conversation> = resp.update.iter().chain(resp.insert.iter())
+            let changed: Vec<Conversation> = resp
+                .update
+                .iter()
+                .chain(resp.insert.iter())
                 .map(|s| server_to_domain(s.clone()))
                 .collect();
             self.event_bus.publish(SdkEvent::ConversationChanged {
@@ -208,17 +278,42 @@ impl ConversationSyncer {
             });
         }
 
-        *self.sync_version.write().await = resp.version;
-        *self.sync_version_id.write().await = resp.version_id;
-        *self.is_first_sync.write().await = false;
+        // 5. 持久化版本号到数据库（对齐 Go SDK `updateVersionInfo`）
+        if let Err(e) = self
+            .sync_version_dao
+            .set_version_sync(
+                CONVERSATION_TABLE_NAME,
+                &user_id,
+                &resp.version_id,
+                resp.version,
+            )
+            .await
+        {
+            warn!("更新会话同步版本失败: {}", e);
+        }
 
         self.event_bus.publish(SdkEvent::SyncFinished);
-        info!("增量同步完成，insert={}, update={}, delete={}",
-            resp.insert.len(), resp.update.len(), resp.delete.len());
+        info!(
+            "增量同步完成，insert={}, update={}, delete={}",
+            resp.insert.len(),
+            resp.update.len(),
+            resp.delete.len()
+        );
 
-        let inserted_convs: Vec<Conversation> = resp.insert.iter().map(|s| server_to_domain(s.clone())).collect();
+        let inserted_convs: Vec<Conversation> =
+            resp.insert.iter().map(|s| server_to_domain(s.clone())).collect();
         Ok(inserted_convs)
     }
+
+    /// 加锁版本的增量同步（对齐 Go SDK `IncrSyncConversationsWithLock`）
+    pub async fn sync_incremental_with_lock(&self) -> Result<Vec<Conversation>> {
+        let _guard = self.sync_mutex.lock().await;
+        self.sync_incremental().await
+    }
+
+    // ========================================================================
+    // 全量同步
+    // ========================================================================
 
     pub async fn sync_full(&self) -> Result<Vec<Conversation>> {
         info!("开始全量同步会话");
@@ -234,8 +329,11 @@ impl ConversationSyncer {
             }
         };
 
-        let conversations: Vec<Conversation> = resp.conversations.unwrap_or_default().into_iter()
-            .map(|s| server_to_domain(s))
+        let conversations: Vec<Conversation> = resp
+            .conversations
+            .unwrap_or_default()
+            .into_iter()
+            .map(server_to_domain)
             .collect();
 
         self.dao.clear_all().await?;
@@ -247,8 +345,6 @@ impl ConversationSyncer {
         self.event_bus.publish(SdkEvent::ConversationChanged {
             conversations: conversations.clone(),
         });
-
-        *self.is_first_sync.write().await = false;
 
         self.event_bus.publish(SdkEvent::SyncFinished);
         info!("全量同步完成，同步 {} 个会话", conversations.len());
@@ -262,47 +358,15 @@ impl ConversationSyncer {
         Ok(conversations)
     }
 
-    async fn pull_all(&self) -> Result<GetAllConversationsResp> {
-        let user_id = self.user_id.read().await.clone();
-        let req = GetAllConversationsReq {
-            owner_user_id: user_id,
-        };
-        debug!("从服务器拉取所有会话");
-        let resp: GetAllConversationsResp = self.http_client.post(GET_ALL_CONVERSATION_LIST, &req).await?;
-        debug!("拉取到 {} 个会话", resp.conversations.as_ref().map_or(0, |v| v.len()));
-        Ok(resp)
-    }
+    // ========================================================================
+    // Hash Read Seq 同步（对齐 Go SDK `SyncAllConversationHashReadSeqs`）
+    // ========================================================================
 
-    async fn pull_incremental(&self, version: u64, version_id: &str) -> Result<GetIncrementalConversationResp> {
-        let user_id = self.user_id.read().await.clone();
-        let req = GetIncrementalConversationReq {
-            user_id,
-            version_id: version_id.to_string(),
-            version,
-        };
-        debug!("从服务器拉取增量会话，版本: {}, version_id: {}", version, version_id);
-        let resp: GetIncrementalConversationResp = self.http_client.post(GET_INCREMENTAL_CONVERSATION, &req).await?;
-        debug!("增量响应: full={}, insert={}, update={}, delete={}",
-            resp.full, resp.insert.len(), resp.update.len(), resp.delete.len());
-        Ok(resp)
-    }
-
-    pub async fn get_sync_version(&self) -> u64 {
-        *self.sync_version.read().await
-    }
-
-    pub async fn get_sync_version_id(&self) -> String {
-        self.sync_version_id.read().await.clone()
-    }
-
-    pub async fn is_first_sync(&self) -> bool {
-        *self.is_first_sync.read().await
-    }
-
-    /// 从服务端同步所有会话的 maxSeq 和 hasReadSeq（对齐 Go SDK `SyncAllConversationHashReadSeqs`）
+    /// 从服务端同步所有会话的 maxSeq 和 hasReadSeq（对齐 Go SDK `sync.go:11-151`）
     ///
     /// 用于准确计算未读数：unreadCount = maxSeq - hasReadSeq
-    /// 对齐 Go SDK `sync.go:11-151`
+    /// 关键差异：Go SDK 会为本地不存在的会话从服务端拉取完整数据并插入，
+    /// 此处补齐该逻辑。
     pub async fn sync_conversation_hash_read_seqs(
         &self,
         max_seq_recorder: &crate::core::message::handler::MaxSeqRecorder,
@@ -341,6 +405,7 @@ impl ConversationSyncer {
         }
 
         let mut changed_ids: Vec<String> = Vec::new();
+        let mut conversation_ids_need_sync: Vec<String> = Vec::new();
 
         // 获取所有本地会话
         let local_conversations = self.dao.get_all().await.unwrap_or_default();
@@ -373,8 +438,63 @@ impl ConversationSyncer {
                     }
                     changed_ids.push(conv_id.clone());
                 }
+            } else {
+                // 本地不存在该会话 → 收集待同步列表（对齐 Go SDK sync.go:82）
+                conversation_ids_need_sync.push(conv_id.clone());
             }
-            // 本地不存在的会话会在后续的 full sync 中创建
+        }
+
+        // 同步不存在于本地的会话（对齐 Go SDK sync.go:87-123）
+        if !conversation_ids_need_sync.is_empty() {
+            info!(
+                "[ConvSync] {} 个会话不在本地，从服务端拉取",
+                conversation_ids_need_sync.len()
+            );
+            match self
+                .pull_conversations_by_ids(&conversation_ids_need_sync)
+                .await
+            {
+                Ok(server_convs) => {
+                    let mut conversations_to_insert = Vec::new();
+                    for s in &server_convs {
+                        let mut domain = server_to_domain(s.clone());
+                        // 计算未读数
+                        if let Some(seq_info) = resp.seqs.get(&domain.conversation_id) {
+                            let unread_count = if seq_info.max_seq > seq_info.has_read_seq {
+                                (seq_info.max_seq - seq_info.has_read_seq) as i32
+                            } else {
+                                0
+                            };
+                            domain.unread_count = unread_count;
+                        }
+                        let local = crate::core::conversation::manager::domain_to_local(domain.clone());
+                        if let Err(e) = self.dao.upsert(&local).await {
+                            error!(
+                                "[ConvSync] 插入会话 {} 失败: {}",
+                                domain.conversation_id, e
+                            );
+                        } else {
+                            conversations_to_insert.push(domain);
+                        }
+                    }
+                    if !conversations_to_insert.is_empty() {
+                        changed_ids.extend(
+                            conversations_to_insert
+                                .iter()
+                                .map(|c| c.conversation_id.clone()),
+                        );
+                        self.event_bus.publish(SdkEvent::ConversationChanged {
+                            conversations: conversations_to_insert,
+                        });
+                    }
+                }
+                Err(e) => {
+                    error!(
+                        "[ConvSync] 从服务端拉取缺失会话失败: {}",
+                        e
+                    );
+                }
+            }
         }
 
         // 发布未读数变更事件
@@ -390,6 +510,103 @@ impl ConversationSyncer {
 
         Ok(())
     }
+
+    // ========================================================================
+    // HTTP / RPC 拉取方法
+    // ========================================================================
+
+    async fn pull_all(&self) -> Result<GetAllConversationsResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetAllConversationsReq {
+            owner_user_id: user_id,
+        };
+        debug!("从服务器拉取所有会话");
+        let resp: GetAllConversationsResp = self.http_client.post(GET_ALL_CONVERSATION_LIST, &req).await?;
+        debug!(
+            "拉取到 {} 个会话",
+            resp.conversations.as_ref().map_or(0, |v| v.len())
+        );
+        Ok(resp)
+    }
+
+    async fn pull_incremental(
+        &self,
+        version: u64,
+        version_id: &str,
+    ) -> Result<GetIncrementalConversationResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetIncrementalConversationReq {
+            user_id,
+            version_id: version_id.to_string(),
+            version,
+        };
+        debug!(
+            "从服务器拉取增量会话，版本: {}, version_id: {}",
+            version, version_id
+        );
+        let resp: GetIncrementalConversationResp =
+            self.http_client.post(GET_INCREMENTAL_CONVERSATION, &req).await?;
+        debug!(
+            "增量响应: full={}, insert={}, update={}, delete={}",
+            resp.full,
+            resp.insert.len(),
+            resp.update.len(),
+            resp.delete.len()
+        );
+        Ok(resp)
+    }
+
+    /// 按 ID 列表从服务端拉取会话（对齐 Go SDK `getConversationsByIDsFromServer`）
+    async fn pull_conversations_by_ids(
+        &self,
+        conversation_ids: &[String],
+    ) -> Result<Vec<ServerConversation>> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetConversationsByIDsReq {
+            owner_user_id: user_id,
+            conversation_ids: conversation_ids.to_vec(),
+        };
+        let resp: GetConversationsByIDsResp =
+            self.http_client.post(GET_CONVERSATIONS, &req).await?;
+        Ok(resp.conversations.unwrap_or_default())
+    }
+
+    /// 获取所有会话 ID（对齐 Go SDK `getAllConversationIDsFromServer`）
+    async fn pull_full_conversation_ids(&self) -> Result<GetFullConversationIDsResp> {
+        let user_id = self.user_id.read().await.clone();
+        let req = GetFullConversationIDsReq { user_id };
+        let resp: GetFullConversationIDsResp =
+            self.http_client.post(GET_FULL_CONVERSATION_IDS, &req).await?;
+        Ok(resp)
+    }
+
+    // ========================================================================
+    // 版本查询（供外部使用）
+    // ========================================================================
+
+    pub async fn get_sync_version(&self) -> u64 {
+        let user_id = self.user_id.read().await.clone();
+        match self
+            .sync_version_dao
+            .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
+            .await
+        {
+            Ok(Some((_, v))) => v,
+            _ => 0,
+        }
+    }
+
+    pub async fn get_sync_version_id(&self) -> String {
+        let user_id = self.user_id.read().await.clone();
+        match self
+            .sync_version_dao
+            .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
+            .await
+        {
+            Ok(Some((vid, _))) => vid,
+            _ => String::new(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -400,7 +617,8 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_syncer_creation() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let sync_version_dao = Arc::new(SyncVersionDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
         let http_client = Arc::new(HttpApiClient::new(
             "http://localhost:10002".to_string(),
@@ -411,11 +629,11 @@ mod tests {
             http_client,
             dao,
             event_bus,
+            sync_version_dao,
             "test_user".to_string(),
         );
 
         assert_eq!(syncer.get_sync_version().await, 0);
-        assert!(syncer.is_first_sync().await);
         assert_eq!(syncer.get_sync_version_id().await, "");
     }
 
@@ -446,7 +664,7 @@ mod tests {
         assert_eq!(domain.user_id, "user2");
         assert_eq!(domain.recv_msg_opt, 0);
         assert_eq!(domain.latest_msg_seq, 100);
-        assert_eq!(domain.is_pinned, false);
+        assert!(!domain.is_pinned);
     }
 
     #[tokio::test]
@@ -470,5 +688,16 @@ mod tests {
         assert!(json.contains("versionID"));
         assert!(json.contains("abc123"));
         assert!(json.contains("42"));
+    }
+
+    #[tokio::test]
+    async fn test_get_conversations_by_ids_req_serialization() {
+        let req = GetConversationsByIDsReq {
+            owner_user_id: "user1".to_string(),
+            conversation_ids: vec!["si_u1_u2".to_string(), "g_group1".to_string()],
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("ownerUserID"));
+        assert!(json.contains("conversationIDs"));
     }
 }

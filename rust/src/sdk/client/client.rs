@@ -90,6 +90,7 @@ impl OpenIMClient {
             context.conversation_dao.clone(),
             context.message_dao.clone(),
             context.sync_version_dao.clone(),
+            context.notification_seq_dao.clone(),
             message_handler.clone(),
             event_bus.clone(),
             config.user_id.clone(),
@@ -99,6 +100,7 @@ impl OpenIMClient {
             context.http_client.clone(),
             context.conversation_dao.clone(),
             event_bus.clone(),
+            context.sync_version_dao.clone(),
             config.user_id.clone(),
         ));
 
@@ -114,6 +116,7 @@ impl OpenIMClient {
             friend.clone(),
             group.clone(),
             user.clone(),
+            conversation_syncer.clone(),
             event_bus.clone(),
         ));
 
@@ -277,6 +280,75 @@ impl OpenIMClient {
                                     if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
                                         warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
                                     }
+                                    // 持久化通知会话的 seq（对齐 Go SDK SetNotificationSeq）
+                                    if let Some(&max_seq) = seqs.iter().max() {
+                                        if let Err(e) = message_syncer.set_notification_seq(&conversation_id, max_seq).await {
+                                            warn!("set_notification_seq failed for {}: {:?}", conversation_id, e);
+                                        }
+                                    }
+                                }
+                            }
+                            Some(SdkEvent::BatchedPushMessages { msgs, notification_msgs }) => {
+                                info!("push_message_handler: received BatchedPushMessages, {} msg conversations, {} notification conversations",
+                                    msgs.len(), notification_msgs.len());
+
+                                // 处理普通消息
+                                for (conv_id, pull_msgs) in &msgs {
+                                    let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
+                                        let content_str = String::from_utf8_lossy(&msg.content).to_string();
+                                        Some(ReceivedMessage {
+                                            server_msg_id: msg.server_msg_id.clone(),
+                                            client_msg_id: msg.client_msg_id.clone(),
+                                            send_id: msg.send_id.clone(),
+                                            recv_id: msg.recv_id.clone(),
+                                            sender_platform_id: msg.sender_platform_id,
+                                            sender_nick_name: msg.sender_nickname.clone(),
+                                            sender_face_url: msg.sender_face_url.clone(),
+                                            session_type: msg.session_type,
+                                            msg_from: msg.msg_from,
+                                            content_type: msg.content_type,
+                                            content: content_str,
+                                            seq: msg.seq,
+                                            send_time: msg.send_time,
+                                            create_time: msg.create_time,
+                                            conversation_id: conv_id.clone(),
+                                            group_id: msg.group_id.clone(),
+                                        })
+                                    }).collect();
+
+                                    let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+
+                                    if !messages.is_empty() {
+                                        info!("push_message_handler: handling {} batched messages for {}", messages.len(), conv_id);
+                                        if let Err(e) = message_handler.handle_messages(messages).await {
+                                            warn!("failed to handle batched messages for {}: {:?}", conv_id, e);
+                                        }
+                                        if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                            warn!("push_trigger_and_sync (batched) failed for {}: {:?}", conv_id, e);
+                                        }
+                                    } else if !seqs.is_empty() {
+                                        if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                            warn!("push_trigger_and_sync (batched seq) failed for {}: {:?}", conv_id, e);
+                                        }
+                                    }
+                                }
+
+                                // 处理通知消息
+                                for (conv_id, pull_msgs) in &notification_msgs {
+                                    notification_handler.handle_notifications(&pull_msgs.msgs).await;
+
+                                    let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+                                    if !seqs.is_empty() {
+                                        if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                            warn!("push_trigger_and_sync (batched notification) failed for {}: {:?}", conv_id, e);
+                                        }
+                                        // 持久化通知会话的 seq（对齐 Go SDK SetNotificationSeq）
+                                        if let Some(&max_seq) = seqs.iter().max() {
+                                            if let Err(e) = message_syncer.set_notification_seq(conv_id, max_seq).await {
+                                                warn!("set_notification_seq (batched) failed for {}: {:?}", conv_id, e);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             Some(other) => {
@@ -318,8 +390,12 @@ impl OpenIMClient {
             self.spawn_push_message_handler();
         }
 
-        if let Err(e) = self.conversation_syncer.sync_full().await {
-            warn!("登录后会话全量同步失败: {}", e);
+        // 会话同步：优先增量同步，首次或版本不匹配时回退全量（对齐 Go SDK syncFlag 路径）
+        if let Err(e) = self.conversation_syncer.sync_incremental().await {
+            warn!("登录后会话增量同步失败，回退全量同步: {}", e);
+            if let Err(e2) = self.conversation_syncer.sync_full().await {
+                warn!("登录后会话全量同步失败: {}", e2);
+            }
         }
 
         tokio::spawn({
@@ -367,6 +443,15 @@ impl OpenIMClient {
         self.conversation_syncer
             .sync_conversation_hash_read_seqs(&self.message_handler.max_seq_recorder)
             .await
+    }
+
+    /// 增量同步会话列表（对齐 Go SDK `IncrSyncConversations`）
+    ///
+    /// 版本号持久化到数据库，重连后无需全量同步。
+    /// 收到会话变更通知时调用。
+    pub async fn incr_sync_conversations(&self) -> Result<()> {
+        self.conversation_syncer.sync_incremental_with_lock().await?;
+        Ok(())
     }
 
     /// 获取连接状态

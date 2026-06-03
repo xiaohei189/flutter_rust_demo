@@ -78,8 +78,8 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | Go SDK | Rust 模块 | 关键文件 |
 |--------|-----------|---------|
 | `internal/interaction/long_conn_mgr.go` | `core/connection/` | `manager.rs` + `heartbeat.rs` + `reconnect.rs` |
-| `internal/interaction/message_batcher.go` | — | ❌ 未实现 |
-| `internal/conversation_msg/msg_sync.go` | `core/message/syncer.rs` | 消息同步器 |
+| `internal/interaction/message_batcher.go` | `core/connection/message_batcher.rs` | 推送消息批处理器（自适应聚合） |
+| `internal/interaction/msg_sync.go` | `core/message/syncer.rs` | 消息同步器（seq 增量拉取） |
 | `internal/conversation_msg/conversation_msg.go` | `core/message/handler.rs` | 消息处理器（doMsgNew） |
 | `internal/conversation_msg/send_queue.go` | `core/message/service.rs` | 消息发送 |
 | `internal/conversation_msg/notification.go` | `core/notification/handler.rs` | 通知路由（41 种） |
@@ -112,8 +112,8 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 消息推送接收 | `long_conn_mgr.go` | `manager.rs` | ✅ |
 | 踢下线 + Token 过期处理 | `long_conn_mgr.go` | `manager.rs` | ✅ |
 | 连接状态事件 | ✅ | `SdkEvent::Connected/Disconnected` | ✅ |
-| **MessageBatcher 推送聚合** | `message_batcher.go` | — | ❌ P2 |
-| **压缩/编码** | `compressor.go` + `encoder.go` | — | ❌ P2 |
+| **MessageBatcher 推送聚合** | `message_batcher.go` | `message_batcher.rs` | ✅ P2 |
+| **压缩/编码** | `compressor.go` + `encoder.go` | `compressor.rs` (gzip) + JSON (serde_json, 服务端暂用 JSON) | ✅ P2 |
 
 ### 4.2 消息模块 `core/message/` — 95%
 
@@ -129,13 +129,13 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 获取历史消息 | `api.go` | `sdk/client/message.rs` | ✅ |
 | 本地消息搜索 | `api.go` | `service.rs` | ✅ |
 | 15 种消息元素结构体 | `sdk_struct.go` | `domain/model/msg_struct.rs` | ✅ |
-| **seq gap 异常消息处理（4 类）** | `message_check.go` | — | ❌ **P0** |
-| **双 Lane 发送队列** | `send_queue.go` | 当前单 lane | ❌ P1 |
-| **消息发送进度回调** | `progress.go` | — | ❌ P1 |
+| **seq gap 异常消息处理（4 类）** | `message_check.go` | `message_check.rs` 三层连续性检查 + 1005 RPC 补拉 + `merge_sorted_arrays` | ✅ |
+| **双 Lane 发送队列** | `send_queue.go` | `send_queue.rs` 双 Lane 并行 | ✅ |
+| **消息发送进度回调** | `progress.go` | `upload_file_with_progress` + StreamSink | ✅ |
 | **正在输入（Typing）** | `entering.go` | `send_typing()` FFI | ✅ |
 | **消息转发** | `api.go` | `forward_message()` FFI | ✅ |
 
-### 4.3 会话模块 `core/conversation/` — 80%
+### 4.3 会话模块 `core/conversation/` — 98%
 
 | 功能 | Go SDK | Rust | 状态 |
 |------|--------|------|------|
@@ -144,9 +144,9 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 置顶/免打扰/草稿 | ✅ | `manager.rs` | ✅ |
 | 未读消息计数 | ✅ | `manager.rs` | ✅ |
 | 会话删除 | ✅ | `manager.rs` | ✅ |
-| **会话标记已读联动** | ✅ 完整联动 | ⚠️ 部分实现 | ⚠️ |
-| **会话 Hash Read Seq 同步** | `sync.go:30` | — | ❌ P1 |
-| **会话增量同步（VersionSynchronizer）** | `incremental_sync.go:26` | — | ❌ P1 |
+| **会话标记已读联动** | ✅ 完整联动 | ✅ 完整实现 | ✅ |
+| **会话 Hash Read Seq 同步** | `sync.go:30` | `syncer.rs:370` + 缺失会话拉取 | ✅ |
+| **会话增量同步（VersionSynchronizer）** | `incremental_sync.go:26` | `syncer.rs:209` 版本持久化 + 加锁同步 | ✅ |
 | **会话信息设置（set_conversation）** | ✅ | `set_conversation()` FFI | ✅ |
 
 ### 4.4 通知模块 `core/notification/` — 95%
@@ -221,13 +221,13 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 查询用户状态 | ✅ | `manager.rs` + FFI | ✅ |
 | 订阅/取消订阅 | ✅ | `manager.rs` | ✅ |
 
-### 4.9 文件上传 `core/file/` — 85%
+### 4.9 文件上传 `core/file/` — 100%
 
 | 功能 | Go SDK | Rust | 状态 |
 |------|--------|------|------|
 | 文件上传（预签名 URL） | `upload.go` | `uploader.rs` | ✅ |
-| **上传进度回调** | `progress.go` | — | ❌ P1 |
-| **分片上传** | `upload.go` | — | ❌ P2 |
+| **上传进度回调** | `progress.go` | `progress_reader.rs` + `cb.rs` | ✅ |
+| **分片上传** | `upload.go` | `uploader.rs` + `bitmap.rs` | ✅ |
 
 ### 4.10 基础设施 `infra/` — 95%
 
@@ -281,7 +281,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | syncFlag 多阶段同步 | `sync.go:67` | P2 | 重装后同步群组/好友/会话基础数据 |
 | 通知消息重装特殊处理 | `msg_sync.go:566` | P2 | 重装时通知只更新 seq，不拉消息体 |
 | 唤醒同步 pullNums 区分 | `msg_sync.go:473` | P2 | 唤醒时拉取数量与连接时区分 |
-| MessageBatcher 聚合 | `message_batcher.go` | P2 | 高负载场景避免频繁处理 |
+| ~~MessageBatcher 聚合~~ | `message_batcher.go` | ~~P2~~ ✅ | `message_batcher.rs` 自适应聚合已完成 |
 
 ---
 
@@ -296,12 +296,12 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | `InitSDK` | `OpenIMBridgeClient::new()` | ✅ |
 | `Login` | 在 `new()` 内部 | ✅ |
 | `Logout` | `logout()` | ✅ |
-| `UnInitSDK` | — | ❌ |
-| `GetSdkVersion` | — | ❌ |
+| `UnInitSDK` | `un_init_sdk()` | ✅ |
+| `GetSdkVersion` | `get_sdk_version()` | ✅ |
 | `GetLoginStatus` | `get_connection_state()` | ✅ |
-| `GetLoginUserID` | — | ❌ |
-| `SetAppBackgroundStatus` | — | ❌ |
-| `NetworkStatusChanged` | — | ❌ |
+| `GetLoginUserID` | `get_login_user_id()` | ✅ |
+| `SetAppBackgroundStatus` | `set_app_background_status()` | ✅ |
+| `NetworkStatusChanged` | `network_status_changed()` | ✅ |
 | `SetConnListener` | EventBus 替代 | — |
 
 #### 好友（16 个）
@@ -320,10 +320,10 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | `GetBlackList` | `get_black_list()` | ✅ |
 | `RemoveBlack` | `remove_black()` | ✅ |
 | `GetFriendApplicationUnhandledCount` | `get_friend_application_unhandled_count()` | ✅ |
-| `GetSpecifiedFriendsInfo` | — | ❌ |
-| `GetFriendListPage` | — | ❌ |
+| `GetSpecifiedFriendsInfo` | `get_specified_friends_info()` | ✅ |
+| `GetFriendListPage` | `get_friend_list_page()` | ✅ |
 | `SearchFriends` | `search_friends()` | ✅ |
-| `UpdateFriends` | — | ❌ |
+| `UpdateFriends` | `update_friends()` | ✅ |
 
 #### 群组（28 个）
 
@@ -471,9 +471,9 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | 5.9 | 群组高级管理（分页、搜索） | ✅ **完成** | 分页获取群列表、搜索群组/群成员、群主管理员、按时间筛选、同步检查 |
 | 5.10 | 全局设置与通用功能 | ⏳ **待开始** | |
 | 5.11 | 集成测试全覆盖 | ⏳ **待开始** | 30 个文件已有单元测试，需补齐集成测试 |
-| 5.E | MessageBatcher 推送聚合 | ⏳ **待开始** | 高负载场景 |
+| 5.E | MessageBatcher 推送聚合 | ✅ **完成** | `message_batcher.rs` 自适应聚合（低负载透传/高负载 50ms~1s 延迟聚合） |
 | 5.F | syncFlag 多阶段同步 | ⏳ **待开始** | 重装后基础数据同步 |
-| 5.G | 双 Lane 发送队列 | ⏳ **待开始** | 消息保序 |
+| 5.G | 双 Lane 发送队列 | ✅ 完成 | `send_queue.rs` 双 Lane 并行，媒体不阻塞文本 |
 | 5.H | 前台/后台区分回调 | ✅ 完成 | `set_app_background_status` FFI 已暴露 |
 | 5.I | 消息/连接 FFI 补齐 | ✅ 完成 | 转发/URL消息/未读数/已读标记/版本/用户ID/前后台/网络状态 |
 
@@ -482,7 +482,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | 阶段一：API 对齐 | 消息创建+发送两步走、clientMsgID MD5、status 初始化、initBasicInfo | ✅ 已完成 |
-| 阶段二：事件对齐 | 撤回通知事件、seq gap 检测补拉、消息异常处理 | ⚠️ 撤回已实现，seq gap 待做 |
+| 阶段二：事件对齐 | 撤回通知事件、seq gap 检测补拉、消息异常处理 | ✅ 已完成 |
 | 阶段三：字段补齐 | LocalEx、OfflinePush、LastMinSeq、Markdown | ✅ 已完成 |
 | 阶段四：功能补齐 | 各消息类型 Elem 结构、完整性测试 | ✅ 已完成（15 种 Elem 结构体） |
 
@@ -503,8 +503,8 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 
 | 表 | Go SDK | Rust SDK | 用途 |
 |---|--------|----------|------|
-| `local_notification_seqs` | ✅ | ❌ | 通知 seq 追踪 |
-| `local_seq` | ✅ | ❌ | MinSeq 存储 |
+| `local_notification_seqs` | ✅ | ✅ | 通知 seq 追踪 |
+| `local_seq` | ✅ | ✅ | MinSeq 存储 |
 | `local_version_sync` | ✅ | ✅ | 版本同步（会话/好友/群组增量同步） |
 
 ---

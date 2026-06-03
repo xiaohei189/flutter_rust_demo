@@ -326,6 +326,51 @@ impl OpenIMBridgeClient {
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
+    ///
+    /// 先查本地 DB，缺失的从服务端拉取并缓存。
+    /// filter_black=true 时过滤掉黑名单中的好友。
+    #[flutter_rust_bridge::frb]
+    pub async fn get_specified_friends_info(
+        &self,
+        friend_user_ids: Vec<String>,
+        filter_black: bool,
+    ) -> Result<Vec<crate::domain::model::friend::FriendInfo>> {
+        self.inner.get_specified_friends_info(friend_user_ids, filter_black).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
+    ///
+    /// 从本地 DB 按置顶优先、创建时间倒序分页获取。
+    /// filter_black=true 时过滤黑名单好友。
+    #[flutter_rust_bridge::frb]
+    pub async fn get_friend_list_page(
+        &self,
+        offset: i32,
+        count: i32,
+        filter_black: bool,
+    ) -> Result<Vec<crate::domain::model::friend::FriendInfo>> {
+        self.inner.get_friend_list_page(offset, count, filter_black).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    /// 批量更新好友信息（对齐 Go SDK UpdateFriends）
+    ///
+    /// 支持部分更新：is_pinned / remark / ex 为 null 时不修改对应字段。
+    /// 更新成功后自动执行增量同步刷新本地数据。
+    #[flutter_rust_bridge::frb]
+    pub async fn update_friends(
+        &self,
+        friend_user_ids: Vec<String>,
+        is_pinned: Option<bool>,
+        remark: Option<String>,
+        ex: Option<String>,
+    ) -> Result<()> {
+        self.inner.update_friends(friend_user_ids, is_pinned, remark, ex).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     // ========== 群组操作 ==========
 
     #[flutter_rust_bridge::frb]
@@ -761,8 +806,15 @@ pub async fn upload_file_with_progress(
     sink: StreamSink<i32>,
 ) -> Result<String> {
     let client = client_holder()?;
+    let event_bus = client.event_bus();
     let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
         let _ = sink.add(pct as i32);
+        event_bus.publish(SdkEvent::UploadProgress {
+            client_msg_id: String::new(),
+            progress: pct,
+            total_size: 0,
+            uploaded_size: 0,
+        });
     });
     let result = client.file_uploader.upload_file_with_progress(
         &file_path, &file_name, None, Some(progress),
@@ -922,19 +974,13 @@ pub async fn get_total_unread_msg_count() -> Result<i64> {
 }
 
 /// 标记所有会话已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
+///
+/// 遍历所有未读会话，逐个通知服务端 + 标记本地已读
 #[flutter_rust_bridge::frb]
 pub async fn mark_all_conversation_message_as_read() -> Result<()> {
     let client = client_holder()?;
-    let conversations = client.context.conversation_dao.get_all().await?;
-    for conv in &conversations {
-        if conv.unread_count > 0 {
-            client.context.conversation_dao
-                .update_unread_count(&conv.conversation_id, 0)
-                .await?;
-        }
-    }
-    let _ = client.event_bus().publish(SdkEvent::TotalUnreadCountChanged { count: 0 });
-    Ok(())
+    client.mark_all_conversation_as_read().await
+        .map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 发送正在输入通知（对齐 Go SDK `TypingStatusUpdate` / `ChangeInputStates`）
@@ -1148,7 +1194,16 @@ pub async fn clear_conversation_and_delete_all_msg(conversation_id: String) -> R
     Ok(())
 }
 
-/// 删除指定会话并删除所有消息（删除会话记录，对齐 Go SDK `DeleteConversationAndDeleteAllMsg`）
+/// 增量同步会话列表（对齐 Go SDK `IncrSyncConversations`）
+///
+/// 版本号持久化到数据库，重连后无需全量同步。
+/// 收到会话变更通知时调用。
+#[flutter_rust_bridge::frb]
+pub async fn incr_sync_conversations() -> Result<()> {
+    let client = client_holder()?;
+    client.incr_sync_conversations().await
+        .map_err(|e| anyhow::anyhow!("{}", e))
+}
 #[flutter_rust_bridge::frb]
 pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> Result<()> {
     let client = client_holder()?;
@@ -1236,10 +1291,13 @@ pub async fn set_app_background_status(is_background: bool) -> Result<()> {
         tracing::info!("[Bridge] App 进入后台");
     } else {
         tracing::info!("[Bridge] App 进入前台，触发增量同步");
-        // 前台唤醒时触发消息增量同步
-        // 对齐 Go SDK doWakeupDataSync
+        // 前台唤醒时触发会话增量同步 + Hash Read Seq 校准
+        // 对齐 Go SDK doWakeupDataSync → syncData → IncrSyncConversations + SyncAllConversationHashReadSeqs
+        if let Err(e) = client.incr_sync_conversations().await {
+            tracing::warn!("[Bridge] 前台会话增量同步失败: {}", e);
+        }
         if let Err(e) = client.sync_all_conversation_hash_read_seqs().await {
-            tracing::warn!("[Bridge] 前台同步失败: {}", e);
+            tracing::warn!("[Bridge] 前台 Hash Read Seq 同步失败: {}", e);
         }
     }
     Ok(())

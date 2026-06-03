@@ -5,6 +5,7 @@
 //! 用户通知 (1301-1399) → user 模块
 //! 群组通知 (1500-1599) → group 模块
 
+use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::user::manager::UserManager;
@@ -24,6 +25,7 @@ pub struct NotificationHandler {
     friend_manager: Arc<FriendManager>,
     group_manager: Arc<GroupManager>,
     user_manager: Arc<UserManager>,
+    conversation_syncer: Arc<ConversationSyncer>,
     event_bus: Arc<EventBus>,
     user_id: std::sync::Mutex<String>,
 }
@@ -33,12 +35,14 @@ impl NotificationHandler {
         friend_manager: Arc<FriendManager>,
         group_manager: Arc<GroupManager>,
         user_manager: Arc<UserManager>,
+        conversation_syncer: Arc<ConversationSyncer>,
         event_bus: Arc<EventBus>,
     ) -> Self {
         Self {
             friend_manager,
             group_manager,
             user_manager,
+            conversation_syncer,
             event_bus,
             user_id: std::sync::Mutex::new(String::new()),
         }
@@ -133,6 +137,20 @@ impl NotificationHandler {
             }
             notification_type::GROUP_APPLICATION_REJECTED => {
                 self.handle_group_application_rejected(&msg.content).await?;
+            }
+
+            // ========== 会话通知 (1300, 1701) ==========
+            notification_type::CONVERSATION_CHANGE => {
+                info!("收到会话变更通知 (1300)，增量同步会话列表");
+                if let Err(e) = self.conversation_syncer.sync_incremental_with_lock().await {
+                    warn!("增量同步会话列表失败: {}", e);
+                }
+            }
+            notification_type::CONVERSATION_PRIVATE_CHAT => {
+                info!("收到会话私聊设置通知 (1701)，增量同步会话列表");
+                if let Err(e) = self.conversation_syncer.sync_incremental_with_lock().await {
+                    warn!("增量同步会话列表失败: {}", e);
+                }
             }
 
             _ => {
@@ -401,9 +419,11 @@ mod tests {
         let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let sync_version_dao = Arc::new(SyncVersionDao::new(pool.clone()));
         let friend = Arc::new(FriendManager::new(http_client.clone(), event_bus.clone(), "user1".into(), friend_dao, sync_version_dao.clone()));
-        let group = Arc::new(GroupManager::new(http_client.clone(), event_bus.clone(), "user1".into(), group_dao, sync_version_dao));
+        let group = Arc::new(GroupManager::new(http_client.clone(), event_bus.clone(), "user1".into(), group_dao, sync_version_dao.clone()));
         let user = Arc::new(UserManager::new(http_client.clone(), event_bus.clone()));
-        let handler = NotificationHandler::new(friend, group, user, event_bus);
+        let conversation_dao = Arc::new(crate::infra::database::ConversationDao::new(pool.clone()));
+        let conversation_syncer = Arc::new(ConversationSyncer::new(http_client, conversation_dao, event_bus.clone(), sync_version_dao, "user1".into()));
+        let handler = NotificationHandler::new(friend, group, user, conversation_syncer, event_bus);
         handler.set_user_id("user1".into());
     }
 }

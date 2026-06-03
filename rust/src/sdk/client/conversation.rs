@@ -76,6 +76,11 @@ impl OpenIMClient {
         self.message_service.mark_conversation_as_read(conversation_id, session_type).await
     }
 
+    /// 标记所有会话消息已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
+    pub async fn mark_all_conversation_as_read(&self) -> Result<()> {
+        self.message_service.mark_all_conversation_as_read().await
+    }
+
     /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
     ///
     /// 根据 conversation_id 查找已有会话，更新传入的字段，然后 upsert。

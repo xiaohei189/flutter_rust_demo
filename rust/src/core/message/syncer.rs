@@ -5,7 +5,8 @@ use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::infra::database::{ConversationDao, MessageDao, SyncVersionDao};
+use crate::infra::database::{ConversationDao, MessageDao, NotificationSeqDao, SyncVersionDao};
+use crate::infra::database::models::LocalNotificationSeq;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock, Semaphore};
@@ -16,11 +17,20 @@ use openim_protocol::sdkws::{
     MsgData, PullMsgs, PullMessageBySeqsResp, SeqRange, PullMessageBySeqsReq, PullOrder,
 };
 
+/// 判断会话是否为通知类型（对齐 Go SDK `msg_sync.go:503-505` IsNotification）
+///
+/// 通知类型会话的 conversationID 以 `n_` 前缀开头，如好友申请通知、群组变更通知等。
+/// 这类会话的消息不需要拉取和存储，只需跟踪其 seq 以避免重复同步。
+pub fn is_notification(conversation_id: &str) -> bool {
+    conversation_id.starts_with("n_")
+}
+
 pub struct MessageSyncer {
     connection: Arc<ConnectionManager>,
     conversation_dao: Arc<ConversationDao>,
     message_dao: Arc<MessageDao>,
     sync_version_dao: Arc<SyncVersionDao>,
+    notification_seq_dao: Arc<NotificationSeqDao>,
     message_handler: Arc<MessageHandler>,
     event_bus: Arc<EventBus>,
     max_concurrent_pulls: usize,
@@ -38,6 +48,7 @@ impl MessageSyncer {
         conversation_dao: Arc<ConversationDao>,
         message_dao: Arc<MessageDao>,
         sync_version_dao: Arc<SyncVersionDao>,
+        notification_seq_dao: Arc<NotificationSeqDao>,
         message_handler: Arc<MessageHandler>,
         event_bus: Arc<EventBus>,
         user_id: String,
@@ -47,6 +58,7 @@ impl MessageSyncer {
             conversation_dao,
             message_dao,
             sync_version_dao,
+            notification_seq_dao,
             message_handler,
             event_bus,
             max_concurrent_pulls: 5,
@@ -199,6 +211,10 @@ impl MessageSyncer {
     }
 
     /// 从本地 DB 加载已同步的 max_seq 到内存
+    ///
+    /// 包含两部分：
+    /// 1. 普通会话：从 local_chat_logs 加载 max_seq
+    /// 2. 通知会话：从 local_notification_seqs 加载（对齐 Go SDK `msg_sync.go:149-156`）
     pub async fn load_synced_max_seqs(&self) -> Result<()> {
         let conv_seqs = self.conversation_dao.get_all_seq_pairs().await?;
         let mut map = self.synced_max_seqs.write().await;
@@ -206,8 +222,30 @@ impl MessageSyncer {
             let local_max = self.message_dao.get_max_seq(&conv_id).await.unwrap_or(0);
             map.insert(conv_id, local_max);
         }
+
+        // 加载通知会话的 seq（对齐 Go SDK msg_sync.go LoadSeq 中 GetNotificationAllSeqs）
+        match self.notification_seq_dao.get_all().await {
+            Ok(notification_seqs) => {
+                let count = notification_seqs.len();
+                for ns in &notification_seqs {
+                    map.insert(ns.conversation_id.clone(), ns.seq);
+                }
+                info!("已加载 {} 个通知会话的 seq 到 synced_max_seqs", count);
+            }
+            Err(e) => {
+                warn!("加载通知 seq 失败（忽略）: {}", e);
+            }
+        }
+
         info!("已加载 {} 个会话的 synced_max_seqs", map.len());
         Ok(())
+    }
+
+    /// 设置通知会话的 seq（对齐 Go SDK `notification_model.go` SetNotificationSeq）
+    ///
+    /// 在通知消息处理完成后调用，持久化该通知会话的最新 seq
+    pub async fn set_notification_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        self.notification_seq_dao.set_notification_seq(conversation_id, seq).await
     }
 
     pub async fn sync_all_conversations(&self, reinstalled: bool) -> Result<()> {
@@ -267,10 +305,31 @@ impl MessageSyncer {
         self.batch_pull_messages(&need_sync_seq_map).await
     }
 
+    /// 重装模式同步：跳过通知会话，只同步普通消息
+    ///
+    /// 对齐 Go SDK `msg_sync.go:221-263` getNeedSyncConversations 中 reinstalled=true 分支：
+    /// - 通知会话（conversationID 以 `n_` 开头）不拉取消息，直接将服务端 maxSeq 写入 local_notification_seqs
+    /// - 普通会话正常拉取
     async fn sync_all_messages_reinstall(&self, max_seq_to_sync: &HashMap<String, i64>) -> Result<()> {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
+        let mut notification_seq_records: Vec<LocalNotificationSeq> = Vec::new();
 
         for (conversation_id, server_max_seq) in max_seq_to_sync {
+            if is_notification(conversation_id) {
+                // 通知会话：重装模式下不拉取消息，直接将 maxSeq 持久化
+                // 对齐 Go SDK getNeedSyncConversations reinstalled=true 分支
+                if *server_max_seq != 0 {
+                    notification_seq_records.push(LocalNotificationSeq {
+                        conversation_id: conversation_id.clone(),
+                        seq: *server_max_seq,
+                    });
+                    // 同步更新内存中的 synced_max_seqs
+                    self.synced_max_seqs.write().await.insert(conversation_id.clone(), *server_max_seq);
+                    info!("重装模式: 通知会话 {} 跳过拉取，直接持久化 seq={}", conversation_id, server_max_seq);
+                }
+                continue;
+            }
+
             let local_max_seq = self.message_dao.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
@@ -278,6 +337,14 @@ impl MessageSyncer {
                 info!("会话 {} 重装同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
                     conversation_id, local_max_seq, server_max_seq, begin, server_max_seq);
                 need_sync_seq_map.insert(conversation_id.clone(), (begin, *server_max_seq));
+            }
+        }
+
+        // 批量持久化通知 seq（对齐 Go SDK BatchInsertNotificationSeq）
+        if !notification_seq_records.is_empty() {
+            info!("重装模式: 持久化 {} 个通知会话的 seq", notification_seq_records.len());
+            if let Err(e) = self.notification_seq_dao.batch_insert(&notification_seq_records).await {
+                warn!("持久化通知 seq 失败: {}", e);
             }
         }
 
@@ -489,6 +556,7 @@ impl MessageSyncer {
             conversation_dao: self.conversation_dao.clone(),
             message_dao: self.message_dao.clone(),
             sync_version_dao: self.sync_version_dao.clone(),
+            notification_seq_dao: self.notification_seq_dao.clone(),
             message_handler: self.message_handler.clone(),
             event_bus: self.event_bus.clone(),
             max_concurrent_pulls: self.max_concurrent_pulls,

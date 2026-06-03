@@ -234,6 +234,32 @@ impl ConversationDao {
         Ok(row.0 as usize)
     }
 
+    /// 获取会话的 min_seq（对齐 Go SDK `getConversationMinSeq`）
+    pub async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> {
+        let row: (Option<i64>,) = sqlx::query_as(
+            "SELECT min_seq FROM local_conversations WHERE conversation_id = ?",
+        )
+        .bind(conversation_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query min_seq: {}", e)))?;
+        Ok(row.0.unwrap_or(0))
+    }
+
+    /// 更新会话的 min_seq（对齐 Go SDK `setConversationMinSeq`）
+    pub async fn update_min_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET min_seq = ? WHERE conversation_id = ? AND min_seq < ?",
+        )
+        .bind(seq)
+        .bind(conversation_id)
+        .bind(seq)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("update min_seq: {}", e)))?;
+        Ok(())
+    }
+
     pub async fn clear_all(&self) -> Result<()> {
         sqlx::query("DELETE FROM local_conversations")
             .execute(&self.pool)

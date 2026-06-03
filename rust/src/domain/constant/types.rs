@@ -91,6 +91,9 @@ pub mod notification_type {
     pub const GROUP_INFO_SET_NAME: i32 = 1520;
     pub const GROUP_NOTIFICATION_END: i32 = 1599;
 
+    /// 会话通知
+    pub const CONVERSATION_CHANGE: i32 = 1300;
+
     /// 其他通知
     pub const CONVERSATION_PRIVATE_CHAT: i32 = 1701;
     pub const CLEAR_CONVERSATION: i32 = 1703;

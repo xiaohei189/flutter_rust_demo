@@ -11,6 +11,7 @@ pub use openim_protocol::third;
 
 pub mod ws;
 pub mod constants;
+pub mod compressor;
 pub use openim_protocol::push;
 
 pub use openim_protocol::constant as protocol_constant;

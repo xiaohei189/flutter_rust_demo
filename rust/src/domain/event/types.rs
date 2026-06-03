@@ -1,8 +1,18 @@
+use std::collections::HashMap;
 use crate::domain::model::conversation::Conversation;
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::user::UserInfo;
 use crate::protocol::sdkws::MsgData;
+
+/// C2C 已读回执（对齐 Go SDK `sdkws.MessageReceipt`）
+#[derive(Clone, Debug)]
+pub struct MessageReceipt {
+    pub user_id: String,
+    pub msg_ids: Vec<String>,
+    pub read_time: i64,
+    pub session_type: i32,
+}
 
 #[derive(Clone, Debug)]
 pub enum SdkEvent {
@@ -71,6 +81,10 @@ pub enum SdkEvent {
         conversation_id: String,
         seq: i64,
         client_msg_id: String,
+    },
+    /// C2C 已读回执（对齐 Go SDK `OnRecvC2CReadReceipt`）
+    C2CReadReceipt {
+        receipts: Vec<MessageReceipt>,
     },
     MessagesDeleted {
         conversation_id: String,
@@ -168,6 +182,11 @@ pub enum SdkEvent {
         status: i32,
         platform_ids: Vec<i32>,
     },
+    /// 批量推送消息（经 MessageBatcher 聚合后）
+    BatchedPushMessages {
+        msgs: HashMap<String, crate::protocol::sdkws::PullMsgs>,
+        notification_msgs: HashMap<String, crate::protocol::sdkws::PullMsgs>,
+    },
     KickedOffline {
         reason: String,
     },
@@ -205,6 +224,7 @@ impl SdkEvent {
             SdkEvent::MessageSendFailed { .. } => "message_send_failed",
             SdkEvent::UploadProgress { .. } => "upload_progress",
             SdkEvent::MessageRevoked { .. } => "message_revoked",
+            SdkEvent::C2CReadReceipt { .. } => "c2c_read_receipt",
             SdkEvent::MessagesDeleted { .. } => "messages_deleted",
             SdkEvent::ConversationChanged { .. } => "conversation_changed",
             SdkEvent::ConversationDeleted { .. } => "conversation_deleted",
@@ -234,6 +254,7 @@ impl SdkEvent {
             SdkEvent::GroupOwnerTransferred { .. } => "group_owner_transferred",
             SdkEvent::UserInfoUpdated { .. } => "user_info_updated",
             SdkEvent::UserStatusChanged { .. } => "user_status_changed",
+            SdkEvent::BatchedPushMessages { .. } => "batched_push_messages",
             SdkEvent::KickedOffline { .. } => "kicked_offline",
             SdkEvent::Reconnecting { .. } => "reconnecting",
             SdkEvent::TokenExpired => "token_expired",

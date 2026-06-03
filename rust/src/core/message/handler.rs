@@ -1,9 +1,10 @@
 use crate::domain::constant::types::content_type;
 use crate::domain::constant::types::msg_status;
 use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
+use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
-use crate::domain::event::types::SdkEvent;
+use crate::domain::event::types::{MessageReceipt, SdkEvent};
 use crate::domain::model::message::ReceivedMessage;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
@@ -372,6 +373,12 @@ impl MessageHandler {
     }
 
     /// 已读回执处理（对齐 Go SDK read_drawing.go doReadDrawing L227-284）
+    ///
+    /// 两条路径：
+    /// 1. 别人发来的已读回执（对方标记我的消息已读）：
+    ///    - 单聊：标记消息 is_read + 发布 C2CReadReceipt 事件 + 重算未读数
+    ///    - 群聊/通知：仅重算未读数（doUnreadCount）
+    /// 2. 自己的已读回执（其他设备同步）：更新未读数
     async fn handle_read_receipt(&self, msg: &ReceivedMessage) -> Result<()> {
         let tips = MarkAsReadTips::decode(msg.content.as_bytes())
             .map_err(|e| SdkError::invalid_argument(format!("解析 MarkAsReadTips 失败: {}", e)))?;
@@ -379,23 +386,157 @@ impl MessageHandler {
         let login_user_id = self.user_id.lock().unwrap().clone();
 
         if tips.mark_as_read_user_id != login_user_id {
-            // 别人发来的已读回执：标记我发的消息为已读
-            if tips.seqs.is_empty() {
-                return Ok(());
+            // 别人发来的已读回执：对方标记我的消息为已读（对齐 Go SDK L238-280）
+
+            // 获取本地会话（对齐 Go SDK L244）
+            let conversation = self.conversation_dao.get_by_id(&tips.conversation_id).await?;
+            let session_type_val = conversation.as_ref()
+                .map(|c| c.conversation_type)
+                .unwrap_or(msg.session_type);
+
+            if session_type_val == session_type::SINGLE_CHAT {
+                // 单聊：标记消息已读（对齐 Go SDK L251-280）
+                if !tips.seqs.is_empty() {
+                    // 通过 seq 查询消息，逐条标记 is_read = true
+                    let messages = self.message_dao.get_by_seqs(&tips.conversation_id, &tips.seqs).await?;
+                    let mut updated_client_msg_ids: Vec<String> = Vec::new();
+
+                    for mut m in messages {
+                        if m.is_read == 0 && m.send_id != login_user_id {
+                            m.is_read = 1;
+                            // 更新本地 DB（设置 is_read = 1）
+                            self.message_dao.mark_as_read_by_seqs(
+                                &tips.conversation_id,
+                                &[m.seq],
+                                &login_user_id,
+                            ).await?;
+                            updated_client_msg_ids.push(m.client_msg_id.clone());
+                        }
+                    }
+
+                    // 发布 C2C 已读回执事件（对齐 Go SDK OnRecvC2CReadReceipt）
+                    if !updated_client_msg_ids.is_empty() {
+                        self.event_bus.publish(SdkEvent::C2CReadReceipt {
+                            receipts: vec![MessageReceipt {
+                                user_id: tips.mark_as_read_user_id.clone(),
+                                msg_ids: updated_client_msg_ids,
+                                read_time: tips.has_read_seq, // 使用 hasReadSeq 作为 read_time
+                                session_type: session_type_val,
+                            }],
+                        });
+                    }
+                }
             }
 
-            if msg.session_type == 1 {
-                // 单聊：标记消息已读（对齐 Go SDK read_drawing.go L251-280）
-                self.message_dao.mark_as_read_by_seqs(&tips.conversation_id, &tips.seqs).await?;
-            }
-            // 群聊和通知会话：更新未读数（对齐 Go SDK doUnreadCount）
-            self.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
+            // 重算未读数（对齐 Go SDK doUnreadCount）
+            self.do_unread_count(
+                &tips.conversation_id,
+                session_type_val,
+                tips.has_read_seq,
+                &tips.seqs,
+            ).await?;
+
         } else {
-            // 自己的已读回执（其他设备同步过来的）：更新未读数
+            // 自己的已读回执（其他设备同步过来的，对齐 Go SDK L282-284）
+            // 直接将会话未读数清零
             self.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
+
+            // 发布事件
+            let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
+                conversations: Vec::new(),
+            });
+            if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+                let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+            }
         }
 
-        debug!("处理已读回执: conversation_id={}, seqs={}", tips.conversation_id, tips.seqs.len());
+        debug!("处理已读回执: conversation_id={}, seqs={}, has_read_seq={}",
+            tips.conversation_id, tips.seqs.len(), tips.has_read_seq);
+        Ok(())
+    }
+
+    /// 重算会话未读数（对齐 Go SDK `doUnreadCount` read_drawing.go L173-225）
+    ///
+    /// 单聊：使用 MaxSeqRecorder 获取 currentMaxSeq，计算 unread = currentMaxSeq - hasReadSeq
+    /// 群聊/通知：直接将未读数清零
+    async fn do_unread_count(
+        &self,
+        conversation_id: &str,
+        session_type_val: i32,
+        has_read_seq: i64,
+        seqs: &[i64],
+    ) -> Result<()> {
+        if session_type_val == session_type::SINGLE_CHAT {
+            // 单聊：通过 seq 标记消息已读（对齐 Go SDK L186-199）
+            if !seqs.is_empty() {
+                // 检查 hasReadSeq 对应的消息是否已读过
+                if let Ok(Some(msg)) = self.message_dao.get_by_seq(has_read_seq).await {
+                    if msg.is_read != 0 {
+                        // 已读过，忽略（对齐 Go SDK L189-192）
+                        return Ok(());
+                    }
+                }
+
+                // 按 seq 批量标记已读（对齐 Go SDK L195-196）
+                let login_user_id = self.user_id.lock().unwrap().clone();
+                self.message_dao.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
+            }
+
+            // 使用 MaxSeqRecorder 计算未读数（对齐 Go SDK L200-206）
+            let current_max_seq = self.max_seq_recorder.get(conversation_id);
+            let unread_count = if current_max_seq > has_read_seq {
+                (current_max_seq - has_read_seq) as i32
+            } else {
+                0
+            };
+
+            self.conversation_dao.update_unread_count(conversation_id, unread_count).await?;
+
+        } else {
+            // 群聊/通知会话：直接清零（对齐 Go SDK L208-213）
+            self.conversation_dao.update_unread_count(conversation_id, 0).await?;
+        }
+
+        // 发布会话变更 + 全局未读数变更事件（对齐 Go SDK L215-223）
+        if let Ok(Some(conv)) = self.conversation_dao.get_by_id(conversation_id).await {
+            let conversation = crate::domain::model::conversation::Conversation {
+                conversation_id: conv.conversation_id,
+                conversation_type: conv.conversation_type,
+                user_id: conv.user_id,
+                group_id: conv.group_id,
+                show_name: conv.show_name,
+                face_url: conv.face_url,
+                latest_msg: conv.latest_msg,
+                latest_msg_send_time: conv.latest_msg_send_time,
+                unread_count: conv.unread_count,
+                recv_msg_opt: conv.recv_msg_opt,
+                is_pinned: conv.is_pinned != 0,
+                is_not_in_group: conv.is_not_in_group != 0,
+                draft_text: conv.draft_text,
+                draft_text_time: conv.draft_text_time,
+                is_private_chat: conv.is_private_chat != 0,
+                burn_duration: conv.burn_duration as i32,
+                group_at_type: conv.group_at_type,
+                update_unread_count_time: conv.update_unread_count_time,
+                latest_msg_seq: conv.max_seq,
+                max_seq: conv.max_seq,
+                min_seq: conv.min_seq,
+                is_msg_destruct: conv.is_msg_destruct != 0,
+                msg_destruct_time: conv.msg_destruct_time,
+                update_flag: 0,
+                sync_action: None,
+                is_private: conv.is_private_chat != 0,
+                ex: conv.ex,
+            };
+            let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
+                conversations: vec![conversation],
+            });
+        }
+
+        if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+        }
+
         Ok(())
     }
 }

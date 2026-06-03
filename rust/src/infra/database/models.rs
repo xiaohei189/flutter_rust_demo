@@ -150,3 +150,23 @@ pub struct LocalSendingMessage {
     pub client_msg_id: String,
     pub ex: String,
 }
+
+/// 通知会话 seq 追踪
+/// 对齐 Go SDK `pkg/db/model_struct/data_model_struct.go` 的 NotificationSeqs
+/// 用于存储通知类型会话（conversationID 以 `n_` 开头）已同步到的最大 seq
+#[derive(Debug, Clone, FromRow)]
+pub struct LocalNotificationSeq {
+    pub conversation_id: String,
+    pub seq: i64,
+}
+
+/// 分片上传断点续传记录
+/// 对齐 Go SDK `pkg/db/model_struct/data_model_struct.go` 的 LocalUpload
+#[derive(Debug, Clone, FromRow)]
+pub struct LocalUpload {
+    pub part_hash: String,
+    pub upload_id: String,
+    pub upload_info: String,
+    pub expire_time: i64,
+    pub create_time: i64,
+}

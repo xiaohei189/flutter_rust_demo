@@ -8,9 +8,10 @@ use crate::infra::database::sync_version_dao::SyncVersionDao;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND,
-    GET_BLACK_LIST, GET_FRIEND_APPLY_LIST, GET_FRIEND_ID_LIST, GET_FRIEND_LIST,
-    GET_FULL_FRIEND_USER_IDS, GET_INCREMENTAL_FRIENDS, GET_SELF_FRIEND_APPLY_LIST,
-    GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION, REMOVE_BLACK, RESPOND_FRIEND_APPLY,
+    GET_BLACK_LIST, GET_DESIGNATED_FRIENDS, GET_FRIEND_APPLY_LIST, GET_FRIEND_ID_LIST,
+    GET_FRIEND_LIST, GET_FULL_FRIEND_USER_IDS, GET_INCREMENTAL_FRIENDS,
+    GET_SELF_FRIEND_APPLY_LIST, GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION,
+    REMOVE_BLACK, RESPOND_FRIEND_APPLY, UPDATE_FRIENDS,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -258,6 +259,38 @@ pub struct SearchFriendItem {
     pub relationship: i32,
 }
 
+// ========== 指定好友查询（对齐 Go SDK GetSpecifiedFriendsInfo） ==========
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetDesignatedFriendsReq {
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "friendUserIDs")]
+    pub friend_user_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetDesignatedFriendsResp {
+    #[serde(rename = "friendsInfo", default)]
+    pub friends_info: Vec<FriendServerInfo>,
+}
+
+// ========== 批量更新好友（对齐 Go SDK UpdateFriends） ==========
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateFriendsReq {
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "friendUserIDs")]
+    pub friend_user_ids: Vec<String>,
+    #[serde(rename = "isPinned", skip_serializing_if = "Option::is_none")]
+    pub is_pinned: Option<bool>,
+    #[serde(rename = "remark", skip_serializing_if = "Option::is_none")]
+    pub remark: Option<String>,
+    #[serde(rename = "ex", skip_serializing_if = "Option::is_none")]
+    pub ex: Option<String>,
+}
+
 pub struct FriendManager {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
@@ -478,6 +511,159 @@ impl FriendManager {
         }).collect();
 
         Ok(items)
+    }
+
+    /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
+    ///
+    /// 先查本地 DB，缺失的从服务端拉取并缓存到本地。
+    /// filterBlack=true 时过滤掉黑名单中的好友。
+    pub async fn get_specified_friends_info(
+        &self,
+        friend_user_ids: Vec<String>,
+        filter_black: bool,
+    ) -> Result<Vec<FriendInfo>> {
+        let user_id = self.user_id.read().await.clone();
+
+        // 1. 从本地 DB 查询已有数据
+        let mut local_map: std::collections::HashMap<String, LocalFriend> =
+            std::collections::HashMap::new();
+        let mut missing_ids: Vec<String> = Vec::new();
+
+        for uid in &friend_user_ids {
+            match self.friend_dao.get_by_id(&user_id, uid).await {
+                Ok(Some(f)) => {
+                    local_map.insert(uid.clone(), f);
+                }
+                _ => {
+                    missing_ids.push(uid.clone());
+                }
+            }
+        }
+
+        // 2. 缺失的从服务端拉取
+        if !missing_ids.is_empty() {
+            let req = GetDesignatedFriendsReq {
+                owner_user_id: user_id.clone(),
+                friend_user_ids: missing_ids,
+            };
+            let resp: GetDesignatedFriendsResp =
+                self.http_client.post(GET_DESIGNATED_FRIENDS, &req).await?;
+
+            // 缓存到本地 DB + 内存
+            let server_friends = resp
+                .friends_info
+                .into_iter()
+                .map(|s| {
+                    let info = server_to_friend(s.clone());
+                    let local = friend_info_to_local(&info, &user_id);
+                    (s.friend_user.user_id, (info, local))
+                })
+                .collect::<Vec<_>>();
+
+            for (_uid, (_info, local)) in &server_friends {
+                if let Err(e) = self.friend_dao.upsert(local).await {
+                    warn!("缓存指定好友到 DB 失败 ({}): {}", _uid, e);
+                }
+                local_map.insert(_uid.clone(), (*local).clone());
+            }
+        }
+
+        // 3. 按原始顺序组装结果
+        let mut result: Vec<FriendInfo> = Vec::new();
+        for uid in &friend_user_ids {
+            if let Some(f) = local_map.remove(uid) {
+                result.push(FriendInfo {
+                    user_id: f.friend_user_id.clone(),
+                    nickname: f.nickname.clone(),
+                    face_url: f.face_url.clone(),
+                    gender: 0,
+                    remark: f.remark.clone(),
+                    create_time: f.create_time,
+                    add_source: f.add_source.to_string(),
+                    ex: f.ex.clone(),
+                });
+            }
+        }
+
+        // 4. filterBlack 过滤
+        if filter_black {
+            let blacks = self.blacks.read().await;
+            let black_set: HashSet<&String> = blacks.iter().collect();
+            result.retain(|f| !black_set.contains(&f.user_id));
+        }
+
+        Ok(result)
+    }
+
+    /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
+    ///
+    /// 从本地 DB 按 is_pinned DESC, create_time DESC 排序分页获取。
+    /// filterBlack=true 时过滤黑名单好友。
+    pub async fn get_friend_list_page(
+        &self,
+        offset: i32,
+        count: i32,
+        filter_black: bool,
+    ) -> Result<Vec<FriendInfo>> {
+        let user_id = self.user_id.read().await.clone();
+
+        // 从本地 DB 获取全部好友（DAO 已按 is_pinned DESC, create_time DESC 排序）
+        let all_local = self.friend_dao.get_all(&user_id).await?;
+
+        // 可选过滤黑名单
+        let filtered: Vec<&LocalFriend> = if filter_black {
+            let blacks = self.blacks.read().await;
+            let black_set: HashSet<&String> = blacks.iter().collect();
+            all_local
+                .iter()
+                .filter(|f| !black_set.contains(&f.friend_user_id))
+                .collect()
+        } else {
+            all_local.iter().collect()
+        };
+
+        // 分页
+        let start = offset.max(0) as usize;
+        let page: Vec<FriendInfo> = filtered
+            .into_iter()
+            .skip(start)
+            .take(count.max(0) as usize)
+            .map(|l| local_to_friend_info(l))
+            .collect();
+
+        Ok(page)
+    }
+
+    /// 批量更新好友信息（对齐 Go SDK UpdateFriends）
+    ///
+    /// 支持部分更新：is_pinned / remark / ex 为 None 时不修改对应字段。
+    /// 更新成功后自动执行增量同步刷新本地数据。
+    pub async fn update_friends(
+        &self,
+        friend_user_ids: Vec<String>,
+        is_pinned: Option<bool>,
+        remark: Option<String>,
+        ex: Option<String>,
+    ) -> Result<()> {
+        let user_id = self.user_id.read().await.clone();
+
+        let req = UpdateFriendsReq {
+            owner_user_id: user_id,
+            friend_user_ids,
+            is_pinned,
+            remark,
+            ex,
+        };
+
+        let _resp: serde_json::Value = self.http_client.post(UPDATE_FRIENDS, &req).await?;
+
+        // 增量同步刷新本地好友列表
+        if let Err(e) = self.sync_friends_incremental().await {
+            warn!("UpdateFriends 后增量同步失败: {}", e);
+        }
+
+        info!("好友信息已批量更新");
+        Ok(())
     }
 
     pub async fn add_friend(&self, user_id: String, req_msg: Option<String>) -> Result<()> {

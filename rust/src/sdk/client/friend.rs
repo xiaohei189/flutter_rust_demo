@@ -97,4 +97,40 @@ impl OpenIMClient {
     pub async fn search_friends(&self, keyword: &str) -> Result<Vec<SearchFriendItem>> {
         self.friend.search_friends(keyword.to_string()).await
     }
+
+    /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
+    pub async fn get_specified_friends_info(
+        &self,
+        friend_user_ids: Vec<String>,
+        filter_black: bool,
+    ) -> Result<Vec<FriendInfo>> {
+        self.friend
+            .get_specified_friends_info(friend_user_ids, filter_black)
+            .await
+    }
+
+    /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
+    pub async fn get_friend_list_page(
+        &self,
+        offset: i32,
+        count: i32,
+        filter_black: bool,
+    ) -> Result<Vec<FriendInfo>> {
+        self.friend
+            .get_friend_list_page(offset, count, filter_black)
+            .await
+    }
+
+    /// 批量更新好友信息（对齐 Go SDK UpdateFriends）
+    pub async fn update_friends(
+        &self,
+        friend_user_ids: Vec<String>,
+        is_pinned: Option<bool>,
+        remark: Option<String>,
+        ex: Option<String>,
+    ) -> Result<()> {
+        self.friend
+            .update_friends(friend_user_ids, is_pinned, remark, ex)
+            .await
+    }
 }

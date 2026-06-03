@@ -1,6 +1,8 @@
+use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
 use crate::protocol::ws::{OpenIMReq, OpenIMResp, WebSocketConnectResp};
 use futures_util::stream::SplitSink;
@@ -48,19 +50,36 @@ pub struct ConnectionManager {
     pending_requests: Arc<RwLock<HashMap<String, PendingRequest>>>,
     event_bus: Arc<EventBus>,
     cancel_token: CancellationToken,
-    
+
     msg_incr: AtomicU64,
     token: RwLock<String>,
     send_id: RwLock<String>,
     ws_url: RwLock<String>,
     platform_id: RwLock<i32>,
-    
+
     reconnect_attempts: AtomicU32,
     is_manual_disconnect: Arc<RwLock<bool>>,
+
+    /// Gzip 压缩器（对齐 Go SDK compressor.go）
+    compressor: GzipCompressor,
+    /// 推送消息批处理器（对齐 Go SDK message_batcher.go）
+    message_batcher: MessageBatcher,
 }
 
 impl ConnectionManager {
     pub fn new(event_bus: Arc<EventBus>, cancel_token: CancellationToken) -> Self {
+        let event_bus_clone = event_bus.clone();
+        let compressor = GzipCompressor::new();
+        let message_batcher = MessageBatcher::new(move |operation_ids, batch| {
+            // 聚合后的推送消息统一发布到 EventBus
+            if !batch.msgs.is_empty() || !batch.notification_msgs.is_empty() {
+                event_bus_clone.publish(SdkEvent::BatchedPushMessages {
+                    msgs: batch.msgs,
+                    notification_msgs: batch.notification_msgs,
+                });
+            }
+        });
+
         Self {
             writer: Arc::new(RwLock::new(None)),
             state: Arc::new(RwLock::new(ConnectionState::Disconnected)),
@@ -74,6 +93,8 @@ impl ConnectionManager {
             platform_id: RwLock::new(1),
             reconnect_attempts: AtomicU32::new(0),
             is_manual_disconnect: Arc::new(RwLock::new(false)),
+            compressor,
+            message_batcher,
         }
     }
 
@@ -99,7 +120,7 @@ impl ConnectionManager {
         let operation_id = format!("conn_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
 
         let full_url = format!(
-            "{}/?token={}&sendID={}&platformID={}&operationID={}&isBackground=false&isMsgResp=true&sdkType=js",
+            "{}/?token={}&sendID={}&platformID={}&operationID={}&isBackground=false&isMsgResp=true&sdkType=js&compression=gzip",
             *ws_url, *token, *send_id, *platform_id, operation_id
         );
 
@@ -239,6 +260,9 @@ impl ConnectionManager {
             platform_id: RwLock::new(0),
             reconnect_attempts: AtomicU32::new(0),
             is_manual_disconnect: self.is_manual_disconnect.clone(),
+            compressor: GzipCompressor::new(),
+            // 浅克隆用于重连，不共享 batcher（重连后原始 batcher 继续工作）
+            message_batcher: MessageBatcher::new(|_, _| {}),
         }
     }
 
@@ -251,6 +275,8 @@ impl ConnectionManager {
         let cancel = self.cancel_token.clone();
         let state = self.state.clone();
         let writer = self.writer.clone();
+        let compressor = self.compressor.clone();
+        let message_batcher = self.message_batcher.clone();
 
         tokio::spawn(async move {
             let mut read = read;
@@ -304,67 +330,50 @@ impl ConnectionManager {
                                 }
                             }
                             Some(Ok(WsMessage::Binary(data))) => {
-                                // 服务器推送的消息（JSON 编码的 OpenIMResp，data 字段包含 protobuf 编码的 PushMessages）
-                                info!("received binary message, len={}", data.len());
-                                
-                                // 先尝试 JSON 解码为 OpenIMResp
-                                match serde_json::from_slice::<OpenIMResp>(&data) {
-                                    Ok(resp) => {
-                                        info!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}", 
-                                            resp.req_identifier, resp.err_code);
-                                        
-                                        // 根据 req_identifier 判断消息类型
-                                        if resp.req_identifier == crate::domain::constant::types::ws_push_identifier::PUSH_MSG && resp.err_code == 0 {
-                                            // data 字段是 protobuf 编码的 PushMessages
-                                            match PushMessages::decode(resp.data.as_slice()) {
-                                                Ok(push_msgs) => {
-                                                    info!("received push messages: {} conversations with msgs, {} with notifications", 
-                                                        push_msgs.msgs.len(), push_msgs.notification_msgs.len());
-                                                    
-                                                    // 发布普通消息推送事件
-                                                    for (conversation_id, pull_msgs) in push_msgs.msgs {
-                                                        event_bus.publish(SdkEvent::PushMessages {
-                                                            conversation_id,
-                                                            msgs: pull_msgs.msgs,
-                                                            is_end: pull_msgs.is_end,
-                                                            end_seq: pull_msgs.end_seq,
-                                                        });
-                                                    }
-                                                    
-                                                    // 发布通知消息推送事件
-                                                    for (conversation_id, pull_msgs) in push_msgs.notification_msgs {
-                                                        event_bus.publish(SdkEvent::PushNotificationMessages {
-                                                            conversation_id,
-                                                            msgs: pull_msgs.msgs,
-                                                            is_end: pull_msgs.is_end,
-                                                            end_seq: pull_msgs.end_seq,
-                                                        });
-                                                    }
-                                                }
-                                                Err(e) => {
-                                                    warn!("failed to decode push messages from protobuf: {}", e);
-                                                }
+                            // Gzip 解压（对齐 Go SDK compressor.go DecompressWithPool）
+                            let data = match compressor.decompress(&data) {
+                                Ok(decompressed) => decompressed,
+                                Err(_) => data, // 非压缩数据直接使用原始数据
+                            };
+                            // 尝试 JSON 解码为 OpenIMResp
+                            match serde_json::from_slice::<OpenIMResp>(&data) {
+                                Ok(resp) => {
+                                    info!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}", 
+                                        resp.req_identifier, resp.err_code);
+                                    
+                                    // 根据 req_identifier 判断消息类型
+                                    if resp.req_identifier == crate::domain::constant::types::ws_push_identifier::PUSH_MSG && resp.err_code == 0 {
+                                        // data 字段是 protobuf 编码的 PushMessages → 通过 MessageBatcher 聚合
+                                        match PushMessages::decode(resp.data.as_slice()) {
+                                            Ok(push_msgs) => {
+                                                info!("received push messages: {} conversations with msgs, {} with notifications", 
+                                                    push_msgs.msgs.len(), push_msgs.notification_msgs.len());
+                                                message_batcher.enqueue(resp.operation_id, push_msgs).await;
                                             }
-                                        } else {
-                                            // RPC 响应（包括错误响应），通知等待的通道
-                                            if resp.err_code != 0 {
-                                                warn!("server error response: req_identifier={}, err_code={}, err_msg={}", 
-                                                    resp.req_identifier, resp.err_code, resp.err_msg);
-                                            }
-                                            if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
-                                                let _ = req.tx.send(resp);
+                                            Err(e) => {
+                                                warn!("failed to decode push messages from protobuf: {}", e);
                                             }
                                         }
-                                    }
-                                    Err(e) => {
-                                        // 打印前200字节的hex用于调试编码格式
-                                        let preview: String = data.iter().take(200)
-                                            .map(|b| format!("{:02x}", b))
-                                            .collect();
-                                        warn!("failed to decode binary message as OpenIMResp: {}, len={}, hex[0:100]={}", e, data.len(), &preview[..preview.len().min(200)]);
+                                    } else {
+                                        // RPC 响应（包括错误响应），通知等待的通道
+                                        if resp.err_code != 0 {
+                                            warn!("server error response: req_identifier={}, err_code={}, err_msg={}", 
+                                                resp.req_identifier, resp.err_code, resp.err_msg);
+                                        }
+                                        if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
+                                            let _ = req.tx.send(resp);
+                                        }
                                     }
                                 }
+                                Err(e) => {
+                                    // 打印前200字节的hex用于调试编码格式
+                                    let preview: String = data.iter().take(200)
+                                        .map(|b| format!("{:02x}", b))
+                                        .collect();
+                                    warn!("failed to decode binary message as OpenIMResp: {}, len={}, hex[0:100]={}", e, data.len(), &preview[..preview.len().min(200)]);
+                                }
                             }
+                        }
                             Some(Ok(WsMessage::Ping(data))) => {
                                 if let Some(w) = writer.write().await.as_mut() {
                                     let _ = w.send(WsMessage::Pong(data)).await;
@@ -488,11 +497,15 @@ impl ConnectionManager {
         let req_json = serde_json::to_string(&req)
             .map_err(|e| SdkError::unknown(format!("serialize rpc request: {}", e)))?;
 
+        // Gzip 压缩（对齐 Go SDK compressor.go CompressWithPool）
+        let compressed = self.compressor.compress(req_json.as_bytes())
+            .map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
+
         let send_result = {
             let mut w = self.writer.write().await;
             if let Some(writer) = w.as_mut() {
                 writer
-                    .send(WsMessage::Binary(req_json.into_bytes()))
+                    .send(WsMessage::Binary(compressed))
                     .await
                     .map_err(|e| SdkError::connection(format!("send failed: {}", e)))
             } else {
@@ -525,6 +538,8 @@ impl ConnectionManager {
         {
             *self.state.write().await = ConnectionState::Disconnected;
         }
+        // 关闭 MessageBatcher，flush 剩余缓冲消息
+        self.message_batcher.close().await;
         self.event_bus.publish(SdkEvent::Disconnected {
             reason: "manual disconnect".into(),
         });
@@ -537,10 +552,16 @@ impl ConnectionManager {
         {
             *self.state.write().await = ConnectionState::Kicked;
         }
+        // 关闭 MessageBatcher，flush 剩余缓冲消息
+        self.message_batcher.close().await;
         self.event_bus.publish(SdkEvent::KickedOffline {
             reason: reason.clone(),
         });
         warn!("kicked offline: {}", reason);
+    }
+
+    pub fn message_batcher(&self) -> &MessageBatcher {
+        &self.message_batcher
     }
 
     pub async fn get_state(&self) -> ConnectionState {

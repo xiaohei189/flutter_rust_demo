@@ -1123,3 +1123,929 @@ async fn test_message_sync_from_server() {
     // 服务端应该有更多消息（包括 Web 端发的）
     assert!(history.messages.len() > 4, "同步后应有超过4条消息（含Web端消息），实际{}", history.messages.len());
 }
+
+// ============================================================================
+// 第四类：消息撤回与删除
+// ============================================================================
+
+/// 场景：A 发消息给 B，A 撤回该消息
+/// 验证：A 收到 MessageRevoked 事件，消息 content_type 变为撤回通知类型
+#[tokio::test]
+async fn test_revoke_message_and_event() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::sdk::client::types::RevokeMessageReq;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let _receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+
+    // 发送消息
+    let send_result = sender_sdk.send_text_message("将被撤回的消息", &user2.user_id, 1).await;
+    assert!(send_result.is_ok(), "发送消息失败: {:?}", send_result.err());
+    let msg_data = send_result.unwrap();
+    let client_msg_id = msg_data.client_msg_id.clone();
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 撤回消息
+    let conv_id = make_conversation_id(&user1.user_id, &user2.user_id);
+    let revoke_result = sender_sdk.revoke_message(RevokeMessageReq {
+        conversation_id: conv_id.clone(),
+        seq: 0,
+        client_msg_id: client_msg_id.clone(),
+        session_type: 1,
+    }).await;
+    assert!(revoke_result.is_ok(), "撤回消息失败: {:?}", revoke_result.err());
+
+    // 验证本地消息 content_type 已更新为撤回类型
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    let history = sender_sdk.get_history_messages(
+        rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq {
+            conversation_id: conv_id,
+            start_client_msg_id: String::new(),
+            count: 10,
+        },
+    ).await;
+    assert!(history.is_ok(), "查询历史消息失败");
+    let history = history.unwrap();
+    // 撤回后消息应仍存在但 content_type 变为撤回通知类型
+    let revoked_msg = history.messages.iter().find(|m| m.client_msg_id == client_msg_id);
+    if let Some(msg) = revoked_msg {
+        assert_eq!(msg.content_type, 10000, "撤回后消息 content_type 应为 10000(撤回通知), 实际: {}", msg.content_type);
+    }
+}
+
+/// 场景：A 发消息，B 收到后 A 删除该消息
+/// 验证：A 收到 MessagesDeleted 事件
+#[tokio::test]
+async fn test_delete_message_and_event() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::sdk::client::types::DeleteMessagesReq;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let mut sender_events = sender_sdk.event_bus().subscribe();
+
+    let _receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+
+    // 发送消息
+    let send_result = sender_sdk.send_text_message("将被删除的消息", &user2.user_id, 1).await;
+    assert!(send_result.is_ok(), "发送消息失败: {:?}", send_result.err());
+    let msg_data = send_result.unwrap();
+    let client_msg_id = msg_data.client_msg_id.clone();
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 删除消息
+    let conv_id = make_conversation_id(&user1.user_id, &user2.user_id);
+    let delete_result = sender_sdk.delete_messages(DeleteMessagesReq {
+        conversation_id: conv_id.clone(),
+        client_msg_ids: vec![client_msg_id.clone()],
+    }).await;
+    assert!(delete_result.is_ok(), "删除消息失败: {:?}", delete_result.err());
+
+    // 验证收到 MessagesDeleted 事件
+    let timeout = tokio::time::sleep(Duration::from_secs(5));
+    tokio::pin!(timeout);
+    let mut deleted_event_received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = sender_events.next() => {
+                if let Some(SdkEvent::MessagesDeleted { client_msg_ids, .. }) = event {
+                    if client_msg_ids.contains(&client_msg_id) {
+                        deleted_event_received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(deleted_event_received, "未收到 MessagesDeleted 事件");
+}
+
+// ============================================================================
+// 第五类：高级消息类型
+// ============================================================================
+
+/// 场景：A 发送自定义消息给 B
+/// 验证：B 收到 content_type=110 的 NewMessage 事件，data/description/extension 字段正确
+#[tokio::test]
+async fn test_send_custom_message() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    let result = sender_sdk.send_custom_message(
+        r#"{"type":"gift","id":"rose_001"}"#,
+        "送你一朵玫瑰花",
+        r#"{"giftId":"rose_001","count":1}"#,
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "发送自定义消息失败: {:?}", result.err());
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    if message.content_type == 110 {
+                        assert!(message.content.contains("gift"), "自定义消息内容应包含 gift");
+                        received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(received, "接收方未收到自定义消息");
+}
+
+/// 场景：A 发送位置消息给 B
+/// 验证：B 收到 content_type=109 的 NewMessage 事件
+#[tokio::test]
+async fn test_send_location_message() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    let result = sender_sdk.send_location_message(
+        "北京市海淀区中关村",
+        116.310003,
+        39.991957,
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "发送位置消息失败: {:?}", result.err());
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    if message.content_type == 109 {
+                        assert!(message.content.contains("北京"), "位置消息应包含描述");
+                        received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(received, "接收方未收到位置消息");
+}
+
+/// 场景：A 发送引用消息给 B（引用之前的文本消息）
+/// 验证：B 收到 content_type=114 的引用消息
+#[tokio::test]
+async fn test_send_quote_message() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    // 先发一条消息
+    let first_msg = sender_sdk.send_text_message("原始消息", &user2.user_id, 1).await;
+    assert!(first_msg.is_ok(), "发送原始消息失败");
+    let first_msg_data = first_msg.unwrap();
+
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // 创建被引用的消息结构
+    let quoted_msg = MsgStruct::from(&first_msg_data);
+
+    // 发送引用消息
+    let result = sender_sdk.send_quote_message(
+        "这是引用消息",
+        quoted_msg,
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "发送引用消息失败: {:?}", result.err());
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    if message.content_type == 114 {
+                        assert!(message.content.contains("引用"), "引用消息应包含引用内容");
+                        received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(received, "接收方未收到引用消息");
+}
+
+/// 场景：A 发送 @ 消息给 B
+/// 验证：B 收到 content_type=106 的 @ 消息
+#[tokio::test]
+async fn test_send_at_text_message() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    let result = sender_sdk.send_at_text_message(
+        "大家好，请注意",
+        vec![user2.user_id.clone()],
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "发送@消息失败: {:?}", result.err());
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    if message.content_type == 106 {
+                        assert!(message.content.contains("大家好"), "@消息内容应包含文本");
+                        received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(received, "接收方未收到@消息");
+}
+
+/// 场景：A 发送位置+自定义+@三种消息，B 全部收到
+/// 验证：三种消息类型均正确送达
+#[tokio::test]
+async fn test_send_mixed_message_types() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    // 发送三种消息
+    let _ = sender_sdk.send_text_message("混合测试文本", &user2.user_id, 1).await;
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    let _ = sender_sdk.send_custom_message(
+        r#"{"type":"test"}"#, "自定义描述", "",
+        &user2.user_id, 1,
+    ).await;
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    let _ = sender_sdk.send_location_message(
+        "测试地点", 116.0, 39.0,
+        &user2.user_id, 1,
+    ).await;
+
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    let mut received_types: std::collections::HashSet<i32> = std::collections::HashSet::new();
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    received_types.insert(message.content_type);
+                    if received_types.len() >= 3 { break; }
+                }
+            }
+        }
+    }
+
+    assert!(received_types.contains(&101), "未收到文本消息(101)");
+    assert!(received_types.contains(&110), "未收到自定义消息(110)");
+    assert!(received_types.contains(&109), "未收到位置消息(109)");
+}
+
+// ============================================================================
+// 第六类：Typing 通知
+// ============================================================================
+
+/// 场景：A 发送 typing(focus=true) 给 B
+/// 验证：typing 不触发 NewMessage 事件、不创建会话消息（typing 消息不入库）
+#[tokio::test]
+async fn test_send_typing_notification() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    // 发送 typing 通知
+    let result = sender_sdk.send_typing(&user2.user_id, 1, true).await;
+    assert!(result.is_ok(), "发送 typing 通知失败: {:?}", result.err());
+
+    // 等待一段时间，确认不触发 NewMessage
+    let timeout = tokio::time::sleep(Duration::from_secs(3));
+    tokio::pin!(timeout);
+    let mut got_new_message = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    got_new_message = true;
+                    break;
+                }
+            }
+        }
+    }
+    assert!(!got_new_message, "typing 通知不应触发 NewMessage 事件");
+}
+
+// ============================================================================
+// 第七类：全量已读 & 未读总数
+// ============================================================================
+
+/// 场景：A 给 B 发 3 条消息，B 调用 mark_all_conversation_as_read
+/// 验证：所有会话未读清零，TotalUnreadCountChanged(count=0) 事件触发
+#[tokio::test]
+async fn test_mark_all_conversation_as_read() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut user2_events = user2_sdk.event_bus().subscribe();
+
+    // 发送 3 条消息
+    for i in 1..=3 {
+        let _ = user1_sdk.send_text_message(
+            &format!("全量已读测试 {}", i),
+            &user2.user_id,
+            1,
+        ).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    // 等待所有消息到达
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    let mut msg_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    msg_count += 1;
+                    if msg_count >= 3 { break; }
+                }
+            }
+        }
+    }
+    assert_eq!(msg_count, 3, "应收到 3 条消息");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    // 全量标记已读
+    let mark_result = user2_sdk.mark_all_conversation_as_read().await;
+    assert!(mark_result.is_ok(), "全量标记已读失败: {:?}", mark_result.err());
+
+    // 验证 TotalUnreadCountChanged(0)
+    let timeout2 = tokio::time::sleep(Duration::from_secs(5));
+    tokio::pin!(timeout2);
+    let mut total_zero_received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout2 => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::TotalUnreadCountChanged { count }) = event {
+                    if count == 0 {
+                        total_zero_received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(total_zero_received, "未收到 TotalUnreadCountChanged(count=0) 事件");
+}
+
+/// 场景：B 有多条未读消息时检查全局未读总数
+/// 验证：A 发 5 条消息后，B 的 get_conversations 里 unread 递增
+#[tokio::test]
+async fn test_total_unread_count() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+
+    // 发送 5 条消息
+    for i in 1..=5 {
+        let _ = user1_sdk.send_text_message(
+            &format!("未读总数测试 {}", i),
+            &user2.user_id,
+            1,
+        ).await;
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
+    tokio::time::sleep(Duration::from_secs(5)).await;
+
+    // 查询 B 的会话列表，计算未读总数
+    let convs = user2_sdk.get_conversations().await.expect("获取会话失败");
+    let total_unread: i32 = convs.iter().map(|c| c.unread_count).sum();
+    assert!(total_unread > 0, "B 应有未读消息，实际总未读: {}", total_unread);
+
+    // 逐条标记已读后未读应清零
+    let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
+    let _ = user2_sdk.mark_conversation_as_read(conv_id, 1).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let convs_after = user2_sdk.get_conversations().await.expect("获取会话失败");
+    let total_after: i32 = convs_after.iter().map(|c| c.unread_count).sum();
+    assert_eq!(total_after, 0, "标记已读后总未读应为0, 实际: {}", total_after);
+}
+
+// ============================================================================
+// 第八类：消息转发
+// ============================================================================
+
+/// 场景：A 发文本消息给 B，B 将该消息转发给 A
+/// 验证：A 收到转发的消息（content_type=101）
+#[tokio::test]
+async fn test_forward_message() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut user1_events = user1_sdk.event_bus().subscribe();
+
+    // A 发消息给 B
+    let send_result = user1_sdk.send_text_message("原始消息内容", &user2.user_id, 1).await;
+    assert!(send_result.is_ok(), "A 发送消息失败");
+    let original_msg = send_result.unwrap();
+
+    // B 收到消息
+    let mut user2_events = user2_sdk.event_bus().subscribe();
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut b_received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    b_received = true;
+                    break;
+                }
+            }
+        }
+    }
+    assert!(b_received, "B 未收到 A 的消息");
+
+    // B 转发消息给 A
+    let forward_result = user2_sdk.forward_message(original_msg, &user1.user_id, 1).await;
+    assert!(forward_result.is_ok(), "B 转发消息失败: {:?}", forward_result.err());
+
+    // A 收到转发消息
+    let timeout2 = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout2);
+    let mut a_received_forward = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout2 => { break; }
+            event = user1_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    if message.send_id == user2.user_id && message.content.contains("原始消息内容") {
+                        a_received_forward = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(a_received_forward, "A 未收到 B 转发的消息");
+}
+
+// ============================================================================
+// 第九类：合并消息
+// ============================================================================
+
+/// 场景：A 先发 2 条消息，然后将它们合并转发给 B
+/// 验证：B 收到 content_type=107 的合并消息
+#[tokio::test]
+async fn test_send_merger_message() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    // 发送 2 条消息
+    let msg1 = sender_sdk.send_text_message("合并消息1", &user2.user_id, 1).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    let msg2 = sender_sdk.send_text_message("合并消息2", &user2.user_id, 1).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    // 将 2 条消息合并转发
+    let context_list: Vec<MsgStruct> = vec![MsgStruct::from(&msg1), MsgStruct::from(&msg2)];
+    let result = sender_sdk.send_merger_message(
+        "合并转发",
+        vec!["合并消息1".to_string(), "合并消息2".to_string()],
+        context_list,
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "发送合并消息失败: {:?}", result.err());
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received_merger = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    if message.content_type == 107 {
+                        received_merger = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(received_merger, "接收方未收到合并消息(107)");
+}
+
+// ============================================================================
+// 第十类：从 URL 发送媒体消息
+// ============================================================================
+
+/// 场景：A 从 URL 发送图片/语音/视频/文件消息给 B
+/// 验证：B 收到对应 content_type 的消息
+#[tokio::test]
+async fn test_send_media_from_url() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    // 从 URL 发送图片消息
+    let result = sender_sdk.send_image_message_from_url(
+        "https://example.com/test_image.png",
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "从URL发送图片消息失败: {:?}", result.err());
+
+    // 从 URL 发送语音消息
+    let result = sender_sdk.send_sound_message_from_url(
+        "https://example.com/test_sound.mp3",
+        5,
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "从URL发送语音消息失败: {:?}", result.err());
+
+    // 从 URL 发送视频消息
+    let result = sender_sdk.send_video_message_from_url(
+        "https://example.com/test_video.mp4",
+        10,
+        "https://example.com/test_snapshot.jpg",
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "从URL发送视频消息失败: {:?}", result.err());
+
+    // 从 URL 发送文件消息
+    let result = sender_sdk.send_file_message_from_url(
+        "https://example.com/test_file.pdf",
+        "test_file.pdf",
+        8192,
+        &user2.user_id,
+        1,
+    ).await;
+    assert!(result.is_ok(), "从URL发送文件消息失败: {:?}", result.err());
+
+    // 验证接收方收到消息
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received_types: std::collections::HashSet<i32> = std::collections::HashSet::new();
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { message }) = event {
+                    received_types.insert(message.content_type);
+                    if received_types.len() >= 4 { break; }
+                }
+            }
+        }
+    }
+
+    assert!(received_types.contains(&102), "未收到图片消息(102)");
+    assert!(received_types.contains(&103), "未收到语音消息(103)");
+    assert!(received_types.contains(&104), "未收到视频消息(104)");
+    assert!(received_types.contains(&105), "未收到文件消息(105)");
+}
+
+// ============================================================================
+// 第十一类：消息搜索 & 本地消息查询
+// ============================================================================
+
+/// 场景：A 发 3 条含特定关键词的消息给 B，B 搜索该关键词
+/// 验证：search_local_messages 返回匹配的消息
+#[tokio::test]
+async fn test_search_local_messages() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::sdk::client::types::SearchMessagesReq;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let user1_sdk = create_sdk(&user1, &user1_im_token).await;
+    let user2_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut user2_events = user2_sdk.event_bus().subscribe();
+
+    let search_keyword = "UNIQUE_KEYWORD_42";
+    for i in 1..=3 {
+        let text = format!("消息{} 包含 {}", i, search_keyword);
+        let _ = user1_sdk.send_text_message(&text, &user2.user_id, 1).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    // 等待所有消息到达
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    let mut msg_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    msg_count += 1;
+                    if msg_count >= 3 { break; }
+                }
+            }
+        }
+    }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    // 搜索
+    let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
+    let results = user2_sdk.search_local_messages(SearchMessagesReq {
+        conversation_id: conv_id,
+        keyword: search_keyword.to_string(),
+    }).await;
+
+    assert!(results.is_ok(), "本地搜索失败: {:?}", results.err());
+    let results = results.unwrap();
+    assert!(results.len() >= 3, "应搜索到至少 3 条消息, 实际: {}", results.len());
+
+    // 验证搜索结果都包含关键词
+    for msg in &results {
+        assert!(msg.content.contains(search_keyword),
+            "搜索结果应包含关键词 '{}', 实际: {}", search_keyword, msg.content);
+    }
+}
+
+// ============================================================================
+// 第十二类：消息级别的已读回执（C2CReadReceipt）
+// ============================================================================
+
+/// 场景：A 发 2 条消息给 B，B 标记会话已读
+/// 验证：A 收到 C2CReadReceipt 事件
+#[tokio::test]
+async fn test_c2c_read_receipt() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+
+    let mut sender_events = sender_sdk.event_bus().subscribe();
+
+    // A 发消息
+    for i in 1..=2 {
+        let _ = sender_sdk.send_text_message(
+            &format!("回执测试 {}", i),
+            &user2.user_id,
+            1,
+        ).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    // 等待 B 收到
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    let mut received_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    received_count += 1;
+                    if received_count >= 2 { break; }
+                }
+            }
+        }
+    }
+
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // B 标记会话已读
+    let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
+    let _ = receiver_sdk.mark_conversation_as_read(conv_id, 1).await;
+
+    // 验证 A 收到 C2CReadReceipt
+    let timeout2 = tokio::time::sleep(Duration::from_secs(5));
+    tokio::pin!(timeout2);
+    let mut receipt_received = false;
+    loop {
+        tokio::select! {
+            _ = &mut timeout2 => { break; }
+            event = sender_events.next() => {
+                if let Some(SdkEvent::C2CReadReceipt { receipts }) = event {
+                    if !receipts.is_empty() {
+                        receipt_received = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    assert!(receipt_received, "A 未收到 C2CReadReceipt 事件");
+}

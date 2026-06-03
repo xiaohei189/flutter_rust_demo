@@ -174,13 +174,15 @@ impl MessageDao {
         Ok(())
     }
 
-    pub async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64) -> Result<()> {
+    /// 按 max_seq 批量标记消息为已读（排除自己发送的消息）
+    /// 对齐 Go SDK `MarkConversationMessageAsReadBySeqs` 中 `send_id != GetSelfUserID()`
+    pub async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64, self_user_id: &str) -> Result<()> {
         sqlx::query(
             "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq <= ? AND seq > 0 AND send_id != ?",
         )
             .bind(conversation_id)
             .bind(max_seq)
-            .bind(conversation_id)
+            .bind(self_user_id)
             .execute(&self.pool)
             .await
             .map_err(|e| SdkError::database(format!("mark as read by max seq: {}", e)))?;
@@ -222,23 +224,70 @@ impl MessageDao {
         Ok(rows)
     }
 
-    pub async fn mark_as_read_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> {
+    pub async fn mark_as_read_by_seqs(&self, conversation_id: &str, seqs: &[i64], self_user_id: &str) -> Result<()> {
         if seqs.is_empty() {
             return Ok(());
         }
         let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!(
-            "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq IN ({})",
+            "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq IN ({}) AND send_id != ?",
             placeholders
         );
         let mut query = sqlx::query(&sql).bind(conversation_id);
         for seq in seqs {
             query = query.bind(seq);
         }
+        query = query.bind(self_user_id);
         query.execute(&self.pool)
             .await
             .map_err(|e| SdkError::database(format!("mark as read: {}", e)))?;
         Ok(())
+    }
+
+    /// 获取会话中对方发送的未读消息（对齐 Go SDK `GetUnreadMessage`）
+    /// WHERE send_id != self AND is_read = 0
+    pub async fn get_unread_messages(&self, conversation_id: &str, self_user_id: &str) -> Result<Vec<LocalChatLog>> {
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND send_id != ? AND is_read = 0",
+        )
+        .bind(conversation_id)
+        .bind(self_user_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query unread messages: {}", e)))?;
+        Ok(rows)
+    }
+
+    /// 获取会话中对方发送消息的最大 seq（对齐 Go SDK `GetConversationPeerNormalMsgSeq`）
+    pub async fn get_peer_normal_msg_seq(&self, conversation_id: &str, self_user_id: &str) -> Result<i64> {
+        let row: (Option<i64>,) = sqlx::query_as(
+            "SELECT MAX(seq) FROM local_chat_logs WHERE conversation_id = ? AND send_id != ?",
+        )
+        .bind(conversation_id)
+        .bind(self_user_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query peer max seq: {}", e)))?;
+        Ok(row.0.unwrap_or(0))
+    }
+
+    /// 按 seq 列表查询消息（对齐 Go SDK `GetMessagesBySeqs`）
+    pub async fn get_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<Vec<LocalChatLog>> {
+        if seqs.is_empty() {
+            return Ok(Vec::new());
+        }
+        let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq IN ({})",
+            placeholders
+        );
+        let mut query = sqlx::query_as::<_, LocalChatLog>(&sql).bind(conversation_id);
+        for seq in seqs {
+            query = query.bind(seq);
+        }
+        let rows = query.fetch_all(&self.pool).await
+            .map_err(|e| SdkError::database(format!("query messages by seqs: {}", e)))?;
+        Ok(rows)
     }
 
     /// 按会话 ASC 排序获取消息（用于倒序翻页，对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
@@ -301,8 +350,41 @@ impl MessageDao {
         sqlx::query("DELETE FROM local_chat_logs")
             .execute(&self.pool)
             .await
-            .map_err(|e| SdkError::database(format!("delete all messages: {}", e)))?;
+            .map_err(|e| SdkError::database(format!("delete all: {}", e)))?;
         Ok(())
+    }
+
+    /// 获取指定会话的最小 seq（对齐 Go SDK message_check.go 中的 userCanPullMinSeq）
+    pub async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> {
+        let row: (Option<i64>,) = sqlx::query_as(
+            "SELECT MIN(seq) FROM local_chat_logs WHERE conversation_id = ? AND seq > 0",
+        )
+        .bind(conversation_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query min seq: {}", e)))?;
+        Ok(row.0.unwrap_or(0))
+    }
+
+    /// 获取指定会话在 [min_seq, max_seq] 范围内已有的 seq 列表
+    ///
+    /// 用于 seq gap 检测时快速判断哪些 seq 已存在于本地。
+    pub async fn get_existing_seqs_in_range(
+        &self,
+        conversation_id: &str,
+        min_seq: i64,
+        max_seq: i64,
+    ) -> Result<Vec<i64>> {
+        let rows: Vec<(i64,)> = sqlx::query_as(
+            "SELECT seq FROM local_chat_logs WHERE conversation_id = ? AND seq >= ? AND seq <= ? AND seq > 0",
+        )
+        .bind(conversation_id)
+        .bind(min_seq)
+        .bind(max_seq)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query seqs in range: {}", e)))?;
+        Ok(rows.into_iter().map(|(s,)| s).collect())
     }
 }
 
@@ -409,7 +491,7 @@ mod tests {
         };
 
         dao.batch_insert(&[msg]).await.unwrap();
-        dao.mark_as_read_by_seqs("conv_1", &[1]).await.unwrap();
+        dao.mark_as_read_by_seqs("conv_1", &[1], "user1").await.unwrap();
 
         let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
         assert_eq!(msgs.len(), 1);

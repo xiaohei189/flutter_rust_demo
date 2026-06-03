@@ -53,6 +53,8 @@ pub const INVITE_USER_TO_GROUP: &str = "/group/invite_user_to_group";
 
 pub const GET_INCREMENTAL_FRIENDS: &str = "/friend/get_incremental_friends";
 pub const GET_FULL_FRIEND_USER_IDS: &str = "/friend/get_full_friend_user_ids";
+pub const GET_DESIGNATED_FRIENDS: &str = "/friend/get_designated_friends";
+pub const UPDATE_FRIENDS: &str = "/friend/update_friends";
 
 pub const GET_INCREMENTAL_JOIN_GROUP: &str = "/group/get_incremental_join_groups";
 pub const GET_FULL_JOIN_GROUP_IDS: &str = "/group/get_full_join_group_ids";
@@ -67,7 +69,9 @@ pub const GET_CONVERSATION_OFFLINE_PUSH_MAX_SEQ: &str = "/conversation/get_conve
 pub const CLEAR_CONVERSATION: &str = "/conversation/clear_conversation";
 pub const DELETE_CONVERSATION: &str = "/conversation/delete_conversation";
 pub const MARK_CONVERSATION_AS_READ: &str = "/conversation/mark_conversation_as_read";
+pub const GET_CONVERSATIONS: &str = "/conversation/get_conversations";
 pub const GET_CONVERSATION_IDS: &str = "/conversation/get_conversation_ids";
+pub const GET_FULL_CONVERSATION_IDS: &str = "/conversation/get_full_conversation_ids";
 pub const SET_CONVERSATION_MAX_SEQ: &str = "/conversation/set_conversation_max_seq";
 pub const SET_CONVERSATION_MIN_SEQ: &str = "/conversation/set_conversation_min_seq";
 
