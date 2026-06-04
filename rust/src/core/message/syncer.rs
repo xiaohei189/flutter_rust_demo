@@ -126,10 +126,28 @@ impl MessageSyncer {
 
         info!("重连后开始增量同步消息");
         self.event_bus.publish(SdkEvent::SyncStarted);
+        self.event_bus.publish(SdkEvent::SyncProgress {
+            progress: 1,
+            message: "重连后开始同步".to_string(),
+        });
 
-        let server_max_seqs = self.get_server_max_seqs().await?;
+        let server_max_seqs = match self.get_server_max_seqs().await {
+            Ok(seqs) => seqs,
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                self.event_bus.publish(SdkEvent::SyncFailed {
+                    error: error_msg,
+                });
+                return Err(e);
+            }
+        };
+
         if server_max_seqs.is_empty() {
             info!("服务端无会话 seq，跳过同步");
+            self.event_bus.publish(SdkEvent::SyncProgress {
+                progress: 100,
+                message: "同步完成（无需同步）".to_string(),
+            });
             self.event_bus.publish(SdkEvent::SyncFinished);
             return Ok(());
         }
@@ -138,11 +156,24 @@ impl MessageSyncer {
             let _ = self.conversation_dao.update_max_seq(conv_id, *max_seq).await;
         }
 
-        self.sync_incremental_messages(&server_max_seqs).await?;
-
-        self.event_bus.publish(SdkEvent::SyncFinished);
-        info!("重连后增量同步完成");
-        Ok(())
+        match self.sync_incremental_messages(&server_max_seqs).await {
+            Ok(()) => {
+                self.event_bus.publish(SdkEvent::SyncProgress {
+                    progress: 100,
+                    message: "重连后同步完成".to_string(),
+                });
+                self.event_bus.publish(SdkEvent::SyncFinished);
+                info!("重连后增量同步完成");
+                Ok(())
+            }
+            Err(e) => {
+                let error_msg = format!("{}", e);
+                self.event_bus.publish(SdkEvent::SyncFailed {
+                    error: error_msg,
+                });
+                Err(e)
+            }
+        }
     }
 
     /// 登录后的全量同步（区分重装和普通模式）
@@ -157,12 +188,30 @@ impl MessageSyncer {
         let reinstalled = self.sync_version_dao.is_reinstalled().await?;
         info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
 
+        // 通知同步开始（对齐 Go SDK OnSyncServerStart）
+        self.event_bus.publish(SdkEvent::SyncStarted);
+        self.event_bus.publish(SdkEvent::SyncProgress {
+            progress: 1,
+            message: "同步开始".to_string(),
+        });
+
         match self.sync_all_conversations(reinstalled).await {
             Ok(()) => {
+                // 同步完成：进度 100（对齐 Go SDK OnSyncServerProgress(100) + OnSyncServerFinish）
+                self.event_bus.publish(SdkEvent::SyncProgress {
+                    progress: 100,
+                    message: "同步完成".to_string(),
+                });
+                self.event_bus.publish(SdkEvent::SyncFinished);
                 info!("=== 消息同步成功: sync_on_login ===");
                 Ok(())
             }
             Err(e) => {
+                // 同步失败：发布 SyncFailed 事件（对齐 Go SDK OnSyncServerFailed）
+                let error_msg = format!("{}", e);
+                self.event_bus.publish(SdkEvent::SyncFailed {
+                    error: error_msg.clone(),
+                });
                 error!("=== 消息同步失败: sync_on_login, error={} ===", e);
                 Err(e)
             }
@@ -251,7 +300,8 @@ impl MessageSyncer {
     pub async fn sync_all_conversations(&self, reinstalled: bool) -> Result<()> {
         info!("开始同步全部会话消息, reinstalled={}", reinstalled);
 
-        self.event_bus.publish(SdkEvent::SyncStarted);
+        // 注意：SyncStarted/SyncFinished 事件由调用方（sync_on_login/sync_after_reconnect）负责发布
+        // 此方法仅执行实际同步逻辑
 
         // 先从服务端获取最新 maxSeq
         let server_max_seqs = self.get_server_max_seqs().await?;
@@ -283,7 +333,6 @@ impl MessageSyncer {
             self.sync_incremental_messages(&server_max_seqs).await?;
         }
 
-        self.event_bus.publish(SdkEvent::SyncFinished);
         info!("全部会话消息同步完成");
         Ok(())
     }
@@ -471,9 +520,14 @@ impl MessageSyncer {
 
         self.handle_pulled_messages(&resp.msgs).await?;
 
-        for (conv_id, (_, end_seq)) in seq_map {
+        // 计算同步进度（对齐 Go SDK OnSyncServerProgress）
+        // 进度 = 10% + (已同步会话数 / 总会话数) * 90%
+        // 使用 SyncProgress 事件报告
+        let total_convs = seq_map.len() as u8;
+        for (idx, (conv_id, (_, end_seq))) in seq_map.iter().enumerate() {
+            let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
             self.event_bus.publish(SdkEvent::SyncProgress {
-                progress: 0,
+                progress,
                 message: format!("同步完成 {}: seq={}", conv_id, end_seq),
             });
         }
@@ -503,10 +557,15 @@ impl MessageSyncer {
 
         self.handle_pulled_messages(&resp.msgs).await?;
 
-        self.event_bus.publish(SdkEvent::SyncProgress {
-            progress: 0,
-            message: format!("重装同步完成，共 {} 条消息", total),
-        });
+        // 计算重装同步进度（对齐 Go SDK OnSyncServerProgress）
+        let total_convs = seq_map.len() as u8;
+        for (idx, (conv_id, (_, _))) in seq_map.iter().enumerate() {
+            let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
+            self.event_bus.publish(SdkEvent::SyncProgress {
+                progress,
+                message: format!("重装同步完成 {}: 共 {} 条消息", conv_id, total),
+            });
+        }
 
         Ok(())
     }
@@ -550,7 +609,8 @@ impl MessageSyncer {
         }
 
         if !all_messages.is_empty() {
-            self.message_handler.handle_messages(all_messages).await?;
+            // 使用 handle_sync_messages 标记为同步来源，触发 RecvOfflineNewMessage 事件
+            self.message_handler.handle_sync_messages(all_messages).await?;
         }
 
         Ok(())

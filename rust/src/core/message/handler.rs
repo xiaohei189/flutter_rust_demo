@@ -4,8 +4,9 @@ use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
 use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
-use crate::domain::event::types::{MessageReceipt, SdkEvent};
+use crate::domain::event::types::{GroupReadReceipt, MessageReceipt, SdkEvent};
 use crate::domain::model::message::ReceivedMessage;
+use crate::domain::model::msg_struct::TypingElem;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
 use crate::protocol::sdkws::MarkAsReadTips;
@@ -191,6 +192,18 @@ impl MessageHandler {
     }
 
     pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
+        self.handle_messages_internal(messages, false).await
+    }
+
+    /// 处理消息列表（标记为同步来源，会触发 RecvOfflineNewMessage 事件）
+    ///
+    /// 对齐 Go SDK `OnRecvOfflineNewMessage`：在同步过程中收到的消息
+    /// 需要额外通知上层 UI 这些是离线期间积累的消息。
+    pub async fn handle_sync_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
+        self.handle_messages_internal(messages, true).await
+    }
+
+    async fn handle_messages_internal(&self, messages: Vec<ReceivedMessage>, is_from_sync: bool) -> Result<()> {
         if messages.is_empty() {
             return Ok(());
         }
@@ -214,6 +227,23 @@ impl MessageHandler {
 
         if normal_messages.is_empty() {
             return Ok(());
+        }
+
+        // 处理 Typing 消息：发布输入状态变化事件（对齐 Go SDK OnConversationUserInputStatusChanged）
+        for msg in &normal_messages {
+            if msg.content_type == content_type::TYPING {
+                if let Ok(typing_elem) = serde_json::from_str::<TypingElem>(&msg.content) {
+                    let platform_id = msg.sender_platform_id;
+                    let is_typing = typing_elem.msg_tips == "yes";
+                    self.event_bus.publish(SdkEvent::ConversationUserInputStatusChanged {
+                        data: crate::domain::event::types::InputStatusChangedData {
+                            conversation_id: msg.conversation_id.clone(),
+                            user_id: msg.send_id.clone(),
+                            platform_ids: if is_typing { vec![platform_id] } else { vec![] },
+                        },
+                    });
+                }
+            }
         }
 
         let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
@@ -389,6 +419,20 @@ impl MessageHandler {
 
         info!("handled {} messages ({} inserted, {} duplicates skipped)", 
             normal_messages.len(), insert_list.len(), normal_messages.len() - insert_list.len());
+
+        // 离线新消息通知（对齐 Go SDK OnRecvOfflineNewMessage）
+        // 同步过程中收到的消息需要额外通知上层 UI
+        if is_from_sync && !to_notify.is_empty() {
+            let offline_msgs: Vec<ReceivedMessage> = to_notify.into_iter()
+                .filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING)
+                .collect();
+            if !offline_msgs.is_empty() {
+                self.event_bus.publish(SdkEvent::RecvOfflineNewMessage {
+                    messages: offline_msgs,
+                });
+            }
+        }
+
         Ok(())
     }
 
@@ -446,6 +490,20 @@ impl MessageHandler {
                         });
                     }
                 }
+            } else if session_type_val == session_type::WRITE_GROUP_CHAT
+                || session_type_val == session_type::READ_GROUP_CHAT
+            {
+                // 群聊：发布群已读回执事件（对齐 Go SDK OnRecvGroupReadReceipt）
+                self.event_bus.publish(SdkEvent::GroupReadReceipt {
+                    receipts: vec![GroupReadReceipt {
+                        group_id: tips.conversation_id.clone(),
+                        msg_id: tips.seqs.first().map(|s| s.to_string()).unwrap_or_default(),
+                        has_read_user_id_list: vec![tips.mark_as_read_user_id.clone()],
+                        has_read_count: tips.seqs.len() as i32,
+                        group_member_count: 0, // 服务端未提供，需上层查询
+                        read_time: tips.has_read_seq,
+                    }],
+                });
             }
 
             // 重算未读数（对齐 Go SDK doUnreadCount）

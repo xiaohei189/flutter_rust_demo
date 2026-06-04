@@ -401,6 +401,27 @@ impl MessageDao {
         .map_err(|e| SdkError::database(format!("query seqs in range: {}", e)))?;
         Ok(rows.into_iter().map(|(s,)| s).collect())
     }
+
+    /// 按 seq 范围查询消息（对齐 Go SDK `GetAdvancedHistoryMessageList` seq 范围）
+    pub async fn get_by_seq_range(
+        &self,
+        conversation_id: &str,
+        start_seq: i64,
+        end_seq: i64,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq >= ? AND seq <= ? AND seq > 0 ORDER BY seq ASC LIMIT ?",
+        )
+        .bind(conversation_id)
+        .bind(start_seq)
+        .bind(end_seq)
+        .bind(count)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("get_by_seq_range: {}", e)))?;
+        Ok(rows)
+    }
 }
 
 #[cfg(test)]

@@ -37,6 +37,10 @@ pub mod content_type {
     pub const MARKDOWN_TEXT: i32 = 118;
     pub const CUSTOM_MSG_NOT_TRIGGER_CONVERSATION: i32 = 119;
     pub const CUSTOM_MSG_ONLINE_ONLY: i32 = 120;
+    /// Reaction 消息修饰（对齐 Go SDK constant.ReactionMessageModifier）
+    pub const REACTION_MESSAGE_MODIFIER: i32 = 121;
+    /// Reaction 消息删除（对齐 Go SDK constant.ReactionMessageDeleter）
+    pub const REACTION_MESSAGE_DELETER: i32 = 122;
 
     pub const NOTIFICATION_BEGIN: i32 = 1000;
     pub const NOTIFICATION_END: i32 = 5000;
@@ -278,6 +282,8 @@ mod tests {
         assert_eq!(content_type::CARD, 108);
         assert_eq!(content_type::LOCATION, 109);
         assert_eq!(content_type::CUSTOM, 110);
+        assert_eq!(content_type::REACTION_MESSAGE_MODIFIER, 121);
+        assert_eq!(content_type::REACTION_MESSAGE_DELETER, 122);
         assert_eq!(content_type::NOTIFICATION_BEGIN, 1000);
         assert_eq!(content_type::NOTIFICATION_END, 5000);
     }

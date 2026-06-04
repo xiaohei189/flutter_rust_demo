@@ -14,6 +14,35 @@ pub struct MessageReceipt {
     pub session_type: i32,
 }
 
+/// 群聊已读回执（对齐 Go SDK `OnRecvGroupReadReceipt`）
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct GroupReadReceipt {
+    pub group_id: String,
+    pub msg_id: String,
+    pub has_read_user_id_list: Vec<String>,
+    pub has_read_count: i32,
+    pub group_member_count: i32,
+    pub read_time: i64,
+}
+
+/// 用户输入状态变化数据（对齐 Go SDK `OnConversationUserInputStatusChanged`）
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct InputStatusChangedData {
+    #[serde(rename = "conversationID")]
+    pub conversation_id: String,
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "platformIDs")]
+    pub platform_ids: Vec<i32>,
+}
+
+/// 消息扩展（Reaction）变更数据（对齐 Go SDK `OnRecvMessageExtensionsChanged` 等）
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct MessageExtensionData {
+    pub client_msg_id: String,
+    pub reaction_extension_list: String,
+}
+
 #[derive(Clone, Debug)]
 pub enum SdkEvent {
     Connecting,
@@ -85,6 +114,34 @@ pub enum SdkEvent {
     /// C2C 已读回执（对齐 Go SDK `OnRecvC2CReadReceipt`）
     C2CReadReceipt {
         receipts: Vec<MessageReceipt>,
+    },
+    /// 群聊已读回执（对齐 Go SDK `OnRecvGroupReadReceipt`）
+    GroupReadReceipt {
+        receipts: Vec<GroupReadReceipt>,
+    },
+    /// 用户输入状态变化（对齐 Go SDK `OnConversationUserInputStatusChanged`）
+    ConversationUserInputStatusChanged {
+        data: InputStatusChangedData,
+    },
+    /// 离线新消息通知（对齐 Go SDK `OnRecvOfflineNewMessage`）
+    RecvOfflineNewMessage {
+        messages: Vec<ReceivedMessage>,
+    },
+    /// 消息被编辑通知（对齐 Go SDK `OnMsgEdited` / `OnRecvMessageModified`）
+    MsgEdited {
+        message: ReceivedMessage,
+    },
+    /// 消息扩展（Reaction）新增（对齐 Go SDK `OnRecvMessageExtensionsAdded`）
+    MessageExtensionsAdded {
+        data: MessageExtensionData,
+    },
+    /// 消息扩展（Reaction）变更（对齐 Go SDK `OnRecvMessageExtensionsChanged`）
+    MessageExtensionsChanged {
+        data: MessageExtensionData,
+    },
+    /// 消息扩展（Reaction）删除（对齐 Go SDK `OnRecvMessageExtensionsDeleted`）
+    MessageExtensionsDeleted {
+        data: MessageExtensionData,
     },
     MessagesDeleted {
         conversation_id: String,
@@ -225,6 +282,13 @@ impl SdkEvent {
             SdkEvent::UploadProgress { .. } => "upload_progress",
             SdkEvent::MessageRevoked { .. } => "message_revoked",
             SdkEvent::C2CReadReceipt { .. } => "c2c_read_receipt",
+            SdkEvent::GroupReadReceipt { .. } => "group_read_receipt",
+            SdkEvent::ConversationUserInputStatusChanged { .. } => "conversation_user_input_status_changed",
+            SdkEvent::RecvOfflineNewMessage { .. } => "recv_offline_new_message",
+            SdkEvent::MsgEdited { .. } => "msg_edited",
+            SdkEvent::MessageExtensionsAdded { .. } => "message_extensions_added",
+            SdkEvent::MessageExtensionsChanged { .. } => "message_extensions_changed",
+            SdkEvent::MessageExtensionsDeleted { .. } => "message_extensions_deleted",
             SdkEvent::MessagesDeleted { .. } => "messages_deleted",
             SdkEvent::ConversationChanged { .. } => "conversation_changed",
             SdkEvent::ConversationDeleted { .. } => "conversation_deleted",
@@ -306,5 +370,197 @@ mod tests {
             },
         };
         assert_eq!(event.event_type(), "new_message");
+    }
+
+    // ========== 第四批：事件回调完整性测试 ==========
+
+    #[test]
+    fn test_sync_progress_event_type() {
+        let event = SdkEvent::SyncProgress {
+            progress: 50,
+            message: "同步中".to_string(),
+        };
+        assert_eq!(event.event_type(), "sync_progress");
+    }
+
+    #[test]
+    fn test_sync_failed_event_type() {
+        let event = SdkEvent::SyncFailed {
+            error: "网络断开".to_string(),
+        };
+        assert_eq!(event.event_type(), "sync_failed");
+    }
+
+    #[test]
+    fn test_group_read_receipt_event_type() {
+        let event = SdkEvent::GroupReadReceipt {
+            receipts: vec![GroupReadReceipt {
+                group_id: "g_123".into(),
+                msg_id: "msg_1".into(),
+                has_read_user_id_list: vec!["user_1".into(), "user_2".into()],
+                has_read_count: 2,
+                group_member_count: 10,
+                read_time: 1700000000,
+            }],
+        };
+        assert_eq!(event.event_type(), "group_read_receipt");
+    }
+
+    #[test]
+    fn test_group_read_receipt_data_structure() {
+        let receipt = GroupReadReceipt {
+            group_id: "g_abc".into(),
+            msg_id: "msg_xyz".into(),
+            has_read_user_id_list: vec!["u1".into(), "u2".into(), "u3".into()],
+            has_read_count: 3,
+            group_member_count: 20,
+            read_time: 1700000000,
+        };
+        assert_eq!(receipt.group_id, "g_abc");
+        assert_eq!(receipt.has_read_count, 3);
+        assert_eq!(receipt.has_read_user_id_list.len(), 3);
+
+        // 验证序列化/反序列化
+        let json = serde_json::to_string(&receipt).unwrap();
+        let deserialized: GroupReadReceipt = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.group_id, receipt.group_id);
+        assert_eq!(deserialized.has_read_count, receipt.has_read_count);
+    }
+
+    #[test]
+    fn test_input_status_changed_event_type() {
+        let event = SdkEvent::ConversationUserInputStatusChanged {
+            data: InputStatusChangedData {
+                conversation_id: "si_u1_u2".into(),
+                user_id: "user_1".into(),
+                platform_ids: vec![1],
+            },
+        };
+        assert_eq!(event.event_type(), "conversation_user_input_status_changed");
+    }
+
+    #[test]
+    fn test_input_status_changed_data_structure() {
+        let data = InputStatusChangedData {
+            conversation_id: "si_u1_u2".into(),
+            user_id: "user_1".into(),
+            platform_ids: vec![1, 2],
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        assert!(json.contains("conversationID"));
+        assert!(json.contains("userID"));
+        assert!(json.contains("platformIDs"));
+
+        let deserialized: InputStatusChangedData = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.conversation_id, "si_u1_u2");
+        assert_eq!(deserialized.user_id, "user_1");
+        assert_eq!(deserialized.platform_ids, vec![1, 2]);
+    }
+
+    #[test]
+    fn test_input_status_stopped_has_empty_platforms() {
+        let data = InputStatusChangedData {
+            conversation_id: "si_u1_u2".into(),
+            user_id: "user_1".into(),
+            platform_ids: vec![], // 空表示停止输入
+        };
+        assert!(data.platform_ids.is_empty());
+    }
+
+    #[test]
+    fn test_recv_offline_new_message_event_type() {
+        use crate::domain::model::message::ReceivedMessage;
+        let event = SdkEvent::RecvOfflineNewMessage {
+            messages: vec![ReceivedMessage {
+                server_msg_id: "srv_off".into(),
+                client_msg_id: "msg_off".into(),
+                send_id: "user_1".into(),
+                recv_id: "user_2".into(),
+                sender_platform_id: 1,
+                sender_nick_name: String::new(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 100,
+                content_type: 101,
+                content: "{\"text\":\"offline msg\"}".into(),
+                seq: 5,
+                send_time: 1700000000,
+                create_time: 1700000000,
+                conversation_id: "si_u1_u2".into(),
+                group_id: String::new(),
+            }],
+        };
+        assert_eq!(event.event_type(), "recv_offline_new_message");
+    }
+
+    #[test]
+    fn test_msg_edited_event_type() {
+        use crate::domain::model::message::ReceivedMessage;
+        let event = SdkEvent::MsgEdited {
+            message: ReceivedMessage {
+                server_msg_id: "srv_edit".into(),
+                client_msg_id: "msg_edit".into(),
+                send_id: "user_1".into(),
+                recv_id: "user_2".into(),
+                sender_platform_id: 1,
+                sender_nick_name: String::new(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 100,
+                content_type: 101,
+                content: "{\"text\":\"edited\"}".into(),
+                seq: 10,
+                send_time: 1700000000,
+                create_time: 1700000000,
+                conversation_id: "si_u1_u2".into(),
+                group_id: String::new(),
+            },
+        };
+        assert_eq!(event.event_type(), "msg_edited");
+    }
+
+    #[test]
+    fn test_message_extensions_added_event_type() {
+        let event = SdkEvent::MessageExtensionsAdded {
+            data: MessageExtensionData {
+                client_msg_id: "msg_1".into(),
+                reaction_extension_list: "[{\"type\":\"👍\"}]".into(),
+            },
+        };
+        assert_eq!(event.event_type(), "message_extensions_added");
+    }
+
+    #[test]
+    fn test_message_extensions_changed_event_type() {
+        let event = SdkEvent::MessageExtensionsChanged {
+            data: MessageExtensionData {
+                client_msg_id: "msg_1".into(),
+                reaction_extension_list: "[{\"type\":\"❤️\",\"count\":3}]".into(),
+            },
+        };
+        assert_eq!(event.event_type(), "message_extensions_changed");
+    }
+
+    #[test]
+    fn test_message_extensions_deleted_event_type() {
+        let event = SdkEvent::MessageExtensionsDeleted {
+            data: MessageExtensionData {
+                client_msg_id: "msg_1".into(),
+                reaction_extension_list: "[\"👍\"]".into(),
+            },
+        };
+        assert_eq!(event.event_type(), "message_extensions_deleted");
+    }
+
+    #[test]
+    fn test_message_extension_data_structure() {
+        let data = MessageExtensionData {
+            client_msg_id: "msg_abc".into(),
+            reaction_extension_list: "[{\"type\":\"👍\",\"count\":5}]".into(),
+        };
+        let json = serde_json::to_string(&data).unwrap();
+        let deserialized: MessageExtensionData = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.client_msg_id, "msg_abc");
+        assert!(deserialized.reaction_extension_list.contains("👍"));
     }
 }

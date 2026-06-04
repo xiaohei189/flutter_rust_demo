@@ -189,6 +189,43 @@ impl OpenIMBridgeClient {
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
+    #[flutter_rust_bridge::frb]
+    pub async fn get_conversation_list_split(
+        &self,
+        offset: i64,
+        count: i64,
+    ) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+        self.inner.get_conversation_list_split(offset, count).await.map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
+    #[flutter_rust_bridge::frb]
+    pub async fn get_multiple_conversations(
+        &self,
+        conversation_ids: Vec<String>,
+    ) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+        self.inner.get_multiple_conversations(conversation_ids).await.map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    /// 搜索会话（对齐 Go SDK `SearchConversation`）
+    #[flutter_rust_bridge::frb]
+    pub async fn search_conversations(
+        &self,
+        keyword: String,
+    ) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+        self.inner.search_conversations(&keyword).await.map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    /// 隐藏会话（对齐 Go SDK `HideConversation`）
+    #[flutter_rust_bridge::frb]
+    pub async fn hide_conversation(
+        &self,
+        conversation_id: String,
+    ) -> Result<()> {
+        self.inner.hide_conversation(&conversation_id).await.map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
     ///
     /// 只更新传入的非空字段，其余保持不变。
@@ -993,6 +1030,56 @@ pub async fn send_typing(source_id: String, session_type: i32, focus: bool) -> R
     let client = client_holder()?;
     client.send_typing(&source_id, session_type, focus).await
         .map_err(|e| anyhow::anyhow!("{}", e))
+}
+
+/// 发送高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage` + `SendMessage`）
+///
+/// 与 `send_quote_message` 的区别：额外支持 `message_entities` 参数，
+/// 可以为引用消息的文本添加实体（如 @提及、链接等富文本）。
+#[flutter_rust_bridge::frb]
+pub async fn send_advanced_quote_message(
+    text: String,
+    source_id: String,
+    session_type: i32,
+    quote_text: String,
+    quote_client_msg_id: String,
+    quote_send_id: String,
+    quote_send_time: i64,
+    message_entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
+) -> Result<MsgData> {
+    let client = client_holder()?;
+    let quote_struct = crate::domain::model::msg_struct::MsgStruct {
+        content: quote_text,
+        client_msg_id: quote_client_msg_id,
+        send_id: quote_send_id,
+        send_time: quote_send_time,
+        ..Default::default()
+    };
+    let result = client.send_advanced_quote_message(
+        &text, quote_struct, message_entities, &source_id, session_type,
+    ).await?;
+    Ok(result)
+}
+
+/// 编辑消息（对齐 Go SDK 消息修改功能）
+///
+/// 当前实现：构造一条新的文本消息发送，服务端通过 MsgDataToModifyByMQ 广播修改通知。
+/// - `conversation_id`: 消息所属会话 ID
+/// - `client_msg_id`: 要编辑的消息的 clientMsgId
+/// - `content`: 编辑后的新内容（JSON 字符串，如 `{"text":"新内容"}`）
+/// - `content_type`: 消息内容类型（如 101=文本, 117=富文本, 118=Markdown）
+#[flutter_rust_bridge::frb]
+pub async fn edit_message(
+    conversation_id: String,
+    client_msg_id: String,
+    content: String,
+    content_type: i32,
+) -> Result<MsgData> {
+    let client = client_holder()?;
+    let result = client.edit_message(
+        &conversation_id, &client_msg_id, &content, content_type,
+    ).await?;
+    Ok(result)
 }
 
 // ============================================================================

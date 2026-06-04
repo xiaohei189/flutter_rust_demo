@@ -267,6 +267,83 @@ impl ConversationDao {
             .map_err(|e| SdkError::database(format!("clear all: {}", e)))?;
         Ok(())
     }
+
+    /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplitDB`）
+    ///
+    /// 过滤 latest_msg_send_time > 0 的会话，置顶优先，按时间降序。
+    pub async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> {
+        let rows = sqlx::query_as::<_, LocalConversation>(
+            "SELECT * FROM local_conversations \
+             WHERE latest_msg_send_time > 0 \
+             ORDER BY CASE WHEN is_pinned = 1 THEN 0 ELSE 1 END, \
+                      MAX(latest_msg_send_time, draft_text_time) DESC \
+             LIMIT ? OFFSET ?"
+        )
+        .bind(count)
+        .bind(offset)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("get_split: {}", e)))?;
+        Ok(rows)
+    }
+
+    /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversationDB`）
+    pub async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> {
+        if conversation_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut query = String::from("SELECT * FROM local_conversations WHERE conversation_id IN (");
+        for (i, id) in conversation_ids.iter().enumerate() {
+            if i > 0 { query.push(','); }
+            query.push_str(&format!("'{}'", id.replace('\'', "''")));
+        }
+        query.push(')');
+        let rows = sqlx::query_as::<_, LocalConversation>(&query)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("get_multiple: {}", e)))?;
+        Ok(rows)
+    }
+
+    /// 按名称搜索会话（对齐 Go SDK `SearchConversations`）
+    ///
+    /// 模糊匹配 show_name，按 latest_msg_send_time 降序。
+    pub async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>> {
+        let pattern = format!("%{}%", keyword);
+        let rows = sqlx::query_as::<_, LocalConversation>(
+            "SELECT * FROM local_conversations \
+             WHERE show_name LIKE ? \
+             ORDER BY latest_msg_send_time DESC"
+        )
+        .bind(&pattern)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("search: {}", e)))?;
+        Ok(rows)
+    }
+
+    /// 重置/隐藏会话（对齐 Go SDK `ResetConversation`）
+    ///
+    /// 将 unread_count、latest_msg、latest_msg_send_time、draft_text、draft_text_time 清零。
+    /// 因为 get_split 过滤 latest_msg_send_time > 0，清零后该会话不再出现在列表中。
+    pub async fn reset(&self, conversation_id: &str) -> Result<()> {
+        let rows_affected = sqlx::query(
+            "UPDATE local_conversations \
+             SET unread_count = 0, latest_msg = '', latest_msg_send_time = 0, \
+                 draft_text = '', draft_text_time = 0 \
+             WHERE conversation_id = ?"
+        )
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("reset: {}", e)))?
+        .rows_affected();
+
+        if rows_affected == 0 {
+            return Err(SdkError::database(format!("reset: 会话 {} 不存在", conversation_id)));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

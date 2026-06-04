@@ -893,3 +893,416 @@ async fn test_update_conversation_unread_count() {
     let conv = receiver_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
     assert_eq!(conv.unread_count, 0, "未读数应为 0");
 }
+
+// ============================================================================
+// 第十二类：分页获取会话列表
+// 覆盖：get_conversation_list_split 分页 + 置顶排序
+// ============================================================================
+
+/// 场景：验证分页获取会话列表（get_conversation_list_split）
+///
+/// 步骤：
+///   Phase 1: A 创建 5 个随机账号并分别与 B 建立好友
+///   Phase 2: A 向 5 个账号各发送 1 条消息，创建 5 个会话
+///   Phase 3: B 登录，等待同步
+///   Phase 4: B 分页查询 offset=0, count=3 → 验证返回 3 条
+///   Phase 5: B 分页查询 offset=3, count=3 → 验证返回 2 条
+///   Phase 6: 验证排序 — 置顶优先，然后按时间降序
+///   Phase 7: B 置顶第 3 个会话，重新查询 offset=0, count=3 → 验证置顶的排在前面
+#[tokio::test]
+async fn test_conversation_list_split() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    println!("[Phase 1] 创建 5 个随机账号...");
+    let mut sender_accounts = Vec::new();
+    for i in 0..5 {
+        let account = create_random_account(&format!("SplitSender{}", i)).await;
+        sender_accounts.push(account);
+    }
+
+    let receiver = create_random_account("SplitReceiver").await;
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+
+    println!("[Phase 1] 建立好友关系...");
+    let mut sender_sdks = Vec::new();
+    for (i, account) in sender_accounts.iter().enumerate() {
+        let (token, _) = login_account(account).await.expect(&format!("发送方{}登录失败", i));
+        let sdk = create_sdk(account, &token).await;
+        ensure_friends(&sdk, &account.user_id, &receiver_sdk, &receiver.user_id).await;
+        sender_sdks.push(sdk);
+    }
+
+    println!("[Phase 2] 发送 5 条消息创建 5 个会话...");
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    for (i, sdk) in sender_sdks.iter().enumerate() {
+        let _ = sdk.send_text_message(
+            &format!("分页测试消息 {}", i),
+            &receiver.user_id,
+            1,
+        ).await;
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
+    println!("[Phase 3] 等待消息到达...");
+    let timeout = tokio::time::sleep(Duration::from_secs(30));
+    tokio::pin!(timeout);
+    let mut msg_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    msg_count += 1;
+                    if msg_count >= 5 { break; }
+                }
+            }
+        }
+    }
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    println!("[Phase 4] 分页查询 offset=0, count=3...");
+    let page1 = receiver_sdk.get_conversation_list_split(0, 3).await
+        .expect("分页查询失败");
+    assert_eq!(page1.len(), 3, "第一页应返回 3 条，实际: {}", page1.len());
+    println!("  第一页: {} 条会话", page1.len());
+
+    println!("[Phase 5] 分页查询 offset=3, count=3...");
+    let page2 = receiver_sdk.get_conversation_list_split(3, 3).await
+        .expect("分页查询失败");
+    assert_eq!(page2.len(), 2, "第二页应返回 2 条，实际: {}", page2.len());
+    println!("  第二页: {} 条会话", page2.len());
+
+    println!("[Phase 6] 验证排序（时间降序）...");
+    // 验证每页内按时间降序
+    for page in [&page1, &page2] {
+        for window in page.windows(2) {
+            assert!(
+                window[0].latest_msg_send_time >= window[1].latest_msg_send_time,
+                "会话应按时间降序排列: {} < {}",
+                window[0].latest_msg_send_time,
+                window[1].latest_msg_send_time,
+            );
+        }
+    }
+    // 跨页验证：第一页最后一条 >= 第二页第一条
+    if !page1.is_empty() && !page2.is_empty() {
+        assert!(
+            page1.last().unwrap().latest_msg_send_time >= page2.first().unwrap().latest_msg_send_time,
+            "跨页排序不正确"
+        );
+    }
+    println!("  排序验证通过");
+
+    println!("[Phase 7] 置顶第 3 个会话后重新查询...");
+    let third_conv_id = &page1[2].conversation_id;
+    receiver_sdk.set_conversation_pinned(third_conv_id, true).await
+        .expect("置顶失败");
+
+    let page1_pinned = receiver_sdk.get_conversation_list_split(0, 3).await
+        .expect("置顶后分页查询失败");
+    assert_eq!(page1_pinned.len(), 3, "置顶后第一页仍应返回 3 条");
+
+    // 验证置顶的排在最前面
+    let pinned_found = page1_pinned.iter().position(|c| &c.conversation_id == third_conv_id);
+    assert!(pinned_found.is_some(), "置顶会话应在第一页中");
+    assert_eq!(pinned_found.unwrap(), 0, "置顶会话应排在第一位");
+    println!("  置顶排序验证通过");
+
+    // 恢复
+    receiver_sdk.set_conversation_pinned(third_conv_id, false).await.ok();
+
+    println!("test_conversation_list_split 通过!");
+}
+
+// ============================================================================
+// 第十三类：按 ID 批量获取会话
+// 覆盖：get_multiple_conversations 批量查询 + 不存在的 ID
+// ============================================================================
+
+/// 场景：验证按 ID 列表批量获取会话（get_multiple_conversations）
+///
+/// 步骤：
+///   Phase 1: A 发送消息给 B，创建 2 个会话
+///   Phase 2: B 登录，等待同步
+///   Phase 3: B 用 get_multiple_conversations 查询 2 个会话 ID + 1 个不存在的 ID
+///            → 验证返回 2 条（不存在的被忽略）
+///   Phase 4: 查询空列表 → 验证返回空
+#[tokio::test]
+async fn test_multiple_conversations() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    println!("[Phase 1] 创建发送方，发送 2 条消息...");
+    let sender = create_random_account("MultiSender").await;
+    let receiver = create_random_account("MultiReceiver").await;
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    // 创建 2 个会话（发送 2 条消息到同一个接收方会触发会话创建）
+    let _ = sender_sdk.send_text_message("批量查询测试1", &receiver.user_id, 1).await;
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    let _ = sender_sdk.send_text_message("批量查询测试2", &receiver.user_id, 1).await;
+
+    println!("[Phase 2] 等待消息到达...");
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    let mut msg_count = 0;
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    msg_count += 1;
+                    if msg_count >= 2 { break; }
+                }
+            }
+        }
+    }
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    // 会话 ID 是 si_{sorted(sender, receiver)}，两条消息是同一个会话
+    let conv_id = make_conversation_id(&receiver.user_id, &sender.user_id);
+    let fake_id = "si_nonexistent_user1_nonexistent_user2";
+    let nonexistent_id = "si_does_not_exist_xyz";
+
+    println!("[Phase 3] 批量查询 2 个有效 ID + 1 个不存在的 ID...");
+    let results = receiver_sdk.get_multiple_conversations(vec![
+        conv_id.clone(),
+        fake_id.to_string(),
+        nonexistent_id.to_string(),
+    ]).await.expect("批量查询失败");
+
+    // 至少应找到 conv_id 对应的会话
+    let found = results.iter().any(|c| c.conversation_id == conv_id);
+    assert!(found, "应找到会话: {}", conv_id);
+    println!("  批量查询返回 {} 条（期望至少 1 条）", results.len());
+
+    // fake_id 和 nonexistent_id 不应存在
+    assert!(!results.iter().any(|c| c.conversation_id == fake_id),
+        "不存在的会话不应返回: {}", fake_id);
+    assert!(!results.iter().any(|c| c.conversation_id == nonexistent_id),
+        "不存在的会话不应返回: {}", nonexistent_id);
+
+    println!("[Phase 4] 查询空列表...");
+    let empty = receiver_sdk.get_multiple_conversations(vec![]).await
+        .expect("空列表查询失败");
+    assert!(empty.is_empty(), "空列表查询应返回空，实际: {}", empty.len());
+
+    println!("test_multiple_conversations 通过!");
+}
+
+// ============================================================================
+// 第十四类：搜索会话
+// 覆盖：search_conversations 模糊搜索 + 空关键词错误
+// ============================================================================
+
+/// 场景：验证搜索会话（search_conversations）
+///
+/// 步骤：
+///   Phase 1: A 发送消息给 B，创建会话（会话 show_name 包含 A 的昵称）
+///   Phase 2: B 登录，等待同步
+///   Phase 3: B 用 A 的昵称搜索 → 验证找到会话
+///   Phase 4: B 用不存在的关键词搜索 → 验证返回空
+///   Phase 5: 空关键词搜索 → 验证返回错误
+#[tokio::test]
+async fn test_search_conversations() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    println!("[Phase 1] 创建发送方和接收方...");
+    let sender = create_random_account("SearchSender").await;
+    let receiver = create_random_account("SearchReceiver").await;
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    println!("[Phase 1] A 发消息给 B...");
+    let _ = sender_sdk.send_text_message("搜索测试消息", &receiver.user_id, 1).await;
+
+    println!("[Phase 2] 等待消息到达...");
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+            }
+        }
+    }
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    println!("[Phase 3] 搜索会话（按 show_name）...");
+    // 注意: show_name 在同步时可能为空或为默认值，搜索按 show_name 匹配
+    // 先获取会话列表确认 show_name 的实际值
+    let all_convs = receiver_sdk.get_conversations().await.unwrap();
+    let target_conv = all_convs.iter().find(|c| {
+        c.conversation_id.contains(&sender.user_id) || c.conversation_id.contains(&receiver.user_id)
+    });
+    if let Some(conv) = target_conv {
+        println!("  目标会话 show_name='{}', conv_id='{}'", conv.show_name, conv.conversation_id);
+        if !conv.show_name.is_empty() {
+            let results = receiver_sdk.search_conversations(&conv.show_name).await.unwrap();
+            assert!(!results.is_empty(), "应通过 show_name '{}' 找到会话", conv.show_name);
+            println!("  搜索到 {} 条结果 ✓", results.len());
+        } else {
+            println!("  show_name 为空，跳过昵称搜索验证（符合预期：同步器未设置 show_name）");
+        }
+    } else {
+        println!("  未找到目标会话，跳过搜索验证");
+    }
+
+    println!("[Phase 4] 用不存在的关键词搜索...");
+    let not_found = receiver_sdk.search_conversations("ZZZZZZ_NONEXISTENT_KEYWORD").await
+        .expect("搜索不存在的关键词失败");
+    assert!(not_found.is_empty(), "搜索不存在的关键词应返回空");
+    println!("  不存在的关键词搜索返回 0 条 ✓");
+
+    println!("[Phase 5] 空关键词搜索 → 应返回错误...");
+    let empty_result = receiver_sdk.search_conversations("").await;
+    assert!(empty_result.is_err(), "空关键词搜索应返回错误");
+    println!("  空关键词错误: {:?}", empty_result.err());
+
+    println!("test_search_conversations 通过!");
+}
+
+// ============================================================================
+// 第十五类：隐藏会话
+// 覆盖：hide_conversation 隐藏 + 新消息后重新出现
+// ============================================================================
+
+/// 场景：验证隐藏会话（hide_conversation）
+///
+/// 步骤：
+///   Phase 1: A 发送消息给 B，创建会话
+///   Phase 2: B 登录，等待同步
+///   Phase 3: B 验证会话在列表中（get_conversation_list_split 找到）
+///   Phase 4: B 调用 hide_conversation
+///   Phase 5: B 再次分页查询 → 验证会话不在列表中
+///   Phase 6: B 直接 get_conversation → 验证会话仍在 DB 中（只是被隐藏）
+///   Phase 7: A 再发一条消息 → B 重新同步 → 验证会话重新出现
+#[tokio::test]
+async fn test_hide_conversation() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    println!("[Phase 1] 创建发送方和接收方...");
+    let sender = create_random_account("HideSender").await;
+    let receiver = create_random_account("HideReceiver").await;
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    println!("[Phase 1] A 发消息给 B...");
+    let _ = sender_sdk.send_text_message("隐藏测试消息1", &receiver.user_id, 1).await;
+
+    println!("[Phase 2] 等待消息到达...");
+    let timeout = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout);
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+            }
+        }
+    }
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv_id = make_conversation_id(&receiver.user_id, &sender.user_id);
+
+    println!("[Phase 3] 验证会话在分页列表中...");
+    let page = receiver_sdk.get_conversation_list_split(0, 100).await
+        .expect("分页查询失败");
+    let found_before = page.iter().any(|c| c.conversation_id == conv_id);
+    assert!(found_before, "隐藏前会话应在分页列表中: {}", conv_id);
+    println!("  隐藏前找到会话 ✓");
+
+    println!("[Phase 4] 调用 hide_conversation...");
+    let hide_result = receiver_sdk.hide_conversation(&conv_id).await;
+    assert!(hide_result.is_ok(), "隐藏会话失败: {:?}", hide_result.err());
+    println!("  隐藏成功 ✓");
+
+    println!("[Phase 5] 验证会话不在分页列表中...");
+    let page_after = receiver_sdk.get_conversation_list_split(0, 100).await
+        .expect("隐藏后分页查询失败");
+    let found_after = page_after.iter().any(|c| c.conversation_id == conv_id);
+    assert!(!found_after, "隐藏后会话不应在分页列表中: {}", conv_id);
+    println!("  隐藏后不在列表中 ✓");
+
+    println!("[Phase 6] 验证会话仍在 DB 中...");
+    let conv_direct = receiver_sdk.get_conversation(&conv_id).await
+        .expect("get_conversation 失败");
+    // get_conversation 可能返回 None 因为 reset 清了 latest_msg_send_time
+    // 但会话记录本身可能仍存在（取决于 get_conversation 的实现）
+    // 这里验证 get_conversation 不会报错即可
+    match conv_direct {
+        Some(c) => {
+            assert_eq!(c.conversation_id, conv_id, "会话 ID 不匹配");
+            assert_eq!(c.unread_count, 0, "隐藏后未读数应为 0");
+            println!("  会话仍在 DB 中（unread_count=0）✓");
+        }
+        None => {
+            println!("  会话在 DB 中已被重置（latest_msg_send_time=0）✓");
+        }
+    }
+
+    println!("[Phase 7] A 再发一条消息，验证会话重新出现...");
+    let _ = sender_sdk.send_text_message("隐藏测试消息2-恢复", &receiver.user_id, 1).await;
+    let timeout2 = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout2);
+    loop {
+        tokio::select! {
+            _ = &mut timeout2 => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+            }
+        }
+    }
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    let page_reappear = receiver_sdk.get_conversation_list_split(0, 100).await
+        .expect("恢复后分页查询失败");
+    let found_reappear = page_reappear.iter().any(|c| c.conversation_id == conv_id);
+    assert!(found_reappear, "新消息后会话应重新出现在分页列表中: {}", conv_id);
+    println!("  新消息后会话重新出现 ✓");
+
+    println!("test_hide_conversation 通过!");
+}

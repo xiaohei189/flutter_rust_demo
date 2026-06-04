@@ -81,6 +81,48 @@ impl OpenIMClient {
         self.message_service.mark_all_conversation_as_read().await
     }
 
+    /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
+    ///
+    /// 过滤有消息的会话，置顶优先，按时间降序分页。
+    pub async fn get_conversation_list_split(
+        &self,
+        offset: i64,
+        count: i64,
+    ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+        self.conversation.dao().get_split(offset, count).await
+    }
+
+    /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
+    pub async fn get_multiple_conversations(
+        &self,
+        conversation_ids: Vec<String>,
+    ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+        self.conversation.dao().get_multiple(&conversation_ids).await
+    }
+
+    /// 搜索会话（对齐 Go SDK `SearchConversation`）
+    ///
+    /// 按 show_name 模糊匹配。
+    pub async fn search_conversations(
+        &self,
+        keyword: &str,
+    ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+        if keyword.is_empty() {
+            return Err(SdkError::invalid_argument("搜索关键词不能为空"));
+        }
+        self.conversation.dao().search(keyword).await
+    }
+
+    /// 隐藏会话（对齐 Go SDK `HideConversation`）
+    ///
+    /// 重置会话的未读数、最新消息、草稿等，使其不出现在会话列表中。
+    pub async fn hide_conversation(
+        &self,
+        conversation_id: &str,
+    ) -> std::result::Result<(), SdkError> {
+        self.conversation.dao().reset(conversation_id).await
+    }
+
     /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
     ///
     /// 根据 conversation_id 查找已有会话，更新传入的字段，然后 upsert。

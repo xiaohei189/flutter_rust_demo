@@ -108,6 +108,9 @@ pub struct AtInfo {
 pub struct QuoteElem {
     pub text: String,
     pub quote_message: Option<Box<MsgStruct>>,
+    /// 高级引用消息的消息实体列表（对齐 Go SDK QuoteElem.MessageEntityList）
+    #[serde(rename = "messageEntityList", skip_serializing_if = "Vec::is_empty", default)]
+    pub message_entity_list: Vec<MessageEntity>,
 }
 
 /// 合并转发元素（对齐 Go SDK MergeElem）
@@ -443,7 +446,40 @@ impl MsgStruct {
             qm.text_elem = Some(TextElem { content: qm.content.clone() });
             qm.quote_elem = None;
         }
-        let elem = QuoteElem { text: text.to_string(), quote_message: Some(Box::new(qm)) };
+        let elem = QuoteElem {
+            text: text.to_string(),
+            quote_message: Some(Box::new(qm)),
+            message_entity_list: Vec::new(),
+        };
+        msg.content = serde_json::to_string(&elem).unwrap();
+        msg.quote_elem = Some(elem);
+        msg
+    }
+
+    /// 创建高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage`）
+    ///
+    /// 与 `create_quote_message` 的区别：额外支持 `message_entities` 参数，
+    /// 可以为引用消息的文本添加实体（如 @提及、链接等富文本）。
+    pub fn create_advanced_quote_message(
+        text: &str,
+        quoted_msg: Box<MsgStruct>,
+        message_entities: Vec<MessageEntity>,
+    ) -> MsgStruct {
+        let mut msg = MsgStruct::new();
+        msg.content_type = 114;
+        msg.msg_from = MSG_FROM_USER;
+        let mut qm = *quoted_msg.clone();
+        // 避免嵌套引用（对齐 Go SDK create_message.go L121-124）
+        if qm.content_type == 114 {
+            qm.content_type = 101;
+            qm.text_elem = Some(TextElem { content: qm.content.clone() });
+            qm.quote_elem = None;
+        }
+        let elem = QuoteElem {
+            text: text.to_string(),
+            quote_message: Some(Box::new(qm)),
+            message_entity_list: message_entities,
+        };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.quote_elem = Some(elem);
         msg
@@ -585,6 +621,147 @@ impl From<&MsgData> for MsgStruct {
         };
         msg.populate_elem_by_content_type();
         msg
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_advanced_quote_message_basic() {
+        let quoted = MsgStruct::create_text_message("原始消息");
+        let entities = vec![
+            MessageEntity {
+                entity_type: "at".to_string(),
+                offset: 0,
+                length: 3,
+                url: String::new(),
+                ex: "@user1".to_string(),
+            },
+        ];
+
+        let msg = MsgStruct::create_advanced_quote_message(
+            "引用文本",
+            Box::new(quoted),
+            entities,
+        );
+
+        assert_eq!(msg.content_type, 114); // QUOTE
+        assert_eq!(msg.msg_from, MSG_FROM_USER);
+
+        let quote_elem = msg.quote_elem.as_ref().unwrap();
+        assert_eq!(quote_elem.text, "引用文本");
+        assert_eq!(quote_elem.message_entity_list.len(), 1);
+        assert_eq!(quote_elem.message_entity_list[0].entity_type, "at");
+        assert_eq!(quote_elem.message_entity_list[0].offset, 0);
+        assert_eq!(quote_elem.message_entity_list[0].ex, "@user1");
+
+        // 验证引用消息的嵌套引用被扁平化
+        let quoted_msg = quote_elem.quote_message.as_ref().unwrap();
+        assert_eq!(quoted_msg.content_type, 101); // 被扁平化为 TEXT
+    }
+
+    #[test]
+    fn test_create_advanced_quote_message_nested_quote_flattened() {
+        // 如果被引用消息本身是引用消息，应被扁平化为文本
+        let inner_quote = MsgStruct::create_text_message("内部消息");
+        let outer_quote = MsgStruct::create_quote_message(
+            "引用引用",
+            Box::new(inner_quote),
+        );
+
+        let msg = MsgStruct::create_advanced_quote_message(
+            "高级引用",
+            Box::new(outer_quote),
+            vec![],
+        );
+
+        let quote_elem = msg.quote_elem.as_ref().unwrap();
+        let quoted_msg = quote_elem.quote_message.as_ref().unwrap();
+        // 嵌套引用应被扁平化为 TEXT
+        assert_eq!(quoted_msg.content_type, 101);
+        assert!(quoted_msg.quote_elem.is_none());
+    }
+
+    #[test]
+    fn test_create_advanced_quote_message_empty_entities() {
+        let quoted = MsgStruct::create_text_message("被引用的消息");
+        let msg = MsgStruct::create_advanced_quote_message(
+            "引用文本",
+            Box::new(quoted),
+            vec![], // 空实体列表
+        );
+
+        let quote_elem = msg.quote_elem.as_ref().unwrap();
+        assert!(quote_elem.message_entity_list.is_empty());
+        assert_eq!(quote_elem.text, "引用文本");
+    }
+
+    #[test]
+    fn test_create_advanced_quote_message_serialization() {
+        let quoted = MsgStruct::create_text_message("原文");
+        let entities = vec![
+            MessageEntity {
+                entity_type: "url".to_string(),
+                offset: 5,
+                length: 10,
+                url: "https://example.com".to_string(),
+                ex: String::new(),
+            },
+        ];
+
+        let msg = MsgStruct::create_advanced_quote_message(
+            "查看链接",
+            Box::new(quoted),
+            entities,
+        );
+
+        // 验证 content JSON 包含 messageEntityList
+        let content_json: serde_json::Value = serde_json::from_str(&msg.content).unwrap();
+        assert_eq!(content_json["text"], "查看链接");
+        assert!(content_json["messageEntityList"].is_array());
+        assert_eq!(content_json["messageEntityList"][0]["type"], "url");
+        assert_eq!(content_json["messageEntityList"][0]["offset"], 5);
+    }
+
+    #[test]
+    fn test_create_advanced_quote_message_populate_from_content() {
+        let quoted = MsgStruct::create_text_message("原文");
+        let entities = vec![
+            MessageEntity {
+                entity_type: "at".to_string(),
+                offset: 0,
+                length: 3,
+                url: String::new(),
+                ex: "@someone".to_string(),
+            },
+        ];
+
+        let msg = MsgStruct::create_advanced_quote_message(
+            "引用",
+            Box::new(quoted),
+            entities,
+        );
+
+        // 从 content 恢复 QuoteElem
+        let mut restored = MsgStruct::new();
+        restored.content_type = 114;
+        restored.content = msg.content.clone();
+        restored.populate_elem_by_content_type();
+
+        let quote_elem = restored.quote_elem.as_ref().unwrap();
+        assert_eq!(quote_elem.text, "引用");
+        assert_eq!(quote_elem.message_entity_list.len(), 1);
+        assert_eq!(quote_elem.message_entity_list[0].entity_type, "at");
+    }
+
+    #[test]
+    fn test_quote_elem_default_empty_message_entity_list() {
+        // 确保普通 QuoteElem 的 message_entity_list 默认为空
+        let msg = MsgStruct::create_quote_message("引用", Box::new(MsgStruct::create_text_message("原文")));
+        let quote_elem = msg.quote_elem.as_ref().unwrap();
+        assert!(quote_elem.message_entity_list.is_empty());
     }
 }
 
