@@ -209,6 +209,7 @@ async fn do_send_message_impl(
 
     // isOnlineOnly: 设置 options 全部为 false（对齐 Go SDK api.go L657-664）
     if online_only {
+        msg_data.options.insert("isOnlineOnly".to_string(), true);
         msg_data.options.insert("history".to_string(), false);
         msg_data.options.insert("persistent".to_string(), false);
         msg_data.options.insert("senderSync".to_string(), false);

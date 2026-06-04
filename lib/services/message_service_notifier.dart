@@ -299,15 +299,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       throw ArgumentError('recvId 与 groupId 至少填一个');
     }
 
-    final jsonContent = jsonEncode({'content': text});
-    await _client!.sendMessage(
-      req: SendMessageReq(
-        recvId: recvId,
-        groupId: groupId,
-        sessionType: sessionType,
-        contentType: ContentType.text,
-        content: jsonContent,
-      ),
+    final sourceId = groupId.isNotEmpty ? groupId : recvId;
+    await _client!.sendTextMessage(
+      text: text,
+      sourceId: sourceId,
+      sessionType: sessionType,
     );
   }
 

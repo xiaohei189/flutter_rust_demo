@@ -367,6 +367,7 @@ mod tests {
                 create_time: 1000,
                 conversation_id: "conv_1".into(),
                 group_id: String::new(),
+                is_online_only: false,
             },
         };
         assert_eq!(event.event_type(), "new_message");
@@ -488,6 +489,7 @@ mod tests {
                 create_time: 1700000000,
                 conversation_id: "si_u1_u2".into(),
                 group_id: String::new(),
+                is_online_only: false,
             }],
         };
         assert_eq!(event.event_type(), "recv_offline_new_message");
@@ -514,6 +516,7 @@ mod tests {
                 create_time: 1700000000,
                 conversation_id: "si_u1_u2".into(),
                 group_id: String::new(),
+                is_online_only: false,
             },
         };
         assert_eq!(event.event_type(), "msg_edited");

@@ -6,6 +6,25 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// @ 用户信息
+class AtInfo {
+  final String atUserId;
+  final String groupNickname;
+
+  const AtInfo({required this.atUserId, required this.groupNickname});
+
+  @override
+  int get hashCode => atUserId.hashCode ^ groupNickname.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AtInfo &&
+          runtimeType == other.runtimeType &&
+          atUserId == other.atUserId &&
+          groupNickname == other.groupNickname;
+}
+
 /// 消息实体（用于富文本）
 class MessageEntity {
   final String entityType;

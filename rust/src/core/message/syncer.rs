@@ -594,6 +594,7 @@ impl MessageSyncer {
                     create_time: msg_data.create_time,
                     conversation_id: conv_id.clone(),
                     group_id: msg_data.group_id.clone(),
+                    is_online_only: msg_data.options.get("isOnlineOnly").copied().unwrap_or(false),
                 };
                 all_messages.push(received_msg);
             }

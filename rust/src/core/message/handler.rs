@@ -300,17 +300,21 @@ impl MessageHandler {
                 }
             } else {
                 if exists.is_none() {
-                    // 正常新消息：他人发送 → 入库
-                    let mut local_msg: LocalChatLog = self.received_to_local(msg);
-                    local_msg.status = msg_status::SEND_SUCCESS as i32;
-                    // 使用 MaxSeqRecorder 判断是否贡献未读（对齐 Go SDK IsNewMsg）
-                    let conv_id = local_msg.conversation_id.clone();
-                    let msg_seq = local_msg.seq;
-                    insert_list.push(local_msg);
-                    to_notify.push(msg.clone());
-                    if self.max_seq_recorder.is_new_msg(&conv_id, msg_seq) {
-                        is_trigger_unread_count = true;
-                        self.max_seq_recorder.incr(&conv_id, 1);
+                    // 正常新消息：他人发送
+                    // online_only 消息不入库（对齐 Go SDK: history=false），但仍触发事件
+                    if msg.is_online_only {
+                        to_notify.push(msg.clone());
+                    } else {
+                        let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                        local_msg.status = msg_status::SEND_SUCCESS as i32;
+                        let conv_id = local_msg.conversation_id.clone();
+                        let msg_seq = local_msg.seq;
+                        insert_list.push(local_msg);
+                        to_notify.push(msg.clone());
+                        if self.max_seq_recorder.is_new_msg(&conv_id, msg_seq) {
+                            is_trigger_unread_count = true;
+                            self.max_seq_recorder.incr(&conv_id, 1);
+                        }
                     }
                 } else {
                     // CLIENT_DUP: 重复消息
@@ -386,7 +390,8 @@ impl MessageHandler {
             }
 
             // 每条新消息都增加未读数（对齐 Go SDK：每条消息独立计数）
-            if is_conversation_update && !is_self {
+            // online_only 消息不增加未读数（对齐 Go SDK：RecvOnlineOnlyMessage）
+            if is_conversation_update && !is_self && !msg.is_online_only {
                 debug!("[UNREAD_DIAG] 增加未读: conv={}, seq={}, send_id={}", msg.conversation_id, msg.seq, msg.send_id);
                 self.conversation_dao
                     .update_after_new_message(
@@ -642,6 +647,7 @@ mod tests {
             create_time: seq * 1000,
             conversation_id: conv_id.to_string(),
             group_id: String::new(),
+            is_online_only: false,
         }
     }
 

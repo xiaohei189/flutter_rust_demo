@@ -2579,6 +2579,9 @@ async fn test_concurrent_send_stress() {
     let st = 1i32;
     let conv_id = make_conversation_id(&user_a.user_id, &user_b.user_id);
 
+    // 先订阅 B 的事件流（在 A 发送之前，避免错过推送）
+    let mut b_events = b_sdk.event_bus().subscribe();
+
     // Phase 2: A 快速连发 20 条消息
     println!("\n========== Phase 2: A 快速连发 20 条消息 ==========");
 
@@ -2595,7 +2598,6 @@ async fn test_concurrent_send_stress() {
     // Phase 3: B 等待接收 20 条消息并验证 seq 连续性
     println!("\n========== Phase 3: B 等待接收 20 条消息 ==========");
 
-    let mut b_events = b_sdk.event_bus().subscribe();
     let mut received_seqs = Vec::new();
     let mut received_count = 0usize;
 

@@ -117,6 +117,9 @@ class ReceivedMessage {
   final String conversationId;
   final String groupId;
 
+  /// 是否仅在线推送（online_only 消息不增加未读数）
+  final bool isOnlineOnly;
+
   const ReceivedMessage({
     required this.serverMsgId,
     required this.clientMsgId,
@@ -134,6 +137,7 @@ class ReceivedMessage {
     required this.createTime,
     required this.conversationId,
     required this.groupId,
+    required this.isOnlineOnly,
   });
 
   @override
@@ -153,7 +157,8 @@ class ReceivedMessage {
       sendTime.hashCode ^
       createTime.hashCode ^
       conversationId.hashCode ^
-      groupId.hashCode;
+      groupId.hashCode ^
+      isOnlineOnly.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -175,5 +180,6 @@ class ReceivedMessage {
           sendTime == other.sendTime &&
           createTime == other.createTime &&
           conversationId == other.conversationId &&
-          groupId == other.groupId;
+          groupId == other.groupId &&
+          isOnlineOnly == other.isOnlineOnly;
 }

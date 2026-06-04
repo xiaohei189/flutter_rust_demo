@@ -40,6 +40,381 @@ Stream<int> uploadFileWithProgress({
   fileName: fileName,
 );
 
+/// 发送引用消息（对齐 Go SDK `CreateQuoteMessage` + `SendMessage`）
+///
+/// quote_text: 被引用消息的文本内容
+/// quote_client_msg_id: 被引用消息的 clientMsgId
+/// quote_send_id: 被引用消息的发送者 ID
+/// quote_send_time: 被引用消息的发送时间
+Future<MsgData> sendQuoteMessage({
+  required String text,
+  required String sourceId,
+  required SessionType sessionType,
+  required String quoteText,
+  required String quoteClientMsgId,
+  required String quoteSendId,
+  required PlatformInt64 quoteSendTime,
+}) => RustLib.instance.api.crateApiBridgeClientSendQuoteMessage(
+  text: text,
+  sourceId: sourceId,
+  sessionType: sessionType,
+  quoteText: quoteText,
+  quoteClientMsgId: quoteClientMsgId,
+  quoteSendId: quoteSendId,
+  quoteSendTime: quoteSendTime,
+);
+
+/// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
+Future<MsgData> sendMergerMessage({
+  required String title,
+  required List<String> summaryList,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendMergerMessage(
+  title: title,
+  summaryList: summaryList,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 发送名片消息（对齐 Go SDK `CreateCardMessage` + `SendMessage`）
+Future<MsgData> sendCardMessage({
+  required String userId,
+  required String nickname,
+  required String faceUrl,
+  required String ex,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendCardMessage(
+  userId: userId,
+  nickname: nickname,
+  faceUrl: faceUrl,
+  ex: ex,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 发送位置消息（对齐 Go SDK `CreateLocationMessage` + `SendMessage`）
+Future<MsgData> sendLocationMessage({
+  required String description,
+  required double longitude,
+  required double latitude,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendLocationMessage(
+  description: description,
+  longitude: longitude,
+  latitude: latitude,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 发送表情消息（对齐 Go SDK `CreateFaceMessage` + `SendMessage`）
+Future<MsgData> sendFaceMessage({
+  required int index,
+  required String data,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendFaceMessage(
+  index: index,
+  data: data,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 转发消息（对齐 Go SDK `ForwardMessage`）
+Future<MsgData> forwardMessage({
+  required MsgData msgData,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientForwardMessage(
+  msgData: msgData,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 按 seq 获取单条历史消息（对齐 Go SDK `GetHistoryMessageBySeq`）
+Future<LocalChatLog> getHistoryMessageBySeq({required PlatformInt64 seq}) =>
+    RustLib.instance.api.crateApiBridgeClientGetHistoryMessageBySeq(seq: seq);
+
+/// 按 seq 范围获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListBySeq`）
+Future<List<LocalChatLog>> getAdvancedHistoryMessageListBySeq({
+  required String conversationId,
+  required PlatformInt64 startSeq,
+  required PlatformInt64 endSeq,
+  required int count,
+}) =>
+    RustLib.instance.api.crateApiBridgeClientGetAdvancedHistoryMessageListBySeq(
+      conversationId: conversationId,
+      startSeq: startSeq,
+      endSeq: endSeq,
+      count: count,
+    );
+
+/// 获取服务端时间（对齐 Go SDK `GetServerTime`）
+Future<PlatformInt64> getServerTime() =>
+    RustLib.instance.api.crateApiBridgeClientGetServerTime();
+
+/// 获取全局未读消息数（对齐 Go SDK `GetTotalUnreadMsgCount`）
+Future<PlatformInt64> getTotalUnreadMsgCount() =>
+    RustLib.instance.api.crateApiBridgeClientGetTotalUnreadMsgCount();
+
+/// 标记所有会话已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
+///
+/// 遍历所有未读会话，逐个通知服务端 + 标记本地已读
+Future<void> markAllConversationMessageAsRead() =>
+    RustLib.instance.api.crateApiBridgeClientMarkAllConversationMessageAsRead();
+
+/// 发送正在输入通知（对齐 Go SDK `TypingStatusUpdate` / `ChangeInputStates`）
+///
+/// source_id: 对方用户 ID 或群组 ID
+/// session_type: 会话类型（1=单聊, 2=群聊）
+/// focus: true=正在输入, false=停止输入
+Future<void> sendTyping({
+  required String sourceId,
+  required SessionType sessionType,
+  required bool focus,
+}) => RustLib.instance.api.crateApiBridgeClientSendTyping(
+  sourceId: sourceId,
+  sessionType: sessionType,
+  focus: focus,
+);
+
+/// 发送高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage` + `SendMessage`）
+///
+/// 与 `send_quote_message` 的区别：额外支持 `message_entities` 参数，
+/// 可以为引用消息的文本添加实体（如 @提及、链接等富文本）。
+Future<MsgData> sendAdvancedQuoteMessage({
+  required String text,
+  required String sourceId,
+  required SessionType sessionType,
+  required String quoteText,
+  required String quoteClientMsgId,
+  required String quoteSendId,
+  required PlatformInt64 quoteSendTime,
+  required List<MessageEntity> messageEntities,
+}) => RustLib.instance.api.crateApiBridgeClientSendAdvancedQuoteMessage(
+  text: text,
+  sourceId: sourceId,
+  sessionType: sessionType,
+  quoteText: quoteText,
+  quoteClientMsgId: quoteClientMsgId,
+  quoteSendId: quoteSendId,
+  quoteSendTime: quoteSendTime,
+  messageEntities: messageEntities,
+);
+
+/// 编辑消息（对齐 Go SDK 消息修改功能）
+///
+/// 当前实现：构造一条新的文本消息发送，服务端通过 MsgDataToModifyByMQ 广播修改通知。
+/// - `conversation_id`: 消息所属会话 ID
+/// - `client_msg_id`: 要编辑的消息的 clientMsgId
+/// - `content`: 编辑后的新内容（JSON 字符串，如 `{"text":"新内容"}`）
+/// - `content_type`: 消息内容类型（如 101=文本, 117=富文本, 118=Markdown）
+Future<MsgData> editMessage({
+  required String conversationId,
+  required String clientMsgId,
+  required String content,
+  required int contentType,
+}) => RustLib.instance.api.crateApiBridgeClientEditMessage(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+  content: content,
+  contentType: contentType,
+);
+
+/// 从 URL 发送图片消息
+Future<MsgData> sendImageMessageFromUrl({
+  required String sourceUrl,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendImageMessageFromUrl(
+  sourceUrl: sourceUrl,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 从 URL 发送语音消息
+Future<MsgData> sendSoundMessageFromUrl({
+  required String sourceUrl,
+  required PlatformInt64 duration,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendSoundMessageFromUrl(
+  sourceUrl: sourceUrl,
+  duration: duration,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 从 URL 发送视频消息
+Future<MsgData> sendVideoMessageFromUrl({
+  required String sourceUrl,
+  required PlatformInt64 duration,
+  required String snapshotUrl,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendVideoMessageFromUrl(
+  sourceUrl: sourceUrl,
+  duration: duration,
+  snapshotUrl: snapshotUrl,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 从 URL 发送文件消息
+Future<MsgData> sendFileMessageFromUrl({
+  required String sourceUrl,
+  required String fileName,
+  required PlatformInt64 fileSize,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendFileMessageFromUrl(
+  sourceUrl: sourceUrl,
+  fileName: fileName,
+  fileSize: fileSize,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 发送分段 @ 消息（带引用）
+Future<MsgData> sendAtTextMessageWithQuote({
+  required String text,
+  required List<String> atUserList,
+  required List<AtInfo> atUsersInfo,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientSendAtTextMessageWithQuote(
+  text: text,
+  atUserList: atUserList,
+  atUsersInfo: atUsersInfo,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 倒序获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
+///
+/// 与 `get_history_messages` 相同参数，但按 send_time ASC 返回（向上翻页获取更早消息）
+Future<GetHistoryMessagesResult> getHistoryMessagesReverse({
+  required String conversationId,
+  required String startClientMsgId,
+  required PlatformInt64 count,
+}) => RustLib.instance.api.crateApiBridgeClientGetHistoryMessagesReverse(
+  conversationId: conversationId,
+  startClientMsgId: startClientMsgId,
+  count: count,
+);
+
+/// 按 clientMsgID 列表查找消息（对齐 Go SDK `FindMessageList`）
+Future<List<LocalChatLog>> findMessageList({
+  required String conversationId,
+  required List<String> clientMsgIds,
+}) => RustLib.instance.api.crateApiBridgeClientFindMessageList(
+  conversationId: conversationId,
+  clientMsgIds: clientMsgIds,
+);
+
+/// 删除单条消息（本地 + 服务端，对齐 Go SDK `DeleteMessage`）
+///
+/// 先从服务端删除，再从本地删除
+Future<void> deleteMessage({
+  required String conversationId,
+  required String clientMsgId,
+}) => RustLib.instance.api.crateApiBridgeClientDeleteMessage(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+);
+
+/// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
+Future<void> deleteMessageFromLocalStorage({
+  required String conversationId,
+  required String clientMsgId,
+}) => RustLib.instance.api.crateApiBridgeClientDeleteMessageFromLocalStorage(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+);
+
+/// 删除所有消息（本地 + 服务端，对齐 Go SDK `DeleteAllMsgFromLocalAndSvr`）
+Future<void> deleteAllMsgFromLocalAndSvr() =>
+    RustLib.instance.api.crateApiBridgeClientDeleteAllMsgFromLocalAndSvr();
+
+/// 仅从本地删除所有消息（软删除，对齐 Go SDK `DeleteAllMsgFromLocal`）
+Future<void> deleteAllMsgFromLocal() =>
+    RustLib.instance.api.crateApiBridgeClientDeleteAllMsgFromLocal();
+
+/// 清除指定会话并删除所有消息（保留会话记录，对齐 Go SDK `ClearConversationAndDeleteAllMsg`）
+Future<void> clearConversationAndDeleteAllMsg({
+  required String conversationId,
+}) => RustLib.instance.api.crateApiBridgeClientClearConversationAndDeleteAllMsg(
+  conversationId: conversationId,
+);
+
+/// 增量同步会话列表（对齐 Go SDK `IncrSyncConversations`）
+///
+/// 版本号持久化到数据库，重连后无需全量同步。
+/// 收到会话变更通知时调用。
+Future<void> incrSyncConversations() =>
+    RustLib.instance.api.crateApiBridgeClientIncrSyncConversations();
+
+Future<void> deleteConversationAndDeleteAllMsg({
+  required String conversationId,
+}) =>
+    RustLib.instance.api.crateApiBridgeClientDeleteConversationAndDeleteAllMsg(
+      conversationId: conversationId,
+    );
+
+/// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
+Future<void> setMessageLocalEx({
+  required String conversationId,
+  required String clientMsgId,
+  required String localEx,
+}) => RustLib.instance.api.crateApiBridgeClientSetMessageLocalEx(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+  localEx: localEx,
+);
+
+/// 插入群聊消息到本地存储（对齐 Go SDK `InsertGroupMessageToLocalStorage`）
+///
+/// 用于插入自定义/系统消息到本地数据库
+Future<LocalChatLog> insertGroupMessageToLocalStorage({
+  required String groupId,
+  required String content,
+  required int contentType,
+  required String sendId,
+}) => RustLib.instance.api.crateApiBridgeClientInsertGroupMessageToLocalStorage(
+  groupId: groupId,
+  content: content,
+  contentType: contentType,
+  sendId: sendId,
+);
+
+/// 设置 App 前后台状态（对齐 Go SDK `SetAppBackgroundStatus`）
+///
+/// 后台时降低心跳频率，前台时触发增量同步
+Future<void> setAppBackgroundStatus({required bool isBackground}) => RustLib
+    .instance
+    .api
+    .crateApiBridgeClientSetAppBackgroundStatus(isBackground: isBackground);
+
+/// 网络状态变化通知（对齐 Go SDK `NetworkStatusChanged`）
+///
+/// 网络切换时（WiFi↔4G）触发重连
+Future<void> networkStatusChanged() =>
+    RustLib.instance.api.crateApiBridgeClientNetworkStatusChanged();
+
+/// 获取当前登录用户 ID（对齐 Go SDK `GetLoginUserID`）
+Future<String> getLoginUserId() =>
+    RustLib.instance.api.crateApiBridgeClientGetLoginUserId();
+
+/// 获取 SDK 版本号（对齐 Go SDK `GetSdkVersion`）
+Future<String> getSdkVersion() =>
+    RustLib.instance.api.crateApiBridgeClientGetSdkVersion();
+
+/// 反初始化 SDK（对齐 Go SDK `UnInitSDK`）
+Future<void> unInitSdk() =>
+    RustLib.instance.api.crateApiBridgeClientUnInitSdk();
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> acceptFriendApplication({
@@ -58,6 +433,12 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> addFriend({required String userId, required String reqMsg});
 
   Future<List<CheckFriendResult>> checkFriend({required List<String> userIds});
+
+  /// 检查群成员是否已全量同步（对齐 Go SDK `CheckGroupMemberFullSync`）
+  Future<bool> checkGroupMemberFullSync({required String groupId});
+
+  /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
+  Future<bool> checkLocalGroupFullSync();
 
   Future<void> clearConversationDraft({required String conversationId});
 
@@ -85,6 +466,23 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<LocalConversation?> getConversation({required String conversationId});
 
+  /// 根据会话类型和 sourceID 生成 conversationID（对齐 Go SDK `GetConversationIDBySessionType`）
+  ///
+  /// - sessionType=1 单聊: `si_{sorted(userID, sourceID)}`
+  /// - sessionType=2 普通群聊: `g_{groupID}`
+  /// - sessionType=3 超级群聊: `sg_{groupID}`
+  /// - sessionType=4 服务端通知会话: `sn_{sorted(userID, sourceID)}`
+  Future<String> getConversationIdBySessionType({
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
+  Future<List<LocalConversation>> getConversationListSplit({
+    required PlatformInt64 offset,
+    required PlatformInt64 count,
+  });
+
   Future<List<LocalConversation>> getConversations();
 
   Future<int> getFriendApplicationUnhandledCount();
@@ -97,6 +495,16 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<List<FriendInfo>> getFriendList();
 
+  /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
+  ///
+  /// 从本地 DB 按置顶优先、创建时间倒序分页获取。
+  /// filter_black=true 时过滤黑名单好友。
+  Future<List<FriendInfo>> getFriendListPage({
+    required int offset,
+    required int count,
+    required bool filterBlack,
+  });
+
   Future<List<GroupApplyInfo>> getGroupApplicationList();
 
   Future<List<GroupApplyInfo>> getGroupApplicationListAsApplicant();
@@ -106,6 +514,21 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<int> getGroupApplicationUnhandledCount();
 
   Future<List<GroupInfo>> getGroupList();
+
+  /// 按加入时间筛选群成员（对齐 Go SDK `GetGroupMemberListByJoinTimeFilter`）
+  Future<List<GroupMember>> getGroupMemberListByJoinTimeFilter({
+    required String groupId,
+    required int offset,
+    required int count,
+    required PlatformInt64 joinTimeBegin,
+    required PlatformInt64 joinTimeEnd,
+    required List<String> filterUserIds,
+  });
+
+  /// 获取群主和管理员列表（对齐 Go SDK `GetGroupMemberOwnerAndAdmin`）
+  Future<List<GroupMember>> getGroupMemberOwnerAndAdmin({
+    required String groupId,
+  });
 
   Future<List<GroupMember>> getGroupMembers({required String groupId});
 
@@ -120,13 +543,42 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required GetHistoryMessagesReq req,
   });
 
+  /// 分页获取已加入群组列表（对齐 Go SDK `GetJoinedGroupListPage`）
+  Future<List<GroupInfo>> getJoinedGroupListPage({
+    required int offset,
+    required int count,
+  });
+
+  /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
+  Future<List<LocalConversation>> getMultipleConversations({
+    required List<String> conversationIds,
+  });
+
   Future<List<Conversation>> getPinnedConversations();
 
   Future<UserInfo> getSelfUserInfo();
 
+  /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
+  ///
+  /// 先查本地 DB，缺失的从服务端拉取并缓存。
+  /// filter_black=true 时过滤掉黑名单中的好友。
+  Future<List<FriendInfo>> getSpecifiedFriendsInfo({
+    required List<String> friendUserIds,
+    required bool filterBlack,
+  });
+
   Future<List<OnlineStatus>> getUserStatus({required List<String> userIds});
 
+  /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
+  Future<List<String>> getUsersInGroup({
+    required String groupId,
+    required List<String> userIds,
+  });
+
   Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
+
+  /// 隐藏会话（对齐 Go SDK `HideConversation`）
+  Future<void> hideConversation({required String conversationId});
 
   Future<void> inviteGroupMembers({
     required String groupId,
@@ -189,6 +641,25 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> revokeMessage({required RevokeMessageReq req});
 
+  /// 搜索会话（对齐 Go SDK `SearchConversation`）
+  Future<List<LocalConversation>> searchConversations({
+    required String keyword,
+  });
+
+  /// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
+  ///
+  /// keyword: 搜索关键词，匹配 nickname / user_id / remark
+  Future<List<SearchFriendItem>> searchFriends({required String keyword});
+
+  /// 搜索群成员（对齐 Go SDK `SearchGroupMembers`）
+  Future<List<GroupMember>> searchGroupMembers({
+    required String groupId,
+    required String keyword,
+  });
+
+  /// 搜索群组（对齐 Go SDK `SearchGroups`）
+  Future<List<GroupInfo>> searchGroups({required String keyword});
+
   Future<List<LocalChatLog>> searchLocalMessages({
     required SearchMessagesReq req,
   });
@@ -197,14 +668,14 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required String text,
     required List<MessageEntity> entities,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendAtTextMessage({
     required String text,
     required List<String> atUserIds,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendCustomMessage({
@@ -212,46 +683,89 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required String desc,
     required String extension_,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendFileMessage({
     required String filePath,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
+  });
+
+  /// 发送文件消息（带上传进度回调）
+  Stream<int> sendFileMessageWithProgress({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendImageMessage({
     required String filePath,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
+  });
+
+  /// 发送图片消息（带上传进度回调）
+  Stream<int> sendImageMessageWithProgress({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendMarkdownMessage({
     required String text,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendSoundMessage({
     required String filePath,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
+    required PlatformInt64 duration,
+  });
+
+  /// 发送语音消息（带上传进度回调）
+  Stream<int> sendSoundMessageWithProgress({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
     required PlatformInt64 duration,
   });
 
   Future<MsgData> sendTextMessage({
     required String text,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
   });
 
   Future<MsgData> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
-    required int sessionType,
+    required SessionType sessionType,
     required PlatformInt64 duration,
+  });
+
+  /// 发送视频消息（带上传进度回调，进度跟踪主视频文件）
+  Stream<int> sendVideoMessageWithProgress({
+    required String videoPath,
+    required String snapshotPath,
+    required String sourceId,
+    required SessionType sessionType,
+    required PlatformInt64 duration,
+  });
+
+  /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
+  ///
+  /// 只更新传入的非空字段，其余保持不变。
+  Future<void> setConversation({
+    required String conversationId,
+    int? recvMsgOpt,
+    bool? isPinned,
+    bool? isPrivateChat,
+    int? groupAtType,
+    String? ex,
   });
 
   Future<void> setConversationDraft({
@@ -277,7 +791,23 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     String? faceUrl,
   });
 
+  /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）
+  Future<void> setGroupMemberInfo({
+    required String groupId,
+    required String userId,
+    String? nickname,
+    String? faceUrl,
+    int? roleLevel,
+    String? ex,
+  });
+
   Future<void> syncFriends();
+
+  /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
+  Future<void> syncFriendsIncremental();
+
+  /// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup）
+  Future<void> syncGroupsIncremental();
 
   Future<void> transferGroupOwner({
     required String groupId,
@@ -287,6 +817,17 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> updateConversationUnreadCount({
     required String conversationId,
     required PlatformInt64 unreadCount,
+  });
+
+  /// 批量更新好友信息（对齐 Go SDK UpdateFriends）
+  ///
+  /// 支持部分更新：is_pinned / remark / ex 为 null 时不修改对应字段。
+  /// 更新成功后自动执行增量同步刷新本地数据。
+  Future<void> updateFriends({
+    required List<String> friendUserIds,
+    bool? isPinned,
+    String? remark,
+    String? ex,
   });
 
   Future<void> updateUserProfile({

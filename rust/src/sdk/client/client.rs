@@ -205,6 +205,7 @@ impl OpenIMClient {
                                                     create_time: msg.create_time,
                                                     conversation_id: conv_id.clone(),
                                                     group_id: msg.group_id.clone(),
+                                                    is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
                                                 })
                                             }).collect();
 
@@ -253,6 +254,7 @@ impl OpenIMClient {
                                         create_time: msg.create_time,
                                         conversation_id: conversation_id.clone(),
                                         group_id: msg.group_id.clone(),
+                                        is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
                                     })
                                 }).collect();
 
@@ -313,6 +315,7 @@ impl OpenIMClient {
                                             create_time: msg.create_time,
                                             conversation_id: conv_id.clone(),
                                             group_id: msg.group_id.clone(),
+                                            is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
                                         })
                                     }).collect();
 

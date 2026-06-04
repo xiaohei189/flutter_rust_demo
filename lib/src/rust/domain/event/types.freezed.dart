@@ -62,11 +62,30 @@ mixin _$SdkEvent {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -104,6 +123,11 @@ mixin _$SdkEvent {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -154,8 +178,24 @@ mixin _$SdkEvent {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -188,6 +228,11 @@ mixin _$SdkEvent {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -238,8 +283,24 @@ mixin _$SdkEvent {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -272,6 +333,11 @@ mixin _$SdkEvent {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -298,7 +364,21 @@ mixin _$SdkEvent {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -343,6 +423,8 @@ mixin _$SdkEvent {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -367,7 +449,21 @@ mixin _$SdkEvent {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -407,6 +503,7 @@ mixin _$SdkEvent {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -431,7 +528,21 @@ mixin _$SdkEvent {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -471,6 +582,7 @@ mixin _$SdkEvent {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -588,11 +700,30 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -630,6 +761,11 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -684,8 +820,24 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -718,6 +870,11 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -772,8 +929,24 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -806,6 +979,11 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -839,7 +1017,21 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -884,6 +1076,8 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -912,7 +1106,21 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -952,6 +1160,7 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -980,7 +1189,21 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -1020,6 +1243,7 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -1126,11 +1350,30 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -1168,6 +1411,11 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -1222,8 +1470,24 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -1256,6 +1520,11 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -1310,8 +1579,24 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -1344,6 +1629,11 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -1377,7 +1667,21 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -1422,6 +1726,8 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -1450,7 +1756,21 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -1490,6 +1810,7 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -1518,7 +1839,21 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -1558,6 +1893,7 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -1695,11 +2031,30 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -1737,6 +2092,11 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -1791,8 +2151,24 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -1825,6 +2201,11 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -1879,8 +2260,24 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -1913,6 +2310,11 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -1946,7 +2348,21 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -1991,6 +2407,8 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -2019,7 +2437,21 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -2059,6 +2491,7 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -2087,7 +2520,21 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -2127,6 +2574,7 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -2273,11 +2721,30 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -2315,6 +2782,11 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -2369,8 +2841,24 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -2403,6 +2891,11 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -2457,8 +2950,24 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -2491,6 +3000,11 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -2524,7 +3038,21 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -2569,6 +3097,8 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -2597,7 +3127,21 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -2637,6 +3181,7 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -2665,7 +3210,21 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -2705,6 +3264,7 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -2866,11 +3426,30 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -2908,6 +3487,11 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -2962,8 +3546,24 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -2996,6 +3596,11 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -3050,8 +3655,24 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -3084,6 +3705,11 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -3117,7 +3743,21 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -3162,6 +3802,8 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -3190,7 +3832,21 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -3230,6 +3886,7 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -3258,7 +3915,21 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -3298,6 +3969,7 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -3497,11 +4169,30 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -3539,6 +4230,11 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -3593,8 +4289,24 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -3627,6 +4339,11 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -3681,8 +4398,24 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -3715,6 +4448,11 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -3748,7 +4486,21 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -3793,6 +4545,8 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -3821,7 +4575,21 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -3861,6 +4629,7 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -3889,7 +4658,21 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -3929,6 +4712,7 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -4135,11 +4919,30 @@ class _$SdkEvent_PushNotificationMessagesImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -4177,6 +4980,11 @@ class _$SdkEvent_PushNotificationMessagesImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -4231,8 +5039,24 @@ class _$SdkEvent_PushNotificationMessagesImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -4265,6 +5089,11 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -4319,8 +5148,24 @@ class _$SdkEvent_PushNotificationMessagesImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -4353,6 +5198,11 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -4386,7 +5236,21 @@ class _$SdkEvent_PushNotificationMessagesImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -4431,6 +5295,8 @@ class _$SdkEvent_PushNotificationMessagesImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -4459,7 +5325,21 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -4499,6 +5379,7 @@ class _$SdkEvent_PushNotificationMessagesImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -4527,7 +5408,21 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -4567,6 +5462,7 @@ class _$SdkEvent_PushNotificationMessagesImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -4692,11 +5588,30 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -4734,6 +5649,11 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -4788,8 +5708,24 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -4822,6 +5758,11 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -4876,8 +5817,24 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -4910,6 +5867,11 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -4943,7 +5905,21 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -4988,6 +5964,8 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -5016,7 +5994,21 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -5056,6 +6048,7 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -5084,7 +6077,21 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -5124,6 +6131,7 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -5272,11 +6280,30 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -5314,6 +6341,11 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -5368,8 +6400,24 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -5402,6 +6450,11 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -5456,8 +6509,24 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -5490,6 +6559,11 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -5523,7 +6597,21 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -5568,6 +6656,8 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -5596,7 +6686,21 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -5636,6 +6740,7 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -5664,7 +6769,21 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -5704,6 +6823,7 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -5823,11 +6943,30 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -5865,6 +7004,11 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -5919,8 +7063,24 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -5953,6 +7113,11 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -6007,8 +7172,24 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -6041,6 +7222,11 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -6074,7 +7260,21 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -6119,6 +7319,8 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -6147,7 +7349,21 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -6187,6 +7403,7 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -6215,7 +7432,21 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -6255,6 +7486,7 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -6391,11 +7623,30 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -6433,6 +7684,11 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -6487,8 +7743,24 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -6521,6 +7793,11 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -6575,8 +7852,24 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -6609,6 +7902,11 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -6642,7 +7940,21 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -6687,6 +7999,8 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -6715,7 +8029,21 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -6755,6 +8083,7 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -6783,7 +8112,21 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -6823,6 +8166,7 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -6968,11 +8312,30 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -7010,6 +8373,11 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -7064,8 +8432,24 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -7098,6 +8482,11 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -7152,8 +8541,24 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -7186,6 +8591,11 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -7219,7 +8629,21 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -7264,6 +8688,8 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -7292,7 +8718,21 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -7332,6 +8772,7 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -7360,7 +8801,21 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -7400,6 +8855,7 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -7695,11 +9151,30 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -7737,6 +9212,11 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -7805,8 +9285,24 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -7839,6 +9335,11 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -7907,8 +9408,24 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -7941,6 +9458,11 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -7988,7 +9510,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -8033,6 +9569,8 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -8061,7 +9599,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -8101,6 +9653,7 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -8129,7 +9682,21 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -8169,6 +9736,7 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -8350,11 +9918,30 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -8392,6 +9979,11 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -8446,8 +10038,24 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -8480,6 +10088,11 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -8534,8 +10147,24 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -8568,6 +10197,11 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -8601,7 +10235,21 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -8646,6 +10294,8 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -8674,7 +10324,21 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -8714,6 +10378,7 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -8742,7 +10407,21 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -8782,6 +10461,7 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -8811,6 +10491,743 @@ abstract class SdkEvent_MessageSendFailed extends SdkEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$SdkEvent_MessageSendFailedImplCopyWith<_$SdkEvent_MessageSendFailedImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_UploadProgressImplCopyWith<$Res> {
+  factory _$$SdkEvent_UploadProgressImplCopyWith(
+    _$SdkEvent_UploadProgressImpl value,
+    $Res Function(_$SdkEvent_UploadProgressImpl) then,
+  ) = __$$SdkEvent_UploadProgressImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({
+    String clientMsgId,
+    int progress,
+    BigInt totalSize,
+    BigInt uploadedSize,
+  });
+}
+
+/// @nodoc
+class __$$SdkEvent_UploadProgressImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_UploadProgressImpl>
+    implements _$$SdkEvent_UploadProgressImplCopyWith<$Res> {
+  __$$SdkEvent_UploadProgressImplCopyWithImpl(
+    _$SdkEvent_UploadProgressImpl _value,
+    $Res Function(_$SdkEvent_UploadProgressImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? clientMsgId = null,
+    Object? progress = null,
+    Object? totalSize = null,
+    Object? uploadedSize = null,
+  }) {
+    return _then(
+      _$SdkEvent_UploadProgressImpl(
+        clientMsgId: null == clientMsgId
+            ? _value.clientMsgId
+            : clientMsgId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        progress: null == progress
+            ? _value.progress
+            : progress // ignore: cast_nullable_to_non_nullable
+                  as int,
+        totalSize: null == totalSize
+            ? _value.totalSize
+            : totalSize // ignore: cast_nullable_to_non_nullable
+                  as BigInt,
+        uploadedSize: null == uploadedSize
+            ? _value.uploadedSize
+            : uploadedSize // ignore: cast_nullable_to_non_nullable
+                  as BigInt,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
+  const _$SdkEvent_UploadProgressImpl({
+    required this.clientMsgId,
+    required this.progress,
+    required this.totalSize,
+    required this.uploadedSize,
+  }) : super._();
+
+  @override
+  final String clientMsgId;
+  @override
+  final int progress;
+  @override
+  final BigInt totalSize;
+  @override
+  final BigInt uploadedSize;
+
+  @override
+  String toString() {
+    return 'SdkEvent.uploadProgress(clientMsgId: $clientMsgId, progress: $progress, totalSize: $totalSize, uploadedSize: $uploadedSize)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_UploadProgressImpl &&
+            (identical(other.clientMsgId, clientMsgId) ||
+                other.clientMsgId == clientMsgId) &&
+            (identical(other.progress, progress) ||
+                other.progress == progress) &&
+            (identical(other.totalSize, totalSize) ||
+                other.totalSize == totalSize) &&
+            (identical(other.uploadedSize, uploadedSize) ||
+                other.uploadedSize == uploadedSize));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, clientMsgId, progress, totalSize, uploadedSize);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_UploadProgressImplCopyWith<_$SdkEvent_UploadProgressImpl>
+  get copyWith =>
+      __$$SdkEvent_UploadProgressImplCopyWithImpl<
+        _$SdkEvent_UploadProgressImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return uploadProgress(clientMsgId, progress, totalSize, uploadedSize);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return uploadProgress?.call(clientMsgId, progress, totalSize, uploadedSize);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (uploadProgress != null) {
+      return uploadProgress(clientMsgId, progress, totalSize, uploadedSize);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return uploadProgress(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return uploadProgress?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (uploadProgress != null) {
+      return uploadProgress(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_UploadProgress extends SdkEvent {
+  const factory SdkEvent_UploadProgress({
+    required final String clientMsgId,
+    required final int progress,
+    required final BigInt totalSize,
+    required final BigInt uploadedSize,
+  }) = _$SdkEvent_UploadProgressImpl;
+  const SdkEvent_UploadProgress._() : super._();
+
+  String get clientMsgId;
+  int get progress;
+  BigInt get totalSize;
+  BigInt get uploadedSize;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_UploadProgressImplCopyWith<_$SdkEvent_UploadProgressImpl>
   get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -8955,11 +11372,30 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -8997,6 +11433,11 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -9051,8 +11492,24 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -9085,6 +11542,11 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -9139,8 +11601,24 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -9173,6 +11651,11 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -9206,7 +11689,21 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -9251,6 +11748,8 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -9279,7 +11778,21 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -9319,6 +11832,7 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -9347,7 +11861,21 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -9387,6 +11915,7 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -9418,6 +11947,5589 @@ abstract class SdkEvent_MessageRevoked extends SdkEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$SdkEvent_MessageRevokedImplCopyWith<_$SdkEvent_MessageRevokedImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_C2CReadReceiptImplCopyWith<$Res> {
+  factory _$$SdkEvent_C2CReadReceiptImplCopyWith(
+    _$SdkEvent_C2CReadReceiptImpl value,
+    $Res Function(_$SdkEvent_C2CReadReceiptImpl) then,
+  ) = __$$SdkEvent_C2CReadReceiptImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({List<MessageReceipt> receipts});
+}
+
+/// @nodoc
+class __$$SdkEvent_C2CReadReceiptImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_C2CReadReceiptImpl>
+    implements _$$SdkEvent_C2CReadReceiptImplCopyWith<$Res> {
+  __$$SdkEvent_C2CReadReceiptImplCopyWithImpl(
+    _$SdkEvent_C2CReadReceiptImpl _value,
+    $Res Function(_$SdkEvent_C2CReadReceiptImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? receipts = null}) {
+    return _then(
+      _$SdkEvent_C2CReadReceiptImpl(
+        receipts: null == receipts
+            ? _value._receipts
+            : receipts // ignore: cast_nullable_to_non_nullable
+                  as List<MessageReceipt>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
+  const _$SdkEvent_C2CReadReceiptImpl({
+    required final List<MessageReceipt> receipts,
+  }) : _receipts = receipts,
+       super._();
+
+  final List<MessageReceipt> _receipts;
+  @override
+  List<MessageReceipt> get receipts {
+    if (_receipts is EqualUnmodifiableListView) return _receipts;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_receipts);
+  }
+
+  @override
+  String toString() {
+    return 'SdkEvent.c2CReadReceipt(receipts: $receipts)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_C2CReadReceiptImpl &&
+            const DeepCollectionEquality().equals(other._receipts, _receipts));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_receipts));
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_C2CReadReceiptImplCopyWith<_$SdkEvent_C2CReadReceiptImpl>
+  get copyWith =>
+      __$$SdkEvent_C2CReadReceiptImplCopyWithImpl<
+        _$SdkEvent_C2CReadReceiptImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return c2CReadReceipt(receipts);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return c2CReadReceipt?.call(receipts);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (c2CReadReceipt != null) {
+      return c2CReadReceipt(receipts);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return c2CReadReceipt(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return c2CReadReceipt?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (c2CReadReceipt != null) {
+      return c2CReadReceipt(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_C2CReadReceipt extends SdkEvent {
+  const factory SdkEvent_C2CReadReceipt({
+    required final List<MessageReceipt> receipts,
+  }) = _$SdkEvent_C2CReadReceiptImpl;
+  const SdkEvent_C2CReadReceipt._() : super._();
+
+  List<MessageReceipt> get receipts;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_C2CReadReceiptImplCopyWith<_$SdkEvent_C2CReadReceiptImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_GroupReadReceiptImplCopyWith<$Res> {
+  factory _$$SdkEvent_GroupReadReceiptImplCopyWith(
+    _$SdkEvent_GroupReadReceiptImpl value,
+    $Res Function(_$SdkEvent_GroupReadReceiptImpl) then,
+  ) = __$$SdkEvent_GroupReadReceiptImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({List<GroupReadReceipt> receipts});
+}
+
+/// @nodoc
+class __$$SdkEvent_GroupReadReceiptImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_GroupReadReceiptImpl>
+    implements _$$SdkEvent_GroupReadReceiptImplCopyWith<$Res> {
+  __$$SdkEvent_GroupReadReceiptImplCopyWithImpl(
+    _$SdkEvent_GroupReadReceiptImpl _value,
+    $Res Function(_$SdkEvent_GroupReadReceiptImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? receipts = null}) {
+    return _then(
+      _$SdkEvent_GroupReadReceiptImpl(
+        receipts: null == receipts
+            ? _value._receipts
+            : receipts // ignore: cast_nullable_to_non_nullable
+                  as List<GroupReadReceipt>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
+  const _$SdkEvent_GroupReadReceiptImpl({
+    required final List<GroupReadReceipt> receipts,
+  }) : _receipts = receipts,
+       super._();
+
+  final List<GroupReadReceipt> _receipts;
+  @override
+  List<GroupReadReceipt> get receipts {
+    if (_receipts is EqualUnmodifiableListView) return _receipts;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_receipts);
+  }
+
+  @override
+  String toString() {
+    return 'SdkEvent.groupReadReceipt(receipts: $receipts)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_GroupReadReceiptImpl &&
+            const DeepCollectionEquality().equals(other._receipts, _receipts));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_receipts));
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_GroupReadReceiptImplCopyWith<_$SdkEvent_GroupReadReceiptImpl>
+  get copyWith =>
+      __$$SdkEvent_GroupReadReceiptImplCopyWithImpl<
+        _$SdkEvent_GroupReadReceiptImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return groupReadReceipt(receipts);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return groupReadReceipt?.call(receipts);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (groupReadReceipt != null) {
+      return groupReadReceipt(receipts);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return groupReadReceipt(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return groupReadReceipt?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (groupReadReceipt != null) {
+      return groupReadReceipt(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_GroupReadReceipt extends SdkEvent {
+  const factory SdkEvent_GroupReadReceipt({
+    required final List<GroupReadReceipt> receipts,
+  }) = _$SdkEvent_GroupReadReceiptImpl;
+  const SdkEvent_GroupReadReceipt._() : super._();
+
+  List<GroupReadReceipt> get receipts;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_GroupReadReceiptImplCopyWith<_$SdkEvent_GroupReadReceiptImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_ConversationUserInputStatusChangedImplCopyWith<
+  $Res
+> {
+  factory _$$SdkEvent_ConversationUserInputStatusChangedImplCopyWith(
+    _$SdkEvent_ConversationUserInputStatusChangedImpl value,
+    $Res Function(_$SdkEvent_ConversationUserInputStatusChangedImpl) then,
+  ) = __$$SdkEvent_ConversationUserInputStatusChangedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({InputStatusChangedData data});
+}
+
+/// @nodoc
+class __$$SdkEvent_ConversationUserInputStatusChangedImplCopyWithImpl<$Res>
+    extends
+        _$SdkEventCopyWithImpl<
+          $Res,
+          _$SdkEvent_ConversationUserInputStatusChangedImpl
+        >
+    implements
+        _$$SdkEvent_ConversationUserInputStatusChangedImplCopyWith<$Res> {
+  __$$SdkEvent_ConversationUserInputStatusChangedImplCopyWithImpl(
+    _$SdkEvent_ConversationUserInputStatusChangedImpl _value,
+    $Res Function(_$SdkEvent_ConversationUserInputStatusChangedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? data = null}) {
+    return _then(
+      _$SdkEvent_ConversationUserInputStatusChangedImpl(
+        data: null == data
+            ? _value.data
+            : data // ignore: cast_nullable_to_non_nullable
+                  as InputStatusChangedData,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_ConversationUserInputStatusChangedImpl
+    extends SdkEvent_ConversationUserInputStatusChanged {
+  const _$SdkEvent_ConversationUserInputStatusChangedImpl({required this.data})
+    : super._();
+
+  @override
+  final InputStatusChangedData data;
+
+  @override
+  String toString() {
+    return 'SdkEvent.conversationUserInputStatusChanged(data: $data)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_ConversationUserInputStatusChangedImpl &&
+            (identical(other.data, data) || other.data == data));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, data);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_ConversationUserInputStatusChangedImplCopyWith<
+    _$SdkEvent_ConversationUserInputStatusChangedImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_ConversationUserInputStatusChangedImplCopyWithImpl<
+        _$SdkEvent_ConversationUserInputStatusChangedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return conversationUserInputStatusChanged(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return conversationUserInputStatusChanged?.call(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (conversationUserInputStatusChanged != null) {
+      return conversationUserInputStatusChanged(data);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return conversationUserInputStatusChanged(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return conversationUserInputStatusChanged?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (conversationUserInputStatusChanged != null) {
+      return conversationUserInputStatusChanged(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_ConversationUserInputStatusChanged extends SdkEvent {
+  const factory SdkEvent_ConversationUserInputStatusChanged({
+    required final InputStatusChangedData data,
+  }) = _$SdkEvent_ConversationUserInputStatusChangedImpl;
+  const SdkEvent_ConversationUserInputStatusChanged._() : super._();
+
+  InputStatusChangedData get data;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_ConversationUserInputStatusChangedImplCopyWith<
+    _$SdkEvent_ConversationUserInputStatusChangedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_RecvOfflineNewMessageImplCopyWith<$Res> {
+  factory _$$SdkEvent_RecvOfflineNewMessageImplCopyWith(
+    _$SdkEvent_RecvOfflineNewMessageImpl value,
+    $Res Function(_$SdkEvent_RecvOfflineNewMessageImpl) then,
+  ) = __$$SdkEvent_RecvOfflineNewMessageImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({List<ReceivedMessage> messages});
+}
+
+/// @nodoc
+class __$$SdkEvent_RecvOfflineNewMessageImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_RecvOfflineNewMessageImpl>
+    implements _$$SdkEvent_RecvOfflineNewMessageImplCopyWith<$Res> {
+  __$$SdkEvent_RecvOfflineNewMessageImplCopyWithImpl(
+    _$SdkEvent_RecvOfflineNewMessageImpl _value,
+    $Res Function(_$SdkEvent_RecvOfflineNewMessageImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? messages = null}) {
+    return _then(
+      _$SdkEvent_RecvOfflineNewMessageImpl(
+        messages: null == messages
+            ? _value._messages
+            : messages // ignore: cast_nullable_to_non_nullable
+                  as List<ReceivedMessage>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_RecvOfflineNewMessageImpl
+    extends SdkEvent_RecvOfflineNewMessage {
+  const _$SdkEvent_RecvOfflineNewMessageImpl({
+    required final List<ReceivedMessage> messages,
+  }) : _messages = messages,
+       super._();
+
+  final List<ReceivedMessage> _messages;
+  @override
+  List<ReceivedMessage> get messages {
+    if (_messages is EqualUnmodifiableListView) return _messages;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_messages);
+  }
+
+  @override
+  String toString() {
+    return 'SdkEvent.recvOfflineNewMessage(messages: $messages)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_RecvOfflineNewMessageImpl &&
+            const DeepCollectionEquality().equals(other._messages, _messages));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_messages));
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_RecvOfflineNewMessageImplCopyWith<
+    _$SdkEvent_RecvOfflineNewMessageImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_RecvOfflineNewMessageImplCopyWithImpl<
+        _$SdkEvent_RecvOfflineNewMessageImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return recvOfflineNewMessage(messages);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return recvOfflineNewMessage?.call(messages);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (recvOfflineNewMessage != null) {
+      return recvOfflineNewMessage(messages);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return recvOfflineNewMessage(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return recvOfflineNewMessage?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (recvOfflineNewMessage != null) {
+      return recvOfflineNewMessage(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_RecvOfflineNewMessage extends SdkEvent {
+  const factory SdkEvent_RecvOfflineNewMessage({
+    required final List<ReceivedMessage> messages,
+  }) = _$SdkEvent_RecvOfflineNewMessageImpl;
+  const SdkEvent_RecvOfflineNewMessage._() : super._();
+
+  List<ReceivedMessage> get messages;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_RecvOfflineNewMessageImplCopyWith<
+    _$SdkEvent_RecvOfflineNewMessageImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_MsgEditedImplCopyWith<$Res> {
+  factory _$$SdkEvent_MsgEditedImplCopyWith(
+    _$SdkEvent_MsgEditedImpl value,
+    $Res Function(_$SdkEvent_MsgEditedImpl) then,
+  ) = __$$SdkEvent_MsgEditedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({ReceivedMessage message});
+}
+
+/// @nodoc
+class __$$SdkEvent_MsgEditedImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_MsgEditedImpl>
+    implements _$$SdkEvent_MsgEditedImplCopyWith<$Res> {
+  __$$SdkEvent_MsgEditedImplCopyWithImpl(
+    _$SdkEvent_MsgEditedImpl _value,
+    $Res Function(_$SdkEvent_MsgEditedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? message = null}) {
+    return _then(
+      _$SdkEvent_MsgEditedImpl(
+        message: null == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as ReceivedMessage,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
+  const _$SdkEvent_MsgEditedImpl({required this.message}) : super._();
+
+  @override
+  final ReceivedMessage message;
+
+  @override
+  String toString() {
+    return 'SdkEvent.msgEdited(message: $message)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_MsgEditedImpl &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, message);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_MsgEditedImplCopyWith<_$SdkEvent_MsgEditedImpl> get copyWith =>
+      __$$SdkEvent_MsgEditedImplCopyWithImpl<_$SdkEvent_MsgEditedImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return msgEdited(message);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return msgEdited?.call(message);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (msgEdited != null) {
+      return msgEdited(message);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return msgEdited(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return msgEdited?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (msgEdited != null) {
+      return msgEdited(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_MsgEdited extends SdkEvent {
+  const factory SdkEvent_MsgEdited({required final ReceivedMessage message}) =
+      _$SdkEvent_MsgEditedImpl;
+  const SdkEvent_MsgEdited._() : super._();
+
+  ReceivedMessage get message;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_MsgEditedImplCopyWith<_$SdkEvent_MsgEditedImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_MessageExtensionsAddedImplCopyWith<$Res> {
+  factory _$$SdkEvent_MessageExtensionsAddedImplCopyWith(
+    _$SdkEvent_MessageExtensionsAddedImpl value,
+    $Res Function(_$SdkEvent_MessageExtensionsAddedImpl) then,
+  ) = __$$SdkEvent_MessageExtensionsAddedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({MessageExtensionData data});
+}
+
+/// @nodoc
+class __$$SdkEvent_MessageExtensionsAddedImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_MessageExtensionsAddedImpl>
+    implements _$$SdkEvent_MessageExtensionsAddedImplCopyWith<$Res> {
+  __$$SdkEvent_MessageExtensionsAddedImplCopyWithImpl(
+    _$SdkEvent_MessageExtensionsAddedImpl _value,
+    $Res Function(_$SdkEvent_MessageExtensionsAddedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? data = null}) {
+    return _then(
+      _$SdkEvent_MessageExtensionsAddedImpl(
+        data: null == data
+            ? _value.data
+            : data // ignore: cast_nullable_to_non_nullable
+                  as MessageExtensionData,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_MessageExtensionsAddedImpl
+    extends SdkEvent_MessageExtensionsAdded {
+  const _$SdkEvent_MessageExtensionsAddedImpl({required this.data}) : super._();
+
+  @override
+  final MessageExtensionData data;
+
+  @override
+  String toString() {
+    return 'SdkEvent.messageExtensionsAdded(data: $data)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_MessageExtensionsAddedImpl &&
+            (identical(other.data, data) || other.data == data));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, data);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_MessageExtensionsAddedImplCopyWith<
+    _$SdkEvent_MessageExtensionsAddedImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_MessageExtensionsAddedImplCopyWithImpl<
+        _$SdkEvent_MessageExtensionsAddedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return messageExtensionsAdded(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return messageExtensionsAdded?.call(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (messageExtensionsAdded != null) {
+      return messageExtensionsAdded(data);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return messageExtensionsAdded(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return messageExtensionsAdded?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (messageExtensionsAdded != null) {
+      return messageExtensionsAdded(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_MessageExtensionsAdded extends SdkEvent {
+  const factory SdkEvent_MessageExtensionsAdded({
+    required final MessageExtensionData data,
+  }) = _$SdkEvent_MessageExtensionsAddedImpl;
+  const SdkEvent_MessageExtensionsAdded._() : super._();
+
+  MessageExtensionData get data;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_MessageExtensionsAddedImplCopyWith<
+    _$SdkEvent_MessageExtensionsAddedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_MessageExtensionsChangedImplCopyWith<$Res> {
+  factory _$$SdkEvent_MessageExtensionsChangedImplCopyWith(
+    _$SdkEvent_MessageExtensionsChangedImpl value,
+    $Res Function(_$SdkEvent_MessageExtensionsChangedImpl) then,
+  ) = __$$SdkEvent_MessageExtensionsChangedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({MessageExtensionData data});
+}
+
+/// @nodoc
+class __$$SdkEvent_MessageExtensionsChangedImplCopyWithImpl<$Res>
+    extends
+        _$SdkEventCopyWithImpl<$Res, _$SdkEvent_MessageExtensionsChangedImpl>
+    implements _$$SdkEvent_MessageExtensionsChangedImplCopyWith<$Res> {
+  __$$SdkEvent_MessageExtensionsChangedImplCopyWithImpl(
+    _$SdkEvent_MessageExtensionsChangedImpl _value,
+    $Res Function(_$SdkEvent_MessageExtensionsChangedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? data = null}) {
+    return _then(
+      _$SdkEvent_MessageExtensionsChangedImpl(
+        data: null == data
+            ? _value.data
+            : data // ignore: cast_nullable_to_non_nullable
+                  as MessageExtensionData,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_MessageExtensionsChangedImpl
+    extends SdkEvent_MessageExtensionsChanged {
+  const _$SdkEvent_MessageExtensionsChangedImpl({required this.data})
+    : super._();
+
+  @override
+  final MessageExtensionData data;
+
+  @override
+  String toString() {
+    return 'SdkEvent.messageExtensionsChanged(data: $data)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_MessageExtensionsChangedImpl &&
+            (identical(other.data, data) || other.data == data));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, data);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_MessageExtensionsChangedImplCopyWith<
+    _$SdkEvent_MessageExtensionsChangedImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_MessageExtensionsChangedImplCopyWithImpl<
+        _$SdkEvent_MessageExtensionsChangedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return messageExtensionsChanged(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return messageExtensionsChanged?.call(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (messageExtensionsChanged != null) {
+      return messageExtensionsChanged(data);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return messageExtensionsChanged(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return messageExtensionsChanged?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (messageExtensionsChanged != null) {
+      return messageExtensionsChanged(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_MessageExtensionsChanged extends SdkEvent {
+  const factory SdkEvent_MessageExtensionsChanged({
+    required final MessageExtensionData data,
+  }) = _$SdkEvent_MessageExtensionsChangedImpl;
+  const SdkEvent_MessageExtensionsChanged._() : super._();
+
+  MessageExtensionData get data;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_MessageExtensionsChangedImplCopyWith<
+    _$SdkEvent_MessageExtensionsChangedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_MessageExtensionsDeletedImplCopyWith<$Res> {
+  factory _$$SdkEvent_MessageExtensionsDeletedImplCopyWith(
+    _$SdkEvent_MessageExtensionsDeletedImpl value,
+    $Res Function(_$SdkEvent_MessageExtensionsDeletedImpl) then,
+  ) = __$$SdkEvent_MessageExtensionsDeletedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({MessageExtensionData data});
+}
+
+/// @nodoc
+class __$$SdkEvent_MessageExtensionsDeletedImplCopyWithImpl<$Res>
+    extends
+        _$SdkEventCopyWithImpl<$Res, _$SdkEvent_MessageExtensionsDeletedImpl>
+    implements _$$SdkEvent_MessageExtensionsDeletedImplCopyWith<$Res> {
+  __$$SdkEvent_MessageExtensionsDeletedImplCopyWithImpl(
+    _$SdkEvent_MessageExtensionsDeletedImpl _value,
+    $Res Function(_$SdkEvent_MessageExtensionsDeletedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? data = null}) {
+    return _then(
+      _$SdkEvent_MessageExtensionsDeletedImpl(
+        data: null == data
+            ? _value.data
+            : data // ignore: cast_nullable_to_non_nullable
+                  as MessageExtensionData,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_MessageExtensionsDeletedImpl
+    extends SdkEvent_MessageExtensionsDeleted {
+  const _$SdkEvent_MessageExtensionsDeletedImpl({required this.data})
+    : super._();
+
+  @override
+  final MessageExtensionData data;
+
+  @override
+  String toString() {
+    return 'SdkEvent.messageExtensionsDeleted(data: $data)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_MessageExtensionsDeletedImpl &&
+            (identical(other.data, data) || other.data == data));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, data);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_MessageExtensionsDeletedImplCopyWith<
+    _$SdkEvent_MessageExtensionsDeletedImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_MessageExtensionsDeletedImplCopyWithImpl<
+        _$SdkEvent_MessageExtensionsDeletedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return messageExtensionsDeleted(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return messageExtensionsDeleted?.call(data);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (messageExtensionsDeleted != null) {
+      return messageExtensionsDeleted(data);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return messageExtensionsDeleted(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return messageExtensionsDeleted?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (messageExtensionsDeleted != null) {
+      return messageExtensionsDeleted(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_MessageExtensionsDeleted extends SdkEvent {
+  const factory SdkEvent_MessageExtensionsDeleted({
+    required final MessageExtensionData data,
+  }) = _$SdkEvent_MessageExtensionsDeletedImpl;
+  const SdkEvent_MessageExtensionsDeleted._() : super._();
+
+  MessageExtensionData get data;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_MessageExtensionsDeletedImplCopyWith<
+    _$SdkEvent_MessageExtensionsDeletedImpl
+  >
   get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -9561,11 +17673,30 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -9603,6 +17734,11 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -9657,8 +17793,24 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -9691,6 +17843,11 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -9745,8 +17902,24 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -9779,6 +17952,11 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -9812,7 +17990,21 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -9857,6 +18049,8 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -9885,7 +18079,21 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -9925,6 +18133,7 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -9953,7 +18162,21 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -9993,6 +18216,7 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -10157,11 +18381,30 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -10199,6 +18442,11 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -10253,8 +18501,24 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -10287,6 +18551,11 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -10341,8 +18610,24 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -10375,6 +18660,11 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -10408,7 +18698,21 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -10453,6 +18757,8 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -10481,7 +18787,21 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -10521,6 +18841,7 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -10549,7 +18870,21 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -10589,6 +18924,7 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -10753,11 +19089,30 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -10795,6 +19150,11 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -10849,8 +19209,24 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -10883,6 +19259,11 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -10937,8 +19318,24 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -10971,6 +19368,11 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -11004,7 +19406,21 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -11049,6 +19465,8 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -11077,7 +19495,21 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -11117,6 +19549,7 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -11145,7 +19578,21 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -11185,6 +19632,7 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -11347,11 +19795,30 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -11389,6 +19856,11 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -11443,8 +19915,24 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -11477,6 +19965,11 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -11531,8 +20024,24 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -11565,6 +20074,11 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -11598,7 +20112,21 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -11643,6 +20171,8 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -11671,7 +20201,21 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -11711,6 +20255,7 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -11739,7 +20284,21 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -11779,6 +20338,7 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -11929,11 +20489,30 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -11971,6 +20550,11 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -12025,8 +20609,24 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -12059,6 +20659,11 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -12113,8 +20718,24 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -12147,6 +20768,11 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -12180,7 +20806,21 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -12225,6 +20865,8 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -12253,7 +20895,21 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -12293,6 +20949,7 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -12321,7 +20978,21 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -12361,6 +21032,7 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -12513,11 +21185,30 @@ class _$SdkEvent_FriendApplicationAddedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -12555,6 +21246,11 @@ class _$SdkEvent_FriendApplicationAddedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -12609,8 +21305,24 @@ class _$SdkEvent_FriendApplicationAddedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -12643,6 +21355,11 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -12697,8 +21414,24 @@ class _$SdkEvent_FriendApplicationAddedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -12731,6 +21464,11 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -12764,7 +21502,21 @@ class _$SdkEvent_FriendApplicationAddedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -12809,6 +21561,8 @@ class _$SdkEvent_FriendApplicationAddedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -12837,7 +21591,21 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -12877,6 +21645,7 @@ class _$SdkEvent_FriendApplicationAddedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -12905,7 +21674,21 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -12945,6 +21728,7 @@ class _$SdkEvent_FriendApplicationAddedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -13099,11 +21883,30 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -13141,6 +21944,11 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -13195,8 +22003,24 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -13229,6 +22053,11 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -13283,8 +22112,24 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -13317,6 +22162,11 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -13350,7 +22200,21 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -13395,6 +22259,8 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -13423,7 +22289,21 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -13463,6 +22343,7 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -13491,7 +22372,21 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -13531,6 +22426,7 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -13685,11 +22581,30 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -13727,6 +22642,11 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -13781,8 +22701,24 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -13815,6 +22751,11 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -13869,8 +22810,24 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -13903,6 +22860,11 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -13936,7 +22898,21 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -13981,6 +22957,8 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -14009,7 +22987,21 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -14049,6 +23041,7 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -14077,7 +23070,21 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -14117,6 +23124,7 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -14274,11 +23282,30 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -14316,6 +23343,11 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -14370,8 +23402,24 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -14404,6 +23452,11 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -14458,8 +23511,24 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -14492,6 +23561,11 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -14525,7 +23599,21 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -14570,6 +23658,8 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -14598,7 +23688,21 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -14638,6 +23742,7 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -14666,7 +23771,21 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -14706,6 +23825,7 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -14854,11 +23974,30 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -14896,6 +24035,11 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -14950,8 +24094,24 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -14984,6 +24144,11 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -15038,8 +24203,24 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -15072,6 +24253,11 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -15105,7 +24291,21 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -15150,6 +24350,8 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -15178,7 +24380,21 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -15218,6 +24434,7 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -15246,7 +24463,21 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -15286,6 +24517,7 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -15431,11 +24663,30 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -15473,6 +24724,11 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -15527,8 +24783,24 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -15561,6 +24833,11 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -15615,8 +24892,24 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -15649,6 +24942,11 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -15682,7 +24980,21 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -15727,6 +25039,8 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -15755,7 +25069,21 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -15795,6 +25123,7 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -15823,7 +25152,21 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -15863,6 +25206,7 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -16009,11 +25353,30 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -16051,6 +25414,11 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -16105,8 +25473,24 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -16139,6 +25523,11 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -16193,8 +25582,24 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -16227,6 +25632,11 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -16260,7 +25670,21 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -16305,6 +25729,8 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -16333,7 +25759,21 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -16373,6 +25813,7 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -16401,7 +25842,21 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -16441,6 +25896,7 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -16586,11 +26042,30 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -16628,6 +26103,11 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -16682,8 +26162,24 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -16716,6 +26212,11 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -16770,8 +26271,24 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -16804,6 +26321,11 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -16837,7 +26359,21 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -16882,6 +26418,8 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -16910,7 +26448,21 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -16950,6 +26502,7 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -16978,7 +26531,21 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -17018,6 +26585,7 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -17164,11 +26732,30 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -17206,6 +26793,11 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -17260,8 +26852,24 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -17294,6 +26902,11 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -17348,8 +26961,24 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -17382,6 +27011,11 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -17415,7 +27049,21 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -17460,6 +27108,8 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -17488,7 +27138,21 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -17528,6 +27192,7 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -17556,7 +27221,21 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -17596,6 +27275,7 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -17741,11 +27421,30 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -17783,6 +27482,11 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -17837,8 +27541,24 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -17871,6 +27591,11 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -17925,8 +27650,24 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -17959,6 +27700,11 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -17992,7 +27738,21 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -18037,6 +27797,8 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -18065,7 +27827,21 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -18105,6 +27881,7 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -18133,7 +27910,21 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -18173,6 +27964,7 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -18341,11 +28133,30 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -18383,6 +28194,11 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -18437,8 +28253,24 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -18471,6 +28303,11 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -18525,8 +28362,24 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -18559,6 +28412,11 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -18592,7 +28450,21 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -18637,6 +28509,8 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -18665,7 +28539,21 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -18705,6 +28593,7 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -18733,7 +28622,21 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -18773,6 +28676,7 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -18944,11 +28848,30 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -18986,6 +28909,11 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -19040,8 +28968,24 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -19074,6 +29018,11 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -19128,8 +29077,24 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -19162,6 +29127,11 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -19195,7 +29165,21 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -19240,6 +29224,8 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -19268,7 +29254,21 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -19308,6 +29308,7 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -19336,7 +29337,21 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -19376,6 +29391,7 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -19529,11 +29545,30 @@ class _$SdkEvent_GroupApplicationAddedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -19571,6 +29606,11 @@ class _$SdkEvent_GroupApplicationAddedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -19625,8 +29665,24 @@ class _$SdkEvent_GroupApplicationAddedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -19659,6 +29715,11 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -19713,8 +29774,24 @@ class _$SdkEvent_GroupApplicationAddedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -19747,6 +29824,11 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -19780,7 +29862,21 @@ class _$SdkEvent_GroupApplicationAddedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -19825,6 +29921,8 @@ class _$SdkEvent_GroupApplicationAddedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -19853,7 +29951,21 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -19893,6 +30005,7 @@ class _$SdkEvent_GroupApplicationAddedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -19921,7 +30034,21 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -19961,6 +30088,7 @@ class _$SdkEvent_GroupApplicationAddedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -20115,11 +30243,30 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -20157,6 +30304,11 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -20211,8 +30363,24 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -20245,6 +30413,11 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -20299,8 +30472,24 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -20333,6 +30522,11 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -20366,7 +30560,21 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -20411,6 +30619,8 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -20439,7 +30649,21 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -20479,6 +30703,7 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -20507,7 +30732,21 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -20547,6 +30786,7 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -20701,11 +30941,30 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -20743,6 +31002,11 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -20797,8 +31061,24 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -20831,6 +31111,11 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -20885,8 +31170,24 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -20919,6 +31220,11 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -20952,7 +31258,21 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -20997,6 +31317,8 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -21025,7 +31347,21 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -21065,6 +31401,7 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -21093,7 +31430,21 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -21133,6 +31484,7 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -21281,11 +31633,30 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -21323,6 +31694,11 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -21377,8 +31753,24 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -21411,6 +31803,11 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -21465,8 +31862,24 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -21499,6 +31912,11 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -21532,7 +31950,21 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -21577,6 +32009,8 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -21605,7 +32039,21 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -21645,6 +32093,7 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -21673,7 +32122,21 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -21713,6 +32176,7 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -21858,11 +32322,30 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -21900,6 +32383,11 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -21954,8 +32442,24 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -21988,6 +32492,11 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -22042,8 +32551,24 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -22076,6 +32601,11 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -22109,7 +32639,21 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -22154,6 +32698,8 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -22182,7 +32728,21 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -22222,6 +32782,7 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -22250,7 +32811,21 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -22290,6 +32865,7 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -22435,11 +33011,30 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -22477,6 +33072,11 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -22531,8 +33131,24 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -22565,6 +33181,11 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -22619,8 +33240,24 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -22653,6 +33290,11 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -22686,7 +33328,21 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -22731,6 +33387,8 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -22759,7 +33417,21 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -22799,6 +33471,7 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -22827,7 +33500,21 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -22867,6 +33554,7 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -23022,11 +33710,30 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -23064,6 +33771,11 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -23118,8 +33830,24 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -23152,6 +33880,11 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -23206,8 +33939,24 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -23240,6 +33989,11 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -23273,7 +34027,21 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -23318,6 +34086,8 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -23346,7 +34116,21 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -23386,6 +34170,7 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -23414,7 +34199,21 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -23454,6 +34253,7 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -23615,11 +34415,30 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -23657,6 +34476,11 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -23711,8 +34535,24 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -23745,6 +34585,11 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -23799,8 +34644,24 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -23833,6 +34694,11 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -23866,7 +34732,21 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -23911,6 +34791,8 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -23939,7 +34821,21 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -23979,6 +34875,7 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -24007,7 +34904,21 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -24047,6 +34958,7 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -24210,11 +35122,30 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -24252,6 +35183,11 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -24306,8 +35242,24 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -24340,6 +35292,11 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -24394,8 +35351,24 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -24428,6 +35401,11 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -24461,7 +35439,21 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -24506,6 +35498,8 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -24534,7 +35528,21 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -24574,6 +35582,7 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -24602,7 +35611,21 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -24642,6 +35665,7 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -24806,11 +35830,30 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -24848,6 +35891,11 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -24902,8 +35950,24 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -24936,6 +36000,11 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -24990,8 +36059,24 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -25024,6 +36109,11 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -25057,7 +36147,21 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -25102,6 +36206,8 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -25130,7 +36236,21 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -25170,6 +36290,7 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -25198,7 +36319,21 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -25238,6 +36373,7 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -25388,11 +36524,30 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -25430,6 +36585,11 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -25484,8 +36644,24 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -25518,6 +36694,11 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -25572,8 +36753,24 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -25606,6 +36803,11 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -25639,7 +36841,21 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -25684,6 +36900,8 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -25712,7 +36930,21 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -25752,6 +36984,7 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -25780,7 +37013,21 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -25820,6 +37067,7 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -25995,11 +37243,30 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -26037,6 +37304,11 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -26091,8 +37363,24 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -26125,6 +37413,11 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -26179,8 +37472,24 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -26213,6 +37522,11 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -26246,7 +37560,21 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -26291,6 +37619,8 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -26319,7 +37649,21 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -26359,6 +37703,7 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -26387,7 +37732,21 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -26427,6 +37786,7 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -26458,6 +37818,735 @@ abstract class SdkEvent_UserStatusChanged extends SdkEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$SdkEvent_UserStatusChangedImplCopyWith<_$SdkEvent_UserStatusChangedImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_BatchedPushMessagesImplCopyWith<$Res> {
+  factory _$$SdkEvent_BatchedPushMessagesImplCopyWith(
+    _$SdkEvent_BatchedPushMessagesImpl value,
+    $Res Function(_$SdkEvent_BatchedPushMessagesImpl) then,
+  ) = __$$SdkEvent_BatchedPushMessagesImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({
+    Map<String, PullMsgs> msgs,
+    Map<String, PullMsgs> notificationMsgs,
+  });
+}
+
+/// @nodoc
+class __$$SdkEvent_BatchedPushMessagesImplCopyWithImpl<$Res>
+    extends _$SdkEventCopyWithImpl<$Res, _$SdkEvent_BatchedPushMessagesImpl>
+    implements _$$SdkEvent_BatchedPushMessagesImplCopyWith<$Res> {
+  __$$SdkEvent_BatchedPushMessagesImplCopyWithImpl(
+    _$SdkEvent_BatchedPushMessagesImpl _value,
+    $Res Function(_$SdkEvent_BatchedPushMessagesImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? msgs = null, Object? notificationMsgs = null}) {
+    return _then(
+      _$SdkEvent_BatchedPushMessagesImpl(
+        msgs: null == msgs
+            ? _value._msgs
+            : msgs // ignore: cast_nullable_to_non_nullable
+                  as Map<String, PullMsgs>,
+        notificationMsgs: null == notificationMsgs
+            ? _value._notificationMsgs
+            : notificationMsgs // ignore: cast_nullable_to_non_nullable
+                  as Map<String, PullMsgs>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
+  const _$SdkEvent_BatchedPushMessagesImpl({
+    required final Map<String, PullMsgs> msgs,
+    required final Map<String, PullMsgs> notificationMsgs,
+  }) : _msgs = msgs,
+       _notificationMsgs = notificationMsgs,
+       super._();
+
+  final Map<String, PullMsgs> _msgs;
+  @override
+  Map<String, PullMsgs> get msgs {
+    if (_msgs is EqualUnmodifiableMapView) return _msgs;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_msgs);
+  }
+
+  final Map<String, PullMsgs> _notificationMsgs;
+  @override
+  Map<String, PullMsgs> get notificationMsgs {
+    if (_notificationMsgs is EqualUnmodifiableMapView) return _notificationMsgs;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_notificationMsgs);
+  }
+
+  @override
+  String toString() {
+    return 'SdkEvent.batchedPushMessages(msgs: $msgs, notificationMsgs: $notificationMsgs)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_BatchedPushMessagesImpl &&
+            const DeepCollectionEquality().equals(other._msgs, _msgs) &&
+            const DeepCollectionEquality().equals(
+              other._notificationMsgs,
+              _notificationMsgs,
+            ));
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    const DeepCollectionEquality().hash(_msgs),
+    const DeepCollectionEquality().hash(_notificationMsgs),
+  );
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_BatchedPushMessagesImplCopyWith<
+    _$SdkEvent_BatchedPushMessagesImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_BatchedPushMessagesImplCopyWithImpl<
+        _$SdkEvent_BatchedPushMessagesImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return batchedPushMessages(msgs, notificationMsgs);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return batchedPushMessages?.call(msgs, notificationMsgs);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(String conversationId, int seq, String clientMsgId)?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (batchedPushMessages != null) {
+      return batchedPushMessages(msgs, notificationMsgs);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return batchedPushMessages(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return batchedPushMessages?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (batchedPushMessages != null) {
+      return batchedPushMessages(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_BatchedPushMessages extends SdkEvent {
+  const factory SdkEvent_BatchedPushMessages({
+    required final Map<String, PullMsgs> msgs,
+    required final Map<String, PullMsgs> notificationMsgs,
+  }) = _$SdkEvent_BatchedPushMessagesImpl;
+  const SdkEvent_BatchedPushMessages._() : super._();
+
+  Map<String, PullMsgs> get msgs;
+  Map<String, PullMsgs> get notificationMsgs;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_BatchedPushMessagesImplCopyWith<
+    _$SdkEvent_BatchedPushMessagesImpl
+  >
   get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -26578,11 +38667,30 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -26620,6 +38728,11 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -26674,8 +38787,24 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -26708,6 +38837,11 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -26762,8 +38896,24 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -26796,6 +38946,11 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -26829,7 +38984,21 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -26874,6 +39043,8 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -26902,7 +39073,21 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -26942,6 +39127,7 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -26970,7 +39156,21 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -27010,6 +39210,7 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -27167,11 +39368,30 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -27209,6 +39429,11 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -27263,8 +39488,24 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -27297,6 +39538,11 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -27351,8 +39597,24 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -27385,6 +39647,11 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -27418,7 +39685,21 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -27463,6 +39744,8 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -27491,7 +39774,21 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -27531,6 +39828,7 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -27559,7 +39857,21 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -27599,6 +39911,7 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -27718,11 +40031,30 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -27760,6 +40092,11 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -27814,8 +40151,24 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -27848,6 +40201,11 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -27902,8 +40260,24 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -27936,6 +40310,11 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -27969,7 +40348,21 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -28014,6 +40407,8 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -28042,7 +40437,21 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -28082,6 +40491,7 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -28110,7 +40520,21 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -28150,6 +40574,7 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -28287,11 +40712,30 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -28329,6 +40773,11 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -28383,8 +40832,24 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -28417,6 +40882,11 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -28471,8 +40941,24 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -28505,6 +40991,11 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -28538,7 +41029,21 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -28583,6 +41088,8 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -28611,7 +41118,21 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -28651,6 +41172,7 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -28679,7 +41201,21 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -28719,6 +41255,7 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -28834,11 +41371,30 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -28876,6 +41432,11 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -28930,8 +41491,24 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -28964,6 +41541,11 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -29018,8 +41600,24 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -29052,6 +41650,11 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -29085,7 +41688,21 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -29130,6 +41747,8 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -29158,7 +41777,21 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -29198,6 +41831,7 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -29226,7 +41860,21 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -29266,6 +41914,7 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -29414,11 +42063,30 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     required TResult Function(String clientMsgId, String error)
     messageSendFailed,
     required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
       String conversationId,
       int seq,
       String clientMsgId,
     )
     messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
     required TResult Function(String conversationId, List<String> clientMsgIds)
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
@@ -29456,6 +42124,11 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     required TResult Function(UserInfo user) userInfoUpdated,
     required TResult Function(String userId, int status, Int32List platformIds)
     userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
     required TResult Function(String reason) kickedOffline,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function() tokenExpired,
@@ -29510,8 +42183,24 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     )?
     messageSent,
     TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult? Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
@@ -29544,6 +42233,11 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult? Function(UserInfo user)? userInfoUpdated,
     TResult? Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult? Function(String reason)? kickedOffline,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function()? tokenExpired,
@@ -29598,8 +42292,24 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     )?
     messageSent,
     TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
     TResult Function(String conversationId, int seq, String clientMsgId)?
     messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
@@ -29632,6 +42342,11 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult Function(UserInfo user)? userInfoUpdated,
     TResult Function(String userId, int status, Int32List platformIds)?
     userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
     TResult Function(String reason)? kickedOffline,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function()? tokenExpired,
@@ -29665,7 +42380,21 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     required TResult Function(SdkEvent_MessageSent value) messageSent,
     required TResult Function(SdkEvent_MessageSendFailed value)
     messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
     required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
@@ -29710,6 +42439,8 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
     required TResult Function(SdkEvent_UserStatusChanged value)
     userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
     required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
     required TResult Function(SdkEvent_Reconnecting value) reconnecting,
     required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
@@ -29738,7 +42469,21 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult? Function(SdkEvent_NewMessage value)? newMessage,
     TResult? Function(SdkEvent_MessageSent value)? messageSent,
     TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -29778,6 +42523,7 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     groupOwnerTransferred,
     TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
@@ -29806,7 +42552,21 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult Function(SdkEvent_NewMessage value)? newMessage,
     TResult Function(SdkEvent_MessageSent value)? messageSent,
     TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
     TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
@@ -29846,6 +42606,7 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     groupOwnerTransferred,
     TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
     TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
     TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
     TResult Function(SdkEvent_Reconnecting value)? reconnecting,
     TResult Function(SdkEvent_TokenExpired value)? tokenExpired,

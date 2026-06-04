@@ -112,6 +112,7 @@ mod tests {
                 content: "{\"text\":\"hello\"}".into(),
                 seq: 1,
                 send_time: 1000,
+                is_online_only: false,
                 create_time: 1000,
                 conversation_id: "conv_1".into(),
                 group_id: String::new(),

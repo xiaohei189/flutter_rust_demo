@@ -20,6 +20,8 @@ pub struct ReceivedMessage {
     pub create_time: i64,
     pub conversation_id: String,
     pub group_id: String,
+    /// 是否仅在线推送（online_only 消息不增加未读数）
+    pub is_online_only: bool,
 }
 
 /// 消息信息（FFI 桥接用，将 protobuf MsgData 转换为 Dart 友好的结构体）

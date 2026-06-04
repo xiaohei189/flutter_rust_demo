@@ -13,6 +13,126 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'types.freezed.dart';
 
+/// 群聊已读回执（对齐 Go SDK `OnRecvGroupReadReceipt`）
+class GroupReadReceipt {
+  final String groupId;
+  final String msgId;
+  final List<String> hasReadUserIdList;
+  final int hasReadCount;
+  final int groupMemberCount;
+  final PlatformInt64 readTime;
+
+  const GroupReadReceipt({
+    required this.groupId,
+    required this.msgId,
+    required this.hasReadUserIdList,
+    required this.hasReadCount,
+    required this.groupMemberCount,
+    required this.readTime,
+  });
+
+  @override
+  int get hashCode =>
+      groupId.hashCode ^
+      msgId.hashCode ^
+      hasReadUserIdList.hashCode ^
+      hasReadCount.hashCode ^
+      groupMemberCount.hashCode ^
+      readTime.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupReadReceipt &&
+          runtimeType == other.runtimeType &&
+          groupId == other.groupId &&
+          msgId == other.msgId &&
+          hasReadUserIdList == other.hasReadUserIdList &&
+          hasReadCount == other.hasReadCount &&
+          groupMemberCount == other.groupMemberCount &&
+          readTime == other.readTime;
+}
+
+/// 用户输入状态变化数据（对齐 Go SDK `OnConversationUserInputStatusChanged`）
+class InputStatusChangedData {
+  final String conversationId;
+  final String userId;
+  final Int32List platformIds;
+
+  const InputStatusChangedData({
+    required this.conversationId,
+    required this.userId,
+    required this.platformIds,
+  });
+
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^ userId.hashCode ^ platformIds.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is InputStatusChangedData &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          userId == other.userId &&
+          platformIds == other.platformIds;
+}
+
+/// 消息扩展（Reaction）变更数据（对齐 Go SDK `OnRecvMessageExtensionsChanged` 等）
+class MessageExtensionData {
+  final String clientMsgId;
+  final String reactionExtensionList;
+
+  const MessageExtensionData({
+    required this.clientMsgId,
+    required this.reactionExtensionList,
+  });
+
+  @override
+  int get hashCode => clientMsgId.hashCode ^ reactionExtensionList.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MessageExtensionData &&
+          runtimeType == other.runtimeType &&
+          clientMsgId == other.clientMsgId &&
+          reactionExtensionList == other.reactionExtensionList;
+}
+
+/// C2C 已读回执（对齐 Go SDK `sdkws.MessageReceipt`）
+class MessageReceipt {
+  final String userId;
+  final List<String> msgIds;
+  final PlatformInt64 readTime;
+  final int sessionType;
+
+  const MessageReceipt({
+    required this.userId,
+    required this.msgIds,
+    required this.readTime,
+    required this.sessionType,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^
+      msgIds.hashCode ^
+      readTime.hashCode ^
+      sessionType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MessageReceipt &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          msgIds == other.msgIds &&
+          readTime == other.readTime &&
+          sessionType == other.sessionType;
+}
+
 @freezed
 sealed class SdkEvent with _$SdkEvent {
   const SdkEvent._();
@@ -68,11 +188,56 @@ sealed class SdkEvent with _$SdkEvent {
     required String clientMsgId,
     required String error,
   }) = SdkEvent_MessageSendFailed;
+  const factory SdkEvent.uploadProgress({
+    required String clientMsgId,
+    required int progress,
+    required BigInt totalSize,
+    required BigInt uploadedSize,
+  }) = SdkEvent_UploadProgress;
   const factory SdkEvent.messageRevoked({
     required String conversationId,
     required PlatformInt64 seq,
     required String clientMsgId,
   }) = SdkEvent_MessageRevoked;
+
+  /// C2C 已读回执（对齐 Go SDK `OnRecvC2CReadReceipt`）
+  const factory SdkEvent.c2CReadReceipt({
+    required List<MessageReceipt> receipts,
+  }) = SdkEvent_C2CReadReceipt;
+
+  /// 群聊已读回执（对齐 Go SDK `OnRecvGroupReadReceipt`）
+  const factory SdkEvent.groupReadReceipt({
+    required List<GroupReadReceipt> receipts,
+  }) = SdkEvent_GroupReadReceipt;
+
+  /// 用户输入状态变化（对齐 Go SDK `OnConversationUserInputStatusChanged`）
+  const factory SdkEvent.conversationUserInputStatusChanged({
+    required InputStatusChangedData data,
+  }) = SdkEvent_ConversationUserInputStatusChanged;
+
+  /// 离线新消息通知（对齐 Go SDK `OnRecvOfflineNewMessage`）
+  const factory SdkEvent.recvOfflineNewMessage({
+    required List<ReceivedMessage> messages,
+  }) = SdkEvent_RecvOfflineNewMessage;
+
+  /// 消息被编辑通知（对齐 Go SDK `OnMsgEdited` / `OnRecvMessageModified`）
+  const factory SdkEvent.msgEdited({required ReceivedMessage message}) =
+      SdkEvent_MsgEdited;
+
+  /// 消息扩展（Reaction）新增（对齐 Go SDK `OnRecvMessageExtensionsAdded`）
+  const factory SdkEvent.messageExtensionsAdded({
+    required MessageExtensionData data,
+  }) = SdkEvent_MessageExtensionsAdded;
+
+  /// 消息扩展（Reaction）变更（对齐 Go SDK `OnRecvMessageExtensionsChanged`）
+  const factory SdkEvent.messageExtensionsChanged({
+    required MessageExtensionData data,
+  }) = SdkEvent_MessageExtensionsChanged;
+
+  /// 消息扩展（Reaction）删除（对齐 Go SDK `OnRecvMessageExtensionsDeleted`）
+  const factory SdkEvent.messageExtensionsDeleted({
+    required MessageExtensionData data,
+  }) = SdkEvent_MessageExtensionsDeleted;
   const factory SdkEvent.messagesDeleted({
     required String conversationId,
     required List<String> clientMsgIds,
@@ -156,6 +321,12 @@ sealed class SdkEvent with _$SdkEvent {
     required int status,
     required Int32List platformIds,
   }) = SdkEvent_UserStatusChanged;
+
+  /// 批量推送消息（经 MessageBatcher 聚合后）
+  const factory SdkEvent.batchedPushMessages({
+    required Map<String, PullMsgs> msgs,
+    required Map<String, PullMsgs> notificationMsgs,
+  }) = SdkEvent_BatchedPushMessages;
   const factory SdkEvent.kickedOffline({required String reason}) =
       SdkEvent_KickedOffline;
   const factory SdkEvent.reconnecting({
