@@ -13,7 +13,7 @@ impl ConversationDao {
 
     pub async fn upsert(&self, conv: &LocalConversation) -> Result<()> {
         sqlx::query(
-            "INSERT INTO local_conversations (conversation_id, conversation_type, user_id, group_id, show_name, face_url, latest_msg, latest_msg_send_time, unread_count, recv_msg_opt, is_pinned, is_private_chat, burn_duration, group_at_type, is_not_in_group, update_unread_count_time, attached_info, ex, draft_text, draft_text_time, max_seq, min_seq, is_msg_destruct, msg_destruct_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(conversation_id) DO UPDATE SET conversation_type=excluded.conversation_type, user_id=excluded.user_id, group_id=excluded.group_id, show_name=excluded.show_name, face_url=excluded.face_url, latest_msg=excluded.latest_msg, latest_msg_send_time=excluded.latest_msg_send_time, unread_count=excluded.unread_count, recv_msg_opt=excluded.recv_msg_opt, is_pinned=excluded.is_pinned, is_private_chat=excluded.is_private_chat, burn_duration=excluded.burn_duration, group_at_type=excluded.group_at_type, is_not_in_group=excluded.is_not_in_group, update_unread_count_time=excluded.update_unread_count_time, attached_info=excluded.attached_info, ex=excluded.ex, draft_text=excluded.draft_text, draft_text_time=excluded.draft_text_time, max_seq=excluded.max_seq, min_seq=excluded.min_seq, is_msg_destruct=excluded.is_msg_destruct, msg_destruct_time=excluded.msg_destruct_time",
+            "INSERT INTO local_conversations (conversation_id, conversation_type, user_id, group_id, show_name, face_url, latest_msg, latest_msg_send_time, unread_count, recv_msg_opt, is_pinned, is_private_chat, burn_duration, group_at_type, is_not_in_group, update_unread_count_time, attached_info, ex, draft_text, draft_text_time, max_seq, min_seq, is_msg_destruct, msg_destruct_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(conversation_id) DO UPDATE SET conversation_type=excluded.conversation_type, user_id=excluded.user_id, group_id=excluded.group_id, show_name=excluded.show_name, face_url=excluded.face_url, latest_msg=excluded.latest_msg, latest_msg_send_time=excluded.latest_msg_send_time, recv_msg_opt=excluded.recv_msg_opt, is_pinned=excluded.is_pinned, is_private_chat=excluded.is_private_chat, burn_duration=excluded.burn_duration, group_at_type=excluded.group_at_type, is_not_in_group=excluded.is_not_in_group, update_unread_count_time=excluded.update_unread_count_time, attached_info=excluded.attached_info, ex=excluded.ex, draft_text=excluded.draft_text, draft_text_time=excluded.draft_text_time, max_seq=excluded.max_seq, min_seq=excluded.min_seq, is_msg_destruct=excluded.is_msg_destruct, msg_destruct_time=excluded.msg_destruct_time",
         )
         .bind(&conv.conversation_id)
         .bind(conv.conversation_type)
@@ -105,7 +105,7 @@ impl ConversationDao {
         latest_msg_send_time: i64,
     ) -> Result<()> {
         sqlx::query(
-            "UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ?, unread_count = 0 WHERE conversation_id = ? AND latest_msg_send_time < ?",
+            "UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ? WHERE conversation_id = ? AND latest_msg_send_time < ?",
         )
         .bind(latest_msg)
         .bind(latest_msg_send_time)

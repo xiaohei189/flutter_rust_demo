@@ -174,6 +174,21 @@ impl MessageDao {
         Ok(())
     }
 
+    /// 批量更新消息的 seq（对齐 Go SDK batchUpdateMessageList）
+    pub async fn batch_update_seq(&self, updates: &[(String, i64)]) -> Result<()> {
+        for (client_msg_id, seq) in updates {
+            sqlx::query(
+                "UPDATE local_chat_logs SET seq = ? WHERE client_msg_id = ? AND seq = 0"
+            )
+            .bind(seq)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("batch update seq: {}", e)))?;
+        }
+        Ok(())
+    }
+
     /// 按 max_seq 批量标记消息为已读（排除自己发送的消息）
     /// 对齐 Go SDK `MarkConversationMessageAsReadBySeqs` 中 `send_id != GetSelfUserID()`
     pub async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64, self_user_id: &str) -> Result<()> {

@@ -100,7 +100,9 @@ impl MessageService {
         *uid = user_id;
     }
 
-    /// 撤回消息
+    /// 撤回消息（对齐 Go SDK revoke.go waitForMessageSyncSeq + revokeOneMessage）
+    ///
+    /// 如果 seq 为 0，从本地数据库查找；若仍未同步，等待并重试（最多 5 次，每次 2 秒）。
     pub async fn revoke_message(
         &self,
         conversation_id: String,
@@ -109,10 +111,17 @@ impl MessageService {
         session_type: i32,
     ) -> Result<()> {
         let user_id = self.user_id.lock().unwrap().clone();
-        
+
+        // 如果 seq 为 0，从本地数据库查找（对齐 Go SDK waitForMessageSyncSeq）
+        let final_seq = if seq == 0 {
+            self.wait_for_message_sync_seq(&conversation_id, &client_msg_id).await?
+        } else {
+            seq
+        };
+
         let req = RevokeMessageReq {
             conversation_id: conversation_id.clone(),
-            seq,
+            seq: final_seq,
             user_id: user_id.clone(),
             client_msg_id: client_msg_id.clone(),
             session_type,
@@ -127,26 +136,76 @@ impl MessageService {
 
         self.event_bus.publish(SdkEvent::MessageRevoked {
             conversation_id: conversation_id.clone(),
-            seq,
+            seq: final_seq,
             client_msg_id,
         });
 
-        info!("消息已撤回: conversation_id={}, seq={}", conversation_id, seq);
+        info!("消息已撤回: conversation_id={}, seq={}", conversation_id, final_seq);
         Ok(())
     }
 
-    /// 删除消息
+    /// 等待消息 seq 同步到本地数据库（对齐 Go SDK waitForMessageSyncSeq）
+    ///
+    /// 消息发送后 seq 可能尚未同步到本地，需要等待 sync 完成。
+    /// 最多重试 5 次，每次等待 2 秒。
+    async fn wait_for_message_sync_seq(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+    ) -> Result<i64> {
+        for attempt in 0..5 {
+            if let Ok(Some(msg)) = self.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await {
+                if msg.seq > 0 {
+                    return Ok(msg.seq);
+                }
+            }
+            if attempt < 4 {
+                warn!(
+                    "消息 seq 尚未同步 (attempt={}), 等待重试: client_msg_id={}",
+                    attempt + 1, client_msg_id
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            }
+        }
+        Err(SdkError::invalid_argument(format!(
+            "消息 seq 未同步，无法撤回: client_msg_id={}", client_msg_id
+        )))
+    }
+
+    /// 删除消息（对齐 Go SDK deleteMessage）
+    ///
+    /// 服务端 API 需要 seqs，从本地数据库查找。
     pub async fn delete_messages(
         &self,
         conversation_id: String,
         client_msg_ids: Vec<String>,
     ) -> Result<()> {
-        // 调用服务端 API
-        let req = DeleteMessagesReq {
-            conversation_id: conversation_id.clone(),
-            client_msg_ids: client_msg_ids.clone(),
-        };
+        // 从本地数据库查找每条消息的 seq
+        let mut seqs = Vec::new();
+        for client_msg_id in &client_msg_ids {
+            if let Ok(Some(msg)) = self.message_dao.get_by_client_msg_id(&conversation_id, client_msg_id).await {
+                if msg.seq > 0 {
+                    seqs.push(msg.seq);
+                }
+            }
+        }
 
+        // 调用服务端 API（需要 seqs）
+        use crate::infra::http::routes::DELETE_MSGS;
+        #[derive(serde::Serialize)]
+        struct ServerDeleteReq {
+            #[serde(rename = "conversationID")]
+            conversation_id: String,
+            seqs: Vec<i64>,
+            #[serde(rename = "userID")]
+            user_id: String,
+        }
+        let user_id = self.user_id.lock().unwrap().clone();
+        let req = ServerDeleteReq {
+            conversation_id: conversation_id.clone(),
+            seqs,
+            user_id,
+        };
         let _resp: serde_json::Value = self.http_client.post(DELETE_MSGS, &req).await?;
 
         // 删除本地数据库中的消息

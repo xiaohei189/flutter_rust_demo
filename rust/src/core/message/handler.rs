@@ -226,8 +226,14 @@ impl MessageHandler {
         }
 
         let login_user_id = self.user_id.lock().unwrap().clone();
+        debug!("[MSG_DIAG] handle_messages: login_user={}, msg_count={}", login_user_id, normal_messages.len());
+        for msg in &normal_messages {
+            info!("[MSG_DIAG]   msg: conv={}, send_id={}, seq={}, is_self={}, content_type={}",
+                msg.conversation_id, msg.send_id, msg.seq,
+                msg.send_id == login_user_id, msg.content_type);
+        }
         let mut insert_list: Vec<LocalChatLog> = Vec::new();
-        let mut batch_update_list: Vec<String> = Vec::new();
+        let mut batch_update_list: Vec<(String, i64)> = Vec::new(); // (client_msg_id, seq)
         let mut to_notify: Vec<ReceivedMessage> = Vec::new();
         let mut processed_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
         let mut is_trigger_unread_count = false;
@@ -249,7 +255,7 @@ impl MessageHandler {
                 if let Some(existing) = exists {
                     if existing.seq == 0 && msg.seq > 0 {
                         // 本地发送消息尚未同步 seq → 更新
-                        batch_update_list.push(existing.client_msg_id.clone());
+                        batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
                     } else {
                         // CLIENT_DUP: client_msg_id 重复
                         let mut local_msg: LocalChatLog = self.received_to_local(msg);
@@ -289,7 +295,7 @@ impl MessageHandler {
         // 批量更新 seq（对齐 Go SDK batchUpdateMessageList）
         if !batch_update_list.is_empty() {
             info!("batch update seq for {} messages", batch_update_list.len());
-            // TODO: implement batch seq update when message_dao supports it
+            self.message_dao.batch_update_seq(&batch_update_list).await?;
         }
 
         // 批量插入消息（对齐 Go SDK batchInsertMessageList）
@@ -308,6 +314,7 @@ impl MessageHandler {
             let is_conversation_update = Self::should_update_conversation(msg.content_type);
             let is_self = msg.send_id == login_user_id;
 
+            // 首次见到该会话时创建（unread_count=0）
             if seen_convs.insert(&msg.conversation_id) {
                 let existing = self.conversation_dao.get_by_id(&msg.conversation_id).await?;
                 if existing.is_none() {
@@ -316,9 +323,6 @@ impl MessageHandler {
                     } else {
                         format!("Group_{}", msg.group_id)
                     };
-
-                    // 自己发的消息不增加未读数（对齐 Go SDK L336-L340）
-                    let unread_count = if is_conversation_update && !is_self { 1 } else { 0 };
 
                     let conv = LocalConversation {
                         conversation_id: msg.conversation_id.clone(),
@@ -329,7 +333,7 @@ impl MessageHandler {
                         face_url: msg.sender_face_url.clone(),
                         latest_msg: if is_conversation_update { msg.content.clone() } else { String::new() },
                         latest_msg_send_time: if is_conversation_update { msg.send_time } else { 0 },
-                        unread_count,
+                        unread_count: 0,
                         recv_msg_opt: 0,
                         is_pinned: 0,
                         is_private_chat: 0,
@@ -348,22 +352,38 @@ impl MessageHandler {
                     };
                     self.conversation_dao.upsert(&conv).await?;
                     info!("创建新会话: {}", msg.conversation_id);
-                } else if is_conversation_update {
-                    self.conversation_dao
-                        .update_after_new_message(
-                            &msg.conversation_id,
-                            &msg.content,
-                            msg.send_time,
-                            msg.seq,
-                        )
-                        .await?;
                 }
+            }
+
+            // 每条新消息都增加未读数（对齐 Go SDK：每条消息独立计数）
+            if is_conversation_update && !is_self {
+                debug!("[UNREAD_DIAG] 增加未读: conv={}, seq={}, send_id={}", msg.conversation_id, msg.seq, msg.send_id);
+                self.conversation_dao
+                    .update_after_new_message(
+                        &msg.conversation_id,
+                        &msg.content,
+                        msg.send_time,
+                        msg.seq,
+                    )
+                    .await?;
             }
 
             if msg.content_type != content_type::TYPING {
                 self.event_bus.publish(SdkEvent::NewMessage {
                     message: msg.clone(),
                 });
+            }
+        }
+
+        // 诊断：汇总未读数变化
+        let unread_convs: Vec<String> = to_notify.iter()
+            .filter(|m| m.send_id != login_user_id)
+            .map(|m| m.conversation_id.clone())
+            .collect();
+        info!("[UNREAD_DIAG] to_notify 总数={}, 非自己消息数={}", to_notify.len(), unread_convs.len());
+        for conv_id in &unread_convs {
+            if let Ok(Some(c)) = self.conversation_dao.get_by_id(conv_id).await {
+                debug!("[UNREAD_DIAG] 会话 {} 未读数={}", conv_id, c.unread_count);
             }
         }
 

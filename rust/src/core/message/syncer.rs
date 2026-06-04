@@ -262,6 +262,12 @@ impl MessageSyncer {
             return Ok(());
         }
 
+        // 诊断日志：列出所有服务端会话及其 seq
+        for (conv_id, max_seq) in &server_max_seqs {
+            debug!("[SYNC_DIAG] 服务端会话: conv={}, max_seq={}, is_notification={}",
+                conv_id, max_seq, is_notification(conv_id));
+        }
+
         // 更新本地 conversation 的 max_seq
         for (conv_id, max_seq) in &server_max_seqs {
             let _ = self.conversation_dao.update_max_seq(conv_id, *max_seq).await;

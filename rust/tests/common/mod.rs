@@ -324,6 +324,24 @@ pub async fn login_or_register_user(phone: &str, nickname: &str) -> TestAccount 
     }
 }
 
+/// 创建一个全新的随机账号（每次调用注册新用户，确保无历史数据）
+pub async fn create_random_account(nickname: &str) -> TestAccount {
+    let phone = generate_virtual_phone(&format!("{}_{}", nickname, std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()));
+    println!("创建随机账号: nickname={}, phone={}", nickname, phone);
+    let reg = register_user(&phone, nickname).await
+        .unwrap_or_else(|e| panic!("注册随机账号失败: {}", e));
+    TestAccount {
+        user_id: reg.user_id,
+        phone,
+        nickname: nickname.to_string(),
+        im_token: Some(reg.im_token),
+        chat_token: Some(reg.chat_token),
+    }
+}
+
 /// 确保两个用户是好友关系
 /// 如果还不是好友，则 user1_sdk 向 user2 发送好友申请，user2_sdk 接受
 pub async fn ensure_friends(
