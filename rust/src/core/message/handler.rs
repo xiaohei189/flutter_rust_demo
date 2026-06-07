@@ -246,6 +246,11 @@ impl MessageHandler {
             }
         }
 
+        // typing 消息已处理完事件，从 normal_messages 中移除，避免入库和触发 NewMessage 事件
+        let normal_messages: Vec<ReceivedMessage> = normal_messages.into_iter()
+            .filter(|m| m.content_type != content_type::TYPING)
+            .collect();
+
         let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
 
         // 批量查库去重（对齐 Go SDK pullMessageIntoTable L53-70）
@@ -281,28 +286,36 @@ impl MessageHandler {
             let exists = existing_map.get(&msg.client_msg_id);
             let is_self = msg.send_id == login_user_id;
 
+            let is_store = Self::should_store_message(msg.content_type);
+
             if is_self {
                 if let Some(existing) = exists {
                     if existing.seq == 0 && msg.seq > 0 {
                         // 本地发送消息尚未同步 seq → 更新
-                        batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
+                        if is_store {
+                            batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
+                        }
                     } else {
                         // CLIENT_DUP: client_msg_id 重复
-                        let mut local_msg: LocalChatLog = self.received_to_local(msg);
-                        self.handle_exception_messages(Some(existing), &mut local_msg);
-                        insert_list.push(local_msg);
+                        if is_store {
+                            let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                            self.handle_exception_messages(Some(existing), &mut local_msg);
+                            insert_list.push(local_msg);
+                        }
                     }
                 } else {
                     // 本端同步自己发的消息
-                    let mut local_msg: LocalChatLog = self.received_to_local(msg);
-                    local_msg.status = msg_status::SEND_SUCCESS as i32;
-                    insert_list.push(local_msg);
+                    if is_store {
+                        let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                        local_msg.status = msg_status::SEND_SUCCESS as i32;
+                        insert_list.push(local_msg);
+                    }
                 }
             } else {
                 if exists.is_none() {
                     // 正常新消息：他人发送
-                    // online_only 消息不入库（对齐 Go SDK: history=false），但仍触发事件
-                    if msg.is_online_only {
+                    // online_only 或不需要存储的消息不入库，但仍触发事件
+                    if msg.is_online_only || !is_store {
                         to_notify.push(msg.clone());
                     } else {
                         let mut local_msg: LocalChatLog = self.received_to_local(msg);
@@ -318,10 +331,12 @@ impl MessageHandler {
                     }
                 } else {
                     // CLIENT_DUP: 重复消息
-                    let existing_ref = exists.unwrap();
-                    let mut local_msg: LocalChatLog = self.received_to_local(msg);
-                    self.handle_exception_messages(Some(existing_ref), &mut local_msg);
-                    insert_list.push(local_msg);
+                    if is_store {
+                        let existing_ref = exists.unwrap();
+                        let mut local_msg: LocalChatLog = self.received_to_local(msg);
+                        self.handle_exception_messages(Some(existing_ref), &mut local_msg);
+                        insert_list.push(local_msg);
+                    }
                 }
             }
         }

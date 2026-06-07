@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/message.dart';
 import '../models/user.dart';
+import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
 import 'message_bubble.dart';
@@ -19,15 +19,17 @@ class MessageList extends StatelessWidget {
     this.isLoading = false,
     this.cachedSenderProfiles,
     this.cachedCurrentUserProfile,
+    this.onMessageLongPress,
   });
 
-  final List<Message> messages;
+  final List<MessageInfo> messages;
   final User otherUser;
   final String? currentUserId;
   final ScrollController scrollController;
   final bool isLoading;
   final Map<String, UserInfo>? cachedSenderProfiles;
   final UserInfo? cachedCurrentUserProfile;
+  final void Function(MessageInfo message)? onMessageLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -90,8 +92,9 @@ class MessageList extends StatelessWidget {
           message: message,
           otherUser: otherUser,
           currentUserId: currentUserId,
-          cachedSenderProfile: cachedSenderProfiles?[message.senderId],
+          cachedSenderProfile: cachedSenderProfiles?[message.sendId],
           cachedCurrentUserProfile: cachedCurrentUserProfile,
+          onLongPress: onMessageLongPress,
         );
       },
     );

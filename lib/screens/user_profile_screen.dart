@@ -6,7 +6,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
+import '../screens/friend_setup_screen.dart';
 import '../services/navigation_service.dart';
+import '../services/services.dart';
 import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -31,6 +33,8 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   UserInfo? _userProfile;
   bool _isLoading = false;
+  bool _isFriend = false;
+  bool _isSelf = false;
   Map<String, String> _exData = {};
 
   @override
@@ -52,6 +56,25 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       } else {
         _userProfile = await UserService.instance.fetchUserProfile(widget.user.id);
         _exData = UserProfileState.parseEx(_userProfile?.remark);
+      }
+
+      // 判断是否是自己
+      _isSelf = UserService.instance.currentUserId == widget.user.id;
+
+      // 判断是否是好友（非自己时才检查）
+      if (!_isSelf) {
+        final client = ref.read(messageServiceProvider.notifier).client;
+        if (client != null) {
+          try {
+            _isFriend = await FriendService.instance.isFriend(
+              client,
+              userId: widget.user.id,
+            );
+          } catch (e) {
+            appLog.e('[UserProfileScreen] 检查好友关系失败: $e');
+            _isFriend = false;
+          }
+        }
       }
     } catch (e) {
       appLog.e('[UserProfileScreen] 加载用户资料失败: $e');
@@ -215,7 +238,25 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                 const SizedBox(height: 12),
                 // 操作按钮
-                if (!widget.isCurrentUser)
+                if (_isSelf)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildActionRow(
+                          context,
+                          Icons.edit_outlined,
+                          '编辑资料',
+                          () => NavigationService.instance.goBack(),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (_isFriend)
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
@@ -233,9 +274,35 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         _buildDivider(),
                         _buildActionRow(
                           context,
+                          Icons.settings_outlined,
+                          '好友设置',
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => FriendSetupScreen(
+                                  userId: widget.user.id,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildActionRow(
+                          context,
                           Icons.person_add_outlined,
                           '添加好友',
-                          () {},
+                          () => _showAddFriendDialog(),
                         ),
                       ],
                     ),
@@ -352,5 +419,57 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
   Widget _buildDivider() {
     return const Divider(height: 1, indent: 16, endIndent: 16);
+  }
+
+  void _showAddFriendDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('添加好友'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: '输入验证消息（可选）',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final reqMsg = controller.text.trim();
+                Navigator.of(context).pop();
+                try {
+                  final client = ref.read(messageServiceProvider.notifier).client;
+                  if (client == null) {
+                    NavigationService.instance.showSnackBar('客户端未就绪');
+                    return;
+                  }
+                  await FriendService.instance.addFriend(
+                    client,
+                    userId: widget.user.id,
+                    reqMsg: reqMsg,
+                  );
+                  if (mounted) {
+                    setState(() => _isFriend = true);
+                  }
+                  NavigationService.instance.showSnackBar('好友申请已发送');
+                } catch (e) {
+                  appLog.e('[UserProfileScreen] 添加好友失败: $e');
+                  NavigationService.instance.showSnackBar('添加好友失败: $e');
+                }
+              },
+              child: const Text('发送'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

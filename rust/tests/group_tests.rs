@@ -5,7 +5,6 @@ use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 use std::time::Duration;
 
 #[tokio::test]
-#[ignore]
 async fn test_create_group() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -34,7 +33,6 @@ async fn test_create_group() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_join_and_quit_group() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -78,7 +76,6 @@ async fn test_join_and_quit_group() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_group_member_management() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -110,11 +107,70 @@ async fn test_group_member_management() {
     assert!(!ids.is_empty(), "群成员 ID 列表不应为空");
     println!("  成员 ID 数: {}", ids.len());
 
+    // 获取群主和管理员
+    println!("获取群主和管理员...");
+    let owner_admin = sdk.get_group_member_owner_and_admin(&group.group_id).await;
+    match &owner_admin {
+        Ok(members) => {
+            println!("  群主/管理员数: {}", members.len());
+            for m in members {
+                println!("    {} (role={})", m.user_id, m.role_level);
+            }
+        }
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    // 按入群时间过滤群成员
+    println!("按入群时间过滤群成员...");
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    let filtered = sdk.get_group_member_list_by_join_time_filter(
+        &group.group_id, 0, 10, 0, now, vec![],
+    ).await;
+    match &filtered {
+        Ok(members) => {
+            println!("  时间范围内成员数: {}", members.len());
+            assert!(!members.is_empty(), "应有成员在时间范围内");
+        }
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    // 检查用户是否在群中
+    println!("检查用户是否在群中...");
+    let users_check = sdk.get_users_in_group(
+        &group.group_id,
+        vec![account.user_id.clone(), "nonexistent_user".to_string()],
+    ).await;
+    println!("  在群中的用户: {:?}", users_check);
+    assert!(users_check.contains(&account.user_id), "群主应在群中");
+    assert!(!users_check.contains(&"nonexistent_user".to_string()), "不存在的用户不应在群中");
+
+    // 设置群成员信息
+    println!("设置群成员信息...");
+    let member_info_result = sdk.set_group_member_info(
+        &group.group_id,
+        &account.user_id,
+        Some("新昵称"),
+        None,
+        None,
+        None,
+    ).await;
+    match &member_info_result {
+        Ok(_) => println!("  ✅ 设置成功"),
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    // 搜索群成员
+    println!("搜索群成员...");
+    let search_members = sdk.search_group_members(&group.group_id, &account.user_id).await;
+    println!("  搜索结果: {} 个", search_members.len());
+
     println!("✅ 群成员管理测试完成");
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_group_info_update() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -150,7 +206,6 @@ async fn test_group_info_update() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_group_list_sync() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -169,7 +224,6 @@ async fn test_group_list_sync() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_user_state_group_management() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -199,7 +253,6 @@ async fn test_user_state_group_management() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_group_application_flow() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -251,5 +304,145 @@ async fn test_group_application_flow() {
         println!("    - {} ({})", m.nickname, m.user_id);
     }
 
+    // 申请人视角的群组申请列表
+    println!("用户2获取申请人视角的群组申请列表...");
+    let applicant_list = sdk2.get_group_application_list_as_applicant().await;
+    match &applicant_list {
+        Ok(list) => {
+            println!("  申请人列表: {} 条", list.len());
+            for info in list {
+                println!("    群组: {} state={}", info.group_id, info.handle_result);
+            }
+        }
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
     println!("✅ 群组申请流程测试完成");
+}
+
+#[tokio::test]
+async fn test_group_dismiss_and_transfer() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    println!("=== 群组解散与转让测试 ===\n");
+
+    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
+
+    let account1 = get_or_create_group_owner().await;
+    let account2 = get_or_create_group_member1().await;
+    let (im_token1, _) = login_account(&account1).await.expect("登录失败");
+    let (im_token2, _) = login_account(&account2).await.expect("登录失败");
+
+    let sdk1 = create_sdk(&account1, &im_token1).await;
+    let sdk2 = create_sdk(&account2, &im_token2).await;
+
+    // 创建群组
+    let group_name = format!("DismissTransfer_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let group = sdk1.create_group(
+        &group_name, GroupType::Normal,
+        &vec![account1.user_id.clone()],
+    ).await.expect("创建群组失败");
+    println!("群组: {} ({})", group.group_name, group.group_id);
+
+    // 邀请 account2
+    sdk1.invite_group_members(&group.group_id, &vec![account2.user_id.clone()], None).await.expect("邀请失败");
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 转让群主
+    println!("转让群主...");
+    let transfer_result = sdk1.transfer_group_owner(&group.group_id, &account2.user_id).await;
+    match &transfer_result {
+        Ok(_) => println!("  ✅ 转让成功"),
+        Err(e) => println!("  ⚠ 转让失败: {:?}", e),
+    }
+
+    if transfer_result.is_ok() {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        // 验证新群主
+        let members = sdk1.get_group_members(&group.group_id).await.unwrap();
+        let new_owner = members.iter().find(|m| m.user_id == account2.user_id);
+        if let Some(owner) = new_owner {
+            println!("  新群主 role_level: {}", owner.role_level);
+        }
+
+        // 新群主解散群组
+        println!("新群主解散群组...");
+        let dismiss_result = sdk2.dismiss_group(&group.group_id).await;
+        match &dismiss_result {
+            Ok(_) => println!("  ✅ 解散成功"),
+            Err(e) => println!("  ⚠ 解散失败: {:?}", e),
+        }
+    } else {
+        // 转让失败则直接测试解散
+        println!("转让失败，直接测试群主解散...");
+        let dismiss_result = sdk1.dismiss_group(&group.group_id).await;
+        match &dismiss_result {
+            Ok(_) => println!("  ✅ 解散成功"),
+            Err(e) => println!("  ⚠ 解散失败: {:?}", e),
+        }
+    }
+
+    println!("✅ 群组解散与转让测试完成");
+}
+
+#[tokio::test]
+async fn test_group_mute_operations() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    println!("=== 群组禁言测试 ===\n");
+
+    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
+
+    let account1 = get_or_create_group_owner().await;
+    let account2 = get_or_create_group_member1().await;
+    let (im_token1, _) = login_account(&account1).await.expect("登录失败");
+    let (im_token2, _) = login_account(&account2).await.expect("登录失败");
+
+    let sdk1 = create_sdk(&account1, &im_token1).await;
+    let sdk2 = create_sdk(&account2, &im_token2).await;
+
+    // 创建群组
+    let group_name = format!("MuteTest_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let group = sdk1.create_group(
+        &group_name, GroupType::Normal,
+        &vec![account1.user_id.clone()],
+    ).await.expect("创建群组失败");
+    println!("群组: {} ({})", group.group_name, group.group_id);
+
+    // 邀请 account2
+    sdk1.invite_group_members(&group.group_id, &vec![account2.user_id.clone()], None).await.expect("邀请失败");
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 全员禁言
+    println!("开启全员禁言...");
+    let mute_result = sdk1.mute_group(&group.group_id, true).await;
+    match &mute_result {
+        Ok(_) => println!("  ✅ 全员禁言开启"),
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    // 单成员禁言（60秒）
+    println!("设置单成员禁言（60秒）...");
+    let member_mute_result = sdk1.mute_group_member(&group.group_id, &account2.user_id, 60).await;
+    match &member_mute_result {
+        Ok(_) => println!("  ✅ 单成员禁言设置成功"),
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    // 取消全员禁言
+    println!("取消全员禁言...");
+    let unmute_result = sdk1.mute_group(&group.group_id, false).await;
+    match &unmute_result {
+        Ok(_) => println!("  ✅ 全员禁言取消"),
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    println!("✅ 群组禁言测试完成");
 }

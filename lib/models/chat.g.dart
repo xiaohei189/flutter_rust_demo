@@ -12,7 +12,7 @@ _$ChatImpl _$$ChatImplFromJson(Map<String, dynamic> json) => _$ChatImpl(
   avatar: json['avatar'] as String?,
   isGroup: json['isGroup'] as bool,
   unreadCount: (json['unreadCount'] as num).toInt(),
-  lastMessage: Message.fromJson(json['lastMessage'] as Map<String, dynamic>),
+  lastMessage: json['lastMessage'] as String,
   lastMessageTime: DateTime.parse(json['lastMessageTime'] as String),
   memberIds: (json['memberIds'] as List<dynamic>?)
       ?.map((e) => e as String)

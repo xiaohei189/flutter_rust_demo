@@ -3,6 +3,7 @@
 //! 基于新 SDK 架构的统一桥接客户端，所有操作委托给 OpenIMClient。
 
 use crate::domain::config::ClientConfig;
+use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::constant::enums::{ContentType, SessionType};
 use crate::domain::event::types::SdkEvent;
 use crate::sdk::client::types::{
@@ -960,6 +961,28 @@ pub async fn forward_message(
 ) -> Result<MsgData> {
     let client = client_holder()?;
     let result = client.forward_message(msg_data, &source_id, session_type.into()).await?;
+    Ok(result)
+}
+
+/// 转发消息（按 clientMsgId 查找消息并转发）
+#[flutter_rust_bridge::frb]
+pub async fn forward_message_by_client_id(
+    client_msg_id: String,
+    source_id: String,
+    session_type: SessionType,
+) -> Result<MsgData> {
+    let client = client_holder()?;
+    let log = client
+        .context
+        .message_dao
+        .get_by_client_msg_id("", &client_msg_id)
+        .await?
+        .ok_or_else(|| anyhow!("消息不存在: {}", client_msg_id))?;
+    let msg_struct = MsgStruct::from(&log);
+    let msg_data = MsgData::from(&msg_struct);
+    let result = client
+        .forward_message(msg_data, &source_id, session_type.into())
+        .await?;
     Ok(result)
 }
 

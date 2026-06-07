@@ -46,6 +46,12 @@ clap = { version = "4.5", features = ["derive"] }
 # Phase 2: 新 core 模块数据库访问
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "migrate", "macros"] }
 
+[profile.release]
+opt-level = "z"       # 最小体积
+lto = true            # 链接时优化，减少体积和编译产物
+codegen-units = 1     # 单编译单元，优化更充分
+strip = true          # 去除调试符号
+
 [features]
 default = ["ffi"]
 ffi = ["flutter_rust_bridge"]

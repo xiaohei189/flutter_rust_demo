@@ -240,8 +240,12 @@ impl MessageService {
             return Ok(());
         }
 
-        // 2. 获取 maxSeq 和 peerUserMaxSeq
-        let max_seq = self.message_dao.get_max_seq(&conversation_id).await?;
+        // 2. 获取 maxSeq（优先从消息表获取，消息表为空时从会话表获取）
+        let mut max_seq = self.message_dao.get_max_seq(&conversation_id).await?;
+        if max_seq == 0 {
+            // 消息尚未同步到本地时，使用会话表的 maxSeq（已从服务端同步）
+            max_seq = self.conversation_dao.get_max_seq(&conversation_id).await?;
+        }
         let peer_user_max_seq = self.message_dao.get_peer_normal_msg_seq(&conversation_id, &user_id).await?;
 
         if max_seq == 0 {

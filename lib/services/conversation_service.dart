@@ -139,6 +139,32 @@ class ConversationService {
         }
         _notifyConversationsChanged();
       },
+      newMessage: (message) {
+        loadConversations();
+      },
+      messageSent: (
+        clientMsgId,
+        serverMsgId,
+        sendTime,
+        status,
+        conversationId,
+        sendId,
+        recvId,
+        groupId,
+        sessionType,
+        contentType,
+        content,
+        senderNickname,
+        senderFaceUrl,
+      ) {
+        loadConversations();
+      },
+      messageRevoked: (conversationId, seq, clientMsgId) {
+        loadConversations();
+      },
+      messagesDeleted: (conversationId, clientMsgIds) {
+        loadConversations();
+      },
       totalUnreadCountChanged: (count) {
         _notifyConversationsChanged();
       },

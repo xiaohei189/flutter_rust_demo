@@ -26,7 +26,7 @@ mixin _$Chat {
   String? get avatar => throw _privateConstructorUsedError;
   bool get isGroup => throw _privateConstructorUsedError;
   int get unreadCount => throw _privateConstructorUsedError;
-  Message get lastMessage => throw _privateConstructorUsedError;
+  String get lastMessage => throw _privateConstructorUsedError;
   DateTime get lastMessageTime => throw _privateConstructorUsedError;
   List<String>? get memberIds => throw _privateConstructorUsedError;
   String? get groupId => throw _privateConstructorUsedError;
@@ -51,13 +51,11 @@ abstract class $ChatCopyWith<$Res> {
     String? avatar,
     bool isGroup,
     int unreadCount,
-    Message lastMessage,
+    String lastMessage,
     DateTime lastMessageTime,
     List<String>? memberIds,
     String? groupId,
   });
-
-  $MessageCopyWith<$Res> get lastMessage;
 }
 
 /// @nodoc
@@ -110,7 +108,7 @@ class _$ChatCopyWithImpl<$Res, $Val extends Chat>
             lastMessage: null == lastMessage
                 ? _value.lastMessage
                 : lastMessage // ignore: cast_nullable_to_non_nullable
-                      as Message,
+                      as String,
             lastMessageTime: null == lastMessageTime
                 ? _value.lastMessageTime
                 : lastMessageTime // ignore: cast_nullable_to_non_nullable
@@ -126,16 +124,6 @@ class _$ChatCopyWithImpl<$Res, $Val extends Chat>
           )
           as $Val,
     );
-  }
-
-  /// Create a copy of Chat
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $MessageCopyWith<$Res> get lastMessage {
-    return $MessageCopyWith<$Res>(_value.lastMessage, (value) {
-      return _then(_value.copyWith(lastMessage: value) as $Val);
-    });
   }
 }
 
@@ -153,14 +141,11 @@ abstract class _$$ChatImplCopyWith<$Res> implements $ChatCopyWith<$Res> {
     String? avatar,
     bool isGroup,
     int unreadCount,
-    Message lastMessage,
+    String lastMessage,
     DateTime lastMessageTime,
     List<String>? memberIds,
     String? groupId,
   });
-
-  @override
-  $MessageCopyWith<$Res> get lastMessage;
 }
 
 /// @nodoc
@@ -210,7 +195,7 @@ class __$$ChatImplCopyWithImpl<$Res>
         lastMessage: null == lastMessage
             ? _value.lastMessage
             : lastMessage // ignore: cast_nullable_to_non_nullable
-                  as Message,
+                  as String,
         lastMessageTime: null == lastMessageTime
             ? _value.lastMessageTime
             : lastMessageTime // ignore: cast_nullable_to_non_nullable
@@ -257,7 +242,7 @@ class _$ChatImpl implements _Chat {
   @override
   final int unreadCount;
   @override
-  final Message lastMessage;
+  final String lastMessage;
   @override
   final DateTime lastMessageTime;
   final List<String>? _memberIds;
@@ -336,7 +321,7 @@ abstract class _Chat implements Chat {
     final String? avatar,
     required final bool isGroup,
     required final int unreadCount,
-    required final Message lastMessage,
+    required final String lastMessage,
     required final DateTime lastMessageTime,
     final List<String>? memberIds,
     final String? groupId,
@@ -355,7 +340,7 @@ abstract class _Chat implements Chat {
   @override
   int get unreadCount;
   @override
-  Message get lastMessage;
+  String get lastMessage;
   @override
   DateTime get lastMessageTime;
   @override

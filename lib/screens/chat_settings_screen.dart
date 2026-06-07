@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
+import '../services/services.dart';
+import '../src/rust/api/bridge_client.dart' as fb;
+import '../src/rust/domain/model/group.dart' show GroupMember;
 import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -76,6 +79,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
   }
 
+  /// 获取客户端实例
+  fb.OpenImBridgeClient? get _client =>
+      ref.read(messageServiceProvider.notifier).client;
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +93,14 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     } else {
       _muteNotification = false;
       _pinChat = false;
+    }
+    // 群聊时加载真实群成员
+    if (_isGroup) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(groupMemberProvider(widget.conversationId).notifier)
+            .loadMembers();
+      });
     }
   }
 
@@ -200,16 +215,34 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 开关设置区 ----
           const SizedBox(height: 8),
           _buildCard(children: [
-            _buildSwitchRow('消息免打扰', _muteNotification, (v) {
+            _buildSwitchRow('消息免打扰', _muteNotification, (v) async {
               setState(() => _muteNotification = v);
+              final client = _client;
+              if (client != null) {
+                try {
+                  await client.setConversation(
+                    conversationId: widget.conversationId,
+                    recvMsgOpt: v ? 1 : 0,
+                  );
+                } catch (_) {}
+              }
             }),
             if (_isGroup) ...[
               const Divider(height: 1, indent: 16, endIndent: 16),
               _buildSwitchRow('@所有人的消息不提示', false, (_) {}),
             ],
             const Divider(height: 1, indent: 16, endIndent: 16),
-            _buildSwitchRow('置顶会话', _pinChat, (v) {
+            _buildSwitchRow('置顶会话', _pinChat, (v) async {
               setState(() => _pinChat = v);
+              final client = _client;
+              if (client != null) {
+                try {
+                  await client.setConversationPinned(
+                    conversationId: widget.conversationId,
+                    isPinned: v,
+                  );
+                } catch (_) {}
+              }
             }),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildNavRow('标签', onTap: () {}),
@@ -228,7 +261,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 清空聊天记录 ----
           const SizedBox(height: 8),
           _buildCard(children: [
-            _buildNavRow('清空聊天记录', onTap: () {}),
+            _buildNavRow('清空聊天记录', onTap: _handleClearChatHistory),
           ]),
 
           // ---- 退出群组（仅群聊） ----
@@ -236,7 +269,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             const SizedBox(height: 8),
             _buildCard(children: [
               InkWell(
-                onTap: () {},
+                onTap: () => _handleQuitGroup(),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   child: Center(
@@ -383,6 +416,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   List<Widget> _buildGroupHeader() {
+    final memberCount =
+        ref.watch(groupMemberProvider(widget.conversationId)).members.length;
+
     return [
       Padding(
         padding: const EdgeInsets.all(16),
@@ -403,7 +439,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '群聊 · 3 人',
+                    memberCount > 0 ? '群聊 · $memberCount 人' : '群聊',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
@@ -423,15 +459,20 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   List<Widget> _buildGroupMembers() {
+    final memberState = ref.watch(groupMemberProvider(widget.conversationId));
+    final members = memberState.members;
+
     return [
-      _buildSectionTitle('群成员'),
+      _buildSectionTitle(
+          '群成员${memberState.isLoading ? '' : ' (${members.length})'}'),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        child: Row(
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
-            _buildMemberAvatar('用户1'),
-            _buildMemberAvatar('用户2'),
-            _buildMemberAvatar('用户3'),
+            for (final member in members)
+              _buildRealMemberAvatar(member),
             _buildAddMemberButton(),
           ],
         ),
@@ -439,36 +480,36 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     ];
   }
 
-  Widget _buildMemberAvatar(String name) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-            child: Text(
-              name.substring(0, 1),
-              style: const TextStyle(
-                color: AppTheme.primaryColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+  Widget _buildRealMemberAvatar(GroupMember member) {
+    final displayName = member.nickname.isNotEmpty ? member.nickname : member.userId;
+    final user = User(
+      id: member.userId,
+      name: displayName,
+      avatar: member.faceUrl.isNotEmpty ? member.faceUrl : null,
+    );
+
+    return Column(
+      children: [
+        UserAvatar(user: user, radius: 20),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: 48,
+          child: Text(
+            displayName,
+            style: const TextStyle(
+                fontSize: 11, color: AppTheme.textSecondaryColor),
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            maxLines: 1,
           ),
-          const SizedBox(height: 4),
-          Text(
-            name,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildAddMemberButton() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
+    return GestureDetector(
+      onTap: () => _showInviteMemberDialog(),
       child: Column(
         children: [
           Container(
@@ -569,5 +610,290 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// 退出群组
+  Future<void> _handleQuitGroup() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('退出群组'),
+        content: const Text('确定要退出该群组吗？退出后将无法接收群消息。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('退出', style: TextStyle(color: AppTheme.unreadRed)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final client = _client;
+    if (client == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('客户端未初始化')),
+        );
+      }
+      return;
+    }
+
+    try {
+      await GroupService.instance.quitGroup(
+        client,
+        groupId: widget.conversationId,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已退出群组'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('退出群组失败: $e')),
+        );
+      }
+    }
+  }
+
+  /// 清空聊天记录
+  Future<void> _handleClearChatHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清空聊天记录'),
+        content: const Text('确定要清空该会话的所有聊天记录吗？此操作不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('清空', style: TextStyle(color: AppTheme.unreadRed)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final client = _client;
+    if (client == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('客户端未初始化')),
+        );
+      }
+      return;
+    }
+
+    try {
+      await fb.clearConversationAndDeleteAllMsg(
+        conversationId: widget.conversationId,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('聊天记录已清空'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('清空聊天记录失败: $e')),
+        );
+      }
+    }
+  }
+
+  /// 显示邀请成员对话框
+  void _showInviteMemberDialog() {
+    final selectedIds = <String>[];
+
+    // 先加载好友列表
+    ref.read(friendListProvider.notifier).loadFriends();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return StatefulBuilder(
+              builder: (context, setSheetState) {
+                return Consumer(
+                  builder: (context, ref, _) {
+                    final friendState = ref.watch(friendListProvider);
+
+                    return Column(
+                      children: [
+                        // 标题栏
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                '邀请成员',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: selectedIds.isEmpty
+                                    ? null
+                                    : () async {
+                                        Navigator.of(context).pop();
+                                        await _inviteMembers(selectedIds);
+                                      },
+                                child: Text(
+                                  '确定 (${selectedIds.length})',
+                                  style: TextStyle(
+                                    color: selectedIds.isEmpty
+                                        ? AppTheme.textSecondaryColor
+                                        : AppTheme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1),
+
+                        // 好友列表
+                        Expanded(
+                          child: friendState.isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : friendState.friends.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        '暂无好友',
+                                        style: TextStyle(
+                                          color: AppTheme.textSecondaryColor,
+                                        ),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      controller: scrollController,
+                                      itemCount: friendState.friends.length,
+                                      itemBuilder: (context, index) {
+                                        final friend =
+                                            friendState.friends[index];
+                                        final isSelected = selectedIds
+                                            .contains(friend.userId);
+
+                                        return ListTile(
+                                          leading: UserAvatar(
+                                            user: User(
+                                              id: friend.userId,
+                                              name: friend.nickname,
+                                              avatar: friend.faceUrl.isNotEmpty
+                                                  ? friend.faceUrl
+                                                  : null,
+                                            ),
+                                            radius: 20,
+                                          ),
+                                          title: Text(
+                                            friend.remark.isNotEmpty
+                                                ? friend.remark
+                                                : friend.nickname,
+                                            style:
+                                                const TextStyle(fontSize: 15),
+                                          ),
+                                          trailing: Checkbox(
+                                            value: isSelected,
+                                            activeColor: AppTheme.primaryColor,
+                                            onChanged: (checked) {
+                                              setSheetState(() {
+                                                if (checked == true) {
+                                                  selectedIds
+                                                      .add(friend.userId);
+                                                } else {
+                                                  selectedIds
+                                                      .remove(friend.userId);
+                                                }
+                                              });
+                                            },
+                                          ),
+                                          onTap: () {
+                                            setSheetState(() {
+                                              if (isSelected) {
+                                                selectedIds
+                                                    .remove(friend.userId);
+                                              } else {
+                                                selectedIds
+                                                    .add(friend.userId);
+                                              }
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// 邀请成员加入群组
+  Future<void> _inviteMembers(List<String> memberIds) async {
+    final client = _client;
+    if (client == null) return;
+
+    try {
+      await GroupService.instance.inviteGroupMembers(
+        client,
+        groupId: widget.conversationId,
+        memberIds: memberIds,
+      );
+      // 邀请成功后重新加载成员列表
+      await ref
+          .read(groupMemberProvider(widget.conversationId).notifier)
+          .loadMembers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已邀请 ${memberIds.length} 人'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('邀请成员失败: $e')),
+        );
+      }
+    }
   }
 }

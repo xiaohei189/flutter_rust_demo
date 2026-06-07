@@ -7,3 +7,5 @@ export 'im_providers.dart';
 export 'message_provider.dart';
 export 'message_service_provider.dart';
 export 'user_profile_provider.dart';
+export 'group_provider.dart';
+export 'friend_provider.dart';

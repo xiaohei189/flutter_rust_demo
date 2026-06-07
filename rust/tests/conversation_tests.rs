@@ -185,8 +185,9 @@ async fn test_conversation_unread_count() {
     }
 }
 
-/// 场景：A 发 2 条消息给 B，B 标记会话已读
-/// 验证：未读数清零，收到 ConversationChanged 事件
+/// 场景：标记已读完整流程
+/// 1. 正常路径：消息在本地 → 标记已读 → 验证未读清零 + ConversationChanged 事件
+/// 2. Fallback 路径：重新登录，消息表为空 → 同步会话 → 标记已读 → 验证使用会话表 maxSeq
 #[tokio::test]
 async fn test_conversation_mark_read() {
     let _ = tracing_subscriber::fmt()
@@ -205,6 +206,9 @@ async fn test_conversation_mark_read() {
     let user1_sdk = create_sdk(&user1, &user1_im_token).await;
     let user2_sdk = create_sdk(&user2, &user2_im_token).await;
     let mut user2_events = user2_sdk.event_bus().subscribe();
+
+    // ===== 阶段一：正常路径（消息在本地） =====
+    println!("=== 阶段一：正常路径 ===");
 
     for i in 1..=2 {
         let _ = user1_sdk.send_text_message(
@@ -229,15 +233,19 @@ async fn test_conversation_mark_read() {
             }
         }
     }
-
     tokio::time::sleep(Duration::from_secs(1)).await;
 
-    // 标记已读
     let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
+    let conv = user2_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert!(conv.unread_count > 0, "User2 应有未读, 实际: {}", conv.unread_count);
+    println!("阶段一标记前未读数: {}", conv.unread_count);
+
     let mark_result = user2_sdk.mark_conversation_as_read(conv_id.clone(), 1).await;
     assert!(mark_result.is_ok(), "标记已读失败: {:?}", mark_result.err());
 
-    // 验证 ConversationChanged 事件
+    let conv = user2_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert_eq!(conv.unread_count, 0, "标记后未读应为 0, 实际: {}", conv.unread_count);
+
     let timeout2 = tokio::time::sleep(Duration::from_secs(5));
     tokio::pin!(timeout2);
     let mut conv_changed = false;
@@ -248,7 +256,7 @@ async fn test_conversation_mark_read() {
                 if let Some(SdkEvent::ConversationChanged { conversations }) = event {
                     for conv in &conversations {
                         if conv.conversation_id == conv_id {
-                            assert_eq!(conv.unread_count, 0, "已读后未读计数应为0");
+                            assert_eq!(conv.unread_count, 0, "事件中未读应为 0");
                             conv_changed = true;
                             break;
                         }
@@ -259,6 +267,53 @@ async fn test_conversation_mark_read() {
         }
     }
     assert!(conv_changed, "应收到 ConversationChanged 事件");
+    println!("阶段一完成 ✓");
+
+    // ===== 阶段二：Fallback 路径（消息表为空） =====
+    println!("=== 阶段二：Fallback 路径 ===");
+
+    for i in 3..=4 {
+        let _ = user1_sdk.send_text_message(
+            &format!("新消息 {}", i),
+            &user2.user_id,
+            1,
+        ).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    let timeout3 = tokio::time::sleep(Duration::from_secs(15));
+    tokio::pin!(timeout3);
+    loop {
+        tokio::select! {
+            _ = &mut timeout3 => { break; }
+            event = user2_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event {
+                    msg_count += 1;
+                    if msg_count >= 4 { break; }
+                }
+            }
+        }
+    }
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv = user2_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert!(conv.unread_count > 0, "新消息后应有未读, 实际: {}", conv.unread_count);
+    println!("阶段二标记前未读数: {}", conv.unread_count);
+
+    // 重新创建 SDK（模拟重新登录，消息表为空但会话表有数据）
+    let user2_sdk_fresh = create_sdk(&user2, &user2_im_token).await;
+    let _ = user2_sdk_fresh.incr_sync_conversations().await;
+
+    let conv = user2_sdk_fresh.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert!(conv.unread_count > 0, "同步后应有未读, 实际: {}", conv.unread_count);
+    println!("重新登录后未读数: {}", conv.unread_count);
+
+    let mark_result = user2_sdk_fresh.mark_conversation_as_read(conv_id.clone(), 1).await;
+    assert!(mark_result.is_ok(), "fallback 标记已读失败: {:?}", mark_result.err());
+
+    let conv = user2_sdk_fresh.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert_eq!(conv.unread_count, 0, "fallback 标记后未读应为 0, 实际: {}", conv.unread_count);
+    println!("阶段二完成 ✓");
 }
 
 // ============================================================================
@@ -1305,4 +1360,216 @@ async fn test_hide_conversation() {
     println!("  新消息后会话重新出现 ✓");
 
     println!("test_hide_conversation 通过!");
+}
+
+// ============================================================================
+// 新增测试：会话属性全面持久化（登录/登出后保持）
+// ============================================================================
+
+/// 场景：设置会话的多项属性 → 登出 → 重新登录 → 验证全部保持
+///
+/// 步骤：
+///   Phase 1: A 发消息给 B，创建会话
+///   Phase 2: B 设置 pinned + draft + private + recv_msg_opt + ex
+///   Phase 3: B 验证设置生效
+///   Phase 4: B 登出 → 重新登录
+///   Phase 5: B 验证所有属性持久化
+///   Phase 6: 恢复设置
+#[tokio::test]
+async fn test_conversation_full_persistence() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+
+    // Phase 1: A 发消息给 B
+    println!("\n========== Phase 1: A 发消息给 B ==========");
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    let _ = sender_sdk.send_text_message("持久化测试消息", &user2.user_id, 1).await;
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+            }
+        }
+    }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
+
+    // Phase 2: B 设置多项属性
+    println!("\n========== Phase 2: B 设置多项属性 ==========");
+
+    receiver_sdk.set_conversation_pinned(&conv_id, true).await.unwrap();
+    receiver_sdk.set_conversation_draft(&conv_id, "持久化草稿").await.unwrap();
+    receiver_sdk.set_conversation_private(&conv_id, true).await.unwrap();
+    receiver_sdk.set_conversation(
+        &conv_id, Some(0), None, None, None, Some("persist_key=persist_value"),
+    ).await.unwrap();
+    println!("  所有属性设置完成");
+
+    // Phase 3: 验证设置生效
+    println!("\n========== Phase 3: 验证设置生效 ==========");
+
+    let conv = receiver_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert!(conv.is_pinned != 0, "is_pinned 应为 true");
+    assert!(!conv.draft_text.is_empty(), "draft_text 应非空");
+    assert!(conv.is_private_chat != 0, "is_private_chat 应为 true");
+    assert_eq!(conv.ex, "persist_key=persist_value", "ex 字段不匹配");
+    println!("  Phase 3 通过: 所有属性生效");
+
+    // Phase 4: B 登出 → 重新登录
+    println!("\n========== Phase 4: B 登出 → 重新登录 ==========");
+
+    receiver_sdk.logout().await.expect("登出失败");
+    receiver_sdk.login(&user2.user_id, &user2_im_token).await.expect("重新登录失败");
+    tokio::time::sleep(Duration::from_secs(3)).await;
+
+    // Phase 5: 验证所有属性持久化
+    println!("\n========== Phase 5: 验证所有属性持久化 ==========");
+
+    let conv_after = receiver_sdk.get_conversation(&conv_id).await.unwrap();
+    assert!(conv_after.is_some(), "重新登录后会话应存在");
+    let conv_after = conv_after.unwrap();
+
+    assert!(conv_after.is_pinned != 0, "重新登录后 is_pinned 应保持 true");
+    assert!(!conv_after.draft_text.is_empty(), "重新登录后 draft_text 应保持非空");
+    assert!(conv_after.is_private_chat != 0, "重新登录后 is_private_chat 应保持 true");
+    assert_eq!(conv_after.ex, "persist_key=persist_value",
+        "重新登录后 ex 字段应保持: 实际={}", conv_after.ex);
+    println!("  Phase 5 通过: 所有属性持久化成功");
+
+    // Phase 6: 恢复设置
+    println!("\n========== Phase 6: 恢复设置 ==========");
+
+    receiver_sdk.set_conversation_pinned(&conv_id, false).await.ok();
+    receiver_sdk.clear_conversation_draft(&conv_id).await.ok();
+    receiver_sdk.set_conversation_private(&conv_id, false).await.ok();
+    receiver_sdk.set_conversation(&conv_id, None, None, None, None, Some("")).await.ok();
+    println!("  恢复完成");
+
+    println!("\n========== test_conversation_full_persistence 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：会话属性并发操作
+// ============================================================================
+
+/// 场景：多线程同时设置同一会话的不同属性，验证无数据损坏
+///
+/// 步骤：
+///   Phase 1: A 发消息给 B，创建会话
+///   Phase 2: B 用多个 tokio::spawn 并发设置不同属性
+///   Phase 3: 等待全部完成，验证所有属性正确
+#[tokio::test]
+async fn test_concurrent_conversation_ops() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use std::sync::Arc;
+
+    // Phase 1: A 发消息给 B
+    println!("\n========== Phase 1: A 发消息给 B ==========");
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+
+    let (user1_im_token, _) = login_account(&user1).await.expect("用户1登录失败");
+    let (user2_im_token, _) = login_account(&user2).await.expect("用户2登录失败");
+
+    let sender_sdk = create_sdk(&user1, &user1_im_token).await;
+    let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
+    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+
+    let _ = sender_sdk.send_text_message("并发测试消息", &user2.user_id, 1).await;
+
+    let timeout = tokio::time::sleep(Duration::from_secs(10));
+    tokio::pin!(timeout);
+    loop {
+        tokio::select! {
+            _ = &mut timeout => { break; }
+            event = receiver_events.next() => {
+                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+            }
+        }
+    }
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
+    let sdk = Arc::new(receiver_sdk);
+
+    // Phase 2: 并发设置不同属性
+    println!("\n========== Phase 2: 并发设置不同属性 ==========");
+
+    let sdk_clone = sdk.clone();
+    let conv_id_clone = conv_id.clone();
+    let h1 = tokio::spawn(async move {
+        sdk_clone.set_conversation_pinned(&conv_id_clone, true).await
+    });
+
+    let sdk_clone = sdk.clone();
+    let conv_id_clone = conv_id.clone();
+    let h2 = tokio::spawn(async move {
+        sdk_clone.set_conversation_draft(&conv_id_clone, "并发草稿").await
+    });
+
+    let sdk_clone = sdk.clone();
+    let conv_id_clone = conv_id.clone();
+    let h3 = tokio::spawn(async move {
+        sdk_clone.set_conversation_private(&conv_id_clone, true).await
+    });
+
+    let sdk_clone = sdk.clone();
+    let conv_id_clone = conv_id.clone();
+    let h4 = tokio::spawn(async move {
+        sdk_clone.set_conversation(&conv_id_clone, None, None, None, None, Some("concurrent_ex")).await
+    });
+
+    let (r1, r2, r3, r4) = tokio::join!(h1, h2, h3, h4);
+    assert!(r1.unwrap().is_ok(), "并发置顶失败");
+    assert!(r2.unwrap().is_ok(), "并发设置草稿失败");
+    assert!(r3.unwrap().is_ok(), "并发设置免打扰失败");
+    assert!(r4.unwrap().is_ok(), "并发通用设置失败");
+    println!("  Phase 2 通过: 4 个并发操作全部成功");
+
+    // Phase 3: 验证所有属性正确
+    println!("\n========== Phase 3: 验证所有属性正确 ==========");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let conv = sdk.get_conversation(&conv_id).await.unwrap().unwrap();
+    assert!(conv.is_pinned != 0, "is_pinned 应为 true");
+    assert!(!conv.draft_text.is_empty(), "draft_text 应非空");
+    assert!(conv.is_private_chat != 0, "is_private_chat 应为 true");
+    assert_eq!(conv.ex, "concurrent_ex", "ex 字段不匹配");
+    println!("  Phase 3 通过: 所有属性正确");
+
+    // 恢复
+    sdk.set_conversation_pinned(&conv_id, false).await.ok();
+    sdk.clear_conversation_draft(&conv_id).await.ok();
+    sdk.set_conversation_private(&conv_id, false).await.ok();
+    sdk.set_conversation(&conv_id, None, None, None, None, Some("")).await.ok();
+
+    println!("\n========== test_concurrent_conversation_ops 完成 ==========\n");
 }

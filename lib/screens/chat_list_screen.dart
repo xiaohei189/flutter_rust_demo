@@ -172,30 +172,17 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                         onTap: () {
                           AppRouter.goToChatDetail(context, conversation);
                         },
-                        onDelete: () {
-                          // TODO: 使用 Provider 实现删除会话
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('已删除会话'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                        onDelete: () async {
+                          await ref.read(messageServiceProvider.notifier).deleteConversation(conversation.conversationId);
+                        },
+                        onPinToggle: () async {
+                          await ref.read(messageServiceProvider.notifier).toggleConversationPin(
+                            conversation.conversationId,
+                            conversation.isPinned != 1,
                           );
                         },
-                        onPinToggle: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('置顶功能开发中'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                        onMarkRead: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('标为已读功能开发中'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                        onMarkRead: () async {
+                          await ref.read(messageServiceProvider.notifier).markConversationAsRead(conversation.conversationId);
                         },
                       );
                     },

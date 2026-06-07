@@ -4,7 +4,6 @@ use common::*;
 use std::time::Duration;
 
 #[tokio::test]
-#[ignore]
 async fn test_user_registration() {
     let phone = generate_virtual_phone("reg");
     let nickname = format!("TestUser_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
@@ -23,7 +22,6 @@ async fn test_user_registration() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_user_login() {
     let phone = generate_virtual_phone("login");
     let nickname = "TestUser_Login".to_string();
@@ -44,7 +42,6 @@ async fn test_user_login() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_full_registration_and_functionality() {
     let phone = generate_virtual_phone("full");
     let nickname = format!("TestUser_Full_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
@@ -71,7 +68,6 @@ async fn test_full_registration_and_functionality() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_user_state_via_sdk() {
     let phone = generate_virtual_phone("sdk");
     let nickname = format!("TestUser_SDK_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
@@ -137,7 +133,6 @@ async fn test_user_state_via_sdk() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_get_user_online_status() {
     let user1 = get_or_create_user1().await;
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
@@ -152,7 +147,6 @@ async fn test_get_user_online_status() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_update_user_profile() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)

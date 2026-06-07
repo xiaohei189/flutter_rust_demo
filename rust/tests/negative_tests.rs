@@ -5,7 +5,6 @@ use common::*;
 use std::time::Duration;
 
 #[tokio::test]
-#[ignore]
 async fn test_register_with_existing_phone() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -26,7 +25,6 @@ async fn test_register_with_existing_phone() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_login_invalid_token() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -61,7 +59,6 @@ async fn test_login_invalid_token() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_duplicate_add_friend() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -89,7 +86,6 @@ async fn test_duplicate_add_friend() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_delete_non_existent_friend() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -121,7 +117,6 @@ async fn test_delete_non_existent_friend() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_send_message_to_nonexistent_user() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -146,7 +141,6 @@ async fn test_send_message_to_nonexistent_user() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_kick_nonexistent_group_member() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -178,7 +172,6 @@ async fn test_kick_nonexistent_group_member() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_join_nonexistent_group() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -199,7 +192,6 @@ async fn test_join_nonexistent_group() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_set_conversation_draft_empty() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)

@@ -31,11 +31,17 @@ String _contentToDisplay(dynamic content) {
     }
   }
   if (content is Map<String, dynamic>) {
+    // 嵌套 text.content 结构
     final text = content['text'];
     if (text is Map<String, dynamic> && text['content'] != null) {
       return text['content'].toString().trim();
     }
+    // 直接 content 字段
     if (content['content'] != null) return content['content'].toString().trim();
+    // 回退：尝试取第一个字符串值，避免输出原始 Map
+    for (final v in content.values) {
+      if (v is String && v.isNotEmpty) return v;
+    }
   }
   return content.toString().trim();
 }
@@ -274,8 +280,11 @@ class ChatListItem extends StatelessWidget {
         final map = jsonDecode(conversation.draftText) as Map<String, dynamic>?;
         final text = map?['text'] as String?;
         if (text != null && text.isNotEmpty) return text;
-      } catch (_) {}
-      return conversation.draftText;
+        // draftText 是 JSON 但无 text key，不显示原始 JSON
+      } catch (_) {
+        // 非 JSON 格式，直接作为纯文本
+        return conversation.draftText;
+      }
     }
     final preview = latestMessagePreview(conversation.latestMsg);
     return preview == '暂无消息' ? '点击发消息' : preview;

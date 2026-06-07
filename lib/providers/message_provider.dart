@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/message.dart' show Message;
+import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../services/message_service_notifier.dart';
 import '../src/rust/domain/constant/enums.dart';
 import 'message_service_provider.dart';
 
 /// 消息列表状态
 class MessageListState {
-  final List<Message> messages;
+  final List<MessageInfo> messages;
   final bool isLoading;
   final bool hasMore;
   final String? error;
@@ -22,7 +22,7 @@ class MessageListState {
   });
 
   MessageListState copyWith({
-    List<Message>? messages,
+    List<MessageInfo>? messages,
     bool? isLoading,
     bool? hasMore,
     String? error,
@@ -36,10 +36,10 @@ class MessageListState {
   }
 
   /// 获取最新消息
-  Message? get latestMessage => messages.isNotEmpty ? messages.last : null;
+  MessageInfo? get latestMessage => messages.isNotEmpty ? messages.last : null;
 
   /// 获取最早消息
-  Message? get earliestMessage => messages.isNotEmpty ? messages.first : null;
+  MessageInfo? get earliestMessage => messages.isNotEmpty ? messages.first : null;
 }
 
 /// 消息列表 Notifier（按会话）
@@ -122,6 +122,125 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
       return false;
     }
   }
+
+  /// 通用发送辅助：统一 sourceId 计算 + 错误处理
+  String _sourceId(String recvId, String? groupId) =>
+      (groupId != null && groupId.isNotEmpty) ? groupId : recvId;
+
+  /// 发送图片消息
+  Future<bool> sendImageMessage({
+    required String recvId,
+    required String filePath,
+    required SessionType sessionType,
+    String? groupId,
+  }) async {
+    try {
+      await _messageService.sendImageMessage(
+        filePath: filePath,
+        sourceId: _sourceId(recvId, groupId),
+        sessionType: sessionType,
+      );
+      _syncState();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送图片失败: $e');
+      return false;
+    }
+  }
+
+  /// 发送视频消息
+  Future<bool> sendVideoMessage({
+    required String recvId,
+    required String videoPath,
+    required String snapshotPath,
+    required SessionType sessionType,
+    required int duration,
+    String? groupId,
+  }) async {
+    try {
+      await _messageService.sendVideoMessage(
+        videoPath: videoPath,
+        snapshotPath: snapshotPath,
+        sourceId: _sourceId(recvId, groupId),
+        sessionType: sessionType,
+        duration: duration,
+      );
+      _syncState();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送视频失败: $e');
+      return false;
+    }
+  }
+
+  /// 发送语音消息
+  Future<bool> sendSoundMessage({
+    required String recvId,
+    required String filePath,
+    required SessionType sessionType,
+    required int duration,
+    String? groupId,
+  }) async {
+    try {
+      await _messageService.sendSoundMessage(
+        filePath: filePath,
+        sourceId: _sourceId(recvId, groupId),
+        sessionType: sessionType,
+        duration: duration,
+      );
+      _syncState();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送语音失败: $e');
+      return false;
+    }
+  }
+
+  /// 发送文件消息
+  Future<bool> sendFileMessage({
+    required String recvId,
+    required String filePath,
+    required SessionType sessionType,
+    String? groupId,
+  }) async {
+    try {
+      await _messageService.sendFileMessage(
+        filePath: filePath,
+        sourceId: _sourceId(recvId, groupId),
+        sessionType: sessionType,
+      );
+      _syncState();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送文件失败: $e');
+      return false;
+    }
+  }
+
+  /// 发送位置消息
+  Future<bool> sendLocationMessage({
+    required String recvId,
+    required String description,
+    required double latitude,
+    required double longitude,
+    required SessionType sessionType,
+    String? groupId,
+  }) async {
+    try {
+      await _messageService.sendLocationMessage(
+        description: description,
+        latitude: latitude,
+        longitude: longitude,
+        sourceId: _sourceId(recvId, groupId),
+        sessionType: sessionType,
+      );
+      _syncState();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送位置失败: $e');
+      return false;
+    }
+  }
 }
 
 /// 消息列表 Provider（按会话 ID）
@@ -135,6 +254,6 @@ final messageListProvider = StateNotifierProvider.family<MessageListNotifier, Me
 );
 
 /// 指定会话的消息列表 Provider（便捷访问）
-final messagesByConversationIdProvider = Provider.family<List<Message>, String>((ref, conversationId) {
+final messagesByConversationIdProvider = Provider.family<List<MessageInfo>, String>((ref, conversationId) {
   return ref.watch(messageListProvider(conversationId)).messages;
 });

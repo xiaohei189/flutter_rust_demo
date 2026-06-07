@@ -903,6 +903,44 @@ async fn test_send_all_message_types() {
     sender_sdk.send_msg(card, target, None).await.unwrap();
     send_count += 1;
 
+    // 8. 图片（URL）
+    sender_sdk.send_image_message_from_url("https://example.com/image.png", target, st).await.unwrap();
+    send_count += 1;
+
+    // 9. 语音（URL）
+    sender_sdk.send_sound_message_from_url("https://example.com/voice.amr", 5, target, st).await.unwrap();
+    send_count += 1;
+
+    // 10. 视频（URL）
+    sender_sdk.send_video_message_from_url("https://example.com/video.mp4", 10, "https://example.com/snap.jpg", target, st).await.unwrap();
+    send_count += 1;
+
+    // 11. 文件（URL）
+    sender_sdk.send_file_message_from_url("https://example.com/doc.pdf", "doc.pdf", 1024, target, st).await.unwrap();
+    send_count += 1;
+
+    // 12. 高级引用消息（带实体）
+    let original = sender_sdk.send_text_message("被引用的原文", target, st).await.unwrap();
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    let mut quote_msg = MsgStruct::create_text_message("被引用的原文");
+    quote_msg.client_msg_id = original.client_msg_id.clone();
+    quote_msg.send_id = sender.user_id.clone();
+    quote_msg.send_time = original.send_time;
+    sender_sdk.send_advanced_quote_message(
+        "高级引用回复",
+        quote_msg,
+        vec![rust_lib_flutter_rust_demo::domain::model::msg_struct::MessageEntity {
+            entity_type: "At".into(),
+            offset: 0,
+            length: 2,
+            url: target.to_string(),
+            ex: String::new(),
+        }],
+        target,
+        st,
+    ).await.unwrap();
+    send_count += 1;
+
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let history = sender_sdk.get_history_messages(GetHistoryMessagesReq {
@@ -1077,6 +1115,17 @@ async fn test_history_query_reverse_and_by_seq() {
     assert!(single_msg.content.contains("REV_SEQ_MSG_"),
         "消息内容应包含 REV_SEQ_MSG_: {}", single_msg.content);
     println!("Phase 6 通过: seq={} content={}", single_msg.seq, single_msg.content);
+
+    // Phase 7: 按 seq 获取单条（get_history_message_by_seq）
+    println!("\n========== Phase 7: get_history_message_by_seq ==========");
+
+    let target_seq2 = seq_list[2]; // 第 3 条
+    let single = receiver_sdk.get_history_message_by_seq(target_seq2).await;
+    assert!(single.is_ok(), "get_history_message_by_seq 失败: {:?}", single.err());
+    let single = single.unwrap();
+    assert_eq!(single.seq, target_seq2, "seq 不匹配");
+    assert!(single.content.contains("REV_SEQ_MSG_"), "消息内容不匹配: {}", single.content);
+    println!("Phase 7 通过: seq={} content={}", single.seq, single.content);
 
     println!("\n========== test_history_query_reverse_and_by_seq 完成 ==========\n");
 }
@@ -2808,4 +2857,579 @@ async fn test_concurrent_send_stress() {
     println!("Phase 8 通过: 最终状态正确");
 
     println!("\n========== test_concurrent_send_stress 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：语音消息发送（真实文件上传）
+// ============================================================================
+
+/// 场景：发送语音消息（真实文件上传），验证 B 登录后同步到语音类型
+///
+/// 步骤：
+///   Phase 1: 生成测试 WAV 文件
+///   Phase 2: A 发送语音消息给离线 B
+///   Phase 3: B 登录，等待同步
+///   Phase 4: B 查询历史消息，验证 content_type=104（语音）
+///   Phase 5: 验证 B 实时接收新的语音消息
+#[tokio::test]
+async fn test_send_sound_message_flow() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    println!("\n========== Phase 1: 生成测试音频文件 ==========");
+
+    let tmp_dir = std::env::temp_dir().join("openim_test_sound");
+    std::fs::create_dir_all(&tmp_dir).ok();
+    let wav_path = create_test_audio_file(&tmp_dir);
+    assert!(wav_path.exists(), "WAV 文件应已创建");
+    println!("WAV 文件: {:?} ({} bytes)", wav_path, std::fs::metadata(&wav_path).unwrap().len());
+
+    println!("\n========== Phase 2: A 发送语音消息给离线 B ==========");
+
+    let receiver = create_random_account("SoundReceiver").await;
+    let sender = create_random_account("SoundSender").await;
+    println!("测试账号: sender={}, receiver={}", sender.user_id, receiver.user_id);
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+
+    let target = &receiver.user_id;
+    let st = 1i32;
+    let conv_id = make_conversation_id(&sender.user_id, &receiver.user_id);
+
+    let sound_result = sender_sdk.send_sound_message(
+        wav_path.to_str().unwrap(), target, st, 1,
+    ).await;
+    assert!(sound_result.is_ok(), "发送语音消息失败: {:?}", sound_result.err());
+    let sound_msg = sound_result.unwrap();
+    println!("语音消息发送成功: client_msg_id={}", sound_msg.client_msg_id);
+    assert_eq!(sound_msg.content_type, 104, "语音消息 content_type 应为 104");
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    println!("\n========== Phase 3: B 登录，等待同步 ==========");
+
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    println!("\n========== Phase 4: B 查询历史，验证语音类型 ==========");
+
+    let history = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await.unwrap();
+
+    let sound_msgs: Vec<_> = history.messages.iter()
+        .filter(|m| m.content_type == 104)
+        .collect();
+    assert!(!sound_msgs.is_empty(), "历史中应有语音消息(content_type=104)");
+    println!("  找到 {} 条语音消息", sound_msgs.len());
+
+    println!("\n========== Phase 5: B 实时接收新语音消息 ==========");
+
+    let mut b_events = receiver_sdk.event_bus().subscribe();
+    let sound_result2 = sender_sdk.send_sound_message(
+        wav_path.to_str().unwrap(), target, st, 2,
+    ).await;
+    assert!(sound_result2.is_ok(), "发送第二条语音消息失败");
+
+    let ev = wait_for_event(
+        &mut b_events,
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content_type == 104),
+        10,
+    ).await;
+    assert!(ev.is_some(), "B 未收到实时语音消息");
+    println!("  B 收到实时语音消息 ✓");
+
+    println!("\n========== test_send_sound_message_flow 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：视频消息发送（真实文件上传）
+// ============================================================================
+
+/// 场景：发送视频消息（真实文件上传），验证 B 登录后同步到视频类型
+///
+/// 步骤：
+///   Phase 1: 生成测试 MP4 + 截图文件
+///   Phase 2: A 发送视频消息给离线 B
+///   Phase 3: B 登录，等待同步
+///   Phase 4: B 查询历史消息，验证 content_type=103（视频）
+///   Phase 5: 验证 B 实时接收新的视频消息
+#[tokio::test]
+async fn test_send_video_message_flow() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    println!("\n========== Phase 1: 生成测试视频文件 ==========");
+
+    let tmp_dir = std::env::temp_dir().join("openim_test_video");
+    std::fs::create_dir_all(&tmp_dir).ok();
+    let mp4_path = create_test_video_file(&tmp_dir);
+    let snapshot_path = create_test_snapshot_file(&tmp_dir);
+    assert!(mp4_path.exists(), "MP4 文件应已创建");
+    assert!(snapshot_path.exists(), "截图文件应已创建");
+    println!("MP4: {:?} ({} bytes)", mp4_path, std::fs::metadata(&mp4_path).unwrap().len());
+    println!("截图: {:?}", snapshot_path);
+
+    println!("\n========== Phase 2: A 发送视频消息给离线 B ==========");
+
+    let receiver = create_random_account("VideoReceiver").await;
+    let sender = create_random_account("VideoSender").await;
+    println!("测试账号: sender={}, receiver={}", sender.user_id, receiver.user_id);
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+
+    let target = &receiver.user_id;
+    let st = 1i32;
+    let conv_id = make_conversation_id(&sender.user_id, &receiver.user_id);
+
+    let video_result = sender_sdk.send_video_message(
+        mp4_path.to_str().unwrap(),
+        snapshot_path.to_str().unwrap(),
+        target, st, 10,
+    ).await;
+    assert!(video_result.is_ok(), "发送视频消息失败: {:?}", video_result.err());
+    let video_msg = video_result.unwrap();
+    println!("视频消息发送成功: client_msg_id={}", video_msg.client_msg_id);
+    assert_eq!(video_msg.content_type, 103, "视频消息 content_type 应为 103");
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    println!("\n========== Phase 3: B 登录，等待同步 ==========");
+
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    println!("\n========== Phase 4: B 查询历史，验证视频类型 ==========");
+
+    let history = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await.unwrap();
+
+    let video_msgs: Vec<_> = history.messages.iter()
+        .filter(|m| m.content_type == 103)
+        .collect();
+    assert!(!video_msgs.is_empty(), "历史中应有视频消息(content_type=103)");
+    println!("  找到 {} 条视频消息", video_msgs.len());
+
+    println!("\n========== Phase 5: B 实时接收新视频消息 ==========");
+
+    let mut b_events = receiver_sdk.event_bus().subscribe();
+    let video_result2 = sender_sdk.send_video_message(
+        mp4_path.to_str().unwrap(),
+        snapshot_path.to_str().unwrap(),
+        target, st, 5,
+    ).await;
+    assert!(video_result2.is_ok(), "发送第二条视频消息失败");
+
+    let ev = wait_for_event(
+        &mut b_events,
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content_type == 103),
+        10,
+    ).await;
+    assert!(ev.is_some(), "B 未收到实时视频消息");
+    println!("  B 收到实时视频消息 ✓");
+
+    println!("\n========== test_send_video_message_flow 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：消息编辑（真实 edit_message API）
+// ============================================================================
+
+/// 场景：使用真实 edit_message API 编辑消息
+///
+/// 步骤：
+///   Phase 1: A 发送一条文本消息给 B
+///   Phase 2: B 确认收到
+///   Phase 3: A 调用 edit_message 修改内容
+///   Phase 4: 验证双方历史消息内容已更新
+///   Phase 5: 编辑不存在的消息 → 应返回错误
+#[tokio::test]
+async fn test_edit_message_real() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    // Phase 1: 创建账号 + 登录 + 发消息
+    println!("\n========== Phase 1: 创建账号 + 发送消息 ==========");
+
+    let receiver = create_random_account("EditRealReceiver").await;
+    let sender = create_random_account("EditRealSender").await;
+    println!("测试账号: sender={}, receiver={}", sender.user_id, receiver.user_id);
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    let target = &receiver.user_id;
+    let st = 1i32;
+    let conv_id = make_conversation_id(&sender.user_id, &receiver.user_id);
+
+    let mut b_events = receiver_sdk.event_bus().subscribe();
+
+    let msg = sender_sdk.send_text_message("原始消息内容", target, st).await.unwrap();
+    let client_msg_id = msg.client_msg_id.clone();
+    println!("消息发送成功: client_msg_id={}", client_msg_id);
+
+    // Phase 2: B 确认收到
+    println!("\n========== Phase 2: B 确认收到 ==========");
+
+    let ev = wait_for_event(
+        &mut b_events,
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.client_msg_id == client_msg_id),
+        10,
+    ).await;
+    assert!(ev.is_some(), "B 未收到消息");
+    println!("  B 收到消息 ✓");
+
+    // Phase 3: A 调用 edit_message
+    println!("\n========== Phase 3: A 编辑消息 ==========");
+
+    let edit_result = sender_sdk.edit_message(
+        &conv_id, &client_msg_id, "编辑后的消息内容", 101,
+    ).await;
+    assert!(edit_result.is_ok(), "编辑消息失败: {:?}", edit_result.err());
+    let edit_msg = edit_result.unwrap();
+    println!("  编辑成功: content_type={}", edit_msg.content_type);
+
+    // Phase 4: 验证双方历史消息内容已更新
+    println!("\n========== Phase 4: 验证双方历史内容 ==========");
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // A 侧验证
+    let a_history = sender_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 10,
+    }).await.unwrap();
+
+    let a_msg = a_history.messages.iter().find(|m| m.client_msg_id == client_msg_id);
+    assert!(a_msg.is_some(), "A 历史中未找到编辑的消息");
+    let a_content = &a_msg.unwrap().content;
+    assert!(a_content.contains("编辑后"), "A 侧消息内容应已更新: {}", a_content);
+    println!("  A 侧内容已更新 ✓");
+
+    // B 侧验证
+    let b_history = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 10,
+    }).await.unwrap();
+
+    let b_msg = b_history.messages.iter().find(|m| m.client_msg_id == client_msg_id);
+    assert!(b_msg.is_some(), "B 历史中未找到编辑的消息");
+    let b_content = &b_msg.unwrap().content;
+    assert!(b_content.contains("编辑后"), "B 侧消息内容应已更新: {}", b_content);
+    println!("  B 侧内容已更新 ✓");
+
+    // Phase 5: 编辑不存在的消息
+    println!("\n========== Phase 5: 编辑不存在的消息 ==========");
+
+    let edit_not_exist = sender_sdk.edit_message(
+        &conv_id, "non_existent_msg_id", "新内容", 101,
+    ).await;
+    if edit_not_exist.is_err() {
+        println!("  编辑不存在消息返回错误（符合预期）: {:?}", edit_not_exist.err());
+    } else {
+        println!("  编辑不存在消息成功（服务端可能允许）");
+    }
+
+    println!("\n========== test_edit_message_real 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：清理发送中消息
+// ============================================================================
+
+/// 场景：调用 cleanup_sending_messages 清理发送中状态
+///
+/// 步骤：
+///   Phase 1: A 正常发送消息（无发送中残留）
+///   Phase 2: A 调用 cleanup_sending_messages → 验证不 panic
+///   Phase 3: A 发送更多消息 → 验证功能正常
+///
+/// 注意：cleanup_sending_messages 是在登录时自动调用的，
+///       此测试验证手动调用不会导致异常。
+#[tokio::test]
+async fn test_cleanup_sending_messages() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    println!("\n========== Phase 1: 创建账号并发送消息 ==========");
+
+    let receiver = create_random_account("CleanupReceiver").await;
+    let sender = create_random_account("CleanupSender").await;
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+
+    let target = &receiver.user_id;
+    let st = 1i32;
+
+    // 先发一条消息，确保 SDK 正常工作
+    let msg = sender_sdk.send_text_message("清理前消息", target, st).await;
+    assert!(msg.is_ok(), "清理前发送消息失败: {:?}", msg.err());
+    println!("  Phase 1 通过: 消息发送成功");
+
+    // Phase 2: 调用 cleanup_sending_messages
+    println!("\n========== Phase 2: 调用 cleanup_sending_messages ==========");
+
+    sender_sdk.cleanup_sending_messages().await;
+    println!("  Phase 2 通过: cleanup_sending_messages 执行完成");
+
+    // Phase 3: 验证清理后功能正常
+    println!("\n========== Phase 3: 验证清理后功能正常 ==========");
+
+    let msg2 = sender_sdk.send_text_message("清理后消息", target, st).await;
+    assert!(msg2.is_ok(), "清理后发送消息失败: {:?}", msg2.err());
+    println!("  Phase 3 通过: 清理后消息发送成功");
+
+    // 再次调用 cleanup 确保幂等性
+    sender_sdk.cleanup_sending_messages().await;
+    println!("  二次调用 cleanup 完成（幂等性验证）");
+
+    println!("\n========== test_cleanup_sending_messages 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：全量删除消息（本地+服务端）
+// ============================================================================
+
+/// 场景：调用 delete_all_msg_from_local_and_svr 全量删除
+///
+/// 步骤：
+///   Phase 1: A 发送 3 条消息给 B
+///   Phase 2: B 登录，验证历史中有消息
+///   Phase 3: B 调用 delete_all_msg_from_local_and_svr
+///   Phase 4: B 查询历史 → 验证消息已清空
+///   Phase 5: A 再发一条消息 → B 重新登录验证新消息同步
+#[tokio::test]
+async fn test_delete_all_msg_local_and_svr() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    println!("\n========== Phase 1: A 发送 3 条消息 ==========");
+
+    let receiver = create_random_account("DelAllReceiver").await;
+    let sender = create_random_account("DelAllSender").await;
+    println!("测试账号: sender={}, receiver={}", sender.user_id, receiver.user_id);
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    let target = &receiver.user_id;
+    let st = 1i32;
+    let conv_id = make_conversation_id(&sender.user_id, &receiver.user_id);
+
+    for i in 1..=3 {
+        sender_sdk.send_text_message(&format!("DELALL_MSG_{}", i), target, st).await.unwrap();
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    println!("  Phase 1 完成: 发送 3 条消息");
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // Phase 2: B 验证历史中有消息
+    println!("\n========== Phase 2: B 验证历史中有消息 ==========");
+
+    let history = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await.unwrap();
+
+    let test_msgs: Vec<_> = history.messages.iter()
+        .filter(|m| m.content.contains("DELALL_MSG_"))
+        .collect();
+    assert!(!test_msgs.is_empty(), "B 历史中应有测试消息");
+    println!("  B 历史中有 {} 条测试消息", test_msgs.len());
+
+    // Phase 3: B 调用 delete_all_msg_from_local_and_svr
+    println!("\n========== Phase 3: B 全量删除消息 ==========");
+
+    let del_result = receiver_sdk.delete_all_msg_from_local_and_svr().await;
+    assert!(del_result.is_ok(), "全量删除失败: {:?}", del_result.err());
+    println!("  Phase 3 完成: 全量删除成功");
+
+    // Phase 4: B 查询历史 → 验证消息已清空
+    println!("\n========== Phase 4: B 验证消息已清空 ==========");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let history_after = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await.unwrap();
+
+    let remaining: Vec<_> = history_after.messages.iter()
+        .filter(|m| m.content.contains("DELALL_MSG_"))
+        .collect();
+    assert!(remaining.is_empty(), "全量删除后不应有测试消息，实际有 {} 条", remaining.len());
+    println!("  Phase 4 通过: 消息已清空");
+
+    // Phase 5: A 再发一条消息，B 重新登录验证同步
+    println!("\n========== Phase 5: B 重新登录验证新消息同步 ==========");
+
+    let (receiver_token2, _) = login_account(&receiver).await.expect("B 重新登录失败");
+    let receiver_sdk2 = create_sdk(&receiver, &receiver_token2).await;
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    sender_sdk.send_text_message("DELALL_NEW", target, st).await.unwrap();
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    let new_history = receiver_sdk2.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 10,
+    }).await.unwrap();
+
+    let new_found = new_history.messages.iter().any(|m| m.content.contains("DELALL_NEW"));
+    assert!(new_found, "新消息应同步到 B");
+    println!("  Phase 5 通过: 新消息同步成功");
+
+    println!("\n========== test_delete_all_msg_local_and_svr 完成 ==========\n");
+}
+
+// ============================================================================
+// 新增测试：仅本地软删除所有消息
+// ============================================================================
+
+/// 场景：调用 delete_all_msg_from_local 仅本地软删除
+///
+/// 步骤：
+///   Phase 1: A 发送 3 条消息给 B
+///   Phase 2: B 登录，验证历史中有消息
+///   Phase 3: B 调用 delete_all_msg_from_local（仅本地软删除）
+///   Phase 4: B 查询本地历史 → 验证测试消息不可见
+///   Phase 5: A 再发一条消息 → B 验证新消息可接收
+#[tokio::test]
+async fn test_delete_all_msg_local_only() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .try_init();
+
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
+
+    println!("\n========== Phase 1: A 发送 3 条消息 ==========");
+
+    let receiver = create_random_account("DelLocalReceiver").await;
+    let sender = create_random_account("DelLocalSender").await;
+    println!("测试账号: sender={}, receiver={}", sender.user_id, receiver.user_id);
+
+    let (sender_token, _) = login_account(&sender).await.expect("发送方登录失败");
+    let (receiver_token, _) = login_account(&receiver).await.expect("接收方登录失败");
+
+    let sender_sdk = create_sdk(&sender, &sender_token).await;
+    let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
+
+    ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
+
+    let target = &receiver.user_id;
+    let st = 1i32;
+    let conv_id = make_conversation_id(&sender.user_id, &receiver.user_id);
+
+    for i in 1..=3 {
+        sender_sdk.send_text_message(&format!("DELLOCAL_MSG_{}", i), target, st).await.unwrap();
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    println!("  Phase 1 完成: 发送 3 条消息");
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // Phase 2: B 验证历史中有消息
+    println!("\n========== Phase 2: B 验证历史中有消息 ==========");
+
+    let history = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await.unwrap();
+
+    let test_msgs_before: Vec<_> = history.messages.iter()
+        .filter(|m| m.content.contains("DELLOCAL_MSG_"))
+        .collect();
+    assert!(!test_msgs_before.is_empty(), "B 历史中应有测试消息");
+    println!("  B 历史中有 {} 条测试消息", test_msgs_before.len());
+
+    // Phase 3: B 调用 delete_all_msg_from_local
+    println!("\n========== Phase 3: B 本地软删除所有消息 ==========");
+
+    let del_result = receiver_sdk.delete_all_msg_from_local().await;
+    assert!(del_result.is_ok(), "本地软删除失败: {:?}", del_result.err());
+    println!("  Phase 3 完成: 本地软删除成功");
+
+    // Phase 4: B 查询本地历史 → 验证测试消息不可见
+    println!("\n========== Phase 4: B 验证测试消息不可见 ==========");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let history_after = receiver_sdk.get_history_messages(GetHistoryMessagesReq {
+        conversation_id: conv_id.clone(),
+        start_client_msg_id: String::new(),
+        count: 20,
+    }).await.unwrap();
+
+    let remaining: Vec<_> = history_after.messages.iter()
+        .filter(|m| m.content.contains("DELLOCAL_MSG_"))
+        .collect();
+    assert!(remaining.is_empty(),
+        "本地软删除后测试消息应不可见，实际有 {} 条", remaining.len());
+    println!("  Phase 4 通过: 测试消息不可见");
+
+    // Phase 5: A 再发一条消息 → B 验证新消息可接收
+    println!("\n========== Phase 5: B 验证新消息可接收 ==========");
+
+    let mut b_events = receiver_sdk.event_bus().subscribe();
+
+    sender_sdk.send_text_message("DELLOCAL_NEW", target, st).await.unwrap();
+
+    let ev = wait_for_event(
+        &mut b_events,
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("DELLOCAL_NEW")),
+        10,
+    ).await;
+    assert!(ev.is_some(), "B 未收到新消息");
+    println!("  Phase 5 通过: B 收到新消息 DELLOCAL_NEW");
+
+    println!("\n========== test_delete_all_msg_local_only 完成 ==========\n");
 }

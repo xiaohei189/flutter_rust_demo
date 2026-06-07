@@ -1,19 +1,17 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter_rust_demo/models/chat.dart';
-import 'package:flutter_rust_demo/models/message.dart';
+import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
+import 'package:flutter_rust_demo/models/message_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart';
+import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart' as fb;
 import 'package:flutter_rust_demo/src/rust/domain/config.dart';
 import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
 import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
-import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo, ReceivedMessage;
+import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
 import 'package:flutter_rust_demo/src/rust/domain/event/types.dart' show SdkEvent;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
@@ -25,7 +23,7 @@ class MessageServiceState {
   final int syncProgress;
   final String currentUserId;
   final List<LocalConversation> conversations;
-  final Map<String, List<Message>> messages;
+  final Map<String, List<MessageInfo>> messages;
   final Map<String, UserInfo> userProfiles;
   final UserInfo? loginUserProfile;
   final bool isInitializing;
@@ -48,7 +46,7 @@ class MessageServiceState {
     int? syncProgress,
     String? currentUserId,
     List<LocalConversation>? conversations,
-    Map<String, List<Message>>? messages,
+    Map<String, List<MessageInfo>>? messages,
     Map<String, UserInfo>? userProfiles,
     UserInfo? loginUserProfile,
     bool? isInitializing,
@@ -69,16 +67,24 @@ class MessageServiceState {
 
 /// MessageService 的 StateNotifier
 class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
-  OpenImBridgeClient? _client;
+  fb.OpenImBridgeClient? _client;
   StreamSubscription<dynamic>? _eventStreamSubscription;
 
   MessageServiceNotifier() : super(const MessageServiceState());
 
   /// 获取客户端实例
-  OpenImBridgeClient? get client => _client;
+  fb.OpenImBridgeClient? get client => _client;
+
+  /// 将 sendTime 规范化为毫秒（自动检测秒/毫秒）
+  static int _normalizeSendTime(int t) {
+    if (t <= 0) return DateTime.now().millisecondsSinceEpoch;
+    // 如果小于 2000-01-01 的毫秒时间戳，认为是秒级
+    if (t < 946684800000) return t * 1000;
+    return t;
+  }
 
   /// 获取指定会话的消息列表
-  List<Message> getMessages(String conversationId) {
+  List<MessageInfo> getMessages(String conversationId) {
     return List.unmodifiable(this.state.messages[conversationId] ?? []);
   }
 
@@ -146,9 +152,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.e('[MessageService] 重新初始化失败: $e');
       }
     }
-    
+
     if (_client == null) return null;
-    
+
     try {
       await _client!.updateUserProfile(
         nickname: nickname,
@@ -190,18 +196,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.d('dart MessageService 📜 消息: id=${msg.clientMsgId}, sendId=${msg.sendId}, content=${msg.content.substring(0, msg.content.length > 30 ? 30 : msg.content.length)}, isRead=${msg.isRead}, status=${msg.status}');
       }
 
-      final messages = result.messages
-          .map((msg) => _msgDataToMessage(msg))
-          .toList();
-
-      final newMessages = Map<String, List<Message>>.from(this.state.messages);
+      final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
       final currentMessages = newMessages.putIfAbsent(conversationId, () => []);
 
-      currentMessages.insertAll(0, messages);
+      // result.messages 已经是 List<MessageInfo>，直接使用
+      currentMessages.insertAll(0, result.messages);
 
       final seenIds = <String>{};
       newMessages[conversationId] = currentMessages
-          .where((msg) => seenIds.add(msg.id))
+          .where((msg) => seenIds.add(msg.clientMsgId))
           .toList();
 
       appLog.d('dart MessageService 📜 合并后消息数: ${newMessages[conversationId]!.length}');
@@ -213,76 +216,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
       return false;
     }
-  }
-
-  Message _receivedMessageToMessage(ReceivedMessage msg) {
-    final clientMsgId = msg.clientMsgId;
-    final sendId = msg.sendId;
-
-    String content = msg.content;
-    if (msg.contentType == 101 && content.startsWith('{')) {
-      try {
-        final decoded = jsonDecode(content) as Map<String, dynamic>;
-        content = decoded['content'] as String? ?? content;
-      } catch (_) {
-      }
-    }
-
-    final sendTime = msg.sendTime.toInt();
-    final isSent = sendId == this.state.currentUserId;
-
-    return Message(
-      id: clientMsgId.isNotEmpty
-          ? clientMsgId
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: sendId,
-      content: content,
-      type: MessageType.text,
-      timestamp: sendTime > 0
-          ? DateTime.fromMillisecondsSinceEpoch(sendTime)
-          : DateTime.now(),
-      isSent: isSent,
-      senderNickname: msg.senderNickName,
-      senderFaceUrl: msg.senderFaceUrl,
-    );
-  }
-
-  Message _msgDataToMessage(MessageInfo msg) {
-    final clientMsgId = msg.clientMsgId;
-    final sendId = msg.sendId;
-
-    String content = msg.content;
-    if (msg.contentType == 101 && content.startsWith('{')) {
-      try {
-        final decoded = jsonDecode(content) as Map<String, dynamic>;
-        content = decoded['content'] as String? ?? content;
-      } catch (_) {
-      }
-    }
-
-    final sendTime = msg.sendTime.toInt();
-    final isSent = sendId == this.state.currentUserId;
-
-    MessageSendStatus? sendStatus;
-    if (isSent) {
-      sendStatus = MessageSendStatus.fromValue(msg.status);
-    }
-
-    return Message(
-      id: clientMsgId.isNotEmpty
-          ? clientMsgId
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: sendId,
-      content: content,
-      type: MessageType.text,
-      timestamp: sendTime > 0
-          ? DateTime.fromMillisecondsSinceEpoch(sendTime)
-          : DateTime.now(),
-      isSent: isSent,
-      sendStatus: sendStatus,
-      senderNickname: msg.senderNickname,
-      senderFaceUrl: msg.senderFaceUrl,
-    );
   }
 
   Future<void> sendTextMessage({
@@ -304,6 +237,174 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
+    );
+  }
+
+  /// 发送图片消息
+  Future<void> sendImageMessage({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await _client!.sendImageMessage(
+      filePath: filePath,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 发送视频消息
+  Future<void> sendVideoMessage({
+    required String videoPath,
+    required String snapshotPath,
+    required String sourceId,
+    required SessionType sessionType,
+    required int duration,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await _client!.sendVideoMessage(
+      videoPath: videoPath,
+      snapshotPath: snapshotPath,
+      sourceId: sourceId,
+      sessionType: sessionType,
+      duration: duration,
+    );
+  }
+
+  /// 发送语音消息
+  Future<void> sendSoundMessage({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+    required int duration,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await _client!.sendSoundMessage(
+      filePath: filePath,
+      sourceId: sourceId,
+      sessionType: sessionType,
+      duration: duration,
+    );
+  }
+
+  /// 发送文件消息
+  Future<void> sendFileMessage({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await _client!.sendFileMessage(
+      filePath: filePath,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 发送位置消息
+  Future<void> sendLocationMessage({
+    required String description,
+    required double latitude,
+    required double longitude,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await fb.sendLocationMessage(
+      description: description,
+      latitude: latitude,
+      longitude: longitude,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 发送表情消息
+  Future<void> sendFaceMessage({
+    required int index,
+    required String data,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await fb.sendFaceMessage(
+      index: index,
+      data: data,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 发送名片消息
+  Future<void> sendCardMessage({
+    required String userId,
+    required String nickname,
+    required String faceUrl,
+    required String ex,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await fb.sendCardMessage(
+      userId: userId,
+      nickname: nickname,
+      faceUrl: faceUrl,
+      ex: ex,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 发送引用消息
+  Future<void> sendQuoteMessage({
+    required String text,
+    required String sourceId,
+    required SessionType sessionType,
+    required String quoteText,
+    required String quoteClientMsgId,
+    required String quoteSendId,
+    required int quoteSendTime,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await fb.sendQuoteMessage(
+      text: text,
+      sourceId: sourceId,
+      sessionType: sessionType,
+      quoteText: quoteText,
+      quoteClientMsgId: quoteClientMsgId,
+      quoteSendId: quoteSendId,
+      quoteSendTime: quoteSendTime,
+    );
+  }
+
+  /// 撤回消息
+  Future<void> revokeMessage({
+    required String conversationId,
+    required int seq,
+    required String clientMsgId,
+    required int sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await _client!.revokeMessage(
+      req: RevokeMessageReq(
+        conversationId: conversationId,
+        seq: seq,
+        clientMsgId: clientMsgId,
+        sessionType: sessionType,
+      ),
+    );
+  }
+
+  /// 删除消息（本地+服务端）
+  Future<void> deleteMessage({
+    required String conversationId,
+    required String clientMsgId,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await fb.deleteMessage(
+      conversationId: conversationId,
+      clientMsgId: clientMsgId,
     );
   }
 
@@ -349,7 +450,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       final docDir = await getApplicationDocumentsDirectory();
       final dataDir = '${docDir.path}/openim_data';
       appLog.i('[MessageService] 数据目录: $dataDir');
-      _client = await OpenImBridgeClient.newInstance(
+      _client = await fb.OpenImBridgeClient.newInstance(
         config: ClientConfig(
           userId: resolvedUserId,
           token: resolvedImToken,
@@ -416,12 +517,19 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   /// 处理统一事件（连接、会话、消息）
   void _handleEvent(SdkEvent event) {
     event.maybeWhen(
+      connecting: () {
+        appLog.i('[MessageService] 正在连接...');
+      },
       connected: () {
         this.state = this.state.copyWith(isConnected: true);
         appLog.i('[MessageService] 连接成功，主动拉取一次会话列表');
         _loadConversations();
       },
       connectFailed: (error) {
+        this.state = this.state.copyWith(isConnected: false);
+      },
+      disconnected: (reason) {
+        appLog.i('[MessageService] 连接断开: $reason');
         this.state = this.state.copyWith(isConnected: false);
       },
       kickedOffline: (reason) {
@@ -479,19 +587,21 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       conversationDeleted: (conversationIds) {
         _loadConversations();
       },
-            newMessage: (message) {
+      newMessage: (message) {
         _loadConversations();
         final convId = message.conversationId;
         if (convId.isEmpty) return;
-        final sendId = message.sendId;
-        if (sendId == this.state.currentUserId) {
-          return;
-        }
-        final msg = _receivedMessageToMessage(message);
-        final newMessages = Map<String, List<Message>>.from(this.state.messages);
+        final msgInfo = message.toMessageInfo();
+        // 自己发的消息：先以"发送中"状态显示，messageSent 事件后更新为成功
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages.putIfAbsent(convId, () => []);
-        list.add(msg);
-        newMessages[convId] = List<Message>.from(list);
+        final existingIndex = list.indexWhere((m) => m.clientMsgId == message.clientMsgId);
+        if (existingIndex >= 0) {
+          list[existingIndex] = msgInfo;
+        } else {
+          list.add(msgInfo);
+        }
+        newMessages[convId] = List<MessageInfo>.from(list);
         this.state = this.state.copyWith(messages: newMessages);
       },
       messageSent: (
@@ -509,52 +619,319 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         senderNickname,
         senderFaceUrl,
       ) {
-        final newMessages = Map<String, List<Message>>.from(this.state.messages);
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages.putIfAbsent(conversationId, () => []);
-        final existingIndex = list.indexWhere((m) => m.id == clientMsgId);
-        String displayContent = content;
-        if (contentType == 101 && content.startsWith('{')) {
-          try {
-            final decoded = jsonDecode(content) as Map<String, dynamic>;
-            displayContent = decoded['content'] as String? ?? content;
-          } catch (_) {}
-        }
-        final msg = Message(
-          id: clientMsgId,
-          senderId: sendId,
-          content: displayContent,
-          type: MessageType.text,
-          timestamp: sendTime.toInt() > 0
-              ? DateTime.fromMillisecondsSinceEpoch(sendTime.toInt())
-              : DateTime.now(),
-          isSent: true,
-          sendStatus: MessageSendStatus.fromValue(status),
+        final existingIndex = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+
+        final msgInfo = messageSentToInfo(
+          clientMsgId: clientMsgId,
+          serverMsgId: serverMsgId,
+          // sendTime 可能是秒或毫秒，自动检测转换
+          sendTimeMs: _normalizeSendTime(sendTime.toInt()),
+          status: status,
+          conversationId: conversationId,
+          sendId: sendId,
+          recvId: recvId,
+          groupId: groupId,
+          sessionType: sessionType,
+          contentType: contentType,
+          content: content,
           senderNickname: senderNickname,
           senderFaceUrl: senderFaceUrl,
         );
+
         if (existingIndex >= 0) {
-          list[existingIndex] = msg;
+          list[existingIndex] = msgInfo;
         } else {
-          list.add(msg);
+          list.add(msgInfo);
         }
-        newMessages[conversationId] = List<Message>.from(list);
+        newMessages[conversationId] = List<MessageInfo>.from(list);
         this.state = this.state.copyWith(messages: newMessages);
       },
       messageSendFailed: (clientMsgId, error) {
         appLog.e('dart MessageService ❌ 消息发送失败: $clientMsgId, error=$error');
-        final newMessages = Map<String, List<Message>>.from(this.state.messages);
+        // 更新消息列表中标记为发送失败
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         for (final entry in newMessages.entries) {
           final list = entry.value;
-          final index = list.indexWhere((m) => m.id == clientMsgId);
-          if (index >= 0) {
-            newMessages[entry.key] = List<Message>.from(list);
-            newMessages[entry.key]![index] = list[index].copyWith(
-              sendStatus: MessageSendStatus.sendFailed,
-            );
-            break;
+          for (int i = 0; i < list.length; i++) {
+            if (list[i].clientMsgId == clientMsgId) {
+              list[i] = MessageInfo(
+                clientMsgId: list[i].clientMsgId,
+                serverMsgId: list[i].serverMsgId,
+                sendId: list[i].sendId,
+                recvId: list[i].recvId,
+                groupId: list[i].groupId,
+                senderPlatformId: list[i].senderPlatformId,
+                senderNickname: list[i].senderNickname,
+                senderFaceUrl: list[i].senderFaceUrl,
+                sessionType: list[i].sessionType,
+                msgFrom: list[i].msgFrom,
+                contentType: list[i].contentType,
+                content: list[i].content,
+                seq: list[i].seq,
+                sendTime: list[i].sendTime,
+                createTime: list[i].createTime,
+                status: 3, // sendFailed
+                isRead: list[i].isRead,
+                attachedInfo: list[i].attachedInfo,
+                ex: list[i].ex,
+              );
+              newMessages[entry.key] = List<MessageInfo>.from(list);
+              break;
+            }
           }
         }
         this.state = this.state.copyWith(messages: newMessages);
+      },
+      uploadProgress: (clientMsgId, progress, totalSize, uploadedSize) {
+        appLog.d('[MessageService] 上传进度: $clientMsgId, $progress% '
+            '(${uploadedSize.toInt()}/${totalSize.toInt()} bytes)');
+      },
+      messageRevoked: (conversationId, seq, clientMsgId) {
+        appLog.i('dart MessageService 🔄 消息被撤回: conv=$conversationId, seq=$seq, msgId=$clientMsgId');
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+        final list = newMessages[conversationId];
+        if (list != null) {
+          final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+          if (idx >= 0) {
+            final old = list[idx];
+            list[idx] = MessageInfo(
+              clientMsgId: old.clientMsgId,
+              serverMsgId: old.serverMsgId,
+              sendId: old.sendId,
+              recvId: old.recvId,
+              groupId: old.groupId,
+              senderPlatformId: old.senderPlatformId,
+              senderNickname: old.senderNickname,
+              senderFaceUrl: old.senderFaceUrl,
+              sessionType: old.sessionType,
+              msgFrom: old.msgFrom,
+              contentType: 10000, // 系统消息
+              content: '{"content":"对方撤回了一条消息"}',
+              seq: old.seq,
+              sendTime: old.sendTime,
+              createTime: old.createTime,
+              status: old.status,
+              isRead: old.isRead,
+              attachedInfo: old.attachedInfo,
+              ex: old.ex,
+            );
+            newMessages[conversationId] = List<MessageInfo>.from(list);
+            this.state = this.state.copyWith(messages: newMessages);
+          }
+        }
+      },
+      c2CReadReceipt: (receipts) {
+        for (final receipt in receipts) {
+          final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+          for (final entry in newMessages.entries) {
+            final list = entry.value;
+            for (int i = 0; i < list.length; i++) {
+              if (receipt.msgIds.contains(list[i].clientMsgId)) {
+                list[i] = MessageInfo(
+                  clientMsgId: list[i].clientMsgId,
+                  serverMsgId: list[i].serverMsgId,
+                  sendId: list[i].sendId,
+                  recvId: list[i].recvId,
+                  groupId: list[i].groupId,
+                  senderPlatformId: list[i].senderPlatformId,
+                  senderNickname: list[i].senderNickname,
+                  senderFaceUrl: list[i].senderFaceUrl,
+                  sessionType: list[i].sessionType,
+                  msgFrom: list[i].msgFrom,
+                  contentType: list[i].contentType,
+                  content: list[i].content,
+                  seq: list[i].seq,
+                  sendTime: list[i].sendTime,
+                  createTime: list[i].createTime,
+                  status: list[i].status,
+                  isRead: true,
+                  attachedInfo: list[i].attachedInfo,
+                  ex: list[i].ex,
+                );
+              }
+            }
+            newMessages[entry.key] = List<MessageInfo>.from(list);
+          }
+          this.state = this.state.copyWith(messages: newMessages);
+        }
+        // 刷新会话列表以同步未读数
+        _loadConversations();
+        appLog.i('[MessageService] C2C已读回执处理完成');
+      },
+      groupReadReceipt: (receipts) {
+        for (final receipt in receipts) {
+          final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+          final convId = receipt.groupId; // 群聊会话 ID
+          final list = newMessages[convId];
+          if (list != null) {
+            for (int i = 0; i < list.length; i++) {
+              if (list[i].clientMsgId == receipt.msgId) {
+                list[i] = MessageInfo(
+                  clientMsgId: list[i].clientMsgId,
+                  serverMsgId: list[i].serverMsgId,
+                  sendId: list[i].sendId,
+                  recvId: list[i].recvId,
+                  groupId: list[i].groupId,
+                  senderPlatformId: list[i].senderPlatformId,
+                  senderNickname: list[i].senderNickname,
+                  senderFaceUrl: list[i].senderFaceUrl,
+                  sessionType: list[i].sessionType,
+                  msgFrom: list[i].msgFrom,
+                  contentType: list[i].contentType,
+                  content: list[i].content,
+                  seq: list[i].seq,
+                  sendTime: list[i].sendTime,
+                  createTime: list[i].createTime,
+                  status: list[i].status,
+                  isRead: true,
+                  attachedInfo: list[i].attachedInfo,
+                  ex: list[i].ex,
+                );
+              }
+            }
+            newMessages[convId] = List<MessageInfo>.from(list);
+          }
+          this.state = this.state.copyWith(messages: newMessages);
+        }
+        appLog.i('[MessageService] 群聊已读回执处理完成');
+      },
+      messagesDeleted: (conversationId, clientMsgIds) {
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+        final list = newMessages[conversationId];
+        if (list != null) {
+          final deletedSet = clientMsgIds.toSet();
+          newMessages[conversationId] = list.where((m) => !deletedSet.contains(m.clientMsgId)).toList();
+        }
+        this.state = this.state.copyWith(messages: newMessages);
+        _loadConversations(); // 刷新会话列表以更新 latestMsg
+        appLog.i('[MessageService] 消息已删除: conv=$conversationId, count=${clientMsgIds.length}');
+      },
+      msgEdited: (message) {
+        final convId = message.conversationId;
+        if (convId.isEmpty) return;
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+        final list = newMessages[convId];
+        if (list != null) {
+          final idx = list.indexWhere((m) => m.clientMsgId == message.clientMsgId);
+          final msgInfo = message.toMessageInfo();
+          if (idx >= 0) {
+            list[idx] = msgInfo;
+          }
+          newMessages[convId] = List<MessageInfo>.from(list);
+        }
+        this.state = this.state.copyWith(messages: newMessages);
+        appLog.i('[MessageService] 消息已编辑: conv=$convId, msgId=${message.clientMsgId}');
+      },
+      totalUnreadCountChanged: (count) {
+        // 会话变更已由 conversationChanged 事件单独处理，无需重新加载全部会话
+      },
+      conversationUserInputStatusChanged: (data) {
+        // 输入状态由 chat_detail_screen 直接处理
+        appLog.d('[MessageService] 输入状态变化: conv=${data.conversationId}, user=${data.userId}');
+      },
+      recvOfflineNewMessage: (messages) {
+        _loadConversations();
+        for (final message in messages) {
+          final convId = message.conversationId;
+          if (convId.isEmpty) continue;
+          if (message.sendId == this.state.currentUserId) continue;
+          final msgInfo = message.toMessageInfo();
+          final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+          final list = newMessages.putIfAbsent(convId, () => []);
+          list.add(msgInfo);
+          newMessages[convId] = List<MessageInfo>.from(list);
+          this.state = this.state.copyWith(messages: newMessages);
+        }
+      },
+      // ---- 好友事件 ----
+      friendAdded: (friends) {
+        appLog.i('[MessageService] 好友新增: ${friends.length}人');
+      },
+      friendDeleted: (friendId) {
+        appLog.i('[MessageService] 好友删除: $friendId');
+      },
+      friendInfoUpdated: (userId) {
+        appLog.i('[MessageService] 好友信息更新: $userId');
+        // 刷新该好友的用户资料缓存
+        if (_client != null) {
+          _client!.getUsersInfo(userIds: [userId]).then((list) {
+            if (list.isNotEmpty) {
+              final newProfiles = Map<String, UserInfo>.from(this.state.userProfiles);
+              newProfiles[list.first.userId] = list.first;
+              this.state = this.state.copyWith(userProfiles: newProfiles);
+            }
+          }).catchError((e) {
+            appLog.w('[MessageService] 刷新好友资料失败: $e');
+          });
+        }
+      },
+      friendApplicationAdded: (application) {
+        appLog.i('[MessageService] 好友申请新增');
+      },
+      friendApplicationApproved: (application) {
+        appLog.i('[MessageService] 好友申请已同意');
+      },
+      friendApplicationRejected: (application) {
+        appLog.i('[MessageService] 好友申请已拒绝');
+      },
+      // ---- 群组事件 ----
+      groupCreated: (groupId) {
+        appLog.i('[MessageService] 群组创建: $groupId');
+        _loadConversations();
+      },
+      groupInfoChanged: (groupId) {
+        appLog.i('[MessageService] 群信息变更: $groupId');
+        _loadConversations();
+      },
+      groupMemberAdded: (groupId, memberIds) {
+        appLog.i('[MessageService] 群成员新增: group=$groupId, count=${memberIds.length}');
+      },
+      groupMemberDeleted: (groupId, memberIds) {
+        appLog.i('[MessageService] 群成员移除: group=$groupId, count=${memberIds.length}');
+      },
+      groupApplicationAdded: (application) {
+        appLog.i('[MessageService] 入群申请新增');
+      },
+      groupApplicationApproved: (application) {
+        appLog.i('[MessageService] 入群申请已同意');
+        _loadConversations();
+      },
+      groupApplicationRejected: (application) {
+        appLog.i('[MessageService] 入群申请已拒绝');
+      },
+      groupDismissed: (groupId) {
+        appLog.i('[MessageService] 群已解散: $groupId');
+        _loadConversations();
+      },
+      // ---- 用户事件 ----
+      userInfoUpdated: (user) {
+        final newProfiles = Map<String, UserInfo>.from(this.state.userProfiles);
+        newProfiles[user.userId] = user;
+        this.state = this.state.copyWith(userProfiles: newProfiles);
+      },
+      userStatusChanged: (userId, status, platformIds) {
+        appLog.d('[MessageService] 用户状态变化: $userId, status=$status');
+      },
+      // ---- 黑名单事件 ----
+      blackAdded: (userId) {
+        appLog.i('[MessageService] 加入黑名单: $userId');
+      },
+      blackDeleted: (blackId) {
+        appLog.i('[MessageService] 移出黑名单: $blackId');
+      },
+      // ---- 连接 / 认证事件 ----
+      reconnecting: (attempt, maxAttempts) {
+        appLog.i('[MessageService] 重连中: attempt=$attempt/$maxAttempts');
+        this.state = this.state.copyWith(isConnected: false);
+      },
+      loginSuccess: (userId) {
+        appLog.i('[MessageService] 登录成功: $userId');
+      },
+      logout: () {
+        appLog.i('[MessageService] 已登出');
+        this.state = const MessageServiceState();
       },
       orElse: () {},
     );
@@ -594,7 +971,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   void removeConversation(String conversationId) {
     final newConversations = List<LocalConversation>.from(this.state.conversations);
     newConversations.removeWhere((c) => c.conversationId == conversationId);
-    final newMessages = Map<String, List<Message>>.from(this.state.messages);
+    final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
     newMessages.remove(conversationId);
     this.state = this.state.copyWith(
       conversations: newConversations,
@@ -608,5 +985,106 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     await _client?.disconnect();
     _client = null;
     this.state = const MessageServiceState();
+  }
+
+  /// 标记会话为已读
+  Future<void> markConversationAsRead(String conversationId) async {
+    if (_client == null) return;
+    try {
+      // 从本地状态查找会话类型
+      final conv = this.state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
+      final sessionType = conv?.sessionType ?? SessionType.singleChat;
+      await _client!.markConversationAsRead(conversationId: conversationId, sessionType: sessionType);
+      // 更新本地会话未读数
+      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
+      if (idx >= 0) {
+        final conv = newConversations[idx];
+        newConversations[idx] = LocalConversation(
+          conversationId: conv.conversationId,
+          conversationType: conv.conversationType,
+          userId: conv.userId,
+          groupId: conv.groupId,
+          showName: conv.showName,
+          faceUrl: conv.faceUrl,
+          latestMsg: conv.latestMsg,
+          latestMsgSendTime: conv.latestMsgSendTime,
+          unreadCount: 0,
+          recvMsgOpt: conv.recvMsgOpt,
+          isPinned: conv.isPinned,
+          isPrivateChat: conv.isPrivateChat,
+          burnDuration: conv.burnDuration,
+          groupAtType: conv.groupAtType,
+          isNotInGroup: conv.isNotInGroup,
+          updateUnreadCountTime: conv.updateUnreadCountTime,
+          attachedInfo: conv.attachedInfo,
+          ex: conv.ex,
+          draftText: conv.draftText,
+          draftTextTime: conv.draftTextTime,
+          maxSeq: conv.maxSeq,
+          minSeq: conv.minSeq,
+          isMsgDestruct: conv.isMsgDestruct,
+          msgDestructTime: conv.msgDestructTime,
+        );
+      }
+      this.state = this.state.copyWith(conversations: newConversations);
+    } catch (e) {
+      appLog.e('[MessageService] 标记会话已读失败: $e');
+    }
+  }
+
+  /// 保存草稿
+  Future<void> saveDraft(String conversationId, String draftText) async {
+    if (_client == null) return;
+    try {
+      await _client!.setConversationDraft(conversationId: conversationId, draftText: draftText);
+      _loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 保存草稿失败: $e');
+    }
+  }
+
+  /// 清除草稿
+  Future<void> clearDraft(String conversationId) async {
+    if (_client == null) return;
+    try {
+      await _client!.clearConversationDraft(conversationId: conversationId);
+      _loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 清除草稿失败: $e');
+    }
+  }
+
+  /// 切换会话置顶
+  Future<void> toggleConversationPin(String conversationId, bool isPinned) async {
+    if (_client == null) return;
+    try {
+      await _client!.setConversationPinned(conversationId: conversationId, isPinned: isPinned);
+      _loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 切换置顶失败: $e');
+    }
+  }
+
+  /// 删除会话
+  Future<void> deleteConversation(String conversationId) async {
+    if (_client == null) return;
+    try {
+      await _client!.deleteConversation(conversationId: conversationId);
+      _loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 删除会话失败: $e');
+    }
+  }
+
+  /// 标记所有会话为已读
+  Future<void> markAllConversationsAsRead() async {
+    if (_client == null) return;
+    try {
+      await fb.markAllConversationMessageAsRead();
+      _loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 标记全部已读失败: $e');
+    }
   }
 }

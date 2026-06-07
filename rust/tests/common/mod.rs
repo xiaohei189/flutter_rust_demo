@@ -427,3 +427,99 @@ pub async fn ensure_friends(
     let final_check = user1_sdk.is_friend(user2_id).await;
     println!("最终好友关系检查: {} -> {} = {}", user1_id, user2_id, final_check);
 }
+
+// ============================================================================
+// 测试文件生成辅助函数
+// ============================================================================
+
+/// 生成最小合法 WAV 文件（8kHz 单声道 16bit，约 16KB）
+/// 格式：RIFF header + fmt chunk + data chunk
+pub fn create_test_audio_file(dir: &std::path::Path) -> std::path::PathBuf {
+    let path = dir.join("test_audio.wav");
+    if path.exists() {
+        return path;
+    }
+
+    let sample_rate: u32 = 8000;
+    let num_channels: u16 = 1;
+    let bits_per_sample: u16 = 16;
+    let num_samples: u32 = sample_rate; // 1 second
+    let data_size = num_samples * (bits_per_sample as u32 / 8) * (num_channels as u32);
+
+    let mut wav = Vec::new();
+    // RIFF header
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&(36 + data_size).to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    // fmt chunk
+    wav.extend_from_slice(b"fmt ");
+    wav.extend_from_slice(&16u32.to_le_bytes()); // chunk size
+    wav.extend_from_slice(&1u16.to_le_bytes());  // PCM format
+    wav.extend_from_slice(&num_channels.to_le_bytes());
+    wav.extend_from_slice(&sample_rate.to_le_bytes());
+    wav.extend_from_slice(&(sample_rate * num_channels as u32 * bits_per_sample as u32 / 8).to_le_bytes());
+    wav.extend_from_slice(&(num_channels as u16 * bits_per_sample / 8).to_le_bytes());
+    wav.extend_from_slice(&bits_per_sample.to_le_bytes());
+    // data chunk
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&data_size.to_le_bytes());
+    // 1 second of silence (zero bytes)
+    wav.extend_from_slice(&vec![0u8; data_size as usize]);
+
+    std::fs::write(&path, &wav).expect("创建测试音频文件失败");
+    path
+}
+
+/// 生成最小合法 MP4 文件（约 1KB，仅含 moov+mdat 容器结构）
+/// 这是一个最小可解析的 MP4，足以通过上传测试
+pub fn create_test_video_file(dir: &std::path::Path) -> std::path::PathBuf {
+    let path = dir.join("test_video.mp4");
+    if path.exists() {
+        return path;
+    }
+
+    // 最小合法 MP4：moov box + 空 mdat box
+    let mut mp4 = Vec::new();
+
+    // ftyp box
+    mp4.extend_from_slice(&[0x00, 0x00, 0x00, 0x14]); // size = 20
+    mp4.extend_from_slice(b"ftyp");
+    mp4.extend_from_slice(b"isom");
+    mp4.extend_from_slice(&[0x00, 0x00, 0x00, 0x01]); // version
+    mp4.extend_from_slice(b"isom");
+    mp4.extend_from_slice(b"iso2");
+    mp4.extend_from_slice(b"mp41");
+
+    // moov box (minimal, empty content)
+    mp4.extend_from_slice(&[0x00, 0x00, 0x00, 0x08]); // size = 8
+    mp4.extend_from_slice(b"moov");
+
+    // mdat box (minimal)
+    mp4.extend_from_slice(&[0x00, 0x00, 0x00, 0x08]); // size = 8
+    mp4.extend_from_slice(b"mdat");
+
+    std::fs::write(&path, &mp4).expect("创建测试视频文件失败");
+    path
+}
+
+/// 生成 1x1 像素的 PNG 文件（67 字节，最小合法 PNG）
+pub fn create_test_snapshot_file(dir: &std::path::Path) -> std::path::PathBuf {
+    let path = dir.join("test_snapshot.png");
+    if path.exists() {
+        return path;
+    }
+
+    let png_bytes: Vec<u8> = vec![
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+        0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
+        0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
+        0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC,
+        0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+        0x44, 0xAE, 0x42, 0x60, 0x82,
+    ];
+    std::fs::write(&path, &png_bytes).expect("创建测试截图文件失败");
+    path
+}

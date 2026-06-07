@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:flutter_rust_demo/models/message.dart';
 
 part 'chat.freezed.dart';
 part 'chat.g.dart';
@@ -12,7 +11,7 @@ class Chat with _$Chat {
     String? avatar,
     required bool isGroup,
     required int unreadCount,
-    required Message lastMessage,
+    required String lastMessage,
     required DateTime lastMessageTime,
     List<String>? memberIds,
     String? groupId,

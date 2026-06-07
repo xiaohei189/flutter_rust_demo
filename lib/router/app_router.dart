@@ -10,6 +10,13 @@ import '../screens/group_info_screen.dart';
 import '../screens/my_profile_screen.dart' show MyProfileScreen, ProfileFieldEditScreen;
 import '../screens/search_screen.dart';
 import '../screens/user_profile_screen.dart';
+import '../screens/friend_list_screen.dart';
+import '../screens/friend_requests_screen.dart';
+import '../screens/friend_setup_screen.dart';
+import '../screens/group_list_screen.dart';
+import '../screens/create_group_screen.dart';
+import '../screens/add_contact_screen.dart';
+import '../screens/contact_picker_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
 import '../src/rust/infra/database/models.dart' show LocalConversation;
@@ -131,6 +138,48 @@ class AppRouter {
         GoRoute(
           path: search,
           builder: (context, state) => const SearchScreen(),
+        ),
+        // 好友列表页
+        GoRoute(
+          path: '/friend-list',
+          builder: (context, state) => const FriendListScreen(),
+        ),
+        // 好友申请页
+        GoRoute(
+          path: '/friend-requests',
+          builder: (context, state) => const FriendRequestsScreen(),
+        ),
+        // 好友设置页
+        GoRoute(
+          path: '/friend-setup/:userId',
+          builder: (context, state) {
+            final userId = state.pathParameters['userId'];
+            return FriendSetupScreen(userId: userId ?? '');
+          },
+        ),
+        // 群组列表页
+        GoRoute(
+          path: '/group-list',
+          builder: (context, state) => const GroupListScreen(),
+        ),
+        // 创建群组页
+        GoRoute(
+          path: '/create-group',
+          builder: (context, state) => const CreateGroupScreen(),
+        ),
+        // 添加联系人页
+        GoRoute(
+          path: '/add-contact',
+          builder: (context, state) => const AddContactScreen(),
+        ),
+        // 联系人选择器
+        GoRoute(
+          path: '/contact-picker',
+          builder: (context, state) {
+            final mode = state.uri.queryParameters['mode'] ?? 'forward';
+            final multiSelect = mode == 'group';
+            return ContactPickerScreen(multiSelect: multiSelect, title: multiSelect ? '选择群成员' : '选择联系人');
+          },
         ),
         // 个人资料字段编辑页
         GoRoute(

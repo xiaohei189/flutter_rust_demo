@@ -1,7 +1,15 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../models/message_ext.dart';
 import '../providers/providers.dart';
+import '../providers/message_service_provider.dart';
+import '../src/rust/api/bridge_client.dart' as fb;
+import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
@@ -11,7 +19,9 @@ import '../src/rust/domain/constant/enums.dart' show SessionType;
 import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../widgets/chat_input.dart';
 import '../widgets/message_list.dart';
+import '../widgets/message_action_menu.dart';
 import '../widgets/user_avatar.dart';
+import '../screens/contact_picker_screen.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
 class ChatDetailScreen extends ConsumerStatefulWidget {
@@ -34,40 +44,80 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   final ValueNotifier<bool> _loadingNotifier = ValueNotifier<bool>(false);
   bool _hasMoreHistory = true;
   bool _bodyReady = false;
+  DateTime? _lastTypingSent;
+  MessageInfo? _quotedMessage;
+  fb.OpenImBridgeClient? _client;
 
   @override
   void initState() {
     super.initState();
+    _client = ref.read(messageServiceProvider.notifier).client;
     _scrollController.addListener(_onScroll);
+    _textController.addListener(_onTextChanged);
     // 设置当前选中的会话
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(selectedConversationIdProvider.notifier).state = widget.conversationId;
       if (!widget.preLoaded) _loadMessages();
       if (mounted) setState(() => _bodyReady = true);
       _markConversationAsRead();
+      _restoreDraft();
     });
   }
 
   Future<void> _markConversationAsRead() async {
-    final imClient = ref.read(imClientProvider);
-    final client = imClient.client;
-    if (client == null) return;
-    final conv = _conversation;
-    if (conv == null) return;
-    final sessionType = conv.sessionType;
     try {
-      await client.markConversationAsRead(
-        conversationId: widget.conversationId,
-        sessionType: sessionType,
-      );
+      await ref.read(messageServiceProvider.notifier).markConversationAsRead(widget.conversationId);
     } catch (e) {
       appLog.e('标记已读失败: $e');
     }
   }
 
+  /// 恢复草稿到输入框
+  void _restoreDraft() {
+    final conv = _conversation;
+    if (conv == null) return;
+    final draftText = conv.draftText;
+    if (draftText.isEmpty) return;
+    try {
+      final map = jsonDecode(draftText) as Map<String, dynamic>?;
+      final text = map?['text'] as String?;
+      if (text != null && text.isNotEmpty) {
+        _textController.text = text;
+        _textController.selection = TextSelection.fromPosition(
+          TextPosition(offset: text.length),
+        );
+      }
+    } catch (_) {
+      // 非 JSON 格式，直接作为纯文本恢复
+      _textController.text = draftText;
+      _textController.selection = TextSelection.fromPosition(
+        TextPosition(offset: draftText.length),
+      );
+    }
+  }
+
+  /// 离开页面时保存草稿
+  void _saveDraftOnExit() {
+    final text = _textController.text;
+    final client = _client;
+    if (client == null) return;
+    if (text.isNotEmpty) {
+      client.setConversationDraft(
+        conversationId: widget.conversationId,
+        draftText: jsonEncode({'text': text}),
+      );
+    } else {
+      client.clearConversationDraft(
+        conversationId: widget.conversationId,
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _saveDraftOnExit();
     _scrollController.removeListener(_onScroll);
+    _textController.removeListener(_onTextChanged);
     _loadingNotifier.dispose();
     _textController.dispose();
     _scrollController.dispose();
@@ -144,7 +194,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
       if (isLoadMore && currentMessages.isNotEmpty) {
         final earliestMsg = currentMessages.first;
-        startClientMsgId = earliestMsg.id;
+        startClientMsgId = earliestMsg.clientMsgId;
       }
 
       final hasMore = await ref
@@ -286,14 +336,30 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                       : '')
           : '';
 
-      await ref
-          .read(messageListProvider(conversation.conversationId).notifier)
-          .sendTextMessage(
-            recvId: recvId,
-            text: text,
-            sessionType: sessionType,
-            groupId: groupId,
-          );
+      // 如果有引用消息，发送引用消息
+      final quotedMsg = _quotedMessage;
+      if (quotedMsg != null) {
+        setState(() => _quotedMessage = null);
+        final svc = ref.read(messageServiceProvider.notifier);
+        await svc.sendQuoteMessage(
+          text: text,
+          sourceId: recvId,
+          sessionType: sessionType,
+          quoteText: quotedMsg.content,
+          quoteClientMsgId: quotedMsg.clientMsgId,
+          quoteSendId: quotedMsg.sendId,
+          quoteSendTime: quotedMsg.sendTime.toInt(),
+        );
+      } else {
+        await ref
+            .read(messageListProvider(conversation.conversationId).notifier)
+            .sendTextMessage(
+              recvId: recvId,
+              text: text,
+              sessionType: sessionType,
+              groupId: groupId,
+            );
+      }
 
       if (!widget.preLoaded) _scrollToBottom();
     } catch (e, st) {
@@ -306,6 +372,228 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  // ---- 输入状态 ----
+
+  void _onTextChanged() {
+    final now = DateTime.now();
+    if (_lastTypingSent != null && now.difference(_lastTypingSent!).inSeconds < 3) return;
+    _lastTypingSent = now;
+    _sendTyping(focus: true);
+  }
+
+  void _sendTyping({required bool focus}) {
+    final conversation = _conversation;
+    if (conversation == null) return;
+    final userProfileState = ref.read(userProfileProvider);
+    final cid = conversation.conversationId;
+    final type = conversation.conversationType;
+    String sourceId;
+    switch (type) {
+      case 1:
+        sourceId = cid.startsWith('si_') ? cid.substring(3) : conversation.userId;
+      case 2:
+        sourceId = cid.startsWith('g_') ? cid.substring(2) : conversation.groupId;
+      case 3:
+        sourceId = cid.startsWith('sg_') ? cid.substring(3) : conversation.groupId;
+      default:
+        return;
+    }
+    if (sourceId.isEmpty) return;
+    final sessionType = conversation.sessionType;
+    final svc = ref.read(messageServiceProvider.notifier);
+    fb.sendTyping(sourceId: sourceId, sessionType: sessionType, focus: focus);
+  }
+
+  // ---- 图片/文件/位置发送 ----
+
+  ({String recvId, SessionType sessionType, String groupId})? _getSendTarget() {
+    final conversation = _conversation;
+    if (conversation == null) return null;
+    final userProfileState = ref.read(userProfileProvider);
+    final cid = conversation.conversationId;
+    final type = conversation.conversationType;
+    String recvId;
+    switch (type) {
+      case 1:
+        recvId = conversation.userId;
+        if (recvId.isEmpty && cid.startsWith('si_')) {
+          final parts = cid.split('_');
+          if (parts.length >= 3) {
+            final my = userProfileState.profile?.userId ?? '';
+            recvId = parts[1] == my ? parts[2] : parts[1];
+          }
+        }
+      case 2:
+        recvId = cid.startsWith('g_') ? cid.substring(2) : conversation.groupId;
+      case 3:
+        recvId = cid.startsWith('sg_') ? cid.substring(3) : conversation.groupId;
+      default:
+        recvId = '';
+    }
+    if (recvId.isEmpty) return null;
+    final sessionType = conversation.sessionType;
+    final groupId = (sessionType == SessionType.writeGroupChat || sessionType == SessionType.readGroupChat)
+        ? (conversation.groupId.isNotEmpty
+            ? conversation.groupId
+            : cid.startsWith('sg_')
+                ? cid.substring(3)
+                : cid.startsWith('g_')
+                    ? cid.substring(2)
+                    : '')
+        : '';
+    return (recvId: recvId, sessionType: sessionType, groupId: groupId);
+  }
+
+  void _showError(String msg) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: AppTheme.unreadRed),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    final target = _getSendTarget();
+    if (target == null) { _showError('会话信息异常'); return; }
+    await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
+      recvId: target.recvId,
+      filePath: picked.path,
+      sessionType: target.sessionType,
+      groupId: target.groupId,
+    );
+    if (!widget.preLoaded) _scrollToBottom();
+  }
+
+  Future<void> _pickFromCamera() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.camera);
+    if (picked == null) return;
+    final target = _getSendTarget();
+    if (target == null) { _showError('会话信息异常'); return; }
+    await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
+      recvId: target.recvId,
+      filePath: picked.path,
+      sessionType: target.sessionType,
+      groupId: target.groupId,
+    );
+    if (!widget.preLoaded) _scrollToBottom();
+  }
+
+  Future<void> _pickLocation() async {
+    // 简单实现：使用默认坐标发送当前位置
+    final target = _getSendTarget();
+    if (target == null) { _showError('会话信息异常'); return; }
+    await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendLocationMessage(
+      recvId: target.recvId,
+      description: '当前位置',
+      latitude: 39.9042,
+      longitude: 116.4074,
+      sessionType: target.sessionType,
+      groupId: target.groupId,
+    );
+    if (!widget.preLoaded) _scrollToBottom();
+  }
+
+  /// 选择并发送文件
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles();
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.path == null) return;
+      final target = _getSendTarget();
+      if (target == null) { _showError('会话信息异常'); return; }
+      await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendFileMessage(
+        recvId: target.recvId,
+        filePath: file.path!,
+        sessionType: target.sessionType,
+        groupId: target.groupId,
+      );
+      if (!widget.preLoaded) _scrollToBottom();
+    } catch (e) {
+      appLog.e('发送文件失败: $e');
+    }
+  }
+
+  /// 选择并发送视频
+  Future<void> _pickVideo() async {
+    try {
+      final picker = ImagePicker();
+      final video = await picker.pickVideo(source: ImageSource.gallery);
+      if (video == null) return;
+      final target = _getSendTarget();
+      if (target == null) { _showError('会话信息异常'); return; }
+      await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendVideoMessage(
+        recvId: target.recvId,
+        videoPath: video.path,
+        snapshotPath: '',
+        sessionType: target.sessionType,
+        duration: 0,
+        groupId: target.groupId,
+      );
+      if (!widget.preLoaded) _scrollToBottom();
+    } catch (e) {
+      appLog.e('发送视频失败: $e');
+    }
+  }
+
+  /// 发送名片消息
+  Future<void> _sendCardMessage(String userId, String nickname, String faceUrl) async {
+    try {
+      final target = _getSendTarget();
+      if (target == null) { _showError('会话信息异常'); return; }
+      final svc = ref.read(messageServiceProvider.notifier);
+      await svc.sendCardMessage(
+        userId: userId,
+        nickname: nickname,
+        faceUrl: faceUrl,
+        ex: '',
+        sourceId: target.recvId,
+        sessionType: target.sessionType,
+      );
+      if (!widget.preLoaded) _scrollToBottom();
+    } catch (e) {
+      appLog.e('发送名片失败: $e');
+    }
+  }
+
+  // ---- 消息操作 ----
+
+  Future<void> _revokeMessage(dynamic msg) async {
+    final message = msg as MessageInfo;
+    final conversation = _conversation;
+    if (conversation == null) return;
+    final svc = ref.read(messageServiceProvider.notifier);
+    try {
+      await svc.revokeMessage(
+        conversationId: conversation.conversationId,
+        seq: message.seq.toInt(),
+        clientMsgId: message.clientMsgId,
+        sessionType: conversation.conversationType,
+      );
+    } catch (e) {
+      _showError('撤回失败: $e');
+    }
+  }
+
+  Future<void> _deleteMessage(dynamic msg) async {
+    final message = msg as MessageInfo;
+    final conversation = _conversation;
+    if (conversation == null) return;
+    final svc = ref.read(messageServiceProvider.notifier);
+    try {
+      await svc.deleteMessage(
+        conversationId: conversation.conversationId,
+        clientMsgId: message.clientMsgId,
+      );
+    } catch (e) {
+      _showError('删除失败: $e');
     }
   }
 
@@ -454,13 +742,110 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                         scrollController: _scrollController,
                         isLoading: isLoading,
                         cachedCurrentUserProfile: ref.watch(userProfileProvider).profile,
+                        onMessageLongPress: (msg) => showMessageActionMenu(
+                          context,
+                          message: msg,
+                          currentUserId: currentUserId,
+                          actions: MessageActions(
+                            onCopy: (_) {},
+                            onRevoke: _revokeMessage,
+                            onDelete: _deleteMessage,
+                            onForward: (msg) async {
+                              final result = await Navigator.push<List<ContactPickItem>>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ContactPickerScreen(multiSelect: false, title: '转发给'),
+                                ),
+                              );
+                              if (result != null && result.isNotEmpty) {
+                                final target = result.first;
+                                final st = target.isGroup ? SessionType.writeGroupChat : SessionType.singleChat;
+                                try {
+                                  final parsed = msg.parsedContent;
+                                  final text = parsed['text'] as String? ?? msg.content;
+                                  await ref.read(messageServiceProvider.notifier).sendTextMessage(
+                                    recvId: target.id,
+                                    text: '[转发] $text',
+                                    sessionType: st,
+                                    conversationId: target.id,
+                                  );
+                                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('已转发给 ${target.name}')),
+                                  );
+                                } catch (e) {
+                                  appLog.e('转发失败: $e');
+                                }
+                              }
+                            },
+                            onQuote: (msg) {
+                              setState(() => _quotedMessage = msg);
+                            },
+                          ),
+                        ),
                       );
                     },
                   ),
                 ),
+                // 引用消息提示栏
+                if (_quotedMessage != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundColor,
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.reply, size: 16, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '引用 ${_quotedMessage!.senderNickname}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _quotedMessage!.content,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () {
+                            setState(() => _quotedMessage = null);
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
                 ChatInput(
                   controller: _textController,
                   onSend: _sendMessage,
+                  onImagePick: _pickImage,
+                  onCameraPick: _pickFromCamera,
+                  onLocationPick: _pickLocation,
+                  onFilePick: _pickFile,
+                  onVideoPick: _pickVideo,
+                  onCardSend: _sendCardMessage,
                 ),
               ],
             )

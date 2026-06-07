@@ -16,5 +16,7 @@ export 'image_picker_service.dart';
 export 'video_player_service.dart';
 export 'logger_service.dart';
 export 'network_service.dart';
+export 'group_service.dart';
+export 'friend_service.dart';
 
 export '../src/rust/domain/model/user.dart' show UserInfo;

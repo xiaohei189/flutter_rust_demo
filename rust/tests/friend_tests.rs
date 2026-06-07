@@ -4,7 +4,6 @@ use common::*;
 use std::time::Duration;
 
 #[tokio::test]
-#[ignore]
 async fn test_add_friend() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -44,7 +43,6 @@ async fn test_add_friend() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_delete_friend() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -89,7 +87,6 @@ async fn test_delete_friend() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_blacklist_management() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -140,7 +137,6 @@ async fn test_blacklist_management() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_friend_list_sync() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -162,11 +158,38 @@ async fn test_friend_list_sync() {
     println!("好友 ID 数量: {}", ids.len());
     assert_eq!(friends.len(), ids.len(), "好友列表与好友ID列表数量应一致");
 
+    // 搜索好友
+    if !friends.is_empty() {
+        let first_friend = &friends[0];
+        let search_result = sdk.search_friends(&first_friend.user_id).await;
+        match &search_result {
+            Ok(items) => {
+                println!("搜索好友 '{}' 结果: {} 条", first_friend.user_id, items.len());
+                assert!(!items.is_empty(), "应搜索到好友");
+            }
+            Err(e) => println!("  ⚠ search_friends 失败: {:?}", e),
+        }
+    }
+
+    // 批量检查好友关系
+    if !ids.is_empty() {
+        let check_result = sdk.check_friend(ids.clone()).await;
+        match &check_result {
+            Ok(results) => {
+                println!("批量检查好友: {} 个结果", results.len());
+                for r in results {
+                    println!("  {} -> result={}", r.user_id, r.result);
+                }
+                assert_eq!(results.len(), ids.len(), "检查结果数应与输入数一致");
+            }
+            Err(e) => println!("  ⚠ check_friend 失败: {:?}", e),
+        }
+    }
+
     println!("✅ 好友列表同步测试完成");
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_user_state_friend_management() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -212,7 +235,6 @@ async fn test_user_state_friend_management() {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_friend_application_flow() {
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -294,6 +316,35 @@ async fn test_friend_application_flow() {
     match sdk1.refuse_friend_application(&cert3.user_id, None).await {
         Ok(_) => println!("  ✅ 拒绝成功"),
         Err(e) => println!("  ❌ 失败: {:?}", e),
+    }
+
+    // 申请人视角的好友申请列表
+    println!("\n=== 申请人视角的好友申请列表 ===");
+    let applicant_list = sdk1.get_friend_apply_list_as_applicant().await;
+    match &applicant_list {
+        Ok(list) => {
+            println!("  申请人列表: {} 条", list.len());
+            for info in list {
+                println!("    申请目标: {} state={}", info.user_id, info.handle_result);
+            }
+        }
+        Err(e) => println!("  ⚠ 失败: {:?}", e),
+    }
+
+    // 获取指定好友信息
+    println!("\n=== 获取指定好友信息 ===");
+    if has1 && has2 {
+        let specified = sdk1.get_specified_friends_info(vec![cert2.user_id.clone()], false).await;
+        match &specified {
+            Ok(infos) => {
+                assert!(!infos.is_empty(), "应返回指定好友信息");
+                println!("  指定好友数: {}", infos.len());
+                for info in infos {
+                    println!("    {} ({})", info.user_id, info.nickname);
+                }
+            }
+            Err(e) => println!("  ⚠ 失败: {:?}", e),
+        }
     }
 
     println!("\n=== 好友申请流程测试完成 ===");
