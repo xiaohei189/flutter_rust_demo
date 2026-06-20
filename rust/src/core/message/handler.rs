@@ -404,18 +404,25 @@ impl MessageHandler {
                 }
             }
 
-            // 每条新消息都增加未读数（对齐 Go SDK：每条消息独立计数）
-            // online_only 消息不增加未读数（对齐 Go SDK：RecvOnlineOnlyMessage）
-            if is_conversation_update && !is_self && !msg.is_online_only {
-                debug!("[UNREAD_DIAG] 增加未读: conv={}, seq={}, send_id={}", msg.conversation_id, msg.seq, msg.send_id);
+            // 每条新消息都更新 latestMsg（对齐 Go SDK：所有消息都更新会话预览）
+            // online_only 消息不更新（对齐 Go SDK：RecvOnlineOnlyMessage）
+            if is_conversation_update && !msg.is_online_only {
+                // 更新 latestMsg（无论是否自己发的）
                 self.conversation_dao
-                    .update_after_new_message(
+                    .update_latest_msg(
                         &msg.conversation_id,
                         &msg.content,
                         msg.send_time,
-                        msg.seq,
                     )
                     .await?;
+                
+                // 只有别人发的消息才增加未读数
+                if !is_self {
+                    debug!("[UNREAD_DIAG] 增加未读: conv={}, seq={}, send_id={}", msg.conversation_id, msg.seq, msg.send_id);
+                    self.conversation_dao
+                        .increase_unread_count(&msg.conversation_id, msg.seq)
+                        .await?;
+                }
             }
 
             if msg.content_type != content_type::TYPING {
@@ -815,6 +822,89 @@ mod tests {
 
         let conv = conversation_dao.get_by_id("conv_normal").await.unwrap().unwrap();
         assert_eq!(conv.unread_count, 2, "second normal message should increment unread_count to 2");
+    }
+
+    /// 测试最新消息（latestMsg）是否被正确更新
+    /// 对齐 Go SDK 行为：新消息到达时更新会话的 latestMsg 和 latestMsgSendTime
+    #[tokio::test]
+    async fn test_latest_msg_updated_correctly() {
+        let pool = create_pool_memory().await.unwrap();
+        let message_dao = Arc::new(MessageDao::new(pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let event_bus = Arc::new(EventBus::new());
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+
+        // 发送第一条消息，latestMsg 应被设置为该消息的内容
+        let msg1_content = r#"{"text":"hello"}"#;
+        let msgs1 = vec![{
+            let mut m = msg_with_ct("msg_1", "conv_latest", 1, content_type::TEXT);
+            m.content = msg1_content.to_string();
+            m.send_time = 1000;
+            m
+        }];
+        handler.handle_messages(msgs1).await.unwrap();
+
+        let conv = conversation_dao.get_by_id("conv_latest").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg, msg1_content, "latestMsg should be set to first message content");
+        assert_eq!(conv.latest_msg_send_time, 1000, "latestMsgSendTime should be set to first message sendTime");
+        assert_eq!(conv.unread_count, 1, "unreadCount should be 1");
+
+        // 发送第二条消息，latestMsg 应更新为第二条消息的内容
+        let msg2_content = r#"{"text":"world"}"#;
+        let msgs2 = vec![{
+            let mut m = msg_with_ct("msg_2", "conv_latest", 2, content_type::TEXT);
+            m.content = msg2_content.to_string();
+            m.send_time = 2000;
+            m
+        }];
+        handler.handle_messages(msgs2).await.unwrap();
+
+        let conv = conversation_dao.get_by_id("conv_latest").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg, msg2_content, "latestMsg should be updated to second message content");
+        assert_eq!(conv.latest_msg_send_time, 2000, "latestMsgSendTime should be updated to second message sendTime");
+        assert_eq!(conv.unread_count, 2, "unreadCount should be 2");
+
+        // 发送第三条消息（更晚的时间），latestMsg 应更新为第三条消息
+        let msg3_content = r#"{"text":"final"}"#;
+        let msgs3 = vec![{
+            let mut m = msg_with_ct("msg_3", "conv_latest", 3, content_type::TEXT);
+            m.content = msg3_content.to_string();
+            m.send_time = 3000;
+            m
+        }];
+        handler.handle_messages(msgs3).await.unwrap();
+
+        let conv = conversation_dao.get_by_id("conv_latest").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg, msg3_content, "latestMsg should be updated to third message content");
+        assert_eq!(conv.latest_msg_send_time, 3000, "latestMsgSendTime should be updated to third message sendTime");
+        assert_eq!(conv.unread_count, 3, "unreadCount should be 3");
+    }
+
+    /// 测试收到他人消息时 latestMsg 是否被正确更新（is_self=false 的情况）
+    #[tokio::test]
+    async fn test_latest_msg_updated_for_other_user_message() {
+        let pool = create_pool_memory().await.unwrap();
+        let message_dao = Arc::new(MessageDao::new(pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let event_bus = Arc::new(EventBus::new());
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        handler.set_user_id("self_user".to_string()); // 设置当前用户 ID
+
+        // 收到其他用户发送的消息
+        let msg_content = r#"{"text":"message from other"}"#;
+        let msgs = vec![{
+            let mut m = msg_with_ct("msg_1", "conv_other", 1, content_type::TEXT);
+            m.content = msg_content.to_string();
+            m.send_time = 1000;
+            m.send_id = "other_user".to_string(); // 发送者不是当前用户
+            m
+        }];
+        handler.handle_messages(msgs).await.unwrap();
+
+        let conv = conversation_dao.get_by_id("conv_other").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg, msg_content, "latestMsg should be set for other user's message");
+        assert_eq!(conv.latest_msg_send_time, 1000, "latestMsgSendTime should be set");
+        assert_eq!(conv.unread_count, 1, "unreadCount should be 1 for other user's message");
     }
 
     #[tokio::test]

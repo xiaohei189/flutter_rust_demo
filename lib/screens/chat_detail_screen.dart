@@ -387,23 +387,20 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   void _sendTyping({required bool focus}) {
     final conversation = _conversation;
     if (conversation == null) return;
-    final userProfileState = ref.read(userProfileProvider);
-    final cid = conversation.conversationId;
     final type = conversation.conversationType;
     String sourceId;
     switch (type) {
       case 1:
-        sourceId = cid.startsWith('si_') ? cid.substring(3) : conversation.userId;
+        sourceId = conversation.userId;
       case 2:
-        sourceId = cid.startsWith('g_') ? cid.substring(2) : conversation.groupId;
+        sourceId = conversation.groupId;
       case 3:
-        sourceId = cid.startsWith('sg_') ? cid.substring(3) : conversation.groupId;
+        sourceId = conversation.groupId;
       default:
         return;
     }
     if (sourceId.isEmpty) return;
     final sessionType = conversation.sessionType;
-    final svc = ref.read(messageServiceProvider.notifier);
     fb.sendTyping(sourceId: sourceId, sessionType: sessionType, focus: focus);
   }
 

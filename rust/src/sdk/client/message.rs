@@ -794,10 +794,18 @@ impl OpenIMClient {
         msg_data.options = options;
 
         // 直接通过 WS RPC 发送，不走 send_msg（不入库、不更新会话）
-        let _resp: crate::protocol::sdkws::UserSendMsgResp = self.connection.send_rpc(crate::domain::constant::types::ws_req_identifier::SEND_MSG, &msg_data).await
-            .map_err(|e| SdkError::message_send(format!("send typing failed: {}", e)))?;
-
-        debug!("发送 typing 通知: source_id={}, focus={}", source_id, focus);
+        // typing 是尽力而为的通知，连接断开时静默忽略
+        match self.connection.send_rpc::<_, crate::protocol::sdkws::UserSendMsgResp>(
+            crate::domain::constant::types::ws_req_identifier::SEND_MSG,
+            &msg_data,
+        ).await {
+            Ok(_) => {
+                debug!("发送 typing 通知: source_id={}, focus={}", source_id, focus);
+            }
+            Err(e) => {
+                warn!("发送 typing 通知失败（静默忽略）: {}", e);
+            }
+        }
         Ok(())
     }
 

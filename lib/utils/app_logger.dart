@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// 应用统一日志工具，输出包含 [文件:行号] 便于定位
+///
+/// 日志同时输出到控制台和文件，便于调试。
+/// 文件路径：临时目录/app.log（热重启自动清除，每次运行生成新的）
 ///
 /// 使用方式：
 /// ```dart
@@ -14,28 +20,61 @@ final appLog = AppLogger();
 
 class AppLogger {
   late final Logger _logger;
+  File? _logFile;
+  IOSink? _logSink;
 
   AppLogger() {
     _logger = Logger(
       printer: _FileLinePrinter(),
       level: kDebugMode ? Level.debug : Level.info,
     );
+    _initFile();
+  }
+
+  Future<void> _initFile() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      _logFile = File('${dir.path}/app.log');
+      await _logFile?.delete(recursive: false).catchError((_) {});
+      _logSink = _logFile?.openWrite(mode: FileMode.append);
+    } catch (_) {}
+  }
+
+  void _writeToFile(String line) {
+    _logSink?.writeAll([line, '\n']);
   }
 
   void d(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     _logger.d(message, error: error, stackTrace: stackTrace);
+    _writeToFile(_formatMessage(message));
   }
 
   void i(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     _logger.i(message, error: error, stackTrace: stackTrace);
+    _writeToFile(_formatMessage(message));
   }
 
   void w(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     _logger.w(message, error: error, stackTrace: stackTrace);
+    _writeToFile(_formatMessage(message));
   }
 
   void e(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     _logger.e(message, error: error, stackTrace: stackTrace);
+    _writeToFile(_formatMessage(message));
+    if (error != null) _writeToFile('  Error: $error');
+  }
+
+  String _formatMessage(dynamic message) {
+    final time = DateTime.now();
+    final timeStr =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}.${time.millisecond.toString().padLeft(3, '0')}';
+    return '[$timeStr] $message';
+  }
+
+  Future<void> close() async {
+    await _logSink?.flush();
+    await _logSink?.close();
   }
 }
 

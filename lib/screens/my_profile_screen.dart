@@ -180,6 +180,14 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       ),
                     ),
                     const ListDivider(),
+                    // 手机号
+                    ListRow(
+                      label: '手机号',
+                      value: state.profile?.telephone.isNotEmpty == true ? state.profile!.telephone : '未绑定',
+                      valueColor: AppTheme.textSecondaryColor,
+                      onTap: null,
+                    ),
+                    const ListDivider(),
                     // User ID
                     ListRow(
                       label: 'User ID',

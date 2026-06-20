@@ -68,6 +68,7 @@ impl OpenIMClient {
         ));
         let conversation = Arc::new(ConversationManager::new(
             context.conversation_dao.clone(),
+            context.message_dao.clone(),
             event_bus.clone(),
         ));
         let online_status = Arc::new(OnlineStatusManager::new(
@@ -182,9 +183,9 @@ impl OpenIMClient {
                                     Ok(push_messages) => {
                                         info!("push_message_handler: decoded successfully, msgs={}, notification_msgs={}",
                                             push_messages.msgs.len(), push_messages.notification_msgs.len());
-                                        let all_msgs = push_messages.msgs.iter().chain(push_messages.notification_msgs.iter());
 
-                                        for (conv_id, pull_msgs) in all_msgs {
+                                        // 处理普通消息（对齐 Go SDK triggerConversation）
+                                        for (conv_id, pull_msgs) in &push_messages.msgs {
                                             let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
                                                 let content_str = String::from_utf8_lossy(&msg.content).to_string();
 
@@ -222,6 +223,20 @@ impl OpenIMClient {
                                             } else if !seqs.is_empty() {
                                                 if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
                                                     warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
+                                                }
+                                            }
+                                        }
+
+                                        // 处理通知消息（对齐 Go SDK triggerNotification）
+                                        for (conv_id, pull_msgs) in &push_messages.notification_msgs {
+                                            info!("push_message_handler: routing {} notification msgs for {} to NotificationHandler",
+                                                pull_msgs.msgs.len(), conv_id);
+                                            notification_handler.handle_notifications(&pull_msgs.msgs).await;
+
+                                            let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+                                            if !seqs.is_empty() {
+                                                if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                                    warn!("push_trigger_and_sync (notification) failed for {}: {:?}", conv_id, e);
                                                 }
                                             }
                                         }

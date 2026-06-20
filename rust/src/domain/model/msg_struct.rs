@@ -28,6 +28,7 @@ pub struct TextElem {
 
 /// 图片基础信息
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct PictureBaseInfo {
     pub width: i32,
     pub height: i32,
@@ -40,6 +41,7 @@ pub struct PictureBaseInfo {
 
 /// 图片消息元素（对齐 Go SDK PictureElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PictureElem {
     pub source_path: String,
     pub source_picture: PictureBaseInfo,
@@ -49,6 +51,7 @@ pub struct PictureElem {
 
 /// 语音消息元素（对齐 Go SDK SoundElem）
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SoundElem {
     pub uuid: String,
     pub sound_path: String,
@@ -60,6 +63,7 @@ pub struct SoundElem {
 
 /// 视频消息元素（对齐 Go SDK VideoElem）
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VideoElem {
     pub video_path: String,
     pub video_uuid: String,
@@ -78,6 +82,7 @@ pub struct VideoElem {
 
 /// 文件消息元素（对齐 Go SDK FileElem）
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FileElem {
     pub file_path: String,
     pub uuid: String,
@@ -89,6 +94,7 @@ pub struct FileElem {
 
 /// @ 消息元素（对齐 Go SDK AtTextElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AtTextElem {
     pub text: String,
     pub at_user_list: Vec<String>,
@@ -98,6 +104,7 @@ pub struct AtTextElem {
 
 /// @ 用户信息
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AtInfo {
     pub at_user_id: String,
     pub group_nickname: String,
@@ -105,6 +112,7 @@ pub struct AtInfo {
 
 /// 引用消息元素（对齐 Go SDK QuoteElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuoteElem {
     pub text: String,
     pub quote_message: Option<Box<MsgStruct>>,
@@ -115,6 +123,7 @@ pub struct QuoteElem {
 
 /// 合并转发元素（对齐 Go SDK MergeElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MergeElem {
     pub title: String,
     pub abstract_list: Vec<String>,
@@ -123,6 +132,7 @@ pub struct MergeElem {
 
 /// 名片元素（对齐 Go SDK CardElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CardElem {
     pub user_id: String,
     pub nickname: String,
@@ -132,6 +142,7 @@ pub struct CardElem {
 
 /// 位置元素（对齐 Go SDK LocationElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LocationElem {
     pub description: String,
     pub longitude: f64,
@@ -140,6 +151,7 @@ pub struct LocationElem {
 
 /// 表情元素（对齐 Go SDK FaceElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FaceElem {
     pub index: i32,
     pub data: String,
@@ -147,6 +159,7 @@ pub struct FaceElem {
 
 /// 正在输入元素（对齐 Go SDK TypingElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TypingElem {
     /// "yes" 表示正在输入，"no" 表示停止输入
     pub msg_tips: String,
@@ -154,6 +167,7 @@ pub struct TypingElem {
 
 /// 自定义元素（对齐 Go SDK CustomElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CustomElem {
     pub data: String,
     pub extension: String,
@@ -162,6 +176,7 @@ pub struct CustomElem {
 
 /// 富文本元素（对齐 Go SDK AdvancedTextElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AdvancedTextElem {
     pub text: String,
     pub message_entity_list: Vec<MessageEntity>,
@@ -169,12 +184,14 @@ pub struct AdvancedTextElem {
 
 /// Markdown 文本元素（对齐 Go SDK MarkdownTextElem）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MarkdownTextElem {
     pub content: String,
 }
 
 /// 消息实体（用于富文本）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MessageEntity {
     #[serde(rename = "type")]
     pub entity_type: String,
@@ -186,6 +203,7 @@ pub struct MessageEntity {
 
 /// 离线推送信息（对齐 Go SDK OfflinePushInfo）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct OfflinePushInfo {
     pub title: String,
     pub desc: String,

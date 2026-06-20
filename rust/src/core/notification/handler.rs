@@ -66,15 +66,19 @@ impl NotificationHandler {
 
     async fn handle_single_notification(&self, msg: &MsgData) -> anyhow::Result<()> {
         let ct = msg.content_type;
+        debug!("[NotificationHandler] 收到通知: content_type={}", ct);
         match ct {
             // ========== 好友通知 (1200-1299) ==========
             notification_type::FRIEND_APPLICATION_APPROVED => {
+                info!("[NotificationHandler] 路由到 handle_friend_application_approved");
                 self.handle_friend_application_approved(&msg.content).await?;
             }
             notification_type::FRIEND_APPLICATION_REJECTED => {
+                info!("[NotificationHandler] 路由到 handle_friend_application_rejected");
                 self.handle_friend_application_rejected(&msg.content).await?;
             }
             notification_type::FRIEND_APPLICATION => {
+                info!("[NotificationHandler] 路由到 handle_friend_application_added");
                 self.handle_friend_application_added(&msg.content).await?;
             }
             notification_type::FRIEND_ADDED

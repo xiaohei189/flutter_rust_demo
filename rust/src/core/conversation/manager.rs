@@ -3,18 +3,20 @@ use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
+use crate::infra::database::message_dao::MessageDao;
 use crate::infra::database::models::LocalConversation;
 use std::sync::Arc;
 use tracing::{debug, info};
 
 pub struct ConversationManager {
     dao: Arc<ConversationDao>,
+    message_dao: Arc<MessageDao>,
     event_bus: Arc<EventBus>,
 }
 
 impl ConversationManager {
-    pub fn new(dao: Arc<ConversationDao>, event_bus: Arc<EventBus>) -> Self {
-        Self { dao, event_bus }
+    pub fn new(dao: Arc<ConversationDao>, message_dao: Arc<MessageDao>, event_bus: Arc<EventBus>) -> Self {
+        Self { dao, message_dao, event_bus }
     }
 
     pub fn dao(&self) -> Arc<ConversationDao> {
@@ -22,7 +24,26 @@ impl ConversationManager {
     }
 
     pub async fn get_all_conversations(&self) -> Result<Vec<Conversation>> {
-        let local_convs = self.dao.get_all().await?;
+        let mut local_convs = self.dao.get_all().await?;
+        
+        // 回填空的 latest_msg（从消息数据库获取最新消息）
+        for conv in &mut local_convs {
+            if conv.latest_msg.is_empty() {
+                if let Ok(messages) = self.message_dao.get_latest(&conv.conversation_id, 1).await {
+                    if let Some(latest) = messages.first() {
+                        conv.latest_msg = latest.content.clone();
+                        conv.latest_msg_send_time = latest.send_time;
+                        // 更新数据库
+                        let _ = self.dao.update_latest_msg(
+                            &conv.conversation_id,
+                            &latest.content,
+                            latest.send_time,
+                        ).await;
+                    }
+                }
+            }
+        }
+        
         Ok(local_convs.into_iter().map(|lc| local_to_domain(lc)).collect())
     }
 

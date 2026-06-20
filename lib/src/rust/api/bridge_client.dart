@@ -133,6 +133,17 @@ Future<MsgData> forwardMessage({
   sessionType: sessionType,
 );
 
+/// 转发消息（按 clientMsgId 查找消息并转发）
+Future<MsgData> forwardMessageByClientId({
+  required String clientMsgId,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateApiBridgeClientForwardMessageByClientId(
+  clientMsgId: clientMsgId,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
 /// 按 seq 获取单条历史消息（对齐 Go SDK `GetHistoryMessageBySeq`）
 Future<LocalChatLog> getHistoryMessageBySeq({required PlatformInt64 seq}) =>
     RustLib.instance.api.crateApiBridgeClientGetHistoryMessageBySeq(seq: seq);

@@ -496,7 +496,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       (c) => c.conversationId == conv.conversationId,
     );
 
-    if (index >= 0) {
+    final isUpdate = index >= 0;
+    if (isUpdate) {
       newConversations[index] = conv;
     } else {
       newConversations.add(conv);
@@ -555,32 +556,57 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         _loadConversations();
       },
       conversationChanged: (conversations) {
+        appLog.i('[ConvEvent] conversationChanged 收到 ${conversations.length} 条');
         for (final conv in conversations) {
+          // 查找内存中已有的会话，保留本地维护的字段（latestMsg 等）
+          // 服务端同步不返回这些字段，但 Rust DAO 的 upsert_preserving_local_fields
+          // 已在数据库层保留；这里需要在内存层也做同样保留，避免被空值覆盖
+          final existing = state.conversations.cast<LocalConversation?>().firstWhere(
+            (c) => c?.conversationId == conv.conversationId,
+            orElse: () => null,
+          );
+          appLog.i(
+            '[ConvEvent] ${conv.conversationId} | '
+            '事件数据: showName="${conv.showName}" faceUrl="${conv.faceUrl}" '
+            'latestMsg="${conv.latestMsg.length > 40 ? conv.latestMsg.substring(0, 40) : conv.latestMsg}" '
+            'latestMsgSendTime=${conv.latestMsgSendTime} unread=${conv.unreadCount} '
+            'pinned=${conv.isPinned} recvMsgOpt=${conv.recvMsgOpt}',
+          );
+          if (existing != null) {
+            appLog.i(
+              '[ConvEvent] ${conv.conversationId} | '
+              '内存已有: showName="${existing.showName}" faceUrl="${existing.faceUrl}" '
+              'latestMsg="${existing.latestMsg.length > 40 ? existing.latestMsg.substring(0, 40) : existing.latestMsg}" '
+              'latestMsgSendTime=${existing.latestMsgSendTime} unread=${existing.unreadCount}',
+            );
+          } else {
+            appLog.i('[ConvEvent] ${conv.conversationId} | 内存中无此会话（首次）');
+          }
           _updateConversation(LocalConversation(
             conversationId: conv.conversationId,
             conversationType: conv.conversationType,
             userId: conv.userId,
             groupId: conv.groupId,
-            showName: conv.showName,
-            faceUrl: conv.faceUrl,
-            latestMsg: conv.latestMsg,
-            latestMsgSendTime: conv.latestMsgSendTime,
-            unreadCount: conv.unreadCount,
+            showName: conv.showName.isNotEmpty ? conv.showName : (existing?.showName ?? ''),
+            faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : (existing?.faceUrl ?? ''),
+            latestMsg: conv.latestMsg.isNotEmpty ? conv.latestMsg : (existing?.latestMsg ?? ''),
+            latestMsgSendTime: conv.latestMsgSendTime > 0 ? conv.latestMsgSendTime : (existing?.latestMsgSendTime ?? 0),
+            unreadCount: conv.unreadCount > 0 ? conv.unreadCount : (existing?.unreadCount ?? 0),
             recvMsgOpt: conv.recvMsgOpt,
             isPinned: conv.isPinned ? 1 : 0,
-            isNotInGroup: 0,
-            draftText: conv.draftText,
-            draftTextTime: conv.draftTextTime,
+            isNotInGroup: existing?.isNotInGroup ?? 0,
+            draftText: conv.draftText.isNotEmpty ? conv.draftText : (existing?.draftText ?? ''),
+            draftTextTime: conv.draftTextTime > 0 ? conv.draftTextTime : (existing?.draftTextTime ?? 0),
             isPrivateChat: conv.isPrivateChat ? 1 : 0,
-            burnDuration: conv.burnDuration,
+            burnDuration: conv.burnDuration > 0 ? conv.burnDuration : (existing?.burnDuration ?? 0),
             groupAtType: conv.groupAtType,
             updateUnreadCountTime: conv.updateUnreadCountTime,
             maxSeq: conv.maxSeq,
             minSeq: conv.minSeq,
             isMsgDestruct: conv.isMsgDestruct ? 1 : 0,
             msgDestructTime: conv.msgDestructTime,
-            attachedInfo: '',
-            ex: '',
+            attachedInfo: existing?.attachedInfo ?? '',
+            ex: existing?.ex ?? '',
           ));
         }
       },
@@ -944,11 +970,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
 
     try {
-      appLog.i('[MessageService] _loadConversations 开始 getConversations');
       final conversations = await _client!.getConversations();
-      appLog.i(
-        '[MessageService] getConversations 返回，共 ${conversations.length} 条',
-      );
+      appLog.i('[MessageService] 加载会话列表，共 ${conversations.length} 条');
       this.state = this.state.copyWith(conversations: []);
       for (final conv in conversations) {
         _updateConversation(conv);

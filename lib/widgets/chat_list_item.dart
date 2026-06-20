@@ -287,7 +287,7 @@ class ChatListItem extends StatelessWidget {
       }
     }
     final preview = latestMessagePreview(conversation.latestMsg);
-    return preview == '暂无消息' ? '点击发消息' : preview;
+    return preview;
   }
 
   bool get _hasDraft => conversation.draftText.isNotEmpty;

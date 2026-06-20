@@ -45,21 +45,21 @@ extension MessageInfoExt on MessageInfo {
   String get imagePath {
     final json = parsedContent;
     final src = json['sourcePicture'];
-    if (src is Map) return src['path'] as String? ?? '';
+    if (src is Map) return src['url'] as String? ?? '';
     return '';
   }
 
   String get snapshotPath {
     final json = parsedContent;
     final snap = json['snapshotPicture'];
-    if (snap is Map) return snap['path'] as String? ?? '';
+    if (snap is Map) return snap['url'] as String? ?? '';
     return '';
   }
 
   String get bigPicturePath {
     final json = parsedContent;
     final big = json['bigPicture'];
-    if (big is Map) return big['path'] as String? ?? '';
+    if (big is Map) return big['url'] as String? ?? '';
     return '';
   }
 

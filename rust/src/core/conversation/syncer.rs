@@ -224,7 +224,8 @@ impl ConversationSyncer {
             local_version, local_version_id
         );
 
-        self.event_bus.publish(SdkEvent::SyncStarted);
+        // 注意：不发布 SyncStarted/SyncFinished 事件，避免与 MessageSyncer 冲突
+        // 会话变化通过 ConversationChanged/ConversationDeleted 事件单独通知
 
         // 2. 请求增量数据
         let resp = match self
@@ -233,9 +234,6 @@ impl ConversationSyncer {
         {
             Ok(r) => r,
             Err(e) => {
-                self.event_bus.publish(SdkEvent::SyncFailed {
-                    error: format!("{}", e),
-                });
                 return Err(e);
             }
         };
@@ -257,13 +255,13 @@ impl ConversationSyncer {
         for s in &resp.update {
             let domain = server_to_domain(s.clone());
             let local = crate::core::conversation::manager::domain_to_local(domain);
-            self.dao.upsert(&local).await?;
+            self.dao.upsert_preserving_local_fields(&local).await?;
         }
 
         for s in &resp.insert {
             let domain = server_to_domain(s.clone());
             let local = crate::core::conversation::manager::domain_to_local(domain);
-            self.dao.upsert(&local).await?;
+            self.dao.upsert_preserving_local_fields(&local).await?;
         }
 
         if !resp.update.is_empty() || !resp.insert.is_empty() {
@@ -292,7 +290,6 @@ impl ConversationSyncer {
             warn!("更新会话同步版本失败: {}", e);
         }
 
-        self.event_bus.publish(SdkEvent::SyncFinished);
         info!(
             "增量同步完成，insert={}, update={}, delete={}",
             resp.insert.len(),
@@ -317,14 +314,10 @@ impl ConversationSyncer {
 
     pub async fn sync_full(&self) -> Result<Vec<Conversation>> {
         info!("开始全量同步会话");
-        self.event_bus.publish(SdkEvent::SyncStarted);
 
         let resp = match self.pull_all().await {
             Ok(r) => r,
             Err(e) => {
-                self.event_bus.publish(SdkEvent::SyncFailed {
-                    error: format!("{}", e),
-                });
                 return Err(e);
             }
         };
@@ -336,17 +329,37 @@ impl ConversationSyncer {
             .map(server_to_domain)
             .collect();
 
-        self.dao.clear_all().await?;
+        // 保留本地 latest_msg 等字段：先记录本地所有会话 ID
+        let local_ids: std::collections::HashSet<String> = self
+            .dao
+            .get_all()
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|lc| lc.conversation_id)
+            .collect();
+
+        // 使用保留本地字段的 upsert 方法插入所有服务端会话
         for conv in &conversations {
             let local = crate::core::conversation::manager::domain_to_local(conv.clone());
-            self.dao.upsert(&local).await?;
+            self.dao.upsert_preserving_local_fields(&local).await?;
+        }
+
+        // 删除服务端不再返回的会话（即本地存在但服务端不存在的）
+        let server_ids: std::collections::HashSet<String> = conversations
+            .iter()
+            .map(|c| c.conversation_id.clone())
+            .collect();
+        for local_id in &local_ids {
+            if !server_ids.contains(local_id) {
+                self.dao.delete(local_id).await?;
+            }
         }
 
         self.event_bus.publish(SdkEvent::ConversationChanged {
             conversations: conversations.clone(),
         });
 
-        self.event_bus.publish(SdkEvent::SyncFinished);
         info!("全量同步完成，同步 {} 个会话", conversations.len());
 
         if let Ok(count) = self.dao.count().await {
