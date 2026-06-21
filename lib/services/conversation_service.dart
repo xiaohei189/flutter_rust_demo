@@ -159,7 +159,7 @@ class ConversationService {
       ) {
         loadConversations();
       },
-      messageRevoked: (conversationId, seq, clientMsgId) {
+      messageRevoked: (conversationId, seq, clientMsgId, revokerId, revokerRole, revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId, sourceMessageSenderNickname, sessionType, isAdminRevoke) {
         loadConversations();
       },
       messagesDeleted: (conversationId, clientMsgIds) {

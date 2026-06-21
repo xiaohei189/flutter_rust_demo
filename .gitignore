@@ -46,3 +46,4 @@ app.*.map.json
 rust/conversations.db
 rust/logs/rust.log.*
 logs/rust.log.*
+logs/sdk.log.*

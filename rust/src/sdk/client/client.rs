@@ -118,6 +118,7 @@ impl OpenIMClient {
             group.clone(),
             user.clone(),
             conversation_syncer.clone(),
+            message_handler.clone(),
             event_bus.clone(),
         ));
 
@@ -229,9 +230,17 @@ impl OpenIMClient {
 
                                         // 处理通知消息（对齐 Go SDK triggerNotification）
                                         for (conv_id, pull_msgs) in &push_messages.notification_msgs {
-                                            info!("push_message_handler: routing {} notification msgs for {} to NotificationHandler",
+                                            info!("[REVOKE_DEBUG] push_message_handler: routing {} notification msgs for conv={} to NotificationHandler",
                                                 pull_msgs.msgs.len(), conv_id);
+                                            
+                                            // 打印每条通知消息的详细信息
+                                            for (idx, msg) in pull_msgs.msgs.iter().enumerate() {
+                                                info!("[REVOKE_DEBUG] notification_msg[{}]: content_type={}, seq={}, client_msg_id={}, server_msg_id={}, send_id={}, recv_id={}, content_len={}",
+                                                    idx, msg.content_type, msg.seq, msg.client_msg_id, msg.server_msg_id, msg.send_id, msg.recv_id, msg.content.len());
+                                            }
+                                            
                                             notification_handler.handle_notifications(&pull_msgs.msgs).await;
+                                            info!("[REVOKE_DEBUG] notification_handler.handle_notifications completed for conv={}", conv_id);
 
                                             let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
                                             if !seqs.is_empty() {
@@ -391,6 +400,8 @@ impl OpenIMClient {
 
     /// 登录
     pub async fn login(&self, user_id: &str, token: &str) -> Result<()> {
+        info!("[SDK] 开始登录，user_id={}", user_id);
+        
         self.context.set_user_id(user_id.to_string());
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
@@ -400,28 +411,39 @@ impl OpenIMClient {
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
         self.file_uploader.set_login_user_id(user_id.to_string());
 
+        info!("[SDK] 用户上下文已设置");
+
         // 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
         self.cleanup_sending_messages().await;
 
         if let Some(ws_url) = &self.context.config.ws_url {
+            info!("[SDK] 开始 WebSocket 连接，ws_url={}", ws_url);
             self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
+            info!("[SDK] WebSocket 连接成功");
             self.spawn_push_message_handler();
+        } else {
+            warn!("[SDK] ws_url 未配置，跳过 WebSocket 连接");
         }
 
         // 会话同步：优先增量同步，首次或版本不匹配时回退全量（对齐 Go SDK syncFlag 路径）
+        info!("[SDK] 开始会话同步");
         if let Err(e) = self.conversation_syncer.sync_incremental().await {
-            warn!("登录后会话增量同步失败，回退全量同步: {}", e);
+            warn!("[SDK] 登录后会话增量同步失败，回退全量同步: {}", e);
             if let Err(e2) = self.conversation_syncer.sync_full().await {
-                warn!("登录后会话全量同步失败: {}", e2);
+                warn!("[SDK] 登录后会话全量同步失败: {}", e2);
             }
+        } else {
+            info!("[SDK] 会话增量同步成功");
         }
 
         tokio::spawn({
             let message_syncer = self.message_syncer.clone();
             async move {
-                info!("登录后异步触发消息同步");
+                info!("[SDK] 登录后异步触发消息同步");
                 if let Err(e) = message_syncer.sync_on_login().await {
-                    warn!("登录后消息同步失败: {}", e);
+                    warn!("[SDK] 登录后消息同步失败: {}", e);
+                } else {
+                    info!("[SDK] 登录后消息同步完成");
                 }
             }
         });
@@ -429,7 +451,7 @@ impl OpenIMClient {
         self.event_bus.publish(SdkEvent::LoginSuccess {
             user_id: user_id.to_string(),
         });
-        info!("用户登录成功: {}", user_id);
+        info!("[SDK] 用户登录成功: {}", user_id);
         Ok(())
     }
 

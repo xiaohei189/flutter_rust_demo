@@ -129,15 +129,36 @@ impl MessageService {
 
         let _resp: serde_json::Value = self.http_client.post(REVOKE_MSG, &req).await?;
 
+        // 获取原消息信息用于构建事件
+        let original_msg = self.message_dao.get_by_client_msg_id(&conversation_id, &client_msg_id).await?;
+        
         // 更新本地数据库：标记消息为已撤回
         self.message_dao
             .update_content_type(&conversation_id, &client_msg_id, notification_type::REVOKE)
             .await?;
 
+        // 构建完整的 MessageRevoked 事件
+        let revoke_time = chrono::Utc::now().timestamp_millis();
+        let (source_message_send_time, source_message_send_id, source_message_sender_nickname) = 
+            if let Some(msg) = original_msg {
+                (msg.send_time, msg.send_id.clone(), msg.sender_nick_name.clone())
+            } else {
+                (0, String::new(), String::new())
+            };
+
         self.event_bus.publish(SdkEvent::MessageRevoked {
             conversation_id: conversation_id.clone(),
             seq: final_seq,
-            client_msg_id,
+            client_msg_id: client_msg_id.clone(),
+            revoker_id: user_id.clone(),
+            revoker_role: 0,
+            revoker_nickname: String::new(),
+            revoke_time,
+            source_message_send_time,
+            source_message_send_id,
+            source_message_sender_nickname,
+            session_type,
+            is_admin_revoke: false,
         });
 
         info!("消息已撤回: conversation_id={}, seq={}", conversation_id, final_seq);
@@ -233,50 +254,49 @@ impl MessageService {
     /// 6. 发布 ConversationChanged + TotalUnreadCountChanged 事件
     pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
         let user_id = self.user_id.lock().unwrap().clone();
+        info!("[READ] mark_as_read: conv={} type={} user={}", conversation_id, session_type, user_id);
 
-        // 1. 未读数为 0 → 快速返回（对齐 Go SDK L52-55）
-        let unread_count = self.conversation_dao.get_unread_count(&conversation_id).await?;
-        if unread_count == 0 {
-            return Ok(());
-        }
-
-        // 2. 获取 maxSeq（优先从消息表获取，消息表为空时从会话表获取）
+        // 1. 获取 maxSeq（优先从消息表获取，消息表为空时从会话表获取）
         let mut max_seq = self.message_dao.get_max_seq(&conversation_id).await?;
         if max_seq == 0 {
-            // 消息尚未同步到本地时，使用会话表的 maxSeq（已从服务端同步）
             max_seq = self.conversation_dao.get_max_seq(&conversation_id).await?;
         }
         let peer_user_max_seq = self.message_dao.get_peer_normal_msg_seq(&conversation_id, &user_id).await?;
+        info!("[READ] max_seq={} peer_max_seq={}", max_seq, peer_user_max_seq);
 
         if max_seq == 0 {
+            info!("[READ] max_seq=0, nothing to mark");
             return Ok(());
         }
 
-        // 3. 按会话类型分支处理
+        // 2. 按会话类型分支处理（对齐 Go SDK read_drawing.go L67-96）
+        //    Go SDK 即使 seqs 为空也会调用服务端（L75-79）
         let seqs = if session_type == session_type::SINGLE_CHAT {
-            // 单聊：获取未读消息 → 过滤 → 收集 seqs（对齐 Go SDK L65-83）
             let unread_msgs = self.message_dao.get_unread_messages(&conversation_id, &user_id).await?;
             let seqs: Vec<i64> = unread_msgs.iter()
                 .filter(|m| m.is_read == 0 && m.send_id != user_id && m.seq > 0)
                 .map(|m| m.seq)
                 .collect();
+            info!("[READ] seqs={:?}", seqs);
             seqs
         } else {
-            // 群聊/通知：seqs 传空，只告知服务端 hasReadSeq（对齐 Go SDK L85-92）
+            // 群聊/通知：seqs 传空，只告知服务端 hasReadSeq
             Vec::new()
         };
 
-        // 4. 通知服务端标记已读（对齐 Go SDK `markConversationAsReadServer`）
-        if let Err(e) = self.mark_conversation_as_read_server(&conversation_id, max_seq, &seqs).await {
-            warn!("通知服务端标记已读失败: conversation_id={}, err={}", conversation_id, e);
+        // 3. 始终通知服务端标记已读（对齐 Go SDK：即使 seqs 为空也调用）
+        info!("[READ] calling server: conv={} has_read_seq={} seqs={:?}", conversation_id, max_seq, seqs);
+        match self.mark_conversation_as_read_server(&conversation_id, max_seq, &seqs).await {
+            Ok(_) => info!("[READ] server OK"),
+            Err(e) => warn!("[READ] server FAILED: {}", e),
         }
 
-        // 5. 标记本地消息为已读（对齐 Go SDK `MarkConversationMessageAsReadDB`）
+        // 4. 标记本地消息为已读（对齐 Go SDK `MarkConversationMessageAsReadDB`）
         if session_type == session_type::SINGLE_CHAT && !seqs.is_empty() {
             self.message_dao.mark_as_read_by_max_seq(&conversation_id, max_seq, &user_id).await?;
         }
 
-        // 6. 更新本地会话未读数为 0
+        // 5. 更新本地会话未读数为 0
         self.conversation_dao.update_unread_count(&conversation_id, 0).await?;
 
         // 7. 发布会话变更事件（对齐 Go SDK `unreadChangeTrigger` L162-170）

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../models/user.dart';
 import '../src/rust/domain/model/message.dart' show MessageInfo;
@@ -20,6 +21,7 @@ class MessageList extends StatelessWidget {
     this.cachedSenderProfiles,
     this.cachedCurrentUserProfile,
     this.onMessageLongPress,
+    this.onMessageVisible,
   });
 
   final List<MessageInfo> messages;
@@ -30,6 +32,7 @@ class MessageList extends StatelessWidget {
   final Map<String, UserInfo>? cachedSenderProfiles;
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onMessageLongPress;
+  final void Function(MessageInfo message)? onMessageVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -88,15 +91,68 @@ class MessageList extends StatelessWidget {
         }
 
         final message = messages[messageIndex];
-        return MessageBubble(
+        return _VisibleMessageBubble(
           message: message,
           otherUser: otherUser,
           currentUserId: currentUserId,
           cachedSenderProfile: cachedSenderProfiles?[message.sendId],
           cachedCurrentUserProfile: cachedCurrentUserProfile,
           onLongPress: onMessageLongPress,
+          onVisible: onMessageVisible,
         );
       },
+    );
+  }
+}
+
+/// 带可见性检测的消息气泡
+class _VisibleMessageBubble extends StatelessWidget {
+  const _VisibleMessageBubble({
+    required this.message,
+    required this.otherUser,
+    required this.currentUserId,
+    required this.cachedSenderProfile,
+    required this.cachedCurrentUserProfile,
+    required this.onLongPress,
+    required this.onVisible,
+  });
+
+  final MessageInfo message;
+  final User otherUser;
+  final String? currentUserId;
+  final UserInfo? cachedSenderProfile;
+  final UserInfo? cachedCurrentUserProfile;
+  final void Function(MessageInfo message)? onLongPress;
+  final void Function(MessageInfo message)? onVisible;
+
+  @override
+  Widget build(BuildContext context) {
+    if (onVisible == null) {
+      return MessageBubble(
+        message: message,
+        otherUser: otherUser,
+        currentUserId: currentUserId,
+        cachedSenderProfile: cachedSenderProfile,
+        cachedCurrentUserProfile: cachedCurrentUserProfile,
+        onLongPress: onLongPress,
+      );
+    }
+
+    return VisibilityDetector(
+      key: Key('msg_${message.clientMsgId}'),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0) {
+          onVisible?.call(message);
+        }
+      },
+      child: MessageBubble(
+        message: message,
+        otherUser: otherUser,
+        currentUserId: currentUserId,
+        cachedSenderProfile: cachedSenderProfile,
+        cachedCurrentUserProfile: cachedCurrentUserProfile,
+        onLongPress: onLongPress,
+      ),
     );
   }
 }

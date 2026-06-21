@@ -26,7 +26,7 @@
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
-            "deviceId": "windows",
+            "deviceId": "linux",
             "env": {
                 "FLUTTER_COLOR": "true"
             }

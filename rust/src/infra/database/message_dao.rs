@@ -104,6 +104,18 @@ impl MessageDao {
         Ok(row)
     }
 
+    pub async fn get_by_conversation_and_seq(&self, conversation_id: &str, seq: i64) -> Result<Option<LocalChatLog>> {
+        let row = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq = ? LIMIT 1",
+        )
+        .bind(conversation_id)
+        .bind(seq)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query message by conversation and seq: {}", e)))?;
+        Ok(row)
+    }
+
     pub async fn get_by_client_msg_ids(&self, client_msg_ids: &[String]) -> Result<Vec<LocalChatLog>> {
         if client_msg_ids.is_empty() {
             return Ok(Vec::new());
@@ -225,6 +237,25 @@ impl MessageDao {
         Ok(())
     }
 
+    /// 更新消息的 content 和 content_type（用于撤回消息时替换内容）
+    pub async fn update_message_content_and_type(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+        content: &str,
+        content_type: i32,
+    ) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET content = ?, content_type = ? WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(content)
+            .bind(content_type)
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update message content and type: {}", e)))?;
+        Ok(())
+    }
+
     pub async fn search_by_keyword(&self, conversation_id: &str, keyword: &str, max_count: i64) -> Result<Vec<LocalChatLog>> {
         let pattern = format!("%{}%", keyword);
         let rows = sqlx::query_as::<_, LocalChatLog>(
@@ -236,6 +267,19 @@ impl MessageDao {
         .fetch_all(&self.pool)
         .await
         .map_err(|e| SdkError::database(format!("search messages: {}", e)))?;
+        Ok(rows)
+    }
+
+    /// 按内容类型搜索消息（用于撤回时查找引用消息）
+    pub async fn search_by_content_type(&self, conversation_id: &str, content_type: i32) -> Result<Vec<LocalChatLog>> {
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND content_type = ?",
+        )
+        .bind(conversation_id)
+        .bind(content_type)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("search messages by content_type: {}", e)))?;
         Ok(rows)
     }
 
@@ -256,6 +300,27 @@ impl MessageDao {
         query.execute(&self.pool)
             .await
             .map_err(|e| SdkError::database(format!("mark as read: {}", e)))?;
+        Ok(())
+    }
+
+    /// 按 seq 列表标记消息已读（不过滤 send_id，用于已读回执处理）
+    /// 对齐 Go SDK doReadDrawing：收到已读回执时直接标记指定 seq 的消息
+    pub async fn mark_as_read_by_seqs_all(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> {
+        if seqs.is_empty() {
+            return Ok(());
+        }
+        let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq IN ({})",
+            placeholders
+        );
+        let mut query = sqlx::query(&sql).bind(conversation_id);
+        for seq in seqs {
+            query = query.bind(seq);
+        }
+        query.execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("mark as read all: {}", e)))?;
         Ok(())
     }
 

@@ -38,7 +38,7 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
+class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _loadingNotifier = ValueNotifier<bool>(false);
@@ -51,6 +51,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _client = ref.read(messageServiceProvider.notifier).client;
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
@@ -66,6 +67,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
   Future<void> _markConversationAsRead() async {
     try {
+      appLog.i('[READ] chat_detail _markConversationAsRead: ${widget.conversationId}');
       await ref.read(messageServiceProvider.notifier).markConversationAsRead(widget.conversationId);
     } catch (e) {
       appLog.e('标记已读失败: $e');
@@ -115,6 +117,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _markConversationAsRead();
     _saveDraftOnExit();
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
@@ -458,12 +462,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     if (picked == null) return;
     final target = _getSendTarget();
     if (target == null) { _showError('会话信息异常'); return; }
-    await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
+    final ok = await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
       recvId: target.recvId,
       filePath: picked.path,
       sessionType: target.sessionType,
       groupId: target.groupId,
     );
+    if (!ok) {
+      final err = ref.read(messageListProvider(_conversation!.conversationId)).error;
+      _showError(err ?? '发送图片失败');
+    }
     if (!widget.preLoaded) _scrollToBottom();
   }
 
@@ -473,12 +481,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     if (picked == null) return;
     final target = _getSendTarget();
     if (target == null) { _showError('会话信息异常'); return; }
-    await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
+    final ok = await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
       recvId: target.recvId,
       filePath: picked.path,
       sessionType: target.sessionType,
       groupId: target.groupId,
     );
+    if (!ok) {
+      final err = ref.read(messageListProvider(_conversation!.conversationId)).error;
+      _showError(err ?? '发送图片失败');
+    }
     if (!widget.preLoaded) _scrollToBottom();
   }
 
@@ -779,6 +791,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                             },
                           ),
                         ),
+                        onMessageVisible: (msg) {
+                          // 消息可见时标记已读（对齐官方 Demo）
+                          if (msg.sendId != currentUserId) {
+                            _markConversationAsRead();
+                          }
+                        },
                       );
                     },
                   ),

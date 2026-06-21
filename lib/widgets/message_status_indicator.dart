@@ -28,11 +28,7 @@ class MessageStatusIndicator extends StatelessWidget {
         );
 
       case MessageSendStatus.sendSuccess:
-        return Icon(
-          Icons.check,
-          size: 16,
-          color: Colors.grey.shade600,
-        );
+        return const SizedBox.shrink();
 
       case MessageSendStatus.sendFailed:
         return GestureDetector(

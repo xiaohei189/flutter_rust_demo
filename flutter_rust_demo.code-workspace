@@ -24,6 +24,12 @@
         },
         {
             "path": "../openim-docker"
+        },
+        {
+            "path": "../openim-flutter-demo"
+        },
+        {
+            "path": "../open-im-android-demo"
         }
     ]
 }

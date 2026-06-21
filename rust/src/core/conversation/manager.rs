@@ -224,9 +224,10 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_creation() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let message_dao = Arc::new(MessageDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
-        let manager = ConversationManager::new(dao, event_bus);
+        let manager = ConversationManager::new(dao, message_dao, event_bus);
 
         assert_eq!(manager.count().await.unwrap(), 0);
     }
@@ -234,9 +235,10 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_upsert() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let message_dao = Arc::new(MessageDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
-        let manager = ConversationManager::new(dao, event_bus);
+        let manager = ConversationManager::new(dao, message_dao, event_bus);
 
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
@@ -251,9 +253,10 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_delete() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let message_dao = Arc::new(MessageDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
-        let manager = ConversationManager::new(dao, event_bus);
+        let manager = ConversationManager::new(dao, message_dao, event_bus);
 
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
@@ -266,9 +269,10 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_set_pinned() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let message_dao = Arc::new(MessageDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
-        let manager = ConversationManager::new(dao, event_bus);
+        let manager = ConversationManager::new(dao, message_dao, event_bus);
 
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
@@ -286,9 +290,10 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_update_unread_count() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let message_dao = Arc::new(MessageDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
-        let manager = ConversationManager::new(dao, event_bus);
+        let manager = ConversationManager::new(dao, message_dao, event_bus);
 
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
@@ -301,9 +306,10 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_set_draft() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool));
+        let dao = Arc::new(ConversationDao::new(pool.clone()));
+        let message_dao = Arc::new(MessageDao::new(pool));
         let event_bus = Arc::new(EventBus::new());
-        let manager = ConversationManager::new(dao, event_bus);
+        let manager = ConversationManager::new(dao, message_dao, event_bus);
 
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();

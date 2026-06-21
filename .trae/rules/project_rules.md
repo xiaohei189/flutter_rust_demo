@@ -16,11 +16,15 @@
 
 ### 相关项目参考（均在 `../` 同级目录下）
 
+#### BUG 修复参考
+ - 优先查看核心项目，并总结设计思路修复，避免重复分析代码
 #### 核心参考
 - `../protocol` - OpenIM 协议定义项目（**数据模型与 API 契约的权威来源**，包含 `.proto` 和生成的 `.rs`/`.pb.go`）
 - `../openim-sdk-core` - Go 版本 SDK（**IM 核心逻辑参考实现**，所有业务逻辑对齐此项目）
 - `../open-im-server` - IM 服务端源码（消息路由、群组、推送等后端服务）
-
+- `../chat` - 账号中间件服务（注册/登录/验证码/Token 管理，含 chat-api 和 chat-rpc）
+- `../open-im-android-demo` - 官方 Android 端示例（UI 交互、页面跳转、状态管理参考，**遇到 Bug 时优先参考此 Demo 的实现**）
+- `../openim-flutter-demo` - 官方 Flutter 示例（登录/注册/聊天 UI 参考，**遇到 Bug 时优先参考此 Demo 的实现**）
 #### 官方 Demo / 客户端示例
 - `../openim-flutter-demo` - 官方 Flutter 示例（登录/注册/聊天 UI 参考）
 - `../openim-electron-demo` - 官方 Electron 桌面端示例
@@ -268,6 +272,15 @@ rust/src/
 
 - 使用 `freezed` 生成不可变数据类
 - 使用 `json_serializable` 进行 JSON 序列化
+
+### 4. 消息已读/未读状态显示
+
+- 消息已读/未读状态**不使用对号图标**，改用汉字显示
+- 已读：显示「已读」文字，颜色为绿色
+- 未读：显示「未读」文字，颜色为灰色
+- 位置：消息气泡右下角，时间右侧
+- 字体大小：11px
+- 实现参考：`lib/widgets/message_bubble.dart` 中的 `isRead` 状态判断
 
 ---
 

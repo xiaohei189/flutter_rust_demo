@@ -440,7 +440,10 @@ impl FileUploader {
         let resp: InitiateFormDataResp = self.http_client.post(INITIATE_FORM_DATA, &req).await?;
         info!("initiate_form_data: id={}, url={}", resp.id, resp.url);
 
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .map_err(|e| SdkError::file_upload(format!("创建 HTTP 客户端失败: {}", e)))?;
         let mut form = reqwest::multipart::Form::new();
 
         for (key, value) in &resp.form_data {
