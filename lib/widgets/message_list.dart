@@ -22,6 +22,7 @@ class MessageList extends StatelessWidget {
     this.cachedCurrentUserProfile,
     this.onMessageLongPress,
     this.onMessageVisible,
+    this.onMessageTap,
   });
 
   final List<MessageInfo> messages;
@@ -33,6 +34,7 @@ class MessageList extends StatelessWidget {
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onMessageLongPress;
   final void Function(MessageInfo message)? onMessageVisible;
+  final void Function(MessageInfo message)? onMessageTap;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +101,7 @@ class MessageList extends StatelessWidget {
           cachedCurrentUserProfile: cachedCurrentUserProfile,
           onLongPress: onMessageLongPress,
           onVisible: onMessageVisible,
+          onTap: onMessageTap,
         );
       },
     );
@@ -115,6 +118,7 @@ class _VisibleMessageBubble extends StatelessWidget {
     required this.cachedCurrentUserProfile,
     required this.onLongPress,
     required this.onVisible,
+    this.onTap,
   });
 
   final MessageInfo message;
@@ -124,6 +128,7 @@ class _VisibleMessageBubble extends StatelessWidget {
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onLongPress;
   final void Function(MessageInfo message)? onVisible;
+  final void Function(MessageInfo message)? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +140,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         cachedSenderProfile: cachedSenderProfile,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
+        onTap: onTap,
       );
     }
 
@@ -152,6 +158,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         cachedSenderProfile: cachedSenderProfile,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
+        onTap: onTap,
       ),
     );
   }

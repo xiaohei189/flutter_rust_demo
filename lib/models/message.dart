@@ -8,7 +8,7 @@ enum MessageType {
   location,   // 106/109
   card,       // 108
   custom,     // 110
-  merge,      // 111
+  merge,      // 107
   quote,      // 114
   face,       // 115
   at,         // 116
@@ -26,14 +26,15 @@ MessageType messageTypeFromContentType(int ct) {
     104 => MessageType.audio,
     105 => MessageType.file,
     106 || 109 => MessageType.location,
-    107 || 108 => MessageType.card,
+    107 => MessageType.merge,
+    108 => MessageType.card,
     110 => MessageType.custom,
-    111 => MessageType.merge,
     114 => MessageType.quote,
     115 => MessageType.face,
     116 => MessageType.at,
     117 => MessageType.advancedText,
     118 => MessageType.markdown,
+    2101 => MessageType.system, // 消息撤回（RevokeNotification）
     10000 => MessageType.system,
     _ => MessageType.text,
   };

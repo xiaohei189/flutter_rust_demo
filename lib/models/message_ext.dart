@@ -27,9 +27,23 @@ extension MessageInfoExt on MessageInfo {
       MessageType.markdown => json['content'] as String? ?? '',
       MessageType.quote => json['text'] as String? ?? '',
       MessageType.at => json['text'] as String? ?? '',
-      MessageType.merge => '[聊天记录] ${json['messageCount'] as int? ?? 0}条消息',
+      MessageType.merge => '[聊天记录] ${mergeMessageCount}条消息',
+      MessageType.system => _systemDisplayText(json),
       _ => content,
     };
+  }
+
+  String _systemDisplayText(Map<String, dynamic> json) {
+    // 撤回通知（contentType=2101，DB 中存储的完整撤回信息）
+    if (json.containsKey('revokerID') || json.containsKey('revokerNickname')) {
+      final nickname = json['revokerNickname'] as String? ;
+      return '$nickname 撤回了一条消息';
+    }
+    // 撤回通知（实时回调，简化格式 {"content":"xxx"}）
+    if (json.containsKey('content')) {
+      return json['content'] as String? ?? content;
+    }
+    return content;
   }
 
   /// 发送时间 DateTime
@@ -126,9 +140,13 @@ extension MessageInfoExt on MessageInfo {
 
   // ---- 合并转发 ----
   String get mergeTitle => parsedContent['title'] as String? ?? '';
-  int get mergeMessageCount => parsedContent['messageCount'] as int? ?? 0;
+  int get mergeMessageCount {
+    final list = parsedContent['multiMessage'];
+    if (list is List) return list.length;
+    return 0;
+  }
   List<String> get mergeSenderNicknames {
-    final list = parsedContent['senderNicknameList'];
+    final list = parsedContent['abstractList'];
     if (list is List) return list.cast<String>();
     return [];
   }

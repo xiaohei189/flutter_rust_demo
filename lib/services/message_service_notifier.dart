@@ -189,12 +189,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       appLog.d('dart MessageService 📜 getHistoryMessages 返回: messages=${result.messages.length}, isEnd=${result.isEnd}');
 
       if (result.messages.isEmpty) {
-        appLog.d('dart MessageService 📜 历史消息为空');
         return false;
-      }
-
-      for (final msg in result.messages) {
-        appLog.d('dart MessageService 📜 消息: id=${msg.clientMsgId}, sendId=${msg.sendId}, content=${msg.content.substring(0, msg.content.length > 30 ? 30 : msg.content.length)}, isRead=${msg.isRead}, status=${msg.status}');
       }
 
       final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
@@ -208,14 +203,36 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           .where((msg) => seenIds.add(msg.clientMsgId))
           .toList();
 
-      appLog.d('dart MessageService 📜 合并后消息数: ${newMessages[conversationId]!.length}');
-
       this.state = this.state.copyWith(messages: newMessages);
 
       return !result.isEnd;
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
       return false;
+    }
+  }
+
+  /// 标记已读后刷新消息列表（从数据库重新加载，确保 isRead 状态同步）
+  /// 对齐 Go SDK：Go 侧 MarkConversationMessageAsReadDB 更新 DB 后，
+  /// Flutter 侧需重新加载消息以获取最新 is_read 状态
+  Future<void> _refreshMessagesAfterRead(String conversationId) async {
+    if (_client == null) return;
+    try {
+      final result = await _client!.getHistoryMessages(
+        req: GetHistoryMessagesReq(
+          conversationId: conversationId,
+          startClientMsgId: '',
+          count: 20,
+        ),
+      );
+      if (result.messages.isNotEmpty) {
+        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+        newMessages[conversationId] = result.messages;
+        this.state = this.state.copyWith(messages: newMessages);
+        appLog.i('[READ] _refreshMessagesAfterRead: conv=$conversationId msgs=${result.messages.length}');
+      }
+    } catch (e) {
+      appLog.e('[READ] _refreshMessagesAfterRead FAILED: $e');
     }
   }
 
@@ -236,6 +253,20 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     final sourceId = groupId.isNotEmpty ? groupId : recvId;
     await _client!.sendTextMessage(
       text: text,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 转发消息（按 clientMsgId 原样转发，对齐 Go SDK ForwardMessage）
+  Future<void> forwardMessage({
+    required String clientMsgId,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    await fb.forwardMessageByClientId(
+      clientMsgId: clientMsgId,
       sourceId: sourceId,
       sessionType: sessionType,
     );
@@ -716,7 +747,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
             '(${uploadedSize.toInt()}/${totalSize.toInt()} bytes)');
       },
       messageRevoked: (conversationId, seq, clientMsgId, revokerId, revokerRole, revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId, sourceMessageSenderNickname, sessionType, isAdminRevoke) {
-        appLog.i('dart MessageService 🔄 消息被撤回: conv=$conversationId, seq=$seq, msgId=$clientMsgId, revoker=$revokerId');
+        // 使用真实昵称：优先 revokerNickname（可能为 ID），其次 sourceMessageSenderNickname
+        final displayName = (revokerNickname.isNotEmpty && !revokerNickname.startsWith('6') && revokerNickname.length < 20)
+            ? revokerNickname
+            : sourceMessageSenderNickname.isNotEmpty
+                ? sourceMessageSenderNickname
+                : revokerNickname;
+        appLog.i('dart MessageService 消息被撤回: conv=$conversationId, seq=$seq, msgId=$clientMsgId, revoker=$displayName');
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages[conversationId];
         if (list != null) {
@@ -734,8 +771,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
               senderFaceUrl: old.senderFaceUrl,
               sessionType: old.sessionType,
               msgFrom: old.msgFrom,
-              contentType: 10000, // 系统消息
-              content: '{"content":"对方撤回了一条消息"}',
+              contentType: 2101, // 与 DB 中的撤回类型一致
+              content: '{"revokerNickname":"$displayName","clientMsgID":"$clientMsgId","revokerID":"$revokerId","revokeTime":$revokeTime,"sessionType":$sessionType,"seq":$seq,"isAdminRevoke":$isAdminRevoke}',
               seq: old.seq,
               sendTime: old.sendTime,
               createTime: old.createTime,
@@ -1059,6 +1096,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         );
       }
       this.state = this.state.copyWith(conversations: newConversations);
+
+      // 刷新消息列表，确保 isRead 状态从数据库同步到内存
+      // 对齐 Go SDK：Go 侧 MarkConversationMessageAsReadDB 更新 DB 后，
+      // Flutter 侧需重新加载消息以获取最新 is_read 状态
+      await _refreshMessagesAfterRead(conversationId);
     } catch (e) {
       appLog.i('[READ] Dart markConversationAsRead FAILED: $e');
     }

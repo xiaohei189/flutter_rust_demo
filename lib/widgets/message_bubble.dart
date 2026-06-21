@@ -18,6 +18,7 @@ class MessageBubble extends StatelessWidget {
   final UserInfo? cachedSenderProfile;
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onLongPress;
+  final void Function(MessageInfo message)? onTap;
 
   const MessageBubble({
     super.key,
@@ -27,6 +28,7 @@ class MessageBubble extends StatelessWidget {
     this.cachedSenderProfile,
     this.cachedCurrentUserProfile,
     this.onLongPress,
+    this.onTap,
   });
 
   User _buildSenderUser() {
@@ -70,6 +72,23 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 系统消息（撤回等）：居中显示，无头像、无气泡背景
+    if (message.messageType == MessageType.system) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Center(
+          child: Text(
+            message.displayText,
+            style: TextStyle(
+              color: AppTheme.textSecondaryColor,
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
     final isFromMe = _isFromMe;
     final timeFormat = DateFormat('HH:mm');
     final senderUser = _buildSenderUser();
@@ -121,6 +140,7 @@ class MessageBubble extends StatelessWidget {
               ],
               Flexible(
                 child: GestureDetector(
+                  onTap: onTap != null ? () => onTap!(message) : null,
                   onLongPress: onLongPress != null ? () => onLongPress!(message) : null,
                   child: Align(
                     alignment: isFromMe
@@ -443,9 +463,13 @@ class MessageBubble extends StatelessWidget {
 
   // ===== 合并转发消息 =====
   Widget _buildMergeMessage(BuildContext context, bool isFromMe) {
+    final title = message.mergeTitle.isNotEmpty ? message.mergeTitle : '聊天记录';
+    final previews = message.mergeSenderNicknames;
+    final count = message.mergeMessageCount;
+
     return Container(
-      width: 200,
-      padding: const EdgeInsets.all(10),
+      width: 220,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -454,9 +478,10 @@ class MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 标题
           Text(
-            message.mergeTitle.isNotEmpty ? message.mergeTitle : '聊天记录',
-            maxLines: 1,
+            title,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
@@ -464,24 +489,37 @@ class MessageBubble extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
-          ...message.mergeSenderNicknames.take(3).map(
-            (name) => Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
-                fontSize: 12,
+          // 分隔线
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            height: 0.5,
+            color: (isFromMe ? Colors.white24 : Colors.grey.shade300),
+          ),
+          // 摘要预览（sender: content 格式，最多 5 条）
+          ...previews.take(5).map(
+            (text) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            '${message.mergeMessageCount}条消息',
-            style: TextStyle(
-              color: isFromMe ? Colors.white54 : AppTheme.textSecondaryColor,
-              fontSize: 11,
+          // 消息条数
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$count条消息',
+              style: TextStyle(
+                color: isFromMe ? Colors.white54 : AppTheme.textSecondaryColor,
+                fontSize: 11,
+              ),
             ),
           ),
         ],

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/message_ext.dart';
+import '../models/message.dart' show MessageType;
 import '../providers/providers.dart';
 import '../providers/message_service_provider.dart';
 import '../src/rust/api/bridge_client.dart' as fb;
@@ -22,6 +23,7 @@ import '../widgets/message_list.dart';
 import '../widgets/message_action_menu.dart';
 import '../widgets/user_avatar.dart';
 import '../screens/contact_picker_screen.dart';
+import '../screens/merge_message_detail_screen.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
 class ChatDetailScreen extends ConsumerStatefulWidget {
@@ -130,17 +132,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
   /// 获取会话信息
   LocalConversation? get _conversation {
-    // 先尝试从新的 ConversationService 获取
-    final newService = ref.read(conversationServiceProvider);
-    var conversation = newService.getConversation(widget.conversationId);
-    if (conversation != null) return conversation;
-    
-    // 如果新服务没有，尝试从旧的 conversationListProvider 获取
-    final oldState = ref.read(conversationListProvider);
-    conversation = oldState.conversations
+    final convState = ref.read(conversationListProvider);
+    return convState.conversations
         .where((c) => c.conversationId == widget.conversationId)
         .firstOrNull;
-    return conversation;
   }
 
   User _getUser(UserProfileState userProfileState) {
@@ -609,6 +604,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   @override
   Widget build(BuildContext context) {
     final userProfileState = ref.watch(userProfileProvider);
+    ref.watch(conversationListProvider); // watch 会话列表，unreadCount 变化时触发重建
     final user = _getUser(userProfileState);
     final conversation = _conversation;
     final unread = conversation?.unreadCount ?? 0;
@@ -770,13 +766,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                                 final target = result.first;
                                 final st = target.isGroup ? SessionType.writeGroupChat : SessionType.singleChat;
                                 try {
-                                  final parsed = msg.parsedContent;
-                                  final text = parsed['text'] as String? ?? msg.content;
-                                  await ref.read(messageServiceProvider.notifier).sendTextMessage(
-                                    recvId: target.id,
-                                    text: '[转发] $text',
+                                  final sourceId = target.isGroup ? target.id : target.id;
+                                  await ref.read(messageServiceProvider.notifier).forwardMessage(
+                                    clientMsgId: msg.clientMsgId,
+                                    sourceId: sourceId,
                                     sessionType: st,
-                                    conversationId: target.id,
                                   );
                                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('已转发给 ${target.name}')),
@@ -795,6 +789,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                           // 消息可见时标记已读（对齐官方 Demo）
                           if (msg.sendId != currentUserId) {
                             _markConversationAsRead();
+                          }
+                        },
+                        onMessageTap: (msg) {
+                          if (msg.messageType == MessageType.merge) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MergeMessageDetailScreen(message: msg),
+                              ),
+                            );
                           }
                         },
                       );
