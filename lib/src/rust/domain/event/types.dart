@@ -198,6 +198,15 @@ sealed class SdkEvent with _$SdkEvent {
     required String conversationId,
     required PlatformInt64 seq,
     required String clientMsgId,
+    required String revokerId,
+    required int revokerRole,
+    required String revokerNickname,
+    required PlatformInt64 revokeTime,
+    required PlatformInt64 sourceMessageSendTime,
+    required String sourceMessageSendId,
+    required String sourceMessageSenderNickname,
+    required int sessionType,
+    required bool isAdminRevoke,
   }) = SdkEvent_MessageRevoked;
 
   /// C2C 已读回执（对齐 Go SDK `OnRecvC2CReadReceipt`）

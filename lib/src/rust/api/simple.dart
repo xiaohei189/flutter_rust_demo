@@ -7,11 +7,18 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `get_log_dir`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `DartLogLayer`, `MessageVisitor`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `on_event`, `record_debug`, `record_str`
+// These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `default`
 
 /// 设置日志目录（应在 init_logger 前调用）
 Future<void> setLogDirectory({required String path}) =>
     RustLib.instance.api.crateApiSimpleSetLogDirectory(path: path);
 
-/// 初始化 Rust 日志系统
+/// 初始化 Rust 日志系统（同时输出到文件和控制台）
 Future<void> initLogger({required String logLevel}) =>
     RustLib.instance.api.crateApiSimpleInitLogger(logLevel: logLevel);
+
+/// 订阅 Rust 日志流（实时推送到 Dart 侧）
+Stream<String> subscribeRustLogs() =>
+    RustLib.instance.api.crateApiSimpleSubscribeRustLogs();

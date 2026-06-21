@@ -8,14 +8,16 @@
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
+use crate::core::message::handler::MessageHandler;
 use crate::core::user::manager::UserManager;
 use crate::domain::constant::types::notification_type;
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::model::message::ReceivedMessage;
 use crate::protocol::sdkws::{
     FriendApplicationApprovedTips, FriendApplicationRejectedTips, FriendApplicationTips,
     GroupApplicationAcceptedTips, GroupApplicationRejectedTips, JoinGroupApplicationTips,
-    MsgData, UserInfo,
+    MsgData, UserInfo, RevokeMsgTips,
 };
 use prost::Message as ProstMessage;
 use std::sync::Arc;
@@ -26,6 +28,7 @@ pub struct NotificationHandler {
     group_manager: Arc<GroupManager>,
     user_manager: Arc<UserManager>,
     conversation_syncer: Arc<ConversationSyncer>,
+    message_handler: Arc<MessageHandler>,
     event_bus: Arc<EventBus>,
     user_id: std::sync::Mutex<String>,
 }
@@ -36,6 +39,7 @@ impl NotificationHandler {
         group_manager: Arc<GroupManager>,
         user_manager: Arc<UserManager>,
         conversation_syncer: Arc<ConversationSyncer>,
+        message_handler: Arc<MessageHandler>,
         event_bus: Arc<EventBus>,
     ) -> Self {
         Self {
@@ -43,6 +47,7 @@ impl NotificationHandler {
             group_manager,
             user_manager,
             conversation_syncer,
+            message_handler,
             event_bus,
             user_id: std::sync::Mutex::new(String::new()),
         }
@@ -54,7 +59,10 @@ impl NotificationHandler {
 
     /// 处理通知消息列表（对齐 Go SDK Work() 方法的 CmdNotification 路由）
     pub async fn handle_notifications(&self, msgs: &[MsgData]) {
-        for msg in msgs {
+        info!("[REVOKE_DEBUG] NotificationHandler::handle_notifications: 收到 {} 条通知消息", msgs.len());
+        for (idx, msg) in msgs.iter().enumerate() {
+            info!("[REVOKE_DEBUG] handle_notifications[{}]: content_type={}, seq={}, client_msg_id={}",
+                idx, msg.content_type, msg.seq, msg.client_msg_id);
             if let Err(e) = self.handle_single_notification(msg).await {
                 warn!(
                     "处理通知消息失败: content_type={}, error={}",
@@ -62,11 +70,13 @@ impl NotificationHandler {
                 );
             }
         }
+        info!("[REVOKE_DEBUG] NotificationHandler::handle_notifications: 处理完成");
     }
 
     async fn handle_single_notification(&self, msg: &MsgData) -> anyhow::Result<()> {
         let ct = msg.content_type;
-        debug!("[NotificationHandler] 收到通知: content_type={}", ct);
+        info!("[REVOKE_DEBUG] handle_single_notification: content_type={}, seq={}, client_msg_id={}",
+            ct, msg.seq, msg.client_msg_id);
         match ct {
             // ========== 好友通知 (1200-1299) ==========
             notification_type::FRIEND_APPLICATION_APPROVED => {
@@ -157,10 +167,41 @@ impl NotificationHandler {
                 }
             }
 
+            // ========== 消息撤回通知 (2101) ==========
+            notification_type::REVOKE => {
+                info!("[NotificationHandler] 收到消息撤回通知 (2101)");
+                self.handle_revoke_notification(msg).await?;
+            }
+
+            // ========== 已读回执通知 (2200) ==========
+            notification_type::HAS_READ_RECEIPT => {
+                info!("[NotificationHandler] 收到已读回执通知 (2200)");
+                self.message_handler.handle_read_receipt_from_msg_data(msg).await?;
+            }
+
             _ => {
                 debug!("未处理的通知类型: content_type={}", ct);
             }
         }
+        Ok(())
+    }
+
+    /// 处理消息撤回通知（2101）
+    /// 对齐 Go SDK do_revoke_msg: 从 msg.content 反序列化 RevokeMsgTips (protobuf)
+    async fn handle_revoke_notification(&self, msg: &MsgData) -> anyhow::Result<()> {
+        // 1. 从 msg.content 反序列化 RevokeMsgTips (protobuf)
+        let tips = RevokeMsgTips::decode(msg.content.as_slice())
+            .map_err(|e| anyhow::anyhow!("解析 RevokeMsgTips 失败: {}", e))?;
+        
+        info!("[NotificationHandler] 解析 RevokeMsgTips: conversation_id={}, seq={}, revoker_user_id={}, client_msg_id={}",
+              tips.conversation_id, tips.seq, tips.revoker_user_id, tips.client_msg_id);
+
+        // 2. 委托给 MessageHandler 处理（直接传递 tips）
+        if let Err(e) = self.message_handler.handle_revoke_notification(&tips).await {
+            warn!("[NotificationHandler] 处理撤回通知失败: {}", e);
+            return Err(anyhow::anyhow!("处理撤回通知失败: {}", e));
+        }
+
         Ok(())
     }
 
@@ -427,7 +468,9 @@ mod tests {
         let user = Arc::new(UserManager::new(http_client.clone(), event_bus.clone()));
         let conversation_dao = Arc::new(crate::infra::database::ConversationDao::new(pool.clone()));
         let conversation_syncer = Arc::new(ConversationSyncer::new(http_client, conversation_dao, event_bus.clone(), sync_version_dao, "user1".into()));
-        let handler = NotificationHandler::new(friend, group, user, conversation_syncer, event_bus);
+        let message_dao = Arc::new(crate::infra::database::MessageDao::new(pool.clone()));
+        let message_handler = Arc::new(MessageHandler::new(message_dao, conversation_dao.clone(), event_bus.clone()));
+        let handler = NotificationHandler::new(friend, group, user, conversation_syncer, message_handler, event_bus);
         handler.set_user_id("user1".into());
     }
 }

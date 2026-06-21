@@ -81,7 +81,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1419092269;
+  int get rustContentHash => 1417839870;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -869,6 +869,8 @@ abstract class RustLibApi extends BaseApi {
     required String clientMsgId,
     required String localEx,
   });
+
+  Stream<String> crateApiSimpleSubscribeRustLogs();
 
   Future<void> crateApiBridgeClientUnInitSdk();
 
@@ -6442,6 +6444,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<String> crateApiSimpleSubscribeRustLogs() {
+    final sink = RustStreamSink<String>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_StreamSink_String_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 135,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: sse_decode_AnyhowException,
+          ),
+          constMeta: kCrateApiSimpleSubscribeRustLogsConstMeta,
+          argValues: [sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta get kCrateApiSimpleSubscribeRustLogsConstMeta =>
+      const TaskConstMeta(debugName: "subscribe_rust_logs", argNames: ["sink"]);
+
+  @override
   Future<void> crateApiBridgeClientUnInitSdk() {
     return handler.executeNormal(
       NormalTask(
@@ -6450,7 +6484,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 135,
+            funcId: 136,
             port: port_,
           );
         },
@@ -6482,7 +6516,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 136,
+            funcId: 137,
             port: port_,
           );
         },
@@ -6520,7 +6554,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 137,
+              funcId: 138,
               port: port_,
             );
           },
@@ -6647,6 +6681,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return PullMsgsImpl.frbInternalDcoDecode(raw as List<dynamic>);
+  }
+
+  @protected
+  RustStreamSink<String> dco_decode_StreamSink_String_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
   }
 
   @protected
@@ -7503,6 +7543,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           conversationId: dco_decode_String(raw[1]),
           seq: dco_decode_i_64(raw[2]),
           clientMsgId: dco_decode_String(raw[3]),
+          revokerId: dco_decode_String(raw[4]),
+          revokerRole: dco_decode_i_32(raw[5]),
+          revokerNickname: dco_decode_String(raw[6]),
+          revokeTime: dco_decode_i_64(raw[7]),
+          sourceMessageSendTime: dco_decode_i_64(raw[8]),
+          sourceMessageSendId: dco_decode_String(raw[9]),
+          sourceMessageSenderNickname: dco_decode_String(raw[10]),
+          sessionType: dco_decode_i_32(raw[11]),
+          isAdminRevoke: dco_decode_bool(raw[12]),
         );
       case 16:
         return SdkEvent_C2CReadReceipt(
@@ -7860,6 +7909,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
+  }
+
+  @protected
+  RustStreamSink<String> sse_decode_StreamSink_String_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
   }
 
   @protected
@@ -9065,10 +9122,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_conversationId = sse_decode_String(deserializer);
         var var_seq = sse_decode_i_64(deserializer);
         var var_clientMsgId = sse_decode_String(deserializer);
+        var var_revokerId = sse_decode_String(deserializer);
+        var var_revokerRole = sse_decode_i_32(deserializer);
+        var var_revokerNickname = sse_decode_String(deserializer);
+        var var_revokeTime = sse_decode_i_64(deserializer);
+        var var_sourceMessageSendTime = sse_decode_i_64(deserializer);
+        var var_sourceMessageSendId = sse_decode_String(deserializer);
+        var var_sourceMessageSenderNickname = sse_decode_String(deserializer);
+        var var_sessionType = sse_decode_i_32(deserializer);
+        var var_isAdminRevoke = sse_decode_bool(deserializer);
         return SdkEvent_MessageRevoked(
           conversationId: var_conversationId,
           seq: var_seq,
           clientMsgId: var_clientMsgId,
+          revokerId: var_revokerId,
+          revokerRole: var_revokerRole,
+          revokerNickname: var_revokerNickname,
+          revokeTime: var_revokeTime,
+          sourceMessageSendTime: var_sourceMessageSendTime,
+          sourceMessageSendId: var_sourceMessageSendId,
+          sourceMessageSenderNickname: var_sourceMessageSenderNickname,
+          sessionType: var_sessionType,
+          isAdminRevoke: var_isAdminRevoke,
         );
       case 16:
         var var_receipts = sse_decode_list_message_receipt(deserializer);
@@ -9466,6 +9541,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as PullMsgsImpl).frbInternalSseEncode(move: null),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_String_Sse(
+    RustStreamSink<String> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
       serializer,
     );
   }
@@ -10467,11 +10559,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         conversationId: final conversationId,
         seq: final seq,
         clientMsgId: final clientMsgId,
+        revokerId: final revokerId,
+        revokerRole: final revokerRole,
+        revokerNickname: final revokerNickname,
+        revokeTime: final revokeTime,
+        sourceMessageSendTime: final sourceMessageSendTime,
+        sourceMessageSendId: final sourceMessageSendId,
+        sourceMessageSenderNickname: final sourceMessageSenderNickname,
+        sessionType: final sessionType,
+        isAdminRevoke: final isAdminRevoke,
       ):
         sse_encode_i_32(15, serializer);
         sse_encode_String(conversationId, serializer);
         sse_encode_i_64(seq, serializer);
         sse_encode_String(clientMsgId, serializer);
+        sse_encode_String(revokerId, serializer);
+        sse_encode_i_32(revokerRole, serializer);
+        sse_encode_String(revokerNickname, serializer);
+        sse_encode_i_64(revokeTime, serializer);
+        sse_encode_i_64(sourceMessageSendTime, serializer);
+        sse_encode_String(sourceMessageSendId, serializer);
+        sse_encode_String(sourceMessageSenderNickname, serializer);
+        sse_encode_i_32(sessionType, serializer);
+        sse_encode_bool(isAdminRevoke, serializer);
       case SdkEvent_C2CReadReceipt(receipts: final receipts):
         sse_encode_i_32(16, serializer);
         sse_encode_list_message_receipt(receipts, serializer);

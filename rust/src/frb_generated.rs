@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1419092269;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1417839870;
 
 // Section: executor
 
@@ -5068,6 +5068,35 @@ fn wire__crate__api__bridge_client__set_message_local_ex_impl(
         },
     )
 }
+fn wire__crate__api__simple__subscribe_rust_logs_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "subscribe_rust_logs",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_sink = <StreamSink<String, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let output_ok = crate::api::simple::subscribe_rust_logs(api_sink).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__bridge_client__un_init_sdk_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -5227,6 +5256,14 @@ impl SseDecode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpa
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <usize>::sse_decode(deserializer);
         return decode_rust_opaque_moi(inner);
+    }
+}
+
+impl SseDecode for StreamSink<String, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <String>::sse_decode(deserializer);
+        return StreamSink::deserialize(inner);
     }
 }
 
@@ -6343,10 +6380,28 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                 let mut var_conversationId = <String>::sse_decode(deserializer);
                 let mut var_seq = <i64>::sse_decode(deserializer);
                 let mut var_clientMsgId = <String>::sse_decode(deserializer);
+                let mut var_revokerId = <String>::sse_decode(deserializer);
+                let mut var_revokerRole = <i32>::sse_decode(deserializer);
+                let mut var_revokerNickname = <String>::sse_decode(deserializer);
+                let mut var_revokeTime = <i64>::sse_decode(deserializer);
+                let mut var_sourceMessageSendTime = <i64>::sse_decode(deserializer);
+                let mut var_sourceMessageSendId = <String>::sse_decode(deserializer);
+                let mut var_sourceMessageSenderNickname = <String>::sse_decode(deserializer);
+                let mut var_sessionType = <i32>::sse_decode(deserializer);
+                let mut var_isAdminRevoke = <bool>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::MessageRevoked {
                     conversation_id: var_conversationId,
                     seq: var_seq,
                     client_msg_id: var_clientMsgId,
+                    revoker_id: var_revokerId,
+                    revoker_role: var_revokerRole,
+                    revoker_nickname: var_revokerNickname,
+                    revoke_time: var_revokeTime,
+                    source_message_send_time: var_sourceMessageSendTime,
+                    source_message_send_id: var_sourceMessageSendId,
+                    source_message_sender_nickname: var_sourceMessageSenderNickname,
+                    session_type: var_sessionType,
+                    is_admin_revoke: var_isAdminRevoke,
                 };
             }
             16 => {
@@ -6826,9 +6881,10 @@ fn pde_ffi_dispatcher_primary_impl(
         132 => wire__crate__api__bridge_client__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
         133 => wire__crate__api__simple__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
         134 => wire__crate__api__bridge_client__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
-        135 => wire__crate__api__bridge_client__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
-        136 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
-        137 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        135 => wire__crate__api__simple__subscribe_rust_logs_impl(port, ptr, rust_vec_len, data_len),
+        136 => wire__crate__api__bridge_client__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
+        137 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
+        138 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -7504,11 +7560,33 @@ impl flutter_rust_bridge::IntoDart for crate::domain::event::types::SdkEvent {
                 uploaded_size.into_into_dart().into_dart(),
             ]
             .into_dart(),
-            crate::domain::event::types::SdkEvent::MessageRevoked { conversation_id, seq, client_msg_id } => [
+            crate::domain::event::types::SdkEvent::MessageRevoked {
+                conversation_id,
+                seq,
+                client_msg_id,
+                revoker_id,
+                revoker_role,
+                revoker_nickname,
+                revoke_time,
+                source_message_send_time,
+                source_message_send_id,
+                source_message_sender_nickname,
+                session_type,
+                is_admin_revoke,
+            } => [
                 15.into_dart(),
                 conversation_id.into_into_dart().into_dart(),
                 seq.into_into_dart().into_dart(),
                 client_msg_id.into_into_dart().into_dart(),
+                revoker_id.into_into_dart().into_dart(),
+                revoker_role.into_into_dart().into_dart(),
+                revoker_nickname.into_into_dart().into_dart(),
+                revoke_time.into_into_dart().into_dart(),
+                source_message_send_time.into_into_dart().into_dart(),
+                source_message_send_id.into_into_dart().into_dart(),
+                source_message_sender_nickname.into_into_dart().into_dart(),
+                session_type.into_into_dart().into_dart(),
+                is_admin_revoke.into_into_dart().into_dart(),
             ]
             .into_dart(),
             crate::domain::event::types::SdkEvent::C2CReadReceipt { receipts } => [16.into_dart(), receipts.into_into_dart().into_dart()].into_dart(),
@@ -7725,6 +7803,13 @@ impl SseEncode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpa
         let (ptr, size) = self.sse_encode_raw();
         <usize>::sse_encode(ptr, serializer);
         <i32>::sse_encode(size, serializer);
+    }
+}
+
+impl SseEncode for StreamSink<String, flutter_rust_bridge::for_generated::SseCodec> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        unimplemented!("")
     }
 }
 
@@ -8534,11 +8619,33 @@ impl SseEncode for crate::domain::event::types::SdkEvent {
                 <u64>::sse_encode(total_size, serializer);
                 <u64>::sse_encode(uploaded_size, serializer);
             }
-            crate::domain::event::types::SdkEvent::MessageRevoked { conversation_id, seq, client_msg_id } => {
+            crate::domain::event::types::SdkEvent::MessageRevoked {
+                conversation_id,
+                seq,
+                client_msg_id,
+                revoker_id,
+                revoker_role,
+                revoker_nickname,
+                revoke_time,
+                source_message_send_time,
+                source_message_send_id,
+                source_message_sender_nickname,
+                session_type,
+                is_admin_revoke,
+            } => {
                 <i32>::sse_encode(15, serializer);
                 <String>::sse_encode(conversation_id, serializer);
                 <i64>::sse_encode(seq, serializer);
                 <String>::sse_encode(client_msg_id, serializer);
+                <String>::sse_encode(revoker_id, serializer);
+                <i32>::sse_encode(revoker_role, serializer);
+                <String>::sse_encode(revoker_nickname, serializer);
+                <i64>::sse_encode(revoke_time, serializer);
+                <i64>::sse_encode(source_message_send_time, serializer);
+                <String>::sse_encode(source_message_send_id, serializer);
+                <String>::sse_encode(source_message_sender_nickname, serializer);
+                <i32>::sse_encode(session_type, serializer);
+                <bool>::sse_encode(is_admin_revoke, serializer);
             }
             crate::domain::event::types::SdkEvent::C2CReadReceipt { receipts } => {
                 <i32>::sse_encode(16, serializer);

@@ -72,6 +72,15 @@ mixin _$SdkEvent {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -185,7 +194,20 @@ mixin _$SdkEvent {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -290,7 +312,20 @@ mixin _$SdkEvent {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -710,6 +745,15 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -827,7 +871,20 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -936,7 +993,20 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -1360,6 +1430,15 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -1477,7 +1556,20 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -1586,7 +1678,20 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -2041,6 +2146,15 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -2158,7 +2272,20 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -2267,7 +2394,20 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -2731,6 +2871,15 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -2848,7 +2997,20 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -2957,7 +3119,20 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -3436,6 +3611,15 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -3553,7 +3737,20 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -3662,7 +3859,20 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -4179,6 +4389,15 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -4296,7 +4515,20 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -4405,7 +4637,20 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -4929,6 +5174,15 @@ class _$SdkEvent_PushNotificationMessagesImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -5046,7 +5300,20 @@ class _$SdkEvent_PushNotificationMessagesImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -5155,7 +5422,20 @@ class _$SdkEvent_PushNotificationMessagesImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -5598,6 +5878,15 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -5715,7 +6004,20 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -5824,7 +6126,20 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -6290,6 +6605,15 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -6407,7 +6731,20 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -6516,7 +6853,20 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -6953,6 +7303,15 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -7070,7 +7429,20 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -7179,7 +7551,20 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -7633,6 +8018,15 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -7750,7 +8144,20 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -7859,7 +8266,20 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -8322,6 +8742,15 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -8439,7 +8868,20 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -8548,7 +8990,20 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -9161,6 +9616,15 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -9292,7 +9756,20 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -9415,7 +9892,20 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -9928,6 +10418,15 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -10045,7 +10544,20 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -10154,7 +10666,20 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -10661,6 +11186,15 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -10778,7 +11312,20 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -10887,7 +11434,20 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -11238,7 +11798,20 @@ abstract class _$$SdkEvent_MessageRevokedImplCopyWith<$Res> {
     $Res Function(_$SdkEvent_MessageRevokedImpl) then,
   ) = __$$SdkEvent_MessageRevokedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String conversationId, int seq, String clientMsgId});
+  $Res call({
+    String conversationId,
+    int seq,
+    String clientMsgId,
+    String revokerId,
+    int revokerRole,
+    String revokerNickname,
+    int revokeTime,
+    int sourceMessageSendTime,
+    String sourceMessageSendId,
+    String sourceMessageSenderNickname,
+    int sessionType,
+    bool isAdminRevoke,
+  });
 }
 
 /// @nodoc
@@ -11258,6 +11831,15 @@ class __$$SdkEvent_MessageRevokedImplCopyWithImpl<$Res>
     Object? conversationId = null,
     Object? seq = null,
     Object? clientMsgId = null,
+    Object? revokerId = null,
+    Object? revokerRole = null,
+    Object? revokerNickname = null,
+    Object? revokeTime = null,
+    Object? sourceMessageSendTime = null,
+    Object? sourceMessageSendId = null,
+    Object? sourceMessageSenderNickname = null,
+    Object? sessionType = null,
+    Object? isAdminRevoke = null,
   }) {
     return _then(
       _$SdkEvent_MessageRevokedImpl(
@@ -11273,6 +11855,42 @@ class __$$SdkEvent_MessageRevokedImplCopyWithImpl<$Res>
             ? _value.clientMsgId
             : clientMsgId // ignore: cast_nullable_to_non_nullable
                   as String,
+        revokerId: null == revokerId
+            ? _value.revokerId
+            : revokerId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        revokerRole: null == revokerRole
+            ? _value.revokerRole
+            : revokerRole // ignore: cast_nullable_to_non_nullable
+                  as int,
+        revokerNickname: null == revokerNickname
+            ? _value.revokerNickname
+            : revokerNickname // ignore: cast_nullable_to_non_nullable
+                  as String,
+        revokeTime: null == revokeTime
+            ? _value.revokeTime
+            : revokeTime // ignore: cast_nullable_to_non_nullable
+                  as int,
+        sourceMessageSendTime: null == sourceMessageSendTime
+            ? _value.sourceMessageSendTime
+            : sourceMessageSendTime // ignore: cast_nullable_to_non_nullable
+                  as int,
+        sourceMessageSendId: null == sourceMessageSendId
+            ? _value.sourceMessageSendId
+            : sourceMessageSendId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        sourceMessageSenderNickname: null == sourceMessageSenderNickname
+            ? _value.sourceMessageSenderNickname
+            : sourceMessageSenderNickname // ignore: cast_nullable_to_non_nullable
+                  as String,
+        sessionType: null == sessionType
+            ? _value.sessionType
+            : sessionType // ignore: cast_nullable_to_non_nullable
+                  as int,
+        isAdminRevoke: null == isAdminRevoke
+            ? _value.isAdminRevoke
+            : isAdminRevoke // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -11285,6 +11903,15 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required this.conversationId,
     required this.seq,
     required this.clientMsgId,
+    required this.revokerId,
+    required this.revokerRole,
+    required this.revokerNickname,
+    required this.revokeTime,
+    required this.sourceMessageSendTime,
+    required this.sourceMessageSendId,
+    required this.sourceMessageSenderNickname,
+    required this.sessionType,
+    required this.isAdminRevoke,
   }) : super._();
 
   @override
@@ -11293,10 +11920,28 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
   final int seq;
   @override
   final String clientMsgId;
+  @override
+  final String revokerId;
+  @override
+  final int revokerRole;
+  @override
+  final String revokerNickname;
+  @override
+  final int revokeTime;
+  @override
+  final int sourceMessageSendTime;
+  @override
+  final String sourceMessageSendId;
+  @override
+  final String sourceMessageSenderNickname;
+  @override
+  final int sessionType;
+  @override
+  final bool isAdminRevoke;
 
   @override
   String toString() {
-    return 'SdkEvent.messageRevoked(conversationId: $conversationId, seq: $seq, clientMsgId: $clientMsgId)';
+    return 'SdkEvent.messageRevoked(conversationId: $conversationId, seq: $seq, clientMsgId: $clientMsgId, revokerId: $revokerId, revokerRole: $revokerRole, revokerNickname: $revokerNickname, revokeTime: $revokeTime, sourceMessageSendTime: $sourceMessageSendTime, sourceMessageSendId: $sourceMessageSendId, sourceMessageSenderNickname: $sourceMessageSenderNickname, sessionType: $sessionType, isAdminRevoke: $isAdminRevoke)';
   }
 
   @override
@@ -11308,12 +11953,47 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
                 other.conversationId == conversationId) &&
             (identical(other.seq, seq) || other.seq == seq) &&
             (identical(other.clientMsgId, clientMsgId) ||
-                other.clientMsgId == clientMsgId));
+                other.clientMsgId == clientMsgId) &&
+            (identical(other.revokerId, revokerId) ||
+                other.revokerId == revokerId) &&
+            (identical(other.revokerRole, revokerRole) ||
+                other.revokerRole == revokerRole) &&
+            (identical(other.revokerNickname, revokerNickname) ||
+                other.revokerNickname == revokerNickname) &&
+            (identical(other.revokeTime, revokeTime) ||
+                other.revokeTime == revokeTime) &&
+            (identical(other.sourceMessageSendTime, sourceMessageSendTime) ||
+                other.sourceMessageSendTime == sourceMessageSendTime) &&
+            (identical(other.sourceMessageSendId, sourceMessageSendId) ||
+                other.sourceMessageSendId == sourceMessageSendId) &&
+            (identical(
+                  other.sourceMessageSenderNickname,
+                  sourceMessageSenderNickname,
+                ) ||
+                other.sourceMessageSenderNickname ==
+                    sourceMessageSenderNickname) &&
+            (identical(other.sessionType, sessionType) ||
+                other.sessionType == sessionType) &&
+            (identical(other.isAdminRevoke, isAdminRevoke) ||
+                other.isAdminRevoke == isAdminRevoke));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, conversationId, seq, clientMsgId);
+  int get hashCode => Object.hash(
+    runtimeType,
+    conversationId,
+    seq,
+    clientMsgId,
+    revokerId,
+    revokerRole,
+    revokerNickname,
+    revokeTime,
+    sourceMessageSendTime,
+    sourceMessageSendId,
+    sourceMessageSenderNickname,
+    sessionType,
+    isAdminRevoke,
+  );
 
   /// Create a copy of SdkEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -11382,6 +12062,15 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -11445,7 +12134,20 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult Function() logout,
     required TResult Function(String eventType, String data) customEvent,
   }) {
-    return messageRevoked(conversationId, seq, clientMsgId);
+    return messageRevoked(
+      conversationId,
+      seq,
+      clientMsgId,
+      revokerId,
+      revokerRole,
+      revokerNickname,
+      revokeTime,
+      sourceMessageSendTime,
+      sourceMessageSendId,
+      sourceMessageSenderNickname,
+      sessionType,
+      isAdminRevoke,
+    );
   }
 
   @override
@@ -11499,7 +12201,20 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -11554,7 +12269,20 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult? Function()? logout,
     TResult? Function(String eventType, String data)? customEvent,
   }) {
-    return messageRevoked?.call(conversationId, seq, clientMsgId);
+    return messageRevoked?.call(
+      conversationId,
+      seq,
+      clientMsgId,
+      revokerId,
+      revokerRole,
+      revokerNickname,
+      revokeTime,
+      sourceMessageSendTime,
+      sourceMessageSendId,
+      sourceMessageSenderNickname,
+      sessionType,
+      isAdminRevoke,
+    );
   }
 
   @override
@@ -11608,7 +12336,20 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -11665,7 +12406,20 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult orElse(),
   }) {
     if (messageRevoked != null) {
-      return messageRevoked(conversationId, seq, clientMsgId);
+      return messageRevoked(
+        conversationId,
+        seq,
+        clientMsgId,
+        revokerId,
+        revokerRole,
+        revokerNickname,
+        revokeTime,
+        sourceMessageSendTime,
+        sourceMessageSendId,
+        sourceMessageSenderNickname,
+        sessionType,
+        isAdminRevoke,
+      );
     }
     return orElse();
   }
@@ -11936,12 +12690,30 @@ abstract class SdkEvent_MessageRevoked extends SdkEvent {
     required final String conversationId,
     required final int seq,
     required final String clientMsgId,
+    required final String revokerId,
+    required final int revokerRole,
+    required final String revokerNickname,
+    required final int revokeTime,
+    required final int sourceMessageSendTime,
+    required final String sourceMessageSendId,
+    required final String sourceMessageSenderNickname,
+    required final int sessionType,
+    required final bool isAdminRevoke,
   }) = _$SdkEvent_MessageRevokedImpl;
   const SdkEvent_MessageRevoked._() : super._();
 
   String get conversationId;
   int get seq;
   String get clientMsgId;
+  String get revokerId;
+  int get revokerRole;
+  String get revokerNickname;
+  int get revokeTime;
+  int get sourceMessageSendTime;
+  String get sourceMessageSendId;
+  String get sourceMessageSenderNickname;
+  int get sessionType;
+  bool get isAdminRevoke;
 
   /// Create a copy of SdkEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -12085,6 +12857,15 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -12202,7 +12983,20 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -12311,7 +13105,20 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -12784,6 +13591,15 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -12901,7 +13717,20 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -13010,7 +13839,20 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -13485,6 +14327,15 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -13602,7 +14453,20 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -13711,7 +14575,20 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -14189,6 +15066,15 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -14306,7 +15192,20 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -14415,7 +15314,20 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -14881,6 +15793,15 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -14998,7 +15919,20 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -15107,7 +16041,20 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -15573,6 +16520,15 @@ class _$SdkEvent_MessageExtensionsAddedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -15690,7 +16646,20 @@ class _$SdkEvent_MessageExtensionsAddedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -15799,7 +16768,20 @@ class _$SdkEvent_MessageExtensionsAddedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -16270,6 +17252,15 @@ class _$SdkEvent_MessageExtensionsChangedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -16387,7 +17378,20 @@ class _$SdkEvent_MessageExtensionsChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -16496,7 +17500,20 @@ class _$SdkEvent_MessageExtensionsChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -16967,6 +17984,15 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -17084,7 +18110,20 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -17193,7 +18232,20 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -17683,6 +18735,15 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -17800,7 +18861,20 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -17909,7 +18983,20 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -18391,6 +19478,15 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -18508,7 +19604,20 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -18617,7 +19726,20 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -19099,6 +20221,15 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -19216,7 +20347,20 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -19325,7 +20469,20 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -19805,6 +20962,15 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -19922,7 +21088,20 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -20031,7 +21210,20 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -20499,6 +21691,15 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -20616,7 +21817,20 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -20725,7 +21939,20 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -21195,6 +22422,15 @@ class _$SdkEvent_FriendApplicationAddedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -21312,7 +22548,20 @@ class _$SdkEvent_FriendApplicationAddedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -21421,7 +22670,20 @@ class _$SdkEvent_FriendApplicationAddedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -21893,6 +23155,15 @@ class _$SdkEvent_FriendApplicationApprovedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -22010,7 +23281,20 @@ class _$SdkEvent_FriendApplicationApprovedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -22119,7 +23403,20 @@ class _$SdkEvent_FriendApplicationApprovedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -22591,6 +23888,15 @@ class _$SdkEvent_FriendApplicationRejectedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -22708,7 +24014,20 @@ class _$SdkEvent_FriendApplicationRejectedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -22817,7 +24136,20 @@ class _$SdkEvent_FriendApplicationRejectedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -23292,6 +24624,15 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -23409,7 +24750,20 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -23518,7 +24872,20 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -23984,6 +25351,15 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -24101,7 +25477,20 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -24210,7 +25599,20 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -24673,6 +26075,15 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -24790,7 +26201,20 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -24899,7 +26323,20 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -25363,6 +26800,15 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -25480,7 +26926,20 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -25589,7 +27048,20 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -26052,6 +27524,15 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -26169,7 +27650,20 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -26278,7 +27772,20 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -26742,6 +28249,15 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -26859,7 +28375,20 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -26968,7 +28497,20 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -27431,6 +28973,15 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -27548,7 +29099,20 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -27657,7 +29221,20 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -28143,6 +29720,15 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -28260,7 +29846,20 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -28369,7 +29968,20 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -28858,6 +30470,15 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -28975,7 +30596,20 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -29084,7 +30718,20 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -29555,6 +31202,15 @@ class _$SdkEvent_GroupApplicationAddedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -29672,7 +31328,20 @@ class _$SdkEvent_GroupApplicationAddedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -29781,7 +31450,20 @@ class _$SdkEvent_GroupApplicationAddedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -30253,6 +31935,15 @@ class _$SdkEvent_GroupApplicationApprovedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -30370,7 +32061,20 @@ class _$SdkEvent_GroupApplicationApprovedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -30479,7 +32183,20 @@ class _$SdkEvent_GroupApplicationApprovedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -30951,6 +32668,15 @@ class _$SdkEvent_GroupApplicationRejectedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -31068,7 +32794,20 @@ class _$SdkEvent_GroupApplicationRejectedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -31177,7 +32916,20 @@ class _$SdkEvent_GroupApplicationRejectedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -31643,6 +33395,15 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -31760,7 +33521,20 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -31869,7 +33643,20 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -32332,6 +34119,15 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -32449,7 +34245,20 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -32558,7 +34367,20 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -33021,6 +34843,15 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -33138,7 +34969,20 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -33247,7 +35091,20 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -33720,6 +35577,15 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -33837,7 +35703,20 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -33946,7 +35825,20 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -34425,6 +36317,15 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -34542,7 +36443,20 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -34651,7 +36565,20 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -35132,6 +37059,15 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -35249,7 +37185,20 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -35358,7 +37307,20 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -35840,6 +37802,15 @@ class _$SdkEvent_GroupOwnerTransferredImpl
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -35957,7 +37928,20 @@ class _$SdkEvent_GroupOwnerTransferredImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -36066,7 +38050,20 @@ class _$SdkEvent_GroupOwnerTransferredImpl
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -36534,6 +38531,15 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -36651,7 +38657,20 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -36760,7 +38779,20 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -37253,6 +39285,15 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -37370,7 +39411,20 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -37479,7 +39533,20 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -37982,6 +40049,15 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -38099,7 +40175,20 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -38208,7 +40297,20 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -38677,6 +40779,15 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -38794,7 +40905,20 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -38903,7 +41027,20 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -39378,6 +41515,15 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -39495,7 +41641,20 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -39604,7 +41763,20 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -40041,6 +42213,15 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -40158,7 +42339,20 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -40267,7 +42461,20 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -40722,6 +42929,15 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -40839,7 +43055,20 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -40948,7 +43177,20 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -41381,6 +43623,15 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -41498,7 +43749,20 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -41607,7 +43871,20 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -42073,6 +44350,15 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
       String conversationId,
       int seq,
       String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
     )
     messageRevoked,
     required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
@@ -42190,7 +44476,20 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult? Function(String conversationId, int seq, String clientMsgId)?
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
@@ -42299,7 +44598,20 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
       BigInt uploadedSize,
     )?
     uploadProgress,
-    TResult Function(String conversationId, int seq, String clientMsgId)?
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
     messageRevoked,
     TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
     TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,

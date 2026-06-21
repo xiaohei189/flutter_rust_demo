@@ -1,6 +1,6 @@
 use crate::domain::constant::types::content_type;
 use crate::domain::constant::types::msg_status;
-use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
+use crate::domain::constant::types::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
@@ -9,7 +9,7 @@ use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
-use crate::protocol::sdkws::MarkAsReadTips;
+use crate::protocol::sdkws::{MarkAsReadTips, RevokeMsgTips};
 use prost::Message as ProstMessage;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -220,9 +220,27 @@ impl MessageHandler {
             }
         }
 
-        // 过滤掉已读回执，只处理普通消息
+        // 撤回通知处理（对齐 Go SDK do_revoke_msg）
+        for msg in &messages {
+            if msg.content_type == REVOKE {
+                // 从 msg.content 解析 RevokeMsgTips (protobuf)
+                match RevokeMsgTips::decode(msg.content.as_bytes()) {
+                    Ok(tips) => {
+                        if let Err(e) = self.handle_revoke_notification(&tips).await {
+                            warn!("处理撤回通知失败: {}", e);
+                        }
+                    }
+                    Err(e) => {
+                        warn!("解析 RevokeMsgTips 失败: {}", e);
+                    }
+                }
+                continue;
+            }
+        }
+
+        // 过滤掉已读回执和撤回通知，只处理普通消息
         let normal_messages: Vec<ReceivedMessage> = messages.into_iter()
-            .filter(|m| m.content_type != HAS_READ_RECEIPT)
+            .filter(|m| m.content_type != HAS_READ_RECEIPT && m.content_type != REVOKE)
             .collect();
 
         if normal_messages.is_empty() {
@@ -476,6 +494,7 @@ impl MessageHandler {
 
         let login_user_id = self.user_id.lock().unwrap().clone();
 
+        info!("[READ] handle_read_receipt: conv={} mark_user={} login_user={}", tips.conversation_id, tips.mark_as_read_user_id, login_user_id);
         if tips.mark_as_read_user_id != login_user_id {
             // 别人发来的已读回执：对方标记我的消息为已读（对齐 Go SDK L238-280）
 
@@ -490,16 +509,16 @@ impl MessageHandler {
                 if !tips.seqs.is_empty() {
                     // 通过 seq 查询消息，逐条标记 is_read = true
                     let messages = self.message_dao.get_by_seqs(&tips.conversation_id, &tips.seqs).await?;
+                    info!("[READ] got msgs by seqs: count={}", messages.len());
                     let mut updated_client_msg_ids: Vec<String> = Vec::new();
 
                     for mut m in messages {
-                        if m.is_read == 0 && m.send_id != login_user_id {
+                        if m.is_read == 0 {
                             m.is_read = 1;
-                            // 更新本地 DB（设置 is_read = 1）
-                            self.message_dao.mark_as_read_by_seqs(
+                            // 更新本地 DB（设置 is_read = 1，不过滤 send_id）
+                            self.message_dao.mark_as_read_by_seqs_all(
                                 &tips.conversation_id,
                                 &[m.seq],
-                                &login_user_id,
                             ).await?;
                             updated_client_msg_ids.push(m.client_msg_id.clone());
                         }
@@ -557,6 +576,108 @@ impl MessageHandler {
 
         debug!("处理已读回执: conversation_id={}, seqs={}, has_read_seq={}",
             tips.conversation_id, tips.seqs.len(), tips.has_read_seq);
+        Ok(())
+    }
+
+    /// 处理来自 NotificationHandler 的已读回执（MsgData 格式，content_type=2200）
+    /// 通知消息的 content 是 JSON 格式：{"detail": "{\"markAsReadUserID\":...}"}
+    /// 需要先解析外层 JSON 取 detail，再解析内层 JSON 取 MarkAsReadTips 字段
+    pub async fn handle_read_receipt_from_msg_data(&self, msg: &crate::protocol::sdkws::MsgData) -> Result<()> {
+        // 1. 解析外层 JSON 获取 detail 字段
+        let content_str = std::str::from_utf8(&msg.content)
+            .map_err(|e| SdkError::invalid_argument(format!("content 不是有效 UTF-8: {}", e)))?;
+        let outer: serde_json::Value = serde_json::from_str(content_str)
+            .map_err(|e| SdkError::invalid_argument(format!("解析外层 JSON 失败: {}", e)))?;
+        let detail_str = outer.get("detail")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| SdkError::invalid_argument("JSON 缺少 detail 字段".to_string()))?;
+
+        // 2. 解析内层 JSON 获取 MarkAsReadTips 字段
+        #[derive(serde::Deserialize)]
+        struct MarkAsReadTipsJson {
+            #[serde(rename = "markAsReadUserID")]
+            mark_as_read_user_id: String,
+            #[serde(rename = "conversationID")]
+            conversation_id: String,
+            #[serde(default)]
+            seqs: Option<Vec<i64>>,
+            #[serde(rename = "hasReadSeq")]
+            has_read_seq: i64,
+        }
+        let tips_json: MarkAsReadTipsJson = serde_json::from_str(detail_str)
+            .map_err(|e| SdkError::invalid_argument(format!("解析 detail JSON 失败: {}", e)))?;
+        let seqs = tips_json.seqs.unwrap_or_default();
+
+        let login_user_id = self.user_id.lock().unwrap().clone();
+
+        info!("[READ] handle_read_receipt(from_notification): conv={} mark_user={} login_user={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, login_user_id);
+        if tips_json.mark_as_read_user_id != login_user_id {
+            let conversation = self.conversation_dao.get_by_id(&tips_json.conversation_id).await?;
+            let session_type_val = conversation.as_ref()
+                .map(|c| c.conversation_type)
+                .unwrap_or(msg.session_type);
+
+            if session_type_val == session_type::SINGLE_CHAT {
+                if !seqs.is_empty() {
+                    let messages = self.message_dao.get_by_seqs(&tips_json.conversation_id, &seqs).await?;
+                    info!("[READ] got msgs by seqs: count={}", messages.len());
+                    let mut updated_client_msg_ids: Vec<String> = Vec::new();
+
+                    for mut m in messages {
+                        if m.is_read == 0 {
+                            m.is_read = 1;
+                            self.message_dao.mark_as_read_by_seqs_all(
+                                &tips_json.conversation_id,
+                                &[m.seq],
+                            ).await?;
+                            updated_client_msg_ids.push(m.client_msg_id.clone());
+                        }
+                    }
+
+                    if !updated_client_msg_ids.is_empty() {
+                        self.event_bus.publish(SdkEvent::C2CReadReceipt {
+                            receipts: vec![MessageReceipt {
+                                user_id: tips_json.mark_as_read_user_id.clone(),
+                                msg_ids: updated_client_msg_ids,
+                                read_time: tips_json.has_read_seq,
+                                session_type: session_type_val,
+                            }],
+                        });
+                    }
+                }
+            } else if session_type_val == session_type::WRITE_GROUP_CHAT
+                || session_type_val == session_type::READ_GROUP_CHAT
+            {
+                self.event_bus.publish(SdkEvent::GroupReadReceipt {
+                    receipts: vec![GroupReadReceipt {
+                        group_id: tips_json.conversation_id.clone(),
+                        msg_id: seqs.first().map(|s| s.to_string()).unwrap_or_default(),
+                        has_read_user_id_list: vec![tips_json.mark_as_read_user_id.clone()],
+                        has_read_count: seqs.len() as i32,
+                        group_member_count: 0,
+                        read_time: tips_json.has_read_seq,
+                    }],
+                });
+            }
+
+            self.do_unread_count(
+                &tips_json.conversation_id,
+                session_type_val,
+                tips_json.has_read_seq,
+                &seqs,
+            ).await?;
+        } else {
+            self.conversation_dao.update_unread_count(&tips_json.conversation_id, 0).await?;
+            let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
+                conversations: Vec::new(),
+            });
+            if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+                let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+            }
+        }
+
+        debug!("处理已读回执(from_notification): conversation_id={}, seqs={}, has_read_seq={}",
+            tips_json.conversation_id, seqs.len(), tips_json.has_read_seq);
         Ok(())
     }
 
@@ -640,6 +761,185 @@ impl MessageHandler {
 
         if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
             let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+        }
+
+        Ok(())
+    }
+
+    /// 撤回通知处理（严格对齐 Go SDK revoke_message）
+    ///
+    /// 官方实现流程：
+    /// 1. 获取被撤回的消息
+    /// 2. 获取撤回者信息
+    /// 3. 构建 MessageRevoked 结构
+    /// 4. 更新 DB：替换消息内容为 RevokeNotification
+    /// 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg
+    /// 6. 触发 OnNewRecvMessageRevoked 回调
+    /// 7. 搜索所有引用该消息的 Quote 消息并更新
+    pub async fn handle_revoke_notification(&self, tips: &RevokeMsgTips) -> Result<()> {
+        info!("[REVOKE_DEBUG] ========== 开始处理撤回通知 ==========");
+        info!("[REVOKE_DEBUG] 1. 解析 RevokeMsgTips: conversation_id={}, seq={}, revoker_user_id={}, client_msg_id={}, revoke_time={}, is_admin_revoke={}",
+              tips.conversation_id, tips.seq, tips.revoker_user_id, tips.client_msg_id, tips.revoke_time, tips.is_admin_revoke);
+
+        // 1. 获取被撤回的消息（按 conversation_id 和 seq 查询，对齐官方实现）
+        info!("[REVOKE_DEBUG] 2. 查询被撤回的消息: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
+        let revoked_msg = self.message_dao.get_by_conversation_and_seq(&tips.conversation_id, tips.seq).await?
+            .ok_or_else(|| {
+                let err_msg = format!("被撤回的消息不存在: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
+                warn!("[REVOKE_DEBUG] {}", err_msg);
+                SdkError::InvalidArgument { message: err_msg }
+            })?;
+        
+        info!("[REVOKE_DEBUG] 3. 找到被撤回的消息: client_msg_id={}, send_id={}, send_time={}, sender_nick_name={}, content_type={}",
+              revoked_msg.client_msg_id, revoked_msg.send_id, revoked_msg.send_time, revoked_msg.sender_nick_name, revoked_msg.content_type);
+
+        // 2. 获取撤回者信息（简化实现：使用撤回者 ID 作为昵称）
+        let revoker_role = 0; // 简化：不获取角色信息
+        let revoker_nickname = tips.revoker_user_id.clone(); // 简化：使用 ID 作为昵称
+
+        // 3. 构建 MessageRevoked 结构（对齐官方实现）
+        let revoked_event = SdkEvent::MessageRevoked {
+            conversation_id: tips.conversation_id.clone(),
+            seq: tips.seq,
+            client_msg_id: revoked_msg.client_msg_id.clone(),
+            revoker_id: tips.revoker_user_id.clone(),
+            revoker_role,
+            revoker_nickname: revoker_nickname.clone(),
+            revoke_time: tips.revoke_time,
+            source_message_send_time: revoked_msg.send_time,
+            source_message_send_id: revoked_msg.send_id.clone(),
+            source_message_sender_nickname: revoked_msg.sender_nick_name.clone(),
+            session_type: tips.sesstion_type,
+            is_admin_revoke: tips.is_admin_revoke,
+        };
+
+        // 4. 更新 DB：替换消息内容为 RevokeNotification
+        // 构建 NotificationElem 内容（对齐官方实现）
+        let notification_content = serde_json::json!({
+            "revokerID": tips.revoker_user_id,
+            "revokerRole": revoker_role,
+            "clientMsgID": revoked_msg.client_msg_id,
+            "revokerNickname": revoker_nickname,
+            "revokeTime": tips.revoke_time,
+            "sourceMessageSendTime": revoked_msg.send_time,
+            "sourceMessageSendID": revoked_msg.send_id,
+            "sourceMessageSenderNickname": revoked_msg.sender_nick_name,
+            "sessionType": tips.sesstion_type,
+            "seq": tips.seq,
+            "isAdminRevoke": tips.is_admin_revoke,
+        });
+        
+        // 更新消息内容类型和内容（对齐官方实现）
+        self.message_dao.update_message_content_and_type(
+            &tips.conversation_id,
+            &revoked_msg.client_msg_id,
+            &notification_content.to_string(),
+            REVOKE,
+        ).await?;
+        
+        info!("[REVOKE] 更新消息内容类型和内容: content_type={}, content={}", REVOKE, notification_content);
+
+        // 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg
+        if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
+            if conv.latest_msg_send_time <= revoked_msg.send_time {
+                // 获取最新的消息（使用正确的参数）
+                if let Ok(latest_msgs) = self.message_dao.get_by_conversation(&tips.conversation_id, 0, 1).await {
+                    if let Some(latest_msg) = latest_msgs.first() {
+                        // 更新会话的最新消息
+                        let updated_conv = crate::domain::model::conversation::Conversation {
+                            conversation_id: conv.conversation_id,
+                            conversation_type: conv.conversation_type,
+                            user_id: conv.user_id,
+                            group_id: conv.group_id,
+                            show_name: conv.show_name,
+                            face_url: conv.face_url,
+                            latest_msg: latest_msg.content.clone(),
+                            latest_msg_send_time: latest_msg.send_time,
+                            unread_count: conv.unread_count,
+                            recv_msg_opt: conv.recv_msg_opt,
+                            is_pinned: conv.is_pinned != 0,
+                            is_not_in_group: conv.is_not_in_group != 0,
+                            draft_text: conv.draft_text,
+                            draft_text_time: conv.draft_text_time,
+                            is_private_chat: conv.is_private_chat != 0,
+                            burn_duration: conv.burn_duration as i32,
+                            group_at_type: conv.group_at_type,
+                            update_unread_count_time: conv.update_unread_count_time,
+                            latest_msg_seq: latest_msg.seq,
+                            max_seq: conv.max_seq,
+                            min_seq: conv.min_seq,
+                            is_msg_destruct: conv.is_msg_destruct != 0,
+                            msg_destruct_time: conv.msg_destruct_time,
+                            update_flag: 0,
+                            sync_action: None,
+                            is_private: conv.is_private_chat != 0,
+                            ex: conv.ex,
+                        };
+                        let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
+                            conversations: vec![updated_conv],
+                        });
+                        info!("[REVOKE] 刷新会话 LatestMsg: latest_msg_send_time={}", latest_msg.send_time);
+                    }
+                }
+            }
+        }
+
+        // 6. 触发 OnNewRecvMessageRevoked 回调
+        let _ = self.event_bus.publish(revoked_event);
+
+        // 7. 搜索所有引用该消息的 Quote 消息并更新（对齐官方实现）
+        if let Err(e) = self.handle_quote_msg_revoke(&tips.conversation_id, &revoked_msg.client_msg_id, &notification_content.to_string()).await {
+            warn!("[REVOKE] 处理引用消息撤回失败: {}", e);
+        }
+
+        info!("[REVOKE] handle_revoke_notification done");
+        Ok(())
+    }
+
+    /// 处理引用消息的撤回（对齐官方实现 quoteMsgRevokeHandle）
+    ///
+    /// 当引用的消息被撤回时：
+    /// 1. 搜索所有引用类型消息
+    /// 2. 解析引用消息的 QuoteElem
+    /// 3. 检查 QuoteMessage.ClientMsgID 是否匹配被撤回消息
+    /// 4. 替换引用消息的 Content 和 ContentType 为 RevokeNotification
+    /// 5. 更新 DB
+    async fn handle_quote_msg_revoke(
+        &self,
+        conversation_id: &str,
+        revoked_client_msg_id: &str,
+        revoke_notification_content: &str,
+    ) -> Result<()> {
+        // 搜索所有引用类型消息（contentType = 104）
+        let quote_msgs = self.message_dao.search_by_content_type(conversation_id, 104).await?;
+        
+        if quote_msgs.is_empty() {
+            info!("[REVOKE] 没有找到引用消息");
+            return Ok(());
+        }
+
+        info!("[REVOKE] 找到 {} 条引用消息", quote_msgs.len());
+
+        for quote_msg in quote_msgs {
+            // 解析引用消息的 QuoteElem
+            if let Ok(quote_elem) = serde_json::from_str::<serde_json::Value>(&quote_msg.content) {
+                // 检查 QuoteMessage.ClientMsgID 是否匹配被撤回消息
+                if let Some(quote_message) = quote_elem.get("quoteMessage") {
+                    if let Some(client_msg_id) = quote_message.get("clientMsgID").and_then(|v| v.as_str()) {
+                        if client_msg_id == revoked_client_msg_id {
+                            // 替换引用消息的 Content 和 ContentType 为 RevokeNotification
+                            self.message_dao.update_message_content_and_type(
+                                conversation_id,
+                                &quote_msg.client_msg_id,
+                                revoke_notification_content,
+                                REVOKE,
+                            ).await?;
+                            
+                            info!("[REVOKE] 更新引用消息: client_msg_id={}", quote_msg.client_msg_id);
+                        }
+                    }
+                }
+            }
         }
 
         Ok(())

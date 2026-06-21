@@ -110,6 +110,15 @@ pub enum SdkEvent {
         conversation_id: String,
         seq: i64,
         client_msg_id: String,
+        revoker_id: String,
+        revoker_role: i32,
+        revoker_nickname: String,
+        revoke_time: i64,
+        source_message_send_time: i64,
+        source_message_send_id: String,
+        source_message_sender_nickname: String,
+        session_type: i32,
+        is_admin_revoke: bool,
     },
     /// C2C 已读回执（对齐 Go SDK `OnRecvC2CReadReceipt`）
     C2CReadReceipt {

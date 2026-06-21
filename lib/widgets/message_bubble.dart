@@ -8,7 +8,6 @@ import '../router/app_router.dart';
 import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
-import 'message_status_indicator.dart';
 import 'user_avatar.dart';
 
 /// 消息气泡：支持所有消息类型的渲染
@@ -75,104 +74,141 @@ class MessageBubble extends StatelessWidget {
     final timeFormat = DateFormat('HH:mm');
     final senderUser = _buildSenderUser();
 
-    final bubbleContent = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: isFromMe
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        // 引用消息预览
-        if (message.messageType == MessageType.quote) _buildQuotePreview(context, isFromMe),
-        // 消息主体
-        Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: isFromMe
-                ? AppTheme.myMessageColor
-                : AppTheme.otherMessageColor,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isFromMe ? 18 : 4),
-              bottomRight: Radius.circular(isFromMe ? 4 : 18),
-            ),
-          ),
-          child: _buildMessageContent(context, isFromMe),
+    // 消息气泡内容
+    final bubble = Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.65,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isFromMe
+            ? AppTheme.myMessageColor
+            : AppTheme.otherMessageColor,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: Radius.circular(isFromMe ? 18 : 4),
+          bottomRight: Radius.circular(isFromMe ? 4 : 18),
         ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              timeFormat.format(message.sendDateTime),
-              style: TextStyle(
-                fontSize: 11,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
-              ),
-            ),
-            if (isFromMe && message.status >= 1) ...[
-              const SizedBox(width: 4),
-              MessageStatusIndicator(
-                status: MessageSendStatus.fromValue(message.status),
-                onRetry: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('重试发送功能开发中')),
-                  );
-                },
-              ),
-            ],
-            if (isFromMe) ...[
-              const SizedBox(width: 4),
-              Icon(
-                message.isRead ? Icons.done_all : Icons.done,
-                size: 12,
-                color: message.isRead ? Colors.green : Colors.grey,
-              ),
-            ],
-          ],
-        ),
-      ],
+      ),
+      child: _buildMessageContent(context, isFromMe),
     );
+
+    // 引用消息预览
+    final quotePreview = message.messageType == MessageType.quote
+        ? _buildQuotePreview(context, isFromMe)
+        : const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: isFromMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: isFromMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
-          if (!isFromMe) ...[
-            GestureDetector(
-              onTap: () => _navigateToProfile(context, senderUser, false),
-              child: UserAvatar(user: senderUser, radius: 18),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: GestureDetector(
-              onLongPress: onLongPress != null ? () => onLongPress!(message) : null,
-              child: Align(
-                alignment: isFromMe
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                child: bubbleContent,
+          // 引用预览 + 气泡 + 头像（同一行）
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!isFromMe) ...[
+                GestureDetector(
+                  onTap: () => _navigateToProfile(context, senderUser, false),
+                  child: UserAvatar(user: senderUser, radius: 18),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: GestureDetector(
+                  onLongPress: onLongPress != null ? () => onLongPress!(message) : null,
+                  child: Align(
+                    alignment: isFromMe
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: isFromMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [quotePreview, bubble],
+                    ),
+                  ),
+                ),
               ),
+              if (isFromMe) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _navigateToProfile(context, senderUser, true),
+                  child: UserAvatar(user: senderUser, radius: 18),
+                ),
+              ],
+            ],
+          ),
+          // 时间+状态（头像下方）
+          Padding(
+            padding: EdgeInsets.only(
+              left: isFromMe ? 0 : 44,
+              right: isFromMe ? 44 : 0,
+              top: 4,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  timeFormat.format(message.sendDateTime),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                  ),
+                ),
+                if (isFromMe) ...[
+                  const SizedBox(width: 4),
+                  _buildStatusIcon(),
+                ],
+              ],
             ),
           ),
-          if (isFromMe) ...[
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => _navigateToProfile(context, senderUser, true),
-              child: UserAvatar(user: senderUser, radius: 18),
-            ),
-          ],
         ],
       ),
     );
+  }
+
+  /// 构建消息状态图标（飞书风格）
+  Widget _buildStatusIcon() {
+    final status = MessageSendStatus.fromValue(message.status);
+    // 发送中：显示转圈
+    if (status == MessageSendStatus.sending) {
+      return SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade400),
+        ),
+      );
+    }
+    // 发送失败：显示错误图标
+    if (status == MessageSendStatus.sendFailed) {
+      return const Icon(Icons.error_outline, size: 16, color: Colors.red);
+    }
+    // 已读：绿色实心圆 + 白色 ✓（飞书风格）
+    if (message.isRead) {
+      return Container(
+        width: 16,
+        height: 16,
+        decoration: const BoxDecoration(
+          color: Color(0xFF34C759),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.done, size: 11, color: Colors.white),
+      );
+    }
+    // 已发送（未读）：灰色 ✓
+    if (status == MessageSendStatus.sendSuccess) {
+      return Icon(Icons.done, size: 16, color: Colors.grey.shade400);
+    }
+    return const SizedBox.shrink();
   }
 
   /// 根据消息类型构建消息内容

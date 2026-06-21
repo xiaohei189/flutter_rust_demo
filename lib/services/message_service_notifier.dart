@@ -67,10 +67,11 @@ class MessageServiceState {
 
 /// MessageService 的 StateNotifier
 class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
+  final Ref _ref;
   fb.OpenImBridgeClient? _client;
   StreamSubscription<dynamic>? _eventStreamSubscription;
 
-  MessageServiceNotifier() : super(const MessageServiceState());
+  MessageServiceNotifier(this._ref) : super(const MessageServiceState());
 
   /// 获取客户端实例
   fb.OpenImBridgeClient? get client => _client;
@@ -591,7 +592,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
             faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : (existing?.faceUrl ?? ''),
             latestMsg: conv.latestMsg.isNotEmpty ? conv.latestMsg : (existing?.latestMsg ?? ''),
             latestMsgSendTime: conv.latestMsgSendTime > 0 ? conv.latestMsgSendTime : (existing?.latestMsgSendTime ?? 0),
-            unreadCount: conv.unreadCount > 0 ? conv.unreadCount : (existing?.unreadCount ?? 0),
+            unreadCount: conv.unreadCount >= 0 ? conv.unreadCount : (existing?.unreadCount ?? 0),
             recvMsgOpt: conv.recvMsgOpt,
             isPinned: conv.isPinned ? 1 : 0,
             isNotInGroup: existing?.isNotInGroup ?? 0,
@@ -714,8 +715,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.d('[MessageService] 上传进度: $clientMsgId, $progress% '
             '(${uploadedSize.toInt()}/${totalSize.toInt()} bytes)');
       },
-      messageRevoked: (conversationId, seq, clientMsgId) {
-        appLog.i('dart MessageService 🔄 消息被撤回: conv=$conversationId, seq=$seq, msgId=$clientMsgId');
+      messageRevoked: (conversationId, seq, clientMsgId, revokerId, revokerRole, revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId, sourceMessageSenderNickname, sessionType, isAdminRevoke) {
+        appLog.i('dart MessageService 🔄 消息被撤回: conv=$conversationId, seq=$seq, msgId=$clientMsgId, revoker=$revokerId');
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages[conversationId];
         if (list != null) {
@@ -750,11 +751,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       },
       c2CReadReceipt: (receipts) {
         for (final receipt in receipts) {
+          appLog.i('[READ] c2CReadReceipt: userId=${receipt.userId} msgIds=${receipt.msgIds}');
+          int updatedCount = 0;
           final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
           for (final entry in newMessages.entries) {
             final list = entry.value;
             for (int i = 0; i < list.length; i++) {
               if (receipt.msgIds.contains(list[i].clientMsgId)) {
+                appLog.i('[READ] 匹配消息: clientMsgId=${list[i].clientMsgId} wasRead=${list[i].isRead}');
                 list[i] = MessageInfo(
                   clientMsgId: list[i].clientMsgId,
                   serverMsgId: list[i].serverMsgId,
@@ -776,11 +780,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
                   attachedInfo: list[i].attachedInfo,
                   ex: list[i].ex,
                 );
+                updatedCount++;
               }
             }
             newMessages[entry.key] = List<MessageInfo>.from(list);
           }
           this.state = this.state.copyWith(messages: newMessages);
+          appLog.i('[READ] c2CReadReceipt updated=$updatedCount totalConv=${newMessages.length}');
         }
         // 刷新会话列表以同步未读数
         _loadConversations();
@@ -1012,12 +1018,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 标记会话为已读
   Future<void> markConversationAsRead(String conversationId) async {
-    if (_client == null) return;
+    if (_client == null) { appLog.i('[READ] _client is null, skip'); return; }
     try {
       // 从本地状态查找会话类型
       final conv = this.state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
       final sessionType = conv?.sessionType ?? SessionType.singleChat;
+      appLog.i('[READ] Dart markConversationAsRead: conv=$conversationId sessionType=$sessionType');
       await _client!.markConversationAsRead(conversationId: conversationId, sessionType: sessionType);
+      appLog.i('[READ] Dart markConversationAsRead OK: conv=$conversationId');
       // 更新本地会话未读数
       final newConversations = List<LocalConversation>.from(this.state.conversations);
       final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
@@ -1052,7 +1060,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       }
       this.state = this.state.copyWith(conversations: newConversations);
     } catch (e) {
-      appLog.e('[MessageService] 标记会话已读失败: $e');
+      appLog.i('[READ] Dart markConversationAsRead FAILED: $e');
     }
   }
 

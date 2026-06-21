@@ -41,10 +41,24 @@ impl OpenIMBridgeClient {
 
     #[flutter_rust_bridge::frb]
     pub async fn new(config: ClientConfig) -> Result<Self> {
+        tracing::info!("[Bridge] 创建客户端实例，user_id={}, ws_url={:?}, api_url={:?}", 
+            config.user_id, config.ws_url, config.api_base_url);
+        
         let client = OpenIMClient::new(config.clone()).await
-            .map_err(|e| anyhow::anyhow!("{}", e))?;
+            .map_err(|e| {
+                tracing::error!("[Bridge] 客户端创建失败: {}", e);
+                anyhow::anyhow!("{}", e)
+            })?;
+        
+        tracing::info!("[Bridge] 客户端创建成功，开始登录...");
+        
         client.login(&config.user_id, &config.token).await
-            .map_err(|e| anyhow::anyhow!("{}", e))?;
+            .map_err(|e| {
+                tracing::error!("[Bridge] 登录失败: {}", e);
+                anyhow::anyhow!("{}", e)
+            })?;
+        
+        tracing::info!("[Bridge] 登录成功");
 
         let inner = Arc::new(client);
         let _ = CLIENT_HOLDER.set(inner.clone());
@@ -54,14 +68,20 @@ impl OpenIMBridgeClient {
 
     #[flutter_rust_bridge::frb]
     pub async fn disconnect(&self) -> Result<()> {
+        tracing::info!("[Bridge] 断开连接");
         self.inner.disconnect().await;
+        tracing::info!("[Bridge] 连接已断开");
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn logout(&self) -> Result<()> {
+        tracing::info!("[Bridge] 登出");
         self.inner.logout().await
-            .map_err(|e| anyhow::anyhow!("{}", e))
+            .map_err(|e| {
+                tracing::error!("[Bridge] 登出失败: {}", e);
+                anyhow::anyhow!("{}", e)
+            })
     }
 
     #[flutter_rust_bridge::frb]
