@@ -16,9 +16,8 @@ migrate_working_dir/
 *.iml
 *.ipr
 *.iws
-.idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
+# The .vscode folder contains launch configuration and tasks you configure for
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
 #.vscode/
@@ -43,6 +42,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Rust 本地数据库和日志
 rust/conversations.db
 rust/logs/rust.log.*
 logs/rust.log.*

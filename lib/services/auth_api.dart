@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import '../utils/app_logger.dart';
 import '../utils/host_config.dart';
 
-/// 认证服务端基础 URL；Android 模拟器内用 10.0.2.2 访问宿主机
+/// 认证服务端基础 URL
 String get kAuthBaseUrl => 'http://${getHostAddress()}:10008';
 
 /// 账号服务中间件要求 header 带 operationID（与 openim-sdk-core cmd/sdk 一致）

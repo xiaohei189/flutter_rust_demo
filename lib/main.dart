@@ -13,10 +13,10 @@ import 'utils/host_config.dart';
 import 'utils/login_storage.dart';
 import 'services/im_client.dart';
 
-/// WebSocket 地址；Android 模拟器内用 10.0.2.2 访问宿主机
+/// WebSocket 地址
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
 
-/// HTTP API 基础地址；与 ws 同 host，Android 下不能用 localhost
+/// HTTP API 基础地址
 String get kApiBaseUrl => 'http://${getHostAddress()}:10002';
 
 Future<void> main() async {
@@ -25,8 +25,9 @@ Future<void> main() async {
   // 1. 初始化 Rust 库（bridge 必须先 init，才能调用 setLogDirectory）
   await RustLib.init();
 
-  // 2. 设置 Rust 日志目录（输出到项目根目录下的 logs 目录）
-  final logDir = '${Directory.current.path}/logs';
+  // 2. 设置 Rust 日志目录（输出到应用数据目录下的 logs 目录）
+  final appDir = await getApplicationDocumentsDirectory();
+  final logDir = '${appDir.path}/logs';
   await Directory(logDir).create(recursive: true);
   debugPrint('[Dart] 日志目录: $logDir');
   setLogDirectory(path: logDir);
