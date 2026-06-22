@@ -110,6 +110,10 @@ impl HttpApiClient {
     ) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
+        // 调试：打印请求信息
+        let body_json = serde_json::to_string(body).unwrap_or_default();
+        tracing::debug!("[HTTP] POST {} (no_auth) - Body: {}", route, body_json);
+
         let response = self
             .client
             .post(&url)
@@ -121,18 +125,24 @@ impl HttpApiClient {
         let status = response.status().as_u16();
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
+            tracing::error!("[HTTP] POST {} failed - Status: {}, Body: {}", route, status, body);
             return Err(SdkError::http(status, format!("HTTP 错误: {}", body)));
         }
 
         let api_resp: ApiResponse<R> = response.json().await?;
         if api_resp.err_code != 0 {
-            tracing::error!("HTTP POST {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+            tracing::error!("[HTTP] POST {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+        } else {
+            tracing::debug!("[HTTP] POST {} ok", route);
         }
         api_resp.into_result()
     }
 
     pub async fn get<R: for<'de> Deserialize<'de> + Default>(&self, route: &str) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
+
+        // 调试：打印请求信息
+        tracing::debug!("[HTTP] GET {}", route);
 
         let response = self
             .client
@@ -146,12 +156,15 @@ impl HttpApiClient {
         let status = response.status().as_u16();
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
+            tracing::error!("[HTTP] GET {} failed - Status: {}, Body: {}", route, status, body);
             return Err(SdkError::http(status, format!("HTTP 错误: {}", body)));
         }
 
         let api_resp: ApiResponse<R> = response.json().await?;
         if api_resp.err_code != 0 {
-            tracing::error!("HTTP GET {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+            tracing::error!("[HTTP] GET {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+        } else {
+            tracing::debug!("[HTTP] GET {} ok", route);
         }
         api_resp.into_result()
     }
