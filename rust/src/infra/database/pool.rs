@@ -1,11 +1,15 @@
 use crate::domain::error::types::{Result, SdkError};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
+use sqlx::ConnectOptions;
 use std::str::FromStr;
+use std::time::Duration;
 
 pub async fn create_pool(db_url: &str) -> Result<SqlitePool> {
     let options = SqliteConnectOptions::from_str(db_url)
         .map_err(|e| SdkError::database(format!("invalid db_url: {}", e)))?
-        .create_if_missing(true);
+        .create_if_missing(true)
+        .log_statements(tracing::log::LevelFilter::Info)
+        .log_slow_statements(tracing::log::LevelFilter::Info, Duration::from_millis(100));
 
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
