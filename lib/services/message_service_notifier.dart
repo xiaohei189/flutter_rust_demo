@@ -177,7 +177,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return false;
 
     try {
-      appLog.d('dart MessageService 📜 加载历史消息: conversationId=$conversationId, startClientMsgId=$startClientMsgId, count=$count');
+      appLog.i('[MSG] Service 加载历史消息: count=$count');
       final result = await _client!.getHistoryMessages(
         req: GetHistoryMessagesReq(
           conversationId: conversationId,
@@ -186,7 +186,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         ),
       );
 
-      appLog.d('dart MessageService 📜 getHistoryMessages 返回: messages=${result.messages.length}, isEnd=${result.isEnd}');
+      appLog.i('[MSG] Service 加载完成: messages=${result.messages.length}, isEnd=${result.isEnd}');
 
       if (result.messages.isEmpty) {
         return false;
@@ -1055,14 +1055,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 标记会话为已读
   Future<void> markConversationAsRead(String conversationId) async {
-    if (_client == null) { appLog.i('[READ] _client is null, skip'); return; }
+    if (_client == null) return;
     try {
       // 从本地状态查找会话类型
       final conv = this.state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
       final sessionType = conv?.sessionType ?? SessionType.singleChat;
-      appLog.i('[READ] Dart markConversationAsRead: conv=$conversationId sessionType=$sessionType');
+      appLog.i('[READ] Service 标记已读: sessionType=$sessionType');
       await _client!.markConversationAsRead(conversationId: conversationId, sessionType: sessionType);
-      appLog.i('[READ] Dart markConversationAsRead OK: conv=$conversationId');
       // 更新本地会话未读数
       final newConversations = List<LocalConversation>.from(this.state.conversations);
       final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
@@ -1101,7 +1100,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       // 标记已读后，消息的 isRead 状态会在下次加载消息时从数据库同步
       // 避免重复查询数据库造成性能浪费
     } catch (e) {
-      appLog.i('[READ] Dart markConversationAsRead FAILED: $e');
+      appLog.e('[READ] 标记已读失败: $e');
     }
   }
 
