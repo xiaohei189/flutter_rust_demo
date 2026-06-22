@@ -179,22 +179,18 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   /// 检查 URL 是否为有效的头像 URL（不是模拟 URL）
   bool _isValidAvatarUrl(String? url) {
     if (url == null || url.isEmpty) {
-      appLog.i('[UserProfile] _isValidAvatarUrl: url 为空，返回 false');
       return false;
     }
     // 排除模拟 URL
     if (url.contains('example.com')) {
-      appLog.i('[UserProfile] _isValidAvatarUrl: 是 example.com，返回 false');
       return false;
     }
     // 排除 localhost 和 127.0.0.1 等本地地址
     if (url.contains('localhost') || url.contains('127.0.0.1')) {
-      appLog.i('[UserProfile] _isValidAvatarUrl: 是本地地址，返回 false');
       return false;
     }
     // 排除本地路径
     if (url.contains(':\\') || url.startsWith('/')) {
-      appLog.i('[UserProfile] _isValidAvatarUrl: 是本地路径，返回 false');
       return false;
     }
     return true;

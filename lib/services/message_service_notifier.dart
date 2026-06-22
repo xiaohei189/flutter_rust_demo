@@ -1097,10 +1097,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       }
       this.state = this.state.copyWith(conversations: newConversations);
 
-      // 刷新消息列表，确保 isRead 状态从数据库同步到内存
-      // 对齐 Go SDK：Go 侧 MarkConversationMessageAsReadDB 更新 DB 后，
-      // Flutter 侧需重新加载消息以获取最新 is_read 状态
-      await _refreshMessagesAfterRead(conversationId);
+      // 注意：不再调用 _refreshMessagesAfterRead
+      // 标记已读后，消息的 isRead 状态会在下次加载消息时从数据库同步
+      // 避免重复查询数据库造成性能浪费
     } catch (e) {
       appLog.i('[READ] Dart markConversationAsRead FAILED: $e');
     }

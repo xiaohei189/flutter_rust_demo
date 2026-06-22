@@ -49,6 +49,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   DateTime? _lastTypingSent;
   MessageInfo? _quotedMessage;
   fb.OpenImBridgeClient? _client;
+  DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
 
   @override
   void initState() {
@@ -68,6 +69,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   }
 
   Future<void> _markConversationAsRead() async {
+    // 防抖：1秒内只执行一次
+    final now = DateTime.now();
+    if (_lastMarkReadTime != null && now.difference(_lastMarkReadTime!).inMilliseconds < 1000) {
+      return;
+    }
+    _lastMarkReadTime = now;
+
     try {
       appLog.i('[READ] chat_detail _markConversationAsRead: ${widget.conversationId}');
       await ref.read(messageServiceProvider.notifier).markConversationAsRead(widget.conversationId);
@@ -181,14 +189,27 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   }
 
   Future<void> _loadMessages({bool isLoadMore = false}) async {
-    if (_loadingNotifier.value) return;
-    if (!_hasMoreHistory && isLoadMore) return;
+    appLog.i('🔍 _loadMessages 被调用: isLoadMore=$isLoadMore, preLoaded=${widget.preLoaded}, conversationId=${widget.conversationId}');
+    if (_loadingNotifier.value) {
+      appLog.w('⚠️ _loadMessages 提前返回: 正在加载中');
+      return;
+    }
+    if (!_hasMoreHistory && isLoadMore) {
+      appLog.w('⚠️ _loadMessages 提前返回: 没有更多历史消息');
+      return;
+    }
+
+    // 首次加载时重置 Notifier 的 hasMore 状态，确保能加载消息
+    if (!isLoadMore) {
+      ref.read(messageListProvider(widget.conversationId).notifier).resetLoadState();
+    }
 
     _loadingNotifier.value = true;
 
     try {
       final messageState = ref.read(messageListProvider(widget.conversationId));
       final currentMessages = messageState.messages;
+      appLog.d('📊 当前消息数量: ${currentMessages.length}');
       String startClientMsgId = '';
 
       if (isLoadMore && currentMessages.isNotEmpty) {
@@ -196,6 +217,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
         startClientMsgId = earliestMsg.clientMsgId;
       }
 
+      appLog.d('📥 开始加载历史消息: count=20, startClientMsgId=$startClientMsgId');
       final hasMore = await ref
           .read(messageListProvider(widget.conversationId).notifier)
           .loadHistoryMessages(
@@ -203,6 +225,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
             startClientMsgId: startClientMsgId,
           );
 
+      appLog.d('✅ 加载历史消息完成: hasMore=$hasMore');
       _hasMoreHistory = hasMore;
       _loadingNotifier.value = false;
 
@@ -786,10 +809,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                           ),
                         ),
                         onMessageVisible: (msg) {
-                          // 消息可见时标记已读（对齐官方 Demo）
-                          if (msg.sendId != currentUserId) {
-                            _markConversationAsRead();
-                          }
+                          // 消息可见时不再重复标记已读
+                          // 已在 initState 和 dispose 中调用 _markConversationAsRead()
+                          // 避免每条消息可见时都触发标记，造成重复调用
                         },
                         onMessageTap: (msg) {
                           if (msg.messageType == MessageType.merge) {

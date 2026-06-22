@@ -69,6 +69,11 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     state = state.copyWith(messages: messages);
   }
 
+  /// 重置加载状态（进入会话时调用）
+  void resetLoadState() {
+    state = state.copyWith(hasMore: true, isLoading: false, error: null);
+  }
+
   /// 加载历史消息
   Future<bool> loadHistoryMessages({
     int count = 20,
