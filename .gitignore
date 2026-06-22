@@ -48,3 +48,9 @@ rust/conversations.db
 rust/logs/rust.log.*
 logs/rust.log.*
 logs/sdk.log.*
+
+# IDE 配置
+.idea/
+
+# 临时截图
+*.png

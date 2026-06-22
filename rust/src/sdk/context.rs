@@ -2,7 +2,7 @@ use crate::domain::config::ClientConfig;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::infra::database::pool::create_pool;
-use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao};
+use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
@@ -28,6 +28,8 @@ pub struct RuntimeContext {
     pub conversation_dao: Arc<ConversationDao>,
     /// 好友 DAO
     pub friend_dao: Arc<FriendDao>,
+    /// 用户 DAO
+    pub user_dao: Arc<UserDao>,
     /// 群组 DAO
     pub group_dao: Arc<GroupDao>,
     /// 同步版本 DAO
@@ -56,6 +58,7 @@ impl RuntimeContext {
         let message_dao = Arc::new(MessageDao::new(db_pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(db_pool.clone()));
         let friend_dao = Arc::new(FriendDao::new(db_pool.clone()));
+        let user_dao = Arc::new(UserDao::new(db_pool.clone()));
         let group_dao = Arc::new(GroupDao::new(db_pool.clone()));
         let sync_version_dao = Arc::new(SyncVersionDao::new(db_pool.clone()));
         let notification_seq_dao = Arc::new(NotificationSeqDao::new(db_pool.clone()));
@@ -77,6 +80,7 @@ impl RuntimeContext {
             message_dao,
             conversation_dao,
             friend_dao,
+            user_dao,
             group_dao,
             sync_version_dao,
             notification_seq_dao,

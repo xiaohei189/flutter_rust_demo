@@ -152,10 +152,8 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final path = prefs.getString(_kLocalAvatarPathKey);
-      appLog.i('[UserProfile] loadLocalAvatarPath: path=$path');
       if (path != null && path.isNotEmpty) {
         state = state.copyWith(localAvatarPath: path);
-        appLog.i('[UserProfile] loadLocalAvatarPath: 已设置 localAvatarPath=${path}');
       }
     } catch (e) {
       appLog.e('[UserProfile] loadLocalAvatarPath 失败: $e');
@@ -207,7 +205,6 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   String? getDisplayAvatarUrl() {
     // 如果有本地路径，优先使用
     if (state.localAvatarPath != null && state.localAvatarPath!.isNotEmpty) {
-      appLog.i('[UserProfile] getDisplayAvatarUrl: 使用本地路径=${state.localAvatarPath}');
       return state.localAvatarPath;
     }
     // 如果服务器 URL 有效，使用服务器 URL

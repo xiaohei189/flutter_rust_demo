@@ -254,6 +254,11 @@ sealed class SdkEvent with _$SdkEvent {
   const factory SdkEvent.conversationChanged({
     required List<Conversation> conversations,
   }) = SdkEvent_ConversationChanged;
+
+  /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
+  const factory SdkEvent.updateLatestMessageReadState({
+    required String conversationId,
+  }) = SdkEvent_UpdateLatestMessageReadState;
   const factory SdkEvent.conversationDeleted({
     required List<String> conversationIds,
   }) = SdkEvent_ConversationDeleted;

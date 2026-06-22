@@ -7,7 +7,7 @@ use crate::domain::event::EventBus;
 use crate::domain::event::types::{GroupReadReceipt, MessageReceipt, SdkEvent};
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::msg_struct::TypingElem;
-use crate::infra::database::{ConversationDao, MessageDao};
+use crate::infra::database::{ConversationDao, GroupDao, MessageDao, UserDao};
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
 use crate::protocol::sdkws::{MarkAsReadTips, RevokeMsgTips};
 use prost::Message as ProstMessage;
@@ -15,6 +15,71 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn, error};
 use rand::Rng;
+
+/// 从 JSON 内容解析 RevokeMsgTips（对齐 Go SDK UnmarshalNotificationElem）
+/// 服务端将 protobuf 对象转为 JSON 后放入 MsgData.content，
+/// 外层: {"detail": "..."}  内层: RevokeMsgTips 字段
+/// 撤回通知扩展结构（protobuf RevokeMsgTips 不含 revokerNickname，此结构补充）
+pub struct RevokeTipsWithNickname {
+    pub tips: RevokeMsgTips,
+    pub revoker_nickname: String,
+    pub revoker_role: i32,
+}
+
+fn parse_revoke_tips_from_json(content: &str) -> anyhow::Result<RevokeTipsWithNickname> {
+    let content_str = content;
+
+    // 解析外层 NotificationElem
+    #[derive(serde::Deserialize)]
+    struct Outer {
+        #[serde(default)]
+        detail: String,
+    }
+    let outer: Outer = serde_json::from_str(content_str)
+        .map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
+
+    // 解析内层 RevokeMsgTips JSON
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Inner {
+        #[serde(rename = "revokerUserID", default)]
+        revoker_user_id: String,
+        #[serde(rename = "clientMsgID", default)]
+        client_msg_id: String,
+        #[serde(default)]
+        revoke_time: i64,
+        #[serde(rename = "sesstionType", default)]
+        sesstion_type: i32,
+        #[serde(default)]
+        seq: i64,
+        #[serde(rename = "conversationID", default)]
+        conversation_id: String,
+        #[serde(rename = "isAdminRevoke", default)]
+        is_admin_revoke: bool,
+        #[serde(rename = "revokerNickname", default)]
+        revoker_nickname: String,
+        #[serde(rename = "revokerRole", default)]
+        revoker_role: i32,
+    }
+    let inner: Inner = serde_json::from_str(&outer.detail)
+        .map_err(|e| anyhow::anyhow!("解析内层 RevokeMsgTips 失败: {}", e))?;
+
+    info!("[REVOKE-DEBUG-PARSE] parsed revoker_nickname='{}', revoker_role={}, user_id='{}'",
+        inner.revoker_nickname, inner.revoker_role, inner.revoker_user_id);
+    Ok(RevokeTipsWithNickname {
+        tips: RevokeMsgTips {
+            revoker_user_id: inner.revoker_user_id,
+            client_msg_id: inner.client_msg_id,
+            revoke_time: inner.revoke_time,
+            sesstion_type: inner.sesstion_type,
+            seq: inner.seq,
+            conversation_id: inner.conversation_id,
+            is_admin_revoke: inner.is_admin_revoke,
+        },
+        revoker_nickname: inner.revoker_nickname,
+        revoker_role: inner.revoker_role,
+    })
+}
 
 /// MaxSeqRecorder — 内存中记录每个会话的最大 seq，用于判断消息是否为"新消息"
 /// 对齐 Go SDK `max_seq_recorder.go` IsNewMsg/Incr/Set/Get
@@ -57,6 +122,8 @@ impl MaxSeqRecorder {
 pub struct MessageHandler {
     message_dao: Arc<MessageDao>,
     conversation_dao: Arc<ConversationDao>,
+    user_dao: Arc<UserDao>,
+    group_dao: Arc<GroupDao>,
     event_bus: Arc<EventBus>,
     user_id: std::sync::Mutex<String>,
     /// 内存 seq 记录器，用于准确判断未读数（对齐 Go SDK MaxSeqRecorder）
@@ -67,11 +134,15 @@ impl MessageHandler {
     pub fn new(
         message_dao: Arc<MessageDao>,
         conversation_dao: Arc<ConversationDao>,
+        user_dao: Arc<UserDao>,
+        group_dao: Arc<GroupDao>,
         event_bus: Arc<EventBus>,
     ) -> Self {
         Self {
             message_dao,
             conversation_dao,
+            user_dao,
+            group_dao,
             event_bus,
             user_id: std::sync::Mutex::new(String::new()),
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
@@ -221,12 +292,12 @@ impl MessageHandler {
         }
 
         // 撤回通知处理（对齐 Go SDK do_revoke_msg）
+        // 服务端推送的撤回通知 content 是 JSON（非 protobuf），与 notification handler 一致
         for msg in &messages {
             if msg.content_type == REVOKE {
-                // 从 msg.content 解析 RevokeMsgTips (protobuf)
-                match RevokeMsgTips::decode(msg.content.as_bytes()) {
+                match parse_revoke_tips_from_json(&msg.content) {
                     Ok(tips) => {
-                        if let Err(e) = self.handle_revoke_notification(&tips).await {
+                        if let Err(e) = self.handle_revoke_notification(&tips.tips, &tips.revoker_nickname, tips.revoker_role).await {
                             warn!("处理撤回通知失败: {}", e);
                         }
                     }
@@ -494,7 +565,6 @@ impl MessageHandler {
 
         let login_user_id = self.user_id.lock().unwrap().clone();
 
-        info!("[READ] handle_read_receipt: conv={} mark_user={} login_user={}", tips.conversation_id, tips.mark_as_read_user_id, login_user_id);
         if tips.mark_as_read_user_id != login_user_id {
             // 别人发来的已读回执：对方标记我的消息为已读（对齐 Go SDK L238-280）
 
@@ -509,7 +579,6 @@ impl MessageHandler {
                 if !tips.seqs.is_empty() {
                     // 通过 seq 查询消息，逐条标记 is_read = true
                     let messages = self.message_dao.get_by_seqs(&tips.conversation_id, &tips.seqs).await?;
-                    info!("[READ] got msgs by seqs: count={}", messages.len());
                     let mut updated_client_msg_ids: Vec<String> = Vec::new();
 
                     for mut m in messages {
@@ -560,6 +629,8 @@ impl MessageHandler {
                 &tips.seqs,
             ).await?;
 
+            info!("[RECEIPT] conv={} mark_user={} seqs={}", tips.conversation_id, tips.mark_as_read_user_id, tips.seqs.len());
+
         } else {
             // 自己的已读回执（其他设备同步过来的，对齐 Go SDK L282-284）
             // 直接将会话未读数清零
@@ -572,10 +643,10 @@ impl MessageHandler {
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
                 let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
             }
+
+            info!("[RECEIPT] self sync conv={}", tips.conversation_id);
         }
 
-        debug!("处理已读回执: conversation_id={}, seqs={}, has_read_seq={}",
-            tips.conversation_id, tips.seqs.len(), tips.has_read_seq);
         Ok(())
     }
 
@@ -610,7 +681,6 @@ impl MessageHandler {
 
         let login_user_id = self.user_id.lock().unwrap().clone();
 
-        info!("[READ] handle_read_receipt(from_notification): conv={} mark_user={} login_user={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, login_user_id);
         if tips_json.mark_as_read_user_id != login_user_id {
             let conversation = self.conversation_dao.get_by_id(&tips_json.conversation_id).await?;
             let session_type_val = conversation.as_ref()
@@ -620,7 +690,6 @@ impl MessageHandler {
             if session_type_val == session_type::SINGLE_CHAT {
                 if !seqs.is_empty() {
                     let messages = self.message_dao.get_by_seqs(&tips_json.conversation_id, &seqs).await?;
-                    info!("[READ] got msgs by seqs: count={}", messages.len());
                     let mut updated_client_msg_ids: Vec<String> = Vec::new();
 
                     for mut m in messages {
@@ -666,6 +735,8 @@ impl MessageHandler {
                 tips_json.has_read_seq,
                 &seqs,
             ).await?;
+
+            info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
             self.conversation_dao.update_unread_count(&tips_json.conversation_id, 0).await?;
             let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
@@ -674,10 +745,10 @@ impl MessageHandler {
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
                 let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
             }
+
+            info!("[RECEIPT] notif self sync conv={}", tips_json.conversation_id);
         }
 
-        debug!("处理已读回执(from_notification): conversation_id={}, seqs={}, has_read_seq={}",
-            tips_json.conversation_id, seqs.len(), tips_json.has_read_seq);
         Ok(())
     }
 
@@ -766,6 +837,48 @@ impl MessageHandler {
         Ok(())
     }
 
+    /// 从通知 JSON 中提取 revokerNickname（服务端下发的真实昵称）
+    /// 通知格式: {"detail": "{\"revokerNickname\":\"xxx\",...}"}
+    fn extract_nickname_from_notification(content: &str) -> Option<String> {
+        if content.is_empty() { return None; }
+        let outer: serde_json::Value = serde_json::from_str(content).ok()?;
+        let detail_str = outer.get("detail")?.as_str()?;
+        let inner: serde_json::Value = serde_json::from_str(detail_str).ok()?;
+        let name = inner.get("revokerNickname")?.as_str()?;
+        if name.is_empty() { None } else { Some(name.to_string()) }
+    }
+
+    /// 获取撤回者昵称（对齐 Go SDK getUserNameAndFaceURL + GetSpecifiedGroupMembersInfo）
+    /// - 单聊 / 管理员撤回：从用户表查询昵称
+    /// - 群聊：从群成员表查询昵称和角色
+    async fn get_revoker_nickname(&self, tips: &RevokeMsgTips) -> (String, i32) {
+        let mut revoker_role = 0i32;
+        let fallback = tips.revoker_user_id.clone();
+
+        if tips.is_admin_revoke || tips.sesstion_type == crate::domain::constant::types::session_type::SINGLE_CHAT {
+            // 单聊或管理员撤回 -> 从用户表查询
+            if let Ok(Some(user)) = self.user_dao.get_by_id(&tips.revoker_user_id).await {
+                if !user.name.is_empty() {
+                    return (user.name, 0);
+                }
+            }
+        } else if tips.sesstion_type == crate::domain::constant::types::session_type::WRITE_GROUP_CHAT
+            || tips.sesstion_type == crate::domain::constant::types::session_type::READ_GROUP_CHAT {
+            // 群聊 -> 从群成员表查询
+            if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
+                if let Ok(members) = self.group_dao.get_members(&conv.group_id).await {
+                    if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
+                        revoker_role = member.role_level;
+                        if !member.nickname.is_empty() {
+                            return (member.nickname.clone(), revoker_role);
+                        }
+                    }
+                }
+            }
+        }
+        (fallback, revoker_role)
+    }
+
     /// 撤回通知处理（严格对齐 Go SDK revoke_message）
     ///
     /// 官方实现流程：
@@ -776,26 +889,45 @@ impl MessageHandler {
     /// 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg
     /// 6. 触发 OnNewRecvMessageRevoked 回调
     /// 7. 搜索所有引用该消息的 Quote 消息并更新
-    pub async fn handle_revoke_notification(&self, tips: &RevokeMsgTips) -> Result<()> {
-        info!("[REVOKE_DEBUG] ========== 开始处理撤回通知 ==========");
-        info!("[REVOKE_DEBUG] 1. 解析 RevokeMsgTips: conversation_id={}, seq={}, revoker_user_id={}, client_msg_id={}, revoke_time={}, is_admin_revoke={}",
-              tips.conversation_id, tips.seq, tips.revoker_user_id, tips.client_msg_id, tips.revoke_time, tips.is_admin_revoke);
-
+    pub async fn handle_revoke_notification(&self, tips: &RevokeMsgTips, server_revoker_nickname: &str, server_revoker_role: i32) -> Result<()> {
         // 1. 获取被撤回的消息（按 conversation_id 和 seq 查询，对齐官方实现）
-        info!("[REVOKE_DEBUG] 2. 查询被撤回的消息: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
         let revoked_msg = self.message_dao.get_by_conversation_and_seq(&tips.conversation_id, tips.seq).await?
             .ok_or_else(|| {
                 let err_msg = format!("被撤回的消息不存在: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
-                warn!("[REVOKE_DEBUG] {}", err_msg);
+                warn!("[REVOKE] {}", err_msg);
                 SdkError::InvalidArgument { message: err_msg }
             })?;
-        
-        info!("[REVOKE_DEBUG] 3. 找到被撤回的消息: client_msg_id={}, send_id={}, send_time={}, sender_nick_name={}, content_type={}",
-              revoked_msg.client_msg_id, revoked_msg.send_id, revoked_msg.send_time, revoked_msg.sender_nick_name, revoked_msg.content_type);
 
-        // 2. 获取撤回者信息（简化实现：使用撤回者 ID 作为昵称）
-        let revoker_role = 0; // 简化：不获取角色信息
-        let revoker_nickname = tips.revoker_user_id.clone(); // 简化：使用 ID 作为昵称
+        // 2. 获取撤回者昵称（优先级: 服务端通知 > 本地用户表 > 本地群成员表 > user_id）
+        info!("[REVOKE-DEBUG] server_revoker_nickname='{}', server_revoker_role={}, revoker_user_id={}", 
+            server_revoker_nickname, server_revoker_role, tips.revoker_user_id);
+        let mut revoker_role = server_revoker_role;
+        let mut revoker_nickname = if !server_revoker_nickname.is_empty() {
+            info!("[REVOKE-DEBUG] 使用服务端昵称: '{}'", server_revoker_nickname);
+            server_revoker_nickname.to_string()
+        } else {
+            let (name, role) = self.get_revoker_nickname(tips).await;
+            info!("[REVOKE-DEBUG] 服务端昵称为空，DB查询结果: nickname='{}', role={}", name, role);
+            revoker_role = role;
+            name
+        };
+        // 如果仍然是 user_id，尝试用被撤回消息的发送者昵称（单聊中撤回者=发送者）
+        if revoker_nickname == tips.revoker_user_id && !revoked_msg.sender_nick_name.is_empty() {
+            info!("[REVOKE-DEBUG] 使用被撤回消息的sender_nick_name: '{}'", revoked_msg.sender_nick_name);
+            revoker_nickname = revoked_msg.sender_nick_name.clone();
+        }
+        info!("[REVOKE-DEBUG] 最终昵称: '{}', user_id: '{}'", revoker_nickname, tips.revoker_user_id);
+        // 如果仍然是 user_id，尝试从群成员表获取角色
+        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::types::session_type::WRITE_GROUP_CHAT
+            || tips.sesstion_type == crate::domain::constant::types::session_type::READ_GROUP_CHAT {
+            if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
+                if let Ok(members) = self.group_dao.get_members(&conv.group_id).await {
+                    if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
+                        revoker_role = member.role_level;
+                    }
+                }
+            }
+        }
 
         // 3. 构建 MessageRevoked 结构（对齐官方实现）
         let revoked_event = SdkEvent::MessageRevoked {
@@ -828,6 +960,7 @@ impl MessageHandler {
             "seq": tips.seq,
             "isAdminRevoke": tips.is_admin_revoke,
         });
+        info!("[REVOKE-DEBUG] 写入DB的notification_content: {}", notification_content);
         
         // 更新消息内容类型和内容（对齐官方实现）
         self.message_dao.update_message_content_and_type(
@@ -839,10 +972,14 @@ impl MessageHandler {
         
         info!("[REVOKE] 更新消息内容类型和内容: content_type={}, content={}", REVOKE, notification_content);
 
-        // 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg
+        // 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg（对齐 Go SDK: latestMsg.Seq <= tips.Seq）
         if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
-            if conv.latest_msg_send_time <= revoked_msg.send_time {
-                // 获取最新的消息（使用正确的参数）
+            // 从 latest_msg JSON 中解析 seq（对齐 Go SDK: utils.JsonStringToStruct）
+            let latest_seq: i64 = serde_json::from_str::<serde_json::Value>(&conv.latest_msg)
+                .ok()
+                .and_then(|v| v.get("seq").and_then(|s| s.as_i64()))
+                .unwrap_or(0);
+            if latest_seq <= tips.seq {
                 if let Ok(latest_msgs) = self.message_dao.get_by_conversation(&tips.conversation_id, 0, 1).await {
                     if let Some(latest_msg) = latest_msgs.first() {
                         // 更新会话的最新消息
@@ -950,6 +1087,7 @@ impl MessageHandler {
 mod tests {
     use super::*;
     use crate::infra::database::pool::create_pool_memory;
+    use crate::infra::database::{UserDao, GroupDao};
 
     fn make_msg(id: &str, conv_id: &str, seq: i64) -> ReceivedMessage {
         ReceivedMessage {
@@ -1012,9 +1150,11 @@ mod tests {
     async fn test_handle_messages() {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool));
+        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
-        let handler = MessageHandler::new(message_dao, conversation_dao, event_bus);
+        let handler = MessageHandler::new(message_dao, conversation_dao, user_dao, group_dao, event_bus);
 
         let msgs = vec![
             make_msg("msg_1", "conv_1", 1),
@@ -1029,8 +1169,10 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
-        let handler = MessageHandler::new(message_dao, conversation_dao, event_bus);
+        let handler = MessageHandler::new(message_dao, conversation_dao, user_dao, group_dao, event_bus);
 
         let msgs = vec![make_msg("msg_1", "conv_1", 1)];
         handler.handle_messages(msgs.clone()).await.unwrap();
@@ -1048,8 +1190,10 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
-        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), user_dao.clone(), group_dao.clone(), event_bus);
 
         let mut conv = make_conv("conv_tip");
         conv.unread_count = 5;
@@ -1075,9 +1219,11 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
         let mut sub = event_bus.subscribe();
-        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), user_dao.clone(), group_dao.clone(), event_bus);
 
         let msgs = vec![msg_with_ct("typing_1", "conv_typing", 1, content_type::TYPING)];
         handler.handle_messages(msgs).await.unwrap();
@@ -1100,8 +1246,10 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
-        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), user_dao.clone(), group_dao.clone(), event_bus);
 
         let msgs1 = vec![msg_with_ct("msg_1", "conv_normal", 1, content_type::TEXT)];
         handler.handle_messages(msgs1).await.unwrap();
@@ -1131,8 +1279,10 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
-        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), user_dao.clone(), group_dao.clone(), event_bus);
 
         // 发送第一条消息，latestMsg 应被设置为该消息的内容
         let msg1_content = r#"{"text":"hello"}"#;
@@ -1186,8 +1336,10 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
-        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), user_dao.clone(), group_dao.clone(), event_bus);
         handler.set_user_id("self_user".to_string()); // 设置当前用户 ID
 
         // 收到其他用户发送的消息
@@ -1212,9 +1364,11 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let user_dao = Arc::new(UserDao::new(pool.clone()));
+        let group_dao = Arc::new(GroupDao::new(pool.clone()));
         let event_bus = Arc::new(EventBus::new());
         let mut sub = event_bus.subscribe();
-        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), event_bus);
+        let handler = MessageHandler::new(message_dao.clone(), conversation_dao.clone(), user_dao.clone(), group_dao.clone(), event_bus);
 
         let mut conv = make_conv("conv_notrigger");
         conv.unread_count = 3;
@@ -1227,7 +1381,6 @@ mod tests {
             "notrigger_1",
             "conv_notrigger",
             4,
-            content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION,
         )];
         handler.handle_messages(msgs).await.unwrap();
 

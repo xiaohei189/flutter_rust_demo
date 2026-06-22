@@ -21,10 +21,7 @@ class UserAvatar extends StatelessWidget {
 
     // 如果是本地文件路径
     if (avatarUrl != null && _isLocalPath(avatarUrl)) {
-      appLog.i('[UserAvatar] 使用本地图片: $avatarUrl');
       final file = File(avatarUrl);
-      appLog.i('[UserAvatar] 文件是否存在: ${file.existsSync()}, 大小: ${file.existsSync() ? file.lengthSync() : 0} bytes');
-
       return CircleAvatar(
         radius: radius,
         backgroundColor: Colors.grey[300],
@@ -89,7 +86,6 @@ class UserAvatar extends StatelessWidget {
     
     // Unix 绝对路径（如 /data/user/0/...）
     if (path.startsWith('/')) {
-      appLog.i('[UserAvatar] 检测到 Unix 绝对路径');
       return true;
     }
     

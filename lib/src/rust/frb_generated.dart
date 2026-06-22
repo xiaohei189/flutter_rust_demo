@@ -7595,102 +7595,106 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           conversations: dco_decode_list_conversation(raw[1]),
         );
       case 26:
+        return SdkEvent_UpdateLatestMessageReadState(
+          conversationId: dco_decode_String(raw[1]),
+        );
+      case 27:
         return SdkEvent_ConversationDeleted(
           conversationIds: dco_decode_list_String(raw[1]),
         );
-      case 27:
+      case 28:
         return SdkEvent_NewConversation(
           conversations: dco_decode_list_conversation(raw[1]),
         );
-      case 28:
-        return SdkEvent_TotalUnreadCountChanged(count: dco_decode_i_64(raw[1]));
       case 29:
+        return SdkEvent_TotalUnreadCountChanged(count: dco_decode_i_64(raw[1]));
+      case 30:
         return SdkEvent_FriendApplicationAdded(
           application: dco_decode_String(raw[1]),
         );
-      case 30:
+      case 31:
         return SdkEvent_FriendApplicationApproved(
           application: dco_decode_String(raw[1]),
         );
-      case 31:
+      case 32:
         return SdkEvent_FriendApplicationRejected(
           application: dco_decode_String(raw[1]),
         );
-      case 32:
+      case 33:
         return SdkEvent_FriendAdded(
           friends: dco_decode_list_friend_info(raw[1]),
         );
-      case 33:
-        return SdkEvent_FriendDeleted(friendId: dco_decode_String(raw[1]));
       case 34:
-        return SdkEvent_BlackAdded(userId: dco_decode_String(raw[1]));
+        return SdkEvent_FriendDeleted(friendId: dco_decode_String(raw[1]));
       case 35:
-        return SdkEvent_BlackDeleted(blackId: dco_decode_String(raw[1]));
+        return SdkEvent_BlackAdded(userId: dco_decode_String(raw[1]));
       case 36:
-        return SdkEvent_FriendInfoUpdated(userId: dco_decode_String(raw[1]));
+        return SdkEvent_BlackDeleted(blackId: dco_decode_String(raw[1]));
       case 37:
-        return SdkEvent_GroupCreated(groupId: dco_decode_String(raw[1]));
+        return SdkEvent_FriendInfoUpdated(userId: dco_decode_String(raw[1]));
       case 38:
-        return SdkEvent_GroupInfoChanged(groupId: dco_decode_String(raw[1]));
+        return SdkEvent_GroupCreated(groupId: dco_decode_String(raw[1]));
       case 39:
+        return SdkEvent_GroupInfoChanged(groupId: dco_decode_String(raw[1]));
+      case 40:
         return SdkEvent_GroupMemberAdded(
           groupId: dco_decode_String(raw[1]),
           memberIds: dco_decode_list_String(raw[2]),
         );
-      case 40:
+      case 41:
         return SdkEvent_GroupMemberDeleted(
           groupId: dco_decode_String(raw[1]),
           memberIds: dco_decode_list_String(raw[2]),
         );
-      case 41:
+      case 42:
         return SdkEvent_GroupApplicationAdded(
           application: dco_decode_String(raw[1]),
         );
-      case 42:
+      case 43:
         return SdkEvent_GroupApplicationApproved(
           application: dco_decode_String(raw[1]),
         );
-      case 43:
+      case 44:
         return SdkEvent_GroupApplicationRejected(
           application: dco_decode_String(raw[1]),
         );
-      case 44:
-        return SdkEvent_GroupDismissed(groupId: dco_decode_String(raw[1]));
       case 45:
-        return SdkEvent_GroupMuted(groupId: dco_decode_String(raw[1]));
+        return SdkEvent_GroupDismissed(groupId: dco_decode_String(raw[1]));
       case 46:
-        return SdkEvent_GroupCancelMuted(groupId: dco_decode_String(raw[1]));
+        return SdkEvent_GroupMuted(groupId: dco_decode_String(raw[1]));
       case 47:
+        return SdkEvent_GroupCancelMuted(groupId: dco_decode_String(raw[1]));
+      case 48:
         return SdkEvent_GroupMemberMuted(
           groupId: dco_decode_String(raw[1]),
           userId: dco_decode_String(raw[2]),
         );
-      case 48:
+      case 49:
         return SdkEvent_GroupMemberCancelMuted(
           groupId: dco_decode_String(raw[1]),
           userId: dco_decode_String(raw[2]),
         );
-      case 49:
+      case 50:
         return SdkEvent_GroupMemberInfoChanged(
           groupId: dco_decode_String(raw[1]),
           userId: dco_decode_String(raw[2]),
         );
-      case 50:
+      case 51:
         return SdkEvent_GroupOwnerTransferred(
           groupId: dco_decode_String(raw[1]),
           newOwnerId: dco_decode_String(raw[2]),
         );
-      case 51:
+      case 52:
         return SdkEvent_UserInfoUpdated(
           user: dco_decode_box_autoadd_user_info(raw[1]),
         );
-      case 52:
+      case 53:
         return SdkEvent_UserStatusChanged(
           userId: dco_decode_String(raw[1]),
           status: dco_decode_i_32(raw[2]),
           platformIds: dco_decode_list_prim_i_32_strict(raw[3]),
         );
-      case 53:
+      case 54:
         return SdkEvent_BatchedPushMessages(
           msgs:
               dco_decode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(
@@ -7701,20 +7705,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
                 raw[2],
               ),
         );
-      case 54:
-        return SdkEvent_KickedOffline(reason: dco_decode_String(raw[1]));
       case 55:
+        return SdkEvent_KickedOffline(reason: dco_decode_String(raw[1]));
+      case 56:
         return SdkEvent_Reconnecting(
           attempt: dco_decode_u_32(raw[1]),
           maxAttempts: dco_decode_u_32(raw[2]),
         );
-      case 56:
-        return SdkEvent_TokenExpired();
       case 57:
-        return SdkEvent_LoginSuccess(userId: dco_decode_String(raw[1]));
+        return SdkEvent_TokenExpired();
       case 58:
-        return SdkEvent_Logout();
+        return SdkEvent_LoginSuccess(userId: dco_decode_String(raw[1]));
       case 59:
+        return SdkEvent_Logout();
+      case 60:
         return SdkEvent_CustomEvent(
           eventType: dco_decode_String(raw[1]),
           data: dco_decode_String(raw[2]),
@@ -9188,110 +9192,115 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_conversations = sse_decode_list_conversation(deserializer);
         return SdkEvent_ConversationChanged(conversations: var_conversations);
       case 26:
+        var var_conversationId = sse_decode_String(deserializer);
+        return SdkEvent_UpdateLatestMessageReadState(
+          conversationId: var_conversationId,
+        );
+      case 27:
         var var_conversationIds = sse_decode_list_String(deserializer);
         return SdkEvent_ConversationDeleted(
           conversationIds: var_conversationIds,
         );
-      case 27:
+      case 28:
         var var_conversations = sse_decode_list_conversation(deserializer);
         return SdkEvent_NewConversation(conversations: var_conversations);
-      case 28:
+      case 29:
         var var_count = sse_decode_i_64(deserializer);
         return SdkEvent_TotalUnreadCountChanged(count: var_count);
-      case 29:
-        var var_application = sse_decode_String(deserializer);
-        return SdkEvent_FriendApplicationAdded(application: var_application);
       case 30:
         var var_application = sse_decode_String(deserializer);
-        return SdkEvent_FriendApplicationApproved(application: var_application);
+        return SdkEvent_FriendApplicationAdded(application: var_application);
       case 31:
         var var_application = sse_decode_String(deserializer);
-        return SdkEvent_FriendApplicationRejected(application: var_application);
+        return SdkEvent_FriendApplicationApproved(application: var_application);
       case 32:
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_FriendApplicationRejected(application: var_application);
+      case 33:
         var var_friends = sse_decode_list_friend_info(deserializer);
         return SdkEvent_FriendAdded(friends: var_friends);
-      case 33:
+      case 34:
         var var_friendId = sse_decode_String(deserializer);
         return SdkEvent_FriendDeleted(friendId: var_friendId);
-      case 34:
+      case 35:
         var var_userId = sse_decode_String(deserializer);
         return SdkEvent_BlackAdded(userId: var_userId);
-      case 35:
+      case 36:
         var var_blackId = sse_decode_String(deserializer);
         return SdkEvent_BlackDeleted(blackId: var_blackId);
-      case 36:
+      case 37:
         var var_userId = sse_decode_String(deserializer);
         return SdkEvent_FriendInfoUpdated(userId: var_userId);
-      case 37:
-        var var_groupId = sse_decode_String(deserializer);
-        return SdkEvent_GroupCreated(groupId: var_groupId);
       case 38:
         var var_groupId = sse_decode_String(deserializer);
-        return SdkEvent_GroupInfoChanged(groupId: var_groupId);
+        return SdkEvent_GroupCreated(groupId: var_groupId);
       case 39:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupInfoChanged(groupId: var_groupId);
+      case 40:
         var var_groupId = sse_decode_String(deserializer);
         var var_memberIds = sse_decode_list_String(deserializer);
         return SdkEvent_GroupMemberAdded(
           groupId: var_groupId,
           memberIds: var_memberIds,
         );
-      case 40:
+      case 41:
         var var_groupId = sse_decode_String(deserializer);
         var var_memberIds = sse_decode_list_String(deserializer);
         return SdkEvent_GroupMemberDeleted(
           groupId: var_groupId,
           memberIds: var_memberIds,
         );
-      case 41:
-        var var_application = sse_decode_String(deserializer);
-        return SdkEvent_GroupApplicationAdded(application: var_application);
       case 42:
         var var_application = sse_decode_String(deserializer);
-        return SdkEvent_GroupApplicationApproved(application: var_application);
+        return SdkEvent_GroupApplicationAdded(application: var_application);
       case 43:
         var var_application = sse_decode_String(deserializer);
-        return SdkEvent_GroupApplicationRejected(application: var_application);
+        return SdkEvent_GroupApplicationApproved(application: var_application);
       case 44:
-        var var_groupId = sse_decode_String(deserializer);
-        return SdkEvent_GroupDismissed(groupId: var_groupId);
+        var var_application = sse_decode_String(deserializer);
+        return SdkEvent_GroupApplicationRejected(application: var_application);
       case 45:
         var var_groupId = sse_decode_String(deserializer);
-        return SdkEvent_GroupMuted(groupId: var_groupId);
+        return SdkEvent_GroupDismissed(groupId: var_groupId);
       case 46:
         var var_groupId = sse_decode_String(deserializer);
-        return SdkEvent_GroupCancelMuted(groupId: var_groupId);
+        return SdkEvent_GroupMuted(groupId: var_groupId);
       case 47:
+        var var_groupId = sse_decode_String(deserializer);
+        return SdkEvent_GroupCancelMuted(groupId: var_groupId);
+      case 48:
         var var_groupId = sse_decode_String(deserializer);
         var var_userId = sse_decode_String(deserializer);
         return SdkEvent_GroupMemberMuted(
           groupId: var_groupId,
           userId: var_userId,
         );
-      case 48:
+      case 49:
         var var_groupId = sse_decode_String(deserializer);
         var var_userId = sse_decode_String(deserializer);
         return SdkEvent_GroupMemberCancelMuted(
           groupId: var_groupId,
           userId: var_userId,
         );
-      case 49:
+      case 50:
         var var_groupId = sse_decode_String(deserializer);
         var var_userId = sse_decode_String(deserializer);
         return SdkEvent_GroupMemberInfoChanged(
           groupId: var_groupId,
           userId: var_userId,
         );
-      case 50:
+      case 51:
         var var_groupId = sse_decode_String(deserializer);
         var var_newOwnerId = sse_decode_String(deserializer);
         return SdkEvent_GroupOwnerTransferred(
           groupId: var_groupId,
           newOwnerId: var_newOwnerId,
         );
-      case 51:
+      case 52:
         var var_user = sse_decode_box_autoadd_user_info(deserializer);
         return SdkEvent_UserInfoUpdated(user: var_user);
-      case 52:
+      case 53:
         var var_userId = sse_decode_String(deserializer);
         var var_status = sse_decode_i_32(deserializer);
         var var_platformIds = sse_decode_list_prim_i_32_strict(deserializer);
@@ -9300,7 +9309,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           status: var_status,
           platformIds: var_platformIds,
         );
-      case 53:
+      case 54:
         var var_msgs =
             sse_decode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(
               deserializer,
@@ -9313,24 +9322,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           msgs: var_msgs,
           notificationMsgs: var_notificationMsgs,
         );
-      case 54:
+      case 55:
         var var_reason = sse_decode_String(deserializer);
         return SdkEvent_KickedOffline(reason: var_reason);
-      case 55:
+      case 56:
         var var_attempt = sse_decode_u_32(deserializer);
         var var_maxAttempts = sse_decode_u_32(deserializer);
         return SdkEvent_Reconnecting(
           attempt: var_attempt,
           maxAttempts: var_maxAttempts,
         );
-      case 56:
-        return SdkEvent_TokenExpired();
       case 57:
+        return SdkEvent_TokenExpired();
+      case 58:
         var var_userId = sse_decode_String(deserializer);
         return SdkEvent_LoginSuccess(userId: var_userId);
-      case 58:
-        return SdkEvent_Logout();
       case 59:
+        return SdkEvent_Logout();
+      case 60:
         var var_eventType = sse_decode_String(deserializer);
         var var_data = sse_decode_String(deserializer);
         return SdkEvent_CustomEvent(eventType: var_eventType, data: var_data);
@@ -10616,114 +10625,119 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case SdkEvent_ConversationChanged(conversations: final conversations):
         sse_encode_i_32(25, serializer);
         sse_encode_list_conversation(conversations, serializer);
-      case SdkEvent_ConversationDeleted(conversationIds: final conversationIds):
+      case SdkEvent_UpdateLatestMessageReadState(
+        conversationId: final conversationId,
+      ):
         sse_encode_i_32(26, serializer);
+        sse_encode_String(conversationId, serializer);
+      case SdkEvent_ConversationDeleted(conversationIds: final conversationIds):
+        sse_encode_i_32(27, serializer);
         sse_encode_list_String(conversationIds, serializer);
       case SdkEvent_NewConversation(conversations: final conversations):
-        sse_encode_i_32(27, serializer);
+        sse_encode_i_32(28, serializer);
         sse_encode_list_conversation(conversations, serializer);
       case SdkEvent_TotalUnreadCountChanged(count: final count):
-        sse_encode_i_32(28, serializer);
+        sse_encode_i_32(29, serializer);
         sse_encode_i_64(count, serializer);
       case SdkEvent_FriendApplicationAdded(application: final application):
-        sse_encode_i_32(29, serializer);
-        sse_encode_String(application, serializer);
-      case SdkEvent_FriendApplicationApproved(application: final application):
         sse_encode_i_32(30, serializer);
         sse_encode_String(application, serializer);
-      case SdkEvent_FriendApplicationRejected(application: final application):
+      case SdkEvent_FriendApplicationApproved(application: final application):
         sse_encode_i_32(31, serializer);
         sse_encode_String(application, serializer);
-      case SdkEvent_FriendAdded(friends: final friends):
+      case SdkEvent_FriendApplicationRejected(application: final application):
         sse_encode_i_32(32, serializer);
+        sse_encode_String(application, serializer);
+      case SdkEvent_FriendAdded(friends: final friends):
+        sse_encode_i_32(33, serializer);
         sse_encode_list_friend_info(friends, serializer);
       case SdkEvent_FriendDeleted(friendId: final friendId):
-        sse_encode_i_32(33, serializer);
+        sse_encode_i_32(34, serializer);
         sse_encode_String(friendId, serializer);
       case SdkEvent_BlackAdded(userId: final userId):
-        sse_encode_i_32(34, serializer);
+        sse_encode_i_32(35, serializer);
         sse_encode_String(userId, serializer);
       case SdkEvent_BlackDeleted(blackId: final blackId):
-        sse_encode_i_32(35, serializer);
+        sse_encode_i_32(36, serializer);
         sse_encode_String(blackId, serializer);
       case SdkEvent_FriendInfoUpdated(userId: final userId):
-        sse_encode_i_32(36, serializer);
+        sse_encode_i_32(37, serializer);
         sse_encode_String(userId, serializer);
       case SdkEvent_GroupCreated(groupId: final groupId):
-        sse_encode_i_32(37, serializer);
-        sse_encode_String(groupId, serializer);
-      case SdkEvent_GroupInfoChanged(groupId: final groupId):
         sse_encode_i_32(38, serializer);
         sse_encode_String(groupId, serializer);
-      case SdkEvent_GroupMemberAdded(
-        groupId: final groupId,
-        memberIds: final memberIds,
-      ):
+      case SdkEvent_GroupInfoChanged(groupId: final groupId):
         sse_encode_i_32(39, serializer);
         sse_encode_String(groupId, serializer);
-        sse_encode_list_String(memberIds, serializer);
-      case SdkEvent_GroupMemberDeleted(
+      case SdkEvent_GroupMemberAdded(
         groupId: final groupId,
         memberIds: final memberIds,
       ):
         sse_encode_i_32(40, serializer);
         sse_encode_String(groupId, serializer);
         sse_encode_list_String(memberIds, serializer);
-      case SdkEvent_GroupApplicationAdded(application: final application):
+      case SdkEvent_GroupMemberDeleted(
+        groupId: final groupId,
+        memberIds: final memberIds,
+      ):
         sse_encode_i_32(41, serializer);
-        sse_encode_String(application, serializer);
-      case SdkEvent_GroupApplicationApproved(application: final application):
+        sse_encode_String(groupId, serializer);
+        sse_encode_list_String(memberIds, serializer);
+      case SdkEvent_GroupApplicationAdded(application: final application):
         sse_encode_i_32(42, serializer);
         sse_encode_String(application, serializer);
-      case SdkEvent_GroupApplicationRejected(application: final application):
+      case SdkEvent_GroupApplicationApproved(application: final application):
         sse_encode_i_32(43, serializer);
         sse_encode_String(application, serializer);
-      case SdkEvent_GroupDismissed(groupId: final groupId):
+      case SdkEvent_GroupApplicationRejected(application: final application):
         sse_encode_i_32(44, serializer);
-        sse_encode_String(groupId, serializer);
-      case SdkEvent_GroupMuted(groupId: final groupId):
+        sse_encode_String(application, serializer);
+      case SdkEvent_GroupDismissed(groupId: final groupId):
         sse_encode_i_32(45, serializer);
         sse_encode_String(groupId, serializer);
-      case SdkEvent_GroupCancelMuted(groupId: final groupId):
+      case SdkEvent_GroupMuted(groupId: final groupId):
         sse_encode_i_32(46, serializer);
         sse_encode_String(groupId, serializer);
-      case SdkEvent_GroupMemberMuted(
-        groupId: final groupId,
-        userId: final userId,
-      ):
+      case SdkEvent_GroupCancelMuted(groupId: final groupId):
         sse_encode_i_32(47, serializer);
         sse_encode_String(groupId, serializer);
-        sse_encode_String(userId, serializer);
-      case SdkEvent_GroupMemberCancelMuted(
+      case SdkEvent_GroupMemberMuted(
         groupId: final groupId,
         userId: final userId,
       ):
         sse_encode_i_32(48, serializer);
         sse_encode_String(groupId, serializer);
         sse_encode_String(userId, serializer);
-      case SdkEvent_GroupMemberInfoChanged(
+      case SdkEvent_GroupMemberCancelMuted(
         groupId: final groupId,
         userId: final userId,
       ):
         sse_encode_i_32(49, serializer);
         sse_encode_String(groupId, serializer);
         sse_encode_String(userId, serializer);
+      case SdkEvent_GroupMemberInfoChanged(
+        groupId: final groupId,
+        userId: final userId,
+      ):
+        sse_encode_i_32(50, serializer);
+        sse_encode_String(groupId, serializer);
+        sse_encode_String(userId, serializer);
       case SdkEvent_GroupOwnerTransferred(
         groupId: final groupId,
         newOwnerId: final newOwnerId,
       ):
-        sse_encode_i_32(50, serializer);
+        sse_encode_i_32(51, serializer);
         sse_encode_String(groupId, serializer);
         sse_encode_String(newOwnerId, serializer);
       case SdkEvent_UserInfoUpdated(user: final user):
-        sse_encode_i_32(51, serializer);
+        sse_encode_i_32(52, serializer);
         sse_encode_box_autoadd_user_info(user, serializer);
       case SdkEvent_UserStatusChanged(
         userId: final userId,
         status: final status,
         platformIds: final platformIds,
       ):
-        sse_encode_i_32(52, serializer);
+        sse_encode_i_32(53, serializer);
         sse_encode_String(userId, serializer);
         sse_encode_i_32(status, serializer);
         sse_encode_list_prim_i_32_strict(platformIds, serializer);
@@ -10731,7 +10745,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         msgs: final msgs,
         notificationMsgs: final notificationMsgs,
       ):
-        sse_encode_i_32(53, serializer);
+        sse_encode_i_32(54, serializer);
         sse_encode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(
           msgs,
           serializer,
@@ -10741,24 +10755,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           serializer,
         );
       case SdkEvent_KickedOffline(reason: final reason):
-        sse_encode_i_32(54, serializer);
+        sse_encode_i_32(55, serializer);
         sse_encode_String(reason, serializer);
       case SdkEvent_Reconnecting(
         attempt: final attempt,
         maxAttempts: final maxAttempts,
       ):
-        sse_encode_i_32(55, serializer);
+        sse_encode_i_32(56, serializer);
         sse_encode_u_32(attempt, serializer);
         sse_encode_u_32(maxAttempts, serializer);
       case SdkEvent_TokenExpired():
-        sse_encode_i_32(56, serializer);
-      case SdkEvent_LoginSuccess(userId: final userId):
         sse_encode_i_32(57, serializer);
+      case SdkEvent_LoginSuccess(userId: final userId):
+        sse_encode_i_32(58, serializer);
         sse_encode_String(userId, serializer);
       case SdkEvent_Logout():
-        sse_encode_i_32(58, serializer);
-      case SdkEvent_CustomEvent(eventType: final eventType, data: final data):
         sse_encode_i_32(59, serializer);
+      case SdkEvent_CustomEvent(eventType: final eventType, data: final data):
+        sse_encode_i_32(60, serializer);
         sse_encode_String(eventType, serializer);
         sse_encode_String(data, serializer);
     }

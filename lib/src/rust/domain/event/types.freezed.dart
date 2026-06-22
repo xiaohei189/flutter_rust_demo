@@ -99,6 +99,8 @@ mixin _$SdkEvent {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -221,6 +223,7 @@ mixin _$SdkEvent {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -339,6 +342,7 @@ mixin _$SdkEvent {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -417,6 +421,8 @@ mixin _$SdkEvent {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -501,6 +507,8 @@ mixin _$SdkEvent {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -580,6 +588,8 @@ mixin _$SdkEvent {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -772,6 +782,8 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -898,6 +910,7 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -1020,6 +1033,7 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -1105,6 +1119,8 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -1193,6 +1209,8 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -1276,6 +1294,8 @@ class _$SdkEvent_ConnectingImpl extends SdkEvent_Connecting {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -1457,6 +1477,8 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -1583,6 +1605,7 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -1705,6 +1728,7 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -1790,6 +1814,8 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -1878,6 +1904,8 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -1961,6 +1989,8 @@ class _$SdkEvent_ConnectedImpl extends SdkEvent_Connected {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -2173,6 +2203,8 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -2299,6 +2331,7 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -2421,6 +2454,7 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -2506,6 +2540,8 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -2594,6 +2630,8 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -2677,6 +2715,8 @@ class _$SdkEvent_DisconnectedImpl extends SdkEvent_Disconnected {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -2898,6 +2938,8 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -3024,6 +3066,7 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -3146,6 +3189,7 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -3231,6 +3275,8 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -3319,6 +3365,8 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -3402,6 +3450,8 @@ class _$SdkEvent_ConnectFailedImpl extends SdkEvent_ConnectFailed {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -3638,6 +3688,8 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -3764,6 +3816,7 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -3886,6 +3939,7 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -3971,6 +4025,8 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -4059,6 +4115,8 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -4142,6 +4200,8 @@ class _$SdkEvent_PushMessageImpl extends SdkEvent_PushMessage {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -4416,6 +4476,8 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -4542,6 +4604,7 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -4664,6 +4727,7 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -4749,6 +4813,8 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -4837,6 +4903,8 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -4920,6 +4988,8 @@ class _$SdkEvent_PushMessagesImpl extends SdkEvent_PushMessages {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -5201,6 +5271,8 @@ class _$SdkEvent_PushNotificationMessagesImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -5327,6 +5399,7 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -5449,6 +5522,7 @@ class _$SdkEvent_PushNotificationMessagesImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -5534,6 +5608,8 @@ class _$SdkEvent_PushNotificationMessagesImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -5622,6 +5698,8 @@ class _$SdkEvent_PushNotificationMessagesImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -5705,6 +5783,8 @@ class _$SdkEvent_PushNotificationMessagesImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -5905,6 +5985,8 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -6031,6 +6113,7 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -6153,6 +6236,7 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -6238,6 +6322,8 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -6326,6 +6412,8 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -6409,6 +6497,8 @@ class _$SdkEvent_SyncStartedImpl extends SdkEvent_SyncStarted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -6632,6 +6722,8 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -6758,6 +6850,7 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -6880,6 +6973,7 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -6965,6 +7059,8 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -7053,6 +7149,8 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -7136,6 +7234,8 @@ class _$SdkEvent_SyncProgressImpl extends SdkEvent_SyncProgress {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -7330,6 +7430,8 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -7456,6 +7558,7 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -7578,6 +7681,7 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -7663,6 +7767,8 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -7751,6 +7857,8 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -7834,6 +7942,8 @@ class _$SdkEvent_SyncFinishedImpl extends SdkEvent_SyncFinished {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -8045,6 +8155,8 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -8171,6 +8283,7 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -8293,6 +8406,7 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -8378,6 +8492,8 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -8466,6 +8582,8 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -8549,6 +8667,8 @@ class _$SdkEvent_SyncFailedImpl extends SdkEvent_SyncFailed {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -8769,6 +8889,8 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -8895,6 +9017,7 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -9017,6 +9140,7 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -9102,6 +9226,8 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -9190,6 +9316,8 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -9273,6 +9401,8 @@ class _$SdkEvent_NewMessageImpl extends SdkEvent_NewMessage {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -9643,6 +9773,8 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -9783,6 +9915,7 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -9919,6 +10052,7 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -10018,6 +10152,8 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -10106,6 +10242,8 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -10189,6 +10327,8 @@ class _$SdkEvent_MessageSentImpl extends SdkEvent_MessageSent {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -10445,6 +10585,8 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -10571,6 +10713,7 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -10693,6 +10836,7 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -10778,6 +10922,8 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -10866,6 +11012,8 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -10949,6 +11097,8 @@ class _$SdkEvent_MessageSendFailedImpl extends SdkEvent_MessageSendFailed {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -11213,6 +11363,8 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -11339,6 +11491,7 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -11461,6 +11614,7 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -11546,6 +11700,8 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -11634,6 +11790,8 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -11717,6 +11875,8 @@ class _$SdkEvent_UploadProgressImpl extends SdkEvent_UploadProgress {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -12089,6 +12249,8 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -12228,6 +12390,7 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -12363,6 +12526,7 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -12461,6 +12625,8 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -12549,6 +12715,8 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -12632,6 +12800,8 @@ class _$SdkEvent_MessageRevokedImpl extends SdkEvent_MessageRevoked {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -12884,6 +13054,8 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -13010,6 +13182,7 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -13132,6 +13305,7 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -13217,6 +13391,8 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -13305,6 +13481,8 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -13388,6 +13566,8 @@ class _$SdkEvent_C2CReadReceiptImpl extends SdkEvent_C2CReadReceipt {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -13618,6 +13798,8 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -13744,6 +13926,7 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -13866,6 +14049,7 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -13951,6 +14135,8 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -14039,6 +14225,8 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -14122,6 +14310,8 @@ class _$SdkEvent_GroupReadReceiptImpl extends SdkEvent_GroupReadReceipt {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -14354,6 +14544,8 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -14480,6 +14672,7 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -14602,6 +14795,7 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -14687,6 +14881,8 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -14775,6 +14971,8 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -14858,6 +15056,8 @@ class _$SdkEvent_ConversationUserInputStatusChangedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -15093,6 +15293,8 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -15219,6 +15421,7 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -15341,6 +15544,7 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -15426,6 +15630,8 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -15514,6 +15720,8 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -15597,6 +15805,8 @@ class _$SdkEvent_RecvOfflineNewMessageImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -15820,6 +16030,8 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -15946,6 +16158,7 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -16068,6 +16281,7 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -16153,6 +16367,8 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -16241,6 +16457,8 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -16324,6 +16542,8 @@ class _$SdkEvent_MsgEditedImpl extends SdkEvent_MsgEdited {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -16547,6 +16767,8 @@ class _$SdkEvent_MessageExtensionsAddedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -16673,6 +16895,7 @@ class _$SdkEvent_MessageExtensionsAddedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -16795,6 +17018,7 @@ class _$SdkEvent_MessageExtensionsAddedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -16880,6 +17104,8 @@ class _$SdkEvent_MessageExtensionsAddedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -16968,6 +17194,8 @@ class _$SdkEvent_MessageExtensionsAddedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -17051,6 +17279,8 @@ class _$SdkEvent_MessageExtensionsAddedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -17279,6 +17509,8 @@ class _$SdkEvent_MessageExtensionsChangedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -17405,6 +17637,7 @@ class _$SdkEvent_MessageExtensionsChangedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -17527,6 +17760,7 @@ class _$SdkEvent_MessageExtensionsChangedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -17612,6 +17846,8 @@ class _$SdkEvent_MessageExtensionsChangedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -17700,6 +17936,8 @@ class _$SdkEvent_MessageExtensionsChangedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -17783,6 +18021,8 @@ class _$SdkEvent_MessageExtensionsChangedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -18011,6 +18251,8 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -18137,6 +18379,7 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -18259,6 +18502,7 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -18344,6 +18588,8 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -18432,6 +18678,8 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -18515,6 +18763,8 @@ class _$SdkEvent_MessageExtensionsDeletedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -18762,6 +19012,8 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -18888,6 +19140,7 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -19010,6 +19263,7 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -19095,6 +19349,8 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -19183,6 +19439,8 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -19266,6 +19524,8 @@ class _$SdkEvent_MessagesDeletedImpl extends SdkEvent_MessagesDeleted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -19505,6 +19765,8 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -19631,6 +19893,7 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -19753,6 +20016,7 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -19838,6 +20102,8 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -19926,6 +20192,8 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -20009,6 +20277,8 @@ class _$SdkEvent_ConversationChangedImpl extends SdkEvent_ConversationChanged {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -20075,6 +20345,753 @@ abstract class SdkEvent_ConversationChanged extends SdkEvent {
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$SdkEvent_ConversationChangedImplCopyWith<
     _$SdkEvent_ConversationChangedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$SdkEvent_UpdateLatestMessageReadStateImplCopyWith<$Res> {
+  factory _$$SdkEvent_UpdateLatestMessageReadStateImplCopyWith(
+    _$SdkEvent_UpdateLatestMessageReadStateImpl value,
+    $Res Function(_$SdkEvent_UpdateLatestMessageReadStateImpl) then,
+  ) = __$$SdkEvent_UpdateLatestMessageReadStateImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String conversationId});
+}
+
+/// @nodoc
+class __$$SdkEvent_UpdateLatestMessageReadStateImplCopyWithImpl<$Res>
+    extends
+        _$SdkEventCopyWithImpl<
+          $Res,
+          _$SdkEvent_UpdateLatestMessageReadStateImpl
+        >
+    implements _$$SdkEvent_UpdateLatestMessageReadStateImplCopyWith<$Res> {
+  __$$SdkEvent_UpdateLatestMessageReadStateImplCopyWithImpl(
+    _$SdkEvent_UpdateLatestMessageReadStateImpl _value,
+    $Res Function(_$SdkEvent_UpdateLatestMessageReadStateImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? conversationId = null}) {
+    return _then(
+      _$SdkEvent_UpdateLatestMessageReadStateImpl(
+        conversationId: null == conversationId
+            ? _value.conversationId
+            : conversationId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$SdkEvent_UpdateLatestMessageReadStateImpl
+    extends SdkEvent_UpdateLatestMessageReadState {
+  const _$SdkEvent_UpdateLatestMessageReadStateImpl({
+    required this.conversationId,
+  }) : super._();
+
+  @override
+  final String conversationId;
+
+  @override
+  String toString() {
+    return 'SdkEvent.updateLatestMessageReadState(conversationId: $conversationId)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SdkEvent_UpdateLatestMessageReadStateImpl &&
+            (identical(other.conversationId, conversationId) ||
+                other.conversationId == conversationId));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, conversationId);
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SdkEvent_UpdateLatestMessageReadStateImplCopyWith<
+    _$SdkEvent_UpdateLatestMessageReadStateImpl
+  >
+  get copyWith =>
+      __$$SdkEvent_UpdateLatestMessageReadStateImplCopyWithImpl<
+        _$SdkEvent_UpdateLatestMessageReadStateImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String reason) disconnected,
+    required TResult Function(String error) connectFailed,
+    required TResult Function(int reqIdentifier, Uint8List data) pushMessage,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushMessages,
+    required TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )
+    pushNotificationMessages,
+    required TResult Function() syncStarted,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function() syncFinished,
+    required TResult Function(String error) syncFailed,
+    required TResult Function(ReceivedMessage message) newMessage,
+    required TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )
+    messageSent,
+    required TResult Function(String clientMsgId, String error)
+    messageSendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )
+    messageRevoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(List<GroupReadReceipt> receipts) groupReadReceipt,
+    required TResult Function(InputStatusChangedData data)
+    conversationUserInputStatusChanged,
+    required TResult Function(List<ReceivedMessage> messages)
+    recvOfflineNewMessage,
+    required TResult Function(ReceivedMessage message) msgEdited,
+    required TResult Function(MessageExtensionData data) messageExtensionsAdded,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsChanged,
+    required TResult Function(MessageExtensionData data)
+    messageExtensionsDeleted,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    messagesDeleted,
+    required TResult Function(List<Conversation> conversations)
+    conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
+    required TResult Function(List<String> conversationIds) conversationDeleted,
+    required TResult Function(List<Conversation> conversations) newConversation,
+    required TResult Function(int count) totalUnreadCountChanged,
+    required TResult Function(String application) friendApplicationAdded,
+    required TResult Function(String application) friendApplicationApproved,
+    required TResult Function(String application) friendApplicationRejected,
+    required TResult Function(List<FriendInfo> friends) friendAdded,
+    required TResult Function(String friendId) friendDeleted,
+    required TResult Function(String userId) blackAdded,
+    required TResult Function(String blackId) blackDeleted,
+    required TResult Function(String userId) friendInfoUpdated,
+    required TResult Function(String groupId) groupCreated,
+    required TResult Function(String groupId) groupInfoChanged,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberAdded,
+    required TResult Function(String groupId, List<String> memberIds)
+    groupMemberDeleted,
+    required TResult Function(String application) groupApplicationAdded,
+    required TResult Function(String application) groupApplicationApproved,
+    required TResult Function(String application) groupApplicationRejected,
+    required TResult Function(String groupId) groupDismissed,
+    required TResult Function(String groupId) groupMuted,
+    required TResult Function(String groupId) groupCancelMuted,
+    required TResult Function(String groupId, String userId) groupMemberMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberCancelMuted,
+    required TResult Function(String groupId, String userId)
+    groupMemberInfoChanged,
+    required TResult Function(String groupId, String newOwnerId)
+    groupOwnerTransferred,
+    required TResult Function(UserInfo user) userInfoUpdated,
+    required TResult Function(String userId, int status, Int32List platformIds)
+    userStatusChanged,
+    required TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )
+    batchedPushMessages,
+    required TResult Function(String reason) kickedOffline,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function() tokenExpired,
+    required TResult Function(String userId) loginSuccess,
+    required TResult Function() logout,
+    required TResult Function(String eventType, String data) customEvent,
+  }) {
+    return updateLatestMessageReadState(conversationId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String reason)? disconnected,
+    TResult? Function(String error)? connectFailed,
+    TResult? Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult? Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult? Function()? syncStarted,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function()? syncFinished,
+    TResult? Function(String error)? syncFailed,
+    TResult? Function(ReceivedMessage message)? newMessage,
+    TResult? Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult? Function(String clientMsgId, String error)? messageSendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
+    messageRevoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult? Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult? Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult? Function(ReceivedMessage message)? msgEdited,
+    TResult? Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult? Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult? Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
+    TResult? Function(List<String> conversationIds)? conversationDeleted,
+    TResult? Function(List<Conversation> conversations)? newConversation,
+    TResult? Function(int count)? totalUnreadCountChanged,
+    TResult? Function(String application)? friendApplicationAdded,
+    TResult? Function(String application)? friendApplicationApproved,
+    TResult? Function(String application)? friendApplicationRejected,
+    TResult? Function(List<FriendInfo> friends)? friendAdded,
+    TResult? Function(String friendId)? friendDeleted,
+    TResult? Function(String userId)? blackAdded,
+    TResult? Function(String blackId)? blackDeleted,
+    TResult? Function(String userId)? friendInfoUpdated,
+    TResult? Function(String groupId)? groupCreated,
+    TResult? Function(String groupId)? groupInfoChanged,
+    TResult? Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult? Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult? Function(String application)? groupApplicationAdded,
+    TResult? Function(String application)? groupApplicationApproved,
+    TResult? Function(String application)? groupApplicationRejected,
+    TResult? Function(String groupId)? groupDismissed,
+    TResult? Function(String groupId)? groupMuted,
+    TResult? Function(String groupId)? groupCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberMuted,
+    TResult? Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult? Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult? Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult? Function(UserInfo user)? userInfoUpdated,
+    TResult? Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult? Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult? Function(String reason)? kickedOffline,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String userId)? loginSuccess,
+    TResult? Function()? logout,
+    TResult? Function(String eventType, String data)? customEvent,
+  }) {
+    return updateLatestMessageReadState?.call(conversationId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String reason)? disconnected,
+    TResult Function(String error)? connectFailed,
+    TResult Function(int reqIdentifier, Uint8List data)? pushMessage,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushMessages,
+    TResult Function(
+      String conversationId,
+      List<MsgData> msgs,
+      bool isEnd,
+      int endSeq,
+    )?
+    pushNotificationMessages,
+    TResult Function()? syncStarted,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function()? syncFinished,
+    TResult Function(String error)? syncFailed,
+    TResult Function(ReceivedMessage message)? newMessage,
+    TResult Function(
+      String clientMsgId,
+      String serverMsgId,
+      int sendTime,
+      int status,
+      String conversationId,
+      String sendId,
+      String recvId,
+      String groupId,
+      int sessionType,
+      int contentType,
+      String content,
+      String senderNickname,
+      String senderFaceUrl,
+    )?
+    messageSent,
+    TResult Function(String clientMsgId, String error)? messageSendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
+    messageRevoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(List<GroupReadReceipt> receipts)? groupReadReceipt,
+    TResult Function(InputStatusChangedData data)?
+    conversationUserInputStatusChanged,
+    TResult Function(List<ReceivedMessage> messages)? recvOfflineNewMessage,
+    TResult Function(ReceivedMessage message)? msgEdited,
+    TResult Function(MessageExtensionData data)? messageExtensionsAdded,
+    TResult Function(MessageExtensionData data)? messageExtensionsChanged,
+    TResult Function(MessageExtensionData data)? messageExtensionsDeleted,
+    TResult Function(String conversationId, List<String> clientMsgIds)?
+    messagesDeleted,
+    TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
+    TResult Function(List<String> conversationIds)? conversationDeleted,
+    TResult Function(List<Conversation> conversations)? newConversation,
+    TResult Function(int count)? totalUnreadCountChanged,
+    TResult Function(String application)? friendApplicationAdded,
+    TResult Function(String application)? friendApplicationApproved,
+    TResult Function(String application)? friendApplicationRejected,
+    TResult Function(List<FriendInfo> friends)? friendAdded,
+    TResult Function(String friendId)? friendDeleted,
+    TResult Function(String userId)? blackAdded,
+    TResult Function(String blackId)? blackDeleted,
+    TResult Function(String userId)? friendInfoUpdated,
+    TResult Function(String groupId)? groupCreated,
+    TResult Function(String groupId)? groupInfoChanged,
+    TResult Function(String groupId, List<String> memberIds)? groupMemberAdded,
+    TResult Function(String groupId, List<String> memberIds)?
+    groupMemberDeleted,
+    TResult Function(String application)? groupApplicationAdded,
+    TResult Function(String application)? groupApplicationApproved,
+    TResult Function(String application)? groupApplicationRejected,
+    TResult Function(String groupId)? groupDismissed,
+    TResult Function(String groupId)? groupMuted,
+    TResult Function(String groupId)? groupCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberMuted,
+    TResult Function(String groupId, String userId)? groupMemberCancelMuted,
+    TResult Function(String groupId, String userId)? groupMemberInfoChanged,
+    TResult Function(String groupId, String newOwnerId)? groupOwnerTransferred,
+    TResult Function(UserInfo user)? userInfoUpdated,
+    TResult Function(String userId, int status, Int32List platformIds)?
+    userStatusChanged,
+    TResult Function(
+      Map<String, PullMsgs> msgs,
+      Map<String, PullMsgs> notificationMsgs,
+    )?
+    batchedPushMessages,
+    TResult Function(String reason)? kickedOffline,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function()? tokenExpired,
+    TResult Function(String userId)? loginSuccess,
+    TResult Function()? logout,
+    TResult Function(String eventType, String data)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (updateLatestMessageReadState != null) {
+      return updateLatestMessageReadState(conversationId);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(SdkEvent_Connecting value) connecting,
+    required TResult Function(SdkEvent_Connected value) connected,
+    required TResult Function(SdkEvent_Disconnected value) disconnected,
+    required TResult Function(SdkEvent_ConnectFailed value) connectFailed,
+    required TResult Function(SdkEvent_PushMessage value) pushMessage,
+    required TResult Function(SdkEvent_PushMessages value) pushMessages,
+    required TResult Function(SdkEvent_PushNotificationMessages value)
+    pushNotificationMessages,
+    required TResult Function(SdkEvent_SyncStarted value) syncStarted,
+    required TResult Function(SdkEvent_SyncProgress value) syncProgress,
+    required TResult Function(SdkEvent_SyncFinished value) syncFinished,
+    required TResult Function(SdkEvent_SyncFailed value) syncFailed,
+    required TResult Function(SdkEvent_NewMessage value) newMessage,
+    required TResult Function(SdkEvent_MessageSent value) messageSent,
+    required TResult Function(SdkEvent_MessageSendFailed value)
+    messageSendFailed,
+    required TResult Function(SdkEvent_UploadProgress value) uploadProgress,
+    required TResult Function(SdkEvent_MessageRevoked value) messageRevoked,
+    required TResult Function(SdkEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(SdkEvent_GroupReadReceipt value) groupReadReceipt,
+    required TResult Function(SdkEvent_ConversationUserInputStatusChanged value)
+    conversationUserInputStatusChanged,
+    required TResult Function(SdkEvent_RecvOfflineNewMessage value)
+    recvOfflineNewMessage,
+    required TResult Function(SdkEvent_MsgEdited value) msgEdited,
+    required TResult Function(SdkEvent_MessageExtensionsAdded value)
+    messageExtensionsAdded,
+    required TResult Function(SdkEvent_MessageExtensionsChanged value)
+    messageExtensionsChanged,
+    required TResult Function(SdkEvent_MessageExtensionsDeleted value)
+    messageExtensionsDeleted,
+    required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
+    required TResult Function(SdkEvent_ConversationChanged value)
+    conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
+    required TResult Function(SdkEvent_ConversationDeleted value)
+    conversationDeleted,
+    required TResult Function(SdkEvent_NewConversation value) newConversation,
+    required TResult Function(SdkEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(SdkEvent_FriendApplicationAdded value)
+    friendApplicationAdded,
+    required TResult Function(SdkEvent_FriendApplicationApproved value)
+    friendApplicationApproved,
+    required TResult Function(SdkEvent_FriendApplicationRejected value)
+    friendApplicationRejected,
+    required TResult Function(SdkEvent_FriendAdded value) friendAdded,
+    required TResult Function(SdkEvent_FriendDeleted value) friendDeleted,
+    required TResult Function(SdkEvent_BlackAdded value) blackAdded,
+    required TResult Function(SdkEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(SdkEvent_FriendInfoUpdated value)
+    friendInfoUpdated,
+    required TResult Function(SdkEvent_GroupCreated value) groupCreated,
+    required TResult Function(SdkEvent_GroupInfoChanged value) groupInfoChanged,
+    required TResult Function(SdkEvent_GroupMemberAdded value) groupMemberAdded,
+    required TResult Function(SdkEvent_GroupMemberDeleted value)
+    groupMemberDeleted,
+    required TResult Function(SdkEvent_GroupApplicationAdded value)
+    groupApplicationAdded,
+    required TResult Function(SdkEvent_GroupApplicationApproved value)
+    groupApplicationApproved,
+    required TResult Function(SdkEvent_GroupApplicationRejected value)
+    groupApplicationRejected,
+    required TResult Function(SdkEvent_GroupDismissed value) groupDismissed,
+    required TResult Function(SdkEvent_GroupMuted value) groupMuted,
+    required TResult Function(SdkEvent_GroupCancelMuted value) groupCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberMuted value) groupMemberMuted,
+    required TResult Function(SdkEvent_GroupMemberCancelMuted value)
+    groupMemberCancelMuted,
+    required TResult Function(SdkEvent_GroupMemberInfoChanged value)
+    groupMemberInfoChanged,
+    required TResult Function(SdkEvent_GroupOwnerTransferred value)
+    groupOwnerTransferred,
+    required TResult Function(SdkEvent_UserInfoUpdated value) userInfoUpdated,
+    required TResult Function(SdkEvent_UserStatusChanged value)
+    userStatusChanged,
+    required TResult Function(SdkEvent_BatchedPushMessages value)
+    batchedPushMessages,
+    required TResult Function(SdkEvent_KickedOffline value) kickedOffline,
+    required TResult Function(SdkEvent_Reconnecting value) reconnecting,
+    required TResult Function(SdkEvent_TokenExpired value) tokenExpired,
+    required TResult Function(SdkEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(SdkEvent_Logout value) logout,
+    required TResult Function(SdkEvent_CustomEvent value) customEvent,
+  }) {
+    return updateLatestMessageReadState(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(SdkEvent_Connecting value)? connecting,
+    TResult? Function(SdkEvent_Connected value)? connected,
+    TResult? Function(SdkEvent_Disconnected value)? disconnected,
+    TResult? Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult? Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult? Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult? Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult? Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult? Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult? Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult? Function(SdkEvent_NewMessage value)? newMessage,
+    TResult? Function(SdkEvent_MessageSent value)? messageSent,
+    TResult? Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult? Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult? Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult? Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult? Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult? Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult? Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult? Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult? Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
+    TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult? Function(SdkEvent_NewConversation value)? newConversation,
+    TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult? Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult? Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult? Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult? Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult? Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult? Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult? Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult? Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult? Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult? Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult? Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult? Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult? Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult? Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult? Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult? Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult? Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult? Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult? Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult? Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult? Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult? Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult? Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(SdkEvent_Logout value)? logout,
+    TResult? Function(SdkEvent_CustomEvent value)? customEvent,
+  }) {
+    return updateLatestMessageReadState?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(SdkEvent_Connecting value)? connecting,
+    TResult Function(SdkEvent_Connected value)? connected,
+    TResult Function(SdkEvent_Disconnected value)? disconnected,
+    TResult Function(SdkEvent_ConnectFailed value)? connectFailed,
+    TResult Function(SdkEvent_PushMessage value)? pushMessage,
+    TResult Function(SdkEvent_PushMessages value)? pushMessages,
+    TResult Function(SdkEvent_PushNotificationMessages value)?
+    pushNotificationMessages,
+    TResult Function(SdkEvent_SyncStarted value)? syncStarted,
+    TResult Function(SdkEvent_SyncProgress value)? syncProgress,
+    TResult Function(SdkEvent_SyncFinished value)? syncFinished,
+    TResult Function(SdkEvent_SyncFailed value)? syncFailed,
+    TResult Function(SdkEvent_NewMessage value)? newMessage,
+    TResult Function(SdkEvent_MessageSent value)? messageSent,
+    TResult Function(SdkEvent_MessageSendFailed value)? messageSendFailed,
+    TResult Function(SdkEvent_UploadProgress value)? uploadProgress,
+    TResult Function(SdkEvent_MessageRevoked value)? messageRevoked,
+    TResult Function(SdkEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(SdkEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(SdkEvent_ConversationUserInputStatusChanged value)?
+    conversationUserInputStatusChanged,
+    TResult Function(SdkEvent_RecvOfflineNewMessage value)?
+    recvOfflineNewMessage,
+    TResult Function(SdkEvent_MsgEdited value)? msgEdited,
+    TResult Function(SdkEvent_MessageExtensionsAdded value)?
+    messageExtensionsAdded,
+    TResult Function(SdkEvent_MessageExtensionsChanged value)?
+    messageExtensionsChanged,
+    TResult Function(SdkEvent_MessageExtensionsDeleted value)?
+    messageExtensionsDeleted,
+    TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
+    TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
+    TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
+    TResult Function(SdkEvent_NewConversation value)? newConversation,
+    TResult Function(SdkEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(SdkEvent_FriendApplicationAdded value)?
+    friendApplicationAdded,
+    TResult Function(SdkEvent_FriendApplicationApproved value)?
+    friendApplicationApproved,
+    TResult Function(SdkEvent_FriendApplicationRejected value)?
+    friendApplicationRejected,
+    TResult Function(SdkEvent_FriendAdded value)? friendAdded,
+    TResult Function(SdkEvent_FriendDeleted value)? friendDeleted,
+    TResult Function(SdkEvent_BlackAdded value)? blackAdded,
+    TResult Function(SdkEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(SdkEvent_FriendInfoUpdated value)? friendInfoUpdated,
+    TResult Function(SdkEvent_GroupCreated value)? groupCreated,
+    TResult Function(SdkEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(SdkEvent_GroupMemberAdded value)? groupMemberAdded,
+    TResult Function(SdkEvent_GroupMemberDeleted value)? groupMemberDeleted,
+    TResult Function(SdkEvent_GroupApplicationAdded value)?
+    groupApplicationAdded,
+    TResult Function(SdkEvent_GroupApplicationApproved value)?
+    groupApplicationApproved,
+    TResult Function(SdkEvent_GroupApplicationRejected value)?
+    groupApplicationRejected,
+    TResult Function(SdkEvent_GroupDismissed value)? groupDismissed,
+    TResult Function(SdkEvent_GroupMuted value)? groupMuted,
+    TResult Function(SdkEvent_GroupCancelMuted value)? groupCancelMuted,
+    TResult Function(SdkEvent_GroupMemberMuted value)? groupMemberMuted,
+    TResult Function(SdkEvent_GroupMemberCancelMuted value)?
+    groupMemberCancelMuted,
+    TResult Function(SdkEvent_GroupMemberInfoChanged value)?
+    groupMemberInfoChanged,
+    TResult Function(SdkEvent_GroupOwnerTransferred value)?
+    groupOwnerTransferred,
+    TResult Function(SdkEvent_UserInfoUpdated value)? userInfoUpdated,
+    TResult Function(SdkEvent_UserStatusChanged value)? userStatusChanged,
+    TResult Function(SdkEvent_BatchedPushMessages value)? batchedPushMessages,
+    TResult Function(SdkEvent_KickedOffline value)? kickedOffline,
+    TResult Function(SdkEvent_Reconnecting value)? reconnecting,
+    TResult Function(SdkEvent_TokenExpired value)? tokenExpired,
+    TResult Function(SdkEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(SdkEvent_Logout value)? logout,
+    TResult Function(SdkEvent_CustomEvent value)? customEvent,
+    required TResult orElse(),
+  }) {
+    if (updateLatestMessageReadState != null) {
+      return updateLatestMessageReadState(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class SdkEvent_UpdateLatestMessageReadState extends SdkEvent {
+  const factory SdkEvent_UpdateLatestMessageReadState({
+    required final String conversationId,
+  }) = _$SdkEvent_UpdateLatestMessageReadStateImpl;
+  const SdkEvent_UpdateLatestMessageReadState._() : super._();
+
+  String get conversationId;
+
+  /// Create a copy of SdkEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SdkEvent_UpdateLatestMessageReadStateImplCopyWith<
+    _$SdkEvent_UpdateLatestMessageReadStateImpl
   >
   get copyWith => throw _privateConstructorUsedError;
 }
@@ -20248,6 +21265,8 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -20374,6 +21393,7 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -20496,6 +21516,7 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -20581,6 +21602,8 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -20669,6 +21692,8 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -20752,6 +21777,8 @@ class _$SdkEvent_ConversationDeletedImpl extends SdkEvent_ConversationDeleted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -20989,6 +22016,8 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -21115,6 +22144,7 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -21237,6 +22267,7 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -21322,6 +22353,8 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -21410,6 +22443,8 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -21493,6 +22528,8 @@ class _$SdkEvent_NewConversationImpl extends SdkEvent_NewConversation {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -21718,6 +22755,8 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -21844,6 +22883,7 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -21966,6 +23006,7 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -22051,6 +23092,8 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -22139,6 +23182,8 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -22222,6 +23267,8 @@ class _$SdkEvent_TotalUnreadCountChangedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -22449,6 +23496,8 @@ class _$SdkEvent_FriendApplicationAddedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -22575,6 +23624,7 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -22697,6 +23747,7 @@ class _$SdkEvent_FriendApplicationAddedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -22782,6 +23833,8 @@ class _$SdkEvent_FriendApplicationAddedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -22870,6 +23923,8 @@ class _$SdkEvent_FriendApplicationAddedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -22953,6 +24008,8 @@ class _$SdkEvent_FriendApplicationAddedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -23182,6 +24239,8 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -23308,6 +24367,7 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -23430,6 +24490,7 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -23515,6 +24576,8 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -23603,6 +24666,8 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -23686,6 +24751,8 @@ class _$SdkEvent_FriendApplicationApprovedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -23915,6 +24982,8 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -24041,6 +25110,7 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -24163,6 +25233,7 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -24248,6 +25319,8 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -24336,6 +25409,8 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -24419,6 +25494,8 @@ class _$SdkEvent_FriendApplicationRejectedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -24651,6 +25728,8 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -24777,6 +25856,7 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -24899,6 +25979,7 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -24984,6 +26065,8 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -25072,6 +26155,8 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -25155,6 +26240,8 @@ class _$SdkEvent_FriendAddedImpl extends SdkEvent_FriendAdded {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -25378,6 +26465,8 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -25504,6 +26593,7 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -25626,6 +26716,7 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -25711,6 +26802,8 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -25799,6 +26892,8 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -25882,6 +26977,8 @@ class _$SdkEvent_FriendDeletedImpl extends SdkEvent_FriendDeleted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -26102,6 +27199,8 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -26228,6 +27327,7 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -26350,6 +27450,7 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -26435,6 +27536,8 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -26523,6 +27626,8 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -26606,6 +27711,8 @@ class _$SdkEvent_BlackAddedImpl extends SdkEvent_BlackAdded {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -26827,6 +27934,8 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -26953,6 +28062,7 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -27075,6 +28185,7 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -27160,6 +28271,8 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -27248,6 +28361,8 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -27331,6 +28446,8 @@ class _$SdkEvent_BlackDeletedImpl extends SdkEvent_BlackDeleted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -27551,6 +28668,8 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -27677,6 +28796,7 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -27799,6 +28919,7 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -27884,6 +29005,8 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -27972,6 +29095,8 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -28055,6 +29180,8 @@ class _$SdkEvent_FriendInfoUpdatedImpl extends SdkEvent_FriendInfoUpdated {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -28276,6 +29403,8 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -28402,6 +29531,7 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -28524,6 +29654,7 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -28609,6 +29740,8 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -28697,6 +29830,8 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -28780,6 +29915,8 @@ class _$SdkEvent_GroupCreatedImpl extends SdkEvent_GroupCreated {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -29000,6 +30137,8 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -29126,6 +30265,7 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -29248,6 +30388,7 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -29333,6 +30474,8 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -29421,6 +30564,8 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -29504,6 +30649,8 @@ class _$SdkEvent_GroupInfoChangedImpl extends SdkEvent_GroupInfoChanged {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -29747,6 +30894,8 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -29873,6 +31022,7 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -29995,6 +31145,7 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -30080,6 +31231,8 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -30168,6 +31321,8 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -30251,6 +31406,8 @@ class _$SdkEvent_GroupMemberAddedImpl extends SdkEvent_GroupMemberAdded {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -30497,6 +31654,8 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -30623,6 +31782,7 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -30745,6 +31905,7 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -30830,6 +31991,8 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -30918,6 +32081,8 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -31001,6 +32166,8 @@ class _$SdkEvent_GroupMemberDeletedImpl extends SdkEvent_GroupMemberDeleted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -31229,6 +32396,8 @@ class _$SdkEvent_GroupApplicationAddedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -31355,6 +32524,7 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -31477,6 +32647,7 @@ class _$SdkEvent_GroupApplicationAddedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -31562,6 +32733,8 @@ class _$SdkEvent_GroupApplicationAddedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -31650,6 +32823,8 @@ class _$SdkEvent_GroupApplicationAddedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -31733,6 +32908,8 @@ class _$SdkEvent_GroupApplicationAddedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -31962,6 +33139,8 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -32088,6 +33267,7 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -32210,6 +33390,7 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -32295,6 +33476,8 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -32383,6 +33566,8 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -32466,6 +33651,8 @@ class _$SdkEvent_GroupApplicationApprovedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -32695,6 +33882,8 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -32821,6 +34010,7 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -32943,6 +34133,7 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -33028,6 +34219,8 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -33116,6 +34309,8 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -33199,6 +34394,8 @@ class _$SdkEvent_GroupApplicationRejectedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -33422,6 +34619,8 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -33548,6 +34747,7 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -33670,6 +34870,7 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -33755,6 +34956,8 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -33843,6 +35046,8 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -33926,6 +35131,8 @@ class _$SdkEvent_GroupDismissedImpl extends SdkEvent_GroupDismissed {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -34146,6 +35353,8 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -34272,6 +35481,7 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -34394,6 +35604,7 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -34479,6 +35690,8 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -34567,6 +35780,8 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -34650,6 +35865,8 @@ class _$SdkEvent_GroupMutedImpl extends SdkEvent_GroupMuted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -34870,6 +36087,8 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -34996,6 +36215,7 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -35118,6 +36338,7 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -35203,6 +36424,8 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -35291,6 +36514,8 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -35374,6 +36599,8 @@ class _$SdkEvent_GroupCancelMutedImpl extends SdkEvent_GroupCancelMuted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -35604,6 +36831,8 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -35730,6 +36959,7 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -35852,6 +37082,7 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -35937,6 +37168,8 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -36025,6 +37258,8 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -36108,6 +37343,8 @@ class _$SdkEvent_GroupMemberMutedImpl extends SdkEvent_GroupMemberMuted {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -36344,6 +37581,8 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -36470,6 +37709,7 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -36592,6 +37832,7 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -36677,6 +37918,8 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -36765,6 +38008,8 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -36848,6 +38093,8 @@ class _$SdkEvent_GroupMemberCancelMutedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -37086,6 +38333,8 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -37212,6 +38461,7 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -37334,6 +38584,7 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -37419,6 +38670,8 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -37507,6 +38760,8 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -37590,6 +38845,8 @@ class _$SdkEvent_GroupMemberInfoChangedImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -37829,6 +39086,8 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -37955,6 +39214,7 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -38077,6 +39337,7 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -38162,6 +39423,8 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -38250,6 +39513,8 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -38333,6 +39598,8 @@ class _$SdkEvent_GroupOwnerTransferredImpl
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -38558,6 +39825,8 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -38684,6 +39953,7 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -38806,6 +40076,7 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -38891,6 +40162,8 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -38979,6 +40252,8 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -39062,6 +40337,8 @@ class _$SdkEvent_UserInfoUpdatedImpl extends SdkEvent_UserInfoUpdated {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -39312,6 +40589,8 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -39438,6 +40717,7 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -39560,6 +40840,7 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -39645,6 +40926,8 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -39733,6 +41016,8 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -39816,6 +41101,8 @@ class _$SdkEvent_UserStatusChangedImpl extends SdkEvent_UserStatusChanged {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -40076,6 +41363,8 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -40202,6 +41491,7 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -40324,6 +41614,7 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -40409,6 +41700,8 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -40497,6 +41790,8 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -40580,6 +41875,8 @@ class _$SdkEvent_BatchedPushMessagesImpl extends SdkEvent_BatchedPushMessages {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -40806,6 +42103,8 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -40932,6 +42231,7 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -41054,6 +42354,7 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -41139,6 +42440,8 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -41227,6 +42530,8 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -41310,6 +42615,8 @@ class _$SdkEvent_KickedOfflineImpl extends SdkEvent_KickedOffline {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -41542,6 +42849,8 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -41668,6 +42977,7 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -41790,6 +43100,7 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -41875,6 +43186,8 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -41963,6 +43276,8 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -42046,6 +43361,8 @@ class _$SdkEvent_ReconnectingImpl extends SdkEvent_Reconnecting {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -42240,6 +43557,8 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -42366,6 +43685,7 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -42488,6 +43808,7 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -42573,6 +43894,8 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -42661,6 +43984,8 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -42744,6 +44069,8 @@ class _$SdkEvent_TokenExpiredImpl extends SdkEvent_TokenExpired {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -42956,6 +44283,8 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -43082,6 +44411,7 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -43204,6 +44534,7 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -43289,6 +44620,8 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -43377,6 +44710,8 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -43460,6 +44795,8 @@ class _$SdkEvent_LoginSuccessImpl extends SdkEvent_LoginSuccess {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -43650,6 +44987,8 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -43776,6 +45115,7 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -43898,6 +45238,7 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -43983,6 +45324,8 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -44071,6 +45414,8 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -44154,6 +45499,8 @@ class _$SdkEvent_LogoutImpl extends SdkEvent_Logout {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -44377,6 +45724,8 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     messagesDeleted,
     required TResult Function(List<Conversation> conversations)
     conversationChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
     required TResult Function(List<String> conversationIds) conversationDeleted,
     required TResult Function(List<Conversation> conversations) newConversation,
     required TResult Function(int count) totalUnreadCountChanged,
@@ -44503,6 +45852,7 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult? Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult? Function(List<Conversation> conversations)? conversationChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
     TResult? Function(List<String> conversationIds)? conversationDeleted,
     TResult? Function(List<Conversation> conversations)? newConversation,
     TResult? Function(int count)? totalUnreadCountChanged,
@@ -44625,6 +45975,7 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     TResult Function(String conversationId, List<String> clientMsgIds)?
     messagesDeleted,
     TResult Function(List<Conversation> conversations)? conversationChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     TResult Function(List<String> conversationIds)? conversationDeleted,
     TResult Function(List<Conversation> conversations)? newConversation,
     TResult Function(int count)? totalUnreadCountChanged,
@@ -44710,6 +46061,8 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     required TResult Function(SdkEvent_MessagesDeleted value) messagesDeleted,
     required TResult Function(SdkEvent_ConversationChanged value)
     conversationChanged,
+    required TResult Function(SdkEvent_UpdateLatestMessageReadState value)
+    updateLatestMessageReadState,
     required TResult Function(SdkEvent_ConversationDeleted value)
     conversationDeleted,
     required TResult Function(SdkEvent_NewConversation value) newConversation,
@@ -44798,6 +46151,8 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     messageExtensionsDeleted,
     TResult? Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult? Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult? Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult? Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult? Function(SdkEvent_NewConversation value)? newConversation,
     TResult? Function(SdkEvent_TotalUnreadCountChanged value)?
@@ -44881,6 +46236,8 @@ class _$SdkEvent_CustomEventImpl extends SdkEvent_CustomEvent {
     messageExtensionsDeleted,
     TResult Function(SdkEvent_MessagesDeleted value)? messagesDeleted,
     TResult Function(SdkEvent_ConversationChanged value)? conversationChanged,
+    TResult Function(SdkEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     TResult Function(SdkEvent_ConversationDeleted value)? conversationDeleted,
     TResult Function(SdkEvent_NewConversation value)? newConversation,
     TResult Function(SdkEvent_TotalUnreadCountChanged value)?

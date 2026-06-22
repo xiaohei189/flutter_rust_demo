@@ -87,13 +87,19 @@ impl HttpApiClient {
         // 先读取原始响应，再解析
         let raw_bytes = response.bytes().await?;
         let raw_str = String::from_utf8_lossy(&raw_bytes);
-        tracing::debug!("HTTP POST {} - Raw Response: {}", route, raw_str);
 
         let api_resp: ApiResponse<R> = serde_json::from_slice(&raw_bytes)
             .map_err(|e| {
-                tracing::error!("Failed to parse response: {} - Raw: {}", e, raw_str);
+                tracing::error!("HTTP POST {} 解析失败: {} - Raw: {}", route, e, raw_str);
                 SdkError::unknown(&format!("响应解析错误: {}", e))
             })?;
+
+        // 业务错误用 error，成功用 debug
+        if api_resp.err_code != 0 {
+            tracing::error!("HTTP POST {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+        } else {
+            tracing::debug!("HTTP POST {} ok", route);
+        }
         api_resp.into_result()
     }
 
@@ -119,6 +125,9 @@ impl HttpApiClient {
         }
 
         let api_resp: ApiResponse<R> = response.json().await?;
+        if api_resp.err_code != 0 {
+            tracing::error!("HTTP POST {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+        }
         api_resp.into_result()
     }
 
@@ -141,6 +150,9 @@ impl HttpApiClient {
         }
 
         let api_resp: ApiResponse<R> = response.json().await?;
+        if api_resp.err_code != 0 {
+            tracing::error!("HTTP GET {} 业务错误: errCode={} errMsg={}", route, api_resp.err_code, api_resp.err_msg);
+        }
         api_resp.into_result()
     }
 

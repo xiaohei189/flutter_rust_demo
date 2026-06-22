@@ -30,6 +30,9 @@
         },
         {
             "path": "../open-im-android-demo"
+        },
+        {
+            "path": "../openim-electron-demo"
         }
     ]
 }

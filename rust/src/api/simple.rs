@@ -44,9 +44,16 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
         _ => tracing_subscriber::filter::LevelFilter::INFO,
     };
 
-    let env_filter = tracing_subscriber::EnvFilter::builder()
+    // 构建 EnvFilter：全局级别 + 抑制 HTTP 连接池噪音
+    let mut env_filter = tracing_subscriber::EnvFilter::builder()
         .with_default_directive(level_filter.into())
         .from_env_lossy();
+    // 抑制 reqwest/hyper 连接池 DEBUG 日志
+    env_filter = env_filter.add_directive("hyper=info".parse().unwrap());
+    env_filter = env_filter.add_directive("reqwest=info".parse().unwrap());
+    env_filter = env_filter.add_directive("tower=info".parse().unwrap());
+    env_filter = env_filter.add_directive("hyper_util=info".parse().unwrap());
+    env_filter = env_filter.add_directive("http_pool=info".parse().unwrap());
 
     // 文件输出
     let file_appender = tracing_appender::rolling::daily(log_dir, "sdk.log");

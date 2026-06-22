@@ -338,6 +338,33 @@ impl MessageDao {
         Ok(rows)
     }
 
+    /// 按 client_msg_id 列表标记消息已读（排除自己发送的消息）
+    /// 对齐 Go SDK `MarkConversationMessageAsReadDB`：WHERE client_msg_id IN (?) AND send_id != self
+    pub async fn mark_as_read_by_client_msg_ids(
+        &self,
+        conversation_id: &str,
+        client_msg_ids: &[String],
+        self_user_id: &str,
+    ) -> Result<()> {
+        if client_msg_ids.is_empty() {
+            return Ok(());
+        }
+        let placeholders = client_msg_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND client_msg_id IN ({}) AND send_id != ?",
+            placeholders
+        );
+        let mut query = sqlx::query(&sql).bind(conversation_id);
+        for id in client_msg_ids {
+            query = query.bind(id);
+        }
+        query = query.bind(self_user_id);
+        query.execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("mark as read by client_msg_ids: {}", e)))?;
+        Ok(())
+    }
+
     /// 获取会话中对方发送消息的最大 seq（对齐 Go SDK `GetConversationPeerNormalMsgSeq`）
     pub async fn get_peer_normal_msg_seq(&self, conversation_id: &str, self_user_id: &str) -> Result<i64> {
         let row: (Option<i64>,) = sqlx::query_as(

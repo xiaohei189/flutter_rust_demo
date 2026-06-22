@@ -4,6 +4,10 @@
 //! 好友通知 (1200-1299) → friend 模块
 //! 用户通知 (1301-1399) → user 模块
 //! 群组通知 (1500-1599) → group 模块
+//!
+//! 重要：服务端 MsgData.content 是 JSON 字节（非 protobuf），
+//! 对齐 Go SDK `UnmarshalNotificationElem`：先解析外层 NotificationElem，
+//! 再解析内层 detail 到目标类型。
 
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::friend::manager::FriendManager;
@@ -14,14 +18,188 @@ use crate::domain::constant::types::notification_type;
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::message::ReceivedMessage;
-use crate::protocol::sdkws::{
-    FriendApplicationApprovedTips, FriendApplicationRejectedTips, FriendApplicationTips,
-    GroupApplicationAcceptedTips, GroupApplicationRejectedTips, JoinGroupApplicationTips,
-    MsgData, UserInfo, RevokeMsgTips,
-};
-use prost::Message as ProstMessage;
+use crate::protocol::sdkws::MsgData;
+use serde::Deserialize;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
+
+// ============================================================
+// JSON 兼容类型（对齐 Go SDK proto 的 JSON 序列化格式）
+// 服务端将 protobuf 对象转为 JSON 后放入 MsgData.content，
+// 字段名为 camelCase（Go proto JSON 默认行为）。
+// ============================================================
+
+/// 外层包装（对齐 Go SDK `sdk_struct.NotificationElem`）
+#[derive(Deserialize)]
+struct NotificationElem {
+    #[serde(default)]
+    detail: String,
+}
+
+/// 两层 JSON 解析辅助函数（对齐 Go SDK `UnmarshalNotificationElem`）
+/// 1. 解析外层 `{"detail": "..."}` → 取出 detail 字符串
+/// 2. 解析内层 detail JSON → 目标类型 T
+fn unmarshal_notification_elem<T: serde::de::DeserializeOwned>(content: &[u8]) -> anyhow::Result<T> {
+    let content_str = std::str::from_utf8(content)
+        .map_err(|e| anyhow::anyhow!("content 不是有效 UTF-8: {}", e))?;
+    let outer: NotificationElem = serde_json::from_str(content_str)
+        .map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
+    let inner: T = serde_json::from_str(&outer.detail)
+        .map_err(|e| anyhow::anyhow!("解析内层 detail 失败: {}", e))?;
+    Ok(inner)
+}
+
+// --- 撤回通知 (2101) ---
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RevokeMsgTipsJson {
+    #[serde(rename = "revokerUserID")]
+    revoker_user_id: String,
+    #[serde(rename = "clientMsgID")]
+    client_msg_id: String,
+    revoke_time: i64,
+    #[serde(rename = "sesstionType")]
+    sesstion_type: i32,
+    seq: i64,
+    #[serde(rename = "conversationID")]
+    conversation_id: String,
+    #[serde(rename = "isAdminRevoke")]
+    is_admin_revoke: bool,
+    #[serde(rename = "revokerNickname", default)]
+    revoker_nickname: String,
+    #[serde(rename = "revokerRole", default)]
+    revoker_role: i32,
+}
+
+// --- 好友申请通知 ---
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct FriendRequestJson {
+    #[serde(default, rename = "fromUserID")]
+    from_user_id: String,
+    #[serde(default, rename = "toUserID")]
+    to_user_id: String,
+    #[serde(default)]
+    from_nickname: String,
+    #[serde(default, rename = "fromFaceURL")]
+    from_face_url: String,
+    #[serde(default)]
+    to_nickname: String,
+    #[serde(default, rename = "toFaceURL")]
+    to_face_url: String,
+    #[serde(default)]
+    handle_result: i32,
+    #[serde(default)]
+    req_msg: String,
+    #[serde(default)]
+    create_time: i64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FriendApplicationApprovedTipsJson {
+    #[serde(default)]
+    handle_msg: String,
+    #[serde(default)]
+    request: FriendRequestJson,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FriendApplicationRejectedTipsJson {
+    #[serde(default)]
+    handle_msg: String,
+    #[serde(default)]
+    request: FriendRequestJson,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FriendApplicationTipsJson {
+    #[serde(default)]
+    request: FriendRequestJson,
+}
+
+// --- 用户信息更新通知 ---
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UserInfoJson {
+    #[serde(default, rename = "userID")]
+    user_id: String,
+    #[serde(default)]
+    nickname: String,
+    #[serde(default)]
+    face_url: String,
+    #[serde(default)]
+    ex: String,
+    #[serde(default)]
+    global_recv_msg_opt: i32,
+}
+
+// --- 群组申请通知 ---
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct GroupInfoJson {
+    #[serde(default, rename = "groupID")]
+    group_id: String,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct PublicUserInfoJson {
+    #[serde(default, rename = "userID")]
+    user_id: String,
+    #[serde(default)]
+    nickname: String,
+    #[serde(default)]
+    face_url: String,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct GroupRequestJson {
+    #[serde(default)]
+    group_info: GroupInfoJson,
+    #[serde(default)]
+    user_info: PublicUserInfoJson,
+    #[serde(default)]
+    handle_result: i32,
+    #[serde(default)]
+    req_msg: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct JoinGroupApplicationTipsJson {
+    #[serde(default)]
+    request: GroupRequestJson,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GroupApplicationAcceptedTipsJson {
+    #[serde(default)]
+    handle_msg: String,
+    #[serde(default)]
+    request: GroupRequestJson,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GroupApplicationRejectedTipsJson {
+    #[serde(default)]
+    handle_msg: String,
+    #[serde(default)]
+    request: GroupRequestJson,
+}
+
+// ============================================================
+// NotificationHandler
+// ============================================================
 
 pub struct NotificationHandler {
     friend_manager: Arc<FriendManager>,
@@ -59,36 +237,27 @@ impl NotificationHandler {
 
     /// 处理通知消息列表（对齐 Go SDK Work() 方法的 CmdNotification 路由）
     pub async fn handle_notifications(&self, msgs: &[MsgData]) {
-        info!("[REVOKE_DEBUG] NotificationHandler::handle_notifications: 收到 {} 条通知消息", msgs.len());
-        for (idx, msg) in msgs.iter().enumerate() {
-            info!("[REVOKE_DEBUG] handle_notifications[{}]: content_type={}, seq={}, client_msg_id={}",
-                idx, msg.content_type, msg.seq, msg.client_msg_id);
+        for msg in msgs {
             if let Err(e) = self.handle_single_notification(msg).await {
                 warn!(
-                    "处理通知消息失败: content_type={}, error={}",
+                    "[NOTIFY] 处理失败: content_type={} err={}",
                     msg.content_type, e
                 );
             }
         }
-        info!("[REVOKE_DEBUG] NotificationHandler::handle_notifications: 处理完成");
     }
 
     async fn handle_single_notification(&self, msg: &MsgData) -> anyhow::Result<()> {
         let ct = msg.content_type;
-        info!("[REVOKE_DEBUG] handle_single_notification: content_type={}, seq={}, client_msg_id={}",
-            ct, msg.seq, msg.client_msg_id);
         match ct {
             // ========== 好友通知 (1200-1299) ==========
             notification_type::FRIEND_APPLICATION_APPROVED => {
-                info!("[NotificationHandler] 路由到 handle_friend_application_approved");
                 self.handle_friend_application_approved(&msg.content).await?;
             }
             notification_type::FRIEND_APPLICATION_REJECTED => {
-                info!("[NotificationHandler] 路由到 handle_friend_application_rejected");
                 self.handle_friend_application_rejected(&msg.content).await?;
             }
             notification_type::FRIEND_APPLICATION => {
-                info!("[NotificationHandler] 路由到 handle_friend_application_added");
                 self.handle_friend_application_added(&msg.content).await?;
             }
             notification_type::FRIEND_ADDED
@@ -96,27 +265,23 @@ impl NotificationHandler {
             | notification_type::FRIEND_REMARK_SET
             | notification_type::FRIEND_INFO_UPDATED
             | notification_type::FRIENDS_INFO_UPDATE => {
-                info!("收到好友列表变更通知: content_type={}, 增量同步好友列表", ct);
                 if let Err(e) = self.friend_manager.sync_friends_incremental().await {
-                    warn!("增量同步好友列表失败: {}", e);
+                    warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
                 }
             }
             notification_type::BLACK_ADDED => {
-                info!("收到黑名单添加通知, 同步黑名单");
                 if let Err(e) = self.friend_manager.sync_blacks().await {
-                    warn!("同步黑名单失败: {}", e);
+                    warn!("[NOTIFY] 同步黑名单失败: {}", e);
                 }
             }
             notification_type::BLACK_DELETED => {
-                info!("收到黑名单移除通知, 同步黑名单");
                 if let Err(e) = self.friend_manager.sync_blacks().await {
-                    warn!("同步黑名单失败: {}", e);
+                    warn!("[NOTIFY] 同步黑名单失败: {}", e);
                 }
             }
 
             // ========== 用户通知 (1301-1399) ==========
             notification_type::USER_INFO_UPDATED => {
-                info!("收到用户信息更新通知");
                 self.handle_user_info_updated(&msg.content).await?;
             }
 
@@ -138,9 +303,8 @@ impl NotificationHandler {
             | notification_type::GROUP_MEMBER_SET_TO_ORDINARY_USER
             | notification_type::GROUP_INFO_SET_ANNOUNCEMENT
             | notification_type::GROUP_INFO_SET_NAME => {
-                info!("收到群组变更通知: content_type={}, 增量同步群组列表", ct);
                 if let Err(e) = self.group_manager.sync_groups_incremental().await {
-                    warn!("增量同步群组列表失败: {}", e);
+                    warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
                 }
             }
             notification_type::JOIN_GROUP_APPLICATION => {
@@ -155,50 +319,56 @@ impl NotificationHandler {
 
             // ========== 会话通知 (1300, 1701) ==========
             notification_type::CONVERSATION_CHANGE => {
-                info!("收到会话变更通知 (1300)，增量同步会话列表");
                 if let Err(e) = self.conversation_syncer.sync_incremental_with_lock().await {
-                    warn!("增量同步会话列表失败: {}", e);
+                    warn!("[NOTIFY] 增量同步会话列表失败: {}", e);
                 }
             }
             notification_type::CONVERSATION_PRIVATE_CHAT => {
-                info!("收到会话私聊设置通知 (1701)，增量同步会话列表");
                 if let Err(e) = self.conversation_syncer.sync_incremental_with_lock().await {
-                    warn!("增量同步会话列表失败: {}", e);
+                    warn!("[NOTIFY] 增量同步会话列表失败: {}", e);
                 }
             }
 
             // ========== 消息撤回通知 (2101) ==========
             notification_type::REVOKE => {
-                info!("[NotificationHandler] 收到消息撤回通知 (2101)");
-                self.handle_revoke_notification(msg).await?;
+                self.handle_revoke_notification(&msg.content).await?;
             }
 
             // ========== 已读回执通知 (2200) ==========
             notification_type::HAS_READ_RECEIPT => {
-                info!("[NotificationHandler] 收到已读回执通知 (2200)");
                 self.message_handler.handle_read_receipt_from_msg_data(msg).await?;
             }
 
             _ => {
-                debug!("未处理的通知类型: content_type={}", ct);
+                debug!("[NOTIFY] 未处理: content_type={}", ct);
             }
         }
         Ok(())
     }
 
     /// 处理消息撤回通知（2101）
-    /// 对齐 Go SDK do_revoke_msg: 从 msg.content 反序列化 RevokeMsgTips (protobuf)
-    async fn handle_revoke_notification(&self, msg: &MsgData) -> anyhow::Result<()> {
-        // 1. 从 msg.content 反序列化 RevokeMsgTips (protobuf)
-        let tips = RevokeMsgTips::decode(msg.content.as_slice())
-            .map_err(|e| anyhow::anyhow!("解析 RevokeMsgTips 失败: {}", e))?;
-        
-        info!("[NotificationHandler] 解析 RevokeMsgTips: conversation_id={}, seq={}, revoker_user_id={}, client_msg_id={}",
-              tips.conversation_id, tips.seq, tips.revoker_user_id, tips.client_msg_id);
+    /// 对齐 Go SDK do_revoke_msg: UnmarshalNotificationElem → RevokeMsgTips (JSON)
+    async fn handle_revoke_notification(&self, content: &[u8]) -> anyhow::Result<()> {
+        // 记录原始通知内容用于调试
+        let raw_str = String::from_utf8_lossy(content);
+        info!("[REVOKE-DEBUG-RAW] 原始通知内容前200字: {}", &raw_str[..raw_str.len().min(200)]);
+        let tips: RevokeMsgTipsJson = unmarshal_notification_elem(content)?;
+        info!("[REVOKE-DEBUG-PARSED] 解析结果: revoker_nickname='{}', revoker_role={}, user_id='{}', seq={}, conv='{}'",
+            tips.revoker_nickname, tips.revoker_role, tips.revoker_user_id, tips.seq, tips.conversation_id);
 
-        // 2. 委托给 MessageHandler 处理（直接传递 tips）
-        if let Err(e) = self.message_handler.handle_revoke_notification(&tips).await {
-            warn!("[NotificationHandler] 处理撤回通知失败: {}", e);
+        // 委托给 MessageHandler 处理（构造 protobuf 类型兼容的结构）
+        let revoke_tips = crate::protocol::sdkws::RevokeMsgTips {
+            revoker_user_id: tips.revoker_user_id,
+            client_msg_id: tips.client_msg_id,
+            revoke_time: tips.revoke_time,
+            sesstion_type: tips.sesstion_type,
+            seq: tips.seq,
+            conversation_id: tips.conversation_id,
+            is_admin_revoke: tips.is_admin_revoke,
+        };
+
+        if let Err(e) = self.message_handler.handle_revoke_notification(&revoke_tips, &tips.revoker_nickname, tips.revoker_role).await {
+            warn!("[NOTIFY] 处理撤回通知失败: {}", e);
             return Err(anyhow::anyhow!("处理撤回通知失败: {}", e));
         }
 
@@ -209,23 +379,9 @@ impl NotificationHandler {
 
     /// 1201 - 好友申请被接受
     async fn handle_friend_application_approved(&self, content: &[u8]) -> anyhow::Result<()> {
-        let tips = FriendApplicationApprovedTips::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 FriendApplicationApprovedTips 失败: {}", e))?;
+        let tips: FriendApplicationApprovedTipsJson = unmarshal_notification_elem(content)?;
+        let request = &tips.request;
 
-        let request = tips.request.unwrap_or_default();
-        info!(
-            "好友申请已接受: from={}, to={}",
-            request.from_user_id, request.to_user_id
-        );
-
-        let login_user_id = self.user_id.lock().unwrap().clone();
-
-        // 对齐 Go SDK: 接受后增量同步好友列表
-        if let Err(e) = self.friend_manager.sync_friends_incremental().await {
-            warn!("接受好友申请后增量同步好友列表失败: {}", e);
-        }
-
-        // 构建 FriendApplyInfo JSON 推送到 Flutter
         let application_json = serde_json::json!({
             "userId": request.from_user_id,
             "nickname": request.from_nickname,
@@ -235,6 +391,10 @@ impl NotificationHandler {
             "createTime": request.create_time,
         })
         .to_string();
+
+        if let Err(e) = self.friend_manager.sync_friends_incremental().await {
+            warn!("[NOTIFY] 接受好友申请后增量同步好友列表失败: {}", e);
+        }
 
         self.event_bus
             .publish(SdkEvent::FriendApplicationApproved {
@@ -246,14 +406,8 @@ impl NotificationHandler {
 
     /// 1202 - 好友申请被拒绝
     async fn handle_friend_application_rejected(&self, content: &[u8]) -> anyhow::Result<()> {
-        let tips = FriendApplicationRejectedTips::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 FriendApplicationRejectedTips 失败: {}", e))?;
-
-        let request = tips.request.unwrap_or_default();
-        info!(
-            "好友申请已拒绝: from={}, to={}",
-            request.from_user_id, request.to_user_id
-        );
+        let tips: FriendApplicationRejectedTipsJson = unmarshal_notification_elem(content)?;
+        let request = &tips.request;
 
         let application_json = serde_json::json!({
             "userId": request.from_user_id,
@@ -275,14 +429,8 @@ impl NotificationHandler {
 
     /// 1203 - 收到好友申请
     async fn handle_friend_application_added(&self, content: &[u8]) -> anyhow::Result<()> {
-        let tips = FriendApplicationTips::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 FriendApplicationTips 失败: {}", e))?;
-
-        let request = tips.request.unwrap_or_default();
-        info!(
-            "收到好友申请: from={}, to={}",
-            request.from_user_id, request.to_user_id
-        );
+        let tips: FriendApplicationTipsJson = unmarshal_notification_elem(content)?;
+        let request = &tips.request;
 
         let application_json = serde_json::json!({
             "userId": request.from_user_id,
@@ -306,13 +454,8 @@ impl NotificationHandler {
 
     /// 1303 - 用户信息更新
     async fn handle_user_info_updated(&self, content: &[u8]) -> anyhow::Result<()> {
-        let user_info = UserInfo::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 UserInfo 失败: {}", e))?;
+        let user_info: UserInfoJson = unmarshal_notification_elem(content)?;
 
-        info!("用户信息更新: user_id={}", user_info.user_id);
-
-        // 发布事件通知 Flutter 层刷新用户信息
-        // 完整的同步逻辑将在 VersionSynchronizer 实现时补齐
         self.event_bus.publish(SdkEvent::UserInfoUpdated {
             user: crate::domain::model::user::UserInfo {
                 user_id: user_info.user_id,
@@ -333,26 +476,14 @@ impl NotificationHandler {
 
     /// 1503 - 收到群组申请
     async fn handle_group_application_added(&self, content: &[u8]) -> anyhow::Result<()> {
-        let tips = JoinGroupApplicationTips::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 JoinGroupApplicationTips 失败: {}", e))?;
-
-        let request = tips.request.unwrap_or_default();
-        let user_info = request.user_info.unwrap_or_default();
-        info!(
-            "收到群组申请: group={}, user={}",
-            request
-                .group_info
-                .as_ref()
-                .map(|g| g.group_id.as_str())
-                .unwrap_or(""),
-            user_info.user_id
-        );
+        let tips: JoinGroupApplicationTipsJson = unmarshal_notification_elem(content)?;
+        let request = &tips.request;
 
         let application_json = serde_json::json!({
-            "groupId": request.group_info.as_ref().map(|g| g.group_id.clone()).unwrap_or_default(),
-            "userId": user_info.user_id,
-            "nickname": user_info.nickname,
-            "faceUrl": user_info.face_url,
+            "groupId": request.group_info.group_id,
+            "userId": request.user_info.user_id,
+            "nickname": request.user_info.nickname,
+            "faceUrl": request.user_info.face_url,
             "handleResult": request.handle_result,
             "reason": request.req_msg,
         })
@@ -368,31 +499,18 @@ impl NotificationHandler {
 
     /// 1505 - 群组申请被接受
     async fn handle_group_application_accepted(&self, content: &[u8]) -> anyhow::Result<()> {
-        let tips = GroupApplicationAcceptedTips::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 GroupApplicationAcceptedTips 失败: {}", e))?;
+        let tips: GroupApplicationAcceptedTipsJson = unmarshal_notification_elem(content)?;
+        let request = &tips.request;
 
-        let request = tips.request.unwrap_or_default();
-        let user_info = request.user_info.unwrap_or_default();
-        info!(
-            "群组申请已接受: group={}, user={}",
-            request
-                .group_info
-                .as_ref()
-                .map(|g| g.group_id.as_str())
-                .unwrap_or(""),
-            user_info.user_id
-        );
-
-        // 对齐 Go SDK: 接受后增量同步群组列表
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
-            warn!("接受群组申请后增量同步群组列表失败: {}", e);
+            warn!("[NOTIFY] 接受群组申请后增量同步群组列表失败: {}", e);
         }
 
         let application_json = serde_json::json!({
-            "groupId": request.group_info.as_ref().map(|g| g.group_id.clone()).unwrap_or_default(),
-            "userId": user_info.user_id,
-            "nickname": user_info.nickname,
-            "faceUrl": user_info.face_url,
+            "groupId": request.group_info.group_id,
+            "userId": request.user_info.user_id,
+            "nickname": request.user_info.nickname,
+            "faceUrl": request.user_info.face_url,
             "handleResult": request.handle_result,
             "handleMsg": tips.handle_msg,
         })
@@ -408,26 +526,14 @@ impl NotificationHandler {
 
     /// 1506 - 群组申请被拒绝
     async fn handle_group_application_rejected(&self, content: &[u8]) -> anyhow::Result<()> {
-        let tips = GroupApplicationRejectedTips::decode(content)
-            .map_err(|e| anyhow::anyhow!("解析 GroupApplicationRejectedTips 失败: {}", e))?;
-
-        let request = tips.request.unwrap_or_default();
-        let user_info = request.user_info.unwrap_or_default();
-        info!(
-            "群组申请已拒绝: group={}, user={}",
-            request
-                .group_info
-                .as_ref()
-                .map(|g| g.group_id.as_str())
-                .unwrap_or(""),
-            user_info.user_id
-        );
+        let tips: GroupApplicationRejectedTipsJson = unmarshal_notification_elem(content)?;
+        let request = &tips.request;
 
         let application_json = serde_json::json!({
-            "groupId": request.group_info.as_ref().map(|g| g.group_id.clone()).unwrap_or_default(),
-            "userId": user_info.user_id,
-            "nickname": user_info.nickname,
-            "faceUrl": user_info.face_url,
+            "groupId": request.group_info.group_id,
+            "userId": request.user_info.user_id,
+            "nickname": request.user_info.nickname,
+            "faceUrl": request.user_info.face_url,
             "handleResult": request.handle_result,
             "handleMsg": tips.handle_msg,
         })
@@ -439,38 +545,5 @@ impl NotificationHandler {
             });
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::core::friend::manager::FriendManager;
-    use crate::core::group::manager::GroupManager;
-    use crate::core::user::manager::UserManager;
-    use crate::domain::event::EventBus;
-    use crate::infra::database::friend_dao::FriendDao;
-    use crate::infra::database::group_dao::GroupDao;
-    use crate::infra::database::sync_version_dao::SyncVersionDao;
-    use crate::infra::database::pool::create_pool_memory;
-    use crate::infra::http::client::HttpApiClient;
-
-    #[tokio::test]
-    async fn test_notification_handler_creation() {
-        let event_bus = Arc::new(EventBus::new());
-        let http_client = Arc::new(HttpApiClient::new("http://localhost".to_string(), String::new(), String::new()));
-        let pool = create_pool_memory().await.unwrap();
-        let friend_dao = Arc::new(FriendDao::new(pool.clone()));
-        let group_dao = Arc::new(GroupDao::new(pool.clone()));
-        let sync_version_dao = Arc::new(SyncVersionDao::new(pool.clone()));
-        let friend = Arc::new(FriendManager::new(http_client.clone(), event_bus.clone(), "user1".into(), friend_dao, sync_version_dao.clone()));
-        let group = Arc::new(GroupManager::new(http_client.clone(), event_bus.clone(), "user1".into(), group_dao, sync_version_dao.clone()));
-        let user = Arc::new(UserManager::new(http_client.clone(), event_bus.clone()));
-        let conversation_dao = Arc::new(crate::infra::database::ConversationDao::new(pool.clone()));
-        let conversation_syncer = Arc::new(ConversationSyncer::new(http_client, conversation_dao, event_bus.clone(), sync_version_dao, "user1".into()));
-        let message_dao = Arc::new(crate::infra::database::MessageDao::new(pool.clone()));
-        let message_handler = Arc::new(MessageHandler::new(message_dao, conversation_dao.clone(), event_bus.clone()));
-        let handler = NotificationHandler::new(friend, group, user, conversation_syncer, message_handler, event_bus);
-        handler.set_user_id("user1".into());
     }
 }

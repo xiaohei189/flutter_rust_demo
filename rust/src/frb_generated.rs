@@ -6449,60 +6449,64 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                 return crate::domain::event::types::SdkEvent::ConversationChanged { conversations: var_conversations };
             }
             26 => {
+                let mut var_conversationId = <String>::sse_decode(deserializer);
+                return crate::domain::event::types::SdkEvent::UpdateLatestMessageReadState { conversation_id: var_conversationId };
+            }
+            27 => {
                 let mut var_conversationIds = <Vec<String>>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::ConversationDeleted {
                     conversation_ids: var_conversationIds,
                 };
             }
-            27 => {
+            28 => {
                 let mut var_conversations = <Vec<crate::domain::model::conversation::Conversation>>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::NewConversation { conversations: var_conversations };
             }
-            28 => {
+            29 => {
                 let mut var_count = <i64>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::TotalUnreadCountChanged { count: var_count };
             }
-            29 => {
+            30 => {
                 let mut var_application = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::FriendApplicationAdded { application: var_application };
             }
-            30 => {
+            31 => {
                 let mut var_application = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::FriendApplicationApproved { application: var_application };
             }
-            31 => {
+            32 => {
                 let mut var_application = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::FriendApplicationRejected { application: var_application };
             }
-            32 => {
+            33 => {
                 let mut var_friends = <Vec<crate::domain::model::friend::FriendInfo>>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::FriendAdded { friends: var_friends };
             }
-            33 => {
+            34 => {
                 let mut var_friendId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::FriendDeleted { friend_id: var_friendId };
             }
-            34 => {
+            35 => {
                 let mut var_userId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::BlackAdded { user_id: var_userId };
             }
-            35 => {
+            36 => {
                 let mut var_blackId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::BlackDeleted { black_id: var_blackId };
             }
-            36 => {
+            37 => {
                 let mut var_userId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::FriendInfoUpdated { user_id: var_userId };
             }
-            37 => {
+            38 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupCreated { group_id: var_groupId };
             }
-            38 => {
+            39 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupInfoChanged { group_id: var_groupId };
             }
-            39 => {
+            40 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 let mut var_memberIds = <Vec<String>>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupMemberAdded {
@@ -6510,7 +6514,7 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     member_ids: var_memberIds,
                 };
             }
-            40 => {
+            41 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 let mut var_memberIds = <Vec<String>>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupMemberDeleted {
@@ -6518,31 +6522,31 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     member_ids: var_memberIds,
                 };
             }
-            41 => {
+            42 => {
                 let mut var_application = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupApplicationAdded { application: var_application };
             }
-            42 => {
+            43 => {
                 let mut var_application = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupApplicationApproved { application: var_application };
             }
-            43 => {
+            44 => {
                 let mut var_application = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupApplicationRejected { application: var_application };
             }
-            44 => {
+            45 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupDismissed { group_id: var_groupId };
             }
-            45 => {
+            46 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupMuted { group_id: var_groupId };
             }
-            46 => {
+            47 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupCancelMuted { group_id: var_groupId };
             }
-            47 => {
+            48 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 let mut var_userId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupMemberMuted {
@@ -6550,7 +6554,7 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     user_id: var_userId,
                 };
             }
-            48 => {
+            49 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 let mut var_userId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupMemberCancelMuted {
@@ -6558,7 +6562,7 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     user_id: var_userId,
                 };
             }
-            49 => {
+            50 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 let mut var_userId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupMemberInfoChanged {
@@ -6566,7 +6570,7 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     user_id: var_userId,
                 };
             }
-            50 => {
+            51 => {
                 let mut var_groupId = <String>::sse_decode(deserializer);
                 let mut var_newOwnerId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::GroupOwnerTransferred {
@@ -6574,11 +6578,11 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     new_owner_id: var_newOwnerId,
                 };
             }
-            51 => {
+            52 => {
                 let mut var_user = <crate::domain::model::user::UserInfo>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::UserInfoUpdated { user: var_user };
             }
-            52 => {
+            53 => {
                 let mut var_userId = <String>::sse_decode(deserializer);
                 let mut var_status = <i32>::sse_decode(deserializer);
                 let mut var_platformIds = <Vec<i32>>::sse_decode(deserializer);
@@ -6588,7 +6592,7 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     platform_ids: var_platformIds,
                 };
             }
-            53 => {
+            54 => {
                 let mut var_msgs = <std::collections::HashMap<String, PullMsgs>>::sse_decode(deserializer);
                 let mut var_notificationMsgs = <std::collections::HashMap<String, PullMsgs>>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::BatchedPushMessages {
@@ -6596,11 +6600,11 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     notification_msgs: var_notificationMsgs,
                 };
             }
-            54 => {
+            55 => {
                 let mut var_reason = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::KickedOffline { reason: var_reason };
             }
-            55 => {
+            56 => {
                 let mut var_attempt = <u32>::sse_decode(deserializer);
                 let mut var_maxAttempts = <u32>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::Reconnecting {
@@ -6608,17 +6612,17 @@ impl SseDecode for crate::domain::event::types::SdkEvent {
                     max_attempts: var_maxAttempts,
                 };
             }
-            56 => {
+            57 => {
                 return crate::domain::event::types::SdkEvent::TokenExpired;
             }
-            57 => {
+            58 => {
                 let mut var_userId = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::LoginSuccess { user_id: var_userId };
             }
-            58 => {
+            59 => {
                 return crate::domain::event::types::SdkEvent::Logout;
             }
-            59 => {
+            60 => {
                 let mut var_eventType = <String>::sse_decode(deserializer);
                 let mut var_data = <String>::sse_decode(deserializer);
                 return crate::domain::event::types::SdkEvent::CustomEvent {
@@ -7601,60 +7605,61 @@ impl flutter_rust_bridge::IntoDart for crate::domain::event::types::SdkEvent {
                 [24.into_dart(), conversation_id.into_into_dart().into_dart(), client_msg_ids.into_into_dart().into_dart()].into_dart()
             }
             crate::domain::event::types::SdkEvent::ConversationChanged { conversations } => [25.into_dart(), conversations.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::ConversationDeleted { conversation_ids } => [26.into_dart(), conversation_ids.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::NewConversation { conversations } => [27.into_dart(), conversations.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::TotalUnreadCountChanged { count } => [28.into_dart(), count.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::FriendApplicationAdded { application } => [29.into_dart(), application.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::FriendApplicationApproved { application } => [30.into_dart(), application.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::FriendApplicationRejected { application } => [31.into_dart(), application.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::FriendAdded { friends } => [32.into_dart(), friends.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::FriendDeleted { friend_id } => [33.into_dart(), friend_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::BlackAdded { user_id } => [34.into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::BlackDeleted { black_id } => [35.into_dart(), black_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::FriendInfoUpdated { user_id } => [36.into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupCreated { group_id } => [37.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupInfoChanged { group_id } => [38.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::UpdateLatestMessageReadState { conversation_id } => [26.into_dart(), conversation_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::ConversationDeleted { conversation_ids } => [27.into_dart(), conversation_ids.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::NewConversation { conversations } => [28.into_dart(), conversations.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::TotalUnreadCountChanged { count } => [29.into_dart(), count.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::FriendApplicationAdded { application } => [30.into_dart(), application.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::FriendApplicationApproved { application } => [31.into_dart(), application.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::FriendApplicationRejected { application } => [32.into_dart(), application.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::FriendAdded { friends } => [33.into_dart(), friends.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::FriendDeleted { friend_id } => [34.into_dart(), friend_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::BlackAdded { user_id } => [35.into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::BlackDeleted { black_id } => [36.into_dart(), black_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::FriendInfoUpdated { user_id } => [37.into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupCreated { group_id } => [38.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupInfoChanged { group_id } => [39.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
             crate::domain::event::types::SdkEvent::GroupMemberAdded { group_id, member_ids } => {
-                [39.into_dart(), group_id.into_into_dart().into_dart(), member_ids.into_into_dart().into_dart()].into_dart()
-            }
-            crate::domain::event::types::SdkEvent::GroupMemberDeleted { group_id, member_ids } => {
                 [40.into_dart(), group_id.into_into_dart().into_dart(), member_ids.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::event::types::SdkEvent::GroupApplicationAdded { application } => [41.into_dart(), application.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupApplicationApproved { application } => [42.into_dart(), application.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupApplicationRejected { application } => [43.into_dart(), application.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupDismissed { group_id } => [44.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupMuted { group_id } => [45.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupCancelMuted { group_id } => [46.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupMemberMuted { group_id, user_id } => [47.into_dart(), group_id.into_into_dart().into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::GroupMemberCancelMuted { group_id, user_id } => {
-                [48.into_dart(), group_id.into_into_dart().into_dart(), user_id.into_into_dart().into_dart()].into_dart()
+            crate::domain::event::types::SdkEvent::GroupMemberDeleted { group_id, member_ids } => {
+                [41.into_dart(), group_id.into_into_dart().into_dart(), member_ids.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::event::types::SdkEvent::GroupMemberInfoChanged { group_id, user_id } => {
+            crate::domain::event::types::SdkEvent::GroupApplicationAdded { application } => [42.into_dart(), application.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupApplicationApproved { application } => [43.into_dart(), application.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupApplicationRejected { application } => [44.into_dart(), application.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupDismissed { group_id } => [45.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupMuted { group_id } => [46.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupCancelMuted { group_id } => [47.into_dart(), group_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupMemberMuted { group_id, user_id } => [48.into_dart(), group_id.into_into_dart().into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupMemberCancelMuted { group_id, user_id } => {
                 [49.into_dart(), group_id.into_into_dart().into_dart(), user_id.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::event::types::SdkEvent::GroupOwnerTransferred { group_id, new_owner_id } => {
-                [50.into_dart(), group_id.into_into_dart().into_dart(), new_owner_id.into_into_dart().into_dart()].into_dart()
+            crate::domain::event::types::SdkEvent::GroupMemberInfoChanged { group_id, user_id } => {
+                [50.into_dart(), group_id.into_into_dart().into_dart(), user_id.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::event::types::SdkEvent::UserInfoUpdated { user } => [51.into_dart(), user.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::GroupOwnerTransferred { group_id, new_owner_id } => {
+                [51.into_dart(), group_id.into_into_dart().into_dart(), new_owner_id.into_into_dart().into_dart()].into_dart()
+            }
+            crate::domain::event::types::SdkEvent::UserInfoUpdated { user } => [52.into_dart(), user.into_into_dart().into_dart()].into_dart(),
             crate::domain::event::types::SdkEvent::UserStatusChanged { user_id, status, platform_ids } => [
-                52.into_dart(),
+                53.into_dart(),
                 user_id.into_into_dart().into_dart(),
                 status.into_into_dart().into_dart(),
                 platform_ids.into_into_dart().into_dart(),
             ]
             .into_dart(),
             crate::domain::event::types::SdkEvent::BatchedPushMessages { msgs, notification_msgs } => {
-                [53.into_dart(), msgs.into_into_dart().into_dart(), notification_msgs.into_into_dart().into_dart()].into_dart()
+                [54.into_dart(), msgs.into_into_dart().into_dart(), notification_msgs.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::event::types::SdkEvent::KickedOffline { reason } => [54.into_dart(), reason.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::KickedOffline { reason } => [55.into_dart(), reason.into_into_dart().into_dart()].into_dart(),
             crate::domain::event::types::SdkEvent::Reconnecting { attempt, max_attempts } => {
-                [55.into_dart(), attempt.into_into_dart().into_dart(), max_attempts.into_into_dart().into_dart()].into_dart()
+                [56.into_dart(), attempt.into_into_dart().into_dart(), max_attempts.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::event::types::SdkEvent::TokenExpired => [56.into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::LoginSuccess { user_id } => [57.into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::Logout => [58.into_dart()].into_dart(),
-            crate::domain::event::types::SdkEvent::CustomEvent { event_type, data } => [59.into_dart(), event_type.into_into_dart().into_dart(), data.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::TokenExpired => [57.into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::LoginSuccess { user_id } => [58.into_dart(), user_id.into_into_dart().into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::Logout => [59.into_dart()].into_dart(),
+            crate::domain::event::types::SdkEvent::CustomEvent { event_type, data } => [60.into_dart(), event_type.into_into_dart().into_dart(), data.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -8688,148 +8693,152 @@ impl SseEncode for crate::domain::event::types::SdkEvent {
                 <i32>::sse_encode(25, serializer);
                 <Vec<crate::domain::model::conversation::Conversation>>::sse_encode(conversations, serializer);
             }
-            crate::domain::event::types::SdkEvent::ConversationDeleted { conversation_ids } => {
+            crate::domain::event::types::SdkEvent::UpdateLatestMessageReadState { conversation_id } => {
                 <i32>::sse_encode(26, serializer);
+                <String>::sse_encode(conversation_id, serializer);
+            }
+            crate::domain::event::types::SdkEvent::ConversationDeleted { conversation_ids } => {
+                <i32>::sse_encode(27, serializer);
                 <Vec<String>>::sse_encode(conversation_ids, serializer);
             }
             crate::domain::event::types::SdkEvent::NewConversation { conversations } => {
-                <i32>::sse_encode(27, serializer);
+                <i32>::sse_encode(28, serializer);
                 <Vec<crate::domain::model::conversation::Conversation>>::sse_encode(conversations, serializer);
             }
             crate::domain::event::types::SdkEvent::TotalUnreadCountChanged { count } => {
-                <i32>::sse_encode(28, serializer);
+                <i32>::sse_encode(29, serializer);
                 <i64>::sse_encode(count, serializer);
             }
             crate::domain::event::types::SdkEvent::FriendApplicationAdded { application } => {
-                <i32>::sse_encode(29, serializer);
-                <String>::sse_encode(application, serializer);
-            }
-            crate::domain::event::types::SdkEvent::FriendApplicationApproved { application } => {
                 <i32>::sse_encode(30, serializer);
                 <String>::sse_encode(application, serializer);
             }
-            crate::domain::event::types::SdkEvent::FriendApplicationRejected { application } => {
+            crate::domain::event::types::SdkEvent::FriendApplicationApproved { application } => {
                 <i32>::sse_encode(31, serializer);
                 <String>::sse_encode(application, serializer);
             }
-            crate::domain::event::types::SdkEvent::FriendAdded { friends } => {
+            crate::domain::event::types::SdkEvent::FriendApplicationRejected { application } => {
                 <i32>::sse_encode(32, serializer);
+                <String>::sse_encode(application, serializer);
+            }
+            crate::domain::event::types::SdkEvent::FriendAdded { friends } => {
+                <i32>::sse_encode(33, serializer);
                 <Vec<crate::domain::model::friend::FriendInfo>>::sse_encode(friends, serializer);
             }
             crate::domain::event::types::SdkEvent::FriendDeleted { friend_id } => {
-                <i32>::sse_encode(33, serializer);
+                <i32>::sse_encode(34, serializer);
                 <String>::sse_encode(friend_id, serializer);
             }
             crate::domain::event::types::SdkEvent::BlackAdded { user_id } => {
-                <i32>::sse_encode(34, serializer);
+                <i32>::sse_encode(35, serializer);
                 <String>::sse_encode(user_id, serializer);
             }
             crate::domain::event::types::SdkEvent::BlackDeleted { black_id } => {
-                <i32>::sse_encode(35, serializer);
+                <i32>::sse_encode(36, serializer);
                 <String>::sse_encode(black_id, serializer);
             }
             crate::domain::event::types::SdkEvent::FriendInfoUpdated { user_id } => {
-                <i32>::sse_encode(36, serializer);
+                <i32>::sse_encode(37, serializer);
                 <String>::sse_encode(user_id, serializer);
             }
             crate::domain::event::types::SdkEvent::GroupCreated { group_id } => {
-                <i32>::sse_encode(37, serializer);
-                <String>::sse_encode(group_id, serializer);
-            }
-            crate::domain::event::types::SdkEvent::GroupInfoChanged { group_id } => {
                 <i32>::sse_encode(38, serializer);
                 <String>::sse_encode(group_id, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupMemberAdded { group_id, member_ids } => {
+            crate::domain::event::types::SdkEvent::GroupInfoChanged { group_id } => {
                 <i32>::sse_encode(39, serializer);
                 <String>::sse_encode(group_id, serializer);
-                <Vec<String>>::sse_encode(member_ids, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupMemberDeleted { group_id, member_ids } => {
+            crate::domain::event::types::SdkEvent::GroupMemberAdded { group_id, member_ids } => {
                 <i32>::sse_encode(40, serializer);
                 <String>::sse_encode(group_id, serializer);
                 <Vec<String>>::sse_encode(member_ids, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupApplicationAdded { application } => {
+            crate::domain::event::types::SdkEvent::GroupMemberDeleted { group_id, member_ids } => {
                 <i32>::sse_encode(41, serializer);
-                <String>::sse_encode(application, serializer);
+                <String>::sse_encode(group_id, serializer);
+                <Vec<String>>::sse_encode(member_ids, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupApplicationApproved { application } => {
+            crate::domain::event::types::SdkEvent::GroupApplicationAdded { application } => {
                 <i32>::sse_encode(42, serializer);
                 <String>::sse_encode(application, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupApplicationRejected { application } => {
+            crate::domain::event::types::SdkEvent::GroupApplicationApproved { application } => {
                 <i32>::sse_encode(43, serializer);
                 <String>::sse_encode(application, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupDismissed { group_id } => {
+            crate::domain::event::types::SdkEvent::GroupApplicationRejected { application } => {
                 <i32>::sse_encode(44, serializer);
-                <String>::sse_encode(group_id, serializer);
+                <String>::sse_encode(application, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupMuted { group_id } => {
+            crate::domain::event::types::SdkEvent::GroupDismissed { group_id } => {
                 <i32>::sse_encode(45, serializer);
                 <String>::sse_encode(group_id, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupCancelMuted { group_id } => {
+            crate::domain::event::types::SdkEvent::GroupMuted { group_id } => {
                 <i32>::sse_encode(46, serializer);
                 <String>::sse_encode(group_id, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupMemberMuted { group_id, user_id } => {
+            crate::domain::event::types::SdkEvent::GroupCancelMuted { group_id } => {
                 <i32>::sse_encode(47, serializer);
                 <String>::sse_encode(group_id, serializer);
-                <String>::sse_encode(user_id, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupMemberCancelMuted { group_id, user_id } => {
+            crate::domain::event::types::SdkEvent::GroupMemberMuted { group_id, user_id } => {
                 <i32>::sse_encode(48, serializer);
                 <String>::sse_encode(group_id, serializer);
                 <String>::sse_encode(user_id, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupMemberInfoChanged { group_id, user_id } => {
+            crate::domain::event::types::SdkEvent::GroupMemberCancelMuted { group_id, user_id } => {
                 <i32>::sse_encode(49, serializer);
                 <String>::sse_encode(group_id, serializer);
                 <String>::sse_encode(user_id, serializer);
             }
-            crate::domain::event::types::SdkEvent::GroupOwnerTransferred { group_id, new_owner_id } => {
+            crate::domain::event::types::SdkEvent::GroupMemberInfoChanged { group_id, user_id } => {
                 <i32>::sse_encode(50, serializer);
+                <String>::sse_encode(group_id, serializer);
+                <String>::sse_encode(user_id, serializer);
+            }
+            crate::domain::event::types::SdkEvent::GroupOwnerTransferred { group_id, new_owner_id } => {
+                <i32>::sse_encode(51, serializer);
                 <String>::sse_encode(group_id, serializer);
                 <String>::sse_encode(new_owner_id, serializer);
             }
             crate::domain::event::types::SdkEvent::UserInfoUpdated { user } => {
-                <i32>::sse_encode(51, serializer);
+                <i32>::sse_encode(52, serializer);
                 <crate::domain::model::user::UserInfo>::sse_encode(user, serializer);
             }
             crate::domain::event::types::SdkEvent::UserStatusChanged { user_id, status, platform_ids } => {
-                <i32>::sse_encode(52, serializer);
+                <i32>::sse_encode(53, serializer);
                 <String>::sse_encode(user_id, serializer);
                 <i32>::sse_encode(status, serializer);
                 <Vec<i32>>::sse_encode(platform_ids, serializer);
             }
             crate::domain::event::types::SdkEvent::BatchedPushMessages { msgs, notification_msgs } => {
-                <i32>::sse_encode(53, serializer);
+                <i32>::sse_encode(54, serializer);
                 <std::collections::HashMap<String, PullMsgs>>::sse_encode(msgs, serializer);
                 <std::collections::HashMap<String, PullMsgs>>::sse_encode(notification_msgs, serializer);
             }
             crate::domain::event::types::SdkEvent::KickedOffline { reason } => {
-                <i32>::sse_encode(54, serializer);
+                <i32>::sse_encode(55, serializer);
                 <String>::sse_encode(reason, serializer);
             }
             crate::domain::event::types::SdkEvent::Reconnecting { attempt, max_attempts } => {
-                <i32>::sse_encode(55, serializer);
+                <i32>::sse_encode(56, serializer);
                 <u32>::sse_encode(attempt, serializer);
                 <u32>::sse_encode(max_attempts, serializer);
             }
             crate::domain::event::types::SdkEvent::TokenExpired => {
-                <i32>::sse_encode(56, serializer);
+                <i32>::sse_encode(57, serializer);
             }
             crate::domain::event::types::SdkEvent::LoginSuccess { user_id } => {
-                <i32>::sse_encode(57, serializer);
+                <i32>::sse_encode(58, serializer);
                 <String>::sse_encode(user_id, serializer);
             }
             crate::domain::event::types::SdkEvent::Logout => {
-                <i32>::sse_encode(58, serializer);
+                <i32>::sse_encode(59, serializer);
             }
             crate::domain::event::types::SdkEvent::CustomEvent { event_type, data } => {
-                <i32>::sse_encode(59, serializer);
+                <i32>::sse_encode(60, serializer);
                 <String>::sse_encode(event_type, serializer);
                 <String>::sse_encode(data, serializer);
             }

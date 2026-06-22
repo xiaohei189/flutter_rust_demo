@@ -380,7 +380,6 @@ impl ConnectionManager {
                                 }
                             }
                             Some(Ok(WsMessage::Pong(_))) => {
-                                debug!("received pong");
                             }
                             Some(Ok(WsMessage::Close(_))) => {
                                 info!("ws closed by server");

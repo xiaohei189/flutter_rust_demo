@@ -159,6 +159,10 @@ pub enum SdkEvent {
     ConversationChanged {
         conversations: Vec<Conversation>,
     },
+    /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
+    UpdateLatestMessageReadState {
+        conversation_id: String,
+    },
     ConversationDeleted {
         conversation_ids: Vec<String>,
     },
@@ -300,6 +304,7 @@ impl SdkEvent {
             SdkEvent::MessageExtensionsDeleted { .. } => "message_extensions_deleted",
             SdkEvent::MessagesDeleted { .. } => "messages_deleted",
             SdkEvent::ConversationChanged { .. } => "conversation_changed",
+            SdkEvent::UpdateLatestMessageReadState { .. } => "update_latest_message_read_state",
             SdkEvent::ConversationDeleted { .. } => "conversation_deleted",
             SdkEvent::NewConversation { .. } => "new_conversation",
             SdkEvent::TotalUnreadCountChanged { .. } => "total_unread_count_changed",

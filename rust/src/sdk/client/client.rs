@@ -83,6 +83,8 @@ impl OpenIMClient {
         let message_handler = Arc::new(MessageHandler::new(
             context.message_dao.clone(),
             context.conversation_dao.clone(),
+            context.user_dao.clone(),
+            context.group_dao.clone(),
             event_bus.clone(),
         ));
 
@@ -230,17 +232,7 @@ impl OpenIMClient {
 
                                         // 处理通知消息（对齐 Go SDK triggerNotification）
                                         for (conv_id, pull_msgs) in &push_messages.notification_msgs {
-                                            info!("[REVOKE_DEBUG] push_message_handler: routing {} notification msgs for conv={} to NotificationHandler",
-                                                pull_msgs.msgs.len(), conv_id);
-                                            
-                                            // 打印每条通知消息的详细信息
-                                            for (idx, msg) in pull_msgs.msgs.iter().enumerate() {
-                                                info!("[REVOKE_DEBUG] notification_msg[{}]: content_type={}, seq={}, client_msg_id={}, server_msg_id={}, send_id={}, recv_id={}, content_len={}",
-                                                    idx, msg.content_type, msg.seq, msg.client_msg_id, msg.server_msg_id, msg.send_id, msg.recv_id, msg.content.len());
-                                            }
-                                            
                                             notification_handler.handle_notifications(&pull_msgs.msgs).await;
-                                            info!("[REVOKE_DEBUG] notification_handler.handle_notifications completed for conv={}", conv_id);
 
                                             let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
                                             if !seqs.is_empty() {
@@ -379,7 +371,7 @@ impl OpenIMClient {
                                 }
                             }
                             Some(other) => {
-                                debug!("push_message_handler: received other event: {:?}", other);
+                                info!("push_message_handler: event {:?}", other);
                             }
                             None => {
                                 info!("push_message_handler: event stream closed");
