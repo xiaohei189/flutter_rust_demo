@@ -71,13 +71,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     });
   }
 
-  Future<void> _markConversationAsRead({bool skipUnreadCheck = false}) async {
-    // 检查是否有未读消息，没有则跳过（dispose 时跳过此检查）
-    if (!skipUnreadCheck) {
-      final conv = _conversation;
-      if (conv == null || conv.unreadCount <= 0) {
-        return;
-      }
+  Future<void> _markConversationAsRead() async {
+    // 使用缓存的 service 引用，避免在 dispose 时访问 ref
+    final service = _messageService;
+    if (service == null) return;
+    
+    // 从缓存的 service 状态中获取会话，避免使用 ref
+    final conv = service.state.conversations
+        .where((c) => c.conversationId == widget.conversationId)
+        .firstOrNull;
+    
+    // 检查是否有未读消息，没有则跳过
+    if (conv == null || conv.unreadCount <= 0) {
+      return;
     }
 
     // 防抖：1秒内只执行一次
@@ -89,8 +95,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
     try {
       appLog.i('[READ] 标记会话已读: ${widget.conversationId}');
-      // 使用缓存的引用，避免在 dispose 时访问 ref
-      await _messageService?.markConversationAsRead(widget.conversationId);
+      await service.markConversationAsRead(widget.conversationId);
     } catch (e) {
       appLog.e('标记已读失败: $e');
     }
@@ -123,31 +128,36 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   /// 离开页面时保存草稿
   void _saveDraftOnExit() {
     final text = _textController.text;
-    final client = _client;
-    if (client == null) return;
+    final service = _messageService;
+    if (service == null) return;
+    
+    final draftText = text.isNotEmpty ? jsonEncode({'text': text}) : '';
+    
+    // 通过 service 层保存草稿，确保会话列表状态同步更新
     if (text.isNotEmpty) {
-      client.setConversationDraft(
-        conversationId: widget.conversationId,
-        draftText: jsonEncode({'text': text}),
-      );
+      service.saveDraft(widget.conversationId, draftText);
     } else {
-      client.clearConversationDraft(
-        conversationId: widget.conversationId,
-      );
+      service.clearDraft(widget.conversationId);
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _markConversationAsRead(skipUnreadCheck: true);
-    _saveDraftOnExit();
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
     _loadingNotifier.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 用户主动返回时调用：保存草稿并标记已读
+  void _onUserGoBack() {
+    // 同步保存草稿到内存（异步保存到数据库）
+    _saveDraftOnExit();
+    // 标记已读（异步，但不需要等待完成）
+    _markConversationAsRead();
   }
 
   /// 获取会话信息
@@ -659,38 +669,41 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const Icon(Icons.arrow_back_ios_new, size: 22),
-              if (unread > 0)
-                Positioned(
-                  right: -8,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: AppTheme.unreadRed,
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                    ),
-                    child: Text(
-                      unread > 99 ? '99+' : '$unread',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
+          leading: IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.arrow_back_ios_new, size: 22),
+                if (unread > 0)
+                  Positioned(
+                    right: -8,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.unreadRed,
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                      child: Text(
+                        unread > 99 ? '99+' : '$unread',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
+            onPressed: () {
+              _onUserGoBack();
+              Navigator.of(context).pop();
+            },
           ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         title: LayoutBuilder(
           builder: (context, constraints) {
             return InkWell(

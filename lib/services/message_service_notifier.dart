@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
 import 'package:flutter_rust_demo/models/message_ext.dart';
@@ -1108,8 +1109,43 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   Future<void> saveDraft(String conversationId, String draftText) async {
     if (_client == null) return;
     try {
+      // 先同步更新内存状态，确保会话列表立即显示草稿
+      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
+      if (idx >= 0) {
+        final conv = newConversations[idx];
+        final now = DateTime.now().millisecondsSinceEpoch;
+        newConversations[idx] = LocalConversation(
+          conversationId: conv.conversationId,
+          conversationType: conv.conversationType,
+          userId: conv.userId,
+          groupId: conv.groupId,
+          showName: conv.showName,
+          faceUrl: conv.faceUrl,
+          latestMsg: conv.latestMsg,
+          latestMsgSendTime: conv.latestMsgSendTime,
+          unreadCount: conv.unreadCount,
+          recvMsgOpt: conv.recvMsgOpt,
+          isPinned: conv.isPinned,
+          isPrivateChat: conv.isPrivateChat,
+          burnDuration: conv.burnDuration,
+          groupAtType: conv.groupAtType,
+          isNotInGroup: conv.isNotInGroup,
+          updateUnreadCountTime: conv.updateUnreadCountTime,
+          attachedInfo: conv.attachedInfo,
+          ex: conv.ex,
+          draftText: draftText,
+          draftTextTime: now,
+          maxSeq: conv.maxSeq,
+          minSeq: conv.minSeq,
+          isMsgDestruct: conv.isMsgDestruct,
+          msgDestructTime: conv.msgDestructTime,
+        );
+        this.state = this.state.copyWith(conversations: newConversations);
+      }
+      
+      // 异步保存到数据库
       await _client!.setConversationDraft(conversationId: conversationId, draftText: draftText);
-      _loadConversations();
     } catch (e) {
       appLog.e('[MessageService] 保存草稿失败: $e');
     }
@@ -1119,8 +1155,42 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   Future<void> clearDraft(String conversationId) async {
     if (_client == null) return;
     try {
+      // 先同步更新内存状态
+      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
+      if (idx >= 0) {
+        final conv = newConversations[idx];
+        newConversations[idx] = LocalConversation(
+          conversationId: conv.conversationId,
+          conversationType: conv.conversationType,
+          userId: conv.userId,
+          groupId: conv.groupId,
+          showName: conv.showName,
+          faceUrl: conv.faceUrl,
+          latestMsg: conv.latestMsg,
+          latestMsgSendTime: conv.latestMsgSendTime,
+          unreadCount: conv.unreadCount,
+          recvMsgOpt: conv.recvMsgOpt,
+          isPinned: conv.isPinned,
+          isPrivateChat: conv.isPrivateChat,
+          burnDuration: conv.burnDuration,
+          groupAtType: conv.groupAtType,
+          isNotInGroup: conv.isNotInGroup,
+          updateUnreadCountTime: conv.updateUnreadCountTime,
+          attachedInfo: conv.attachedInfo,
+          ex: conv.ex,
+          draftText: '',
+          draftTextTime: 0,
+          maxSeq: conv.maxSeq,
+          minSeq: conv.minSeq,
+          isMsgDestruct: conv.isMsgDestruct,
+          msgDestructTime: conv.msgDestructTime,
+        );
+        this.state = this.state.copyWith(conversations: newConversations);
+      }
+      
+      // 异步清除数据库中的草稿
       await _client!.clearConversationDraft(conversationId: conversationId);
-      _loadConversations();
     } catch (e) {
       appLog.e('[MessageService] 清除草稿失败: $e');
     }

@@ -8,6 +8,88 @@ use tracing_subscriber::registry::LookupSpan;
 
 use crate::frb_generated::StreamSink;
 
+// Android 平台：通过 JNI 写入 logcat
+#[cfg(target_os = "android")]
+mod android_logcat {
+    use std::cell::RefCell;
+    use std::ffi::CString;
+
+    const LOG_TAG: &str = "RustSDK";
+
+    // Android log priority
+    const ANDROID_LOG_DEBUG: i32 = 3;
+    const ANDROID_LOG_INFO: i32 = 4;
+    const ANDROID_LOG_WARN: i32 = 5;
+    const ANDROID_LOG_ERROR: i32 = 6;
+
+    extern "C" {
+        fn __android_log_write(prio: i32, tag: *const std::os::raw::c_char, text: *const std::os::raw::c_char) -> i32;
+    }
+
+    /// 单行写入 logcat 的 Writer
+    pub struct LogcatWriter {
+        priority: i32,
+        buf: RefCell<Vec<u8>>,
+    }
+
+    impl LogcatWriter {
+        pub fn new(priority: i32) -> Self {
+            Self { priority, buf: RefCell::new(Vec::with_capacity(512)) }
+        }
+    }
+
+    impl std::io::Write for LogcatWriter {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.buf.borrow_mut().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            let mut inner = self.buf.borrow_mut();
+            // 去掉尾部换行（logcat 会自动加）
+            while inner.last() == Some(&b'\n') {
+                inner.pop();
+            }
+            if !inner.is_empty() {
+                if let Ok(text) = CString::new(inner.as_slice()) {
+                    if let Ok(tag) = CString::new(LOG_TAG) {
+                        unsafe { __android_log_write(self.priority, tag.as_ptr(), text.as_ptr()); }
+                    }
+                }
+                inner.clear();
+            }
+            Ok(())
+        }
+    }
+
+    impl Drop for LogcatWriter {
+        fn drop(&mut self) {
+            let _ = self.flush();
+        }
+    }
+
+    /// MakeWriter：为每条日志创建新的 LogcatWriter
+    pub struct LogcatMakeWriter;
+
+    impl tracing_subscriber::fmt::MakeWriter<'_> for LogcatMakeWriter {
+        type Writer = LogcatWriter;
+
+        fn make_writer(&self) -> Self::Writer {
+            LogcatWriter::new(ANDROID_LOG_INFO)
+        }
+
+        fn make_writer_for(&self, meta: &tracing::Metadata<'_>) -> Self::Writer {
+            let priority = match *meta.level() {
+                tracing::Level::ERROR => ANDROID_LOG_ERROR,
+                tracing::Level::WARN => ANDROID_LOG_WARN,
+                tracing::Level::INFO => ANDROID_LOG_INFO,
+                tracing::Level::DEBUG | tracing::Level::TRACE => ANDROID_LOG_DEBUG,
+            };
+            LogcatWriter::new(priority)
+        }
+    }
+}
+
 static LOG_DIR: OnceLock<String> = OnceLock::new();
 static LOG_INITIALIZED: Mutex<bool> = Mutex::new(false);
 static LOG_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
@@ -60,8 +142,22 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
     let (non_blocking_file, guard) = tracing_appender::non_blocking(file_appender);
     let _ = LOG_GUARD.set(guard);
 
-    // 控制台输出
+    // 控制台输出：Android 上 stdout 被重定向到 /dev/null，改用 logcat
+    #[cfg(not(target_os = "android"))]
     let (non_blocking_console, _console_guard) = tracing_appender::non_blocking(std::io::stdout());
+    #[cfg(not(target_os = "android"))]
+    let console_layer = Some(
+        tracing_subscriber::fmt::layer()
+            .with_writer(non_blocking_console)
+            .with_ansi(true)
+    );
+    #[cfg(target_os = "android")]
+    let console_layer = Some(
+        tracing_subscriber::fmt::layer()
+            .with_writer(android_logcat::LogcatMakeWriter)
+            .with_ansi(false)
+            .with_target(false)
+    );
 
     // 使用 layer 同时输出到文件和控制台
     let result = tracing_subscriber::registry()
@@ -75,11 +171,7 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
                 .with_thread_ids(true)
                 .with_target(true)
         )
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_writer(non_blocking_console)
-                .with_ansi(true)
-        )
+        .with(console_layer)
         .with(DartLogLayer)
         .try_init();
     
