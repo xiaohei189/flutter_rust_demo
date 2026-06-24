@@ -252,6 +252,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       return;
     }
     final pos = _scrollController.position;
+    // reverse ListView: pixels=0 是最新消息(底部)，maxScrollExtent 是最早消息(顶部)
+    // 向上滚动到顶部加载更多 → pixels 接近 maxScrollExtent 时触发
     if (pos.pixels >= pos.maxScrollExtent - 200) {
       _loadMessages(isLoadMore: true);
     }

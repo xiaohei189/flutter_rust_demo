@@ -90,7 +90,7 @@ class MessageBubble extends StatelessWidget {
     }
 
     final isFromMe = _isFromMe;
-    final timeFormat = DateFormat('HH:mm');
+    final timeText = _formatMessageTime(message.sendDateTime);
     final senderUser = _buildSenderUser();
 
     // 消息气泡内容
@@ -176,7 +176,7 @@ class MessageBubble extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  timeFormat.format(message.sendDateTime),
+                  timeText,
                   style: TextStyle(
                     fontSize: 11,
                     color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
@@ -704,5 +704,27 @@ class MessageBubble extends StatelessWidget {
       userId: user.id,
       user: user,
     );
+  }
+
+  /// 格式化消息时间（包含日期+时间）
+  String _formatMessageTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final msgDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final diff = today.difference(msgDay).inDays;
+    final timeStr = DateFormat('HH:mm').format(dateTime);
+
+    if (diff == 0) {
+      return timeStr;
+    } else if (diff == 1) {
+      return '昨天 $timeStr';
+    } else if (diff < 7) {
+      const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      return '${weekdays[dateTime.weekday - 1]} $timeStr';
+    } else if (now.year == dateTime.year) {
+      return '${DateFormat('MM月dd日').format(dateTime)} $timeStr';
+    } else {
+      return '${DateFormat('yyyy年MM月dd日').format(dateTime)} $timeStr';
+    }
   }
 }

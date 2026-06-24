@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import '../models/message_ext.dart';
 import '../models/user.dart';
 import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../src/rust/domain/model/user.dart' show UserInfo;
@@ -93,17 +95,91 @@ class MessageList extends StatelessWidget {
         }
 
         final message = messages[messageIndex];
-        return _VisibleMessageBubble(
-          message: message,
-          otherUser: otherUser,
-          currentUserId: currentUserId,
-          cachedSenderProfile: cachedSenderProfiles?[message.sendId],
-          cachedCurrentUserProfile: cachedCurrentUserProfile,
-          onLongPress: onMessageLongPress,
-          onVisible: onMessageVisible,
-          onTap: onMessageTap,
+        final showDateSeparator = _shouldShowDateSeparator(messages, messageIndex);
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showDateSeparator)
+              _buildDateSeparator(message.sendDateTime),
+            _VisibleMessageBubble(
+              message: message,
+              otherUser: otherUser,
+              currentUserId: currentUserId,
+              cachedSenderProfile: cachedSenderProfiles?[message.sendId],
+              cachedCurrentUserProfile: cachedCurrentUserProfile,
+              onLongPress: onMessageLongPress,
+              onVisible: onMessageVisible,
+              onTap: onMessageTap,
+            ),
+          ],
         );
       },
+    );
+  }
+
+  /// 判断是否应该显示日期分隔符
+  bool _shouldShowDateSeparator(List<MessageInfo> messages, int index) {
+    if (index == 0) return true;
+    
+    final currentMsg = messages[index];
+    final prevMsg = messages[index - 1];
+    
+    final currentDate = DateFormat('yyyy-MM-dd').format(currentMsg.sendDateTime);
+    final prevDate = DateFormat('yyyy-MM-dd').format(prevMsg.sendDateTime);
+    
+    return currentDate != prevDate;
+  }
+
+  /// 构建日期分隔符
+  Widget _buildDateSeparator(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateFormat('yyyy-MM-dd').format(now);
+    final msgDate = DateFormat('yyyy-MM-dd').format(dateTime);
+    
+    String dateText;
+    if (today == msgDate) {
+      dateText = '今天';
+    } else {
+      final yesterday = now.subtract(const Duration(days: 1));
+      final yesterdayStr = DateFormat('yyyy-MM-dd').format(yesterday);
+      if (yesterdayStr == msgDate) {
+        dateText = '昨天';
+      } else {
+        // 判断是否在同一周
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        if (dateTime.isAfter(weekStart) || dateTime.isAtSameMomentAs(weekStart)) {
+          final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+          dateText = weekdays[dateTime.weekday - 1];
+        } else {
+          // 判断是否在同一年
+          if (now.year == dateTime.year) {
+            dateText = DateFormat('MM月dd日').format(dateTime);
+          } else {
+            dateText = DateFormat('yyyy年MM月dd日').format(dateTime);
+          }
+        }
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.textSecondaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            dateText,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
