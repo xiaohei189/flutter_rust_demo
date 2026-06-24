@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
 import 'package:flutter_rust_demo/src/rust/api/simple.dart'
-    show setLogDirectory, initLogger, subscribeRustLogs;
+    show setLogDirectory, initLogger;
 
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -32,30 +32,10 @@ Future<void> main() async {
   debugPrint('[Dart] 日志目录: $logDir');
   setLogDirectory(path: logDir);
   
-  // 2.1 初始化日志系统（设置日志级别为 debug，输出到文件和控制台）
+  // 2.1 初始化日志系统（设置日志级别为 debug，输出到文件和控制台/logcat）
   try {
     await initLogger(logLevel: 'debug');
     debugPrint('[Dart] Rust 日志系统初始化成功');
-    
-    // 2.2 订阅 Rust 日志流，通过 Dart 的 print 输出到控制台
-    subscribeRustLogs().listen((log) {
-      // 使用 ANSI 颜色码美化输出
-      String coloredLog;
-      if (log.contains('[ERROR]')) {
-        coloredLog = '\x1B[31m$log\x1B[0m'; // 红色
-      } else if (log.contains('[WARN]')) {
-        coloredLog = '\x1B[33m$log\x1B[0m'; // 黄色
-      } else if (log.contains('[INFO]')) {
-        coloredLog = '\x1B[32m$log\x1B[0m'; // 绿色
-      } else if (log.contains('[DEBUG]')) {
-        coloredLog = '\x1B[36m$log\x1B[0m'; // 青色
-      } else if (log.contains('[TRACE]')) {
-        coloredLog = '\x1B[90m$log\x1B[0m'; // 灰色
-      } else {
-        coloredLog = log;
-      }
-      print(coloredLog);
-    });
   } catch (e) {
     debugPrint('[Dart] Rust 日志系统初始化失败: $e');
   }

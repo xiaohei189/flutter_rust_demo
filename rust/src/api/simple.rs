@@ -3,16 +3,13 @@ use std::sync::OnceLock;
 
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::Layer;
-use tracing_subscriber::registry::LookupSpan;
-
-use crate::frb_generated::StreamSink;
 
 // Android 平台：通过 JNI 写入 logcat
 #[cfg(target_os = "android")]
 mod android_logcat {
     use std::cell::RefCell;
     use std::ffi::CString;
+    use std::io::Write;
 
     const LOG_TAG: &str = "RustSDK";
 
@@ -93,7 +90,6 @@ mod android_logcat {
 static LOG_DIR: OnceLock<String> = OnceLock::new();
 static LOG_INITIALIZED: Mutex<bool> = Mutex::new(false);
 static LOG_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
-static LOG_SINK: OnceLock<StreamSink<String>> = OnceLock::new();
 
 /// 获取当前设置的日志目录
 fn get_log_dir() -> Option<&'static str> {
@@ -172,7 +168,6 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
                 .with_target(true)
         )
         .with(console_layer)
-        .with(DartLogLayer)
         .try_init();
     
     if let Err(e) = result {
@@ -187,89 +182,4 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
 
     *initialized = true;
     Ok(())
-}
-
-/// 订阅 Rust 日志流（实时推送到 Dart 侧）
-#[flutter_rust_bridge::frb]
-pub async fn subscribe_rust_logs(sink: StreamSink<String>) -> anyhow::Result<()> {
-    let _ = LOG_SINK.set(sink);
-    tracing::info!("[Rust SDK] Dart 侧已订阅日志流");
-    Ok(())
-}
-
-/// 自定义 Layer：将日志转发到 StreamSink
-#[flutter_rust_bridge::frb(ignore)]
-struct DartLogLayer;
-
-impl<S> Layer<S> for DartLogLayer
-where
-    S: tracing::Subscriber + for<'lookup> LookupSpan<'lookup>,
-{
-    fn on_event(
-        &self,
-        event: &tracing::Event<'_>,
-        _ctx: tracing_subscriber::layer::Context<'_, S>,
-    ) {
-        if let Some(sink) = LOG_SINK.get() {
-            let mut visitor = MessageVisitor::default();
-            event.record(&mut visitor);
-            
-            let metadata = event.metadata();
-            let level = metadata.level();
-            let target = metadata.target();
-            
-            // 简化模块路径，只保留最后一部分
-            let short_target = target.split("::").last().unwrap_or(target);
-            
-            // 获取文件和行号
-            let file = metadata.file().unwrap_or("unknown");
-            let line = metadata.line().unwrap_or(0);
-            // 只保留文件名，去掉路径前缀
-            let short_file = file.rsplit('/').next().unwrap_or(file);
-            
-            // 获取当前时间（毫秒精度）
-            let now = chrono::Local::now();
-            let timestamp = now.format("%H:%M:%S%.3f");
-            
-            // 构建简洁的日志格式，添加 [Rust] 前缀方便筛选
-            let log_line = if visitor.fields.is_empty() {
-                format!("[Rust] [{}] [{}] [{}:{}] {}: {}", level, timestamp, short_file, line, short_target, visitor.message)
-            } else {
-                format!("[Rust] [{}] [{}] [{}:{}] {}: {} | {}", level, timestamp, short_file, line, short_target, visitor.message, visitor.fields)
-            };
-            
-            let _ = sink.add(log_line);
-        }
-    }
-}
-
-#[derive(Default)]
-#[flutter_rust_bridge::frb(ignore)]
-struct MessageVisitor {
-    message: String,
-    fields: String,
-}
-
-impl tracing::field::Visit for MessageVisitor {
-    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
-        if field.name() == "message" {
-            self.message = format!("{:?}", value);
-        } else {
-            if !self.fields.is_empty() {
-                self.fields.push_str(", ");
-            }
-            self.fields.push_str(&format!("{}={:?}", field.name(), value));
-        }
-    }
-    
-    fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
-        if field.name() == "message" {
-            self.message = value.to_string();
-        } else {
-            if !self.fields.is_empty() {
-                self.fields.push_str(", ");
-            }
-            self.fields.push_str(&format!("{}={}", field.name(), value));
-        }
-    }
 }
