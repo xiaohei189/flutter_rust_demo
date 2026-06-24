@@ -33,6 +33,15 @@ mod android_logcat {
         pub fn new(priority: i32) -> Self {
             Self { priority, buf: RefCell::new(Vec::with_capacity(512)) }
         }
+
+        fn ansi_prefix(&self) -> &'static [u8] {
+            match self.priority {
+                6 => b"\x1B[31m",  // ERROR → 红色
+                5 => b"\x1B[33m",  // WARN  → 黄色
+                4 => b"\x1B[32m",  // INFO  → 绿色
+                _ => b"\x1B[36m",  // DEBUG → 青色
+            }
+        }
     }
 
     impl std::io::Write for LogcatWriter {
@@ -43,12 +52,18 @@ mod android_logcat {
 
         fn flush(&mut self) -> std::io::Result<()> {
             let mut inner = self.buf.borrow_mut();
-            // 去掉尾部换行（logcat 会自动加）
             while inner.last() == Some(&b'\n') {
                 inner.pop();
             }
             if !inner.is_empty() {
-                if let Ok(text) = CString::new(inner.as_slice()) {
+                // 前缀 ANSI 颜色，后缀重置
+                let prefix = self.ansi_prefix();
+                let reset = b"\x1B[0m";
+                let mut colored = Vec::with_capacity(prefix.len() + inner.len() + reset.len());
+                colored.extend_from_slice(prefix);
+                colored.extend_from_slice(&inner);
+                colored.extend_from_slice(reset);
+                if let Ok(text) = CString::new(colored.as_slice()) {
                     if let Ok(tag) = CString::new(LOG_TAG) {
                         unsafe { __android_log_write(self.priority, tag.as_ptr(), text.as_ptr()); }
                     }
@@ -138,7 +153,7 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
     let (non_blocking_file, guard) = tracing_appender::non_blocking(file_appender);
     let _ = LOG_GUARD.set(guard);
 
-    // 控制台输出：Android 上 stdout 被重定向到 /dev/null，改用 logcat
+    // 控制台输出：桌面端走 stdout，Android 走 logcat（每条独立写入，避免与 Flutter 日志重叠）
     #[cfg(not(target_os = "android"))]
     let (non_blocking_console, _console_guard) = tracing_appender::non_blocking(std::io::stdout());
     #[cfg(not(target_os = "android"))]
