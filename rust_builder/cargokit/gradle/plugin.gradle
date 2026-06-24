@@ -59,27 +59,42 @@ abstract class CargoKitBuildTask extends DefaultTask {
 
         def rootProjectDir = project.rootProject.projectDir
 
-        if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
-            project.exec {
-                commandLine 'chmod', '+x', path
+        def envVars = [
+            "CARGOKIT_ROOT_PROJECT_DIR=${rootProjectDir}",
+            "CARGOKIT_TOOL_TEMP_DIR=${buildDir}/build_tool",
+            "CARGOKIT_MANIFEST_DIR=${manifestDir}",
+            "CARGOKIT_CONFIGURATION=${buildMode}",
+            "CARGOKIT_TARGET_TEMP_DIR=${buildDir}",
+            "CARGOKIT_OUTPUT_DIR=${outputDir}",
+            "CARGOKIT_NDK_VERSION=${ndkVersion}",
+            "CARGOKIT_SDK_DIR=${sdkDirectory}",
+            "CARGOKIT_COMPILE_SDK_VERSION=${compileSdkVersion}",
+            "CARGOKIT_MIN_SDK_VERSION=${minSdkVersion}",
+            "CARGOKIT_TARGET_PLATFORMS=${targetPlatforms.join(',')}",
+            "CARGOKIT_JAVA_HOME=${System.properties['java.home']}",
+        ]
+
+        def cmd = "chmod +x ${path} && ${envVars.join(' ')} ${path} build-gradle"
+
+        logger.lifecycle("Running cargokit: ${cmd}")
+
+        def process = Runtime.getRuntime().exec(["sh", "-c", cmd] as String[])
+
+        // Read output concurrently to avoid pipe deadlock
+        def outputThread = Thread.start {
+            def reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
+            def line
+            while ((line = reader.readLine()) != null) {
+                logger.lifecycle("cargokit: ${line}")
             }
         }
 
-        project.exec {
-            executable path
-            args "build-gradle"
-            environment "CARGOKIT_ROOT_PROJECT_DIR", rootProjectDir
-            environment "CARGOKIT_TOOL_TEMP_DIR", "${buildDir}/build_tool"
-            environment "CARGOKIT_MANIFEST_DIR", manifestDir
-            environment "CARGOKIT_CONFIGURATION", buildMode
-            environment "CARGOKIT_TARGET_TEMP_DIR", buildDir
-            environment "CARGOKIT_OUTPUT_DIR", outputDir
-            environment "CARGOKIT_NDK_VERSION", ndkVersion
-            environment "CARGOKIT_SDK_DIR", sdkDirectory
-            environment "CARGOKIT_COMPILE_SDK_VERSION", compileSdkVersion
-            environment "CARGOKIT_MIN_SDK_VERSION", minSdkVersion
-            environment "CARGOKIT_TARGET_PLATFORMS", targetPlatforms.join(",")
-            environment "CARGOKIT_JAVA_HOME", System.properties['java.home']
+        process.waitFor()
+        outputThread.join()
+
+        def exitCode = process.exitValue()
+        if (exitCode != 0) {
+            throw new GradleException("Cargo build failed with exit code ${exitCode}")
         }
     }
 }
