@@ -71,11 +71,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     });
   }
 
-  Future<void> _markConversationAsRead() async {
-    // 检查是否有未读消息，没有则跳过
-    final conv = _conversation;
-    if (conv == null || conv.unreadCount <= 0) {
-      return;
+  Future<void> _markConversationAsRead({bool skipUnreadCheck = false}) async {
+    // 检查是否有未读消息，没有则跳过（dispose 时跳过此检查）
+    if (!skipUnreadCheck) {
+      final conv = _conversation;
+      if (conv == null || conv.unreadCount <= 0) {
+        return;
+      }
     }
 
     // 防抖：1秒内只执行一次
@@ -86,7 +88,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     _lastMarkReadTime = now;
 
     try {
-      appLog.i('[READ] 标记会话已读: ${widget.conversationId}, unreadCount=${conv.unreadCount}');
+      appLog.i('[READ] 标记会话已读: ${widget.conversationId}');
       // 使用缓存的引用，避免在 dispose 时访问 ref
       await _messageService?.markConversationAsRead(widget.conversationId);
     } catch (e) {
@@ -138,7 +140,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _markConversationAsRead();
+    _markConversationAsRead(skipUnreadCheck: true);
     _saveDraftOnExit();
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
