@@ -503,16 +503,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       );
       appLog.i('[MessageService] 流订阅已注册');
 
-      appLog.i('[MessageService] 等待 300ms');
-      await Future.delayed(const Duration(milliseconds: 300));
-      appLog.i('[MessageService] 300ms 完成');
-
       this.state = this.state.copyWith(isConnected: true);
-
       appLog.i('✅ 客户端连接成功');
-      await refreshLoginUserProfile();
 
-      appLog.i('[MessageService] 触发 _loadConversations（不 await）');
+      // 用户资料后台加载，不阻塞进入主页
+      unawaited(refreshLoginUserProfile());
+
+      // 再次从 DB 加载会话，确保最新
       _loadConversations();
     } catch (e) {
       appLog.e('❌ 初始化失败: $e');

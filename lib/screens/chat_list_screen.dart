@@ -28,6 +28,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   @override
   void initState() {
     super.initState();
+    // 延迟 3 秒检查：列表仍空则主动刷新一次
     _delayRefreshTimer = Timer(const Duration(seconds: 3), () {
       final conversations = ref.read(conversationListProvider).conversations;
       if (mounted && conversations.isEmpty) {
@@ -224,44 +225,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (conversationState.isSyncing) ...[
-            const CircularProgressIndicator(color: AppTheme.primaryColor),
-            const SizedBox(height: 16),
+          Icon(
+            _activeFilter == GroupFilter.unread
+                ? Icons.done_all
+                : Icons.chat_bubble_outline,
+            size: 64,
+            color: AppTheme.textSecondaryColor.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _activeFilter == GroupFilter.all
+                ? '暂无会话'
+                : '「$label」中没有会话',
+            style: const TextStyle(
+              fontSize: 16,
+              color: AppTheme.textSecondaryColor,
+            ),
+          ),
+          if (_activeFilter == GroupFilter.all) ...[
+            const SizedBox(height: 8),
             Text(
-              '正在同步会话... ${conversationState.syncProgress}%',
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondaryColor,
+              connectionState.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
               ),
             ),
-          ] else ...[
-            Icon(
-              _activeFilter == GroupFilter.unread
-                  ? Icons.done_all
-                  : Icons.chat_bubble_outline,
-              size: 64,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _activeFilter == GroupFilter.all
-                  ? '暂无会话'
-                  : '「$label」中没有会话',
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppTheme.textSecondaryColor,
-              ),
-            ),
-            if (_activeFilter == GroupFilter.all) ...[
-              const SizedBox(height: 8),
-              Text(
-                connectionState.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
           ],
         ],
       ),

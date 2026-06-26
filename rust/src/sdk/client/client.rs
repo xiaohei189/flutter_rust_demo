@@ -417,26 +417,26 @@ impl OpenIMClient {
             warn!("[SDK] ws_url 未配置，跳过 WebSocket 连接");
         }
 
-        // 会话同步：优先增量同步，首次或版本不匹配时回退全量（对齐 Go SDK syncFlag 路径）
-        info!("[SDK] 开始会话同步");
-        if let Err(e) = self.conversation_syncer.sync_incremental().await {
-            warn!("[SDK] 登录后会话增量同步失败，回退全量同步: {}", e);
-            if let Err(e2) = self.conversation_syncer.sync_full().await {
-                warn!("[SDK] 登录后会话全量同步失败: {}", e2);
-            }
-        } else {
-            info!("[SDK] 会话增量同步成功");
-        }
-
-        tokio::spawn({
-            let message_syncer = self.message_syncer.clone();
-            async move {
-                info!("[SDK] 登录后异步触发消息同步");
-                if let Err(e) = message_syncer.sync_on_login().await {
-                    warn!("[SDK] 登录后消息同步失败: {}", e);
-                } else {
-                    info!("[SDK] 登录后消息同步完成");
+        // 会话同步和消息同步都移到后台执行，避免阻塞登录流程
+        let conversation_syncer = self.conversation_syncer.clone();
+        let message_syncer = self.message_syncer.clone();
+        let event_bus = self.event_bus.clone();
+        tokio::spawn(async move {
+            info!("[SDK] 后台开始会话同步");
+            if let Err(e) = conversation_syncer.sync_incremental().await {
+                warn!("[SDK] 登录后会话增量同步失败，回退全量同步: {}", e);
+                if let Err(e2) = conversation_syncer.sync_full().await {
+                    warn!("[SDK] 登录后会话全量同步失败: {}", e2);
                 }
+            } else {
+                info!("[SDK] 会话增量同步成功");
+            }
+
+            info!("[SDK] 后台开始消息同步");
+            if let Err(e) = message_syncer.sync_on_login().await {
+                warn!("[SDK] 登录后消息同步失败: {}", e);
+            } else {
+                info!("[SDK] 登录后消息同步完成");
             }
         });
 

@@ -130,18 +130,12 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (isSyncing || !isConnected)
-                        Text(
-                          isSyncing
-                              ? (syncProgress > 0
-                                  ? '同步中 $syncProgress%'
-                                  : '连接中...')
-                              : '连接失败',
+                      if (!isConnected)
+                        const Text(
+                          '连接失败',
                           style: TextStyle(
                             fontSize: 11,
-                            color: !isConnected
-                                ? AppTheme.unreadRed
-                                : AppTheme.primaryColor,
+                            color: AppTheme.unreadRed,
                           ),
                         ),
                     ],
