@@ -1,3 +1,5 @@
+use serde::Deserializer;
+
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
@@ -44,17 +46,26 @@ pub struct GetIncrementalConversationReq {
     pub version: u64,
 }
 
+/// serde 反序列化辅助：将 JSON null 视为 Default（空 Vec 等）
+fn deserialize_null_default<'de, D, T>(d: D) -> std::result::Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    Option::<T>::deserialize(d).map(|x| x.unwrap_or_default())
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetIncrementalConversationResp {
     pub version: u64,
     #[serde(rename = "versionID")]
     pub version_id: String,
     pub full: bool,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub delete: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub insert: Vec<ServerConversation>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub update: Vec<ServerConversation>,
 }
 
@@ -88,7 +99,7 @@ pub struct GetFullConversationIDsResp {
     #[serde(rename = "versionID")]
     pub version_id: String,
     pub equal: bool,
-    #[serde(default, rename = "conversationIDs")]
+    #[serde(default, rename = "conversationIDs", deserialize_with = "deserialize_null_default")]
     pub conversation_ids: Vec<String>,
 }
 
