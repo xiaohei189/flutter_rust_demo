@@ -40,6 +40,12 @@ pub struct GetUsersInfoResp {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UpdateUserInfoReq {
+    #[serde(rename = "userInfo")]
+    pub user_info: UpdateUserInfoData,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateUserInfoData {
     #[serde(rename = "userID")]
     pub user_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -110,12 +116,14 @@ impl UserManager {
             .clone();
 
         let req = UpdateUserInfoReq {
-            user_id: user_id.clone(),
-            nickname: updates.nickname.clone(),
-            face_url: updates.face_url.clone(),
-            gender: updates.gender,
-            email: updates.email.clone(),
-            ex: None,
+            user_info: UpdateUserInfoData {
+                user_id: user_id.clone(),
+                nickname: updates.nickname.clone(),
+                face_url: updates.face_url.clone(),
+                gender: updates.gender,
+                email: updates.email.clone(),
+                ex: None,
+            },
         };
 
         let _resp: UpdateUserInfoResp = self.http_client.post(UPDATE_USER_INFO, &req).await?;
@@ -238,15 +246,18 @@ mod tests {
     #[test]
     fn test_update_user_info_req_serialization() {
         let req = UpdateUserInfoReq {
-            user_id: "user_123".to_string(),
-            nickname: Some("New Name".to_string()),
-            face_url: None,
-            gender: Some(1),
-            email: None,
-            ex: None,
+            user_info: UpdateUserInfoData {
+                user_id: "user_123".to_string(),
+                nickname: Some("New Name".to_string()),
+                face_url: None,
+                gender: Some(1),
+                email: None,
+                ex: None,
+            },
         };
 
         let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userInfo"));
         assert!(json.contains("userID"));
         assert!(json.contains("New Name"));
     }
