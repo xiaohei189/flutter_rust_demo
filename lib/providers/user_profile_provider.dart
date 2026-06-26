@@ -185,15 +185,15 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     if (url.contains('example.com')) {
       return false;
     }
-    // 排除 localhost 和 127.0.0.1 等本地地址
-    if (url.contains('localhost') || url.contains('127.0.0.1')) {
-      return false;
+    // 有效的 HTTP/HTTPS URL（本地开发和远程服务器都允许）
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return true;
     }
-    // 排除本地路径
+    // 排除本地文件系统路径
     if (url.contains(':\\') || url.startsWith('/')) {
       return false;
     }
-    return true;
+    return false;
   }
 
   /// 获取用于显示的头像 URL

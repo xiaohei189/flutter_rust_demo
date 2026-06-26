@@ -440,8 +440,48 @@ impl OpenIMClient {
             }
         });
 
+        // 初始化 self_user 缓存：拉取当前用户信息并写入内存，后续 update_self_user_info 依赖此缓存
+        let uid = user_id.to_string();
+        match self.user.get_users_info(vec![uid.clone()]).await {
+            Ok(users) => {
+                if let Some(user) = users.into_iter().next() {
+                    self.user.set_self_user_info(user).await;
+                    info!("[SDK] self_user 缓存已初始化");
+                } else {
+                    // 服务器未返回用户信息，至少设置 user_id 确保后续操作不报"用户未登录"
+                    let minimal = crate::domain::model::user::UserInfo {
+                        user_id: uid.clone(),
+                        nickname: uid.clone(),
+                        face_url: String::new(),
+                        gender: 0,
+                        telephone: String::new(),
+                        email: String::new(),
+                        remark: String::new(),
+                        global_recv_msg_opt: 0,
+                    };
+                    self.user.set_self_user_info(minimal).await;
+                    info!("[SDK] self_user 使用最小信息初始化");
+                }
+            }
+            Err(e) => {
+                // 网络失败时用最小信息兜底
+                warn!("[SDK] 获取 self_user 失败，使用最小信息兜底: {}", e);
+                let minimal = crate::domain::model::user::UserInfo {
+                    user_id: uid.clone(),
+                    nickname: uid.clone(),
+                    face_url: String::new(),
+                    gender: 0,
+                    telephone: String::new(),
+                    email: String::new(),
+                    remark: String::new(),
+                    global_recv_msg_opt: 0,
+                };
+                self.user.set_self_user_info(minimal).await;
+            }
+        }
+
         self.event_bus.publish(SdkEvent::LoginSuccess {
-            user_id: user_id.to_string(),
+            user_id: uid,
         });
         info!("[SDK] 用户登录成功: {}", user_id);
         Ok(())

@@ -98,10 +98,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       final url = await uploadFile(filePath: image.path, fileName: 'avatar.jpg');
       appLog.i('[MyProfile] 上传完成，返回 URL: $url');
 
-      // 检查 URL 是否为有效的外部 URL（排除本地地址和示例地址）
-      final isValidUrl = !url.contains('example.com') && 
-          !url.contains('localhost') && 
-          !url.contains('127.0.0.1');
+      // 检查 URL 是否有效（不为空且非示例地址）
+      final isValidUrl = url.isNotEmpty && !url.contains('example.com');
       appLog.i('[MyProfile] URL 是否有效: $isValidUrl');
 
       // 更新服务器头像 URL（用于持久化）
