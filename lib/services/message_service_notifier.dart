@@ -531,7 +531,38 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
     final isUpdate = index >= 0;
     if (isUpdate) {
-      newConversations[index] = conv;
+      final existing = newConversations[index];
+      // 如果已有草稿文本，保留已有的（服务端/DB 不会推送草稿字段，可能为空）
+      final draftText = existing.draftText.isNotEmpty ? existing.draftText : conv.draftText;
+      final draftTextTime = draftText.isNotEmpty
+          ? (existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime)
+          : conv.draftTextTime;
+      newConversations[index] = LocalConversation(
+        conversationId: conv.conversationId,
+        conversationType: conv.conversationType,
+        userId: conv.userId,
+        groupId: conv.groupId,
+        showName: conv.showName,
+        faceUrl: conv.faceUrl,
+        latestMsg: conv.latestMsg,
+        latestMsgSendTime: conv.latestMsgSendTime,
+        unreadCount: conv.unreadCount,
+        recvMsgOpt: conv.recvMsgOpt,
+        isPinned: conv.isPinned,
+        isPrivateChat: conv.isPrivateChat,
+        burnDuration: conv.burnDuration,
+        groupAtType: conv.groupAtType,
+        isNotInGroup: conv.isNotInGroup,
+        updateUnreadCountTime: conv.updateUnreadCountTime,
+        attachedInfo: conv.attachedInfo,
+        ex: conv.ex,
+        draftText: draftText,
+        draftTextTime: draftTextTime,
+        maxSeq: conv.maxSeq,
+        minSeq: conv.minSeq,
+        isMsgDestruct: conv.isMsgDestruct,
+        msgDestructTime: conv.msgDestructTime,
+      );
     } else {
       newConversations.add(conv);
     }

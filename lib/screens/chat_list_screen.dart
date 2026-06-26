@@ -148,45 +148,58 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           ),
           const Divider(height: 1, color: Color(0xFFEEEEEE)),
           Expanded(
-            child: conversations.isEmpty
-                ? _buildEmptyState(conversationState, connectionState)
-                : ListView.builder(
-                    key: ValueKey<int>(conversations.length),
-                    padding: EdgeInsets.zero,
-                    itemCount: conversations.length,
-                    itemBuilder: (context, index) {
-                      final conversation = conversations[index];
-                      final otherUserId = conversation.conversationType == 1 && conversation.userId.isNotEmpty
-                            ? conversation.userId
-                            : null;
-                        final otherUserProfile = otherUserId != null && otherUserId != userProfileState.profile?.userId
-                            ? ref.read(messageServiceProvider.notifier).getUserProfile(otherUserId)
-                            : null;
-                        return ChatListItem(
-                        key: ValueKey<String>(conversation.conversationId),
-                        conversation: conversation,
-                        cachedUserProfile: otherUserProfile,
-                        currentUserLocalAvatarPath: userProfileState.localAvatarPath,
-                        itemIndex: index,
-                        currentUserId: userProfileState.profile?.userId,
-                        onTap: () {
-                          AppRouter.goToChatDetail(context, conversation);
-                        },
-                        onDelete: () async {
-                          await ref.read(messageServiceProvider.notifier).deleteConversation(conversation.conversationId);
-                        },
-                        onPinToggle: () async {
-                          await ref.read(messageServiceProvider.notifier).toggleConversationPin(
-                            conversation.conversationId,
-                            conversation.isPinned != 1,
-                          );
-                        },
-                        onMarkRead: () async {
-                          await ref.read(messageServiceProvider.notifier).markConversationAsRead(conversation.conversationId);
-                        },
-                      );
-                    },
-                  ),
+            child: RefreshIndicator(
+              color: AppTheme.primaryColor,
+              onRefresh: () => ref.read(conversationListProvider.notifier).refreshConversations(),
+              child: conversations.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: _buildEmptyState(conversationState, connectionState),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      key: ValueKey<int>(conversations.length),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      itemCount: conversations.length,
+                      itemBuilder: (context, index) {
+                        final conversation = conversations[index];
+                        final otherUserId = conversation.conversationType == 1 && conversation.userId.isNotEmpty
+                              ? conversation.userId
+                              : null;
+                          final otherUserProfile = otherUserId != null && otherUserId != userProfileState.profile?.userId
+                              ? ref.read(messageServiceProvider.notifier).getUserProfile(otherUserId)
+                              : null;
+                          return ChatListItem(
+                          key: ValueKey<String>(conversation.conversationId),
+                          conversation: conversation,
+                          cachedUserProfile: otherUserProfile,
+                          currentUserLocalAvatarPath: userProfileState.localAvatarPath,
+                          itemIndex: index,
+                          currentUserId: userProfileState.profile?.userId,
+                          onTap: () {
+                            AppRouter.goToChatDetail(context, conversation);
+                          },
+                          onDelete: () async {
+                            await ref.read(messageServiceProvider.notifier).deleteConversation(conversation.conversationId);
+                          },
+                          onPinToggle: () async {
+                            await ref.read(messageServiceProvider.notifier).toggleConversationPin(
+                              conversation.conversationId,
+                              conversation.isPinned != 1,
+                            );
+                          },
+                          onMarkRead: () async {
+                            await ref.read(messageServiceProvider.notifier).markConversationAsRead(conversation.conversationId);
+                          },
+                        );
+                      },
+                    ),
+            ),
           ),
         ],
       ),
