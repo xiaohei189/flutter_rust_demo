@@ -274,6 +274,14 @@ class ChatListItem extends StatelessWidget {
     );
   }
 
+  /// 展示时间：取草稿时间和最新消息时间中较新的
+  PlatformInt64 get _displayTime {
+    final draftTime = conversation.draftTextTime;
+    final msgTime = conversation.latestMsgSendTime;
+    if (draftTime.toInt() > msgTime.toInt()) return draftTime;
+    return msgTime;
+  }
+
   String get _contentPreview {
     if (conversation.draftText.isNotEmpty) {
       try {
@@ -355,7 +363,7 @@ class ChatListItem extends StatelessWidget {
                         // 第一行：名称 + 标签 + 时间
                         Row(
                           children: [
-                            Flexible(
+                            Expanded(
                               child: Text(
                                 user.name,
                                 style: const TextStyle(
@@ -378,9 +386,9 @@ class ChatListItem extends StatelessWidget {
                                   color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
                                 ),
                               ),
-                            const Spacer(),
+                            const SizedBox(width: 8),
                             Text(
-                              _formatTime(conversation.latestMsgSendTime),
+                              _formatTime(_displayTime),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: unread > 0
