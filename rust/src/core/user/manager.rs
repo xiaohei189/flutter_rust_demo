@@ -42,11 +42,15 @@ pub struct GetUsersInfoResp {
 pub struct UpdateUserInfoReq {
     #[serde(rename = "userID")]
     pub user_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nickname: Option<String>,
-    #[serde(rename = "faceURL")]
+    #[serde(rename = "faceURL", skip_serializing_if = "Option::is_none")]
     pub face_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gender: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ex: Option<String>,
 }
 
