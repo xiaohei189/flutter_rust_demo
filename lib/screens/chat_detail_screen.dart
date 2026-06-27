@@ -653,10 +653,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   @override
   Widget build(BuildContext context) {
     final userProfileState = ref.watch(userProfileProvider);
-    ref.watch(conversationListProvider); // watch 会话列表，unreadCount 变化时触发重建
+    // 只监听当前会话的未读数，其他会话变化不触发此页重建
+    final unread = ref.watch(
+      conversationListProvider.select(
+        (state) => state.conversations
+            .where((c) => c.conversationId == widget.conversationId)
+            .firstOrNull
+            ?.unreadCount ?? 0,
+      ),
+    );
     final user = _getUser(userProfileState);
     final conversation = _conversation;
-    final unread = conversation?.unreadCount ?? 0;
     final currentUserId = userProfileState.profile?.userId ?? '';
 
     if (conversation == null) {
