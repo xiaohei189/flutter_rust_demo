@@ -559,11 +559,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     final isUpdate = index >= 0;
     if (isUpdate) {
       final existing = newConversations[index];
-      // 如果已有草稿文本，保留已有的（服务端/DB 不会推送草稿字段，可能为空）
+      // 保留本地维护的字段（草稿、最新消息），避免 DB 查询与消息更新间的竞态导致被旧值覆盖
       final draftText = existing.draftText.isNotEmpty ? existing.draftText : conv.draftText;
       final draftTextTime = draftText.isNotEmpty
           ? (existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime)
           : conv.draftTextTime;
+      // 保留较新的 latestMsg（内存中的可能比 DB 查询到的更新）
+      final existingTime = existing.latestMsgSendTime.toInt();
+      final convTime = conv.latestMsgSendTime.toInt();
+      final useExisting = existing.latestMsg.isNotEmpty && existingTime >= convTime;
       newConversations[index] = LocalConversation(
         conversationId: conv.conversationId,
         conversationType: conv.conversationType,
@@ -571,8 +575,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         groupId: conv.groupId,
         showName: conv.showName,
         faceUrl: conv.faceUrl,
-        latestMsg: conv.latestMsg,
-        latestMsgSendTime: conv.latestMsgSendTime,
+        latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
+        latestMsgSendTime: useExisting ? existing.latestMsgSendTime : conv.latestMsgSendTime,
         unreadCount: conv.unreadCount,
         recvMsgOpt: conv.recvMsgOpt,
         isPinned: conv.isPinned,
@@ -1065,19 +1069,69 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     );
   }
 
+  bool _loadingConversations = false;
+
   Future<void> _loadConversations() async {
     if (_client == null) {
       appLog.w('[MessageService] _loadConversations 跳过：client 为空');
       return;
     }
+    // 防止并发调用导致状态乱序
+    if (_loadingConversations) return;
+    _loadingConversations = true;
 
     try {
       final conversations = await _client!.getConversations();
       appLog.i('[MessageService] 加载会话列表，共 ${conversations.length} 条');
-      this.state = this.state.copyWith(conversations: []);
+      // 直接用 DB 数据替换，不清空列表（避免 UI 闪烁）
+      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final dbIds = conversations.map((c) => c.conversationId).toSet();
+      // 移除 DB 中不存在的会话
+      newConversations.removeWhere((c) => !dbIds.contains(c.conversationId));
       for (final conv in conversations) {
-        _updateConversation(conv);
+        final index = newConversations.indexWhere((c) => c.conversationId == conv.conversationId);
+        if (index >= 0) {
+          final existing = newConversations[index];
+          final existingTime = existing.latestMsgSendTime.toInt();
+          final convTime = conv.latestMsgSendTime.toInt();
+          final useExisting = existing.latestMsg.isNotEmpty && existingTime >= convTime;
+          newConversations[index] = LocalConversation(
+            conversationId: conv.conversationId,
+            conversationType: conv.conversationType,
+            userId: conv.userId,
+            groupId: conv.groupId,
+            showName: conv.showName.isNotEmpty ? conv.showName : existing.showName,
+            faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : existing.faceUrl,
+            latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
+            latestMsgSendTime: useExisting ? existing.latestMsgSendTime : conv.latestMsgSendTime,
+            unreadCount: conv.unreadCount,
+            recvMsgOpt: conv.recvMsgOpt,
+            isPinned: conv.isPinned,
+            isPrivateChat: conv.isPrivateChat,
+            burnDuration: conv.burnDuration,
+            groupAtType: conv.groupAtType,
+            isNotInGroup: conv.isNotInGroup,
+            updateUnreadCountTime: conv.updateUnreadCountTime,
+            attachedInfo: conv.attachedInfo,
+            ex: conv.ex,
+            draftText: existing.draftText.isNotEmpty ? existing.draftText : conv.draftText,
+            draftTextTime: existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime,
+            maxSeq: conv.maxSeq,
+            minSeq: conv.minSeq,
+            isMsgDestruct: conv.isMsgDestruct,
+            msgDestructTime: conv.msgDestructTime,
+          );
+        } else {
+          newConversations.add(conv);
+        }
       }
+      newConversations.sort((a, b) {
+        if (a.isPinned != b.isPinned) return a.isPinned == 1 ? -1 : 1;
+        final aTime = a.latestMsgSendTime.toInt();
+        final bTime = b.latestMsgSendTime.toInt();
+        return bTime.compareTo(aTime);
+      });
+      this.state = this.state.copyWith(conversations: newConversations);
       final userIds = conversations
           .where((c) => c.userId.isNotEmpty)
           .map((c) => c.userId)
@@ -1086,6 +1140,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       unawaited(preloadUserProfiles(userIds));
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载会话列表失败: $e');
+    } finally {
+      _loadingConversations = false;
     }
   }
 
