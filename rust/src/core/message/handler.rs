@@ -384,16 +384,11 @@ impl MessageHandler {
                         if is_store {
                             batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
                         }
-                    } else {
-                        // CLIENT_DUP: client_msg_id 重复
-                        if is_store {
-                            let mut local_msg: LocalChatLog = self.received_to_local(msg);
-                            self.handle_exception_messages(Some(existing), &mut local_msg);
-                            insert_list.push(local_msg);
-                        }
                     }
+                    // CLIENT_DUP: 已同步过 seq 的消息再次到达（seq 间隙补偿拉取等），
+                    // 跳过不插入重复消息，避免消息列表中多出一条
                 } else {
-                    // 本端同步自己发的消息
+                    // 本端同步自己发的消息（其他设备发送的）
                     if is_store {
                         let mut local_msg: LocalChatLog = self.received_to_local(msg);
                         local_msg.status = msg_status::SEND_SUCCESS as i32;
@@ -419,13 +414,8 @@ impl MessageHandler {
                         }
                     }
                 } else {
-                    // CLIENT_DUP: 重复消息
-                    if is_store {
-                        let existing_ref = exists.unwrap();
-                        let mut local_msg: LocalChatLog = self.received_to_local(msg);
-                        self.handle_exception_messages(Some(existing_ref), &mut local_msg);
-                        insert_list.push(local_msg);
-                    }
+                    // CLIENT_DUP: 消息已存在（重复推送或 seq 间隙补偿拉取），跳过不插入
+                    info!("[MSG] 跳过重复消息: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
                 }
             }
         }
