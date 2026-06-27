@@ -460,6 +460,19 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     this.state = this.state.copyWith(isInitializing: true);
     appLog.i('[MessageService] initialize 开始');
     try {
+      // 关闭已有客户端（热重启或重复登录场景），避免两个实例同时存在导致被踢
+      if (_client != null) {
+        appLog.i('[MessageService] 关闭已有客户端，重新初始化');
+        await _eventStreamSubscription?.cancel();
+        _eventStreamSubscription = null;
+        try {
+          await _client!.disconnect();
+        } catch (e) {
+          appLog.w('[MessageService] 关闭旧客户端失败: $e');
+        }
+        _client = null;
+      }
+
       appLog.i('[MessageService] 即将调用 initLogger');
       await initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
       appLog.i('[MessageService] initLogger 完成');
