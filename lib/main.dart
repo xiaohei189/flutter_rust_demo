@@ -10,7 +10,6 @@ import 'package:flutter_rust_demo/src/rust/api/simple.dart'
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'utils/host_config.dart';
-import 'utils/login_storage.dart';
 import 'services/im_client.dart';
 
 /// WebSocket 地址
@@ -40,8 +39,7 @@ Future<void> main() async {
     debugPrint('[Dart] Rust 日志系统初始化失败: $e');
   }
 
-  // 3. 每次启动清除本地凭证，不自动复用 token，要求重新输入账号密码登录
-  await LoginStorage.clearCredentials();
+  // 3. 保留本地凭证，下次启动时自动登录（splash_screen 会检查凭证有效性）
 
   // 4. 热重启时先关闭之前的 client，避免同 token 重复连接导致 TokenKickedError(1506)
   // 注意：热重启会重新初始化静态字段，旧的 ImClient.instance 已不可达
