@@ -19,7 +19,7 @@ import '../extensions/conversation_extensions.dart';
 import '../models/user.dart';
 import '../src/rust/domain/constant/enums.dart' show SessionType;
 import '../src/rust/infra/database/models.dart' show LocalConversation;
-import '../widgets/chat_input.dart';
+import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
 import '../widgets/message_list.dart';
 import '../widgets/message_action_menu.dart';
 import '../widgets/user_avatar.dart';
@@ -285,7 +285,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     });
   }
 
-  Future<void> _sendMessage(String text) async {
+  Future<void> _sendMessage(String text, MessageContentType type) async {
     if (text.trim().isEmpty) return;
 
     final connectionState = ref.read(connectionProvider);
@@ -317,11 +317,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     }
 
     try {
-      final type = conversation.conversationType;
+      final type_ = conversation.conversationType;
       final cid = conversation.conversationId;
       final userProfileState = ref.read(userProfileProvider);
       String recvId;
-      switch (type) {
+      switch (type_) {
         case 1:
           recvId = conversation.userId;
           if (recvId.isEmpty && cid.startsWith('si_')) {
@@ -389,6 +389,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
           quoteSendId: quotedMsg.sendId,
           quoteSendTime: quotedMsg.sendTime.toInt(),
         );
+      } else if (type == MessageContentType.markdown) {
+        await ref
+            .read(messageListProvider(conversation.conversationId).notifier)
+            .sendMarkdownMessage(
+              recvId: recvId,
+              text: text,
+              sessionType: sessionType,
+              groupId: groupId,
+            );
       } else {
         await ref
             .read(messageListProvider(conversation.conversationId).notifier)
@@ -409,55 +418,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
             content: Text('发送消息失败: $e'),
             backgroundColor: AppTheme.unreadRed,
           ),
-        );
-      }
-    }
-  }
-
-  Future<void> _sendMarkdownMessage(String text) async {
-    if (text.trim().isEmpty) return;
-
-    final connectionState = ref.read(connectionProvider);
-    if (!connectionState.isConnected) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('WebSocket 未连接'), backgroundColor: AppTheme.unreadRed),
-        );
-      }
-      return;
-    }
-
-    final conversation = _conversation;
-    if (conversation == null) return;
-
-    try {
-      final target = _getSendTarget();
-      if (target == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('会话信息异常'), backgroundColor: AppTheme.unreadRed),
-          );
-        }
-        return;
-      }
-
-      _textController.clear();
-
-      await ref
-          .read(messageListProvider(conversation.conversationId).notifier)
-          .sendMarkdownMessage(
-            recvId: target.recvId,
-            text: text,
-            sessionType: target.sessionType,
-            groupId: target.groupId,
-          );
-
-      if (!widget.preLoaded) _scrollToBottom();
-    } catch (e, st) {
-      appLog.e('发送 Markdown 消息失败: $e', e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('发送失败: $e'), backgroundColor: AppTheme.unreadRed),
         );
       }
     }
@@ -950,13 +910,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                 ChatInput(
                   controller: _textController,
                   onSend: _sendMessage,
-                  onSendMarkdown: _sendMarkdownMessage,
                   onImagePick: _pickImage,
                   onCameraPick: _pickFromCamera,
                   onLocationPick: _pickLocation,
                   onFilePick: _pickFile,
                   onVideoPick: _pickVideo,
                   onCardSend: _sendCardMessage,
+                  isGroupChat: _isGroup,
                 ),
               ],
             )

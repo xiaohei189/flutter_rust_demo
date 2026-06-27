@@ -27,6 +27,13 @@ class AppTheme {
   /// 分割线
   static const Color dividerColor = Color(0xFFE5E5EA);
 
+  /// 输入区（飞书风格）
+  static const double inputBarHeight = 48.0;
+  static const double formatBarHeight = 40.0;
+  static const Color feishuInputBg = Color(0xFFF5F5F7);
+  static const Color attachmentPanelBg = Color(0xFFF8F8F8);
+  static const Color formatBarBg = Color(0xFFF0F0F5);
+
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     primaryColor: primaryColor,

@@ -4,36 +4,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../router/app_router.dart';
 import '../theme/app_theme.dart';
+import 'attachment_panel.dart';
+import 'format_toolbar.dart' show MarkdownFormat;
 
-/// 底部输入区：语音/文字切换、自适应输入框、表情、加号（无内容）/发送（有内容）
+/// 消息内容类型
+enum MessageContentType { text, markdown }
+
+/// 输入面板展开状态
+enum _InputPanel { none, emoji, attachment }
+
+/// 底部输入区：
+/// - 按钮变形（mic ↔ 发送）
+/// - 内嵌表情面板
+/// - 附件 Grid 面板
+/// - Markdown 格式工具栏（长按发送切换）
+/// - 输入框自适应扩展
 class ChatInput extends StatefulWidget {
   final TextEditingController controller;
-  final Function(String) onSend;
-  final Function(String)? onSendMarkdown;
+  final Function(String text, MessageContentType type) onSend;
   final VoidCallback? onImagePick;
   final VoidCallback? onCameraPick;
   final VoidCallback? onFilePick;
   final VoidCallback? onLocationPick;
   final VoidCallback? onVideoPick;
-  final VoidCallback? onEmojiTap;
   final Function(int duration, String filePath)? onVoiceRecord;
   final Function(String userId, String nickname, String faceUrl)? onCardSend;
+  final bool isGroupChat;
 
   const ChatInput({
     super.key,
     required this.controller,
     required this.onSend,
-    this.onSendMarkdown,
     this.onImagePick,
     this.onCameraPick,
     this.onFilePick,
     this.onLocationPick,
     this.onVideoPick,
-    this.onEmojiTap,
     this.onVoiceRecord,
     this.onCardSend,
+    this.isGroupChat = false,
   });
 
   @override
@@ -42,8 +52,9 @@ class ChatInput extends StatefulWidget {
 
 class _ChatInputState extends State<ChatInput> {
   late FocusNode _focusNode;
-  bool _isVoiceMode = false;
   bool _isMarkdownMode = false;
+  bool _inputExpanded = false;
+  _InputPanel _activePanel = _InputPanel.none;
 
   /// 语音录制状态
   Timer? _recordingTimer;
@@ -101,27 +112,117 @@ class _ChatInputState extends State<ChatInput> {
   void _doSend() {
     final text = widget.controller.text.trim();
     if (text.isEmpty) return;
-    if (_isMarkdownMode && widget.onSendMarkdown != null) {
-      widget.onSendMarkdown!(text);
-    } else {
-      widget.onSend(text);
-    }
+    widget.onSend(
+      text,
+      _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
+    );
   }
 
   bool get _hasText {
     return widget.controller.text.trim().isNotEmpty;
   }
 
-  /// 开始录音（长按触发）
-  void _startRecording(LongPressStartDetails details) async {
+  // ==================== 面板管理 ====================
+
+  void _togglePanel(_InputPanel panel) {
+    setState(() {
+      _activePanel = _activePanel == panel ? _InputPanel.none : panel;
+    });
+  }
+
+  void _closeAllPanels() {
+    setState(() => _activePanel = _InputPanel.none);
+  }
+
+  // ==================== Markdown 格式插入 ====================
+
+  /// 在光标处插入/包裹 Markdown 标记
+  void _insertMarkdown(String prefix, String suffix) {
+    final controller = widget.controller;
+    final text = controller.text;
+    final selection = controller.selection;
+
+    if (selection.isValid && selection.start < selection.end) {
+      // 有选中文字：包裹选中内容
+      final selected = selection.textInside(text);
+      final newText = text.replaceRange(
+        selection.start,
+        selection.end,
+        '$prefix$selected$suffix',
+      );
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: selection.start + prefix.length + selected.length + suffix.length,
+        ),
+      );
+    } else {
+      // 无选中：插入标记，光标放在标记中间
+      final offset = selection.baseOffset >= 0 ? selection.baseOffset : text.length;
+      final placeholder = _placeholderFor(prefix);
+      final newText = text.replaceRange(
+        offset,
+        offset,
+        '$prefix$placeholder$suffix',
+      );
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection(
+          baseOffset: offset + prefix.length,
+          extentOffset: offset + prefix.length + placeholder.length,
+        ),
+      );
+    }
+
+    // 插入后聚焦输入框
+    _focusNode.requestFocus();
+  }
+
+  String _placeholderFor(String prefix) {
+    return switch (prefix) {
+      '**' => '粗体',
+      '*' => '斜体',
+      '~~' => '删除线',
+      '## ' => '标题',
+      '`' => '代码',
+      '> ' => '引用',
+      '- ' => '列表',
+      '[' => '文字',
+      _ => '',
+    };
+  }
+
+  void _handleFormat(MarkdownFormat format) {
+    switch (format) {
+      case MarkdownFormat.bold:
+        _insertMarkdown('**', '**');
+      case MarkdownFormat.italic:
+        _insertMarkdown('*', '*');
+      case MarkdownFormat.strikethrough:
+        _insertMarkdown('~~', '~~');
+      case MarkdownFormat.heading:
+        _insertMarkdown('## ', '');
+      case MarkdownFormat.inlineCode:
+        _insertMarkdown('`', '`');
+      case MarkdownFormat.quote:
+        _insertMarkdown('> ', '');
+      case MarkdownFormat.bulletList:
+        _insertMarkdown('- ', '');
+      case MarkdownFormat.link:
+        _insertMarkdown('[', '](url)');
+    }
+  }
+
+  // ==================== 语音录制 ====================
+
+  void _startRecording([LongPressStartDetails? details]) async {
     final dir = await getTemporaryDirectory();
     _recordingPath =
         '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.aac';
     _recordingStart = DateTime.now();
 
-    // 启动录音计时器（最长60秒自动停止）
     _recordingTimer = Timer(const Duration(seconds: 60), () {
-      _stopRecording(LongPressEndDetails());
+      _stopRecording();
     });
 
     if (mounted) {
@@ -134,8 +235,7 @@ class _ChatInputState extends State<ChatInput> {
     }
   }
 
-  /// 停止录音（松手触发）
-  void _stopRecording(LongPressEndDetails details) async {
+  void _stopRecording([LongPressEndDetails? details]) {
     _recordingTimer?.cancel();
     _recordingTimer = null;
 
@@ -158,326 +258,64 @@ class _ChatInputState extends State<ChatInput> {
       return;
     }
 
-    // 回调通知父组件发送语音消息
     widget.onVoiceRecord?.call(duration, path!);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 6,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: _isVoiceMode ? _buildVoiceMode() : _buildTextMode(),
-      ),
+  // ==================== Emoji 插入 ====================
+
+  void _insertEmoji(String emoji) {
+    final controller = widget.controller;
+    final text = controller.text;
+    final selection = controller.selection;
+    final start = selection.start >= 0 ? selection.start : text.length;
+    final end = selection.end >= 0 ? selection.end : text.length;
+    final newText = text.replaceRange(start, end, emoji);
+    controller.text = newText;
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: start + emoji.length),
     );
+    _focusNode.requestFocus();
   }
 
-  /// 语音模式：按住说话
-  Widget _buildVoiceMode() {
-    return Row(
-      children: [
-        // 语音/文字切换
-        IconButton(
-          icon: Icon(
-            Icons.keyboard_alt_outlined,
-            size: 26,
-            color: AppTheme.textSecondaryColor,
-          ),
-          onPressed: () {
-            setState(() => _isVoiceMode = false);
-            _focusNode.requestFocus();
-          },
-        ),
-        const Spacer(),
-        // 按住说话按钮
-        GestureDetector(
-          onLongPressStart: _startRecording,
-          onLongPressEnd: _stopRecording,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              '按住  说话',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-        const Spacer(),
-        // 表情
-        IconButton(
-          icon: Icon(
-            Icons.emoji_emotions_outlined,
-            size: 26,
-            color: AppTheme.textSecondaryColor,
-          ),
-          onPressed: () => _showEmojiPanel(context),
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
+  // ==================== 附件列表 ====================
 
-  /// 文字模式
-  Widget _buildTextMode() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // 语音/文字切换
-        IconButton(
-          icon: Icon(
-            Icons.mic_none,
-            size: 26,
-            color: AppTheme.textSecondaryColor,
-          ),
-          onPressed: () {
-            setState(() => _isVoiceMode = true);
-          },
+  List<AttachmentItem> get _attachmentItems => [
+        AttachmentItem(
+          icon: Icons.photo_library_outlined,
+          label: '相册',
+          onTap: widget.onImagePick,
         ),
-        // 输入框
-        Expanded(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
-            child: TextField(
-              controller: widget.controller,
-              focusNode: _focusNode,
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textPrimaryColor,
-                fontFamily: _isMarkdownMode ? 'monospace' : null,
-              ),
-              decoration: InputDecoration(
-                hintText: _isMarkdownMode ? '输入 Markdown...' : '输入消息...',
-                hintStyle: const TextStyle(
-                  color: AppTheme.textSecondaryColor,
-                  fontSize: 16,
-                ),
-                filled: true,
-                fillColor: AppTheme.backgroundColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-              ),
-              onSubmitted: (_) => _doSend(),
-            ),
-          ),
+        AttachmentItem(
+          icon: Icons.camera_alt_outlined,
+          label: '拍照',
+          onTap: widget.onCameraPick,
         ),
-        // Markdown 切换
-        if (widget.onSendMarkdown != null)
-          IconButton(
-            icon: Icon(
-              Icons.code,
-              size: 24,
-              color: _isMarkdownMode
-                  ? AppTheme.primaryColor
-                  : AppTheme.textSecondaryColor,
-            ),
-            onPressed: () {
-              setState(() => _isMarkdownMode = !_isMarkdownMode);
-            },
-          ),
-        // 表情
-        IconButton(
-          icon: Icon(
-            Icons.emoji_emotions_outlined,
-            size: 26,
-            color: AppTheme.textSecondaryColor,
-          ),
-          onPressed: () => _showEmojiPanel(context),
+        AttachmentItem(
+          icon: Icons.videocam_outlined,
+          label: '视频',
+          onTap: widget.onVideoPick,
         ),
-        // 有内容时显示发送，否则显示加号
-        if (_hasText)
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: TextButton(
-              onPressed: _doSend,
-              style: TextButton.styleFrom(
-                backgroundColor: _isMarkdownMode
-                    ? AppTheme.textSecondaryColor
-                    : AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                minimumSize: Size.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              child: Text(
-                _isMarkdownMode ? 'MD' : '发送',
-                style: const TextStyle(fontSize: 15),
-              ),
-            ),
-          )
-        else
-          IconButton(
-            icon: Icon(
-              Icons.add_circle_outline,
-              size: 28,
-              color: AppTheme.textSecondaryColor,
-            ),
-            onPressed: () => _showMoreOptions(context),
-          ),
-      ],
-    );
-  }
+        AttachmentItem(
+          icon: Icons.location_on_outlined,
+          label: '位置',
+          onTap: widget.onLocationPick,
+        ),
+        AttachmentItem(
+          icon: Icons.insert_drive_file_outlined,
+          label: '文件',
+          onTap: widget.onFilePick,
+        ),
+        AttachmentItem(
+          icon: Icons.person_add_outlined,
+          label: '名片',
+          onTap: widget.onCardSend != null
+              ? () => _showCardSendDialog(context)
+              : null,
+        ),
+      ];
 
-  /// 显示表情面板
-  void _showEmojiPanel(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: 280,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Column(
-          children: [
-            // 标题栏
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '表情',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            // emoji 网格
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(12),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 8,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                ),
-                itemCount: _commonEmojis.length,
-                itemBuilder: (context, index) {
-                  final emoji = _commonEmojis[index];
-                  return InkWell(
-                    onTap: () {
-                      final text = widget.controller.text;
-                      final selection = widget.controller.selection;
-                      final start = selection.start >= 0 ? selection.start : text.length;
-                      final end = selection.end >= 0 ? selection.end : text.length;
-                      final newText = text.replaceRange(start, end, emoji);
-                      widget.controller.text = newText;
-                      widget.controller.selection = TextSelection.fromPosition(
-                        TextPosition(offset: start + emoji.length),
-                      );
-                    },
-                    child: Center(
-                      child: Text(
-                        emoji,
-                        style: const TextStyle(fontSize: 26),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMoreOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildOptionItem(context, Icons.photo_library_outlined, '相册', widget.onImagePick),
-                    const SizedBox(width: 32),
-                    _buildOptionItem(context, Icons.camera_alt_outlined, '相机', widget.onCameraPick),
-                    const SizedBox(width: 32),
-                    _buildOptionItem(context, Icons.videocam_outlined, '视频', widget.onVideoPick),
-                    const SizedBox(width: 32),
-                    _buildOptionItem(context, Icons.location_on_outlined, '定位', widget.onLocationPick),
-                    const SizedBox(width: 32),
-                    _buildOptionItem(context, Icons.insert_drive_file_outlined, '文件', widget.onFilePick),
-                    const SizedBox(width: 32),
-                    _buildOptionItem(context, Icons.person_add_outlined, '名片', widget.onCardSend != null ? () => _showCardSendDialog(context) : null),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 显示名片发送对话框（选择好友发送名片）
   void _showCardSendDialog(BuildContext context) {
-    // 先关闭 more options 底部弹出层
-    Navigator.of(context).pop();
-    // 通知父组件处理名片发送
-    // 这里先弹出一个简单提示，实际选择好友的逻辑由父组件的 onCardSend 回调处理
+    _closeAllPanels();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -491,7 +329,6 @@ class _ChatInputState extends State<ChatInput> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // 默认发送当前用户自己的名片（父组件应覆盖此逻辑）
               widget.onCardSend?.call('', '', '');
             },
             child: const Text('确认'),
@@ -501,46 +338,405 @@ class _ChatInputState extends State<ChatInput> {
     );
   }
 
-  Widget _buildOptionItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback? onTap,
-  ) {
-    return InkWell(
-      onTap: onTap != null
-          ? () {
-              AppRouter.goBack(context);
-              onTap();
-            }
-          : null,
-      borderRadius: BorderRadius.circular(12),
+  // ==================== 构建 ====================
+
+  @override
+  Widget build(BuildContext context) {
+    // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
+    return SafeArea(
+      top: false,
+      bottom: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             decoration: BoxDecoration(
-              color: AppTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 6,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
-            child: Icon(
-              icon,
-              size: 28,
-              color: onTap != null ? AppTheme.primaryColor : AppTheme.textSecondaryColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildInputRow(),
+                const SizedBox(height: 8),
+                _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: onTap != null ? AppTheme.textSecondaryColor : AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+          if (_activePanel == _InputPanel.emoji) _buildEmojiPanel(),
+          if (_activePanel == _InputPanel.attachment)
+            AttachmentPanel(
+              items: _attachmentItems,
+              onItemTap: _closeAllPanels,
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 第二层：输入框行（全宽圆角输入 + 右侧展开图标）
+  Widget _buildInputRow() {
+    return SizedBox(
+      height: _inputExpanded ? null : 44,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
+              child: TextField(
+                controller: widget.controller,
+                focusNode: _focusNode,
+                minLines: 1,
+                maxLines: _inputExpanded ? null : 1,
+                textInputAction: TextInputAction.send,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textPrimaryColor,
+                  fontFamily: _isMarkdownMode ? 'monospace' : null,
+                ),
+                decoration: InputDecoration(
+                  hintText: _isMarkdownMode ? 'Markdown...' : '输入消息...',
+                  hintStyle: const TextStyle(
+                    color: AppTheme.textSecondaryColor,
+                    fontSize: 16,
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.feishuInputBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  // 输入框右侧展开/收起图标
+                  suffixIcon: _hasText
+                      ? null
+                      : IconButton(
+                          icon: Icon(
+                            _inputExpanded
+                                ? Icons.zoom_in_map
+                                : Icons.zoom_out_map,
+                            size: 18,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                          onPressed: () {
+                            setState(() => _inputExpanded = !_inputExpanded);
+                          },
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                        ),
+                  suffixIconConstraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+                onSubmitted: (_) => _doSend(),
+                onTap: () {
+                  if (_activePanel != _InputPanel.none) {
+                    _closeAllPanels();
+                  }
+                },
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  /// 第三层：工具栏行（飞书风格，图标均匀排列）
+  Widget _buildToolbarRow() {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          // 😊 表情
+          _buildToolbarIcon(
+            icon: _activePanel == _InputPanel.emoji
+                ? Icons.emoji_emotions
+                : Icons.emoji_emotions_outlined,
+            tooltip: '表情',
+            onTap: () => _togglePanel(_InputPanel.emoji),
+          ),
+          // @ 提及
+          if (widget.isGroupChat)
+            _buildToolbarIcon(
+              icon: Icons.alternate_email,
+              tooltip: '@ 提及',
+              onTap: () {
+                // TODO: 弹出群成员选择器
+                _focusNode.requestFocus();
+              },
+            ),
+          // 🎤 语音（长按录音）
+          _buildToolbarIcon(
+            icon: Icons.mic_none,
+            tooltip: '语音（长按录音）',
+            onLongPressStart: _startRecording,
+            onLongPressEnd: _stopRecording,
+            onTap: () {
+              _focusNode.requestFocus();
+              _closeAllPanels();
+            },
+          ),
+          // 🖼️ 相册
+          _buildToolbarIcon(
+            icon: Icons.photo_library_outlined,
+            tooltip: '相册',
+            onTap: widget.onImagePick ?? () {},
+            enabled: widget.onImagePick != null,
+          ),
+          // Aa 格式
+          _buildToolbarIcon(
+            icon: Icons.text_fields,
+            tooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
+            active: _isMarkdownMode,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              setState(() => _isMarkdownMode = !_isMarkdownMode);
+              if (_isMarkdownMode) {
+                _focusNode.requestFocus();
+              }
+            },
+          ),
+          // ➕ 更多
+          _buildToolbarIcon(
+            icon: _activePanel == _InputPanel.attachment
+                ? Icons.add_circle
+                : Icons.add_circle_outline,
+            tooltip: '更多',
+            onTap: () => _togglePanel(_InputPanel.attachment),
+          ),
+          const Spacer(),
+          // ➡️ 发送
+          _buildSendButton(),
+        ],
+      ),
+    );
+  }
+
+  /// 第二层（Markdown 模式）：格式按钮栏，替换普通工具栏
+  Widget _buildFormatBar() {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          _formatBtn('B', '粗体', () => _handleFormat(MarkdownFormat.bold)),
+          _formatBtn('I', '斜体', () => _handleFormat(MarkdownFormat.italic), italic: true),
+          _formatBtn('S', '删除线', () => _handleFormat(MarkdownFormat.strikethrough), strikethrough: true),
+          _formatBtn('H', '标题', () => _handleFormat(MarkdownFormat.heading)),
+          _formatBtn('<>', '行内代码', () => _handleFormat(MarkdownFormat.inlineCode), mono: true),
+          _formatBtn('"', '引用', () => _handleFormat(MarkdownFormat.quote)),
+          _formatBtn('•', '列表', () => _handleFormat(MarkdownFormat.bulletList)),
+          _formatBtn('🔗', '链接', () => _handleFormat(MarkdownFormat.link)),
+          const Spacer(),
+          // 返回普通工具栏
+          _buildToolbarIcon(
+            icon: Icons.text_fields,
+            tooltip: '关闭 Markdown',
+            active: true,
+            onTap: () => setState(() => _isMarkdownMode = false),
+          ),
+          _buildSendButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _formatBtn(String label, String tooltip, VoidCallback onTap, {bool italic = false, bool strikethrough = false, bool mono = false}) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            width: 36,
+            height: 44,
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimaryColor.withValues(alpha: 0.7),
+                  fontFamily: mono ? 'monospace' : null,
+                  fontStyle: italic ? FontStyle.italic : null,
+                  decoration: strikethrough ? TextDecoration.lineThrough : null,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 工具栏图标按钮（飞书风格：24px 线性图标，等宽）
+  Widget _buildToolbarIcon({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    bool enabled = true,
+    bool active = false,
+    void Function(LongPressStartDetails)? onLongPressStart,
+    void Function(LongPressEndDetails)? onLongPressEnd,
+  }) {
+    final hasLongPress = onLongPressStart != null;
+    final btn = Tooltip(
+      message: tooltip,
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: IconButton(
+          icon: Icon(
+            icon,
+            size: 24,
+            color: enabled
+                ? (active
+                    ? AppTheme.primaryColor
+                    : AppTheme.textPrimaryColor.withValues(alpha: 0.7))
+                : AppTheme.textSecondaryColor.withValues(alpha: 0.3),
+          ),
+          onPressed: hasLongPress ? null : (enabled ? onTap : null),
+          padding: EdgeInsets.zero,
+        ),
+      ),
+    );
+    if (hasLongPress) {
+      return GestureDetector(
+        onTap: enabled ? onTap : null,
+        onLongPressStart: onLongPressStart,
+        onLongPressEnd: onLongPressEnd,
+        child: btn,
+      );
+    }
+    return btn;
+  }
+
+  /// 发送按钮（工具栏最右侧）
+  Widget _buildSendButton() {
+    final enabled = _hasText;
+    return GestureDetector(
+      onTap: enabled ? _doSend : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: enabled
+              ? (_isMarkdownMode
+                  ? AppTheme.textSecondaryColor
+                  : AppTheme.primaryColor)
+              : AppTheme.backgroundColor,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Icon(
+          Icons.arrow_forward,
+          size: 22,
+          color: enabled ? Colors.white : AppTheme.textSecondaryColor,
+        ),
+      ),
+    );
+  }
+
+  // ==================== 表情面板（飞书风格：最常使用 + 默认表情） ====================
+
+  Widget _buildEmojiPanel() {
+    const recentCount = 16;
+    final recentEmojis = _commonEmojis.take(recentCount).toList();
+    final defaultEmojis = _commonEmojis.skip(recentCount).toList();
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 260),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppTheme.dividerColor, width: 0.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('最常使用', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor)),
+                  const SizedBox(height: 4),
+                  _buildEmojiGrid(recentEmojis),
+                  const SizedBox(height: 8),
+                  const Text('默认表情', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor)),
+                  const SizedBox(height: 4),
+                  _buildEmojiGrid(defaultEmojis),
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          SizedBox(
+            height: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                const Icon(Icons.add, size: 20, color: AppTheme.textSecondaryColor),
+                const Icon(Icons.emoji_emotions_outlined, size: 20, color: AppTheme.primaryColor),
+                const Icon(Icons.favorite_border, size: 20, color: AppTheme.textSecondaryColor),
+                IconButton(
+                  icon: const Icon(Icons.keyboard, size: 20, color: AppTheme.textSecondaryColor),
+                  onPressed: () { _closeAllPanels(); _focusNode.requestFocus(); },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmojiGrid(List<String> emojis) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 8, mainAxisSpacing: 4, crossAxisSpacing: 4,
+      ),
+      itemCount: emojis.length,
+      itemBuilder: (_, i) => InkWell(
+        onTap: () => _insertEmoji(emojis[i]),
+        child: Center(child: Text(emojis[i], style: const TextStyle(fontSize: 22))),
+      ),
+    );
+  }
+
+  // ==================== 辅助 ====================
+
 }
