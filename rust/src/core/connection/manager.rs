@@ -430,23 +430,35 @@ impl ConnectionManager {
                                 break;
                             }
                             Some(Err(e)) => {
-                                error!("ws error: {}", e);
+                                let manual = { *is_manual_disconnect.read().await };
+                                if manual {
+                                    info!("ws closed (manual disconnect): {}", e);
+                                } else {
+                                    error!("ws error: {}", e);
+                                }
                                 {
                                     *state.write().await = ConnectionState::Disconnected;
                                 }
-                                event_bus.publish(SdkEvent::Disconnected {
-                                    reason: format!("ws error: {}", e),
-                                });
+                                if !manual {
+                                    event_bus.publish(SdkEvent::Disconnected {
+                                        reason: format!("ws error: {}", e),
+                                    });
+                                }
                                 break;
                             }
                             None => {
-                                info!("ws stream ended");
+                                let manual = { *is_manual_disconnect.read().await };
+                                if manual {
+                                    info!("ws stream ended (manual disconnect)");
+                                } else {
+                                    info!("ws stream ended");
+                                    event_bus.publish(SdkEvent::Disconnected {
+                                        reason: "stream ended".into(),
+                                    });
+                                }
                                 {
                                     *state.write().await = ConnectionState::Disconnected;
                                 }
-                                event_bus.publish(SdkEvent::Disconnected {
-                                    reason: "stream ended".into(),
-                                });
                                 break;
                             }
                             _ => {}
