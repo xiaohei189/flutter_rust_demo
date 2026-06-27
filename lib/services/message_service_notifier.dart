@@ -769,7 +769,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         if (existingIndex >= 0) {
           list[existingIndex] = msgInfo;
         } else {
-          list.add(msgInfo);
+          // 防御性去重：同 sendId + contentType + content 在 3 秒内视为重复
+          final dupByContent = list.indexWhere((m) =>
+              m.sendId == sendId &&
+              m.contentType == contentType &&
+              m.content == content &&
+              (msgInfo.sendTime.toInt() - m.sendTime.toInt()).abs() < 3000);
+          if (dupByContent >= 0) {
+            list[dupByContent] = msgInfo;
+          } else {
+            list.add(msgInfo);
+          }
         }
         newMessages[conversationId] = List<MessageInfo>.from(list);
         this.state = this.state.copyWith(messages: newMessages);
