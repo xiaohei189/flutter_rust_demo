@@ -128,7 +128,7 @@ pub struct BlackServerInfo {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetFriendApplyListReq {
-    #[serde(rename = "fromUserID")]
+    #[serde(rename = "userID")]
     pub from_user_id: String,
     #[serde(rename = "pagination")]
     pub pagination: Pagination,
