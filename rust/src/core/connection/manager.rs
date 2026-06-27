@@ -99,6 +99,20 @@ impl ConnectionManager {
     }
 
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str, platform_id: i32) -> Result<()> {
+        // 关闭已有连接（热重启或重复登录场景），避免旧连接残留导致新连接被踢
+        {
+            let current_state = self.state.read().await.clone();
+            if current_state != ConnectionState::Disconnected {
+                info!("[Connection] connect: 关闭已有连接（状态: {:?}）", current_state);
+                *self.is_manual_disconnect.write().await = true;
+                *self.writer.write().await = None;
+                *self.state.write().await = ConnectionState::Disconnected;
+                self.message_batcher.close().await;
+                // 给旧的 reconnect_loop 和 read_loop 一点时间退出
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+        }
+
         *self.token.write().await = token.to_string();
         *self.send_id.write().await = user_id.to_string();
         *self.ws_url.write().await = ws_url.to_string();

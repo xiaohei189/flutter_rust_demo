@@ -44,6 +44,8 @@ Future<void> main() async {
   await LoginStorage.clearCredentials();
 
   // 4. 热重启时先关闭之前的 client，避免同 token 重复连接导致 TokenKickedError(1506)
+  // 注意：热重启会重新初始化静态字段，旧的 ImClient.instance 已不可达
+  // Rust SDK 的 connect() 会自动关闭已有连接，这里做兜底
   await ImClient.instance.close();
 
   runApp(const MyApp());

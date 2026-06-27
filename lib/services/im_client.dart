@@ -16,7 +16,7 @@ import '../utils/app_logger.dart';
 /// 3. 初始化日志和基础配置
 class ImClient {
   static final ImClient _instance = ImClient._internal();
-  
+
   /// 全局单例实例
   static ImClient get instance => _instance;
   
