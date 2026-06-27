@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 class ChatInput extends StatefulWidget {
   final TextEditingController controller;
   final Function(String) onSend;
+  final Function(String)? onSendMarkdown;
   final VoidCallback? onImagePick;
   final VoidCallback? onCameraPick;
   final VoidCallback? onFilePick;
@@ -24,6 +25,7 @@ class ChatInput extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onSend,
+    this.onSendMarkdown,
     this.onImagePick,
     this.onCameraPick,
     this.onFilePick,
@@ -41,6 +43,7 @@ class ChatInput extends StatefulWidget {
 class _ChatInputState extends State<ChatInput> {
   late FocusNode _focusNode;
   bool _isVoiceMode = false;
+  bool _isMarkdownMode = false;
 
   /// 语音录制状态
   Timer? _recordingTimer;
@@ -97,7 +100,12 @@ class _ChatInputState extends State<ChatInput> {
 
   void _doSend() {
     final text = widget.controller.text.trim();
-    if (text.isNotEmpty) widget.onSend(text);
+    if (text.isEmpty) return;
+    if (_isMarkdownMode && widget.onSendMarkdown != null) {
+      widget.onSendMarkdown!(text);
+    } else {
+      widget.onSend(text);
+    }
   }
 
   bool get _hasText {
@@ -251,12 +259,13 @@ class _ChatInputState extends State<ChatInput> {
               focusNode: _focusNode,
               maxLines: null,
               textInputAction: TextInputAction.send,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 color: AppTheme.textPrimaryColor,
+                fontFamily: _isMarkdownMode ? 'monospace' : null,
               ),
               decoration: InputDecoration(
-                hintText: '输入消息...',
+                hintText: _isMarkdownMode ? '输入 Markdown...' : '输入消息...',
                 hintStyle: const TextStyle(
                   color: AppTheme.textSecondaryColor,
                   fontSize: 16,
@@ -285,6 +294,20 @@ class _ChatInputState extends State<ChatInput> {
             ),
           ),
         ),
+        // Markdown 切换
+        if (widget.onSendMarkdown != null)
+          IconButton(
+            icon: Icon(
+              Icons.code,
+              size: 24,
+              color: _isMarkdownMode
+                  ? AppTheme.primaryColor
+                  : AppTheme.textSecondaryColor,
+            ),
+            onPressed: () {
+              setState(() => _isMarkdownMode = !_isMarkdownMode);
+            },
+          ),
         // 表情
         IconButton(
           icon: Icon(
@@ -301,7 +324,9 @@ class _ChatInputState extends State<ChatInput> {
             child: TextButton(
               onPressed: _doSend,
               style: TextButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: _isMarkdownMode
+                    ? AppTheme.textSecondaryColor
+                    : AppTheme.primaryColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -312,7 +337,10 @@ class _ChatInputState extends State<ChatInput> {
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
-              child: const Text('发送', style: TextStyle(fontSize: 15)),
+              child: Text(
+                _isMarkdownMode ? 'MD' : '发送',
+                style: const TextStyle(fontSize: 15),
+              ),
             ),
           )
         else

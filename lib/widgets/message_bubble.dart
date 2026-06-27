@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import '../models/message.dart';
 import '../models/message_ext.dart';
@@ -248,12 +250,64 @@ class MessageBubble extends StatelessWidget {
       MessageType.location => _buildLocationMessage(context, isFromMe),
       MessageType.custom => _buildCustomMessage(context, isFromMe),
       MessageType.system => _buildSystemMessage(context),
-      // text, advancedText, markdown
+      MessageType.markdown => _buildMarkdownMessage(context, isFromMe),
+      // text, advancedText
       _ => Text(
           message.displayText,
           style: TextStyle(color: textColor, fontSize: 16),
         ),
     };
+  }
+
+  // ===== Markdown 消息 =====
+  Widget _buildMarkdownMessage(BuildContext context, bool isFromMe) {
+    final textColor = isFromMe ? Colors.white : AppTheme.otherMessageTextColor;
+    final linkColor = isFromMe ? Colors.white70 : AppTheme.primaryColor;
+    final codeBgColor = isFromMe
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.06);
+
+    return MarkdownBody(
+      data: message.displayText,
+      selectable: true,
+      extensionSet: md.ExtensionSet.gitHubFlavored,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+        h1: TextStyle(color: textColor, fontSize: 22, fontWeight: FontWeight.bold),
+        h2: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+        h3: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+        h4: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
+        h5: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
+        h6: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold),
+        strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
+        code: TextStyle(
+          color: textColor,
+          fontSize: 14,
+          fontFamily: 'monospace',
+          backgroundColor: codeBgColor,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: codeBgColor,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        codeblockPadding: const EdgeInsets.all(8),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(color: linkColor.withValues(alpha: 0.5), width: 3),
+          ),
+        ),
+        blockquotePadding: const EdgeInsets.only(left: 12),
+        a: TextStyle(color: linkColor, decoration: TextDecoration.underline),
+        listBullet: TextStyle(color: textColor, fontSize: 16),
+        tableHead: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+        tableBody: TextStyle(color: textColor, fontSize: 14),
+        tableBorder: TableBorder.all(
+          color: textColor.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+    );
   }
 
   // ===== 图片消息 =====

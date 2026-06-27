@@ -128,6 +128,29 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     }
   }
 
+  /// 发送 Markdown 消息
+  Future<bool> sendMarkdownMessage({
+    required String recvId,
+    required String text,
+    required SessionType sessionType,
+    String? groupId,
+  }) async {
+    try {
+      await _messageService.sendMarkdownMessage(
+        recvId: recvId,
+        text: text,
+        sessionType: sessionType,
+        conversationId: _conversationId,
+        groupId: groupId ?? '',
+      );
+      _syncState();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送消息失败: $e');
+      return false;
+    }
+  }
+
   /// 通用发送辅助：统一 sourceId 计算 + 错误处理
   String _sourceId(String recvId, String? groupId) =>
       (groupId != null && groupId.isNotEmpty) ? groupId : recvId;

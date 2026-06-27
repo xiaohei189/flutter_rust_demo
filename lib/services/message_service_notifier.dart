@@ -259,6 +259,23 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     );
   }
 
+  /// 发送 Markdown 消息
+  Future<void> sendMarkdownMessage({
+    required String recvId,
+    required String text,
+    required SessionType sessionType,
+    required String conversationId,
+    String groupId = '',
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    final sourceId = groupId.isNotEmpty ? groupId : recvId;
+    await _client!.sendMarkdownMessage(
+      text: text,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
   /// 转发消息（按 clientMsgId 原样转发，对齐 Go SDK ForwardMessage）
   Future<void> forwardMessage({
     required String clientMsgId,

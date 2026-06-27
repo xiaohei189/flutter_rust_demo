@@ -414,6 +414,55 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     }
   }
 
+  Future<void> _sendMarkdownMessage(String text) async {
+    if (text.trim().isEmpty) return;
+
+    final connectionState = ref.read(connectionProvider);
+    if (!connectionState.isConnected) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('WebSocket 未连接'), backgroundColor: AppTheme.unreadRed),
+        );
+      }
+      return;
+    }
+
+    final conversation = _conversation;
+    if (conversation == null) return;
+
+    try {
+      final target = _getSendTarget();
+      if (target == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('会话信息异常'), backgroundColor: AppTheme.unreadRed),
+          );
+        }
+        return;
+      }
+
+      _textController.clear();
+
+      await ref
+          .read(messageListProvider(conversation.conversationId).notifier)
+          .sendMarkdownMessage(
+            recvId: target.recvId,
+            text: text,
+            sessionType: target.sessionType,
+            groupId: target.groupId,
+          );
+
+      if (!widget.preLoaded) _scrollToBottom();
+    } catch (e, st) {
+      appLog.e('发送 Markdown 消息失败: $e', e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('发送失败: $e'), backgroundColor: AppTheme.unreadRed),
+        );
+      }
+    }
+  }
+
   // ---- 输入状态 ----
 
   void _onTextChanged() {
@@ -901,6 +950,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                 ChatInput(
                   controller: _textController,
                   onSend: _sendMessage,
+                  onSendMarkdown: _sendMarkdownMessage,
                   onImagePick: _pickImage,
                   onCameraPick: _pickFromCamera,
                   onLocationPick: _pickLocation,
