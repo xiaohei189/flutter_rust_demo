@@ -120,7 +120,7 @@ pub fn set_log_directory(path: String) {
 /// 初始化 Rust 日志系统（同时输出到文件和控制台）
 #[flutter_rust_bridge::frb]
 pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
-    let mut initialized = LOG_INITIALIZED.lock().unwrap();
+    let mut initialized = LOG_INITIALIZED.lock().unwrap_or_else(|e| e.into_inner());
     if *initialized {
         return Ok(());
     }
