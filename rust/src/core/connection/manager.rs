@@ -214,6 +214,15 @@ impl ConnectionManager {
 
                         match self_clone.do_connect().await {
                             Ok(_) => {
+                                // 等待短暂时间，让 read_loop 有机会处理服务器的连接响应
+                                tokio::time::sleep(Duration::from_millis(200)).await;
+                                // 检查是否被踢下线（read_loop 会设置 is_manual_disconnect）
+                                let manual = { *is_manual.read().await };
+                                let current_state = { state.read().await.clone() };
+                                if manual || current_state == ConnectionState::Kicked {
+                                    info!("reconnected but kicked by server, stopping reconnect");
+                                    break;
+                                }
                                 info!("reconnected successfully");
                                 self_clone.reconnect_attempts.store(0, Ordering::SeqCst);
                             }
@@ -277,6 +286,10 @@ impl ConnectionManager {
         let writer = self.writer.clone();
         let compressor = self.compressor.clone();
         let message_batcher = self.message_batcher.clone();
+        let is_manual_disconnect = self.is_manual_disconnect.clone();
+
+        // TokenKickedError 错误码（同账号在其他设备登录被踢）
+        const TOKEN_KICKED_ERR_CODE: i32 = 1506;
 
         tokio::spawn(async move {
             let mut read = read;
@@ -312,8 +325,19 @@ impl ConnectionManager {
                                             Ok(conn_resp) => {
                                                 if conn_resp.err_code == 0 {
                                                     info!("WebSocket connection confirmed by server");
+                                                } else if conn_resp.err_code == TOKEN_KICKED_ERR_CODE {
+                                                    // 被踢下线：停止重连，通知上层
+                                                    warn!("TokenKickedError: 同账号在其他设备登录，停止重连");
+                                                    *is_manual_disconnect.write().await = true;
+                                                    *writer.write().await = None;
+                                                    *state.write().await = ConnectionState::Kicked;
+                                                    message_batcher.close().await;
+                                                    event_bus.publish(SdkEvent::KickedOffline {
+                                                        reason: conn_resp.err_msg.clone(),
+                                                    });
+                                                    break;
                                                 } else {
-                                                    warn!("WebSocket connection failed: errCode={}, errMsg={}", 
+                                                    warn!("WebSocket connection failed: errCode={}, errMsg={}",
                                                         conn_resp.err_code, conn_resp.err_msg);
                                                     *state.write().await = ConnectionState::Disconnected;
                                                     event_bus.publish(SdkEvent::Disconnected {
