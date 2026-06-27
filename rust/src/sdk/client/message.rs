@@ -261,6 +261,8 @@ async fn do_send_message_impl(
             debug!("删除sending_message失败: {}", e);
         }
 
+        // 对齐 Go SDK updateMsgStatusAndTriggerConversation：通知上层消息发送结果
+        // （MsgData 为 opaque 类型无法从返回值提取字段，通过事件传递 serverMsgId/sendTime）
         context.event_bus.publish(SdkEvent::MessageSent {
             client_msg_id: resp.client_msg_id.clone(),
             server_msg_id: resp.server_msg_id.clone(),
