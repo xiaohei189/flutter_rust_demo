@@ -184,7 +184,7 @@ Rust event → _handleEvent()
 
 | 维度 | Go SDK | Rust SDK (原) | Rust SDK (修复后) |
 |------|--------|---------------|-------------------|
-| **发送成功通知** | updateMsgStatus + ConversationChanged | MessageSent (新增事件) | 同 |
+| **发送成功通知** | updateMsgStatus + ConversationChanged | MessageSent（MsgData 为 opaque，等价 Go 函数返回值） | 同（增加 Set 去重） |
 | **Push 处理 self 消息** | OnRecvNewMessage (含 self) | 仅更新 seq | 仅更新 seq |
 | **Dart UI 去重** | `!messageList.contains(msg)` (按 clientMsgID) | 无 `==` 重载 | `messageSent` 内容去重 + `newMessage` clientMsgId/serverMsgId 去重 |
 | **Seq 间隙 CLIENT_DUP** | **插入重复** | 已修复：跳过 | 已修复：跳过 |
@@ -221,5 +221,5 @@ Rust event → _handleEvent()
 ## 六、建议后续优化
 
 1. **MessageInfo 添加 `operator ==`**：基于 `clientMsgId` 或 `serverMsgId`，让 Dart 的 `list.contains()` 能正确去重
-2. **sendMessage 不发布 MessageSent**：对齐 Go SDK，发送消息后通过 ConversationChanged 刷新（消息已在 DB）
+2. **Dart 消息去重已完备**：`_seenClientMsgIds` Set 替代 `operator ==`（因 MessageInfo 是自动生成的，== 比较全字段不适用）
 3. **服务端推送去重**：检查为何同一消息被 push 3 次
