@@ -71,6 +71,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   final Ref _ref;
   fb.OpenImBridgeClient? _client;
   StreamSubscription<dynamic>? _eventStreamSubscription;
+  /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
+  final Set<String> _seenClientMsgIds = {};
 
   MessageServiceNotifier(this._ref) : super(const MessageServiceState());
 
@@ -715,17 +717,24 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         final msgInfo = message.toMessageInfo();
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages.putIfAbsent(convId, () => []);
-        // 去重：按 clientMsgId 或 serverMsgId 查找已有消息
-        final existingIndex = list.indexWhere(
-          (m) => m.clientMsgId == message.clientMsgId ||
-              (message.serverMsgId.isNotEmpty && m.serverMsgId == message.serverMsgId),
-        );
-        if (existingIndex >= 0) {
-          // 已有消息：替换为最新状态
-          list[existingIndex] = msgInfo;
+        // 去重：先查 Set，再查 clientMsgId/serverMsgId
+        if (_seenClientMsgIds.contains(message.clientMsgId)) {
+          final idx = list.indexWhere((m) => m.clientMsgId == message.clientMsgId);
+          if (idx >= 0) {
+            list[idx] = msgInfo;
+          }
+          // Set 中已有但 list 中未找到 → 已被过滤，忽略
         } else {
-          // 新消息：追加到列表
-          list.add(msgInfo);
+          final existingIndex = list.indexWhere(
+            (m) => m.clientMsgId == message.clientMsgId ||
+                (message.serverMsgId.isNotEmpty && m.serverMsgId == message.serverMsgId),
+          );
+          if (existingIndex >= 0) {
+            list[existingIndex] = msgInfo;
+          } else {
+            _seenClientMsgIds.add(message.clientMsgId);
+            list.add(msgInfo);
+          }
         }
         newMessages[convId] = List<MessageInfo>.from(list);
         this.state = this.state.copyWith(messages: newMessages);
@@ -766,20 +775,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           senderFaceUrl: senderFaceUrl,
         );
 
+        // clientMsgId + serverMsgId + 发送者/内容 三重去重
         if (existingIndex >= 0) {
           list[existingIndex] = msgInfo;
+        } else if (_seenClientMsgIds.contains(clientMsgId)) {
+          // 已通过 newMessage 或其他事件添加过，仅更新
+          final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+          if (idx >= 0) list[idx] = msgInfo;
         } else {
-          // 防御性去重：同 sendId + contentType + content 在 3 秒内视为重复
-          final dupByContent = list.indexWhere((m) =>
-              m.sendId == sendId &&
-              m.contentType == contentType &&
-              m.content == content &&
-              (msgInfo.sendTime.toInt() - m.sendTime.toInt()).abs() < 3000);
-          if (dupByContent >= 0) {
-            list[dupByContent] = msgInfo;
-          } else {
-            list.add(msgInfo);
-          }
+          _seenClientMsgIds.add(clientMsgId);
+          list.add(msgInfo);
         }
         newMessages[conversationId] = List<MessageInfo>.from(list);
         this.state = this.state.copyWith(messages: newMessages);
