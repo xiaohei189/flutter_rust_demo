@@ -175,6 +175,17 @@ impl OpenIMClient {
                     event = subscription.next() => {
                         match event {
                             Some(SdkEvent::Connected) => {
+                                // 延迟一小段时间，等待服务器确认（或拒绝）连接
+                                // 避免在 TokenKickedError 场景下在已死连接上启动同步
+                                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                                if cancel_token.is_cancelled() {
+                                    break;
+                                }
+                                // 检查是否已被踢下线
+                                if message_syncer.is_connection_kicked().await {
+                                    info!("push_message_handler: connection was kicked, skipping sync");
+                                    continue;
+                                }
                                 info!("push_message_handler: connection established, starting message sync");
                                 if let Err(e) = message_syncer.sync_after_reconnect().await {
                                     warn!("push_message_handler: sync after reconnect failed: {:?}", e);

@@ -117,6 +117,11 @@ impl MessageSyncer {
     }
 
     /// 重连后增量同步：先从服务端获取 maxSeq，再与本地对比拉取消息
+    /// 检查连接是否已被踢下线
+    pub async fn is_connection_kicked(&self) -> bool {
+        self.connection.get_state().await == crate::core::connection::manager::ConnectionState::Kicked
+    }
+
     pub async fn sync_after_reconnect(&self) -> Result<()> {
         let _guard = self.sync_lock.try_lock();
         if _guard.is_err() {
