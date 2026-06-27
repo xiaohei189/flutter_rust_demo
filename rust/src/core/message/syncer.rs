@@ -40,6 +40,8 @@ pub struct MessageSyncer {
     synced_max_seqs: Arc<RwLock<HashMap<String, i64>>>,
     /// 防止重复同步的锁（参考 Go SDK 的 startSync 加锁机制）
     sync_lock: Arc<Mutex<()>>,
+    /// 每个会话的同步锁，防止重复推送导致并发 pull
+    per_conv_sync_locks: Arc<RwLock<HashMap<String, Arc<tokio::sync::Mutex<()>>>>>,
 }
 
 impl MessageSyncer {
@@ -66,6 +68,7 @@ impl MessageSyncer {
             user_id,
             synced_max_seqs: Arc::new(RwLock::new(HashMap::new())),
             sync_lock: Arc::new(Mutex::new(())),
+            per_conv_sync_locks: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -232,6 +235,16 @@ impl MessageSyncer {
         if pushed_seqs.is_empty() {
             return Ok(());
         }
+
+        // 获取或创建该会话的同步锁，防止重复推送导致并发 pull
+        let conv_lock = {
+            let mut locks = self.per_conv_sync_locks.write().await;
+            locks
+                .entry(conv_id.to_string())
+                .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
+                .clone()
+        };
+        let _guard = conv_lock.lock().await;
 
         let min_seq = *pushed_seqs.iter().min().unwrap_or(&0);
         let max_seq = *pushed_seqs.iter().max().unwrap_or(&0);
@@ -636,6 +649,7 @@ impl MessageSyncer {
             user_id: self.user_id.clone(),
             synced_max_seqs: self.synced_max_seqs.clone(),
             sync_lock: self.sync_lock.clone(),
+            per_conv_sync_locks: self.per_conv_sync_locks.clone(),
         })
     }
 }
