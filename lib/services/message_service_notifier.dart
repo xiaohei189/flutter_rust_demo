@@ -713,13 +713,18 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         final convId = message.conversationId;
         if (convId.isEmpty) return;
         final msgInfo = message.toMessageInfo();
-        // 自己发的消息：先以"发送中"状态显示，messageSent 事件后更新为成功
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages.putIfAbsent(convId, () => []);
-        final existingIndex = list.indexWhere((m) => m.clientMsgId == message.clientMsgId);
+        // 去重：按 clientMsgId 或 serverMsgId 查找已有消息
+        final existingIndex = list.indexWhere(
+          (m) => m.clientMsgId == message.clientMsgId ||
+              (message.serverMsgId.isNotEmpty && m.serverMsgId == message.serverMsgId),
+        );
         if (existingIndex >= 0) {
+          // 已有消息：替换为最新状态
           list[existingIndex] = msgInfo;
         } else {
+          // 新消息：追加到列表
           list.add(msgInfo);
         }
         newMessages[convId] = List<MessageInfo>.from(list);
