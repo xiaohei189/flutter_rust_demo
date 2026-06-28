@@ -74,15 +74,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   Future<void> _markConversationAsRead() async {
     // 使用缓存的 service 引用，避免在 dispose 时访问 ref
     final service = _messageService;
-    if (service == null) return;
-    
+    if (service == null) {
+      appLog.w('[READ] _messageService 为 null，无法标记已读');
+      return;
+    }
+
     // 从缓存的 service 状态中获取会话，避免使用 ref
     final conv = service.state.conversations
         .where((c) => c.conversationId == widget.conversationId)
         .firstOrNull;
-    
-    // 检查是否有未读消息，没有则跳过
-    if (conv == null || conv.unreadCount <= 0) {
+
+    if (conv == null) {
+      appLog.w('[READ] 会话 ${widget.conversationId} 不在 state 中，无法标记已读');
+      return;
+    }
+
+    if (conv.unreadCount <= 0) {
+      appLog.i('[READ] 会话 ${widget.conversationId} 未读数已是 0，跳过');
       return;
     }
 
@@ -94,10 +102,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     _lastMarkReadTime = now;
 
     try {
-      appLog.i('[READ] 标记会话已读: ${widget.conversationId}');
+      appLog.i('[READ] 标记会话已读: ${widget.conversationId}, 当前未读数: ${conv.unreadCount}');
       await service.markConversationAsRead(widget.conversationId);
+      appLog.i('[READ] 标记会话已读完成: ${widget.conversationId}');
     } catch (e) {
-      appLog.e('标记已读失败: $e');
+      appLog.e('[READ] 标记已读失败: $e');
     }
   }
 
@@ -662,6 +671,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
             ?.unreadCount ?? 0,
       ),
     );
+    // 当前会话有新未读消息时，自动标记已读
+    if (unread > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _markConversationAsRead();
+      });
+    }
     final user = _getUser(userProfileState);
     final conversation = _conversation;
     final currentUserId = userProfileState.profile?.userId ?? '';
