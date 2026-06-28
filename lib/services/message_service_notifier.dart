@@ -763,57 +763,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         newMessages[convId] = List<MessageInfo>.from(list);
         this.state = this.state.copyWith(messages: newMessages);
       },
-      messageSent: (
-        clientMsgId,
-        serverMsgId,
-        sendTime,
-        status,
-        conversationId,
-        sendId,
-        recvId,
-        groupId,
-        sessionType,
-        contentType,
-        content,
-        senderNickname,
-        senderFaceUrl,
-      ) {
-        appLog.i('[MSG] 发送成功: clientMsgId=$clientMsgId serverMsgId=$serverMsgId conv=$conversationId status=$status');
-        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
-        final list = newMessages.putIfAbsent(conversationId, () => []);
-        final existingIndex = list.indexWhere((m) => m.clientMsgId == clientMsgId);
-
-        final msgInfo = messageSentToInfo(
-          clientMsgId: clientMsgId,
-          serverMsgId: serverMsgId,
-          // sendTime 可能是秒或毫秒，自动检测转换
-          sendTimeMs: _normalizeSendTime(sendTime.toInt()),
-          status: status,
-          conversationId: conversationId,
-          sendId: sendId,
-          recvId: recvId,
-          groupId: groupId,
-          sessionType: sessionType,
-          contentType: contentType,
-          content: content,
-          senderNickname: senderNickname,
-          senderFaceUrl: senderFaceUrl,
-        );
-
-        // clientMsgId + serverMsgId + 发送者/内容 三重去重
-        if (existingIndex >= 0) {
-          list[existingIndex] = msgInfo;
-        } else if (_seenClientMsgIds.contains(clientMsgId)) {
-          // 已通过 newMessage 或其他事件添加过，仅更新
-          final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
-          if (idx >= 0) list[idx] = msgInfo;
-        } else {
-          _seenClientMsgIds.add(clientMsgId);
-          list.add(msgInfo);
-        }
-        newMessages[conversationId] = List<MessageInfo>.from(list);
-        this.state = this.state.copyWith(messages: newMessages);
-      },
+      // 对齐 Go SDK：消息发送结果通过 sendTextMessage/sendMarkdownMessage 返回值直接交给 UI
+      // 不再通过 messageSent 事件传递
       messageSendFailed: (clientMsgId, error) {
         appLog.e('dart MessageService ❌ 消息发送失败: $clientMsgId, error=$error');
         // 更新消息列表中标记为发送失败

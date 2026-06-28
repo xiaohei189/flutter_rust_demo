@@ -261,23 +261,7 @@ async fn do_send_message_impl(
             debug!("删除sending_message失败: {}", e);
         }
 
-        // 对齐 Go SDK updateMsgStatusAndTriggerConversation：通知上层消息发送结果
-        // 同时通过事件和返回值传递，Dart 侧依赖 MessageSent 事件更新消息列表状态
-        context.event_bus.publish(SdkEvent::MessageSent {
-            client_msg_id: resp.client_msg_id.clone(),
-            server_msg_id: resp.server_msg_id.clone(),
-            send_time: resp.send_time,
-            status: 2,
-            conversation_id,
-            send_id: msg.send_id.clone(),
-            recv_id: msg.recv_id.clone(),
-            group_id: msg.group_id.clone(),
-            session_type: msg.session_type,
-            content_type: msg.content_type,
-            content: msg.content.clone(),
-            sender_nickname: msg.sender_nickname.clone(),
-            sender_face_url: msg.sender_face_url.clone(),
-        });
+        // 对齐 Go SDK：消息发送结果仅通过返回值（Message）传递，不发布事件
     }
 
     Ok(resp)
