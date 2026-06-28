@@ -671,12 +671,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
             ?.unreadCount ?? 0,
       ),
     );
-    // 当前会话有新未读消息时，自动标记已读
-    if (unread > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _markConversationAsRead();
-      });
-    }
     final user = _getUser(userProfileState);
     final conversation = _conversation;
     final currentUserId = userProfileState.profile?.userId ?? '';
@@ -821,6 +815,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                         scrollController: _scrollController,
                         isLoading: isLoading,
                         cachedCurrentUserProfile: ref.watch(userProfileProvider).profile,
+                        onMessageVisible: (msg) {
+                          // 逐条标记已读（对齐 Go SDK VisibilityDetector 模式）
+                          if (!msg.isRead && msg.sendId != (currentUserId.isNotEmpty ? currentUserId : null)) {
+                            _markConversationAsRead();
+                          }
+                        },
                         onMessageLongPress: (msg) => showMessageActionMenu(
                           context,
                           message: msg,
@@ -859,11 +859,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                             },
                           ),
                         ),
-                        onMessageVisible: (msg) {
-                          // 消息可见时不再重复标记已读
-                          // 已在 initState 和 dispose 中调用 _markConversationAsRead()
-                          // 避免每条消息可见时都触发标记，造成重复调用
-                        },
                         onMessageTap: (msg) {
                           if (msg.messageType == MessageType.merge) {
                             Navigator.push(
