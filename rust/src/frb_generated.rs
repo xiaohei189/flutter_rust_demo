@@ -4170,7 +4170,7 @@ fn wire__crate__api__bridge_client__forward_message_impl(
         move || {
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_msg_data = <MsgData>::sse_decode(&mut deserializer);
+            let api_msg_data = <crate::api::bridge_client::Message>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
             let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
@@ -5999,6 +5999,52 @@ impl SseDecode for crate::sdk::client::types::MarkMessagesAsReadReq {
     }
 }
 
+impl SseDecode for crate::api::bridge_client::Message {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_sendId = <String>::sse_decode(deserializer);
+        let mut var_recvId = <String>::sse_decode(deserializer);
+        let mut var_groupId = <String>::sse_decode(deserializer);
+        let mut var_clientMsgId = <String>::sse_decode(deserializer);
+        let mut var_serverMsgId = <String>::sse_decode(deserializer);
+        let mut var_senderPlatformId = <i32>::sse_decode(deserializer);
+        let mut var_senderNickname = <String>::sse_decode(deserializer);
+        let mut var_senderFaceUrl = <String>::sse_decode(deserializer);
+        let mut var_sessionType = <i32>::sse_decode(deserializer);
+        let mut var_msgFrom = <i32>::sse_decode(deserializer);
+        let mut var_contentType = <i32>::sse_decode(deserializer);
+        let mut var_content = <String>::sse_decode(deserializer);
+        let mut var_seq = <i64>::sse_decode(deserializer);
+        let mut var_sendTime = <i64>::sse_decode(deserializer);
+        let mut var_createTime = <i64>::sse_decode(deserializer);
+        let mut var_status = <i32>::sse_decode(deserializer);
+        let mut var_isRead = <bool>::sse_decode(deserializer);
+        let mut var_attachedInfo = <String>::sse_decode(deserializer);
+        let mut var_ex = <String>::sse_decode(deserializer);
+        return crate::api::bridge_client::Message {
+            send_id: var_sendId,
+            recv_id: var_recvId,
+            group_id: var_groupId,
+            client_msg_id: var_clientMsgId,
+            server_msg_id: var_serverMsgId,
+            sender_platform_id: var_senderPlatformId,
+            sender_nickname: var_senderNickname,
+            sender_face_url: var_senderFaceUrl,
+            session_type: var_sessionType,
+            msg_from: var_msgFrom,
+            content_type: var_contentType,
+            content: var_content,
+            seq: var_seq,
+            send_time: var_sendTime,
+            create_time: var_createTime,
+            status: var_status,
+            is_read: var_isRead,
+            attached_info: var_attachedInfo,
+            ex: var_ex,
+        };
+    }
+}
+
 impl SseDecode for crate::domain::model::msg_struct::MessageEntity {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -7292,6 +7338,39 @@ impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::types::MarkMessagesAs
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::bridge_client::Message {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.send_id.into_into_dart().into_dart(),
+            self.recv_id.into_into_dart().into_dart(),
+            self.group_id.into_into_dart().into_dart(),
+            self.client_msg_id.into_into_dart().into_dart(),
+            self.server_msg_id.into_into_dart().into_dart(),
+            self.sender_platform_id.into_into_dart().into_dart(),
+            self.sender_nickname.into_into_dart().into_dart(),
+            self.sender_face_url.into_into_dart().into_dart(),
+            self.session_type.into_into_dart().into_dart(),
+            self.msg_from.into_into_dart().into_dart(),
+            self.content_type.into_into_dart().into_dart(),
+            self.content.into_into_dart().into_dart(),
+            self.seq.into_into_dart().into_dart(),
+            self.send_time.into_into_dart().into_dart(),
+            self.create_time.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.is_read.into_into_dart().into_dart(),
+            self.attached_info.into_into_dart().into_dart(),
+            self.ex.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::bridge_client::Message {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::bridge_client::Message> for crate::api::bridge_client::Message {
+    fn into_into_dart(self) -> crate::api::bridge_client::Message {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::MessageEntity {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -8319,6 +8398,31 @@ impl SseEncode for crate::sdk::client::types::MarkMessagesAsReadReq {
         <i32>::sse_encode(self.session_type, serializer);
         <i64>::sse_encode(self.has_read_seq, serializer);
         <Vec<i64>>::sse_encode(self.seqs, serializer);
+    }
+}
+
+impl SseEncode for crate::api::bridge_client::Message {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.send_id, serializer);
+        <String>::sse_encode(self.recv_id, serializer);
+        <String>::sse_encode(self.group_id, serializer);
+        <String>::sse_encode(self.client_msg_id, serializer);
+        <String>::sse_encode(self.server_msg_id, serializer);
+        <i32>::sse_encode(self.sender_platform_id, serializer);
+        <String>::sse_encode(self.sender_nickname, serializer);
+        <String>::sse_encode(self.sender_face_url, serializer);
+        <i32>::sse_encode(self.session_type, serializer);
+        <i32>::sse_encode(self.msg_from, serializer);
+        <i32>::sse_encode(self.content_type, serializer);
+        <String>::sse_encode(self.content, serializer);
+        <i64>::sse_encode(self.seq, serializer);
+        <i64>::sse_encode(self.send_time, serializer);
+        <i64>::sse_encode(self.create_time, serializer);
+        <i32>::sse_encode(self.status, serializer);
+        <bool>::sse_encode(self.is_read, serializer);
+        <String>::sse_encode(self.attached_info, serializer);
+        <String>::sse_encode(self.ex, serializer);
     }
 }
 

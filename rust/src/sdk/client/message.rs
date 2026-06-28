@@ -262,7 +262,7 @@ async fn do_send_message_impl(
         }
 
         // 对齐 Go SDK updateMsgStatusAndTriggerConversation：通知上层消息发送结果
-        // （MsgData 为 opaque 类型无法从返回值提取字段，通过事件传递 serverMsgId/sendTime）
+        // 同时通过事件和返回值传递，Dart 侧依赖 MessageSent 事件更新消息列表状态
         context.event_bus.publish(SdkEvent::MessageSent {
             client_msg_id: resp.client_msg_id.clone(),
             server_msg_id: resp.server_msg_id.clone(),
@@ -684,8 +684,6 @@ impl OpenIMClient {
     }
 
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
-        info!("get_history_messages: conversation_id={}, start_client_msg_id={}, count={}",
-              req.conversation_id, req.start_client_msg_id, req.count);
 
         let start_time = if req.start_client_msg_id.is_empty() {
             0
@@ -701,8 +699,6 @@ impl OpenIMClient {
         let messages = self.message_handler.message_dao()
             .get_by_conversation(&req.conversation_id, start_time, req.count)
             .await?;
-
-        info!("数据库查询返回 {} 条消息", messages.len());
 
         let is_end = messages.len() < req.count as usize;
 

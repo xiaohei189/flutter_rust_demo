@@ -126,7 +126,7 @@ impl OpenIMClient {
 
         let send_queue = MessageSendQueue::new();
 
-        info!("OpenIM SDK 初始化完成");
+        debug!("OpenIM SDK 初始化完成");
 
         Ok(Self {
             context,
@@ -165,7 +165,7 @@ impl OpenIMClient {
 
         tokio::spawn(async move {
             let mut subscription = event_bus.subscribe();
-            info!("push_message_handler: started");
+            debug!("push_message_handler: started");
             loop {
                 tokio::select! {
                     _ = cancel_token.cancelled() => {
@@ -414,7 +414,7 @@ impl OpenIMClient {
         self.conversation_syncer.set_user_id(user_id.to_string()).await;
         self.file_uploader.set_login_user_id(user_id.to_string());
 
-        info!("[SDK] 用户上下文已设置");
+        debug!("[SDK] 用户上下文已设置");
 
         // 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
         self.cleanup_sending_messages().await;
@@ -422,7 +422,7 @@ impl OpenIMClient {
         if let Some(ws_url) = &self.context.config.ws_url {
             info!("[SDK] 开始 WebSocket 连接，ws_url={}", ws_url);
             self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
-            info!("[SDK] WebSocket 连接成功");
+            debug!("[SDK] WebSocket 连接成功");
             self.spawn_push_message_handler();
         } else {
             warn!("[SDK] ws_url 未配置，跳过 WebSocket 连接");
@@ -433,21 +433,21 @@ impl OpenIMClient {
         let message_syncer = self.message_syncer.clone();
         let event_bus = self.event_bus.clone();
         tokio::spawn(async move {
-            info!("[SDK] 后台开始会话同步");
+            debug!("[SDK] 后台开始会话同步");
             if let Err(e) = conversation_syncer.sync_incremental().await {
                 warn!("[SDK] 登录后会话增量同步失败，回退全量同步: {}", e);
                 if let Err(e2) = conversation_syncer.sync_full().await {
                     warn!("[SDK] 登录后会话全量同步失败: {}", e2);
                 }
             } else {
-                info!("[SDK] 会话增量同步成功");
+                debug!("[SDK] 会话增量同步成功");
             }
 
-            info!("[SDK] 后台开始消息同步");
+            debug!("[SDK] 后台开始消息同步");
             if let Err(e) = message_syncer.sync_on_login().await {
                 warn!("[SDK] 登录后消息同步失败: {}", e);
             } else {
-                info!("[SDK] 登录后消息同步完成");
+                debug!("[SDK] 登录后消息同步完成");
             }
         });
 
@@ -457,7 +457,7 @@ impl OpenIMClient {
             Ok(users) => {
                 if let Some(user) = users.into_iter().next() {
                     self.user.set_self_user_info(user).await;
-                    info!("[SDK] self_user 缓存已初始化");
+                    debug!("[SDK] self_user 缓存已初始化");
                 } else {
                     // 服务器未返回用户信息，至少设置 user_id 确保后续操作不报"用户未登录"
                     let minimal = crate::domain::model::user::UserInfo {
@@ -471,7 +471,7 @@ impl OpenIMClient {
                         global_recv_msg_opt: 0,
                     };
                     self.user.set_self_user_info(minimal).await;
-                    info!("[SDK] self_user 使用最小信息初始化");
+                    debug!("[SDK] self_user 使用最小信息初始化");
                 }
             }
             Err(e) => {
@@ -494,7 +494,7 @@ impl OpenIMClient {
         self.event_bus.publish(SdkEvent::LoginSuccess {
             user_id: uid,
         });
-        info!("[SDK] 用户登录成功: {}", user_id);
+        debug!("[SDK] 用户登录成功: {}", user_id);
         Ok(())
     }
 

@@ -31,7 +31,44 @@ mod android_logcat {
 
     impl LogcatWriter {
         pub fn new(priority: i32) -> Self {
-            Self { priority, buf: RefCell::new(Vec::with_capacity(512)) }
+            Self { priority, buf: RefCell::new(Vec::with_capacity(1024)) }
+        }
+
+        /// 缩短 cargo registry 的绝对路径
+        /// /home/.../.cargo/registry/src/XX/sqlx-core-0.8.6/src/logger.rs:143
+        /// → sqlx-core/src/logger.rs:143
+        fn shorten_paths(buf: &mut Vec<u8>) {
+            let Ok(text) = std::str::from_utf8(buf) else { return };
+            let marker = ".cargo/registry/src/";
+            if !text.contains(marker) {
+                return;
+            }
+            let mut out = String::with_capacity(text.len());
+            let mut rem = text;
+            while let Some(idx) = rem.find(marker) {
+                out.push_str(&rem[..idx]);
+                let after = &rem[idx + marker.len()..];
+                let Some(slash1) = after.find('/') else {
+                    out.push_str(&rem[idx..]);
+                    break;
+                };
+                let crate_path = &after[slash1 + 1..];
+                let Some(slash2) = crate_path.find('/') else {
+                    out.push_str(crate_path);
+                    break;
+                };
+                let cv = &crate_path[..slash2]; // crate-version, e.g. sqlx-core-0.8.6
+                let dash = cv.as_bytes().iter().enumerate().rev()
+                    .find(|(i, &b)| b == b'-' && i + 1 < cv.len()
+                        && cv.as_bytes()[i + 1].is_ascii_digit())
+                    .map(|(i, _)| i);
+                let cn = dash.map_or(cv, |d| &cv[..d]);
+                out.push_str(cn);
+                out.push_str(&crate_path[slash2..]);
+                rem = &crate_path[slash2..];
+            }
+            out.push_str(rem);
+            *buf = out.into_bytes();
         }
 
         fn ansi_prefix(&self) -> &'static [u8] {
@@ -56,6 +93,8 @@ mod android_logcat {
                 inner.pop();
             }
             if !inner.is_empty() {
+                // 缩短 cargo registry 路径: 提取 crate 名
+                Self::shorten_paths(&mut inner);
                 // 前缀 ANSI 颜色，后缀重置
                 let prefix = self.ansi_prefix();
                 let reset = b"\x1B[0m";
@@ -141,19 +180,20 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
     let mut env_filter = tracing_subscriber::EnvFilter::builder()
         .with_default_directive(level_filter.into())
         .from_env_lossy();
-    // 抑制 reqwest/hyper 连接池 DEBUG 日志
-    env_filter = env_filter.add_directive("hyper=info".parse().unwrap());
-    env_filter = env_filter.add_directive("reqwest=info".parse().unwrap());
-    env_filter = env_filter.add_directive("tower=info".parse().unwrap());
-    env_filter = env_filter.add_directive("hyper_util=info".parse().unwrap());
-    env_filter = env_filter.add_directive("http_pool=info".parse().unwrap());
+    // 抑制三方 crate 的 INFO/DEBUG 日志（避免显示 registry 绝对路径）
+    env_filter = env_filter.add_directive("hyper=warn".parse().unwrap());
+    env_filter = env_filter.add_directive("reqwest=warn".parse().unwrap());
+    env_filter = env_filter.add_directive("tower=warn".parse().unwrap());
+    env_filter = env_filter.add_directive("hyper_util=warn".parse().unwrap());
+    env_filter = env_filter.add_directive("http_pool=warn".parse().unwrap());
+    env_filter = env_filter.add_directive("sqlx=warn".parse().unwrap());
 
     // 文件输出
     let file_appender = tracing_appender::rolling::daily(log_dir, "sdk.log");
     let (non_blocking_file, guard) = tracing_appender::non_blocking(file_appender);
     let _ = LOG_GUARD.set(guard);
 
-    // 控制台输出：桌面端走 stdout，Android 走 logcat（每条独立写入，避免与 Flutter 日志重叠）
+    // 控制台输出：桌面端走 stdout，Android 走 logcat
     #[cfg(not(target_os = "android"))]
     let (non_blocking_console, _console_guard) = tracing_appender::non_blocking(std::io::stdout());
     #[cfg(not(target_os = "android"))]
@@ -161,12 +201,17 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
         tracing_subscriber::fmt::layer()
             .with_writer(non_blocking_console)
             .with_ansi(true)
+            .with_file(true)
+            .with_line_number(true)
+            .with_target(false)
     );
     #[cfg(target_os = "android")]
     let console_layer = Some(
         tracing_subscriber::fmt::layer()
             .with_writer(android_logcat::LogcatMakeWriter)
             .with_ansi(false)
+            .with_file(true)
+            .with_line_number(true)
             .with_target(false)
     );
 

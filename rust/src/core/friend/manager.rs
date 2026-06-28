@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetFriendListReq {
@@ -322,7 +322,7 @@ impl FriendManager {
 
     pub async fn set_user_id(&self, user_id: String) {
         *self.user_id.write().await = user_id.clone();
-        info!("FriendManager user_id 已更新为: {}", user_id);
+        debug!("FriendManager user_id 已更新为: {}", user_id);
     }
 
     pub async fn get_friend_list(&self) -> Vec<FriendInfo> {

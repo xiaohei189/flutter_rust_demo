@@ -57,7 +57,7 @@ pub struct ConnectionManager {
     ws_url: RwLock<String>,
     platform_id: RwLock<i32>,
 
-    reconnect_attempts: AtomicU32,
+    reconnect_attempts: Arc<AtomicU32>,
     is_manual_disconnect: Arc<RwLock<bool>>,
 
     /// Gzip 压缩器（对齐 Go SDK compressor.go）
@@ -91,7 +91,7 @@ impl ConnectionManager {
             send_id: RwLock::new(String::new()),
             ws_url: RwLock::new(String::new()),
             platform_id: RwLock::new(1),
-            reconnect_attempts: AtomicU32::new(0),
+            reconnect_attempts: Arc::new(AtomicU32::new(0)),
             is_manual_disconnect: Arc::new(RwLock::new(false)),
             compressor,
             message_batcher,
@@ -120,10 +120,18 @@ impl ConnectionManager {
         *self.is_manual_disconnect.write().await = false;
         self.reconnect_attempts.store(0, Ordering::SeqCst);
 
-        self.do_connect().await
+        self.do_connect().await?;
+        // 仅在上层主动 connect 时 spawn 一次 reconnect_loop，
+        // 避免 do_connect 被多次调用时产生多个并发的重连循环
+        self.spawn_reconnect_loop();
+        Ok(())
     }
 
     async fn do_connect(&self) -> Result<()> {
+        // 令牌错误码（重连无意义）
+        const TOKEN_KICKED_ERR_CODE: i32 = 1506;
+        const TOKEN_NOT_EXIST_ERR_CODE: i32 = 1507;
+
         self.set_state(ConnectionState::Connecting).await;
         self.event_bus.publish(SdkEvent::Connecting);
 
@@ -145,19 +153,91 @@ impl ConnectionManager {
                 SdkError::connection(format!("WebSocket connect failed: {}", e))
             })?;
 
-        let (write, read) = ws_stream.split();
-        
-        *self.writer.write().await = Some(write);
-        self.set_state(ConnectionState::Connected).await;
-        self.event_bus.publish(SdkEvent::Connected);
-        self.reconnect_attempts.store(0, Ordering::SeqCst);
-        info!("WebSocket connected: {}", full_url);
+        let (write, mut read) = ws_stream.split();
+        info!("WebSocket handshake done: {}", full_url);
 
-        self.spawn_read_loop(read);
-        self.spawn_heartbeat();
-        self.spawn_reconnect_loop();
+        // 对齐 Go SDK reConn(): 预读首条消息进行认证
+        // Go 在 HTTP 握手阶段通过 response body 获取认证结果
+        // Rust 侧 tokio_tungstenite 握手成功后服务端首条消息即为认证响应
+        let auth_result: std::result::Result<WebSocketConnectResp, SdkError> = match read.next().await {
+            Some(Ok(WsMessage::Text(text))) => {
+                serde_json::from_str::<WebSocketConnectResp>(&text)
+                    .map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
+            }
+            Some(Ok(WsMessage::Binary(data))) => {
+                // 尝试解压后解析
+                let data = self.compressor.decompress(&data).unwrap_or(data);
+                serde_json::from_slice::<WebSocketConnectResp>(&data)
+                    .map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
+            }
+            Some(Ok(WsMessage::Close(_))) => {
+                Err(SdkError::connection("server closed during auth"))
+            }
+            Some(Err(e)) => {
+                Err(SdkError::connection(format!("ws error during auth: {}", e)))
+            }
+            None => {
+                Err(SdkError::connection("stream ended during auth"))
+            }
+            _ => {
+                Err(SdkError::connection("unexpected message during auth"))
+            }
+        };
 
-        Ok(())
+        match auth_result {
+            Ok(conn_resp) if conn_resp.err_code == 0 => {
+                // 认证通过 → 发布 Connected，启动读写循环
+                info!("WebSocket auth confirmed by server");
+                *self.writer.write().await = Some(write);
+                self.set_state(ConnectionState::Connected).await;
+                self.event_bus.publish(SdkEvent::Connected);
+                self.reconnect_attempts.store(0, Ordering::SeqCst);
+                self.spawn_read_loop(read);
+                self.spawn_heartbeat();
+                Ok(())
+            }
+            Ok(conn_resp) if conn_resp.err_code == TOKEN_KICKED_ERR_CODE => {
+                // 被踢下线：取消所有后台任务，不再重连
+                warn!("TokenKickedError ({}): 同账号在其他设备登录，停止重连", conn_resp.err_code);
+                self.cancel_token.cancel();
+                *self.is_manual_disconnect.write().await = true;
+                *self.state.write().await = ConnectionState::Kicked;
+                self.message_batcher.close().await;
+                self.event_bus.publish(SdkEvent::KickedOffline {
+                    reason: conn_resp.err_msg.clone(),
+                });
+                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
+            }
+            Ok(conn_resp) if conn_resp.err_code == TOKEN_NOT_EXIST_ERR_CODE => {
+                // Token 无效/过期：取消所有后台任务，不再重连
+                warn!("TokenNotExistError ({}): token 无效或已过期，停止重连", conn_resp.err_code);
+                self.cancel_token.cancel();
+                *self.is_manual_disconnect.write().await = true;
+                *self.state.write().await = ConnectionState::Kicked;
+                self.message_batcher.close().await;
+                self.event_bus.publish(SdkEvent::TokenExpired);
+                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
+            }
+            Ok(conn_resp) => {
+                // 其他服务端错误：短暂断开后允许重连
+                warn!("WebSocket auth failed: errCode={}, errMsg={}",
+                    conn_resp.err_code, conn_resp.err_msg);
+                *self.state.write().await = ConnectionState::Disconnected;
+                self.event_bus.publish(SdkEvent::Disconnected {
+                    reason: format!("server rejected: {}", conn_resp.err_msg),
+                });
+                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
+            }
+            Err(e) => {
+                // 解析认证消息失败
+                error!("WebSocket auth parse error: {:?}", e);
+                *self.state.write().await = ConnectionState::Disconnected;
+                self.event_bus.publish(SdkEvent::Disconnected {
+                    reason: format!("auth parse error: {}", e),
+                });
+                Err(e)
+            }
+        }
     }
 
     fn spawn_reconnect_loop(&self) {
@@ -228,20 +308,18 @@ impl ConnectionManager {
 
                         match self_clone.do_connect().await {
                             Ok(_) => {
-                                // 等待短暂时间，让 read_loop 有机会处理服务器的连接响应
-                                tokio::time::sleep(Duration::from_millis(200)).await;
-                                // 检查是否被踢下线（read_loop 会设置 is_manual_disconnect）
-                                let manual = { *is_manual.read().await };
-                                let current_state = { state.read().await.clone() };
-                                if manual || current_state == ConnectionState::Kicked {
-                                    info!("reconnected but kicked by server, stopping reconnect");
-                                    break;
-                                }
+                                // 认证已在 do_connect() 中完成，Connected 事件已发布
                                 info!("reconnected successfully");
                                 self_clone.reconnect_attempts.store(0, Ordering::SeqCst);
                             }
                             Err(e) => {
                                 warn!("reconnect failed: {:?}", e);
+                                // 令牌致命错误已在 do_connect() 中设置 is_manual_disconnect，
+                                // 检查并直接退出重连循环
+                                let manual = { *is_manual.read().await };
+                                if manual {
+                                    break;
+                                }
                                 {
                                     *state.write().await = ConnectionState::Disconnected;
                                 }
@@ -281,7 +359,7 @@ impl ConnectionManager {
             send_id: RwLock::new(self.send_id.try_read().map(|s| s.clone()).unwrap_or_default()),
             ws_url: RwLock::new(self.ws_url.try_read().map(|u| u.clone()).unwrap_or_default()),
             platform_id: RwLock::new(self.platform_id.try_read().ok().map(|g| *g).unwrap_or(0)),
-            reconnect_attempts: AtomicU32::new(0),
+            reconnect_attempts: self.reconnect_attempts.clone(),
             is_manual_disconnect: self.is_manual_disconnect.clone(),
             compressor: GzipCompressor::new(),
             // 浅克隆用于重连，不共享 batcher（重连后原始 batcher 继续工作）
@@ -302,9 +380,6 @@ impl ConnectionManager {
         let message_batcher = self.message_batcher.clone();
         let is_manual_disconnect = self.is_manual_disconnect.clone();
 
-        // TokenKickedError 错误码（同账号在其他设备登录被踢）
-        const TOKEN_KICKED_ERR_CODE: i32 = 1506;
-
         tokio::spawn(async move {
             let mut read = read;
             loop {
@@ -316,7 +391,8 @@ impl ConnectionManager {
                     msg = read.next() => {
                         match msg {
                             Some(Ok(WsMessage::Text(text))) => {
-                                // 先尝试解析为 OpenIMResp（推送消息或 RPC 响应）
+                                // 解析 OpenIMResp（推送消息或 RPC 响应）
+                                // 认证已在 do_connect() 中通过首条消息完成，无需再次处理 WebSocketConnectResp
                                 match serde_json::from_str::<OpenIMResp>(&text) {
                                     Ok(resp) => {
                                         if let Some(pending_req) =
@@ -333,37 +409,8 @@ impl ConnectionManager {
                                             );
                                         }
                                     }
-                                    Err(_) => {
-                                        // 尝试解析为 WebSocketConnectResp（连接响应）
-                                        match serde_json::from_str::<WebSocketConnectResp>(&text) {
-                                            Ok(conn_resp) => {
-                                                if conn_resp.err_code == 0 {
-                                                    info!("WebSocket connection confirmed by server");
-                                                } else if conn_resp.err_code == TOKEN_KICKED_ERR_CODE {
-                                                    // 被踢下线：停止重连，通知上层
-                                                    warn!("TokenKickedError: 同账号在其他设备登录，停止重连");
-                                                    *is_manual_disconnect.write().await = true;
-                                                    *writer.write().await = None;
-                                                    *state.write().await = ConnectionState::Kicked;
-                                                    message_batcher.close().await;
-                                                    event_bus.publish(SdkEvent::KickedOffline {
-                                                        reason: conn_resp.err_msg.clone(),
-                                                    });
-                                                    break;
-                                                } else {
-                                                    warn!("WebSocket connection failed: errCode={}, errMsg={}",
-                                                        conn_resp.err_code, conn_resp.err_msg);
-                                                    *state.write().await = ConnectionState::Disconnected;
-                                                    event_bus.publish(SdkEvent::Disconnected {
-                                                        reason: format!("server rejected: {}", conn_resp.err_msg),
-                                                    });
-                                                    break;
-                                                }
-                                            }
-                                            Err(e) => {
-                                                warn!("failed to parse ws message as OpenIMResp or WebSocketConnectResp: {}, text={}", e, &text[..text.len().min(100)]);
-                                            }
-                                        }
+                                    Err(e) => {
+                                        warn!("failed to parse ws text as OpenIMResp: {}, text={}", e, &text[..text.len().min(100)]);
                                     }
                                 }
                             }
@@ -376,7 +423,7 @@ impl ConnectionManager {
                             // 尝试 JSON 解码为 OpenIMResp
                             match serde_json::from_slice::<OpenIMResp>(&data) {
                                 Ok(resp) => {
-                                    info!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}", 
+                                    debug!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}",
                                         resp.req_identifier, resp.err_code);
                                     
                                     // 根据 req_identifier 判断消息类型

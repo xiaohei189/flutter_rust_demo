@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
 import 'package:flutter_rust_demo/src/rust/api/simple.dart'
-    show setLogDirectory, initLogger;
+    show setLogDirectory;
 
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -28,16 +28,8 @@ Future<void> main() async {
   final appDir = await getApplicationDocumentsDirectory();
   final logDir = '${appDir.path}/logs';
   await Directory(logDir).create(recursive: true);
-  debugPrint('[Dart] 日志目录: $logDir');
   setLogDirectory(path: logDir);
-  
-  // 2.1 初始化日志系统（设置日志级别为 debug，输出到文件和控制台/logcat）
-  try {
-    await initLogger(logLevel: 'debug');
-    debugPrint('[Dart] Rust 日志系统初始化成功');
-  } catch (e) {
-    debugPrint('[Dart] Rust 日志系统初始化失败: $e');
-  }
+  // initLogger 在 message_service_notifier.initialize() 中调用，避免重复初始化
 
   // 3. 保留本地凭证，下次启动时自动登录（splash_screen 会检查凭证有效性）
 

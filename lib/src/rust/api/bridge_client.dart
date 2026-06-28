@@ -23,6 +23,7 @@ import '../sdk/client/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `client_holder`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`, `from`, `from`
 
 Future<String> uploadFile({
   required String filePath,
@@ -46,7 +47,7 @@ Stream<int> uploadFileWithProgress({
 /// quote_client_msg_id: 被引用消息的 clientMsgId
 /// quote_send_id: 被引用消息的发送者 ID
 /// quote_send_time: 被引用消息的发送时间
-Future<MsgData> sendQuoteMessage({
+Future<Message> sendQuoteMessage({
   required String text,
   required String sourceId,
   required SessionType sessionType,
@@ -65,7 +66,7 @@ Future<MsgData> sendQuoteMessage({
 );
 
 /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
-Future<MsgData> sendMergerMessage({
+Future<Message> sendMergerMessage({
   required String title,
   required List<String> summaryList,
   required String sourceId,
@@ -78,7 +79,7 @@ Future<MsgData> sendMergerMessage({
 );
 
 /// 发送名片消息（对齐 Go SDK `CreateCardMessage` + `SendMessage`）
-Future<MsgData> sendCardMessage({
+Future<Message> sendCardMessage({
   required String userId,
   required String nickname,
   required String faceUrl,
@@ -95,7 +96,7 @@ Future<MsgData> sendCardMessage({
 );
 
 /// 发送位置消息（对齐 Go SDK `CreateLocationMessage` + `SendMessage`）
-Future<MsgData> sendLocationMessage({
+Future<Message> sendLocationMessage({
   required String description,
   required double longitude,
   required double latitude,
@@ -110,7 +111,7 @@ Future<MsgData> sendLocationMessage({
 );
 
 /// 发送表情消息（对齐 Go SDK `CreateFaceMessage` + `SendMessage`）
-Future<MsgData> sendFaceMessage({
+Future<Message> sendFaceMessage({
   required int index,
   required String data,
   required String sourceId,
@@ -123,8 +124,8 @@ Future<MsgData> sendFaceMessage({
 );
 
 /// 转发消息（对齐 Go SDK `ForwardMessage`）
-Future<MsgData> forwardMessage({
-  required MsgData msgData,
+Future<Message> forwardMessage({
+  required Message msgData,
   required String sourceId,
   required SessionType sessionType,
 }) => RustLib.instance.api.crateApiBridgeClientForwardMessage(
@@ -134,7 +135,7 @@ Future<MsgData> forwardMessage({
 );
 
 /// 转发消息（按 clientMsgId 查找消息并转发）
-Future<MsgData> forwardMessageByClientId({
+Future<Message> forwardMessageByClientId({
   required String clientMsgId,
   required String sourceId,
   required SessionType sessionType,
@@ -195,7 +196,7 @@ Future<void> sendTyping({
 ///
 /// 与 `send_quote_message` 的区别：额外支持 `message_entities` 参数，
 /// 可以为引用消息的文本添加实体（如 @提及、链接等富文本）。
-Future<MsgData> sendAdvancedQuoteMessage({
+Future<Message> sendAdvancedQuoteMessage({
   required String text,
   required String sourceId,
   required SessionType sessionType,
@@ -222,7 +223,7 @@ Future<MsgData> sendAdvancedQuoteMessage({
 /// - `client_msg_id`: 要编辑的消息的 clientMsgId
 /// - `content`: 编辑后的新内容（JSON 字符串，如 `{"text":"新内容"}`）
 /// - `content_type`: 消息内容类型（如 101=文本, 117=富文本, 118=Markdown）
-Future<MsgData> editMessage({
+Future<Message> editMessage({
   required String conversationId,
   required String clientMsgId,
   required String content,
@@ -235,7 +236,7 @@ Future<MsgData> editMessage({
 );
 
 /// 从 URL 发送图片消息
-Future<MsgData> sendImageMessageFromUrl({
+Future<Message> sendImageMessageFromUrl({
   required String sourceUrl,
   required String sourceId,
   required SessionType sessionType,
@@ -246,7 +247,7 @@ Future<MsgData> sendImageMessageFromUrl({
 );
 
 /// 从 URL 发送语音消息
-Future<MsgData> sendSoundMessageFromUrl({
+Future<Message> sendSoundMessageFromUrl({
   required String sourceUrl,
   required PlatformInt64 duration,
   required String sourceId,
@@ -259,7 +260,7 @@ Future<MsgData> sendSoundMessageFromUrl({
 );
 
 /// 从 URL 发送视频消息
-Future<MsgData> sendVideoMessageFromUrl({
+Future<Message> sendVideoMessageFromUrl({
   required String sourceUrl,
   required PlatformInt64 duration,
   required String snapshotUrl,
@@ -274,7 +275,7 @@ Future<MsgData> sendVideoMessageFromUrl({
 );
 
 /// 从 URL 发送文件消息
-Future<MsgData> sendFileMessageFromUrl({
+Future<Message> sendFileMessageFromUrl({
   required String sourceUrl,
   required String fileName,
   required PlatformInt64 fileSize,
@@ -289,7 +290,7 @@ Future<MsgData> sendFileMessageFromUrl({
 );
 
 /// 发送分段 @ 消息（带引用）
-Future<MsgData> sendAtTextMessageWithQuote({
+Future<Message> sendAtTextMessageWithQuote({
   required String text,
   required List<String> atUserList,
   required List<AtInfo> atUsersInfo,
@@ -675,21 +676,21 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required SearchMessagesReq req,
   });
 
-  Future<MsgData> sendAdvancedTextMessage({
+  Future<Message> sendAdvancedTextMessage({
     required String text,
     required List<MessageEntity> entities,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendAtTextMessage({
+  Future<Message> sendAtTextMessage({
     required String text,
     required List<String> atUserIds,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendCustomMessage({
+  Future<Message> sendCustomMessage({
     required String data,
     required String desc,
     required String extension_,
@@ -697,7 +698,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendFileMessage({
+  Future<Message> sendFileMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -710,7 +711,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendImageMessage({
+  Future<Message> sendImageMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -723,13 +724,13 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendMarkdownMessage({
+  Future<Message> sendMarkdownMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendSoundMessage({
+  Future<Message> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -744,13 +745,13 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required PlatformInt64 duration,
   });
 
-  Future<MsgData> sendTextMessage({
+  Future<Message> sendTextMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgData> sendVideoMessage({
+  Future<Message> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
@@ -846,4 +847,97 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     String? faceUrl,
     String? ex,
   });
+}
+
+/// 本地 Message，完整对齐协议层 MsgData / Go MsgStruct
+/// 入口出口通过 From trait 与 ProtocolMsgData 互转
+class Message {
+  final String sendId;
+  final String recvId;
+  final String groupId;
+  final String clientMsgId;
+  final String serverMsgId;
+  final int senderPlatformId;
+  final String senderNickname;
+  final String senderFaceUrl;
+  final int sessionType;
+  final int msgFrom;
+  final int contentType;
+  final String content;
+  final PlatformInt64 seq;
+  final PlatformInt64 sendTime;
+  final PlatformInt64 createTime;
+  final int status;
+  final bool isRead;
+  final String attachedInfo;
+  final String ex;
+
+  const Message({
+    required this.sendId,
+    required this.recvId,
+    required this.groupId,
+    required this.clientMsgId,
+    required this.serverMsgId,
+    required this.senderPlatformId,
+    required this.senderNickname,
+    required this.senderFaceUrl,
+    required this.sessionType,
+    required this.msgFrom,
+    required this.contentType,
+    required this.content,
+    required this.seq,
+    required this.sendTime,
+    required this.createTime,
+    required this.status,
+    required this.isRead,
+    required this.attachedInfo,
+    required this.ex,
+  });
+
+  @override
+  int get hashCode =>
+      sendId.hashCode ^
+      recvId.hashCode ^
+      groupId.hashCode ^
+      clientMsgId.hashCode ^
+      serverMsgId.hashCode ^
+      senderPlatformId.hashCode ^
+      senderNickname.hashCode ^
+      senderFaceUrl.hashCode ^
+      sessionType.hashCode ^
+      msgFrom.hashCode ^
+      contentType.hashCode ^
+      content.hashCode ^
+      seq.hashCode ^
+      sendTime.hashCode ^
+      createTime.hashCode ^
+      status.hashCode ^
+      isRead.hashCode ^
+      attachedInfo.hashCode ^
+      ex.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Message &&
+          runtimeType == other.runtimeType &&
+          sendId == other.sendId &&
+          recvId == other.recvId &&
+          groupId == other.groupId &&
+          clientMsgId == other.clientMsgId &&
+          serverMsgId == other.serverMsgId &&
+          senderPlatformId == other.senderPlatformId &&
+          senderNickname == other.senderNickname &&
+          senderFaceUrl == other.senderFaceUrl &&
+          sessionType == other.sessionType &&
+          msgFrom == other.msgFrom &&
+          contentType == other.contentType &&
+          content == other.content &&
+          seq == other.seq &&
+          sendTime == other.sendTime &&
+          createTime == other.createTime &&
+          status == other.status &&
+          isRead == other.isRead &&
+          attachedInfo == other.attachedInfo &&
+          ex == other.ex;
 }

@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use tokio::sync::{mpsc, oneshot};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 use crate::domain::error::types::SdkError;
 use crate::protocol::sdkws::UserSendMsgResp;
@@ -46,21 +46,21 @@ impl MessageSendQueue {
         // Lane B：低优先级（媒体消息）
         tokio::spawn(Self::lane_worker("low", low_rx));
 
-        info!("MessageSendQueue: 双 Lane 发送队列已启动");
+        debug!("MessageSendQueue: 双 Lane 发送队列已启动");
 
         Arc::new(Self { high_tx, low_tx })
     }
 
     /// 后台消费任务：从 channel 中逐条取出并执行
     async fn lane_worker(name: &'static str, mut rx: mpsc::Receiver<SendTask>) {
-        info!("send_queue lane[{}]: worker started", name);
+        debug!("send_queue lane[{}]: worker started", name);
         while let Some(task) = rx.recv().await {
             let result = (task.send_fn)().await;
             if task.result_tx.send(result).is_err() {
                 warn!("send_queue lane[{}]: result receiver dropped", name);
             }
         }
-        info!("send_queue lane[{}]: worker stopped (channel closed)", name);
+        debug!("send_queue lane[{}]: worker stopped (channel closed)", name);
     }
 
     /// 提交一条消息到发送队列

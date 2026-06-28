@@ -6,6 +6,7 @@ import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
 import 'package:flutter_rust_demo/models/message_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart' as fb;
+import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart' show Message;
 import 'package:flutter_rust_demo/src/rust/domain/config.dart';
 import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show Messa
 import 'package:flutter_rust_demo/src/rust/domain/event/types.dart' show SdkEvent;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
+import 'package:flutter_rust_demo/services/navigation_service.dart';
 
 /// MessageService 的状态类
 class MessageServiceState {
@@ -90,6 +92,42 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   /// 获取指定会话的消息列表
   List<MessageInfo> getMessages(String conversationId) {
     return List.unmodifiable(this.state.messages[conversationId] ?? []);
+  }
+
+  /// 将发送结果写入全局消息状态（替代已移除的 messageSent 事件）
+  void upsertSentMessage(String conversationId, Message result) {
+    final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+    final list = newMessages.putIfAbsent(conversationId, () => []);
+    final idx = list.indexWhere((m) => m.clientMsgId == result.clientMsgId);
+    final msgInfo = MessageInfo(
+      clientMsgId: result.clientMsgId,
+      serverMsgId: result.serverMsgId,
+      sendId: result.sendId,
+      recvId: result.recvId,
+      groupId: result.groupId,
+      senderPlatformId: result.senderPlatformId,
+      senderNickname: result.senderNickname,
+      senderFaceUrl: result.senderFaceUrl,
+      sessionType: result.sessionType,
+      msgFrom: result.msgFrom,
+      contentType: result.contentType,
+      content: result.content,
+      seq: result.seq,
+      sendTime: _normalizeSendTime(result.sendTime.toInt()),
+      createTime: result.createTime > 0 ? result.createTime : _normalizeSendTime(result.sendTime.toInt()),
+      status: result.status,
+      isRead: false,
+      attachedInfo: '',
+      ex: '',
+    );
+    if (idx >= 0) {
+      list[idx] = msgInfo;
+    } else {
+      _seenClientMsgIds.add(result.clientMsgId);
+      list.add(msgInfo);
+    }
+    newMessages[conversationId] = List<MessageInfo>.from(list);
+    this.state = this.state.copyWith(messages: newMessages);
   }
 
   /// 获取指定用户资料（命中缓存时）
@@ -239,22 +277,20 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  Future<void> sendTextMessage({
+  Future<Message> sendTextMessage({
     required String recvId,
     required String text,
     required SessionType sessionType,
     required String conversationId,
     String groupId = '',
   }) async {
-    if (_client == null) {
-      throw StateError('客户端未初始化');
-    }
+    if (_client == null) throw StateError('客户端未初始化');
     if (recvId.trim().isEmpty && groupId.trim().isEmpty) {
       throw ArgumentError('recvId 与 groupId 至少填一个');
     }
 
     final sourceId = groupId.isNotEmpty ? groupId : recvId;
-    await _client!.sendTextMessage(
+    return _client!.sendTextMessage(
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -262,7 +298,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送 Markdown 消息
-  Future<void> sendMarkdownMessage({
+  Future<Message> sendMarkdownMessage({
     required String recvId,
     required String text,
     required SessionType sessionType,
@@ -271,7 +307,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
     final sourceId = groupId.isNotEmpty ? groupId : recvId;
-    await _client!.sendMarkdownMessage(
+    return _client!.sendMarkdownMessage(
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -293,13 +329,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送图片消息
-  Future<void> sendImageMessage({
+  Future<Message> sendImageMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await _client!.sendImageMessage(
+    return _client!.sendImageMessage(
       filePath: filePath,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -307,7 +343,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送视频消息
-  Future<void> sendVideoMessage({
+  Future<Message> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
@@ -315,7 +351,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required int duration,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await _client!.sendVideoMessage(
+    return _client!.sendVideoMessage(
       videoPath: videoPath,
       snapshotPath: snapshotPath,
       sourceId: sourceId,
@@ -325,14 +361,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送语音消息
-  Future<void> sendSoundMessage({
+  Future<Message> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
     required int duration,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await _client!.sendSoundMessage(
+    return _client!.sendSoundMessage(
       filePath: filePath,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -341,13 +377,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送文件消息
-  Future<void> sendFileMessage({
+  Future<Message> sendFileMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await _client!.sendFileMessage(
+    return _client!.sendFileMessage(
       filePath: filePath,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -355,7 +391,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送位置消息
-  Future<void> sendLocationMessage({
+  Future<Message> sendLocationMessage({
     required String description,
     required double latitude,
     required double longitude,
@@ -363,7 +399,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await fb.sendLocationMessage(
+    return fb.sendLocationMessage(
       description: description,
       latitude: latitude,
       longitude: longitude,
@@ -373,14 +409,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送表情消息
-  Future<void> sendFaceMessage({
+  Future<Message> sendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await fb.sendFaceMessage(
+    return fb.sendFaceMessage(
       index: index,
       data: data,
       sourceId: sourceId,
@@ -389,7 +425,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送名片消息
-  Future<void> sendCardMessage({
+  Future<Message> sendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -398,7 +434,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await fb.sendCardMessage(
+    return fb.sendCardMessage(
       userId: userId,
       nickname: nickname,
       faceUrl: faceUrl,
@@ -409,7 +445,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送引用消息
-  Future<void> sendQuoteMessage({
+  Future<Message> sendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -419,7 +455,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required int quoteSendTime,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await fb.sendQuoteMessage(
+    return fb.sendQuoteMessage(
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -492,9 +528,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         _client = null;
       }
 
-      appLog.i('[MessageService] 即将调用 initLogger');
+      appLog.i('[MessageService] 初始化日志和 SDK 客户端...');
       await initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
-      appLog.i('[MessageService] initLogger 完成');
 
       final String resolvedUserId;
       final String resolvedImToken;
@@ -504,17 +539,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           imToken.isNotEmpty) {
         resolvedUserId = userId;
         resolvedImToken = imToken;
-        appLog.i('✅ 使用传入凭证连接，用户ID: $resolvedUserId');
+        appLog.i('[MessageService] 用户ID: $resolvedUserId');
       } else {
         throw StateError('缺少 userId 或 imToken，请先登录');
       }
 
       this.state = this.state.copyWith(currentUserId: resolvedUserId);
 
-      appLog.i('[MessageService] 即将调用 OpenImBridgeClient.newInstance');
       final docDir = await getApplicationDocumentsDirectory();
       final dataDir = '${docDir.path}/openim_data';
-      appLog.i('[MessageService] 数据目录: $dataDir');
       _client = await fb.OpenImBridgeClient.newInstance(
         config: ClientConfig(
           userId: resolvedUserId,
@@ -525,15 +558,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           dataDir: dataDir,
         ),
       );
-      appLog.i('[MessageService] newInstance 完成');
-
-      appLog.i('[MessageService] 立即加载本地缓存的会话列表');
       unawaited(_loadConversations());
 
       _eventStreamSubscription = _client!.eventStream().listen(
         _handleEvent,
       );
-      appLog.i('[MessageService] 流订阅已注册');
+      appLog.i('[MessageService] SDK 初始化完成，事件流已注册');
 
       this.state = this.state.copyWith(isConnected: true);
       appLog.i('✅ 客户端连接成功');
@@ -624,6 +654,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         _loadConversations();
       },
       connectFailed: (error) {
+        appLog.w('[MessageService] 连接失败: $error');
         this.state = this.state.copyWith(isConnected: false);
       },
       disconnected: (reason) {
@@ -631,54 +662,46 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         this.state = this.state.copyWith(isConnected: false);
       },
       kickedOffline: (reason) {
+        appLog.w('[MessageService] 被踢下线: $reason');
         this.state = this.state.copyWith(isConnected: false);
       },
       tokenExpired: () {
+        appLog.w('[MessageService] Token 已过期/无效，清除凭证并跳转登录页');
         this.state = this.state.copyWith(isConnected: false);
+        // 清除本地存储的凭证
+        LoginStorage.clearCredentials().catchError((_) {});
+        // 跳转到登录页（使用全局导航，无需 BuildContext）
+        NavigationService.instance.goToLogin();
       },
       syncStarted: () {
+        appLog.i('[Sync] 同步开始');
         this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: 0);
       },
       syncFinished: () {
+        appLog.i('[Sync] 同步完成');
         this.state = this.state.copyWith(isSyncingConversations: false, syncProgress: 100);
         _loadConversations();
       },
       syncProgress: (progress, message) {
+        appLog.i('[Sync] 进度: $progress% $message');
         this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: progress);
       },
       syncFailed: (error) {
+        appLog.w('[Sync] 同步失败: $error');
         this.state = this.state.copyWith(isSyncingConversations: false);
       },
       newConversation: (conversations) {
+        appLog.i('[ConvEvent] 新会话: ${conversations.length} 条');
         _loadConversations();
       },
       conversationChanged: (conversations) {
-        appLog.i('[ConvEvent] conversationChanged 收到 ${conversations.length} 条');
+        appLog.i('[ConvEvent] 会话变更: ${conversations.length} 条 [${conversations.map((c) => "${c.conversationId}(unread=${c.unreadCount})").join(", ")}]');
         for (final conv in conversations) {
-          // 查找内存中已有的会话，保留本地维护的字段（latestMsg 等）
-          // 服务端同步不返回这些字段，但 Rust DAO 的 upsert_preserving_local_fields
-          // 已在数据库层保留；这里需要在内存层也做同样保留，避免被空值覆盖
+          // 查找内存中已有的会话，保留本地维护的字段
           final existing = state.conversations.cast<LocalConversation?>().firstWhere(
             (c) => c?.conversationId == conv.conversationId,
             orElse: () => null,
           );
-          appLog.i(
-            '[ConvEvent] ${conv.conversationId} | '
-            '事件数据: showName="${conv.showName}" faceUrl="${conv.faceUrl}" '
-            'latestMsg="${conv.latestMsg.length > 40 ? conv.latestMsg.substring(0, 40) : conv.latestMsg}" '
-            'latestMsgSendTime=${conv.latestMsgSendTime} unread=${conv.unreadCount} '
-            'pinned=${conv.isPinned} recvMsgOpt=${conv.recvMsgOpt}',
-          );
-          if (existing != null) {
-            appLog.i(
-              '[ConvEvent] ${conv.conversationId} | '
-              '内存已有: showName="${existing.showName}" faceUrl="${existing.faceUrl}" '
-              'latestMsg="${existing.latestMsg.length > 40 ? existing.latestMsg.substring(0, 40) : existing.latestMsg}" '
-              'latestMsgSendTime=${existing.latestMsgSendTime} unread=${existing.unreadCount}',
-            );
-          } else {
-            appLog.i('[ConvEvent] ${conv.conversationId} | 内存中无此会话（首次）');
-          }
           _updateConversation(LocalConversation(
             conversationId: conv.conversationId,
             conversationType: conv.conversationType,
@@ -711,6 +734,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         _loadConversations();
       },
       newMessage: (message) {
+        appLog.i('[MSG] 新消息: conv=${message.conversationId} type=${message.contentType} from=${message.sendId} seq=${message.seq}');
         _loadConversations();
         final convId = message.conversationId;
         if (convId.isEmpty) return;
@@ -754,6 +778,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         senderNickname,
         senderFaceUrl,
       ) {
+        appLog.i('[MSG] 发送成功: clientMsgId=$clientMsgId serverMsgId=$serverMsgId conv=$conversationId status=$status');
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages.putIfAbsent(conversationId, () => []);
         final existingIndex = list.indexWhere((m) => m.clientMsgId == clientMsgId);
@@ -913,6 +938,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.i('[MessageService] C2C已读回执处理完成');
       },
       groupReadReceipt: (receipts) {
+        appLog.i('[READ] 群已读回执: ${receipts.length} 条');
         for (final receipt in receipts) {
           final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
           final convId = receipt.groupId; // 群聊会话 ID
@@ -950,6 +976,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.i('[MessageService] 群聊已读回执处理完成');
       },
       messagesDeleted: (conversationId, clientMsgIds) {
+        appLog.i('[MSG] 消息删除: conv=$conversationId count=${clientMsgIds.length}');
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages[conversationId];
         if (list != null) {
@@ -962,6 +989,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       },
       msgEdited: (message) {
         final convId = message.conversationId;
+        appLog.i('[MSG] 消息编辑: conv=$convId msgId=${message.clientMsgId}');
         if (convId.isEmpty) return;
         final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
         final list = newMessages[convId];
@@ -974,16 +1002,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           newMessages[convId] = List<MessageInfo>.from(list);
         }
         this.state = this.state.copyWith(messages: newMessages);
-        appLog.i('[MessageService] 消息已编辑: conv=$convId, msgId=${message.clientMsgId}');
       },
       totalUnreadCountChanged: (count) {
         // 会话变更已由 conversationChanged 事件单独处理，无需重新加载全部会话
       },
       conversationUserInputStatusChanged: (data) {
-        // 输入状态由 chat_detail_screen 直接处理
-        appLog.d('[MessageService] 输入状态变化: conv=${data.conversationId}, user=${data.userId}');
+        appLog.i('[Input] 输入状态: conv=${data.conversationId} user=${data.userId} platforms=${data.platformIds}');
       },
       recvOfflineNewMessage: (messages) {
+        appLog.i('[MSG] 离线消息: ${messages.length} 条');
         _loadConversations();
         for (final message in messages) {
           final convId = message.conversationId;
@@ -1059,12 +1086,13 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       },
       // ---- 用户事件 ----
       userInfoUpdated: (user) {
+        appLog.i('[User] 用户信息更新: ${user.userId}');
         final newProfiles = Map<String, UserInfo>.from(this.state.userProfiles);
         newProfiles[user.userId] = user;
         this.state = this.state.copyWith(userProfiles: newProfiles);
       },
       userStatusChanged: (userId, status, platformIds) {
-        appLog.d('[MessageService] 用户状态变化: $userId, status=$status');
+        appLog.i('[User] 在线状态: $userId status=$status platforms=$platformIds');
       },
       // ---- 黑名单事件 ----
       blackAdded: (userId) {

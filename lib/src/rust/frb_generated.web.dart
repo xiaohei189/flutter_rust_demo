@@ -146,6 +146,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Message dco_decode_box_autoadd_message(dynamic raw);
+
+  @protected
   MessageExtensionData dco_decode_box_autoadd_message_extension_data(
     dynamic raw,
   );
@@ -299,6 +302,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
+
+  @protected
+  Message dco_decode_message(dynamic raw);
 
   @protected
   MessageEntity dco_decode_message_entity(dynamic raw);
@@ -474,6 +480,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq sse_decode_box_autoadd_mark_messages_as_read_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  Message sse_decode_box_autoadd_message(SseDeserializer deserializer);
 
   @protected
   MessageExtensionData sse_decode_box_autoadd_message_extension_data(
@@ -669,6 +678,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MarkMessagesAsReadReq sse_decode_mark_messages_as_read_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  Message sse_decode_message(SseDeserializer deserializer);
 
   @protected
   MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
@@ -869,6 +881,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     MarkMessagesAsReadReq self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_box_autoadd_message(Message self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_message_extension_data(
@@ -1129,6 +1144,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     MarkMessagesAsReadReq self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_message(Message self, SseSerializer serializer);
 
   @protected
   void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);

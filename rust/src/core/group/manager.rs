@@ -19,7 +19,7 @@ use crate::infra::http::routes::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetJoinedGroupListReq {
@@ -368,7 +368,7 @@ impl GroupManager {
 
     pub async fn set_user_id(&self, user_id: String) {
         *self.user_id.write().await = user_id.clone();
-        info!("GroupManager user_id 已更新为: {}", user_id);
+        debug!("GroupManager user_id 已更新为: {}", user_id);
     }
 
     pub async fn get_joined_group_list(&self) -> Vec<GroupInfo> {

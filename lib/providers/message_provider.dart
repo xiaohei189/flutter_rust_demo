@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../services/message_service_notifier.dart';
 import '../src/rust/domain/constant/enums.dart';
+import '../src/rust/api/bridge_client.dart' show Message;
 import 'message_service_provider.dart';
 
 /// 消息列表状态
@@ -105,7 +106,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     }
   }
 
-  /// 发送文本消息
+  /// 发送文本消息（对齐 Go SDK：返回值直接用于列表更新）
   Future<bool> sendTextMessage({
     required String recvId,
     required String text,
@@ -113,14 +114,14 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendTextMessage(
+      final result = await _messageService.sendTextMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
         conversationId: _conversationId,
         groupId: groupId ?? '',
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送消息失败: $e');
@@ -136,19 +137,27 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendMarkdownMessage(
+      final result = await _messageService.sendMarkdownMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
         conversationId: _conversationId,
         groupId: groupId ?? '',
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送消息失败: $e');
       return false;
     }
+  }
+
+  /// 用发送结果构建 MessageInfo 并添加到列表中（对齐 Go SDK sendMessage 返回值）
+  void _addSentMessage(Message result) {
+    // 同步写入全局状态，确保 _syncState() 不会覆盖掉这条消息
+    _messageService.upsertSentMessage(_conversationId, result);
+    // 再更新本地列表
+    _syncState();
   }
 
   /// 通用发送辅助：统一 sourceId 计算 + 错误处理
@@ -163,12 +172,12 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendImageMessage(
+      final result = await _messageService.sendImageMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送图片失败: $e');
@@ -186,14 +195,14 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendVideoMessage(
+      final result = await _messageService.sendVideoMessage(
         videoPath: videoPath,
         snapshotPath: snapshotPath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
         duration: duration,
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送视频失败: $e');
@@ -210,13 +219,13 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendSoundMessage(
+      final result = await _messageService.sendSoundMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
         duration: duration,
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送语音失败: $e');
@@ -232,12 +241,12 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendFileMessage(
+      final result = await _messageService.sendFileMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送文件失败: $e');
@@ -255,14 +264,14 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      await _messageService.sendLocationMessage(
+      final result = await _messageService.sendLocationMessage(
         description: description,
         latitude: latitude,
         longitude: longitude,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
       );
-      _syncState();
+      _addSentMessage(result);
       return true;
     } catch (e) {
       state = state.copyWith(error: '发送位置失败: $e');
