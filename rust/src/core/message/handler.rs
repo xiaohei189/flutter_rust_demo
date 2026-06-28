@@ -438,7 +438,9 @@ impl MessageHandler {
         }
 
         let mut seen_convs = std::collections::HashSet::new();
-        for msg in &to_notify {
+        // clone to_notify 以避免 borrow 与后续消费冲突（async 循环延长 borrow 生命周期）
+        let to_notify_cloned = to_notify.clone();
+        for msg in &to_notify_cloned {
             let is_conversation_update = Self::should_update_conversation(msg.content_type);
             let is_self = msg.send_id == login_user_id;
 
@@ -527,14 +529,54 @@ impl MessageHandler {
             normal_messages.len(), insert_list.len(), normal_messages.len() - insert_list.len());
 
         // 离线新消息通知（对齐 Go SDK OnRecvOfflineNewMessage）
-        // 同步过程中收到的消息需要额外通知上层 UI
-        if is_from_sync && !to_notify.is_empty() {
-            let offline_msgs: Vec<ReceivedMessage> = to_notify.into_iter()
+        // 同步过程中收到的消息需要额外通知上层 UI（必须在 for msg in &to_notify 之后消费）
+        let offline_msgs: Vec<ReceivedMessage> = if is_from_sync && !to_notify.is_empty() {
+            to_notify.into_iter()
                 .filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING)
-                .collect();
-            if !offline_msgs.is_empty() {
-                self.event_bus.publish(SdkEvent::RecvOfflineNewMessage {
-                    messages: offline_msgs,
+                .collect()
+        } else {
+            Vec::new()
+        };
+        if !offline_msgs.is_empty() {
+            self.event_bus.publish(SdkEvent::RecvOfflineNewMessage {
+                messages: offline_msgs,
+            });
+        }
+
+        // 对齐 Go SDK：所有消息处理完成后统一发布会话变更
+        for conv_id in &seen_convs {
+            if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&conv_id).await {
+                let conversation = crate::domain::model::conversation::Conversation {
+                    conversation_id: conv.conversation_id,
+                    conversation_type: conv.conversation_type,
+                    user_id: conv.user_id,
+                    group_id: conv.group_id,
+                    show_name: conv.show_name,
+                    face_url: conv.face_url,
+                    latest_msg: conv.latest_msg,
+                    latest_msg_send_time: conv.latest_msg_send_time,
+                    unread_count: conv.unread_count,
+                    recv_msg_opt: conv.recv_msg_opt,
+                    is_pinned: conv.is_pinned != 0,
+                    is_not_in_group: conv.is_not_in_group != 0,
+                    draft_text: conv.draft_text,
+                    draft_text_time: conv.draft_text_time,
+                    is_private_chat: conv.is_private_chat != 0,
+                    burn_duration: conv.burn_duration as i32,
+                    group_at_type: conv.group_at_type,
+                    update_unread_count_time: conv.update_unread_count_time,
+                    latest_msg_seq: conv.max_seq,
+                    max_seq: conv.max_seq,
+                    min_seq: conv.min_seq,
+                    is_msg_destruct: conv.is_msg_destruct != 0,
+                    msg_destruct_time: conv.msg_destruct_time,
+                    update_flag: 0,
+                    sync_action: None,
+                    is_private: conv.is_private_chat != 0,
+                    ex: conv.ex,
+                };
+                let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
+                    conversations: vec![conversation],
                 });
             }
         }
@@ -784,42 +826,8 @@ impl MessageHandler {
             self.conversation_dao.update_unread_count(conversation_id, 0).await?;
         }
 
-        // 发布会话变更 + 全局未读数变更事件（对齐 Go SDK L215-223）
-        if let Ok(Some(conv)) = self.conversation_dao.get_by_id(conversation_id).await {
-            let conversation = crate::domain::model::conversation::Conversation {
-                conversation_id: conv.conversation_id,
-                conversation_type: conv.conversation_type,
-                user_id: conv.user_id,
-                group_id: conv.group_id,
-                show_name: conv.show_name,
-                face_url: conv.face_url,
-                latest_msg: conv.latest_msg,
-                latest_msg_send_time: conv.latest_msg_send_time,
-                unread_count: conv.unread_count,
-                recv_msg_opt: conv.recv_msg_opt,
-                is_pinned: conv.is_pinned != 0,
-                is_not_in_group: conv.is_not_in_group != 0,
-                draft_text: conv.draft_text,
-                draft_text_time: conv.draft_text_time,
-                is_private_chat: conv.is_private_chat != 0,
-                burn_duration: conv.burn_duration as i32,
-                group_at_type: conv.group_at_type,
-                update_unread_count_time: conv.update_unread_count_time,
-                latest_msg_seq: conv.max_seq,
-                max_seq: conv.max_seq,
-                min_seq: conv.min_seq,
-                is_msg_destruct: conv.is_msg_destruct != 0,
-                msg_destruct_time: conv.msg_destruct_time,
-                update_flag: 0,
-                sync_action: None,
-                is_private: conv.is_private_chat != 0,
-                ex: conv.ex,
-            };
-            let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
-                conversations: vec![conversation],
-            });
-        }
-
+        // 对齐 Go SDK：doUnreadCount 只触发未读总数变更，不单独发布 ConversationChanged
+        // ConversationChanged 由 handle_messages_internal 末尾统一发布，避免中间态闪烁
         if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
             let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
         }
