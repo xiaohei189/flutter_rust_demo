@@ -227,8 +227,8 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: SessionType) -> Result<()> {
-        self.inner.mark_conversation_as_read(conversation_id, session_type.into()).await
+    pub async fn mark_conversation_message_as_read(&self, conversation_id: String, session_type: SessionType) -> Result<()> {
+        self.inner.mark_conversation_message_as_read(conversation_id, session_type.into()).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 

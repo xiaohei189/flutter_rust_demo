@@ -1217,14 +1217,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 标记会话为已读
-  Future<void> markConversationAsRead(String conversationId) async {
+  Future<void> markConversationMessageAsRead(String conversationId) async {
     if (_client == null) return;
     try {
       // 从本地状态查找会话类型
       final conv = this.state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
       final sessionType = conv?.sessionType ?? SessionType.singleChat;
       appLog.i('[READ] Service 标记已读: sessionType=$sessionType');
-      await _client!.markConversationAsRead(conversationId: conversationId, sessionType: sessionType);
+      await _client!.markConversationMessageAsRead(conversationId: conversationId, sessionType: sessionType);
       // 更新本地会话未读数
       final newConversations = List<LocalConversation>.from(this.state.conversations);
       final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);

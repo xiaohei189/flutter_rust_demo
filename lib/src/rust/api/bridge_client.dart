@@ -614,7 +614,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> logout();
 
-  Future<void> markConversationAsRead({
+  Future<void> markConversationMessageAsRead({
     required String conversationId,
     required SessionType sessionType,
   });

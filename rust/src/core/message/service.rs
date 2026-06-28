@@ -253,7 +253,7 @@ impl MessageService {
     ///   Group/Notification: markConversationAsReadServer(hasReadSeq, nil)
     /// L98-100: UpdateColumnsConversation(unread_count=0)
     /// L102: unreadChangeTrigger(peerUserMaxSeq == maxSeq)
-    pub async fn mark_conversation_as_read(&self, conversation_id: String, _session_type: i32) -> Result<()> {
+    pub async fn mark_conversation_message_as_read(&self, conversation_id: String, _session_type: i32) -> Result<()> {
         let user_id = self.user_id.lock().unwrap().clone();
 
         // L49: GetConversation
@@ -433,7 +433,7 @@ impl MessageService {
 
     /// 标记所有会话消息已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
     ///
-    /// 遍历所有未读会话，逐个调用 `mark_conversation_as_read` 标记已读
+    /// 遍历所有未读会话，逐个调用 `mark_conversation_message_as_read` 标记已读
     pub async fn mark_all_conversation_as_read(&self) -> Result<()> {
         let conversations = self.conversation_dao.get_all().await?;
         let user_id = self.user_id.lock().unwrap().clone();

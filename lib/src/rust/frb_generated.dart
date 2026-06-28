@@ -81,7 +81,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1419092269;
+  int get rustContentHash => -1134091754;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -393,7 +393,8 @@ abstract class RustLibApi extends BaseApi {
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiBridgeClientOpenImBridgeClientMarkConversationAsRead({
+  Future<void>
+  crateApiBridgeClientOpenImBridgeClientMarkConversationMessageAsRead({
     required OpenImBridgeClient that,
     required String conversationId,
     required SessionType sessionType,
@@ -3144,7 +3145,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiBridgeClientOpenImBridgeClientMarkConversationAsRead({
+  Future<void>
+  crateApiBridgeClientOpenImBridgeClientMarkConversationMessageAsRead({
     required OpenImBridgeClient that,
     required String conversationId,
     required SessionType sessionType,
@@ -3171,7 +3173,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiBridgeClientOpenImBridgeClientMarkConversationAsReadConstMeta,
+            kCrateApiBridgeClientOpenImBridgeClientMarkConversationMessageAsReadConstMeta,
         argValues: [that, conversationId, sessionType],
         apiImpl: this,
       ),
@@ -3179,9 +3181,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiBridgeClientOpenImBridgeClientMarkConversationAsReadConstMeta =>
+  get kCrateApiBridgeClientOpenImBridgeClientMarkConversationMessageAsReadConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_mark_conversation_as_read",
+        debugName: "OpenImBridgeClient_mark_conversation_message_as_read",
         argNames: ["that", "conversationId", "sessionType"],
       );
 
@@ -11313,11 +11315,11 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<void> logout() => RustLib.instance.api
       .crateApiBridgeClientOpenImBridgeClientLogout(that: this);
 
-  Future<void> markConversationAsRead({
+  Future<void> markConversationMessageAsRead({
     required String conversationId,
     required SessionType sessionType,
   }) => RustLib.instance.api
-      .crateApiBridgeClientOpenImBridgeClientMarkConversationAsRead(
+      .crateApiBridgeClientOpenImBridgeClientMarkConversationMessageAsRead(
         that: this,
         conversationId: conversationId,
         sessionType: sessionType,

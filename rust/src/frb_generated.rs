@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1419092269;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1134091754;
 
 // Section: executor
 
@@ -2197,7 +2197,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_logout_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_as_read_impl(
+fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message_as_read_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2205,7 +2205,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_as_read
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "OpenImBridgeClient_mark_conversation_as_read",
+            debug_name: "OpenImBridgeClient_mark_conversation_message_as_read",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
@@ -2228,7 +2228,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_as_read
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mark_conversation_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
+                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mark_conversation_message_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6815,7 +6815,7 @@ fn pde_ffi_dispatcher_primary_impl(
         53 => wire__crate__api__bridge_client__OpenImBridgeClient_join_group_impl(port, ptr, rust_vec_len, data_len),
         54 => wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(port, ptr, rust_vec_len, data_len),
         55 => wire__crate__api__bridge_client__OpenImBridgeClient_logout_impl(port, ptr, rust_vec_len, data_len),
-        56 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_as_read_impl(port, ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
         57 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_impl(port, ptr, rust_vec_len, data_len),
         58 => wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_impl(port, ptr, rust_vec_len, data_len),
         59 => wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_member_impl(port, ptr, rust_vec_len, data_len),

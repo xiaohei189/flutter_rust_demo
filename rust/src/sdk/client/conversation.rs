@@ -72,8 +72,8 @@ impl OpenIMClient {
         self.conversation.clear_draft(conversation_id).await
     }
 
-    pub async fn mark_conversation_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
-        self.message_service.mark_conversation_as_read(conversation_id, session_type).await
+    pub async fn mark_conversation_message_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
+        self.message_service.mark_conversation_message_as_read(conversation_id, session_type).await
     }
 
     /// 标记所有会话消息已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）

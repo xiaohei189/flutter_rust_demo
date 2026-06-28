@@ -66,12 +66,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       ref.read(selectedConversationIdProvider.notifier).state = widget.conversationId;
       if (!widget.preLoaded) _loadMessages();
       if (mounted) setState(() => _bodyReady = true);
-      _markConversationAsRead();
+      _markConversationMessageAsRead();
       _restoreDraft();
     });
   }
 
-  Future<void> _markConversationAsRead() async {
+  Future<void> _markConversationMessageAsRead() async {
     // 使用缓存的 service 引用，避免在 dispose 时访问 ref
     final service = _messageService;
     if (service == null) {
@@ -103,7 +103,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
     try {
       appLog.i('[READ] 标记会话已读: ${widget.conversationId}, 当前未读数: ${conv.unreadCount}');
-      await service.markConversationAsRead(widget.conversationId);
+      await service.markConversationMessageAsRead(widget.conversationId);
       appLog.i('[READ] 标记会话已读完成: ${widget.conversationId}');
     } catch (e) {
       appLog.e('[READ] 标记已读失败: $e');
@@ -166,7 +166,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     // 同步保存草稿到内存（异步保存到数据库）
     _saveDraftOnExit();
     // 标记已读（异步，但不需要等待完成）
-    _markConversationAsRead();
+    _markConversationMessageAsRead();
   }
 
   /// 获取会话信息
@@ -818,7 +818,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                         onMessageVisible: (msg) {
                           // 逐条标记已读（对齐 Go SDK VisibilityDetector 模式）
                           if (!msg.isRead && msg.sendId != (currentUserId.isNotEmpty ? currentUserId : null)) {
-                            _markConversationAsRead();
+                            _markConversationMessageAsRead();
                           }
                         },
                         onMessageLongPress: (msg) => showMessageActionMenu(
