@@ -65,6 +65,7 @@ pub struct ConnectionManager {
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
     push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>>,
     connection_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConnectionListener>>>>,
+    pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
 
 impl ConnectionManager {
@@ -97,10 +98,10 @@ impl ConnectionManager {
             message_batcher,
             push_tx,
             connection_listener: Arc::new(std::sync::RwLock::new(None)),
+            on_connected_hook: Arc::new(std::sync::Mutex::new(None)),
         }
     }
 
-    /// 设置连接事件 listener（对齐 Go SDK SetConnectionListener）
     pub fn set_connection_listener(&self, l: Arc<dyn ConnectionListener>) {
         *self.connection_listener.write().unwrap() = Some(l);
     }
@@ -109,7 +110,10 @@ impl ConnectionManager {
         if let Some(l) = &*self.connection_listener.read().unwrap() { f(&**l); }
     }
 
-    pub fn on_connected(&self) { self.notify_conn(|l| l.on_connected()); }
+    pub fn on_connected(&self) {
+        self.notify_conn(|l| l.on_connected());
+        if let Some(hook) = &*self.on_connected_hook.lock().unwrap() { hook(); }
+    }
     fn on_connecting(&self) { self.notify_conn(|l| l.on_connecting()); }
     fn on_disconnected(&self, r: &str) { self.notify_conn(|l| l.on_disconnected(r)); }
     fn on_kicked_offline(&self, r: &str) { self.notify_conn(|l| l.on_kicked_offline(r)); }

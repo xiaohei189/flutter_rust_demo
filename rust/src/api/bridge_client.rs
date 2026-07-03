@@ -167,12 +167,8 @@ impl OpenIMBridgeClient {
 
     #[flutter_rust_bridge::frb]
     pub async fn event_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        let mut rx = crate::domain::listener::bridge::start_event_stream(
-            self.inner.connection_listener(),
-            self.inner.conversation_listener(),
-            self.inner.friend_listener(),
-            self.inner.group_listener(),
-        );
+        let (mut rx, bridge) = crate::domain::listener::bridge::start_event_stream();
+        self.inner.setup_listeners(bridge);
         tokio::spawn(async move {
             while let Some(event) = rx.recv().await {
                 let _ = sink.add(event);

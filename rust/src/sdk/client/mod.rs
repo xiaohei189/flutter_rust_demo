@@ -4,10 +4,7 @@ mod conversation;
 mod friend;
 mod group;
 
-use crate::domain::listener::connection::ConnectionListeners;
-use crate::domain::listener::conversation::ConversationListeners;
-use crate::domain::listener::friend::FriendListeners;
-use crate::domain::listener::group::GroupListeners;
+use crate::domain::listener::bridge::BridgeImpl;
 mod online_status;
 pub mod types;
 mod user;
@@ -85,16 +82,14 @@ pub struct OpenIMClient {
 }
 
 impl OpenIMClient {
-    pub fn connection_listener(&self) -> &Arc<ConnectionListeners> {
-        self.connection.connection_listener()
-    }
-    pub fn conversation_listener(&self) -> &Arc<ConversationListeners> {
-        self.message_handler.conversation_listener()
-    }
-    pub fn friend_listener(&self) -> &Arc<FriendListeners> {
-        self.friend.friend_listener()
-    }
-    pub fn group_listener(&self) -> &Arc<GroupListeners> {
-        self.group.group_listener()
+    pub fn setup_listeners(&self, bridge: Arc<BridgeImpl>) {
+        self.connection.set_connection_listener(bridge.clone());
+        self.message_handler.set_conversation_listener(bridge.clone());
+        self.friend.set_friend_listener(bridge.clone());
+        self.group.set_group_listener(bridge.clone());
+        self.message_syncer.set_conversation_listener(bridge.clone());
+        self.conversation_syncer.set_conversation_listener(bridge.clone());
+        self.conversation.set_conversation_listener(bridge.clone());
+        self.message_service.set_conversation_listener(bridge);
     }
 }
