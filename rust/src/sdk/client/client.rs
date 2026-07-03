@@ -168,6 +168,39 @@ impl OpenIMClient {
         let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<PushMessages>();
         self.connection.set_push_sender(push_tx);
 
+        // 对齐 Go SDK：Connected 事件通过 listener 直接回调，不走 EventBus
+        let mh = message_handler.clone();
+        let ms = message_syncer.clone();
+        let cs = conversation_syncer.clone();
+        let ct = cancel_token.clone();
+        self.connection.connection_listener().on_connected.register(move |_| {
+            let mh = mh.clone();
+            let ms = ms.clone();
+            let cs = cs.clone();
+            let ct = ct.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                if ct.is_cancelled() {
+                    return;
+                }
+                if ms.is_connection_kicked().await {
+                    info!("push_message_handler: connection was kicked, skipping sync");
+                    return;
+                }
+                info!("push_message_handler: connection established, syncing conversations then messages");
+                if let Err(e) = cs.sync_incremental().await {
+                    warn!("push_message_handler: conversation sync after reconnect failed, falling back to full sync: {:?}", e);
+                    if let Err(e2) = cs.sync_full().await {
+                        warn!("push_message_handler: conversation full sync failed: {:?}", e2);
+                    }
+                }
+                if let Err(e) = ms.sync_after_reconnect().await {
+                    warn!("push_message_handler: message sync after reconnect failed: {:?}", e);
+                }
+                mh.publish_total_unread_count_changed().await;
+            });
+        });
+
         tokio::spawn(async move {
             let mut subscription = event_bus.subscribe();
             debug!("push_message_handler: started");
@@ -179,28 +212,6 @@ impl OpenIMClient {
                     }
                     event = subscription.next() => {
                         match event {
-                            Some(SdkEvent::Connected) => {
-                                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                                if cancel_token.is_cancelled() {
-                                    break;
-                                }
-                                if message_syncer.is_connection_kicked().await {
-                                    info!("push_message_handler: connection was kicked, skipping sync");
-                                    continue;
-                                }
-                                info!("push_message_handler: connection established, syncing conversations then messages");
-                                // 对齐 Go SDK：先同步会话，再同步消息
-                                if let Err(e) = conversation_syncer.sync_incremental().await {
-                                    warn!("push_message_handler: conversation sync after reconnect failed, falling back to full sync: {:?}", e);
-                                    if let Err(e2) = conversation_syncer.sync_full().await {
-                                        warn!("push_message_handler: conversation full sync failed: {:?}", e2);
-                                    }
-                                }
-                                if let Err(e) = message_syncer.sync_after_reconnect().await {
-                                    warn!("push_message_handler: message sync after reconnect failed: {:?}", e);
-                                }
-                                message_handler.publish_total_unread_count_changed().await;
-                            }
                             Some(SdkEvent::PushNotificationMessages { msgs, .. }) => {
                                 notification_handler.handle_notifications(&msgs).await;
                             }

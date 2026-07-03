@@ -104,6 +104,11 @@ impl ConnectionManager {
         }
     }
 
+    /// 获取 ConnectionListener
+    pub fn connection_listener(&self) -> &Arc<ConnectionListener> {
+        &self.connection_listener
+    }
+
     /// 设置内部消息通道发送端（由 client.rs 在 login 后调用）
     pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<PushMessages>) {
         *self.push_tx.lock().unwrap() = Some(tx);
