@@ -96,7 +96,6 @@ impl OpenIMClient {
             context.sync_version_dao.clone(),
             context.notification_seq_dao.clone(),
             message_handler.clone(),
-            conversation_listener.clone(),
             config.user_id.clone(),
         ));
 
