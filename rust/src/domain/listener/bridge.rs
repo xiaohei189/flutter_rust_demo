@@ -58,8 +58,6 @@ impl FriendListener for BridgeImpl {
 }
 
 impl GroupListener for BridgeImpl {
-    fn on_joined_group_added(&self, g: &crate::domain::model::group::GroupInfo) { let _ = self.tx.send(SdkEvent::JoinedGroupAdded { group: g.clone() }); }
-    fn on_joined_group_deleted(&self, g: &crate::domain::model::group::GroupInfo) { let _ = self.tx.send(SdkEvent::JoinedGroupDeleted { group: g.clone() }); }
     fn on_group_info_changed(&self, g: &crate::domain::model::group::GroupInfo) { let _ = self.tx.send(SdkEvent::GroupInfoChanged { group_id: g.group_id.clone() }); }
     fn on_group_read_receipt(&self, r: &[crate::domain::event::types::GroupReadReceipt]) { let _ = self.tx.send(SdkEvent::GroupReadReceipt { receipts: r.to_vec() }); }
 }

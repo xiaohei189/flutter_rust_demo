@@ -378,7 +378,7 @@ impl ConversationSyncer {
         info!("全量同步完成，同步 {} 个会话", conversations.len());
 
         if let Ok(count) = self.dao.count().await {
-            self.conversation_listener.on_total_unread_count_changed.notify(&(count as i64));
+            self.on_total_unread_count_changed(count as i64);
         }
 
         Ok(conversations)

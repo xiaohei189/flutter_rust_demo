@@ -377,6 +377,7 @@ impl ConnectionManager {
             message_batcher: MessageBatcher::new(|_, _| {}),
             push_tx: self.push_tx.clone(),
             connection_listener: self.connection_listener.clone(),
+            on_connected_hook: self.on_connected_hook.clone(),
         }
     }
 

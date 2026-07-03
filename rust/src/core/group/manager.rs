@@ -2,6 +2,7 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::listener::group::GroupListener;
+use crate::domain::event::types::GroupReadReceipt;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::infra::database::group_dao::GroupDao;
 use crate::infra::database::models::LocalGroup;

@@ -161,38 +161,31 @@ impl OpenIMClient {
         let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<PushMessages>();
         self.connection.set_push_sender(push_tx);
 
-        // 对齐 Go SDK：Connected 事件通过 listener 直接回调，不走 EventBus
-        let mh = message_handler.clone();
-        let ms = message_syncer.clone();
-        let cs = conversation_syncer.clone();
-        let ct = cancel_token.clone();
-        self.connection.connection_listener().on_connected.register(move |_| {
-            let mh = mh.clone();
-            let ms = ms.clone();
-            let cs = cs.clone();
-            let ct = ct.clone();
-            tokio::spawn(async move {
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                if ct.is_cancelled() {
-                    return;
-                }
-                if ms.is_connection_kicked().await {
-                    info!("push_message_handler: connection was kicked, skipping sync");
-                    return;
-                }
-                info!("push_message_handler: connection established, syncing conversations then messages");
-                if let Err(e) = cs.sync_incremental().await {
-                    warn!("push_message_handler: conversation sync after reconnect failed, falling back to full sync: {:?}", e);
-                    if let Err(e2) = cs.sync_full().await {
-                        warn!("push_message_handler: conversation full sync failed: {:?}", e2);
+        // 对齐 Go SDK：Connected 事件直接回调同步，不走 EventBus
+        *self.connection.on_connected_hook.lock().unwrap() = Some(Box::new({
+            let mh = message_handler.clone();
+            let ms = message_syncer.clone();
+            let cs = conversation_syncer.clone();
+            let ct = cancel_token.clone();
+            move || {
+                let mh = mh.clone();
+                let ms = ms.clone();
+                let cs = cs.clone();
+                let ct = ct.clone();
+                tokio::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    if ct.is_cancelled() { return; }
+                    if ms.is_connection_kicked().await { info!("push_message_handler: connection was kicked, skipping sync"); return; }
+                    info!("push_message_handler: connection established, syncing conversations then messages");
+                    if let Err(e) = cs.sync_incremental().await {
+                        warn!("push_message_handler: conversation sync after reconnect failed: {:?}", e);
+                        let _ = cs.sync_full().await;
                     }
-                }
-                if let Err(e) = ms.sync_after_reconnect().await {
-                    warn!("push_message_handler: message sync after reconnect failed: {:?}", e);
-                }
-                mh.publish_total_unread_count_changed().await;
-            });
-        });
+                    let _ = ms.sync_after_reconnect().await;
+                    mh.publish_total_unread_count_changed().await;
+                });
+            }
+        }));
 
         tokio::spawn(async move {
             let mut subscription = event_bus.subscribe();
@@ -376,7 +369,7 @@ impl OpenIMClient {
             }
         }
 
-        self.connection.connection_listener().on_login_success.notify(&uid);
+        self.connection.on_login_success(&uid);
         debug!("[SDK] 用户登录成功: {}", user_id);
         Ok(())
     }
@@ -389,7 +382,7 @@ impl OpenIMClient {
         self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
 
-        self.connection.connection_listener().on_logout.notify(&());
+        self.connection.on_logout();
         info!("用户登出成功");
         Ok(())
     }

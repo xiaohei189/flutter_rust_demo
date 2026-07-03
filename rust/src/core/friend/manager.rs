@@ -782,7 +782,7 @@ impl FriendManager {
 
         self.blacks.write().await.retain(|id| id != &user_id);
 
-        self.friend_listener.on_black_deleted.notify(&user_id);
+        self.on_black_deleted(&user_id);
 
         info!("已从黑名单移除: {}", user_id);
         Ok(())

@@ -4,7 +4,6 @@ use crate::domain::event::EventBus;
 use crate::domain::event::types::{MessageReceipt, SdkEvent};
 use crate::domain::model::conversation::Conversation;
 use crate::domain::listener::conversation::ConversationListener;
-use crate::domain::model::conversation::Conversation;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
