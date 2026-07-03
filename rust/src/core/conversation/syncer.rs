@@ -1,8 +1,7 @@
 use serde::Deserializer;
 
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::EventBus;
-use crate::domain::event::types::SdkEvent;
+use crate::domain::listener::conversation::ConversationListener;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::sync_version_dao::SyncVersionDao;
@@ -174,7 +173,7 @@ fn server_to_domain(s: ServerConversation) -> Conversation {
 pub struct ConversationSyncer {
     http_client: Arc<HttpApiClient>,
     dao: Arc<ConversationDao>,
-    event_bus: Arc<EventBus>,
+    conversation_listener: Arc<ConversationListener>,
     sync_version_dao: Arc<SyncVersionDao>,
     user_id: Arc<RwLock<String>>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
@@ -187,14 +186,14 @@ impl ConversationSyncer {
     pub fn new(
         http_client: Arc<HttpApiClient>,
         dao: Arc<ConversationDao>,
-        event_bus: Arc<EventBus>,
+        conversation_listener: Arc<ConversationListener>,
         sync_version_dao: Arc<SyncVersionDao>,
         user_id: String,
     ) -> Self {
         Self {
             http_client,
             dao,
-            event_bus,
+            conversation_listener,
             sync_version_dao,
             user_id: Arc::new(RwLock::new(user_id)),
             connection: None,
@@ -258,9 +257,7 @@ impl ConversationSyncer {
         // 4. 处理增量变更
         for conv_id in &resp.delete {
             self.dao.delete(conv_id).await?;
-            self.event_bus.publish(SdkEvent::ConversationDeleted {
-                conversation_ids: vec![conv_id.clone()],
-            });
+            self.conversation_listener.on_deleted.notify(&vec![conv_id.clone()]);
         }
 
         for s in &resp.update {
@@ -282,9 +279,7 @@ impl ConversationSyncer {
                 .chain(resp.insert.iter())
                 .map(|s| server_to_domain(s.clone()))
                 .collect();
-            self.event_bus.publish(SdkEvent::ConversationChanged {
-                conversations: changed,
-            });
+            self.conversation_listener.on_changed.notify(&changed);
         }
 
         // 5. 持久化版本号到数据库（对齐 Go SDK `updateVersionInfo`）
@@ -367,16 +362,12 @@ impl ConversationSyncer {
             }
         }
 
-        self.event_bus.publish(SdkEvent::ConversationChanged {
-            conversations: conversations.clone(),
-        });
+        self.conversation_listener.on_changed.notify(&conversations);
 
         info!("全量同步完成，同步 {} 个会话", conversations.len());
 
         if let Ok(count) = self.dao.count().await {
-            self.event_bus.publish(SdkEvent::TotalUnreadCountChanged {
-                count: count as i64,
-            });
+            self.conversation_listener.on_total_unread_count_changed.notify(&(count as i64));
         }
 
         Ok(conversations)
@@ -507,9 +498,7 @@ impl ConversationSyncer {
                                 .iter()
                                 .map(|c| c.conversation_id.clone()),
                         );
-                        self.event_bus.publish(SdkEvent::ConversationChanged {
-                            conversations: conversations_to_insert,
-                        });
+                        self.conversation_listener.on_changed.notify(&conversations_to_insert);
                     }
                 }
                 Err(e) => {
@@ -635,7 +624,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let sync_version_dao = Arc::new(SyncVersionDao::new(pool));
-        let event_bus = Arc::new(EventBus::new());
+        let conversation_listener = Arc::new(crate::domain::listener::conversation::ConversationListener::new());
         let http_client = Arc::new(HttpApiClient::new(
             "http://localhost:10002".to_string(),
             "test_token".to_string(),
@@ -644,7 +633,7 @@ mod tests {
         let syncer = ConversationSyncer::new(
             http_client,
             dao,
-            event_bus,
+            conversation_listener,
             sync_version_dao,
             "test_user".to_string(),
         );
