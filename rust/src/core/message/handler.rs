@@ -5,7 +5,7 @@ use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::{GroupReadReceipt, MessageReceipt, SdkEvent};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::ConversationListeners;
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::infra::database::{ConversationDao, GroupDao, MessageDao, UserDao};
@@ -127,7 +127,7 @@ pub struct MessageHandler {
     group_dao: Arc<GroupDao>,
     user_id: std::sync::Mutex<String>,
     pub max_seq_recorder: Arc<MaxSeqRecorder>,
-    conversation_listener: Arc<ConversationListener>,
+    conversation_listener: Arc<ConversationListeners>,
 }
 
 impl MessageHandler {
@@ -136,7 +136,7 @@ impl MessageHandler {
         conversation_dao: Arc<ConversationDao>,
         user_dao: Arc<UserDao>,
         group_dao: Arc<GroupDao>,
-        conversation_listener: Arc<ConversationListener>,
+        conversation_listener: Arc<ConversationListeners>,
     ) -> Self {
         Self {
             message_dao,
@@ -149,7 +149,7 @@ impl MessageHandler {
         }
     }
 
-    pub fn conversation_listener(&self) -> &Arc<ConversationListener> {
+    pub fn conversation_listener(&self) -> &Arc<ConversationListeners> {
         &self.conversation_listener
     }
 

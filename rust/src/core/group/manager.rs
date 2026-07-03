@@ -1,7 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::group::GroupListener;
+use crate::domain::listener::group::GroupListeners;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::infra::database::group_dao::GroupDao;
 use crate::infra::database::models::LocalGroup;
@@ -345,7 +345,7 @@ pub struct GroupManager {
     members: Arc<RwLock<Vec<GroupMember>>>,
     group_dao: Arc<GroupDao>,
     sync_version_dao: Arc<SyncVersionDao>,
-    group_listener: Arc<GroupListener>,
+    group_listener: Arc<GroupListeners>,
 }
 
 impl GroupManager {
@@ -354,7 +354,7 @@ impl GroupManager {
         user_id: String,
         group_dao: Arc<GroupDao>,
         sync_version_dao: Arc<SyncVersionDao>,
-        group_listener: Arc<GroupListener>,
+        group_listener: Arc<GroupListeners>,
     ) -> Self {
         Self {
             http_client,
@@ -367,7 +367,7 @@ impl GroupManager {
         }
     }
 
-    pub fn group_listener(&self) -> &Arc<GroupListener> {
+    pub fn group_listener(&self) -> &Arc<GroupListeners> {
         &self.group_listener
     }
 

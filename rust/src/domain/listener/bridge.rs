@@ -4,9 +4,9 @@
 //! EventBus 完全移除后，这是唯一的 Dart 事件通道。
 
 use super::connection::ConnectionListeners;
-use super::conversation::ConversationListener;
-use super::friend::FriendListener;
-use super::group::GroupListener;
+use super::conversation::ConversationListeners;
+use super::friend::FriendListeners;
+use super::group::GroupListeners;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
 use std::sync::Arc;
@@ -14,9 +14,9 @@ use tokio::sync::mpsc;
 
 pub fn start_event_stream(
     conn: &Arc<ConnectionListeners>,
-    conv: &Arc<ConversationListener>,
-    friend: &Arc<FriendListener>,
-    group: &Arc<GroupListener>,
+    conv: &Arc<ConversationListeners>,
+    friend: &Arc<FriendListeners>,
+    group: &Arc<GroupListeners>,
 ) -> mpsc::UnboundedReceiver<SdkEvent> {
     let (tx, rx) = mpsc::unbounded_channel();
 

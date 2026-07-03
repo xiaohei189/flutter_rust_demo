@@ -1,7 +1,7 @@
 use serde::Deserializer;
 
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::ConversationListeners;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::sync_version_dao::SyncVersionDao;
@@ -173,7 +173,7 @@ fn server_to_domain(s: ServerConversation) -> Conversation {
 pub struct ConversationSyncer {
     http_client: Arc<HttpApiClient>,
     dao: Arc<ConversationDao>,
-    conversation_listener: Arc<ConversationListener>,
+    conversation_listener: Arc<ConversationListeners>,
     sync_version_dao: Arc<SyncVersionDao>,
     user_id: Arc<RwLock<String>>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
@@ -186,7 +186,7 @@ impl ConversationSyncer {
     pub fn new(
         http_client: Arc<HttpApiClient>,
         dao: Arc<ConversationDao>,
-        conversation_listener: Arc<ConversationListener>,
+        conversation_listener: Arc<ConversationListeners>,
         sync_version_dao: Arc<SyncVersionDao>,
         user_id: String,
     ) -> Self {
@@ -624,7 +624,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let sync_version_dao = Arc::new(SyncVersionDao::new(pool));
-        let conversation_listener = Arc::new(crate::domain::listener::conversation::ConversationListener::new());
+        let conversation_listener = Arc::new(crate::domain::listener::conversation::ConversationListeners::new());
         let http_client = Arc::new(HttpApiClient::new(
             "http://localhost:10002".to_string(),
             "test_token".to_string(),

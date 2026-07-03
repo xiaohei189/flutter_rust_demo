@@ -3,7 +3,7 @@ use crate::core::message::handler::MessageHandler;
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::ConversationListeners;
 use crate::infra::database::{ConversationDao, MessageDao, NotificationSeqDao, SyncVersionDao};
 use crate::infra::database::models::LocalNotificationSeq;
 use std::collections::HashMap;
@@ -31,7 +31,7 @@ pub struct MessageSyncer {
     sync_version_dao: Arc<SyncVersionDao>,
     notification_seq_dao: Arc<NotificationSeqDao>,
     message_handler: Arc<MessageHandler>,
-    conversation_listener: Arc<ConversationListener>,
+    conversation_listener: Arc<ConversationListeners>,
     max_concurrent_pulls: usize,
     pull_msg_num: i64,
     user_id: String,
@@ -51,7 +51,7 @@ impl MessageSyncer {
         sync_version_dao: Arc<SyncVersionDao>,
         notification_seq_dao: Arc<NotificationSeqDao>,
         message_handler: Arc<MessageHandler>,
-        conversation_listener: Arc<ConversationListener>,
+        conversation_listener: Arc<ConversationListeners>,
         user_id: String,
     ) -> Self {
         Self {

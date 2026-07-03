@@ -1,5 +1,5 @@
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::ConversationListeners;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::message_dao::MessageDao;
@@ -10,11 +10,11 @@ use tracing::{debug, info};
 pub struct ConversationManager {
     dao: Arc<ConversationDao>,
     message_dao: Arc<MessageDao>,
-    conversation_listener: Arc<ConversationListener>,
+    conversation_listener: Arc<ConversationListeners>,
 }
 
 impl ConversationManager {
-    pub fn new(dao: Arc<ConversationDao>, message_dao: Arc<MessageDao>, conversation_listener: Arc<ConversationListener>) -> Self {
+    pub fn new(dao: Arc<ConversationDao>, message_dao: Arc<MessageDao>, conversation_listener: Arc<ConversationListeners>) -> Self {
         Self { dao, message_dao, conversation_listener }
     }
 
@@ -221,7 +221,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let message_dao = Arc::new(MessageDao::new(pool));
-        let conversation_listener = Arc::new(ConversationListener::new());
+        let conversation_listener = Arc::new(ConversationListeners::new());
         let manager = ConversationManager::new(dao, message_dao, conversation_listener);
 
         assert_eq!(manager.count().await.unwrap(), 0);
@@ -232,7 +232,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let message_dao = Arc::new(MessageDao::new(pool));
-        let conversation_listener = Arc::new(ConversationListener::new());
+        let conversation_listener = Arc::new(ConversationListeners::new());
         let manager = ConversationManager::new(dao, message_dao, conversation_listener);
 
         let conv = create_test_conversation("conv_1");
@@ -250,7 +250,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let message_dao = Arc::new(MessageDao::new(pool));
-        let conversation_listener = Arc::new(ConversationListener::new());
+        let conversation_listener = Arc::new(ConversationListeners::new());
         let manager = ConversationManager::new(dao, message_dao, conversation_listener);
 
         let conv = create_test_conversation("conv_1");
@@ -266,7 +266,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let message_dao = Arc::new(MessageDao::new(pool));
-        let conversation_listener = Arc::new(ConversationListener::new());
+        let conversation_listener = Arc::new(ConversationListeners::new());
         let manager = ConversationManager::new(dao, message_dao, conversation_listener);
 
         let conv = create_test_conversation("conv_1");
@@ -287,7 +287,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let message_dao = Arc::new(MessageDao::new(pool));
-        let conversation_listener = Arc::new(ConversationListener::new());
+        let conversation_listener = Arc::new(ConversationListeners::new());
         let manager = ConversationManager::new(dao, message_dao, conversation_listener);
 
         let conv = create_test_conversation("conv_1");
@@ -303,7 +303,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let dao = Arc::new(ConversationDao::new(pool.clone()));
         let message_dao = Arc::new(MessageDao::new(pool));
-        let conversation_listener = Arc::new(ConversationListener::new());
+        let conversation_listener = Arc::new(ConversationListeners::new());
         let manager = ConversationManager::new(dao, message_dao, conversation_listener);
 
         let conv = create_test_conversation("conv_1");

@@ -1,20 +1,22 @@
 use crate::domain::model::friend::FriendInfo;
 use super::ListenerSet;
 
-/// Dart 侧好友事件
-pub enum FriendEvent {
-    Added(Vec<FriendInfo>),
-    Deleted(String),
-    InfoChanged(Vec<FriendInfo>),
-    BlackAdded(String),
-    BlackDeleted(String),
-    ApplicationAdded(String),
-    ApplicationAccepted(String),
-    ApplicationRejected(String),
+/// friend 事件（对齐 Go SDK FriendListener）
+pub trait FriendListener: Send + Sync {
+    fn on_added(&self, _friends: &[FriendInfo]) {}
+    fn on_deleted(&self, _user_id: &str) {}
+    fn on_info_changed(&self, _friends: &[FriendInfo]) {}
+    fn on_black_added(&self, _user_id: &str) {}
+    fn on_black_deleted(&self, _user_id: &str) {}
+    fn on_application_added(&self, _user_id: &str) {}
+    fn on_application_accepted(&self, _user_id: &str) {}
+    fn on_application_rejected(&self, _user_id: &str) {}
 }
 
-pub struct FriendListener {
-    pub on_added: ListenerSet<Vec<FriendInfo>>,
+// === 以下为旧 ListenerSet 模式，逐步迁移后删除 ===
+
+pub struct FriendListeners {
+    pub pub on_added: ListenerSet<Vec<FriendInfo>>,
     pub on_deleted: ListenerSet<String>,
     pub on_info_changed: ListenerSet<Vec<FriendInfo>>,
     pub on_black_added: ListenerSet<String>,
@@ -24,7 +26,7 @@ pub struct FriendListener {
     pub on_application_rejected: ListenerSet<String>,
 }
 
-impl FriendListener {
+impl FriendListeners {
     pub fn new() -> Self {
         Self {
             on_added: ListenerSet::new(),

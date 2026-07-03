@@ -5,9 +5,9 @@ mod friend;
 mod group;
 
 use crate::domain::listener::connection::ConnectionListeners;
-use crate::domain::listener::conversation::ConversationListener;
-use crate::domain::listener::friend::FriendListener;
-use crate::domain::listener::group::GroupListener;
+use crate::domain::listener::conversation::ConversationListeners;
+use crate::domain::listener::friend::FriendListeners;
+use crate::domain::listener::group::GroupListeners;
 mod online_status;
 pub mod types;
 mod user;
@@ -88,13 +88,13 @@ impl OpenIMClient {
     pub fn connection_listener(&self) -> &Arc<ConnectionListeners> {
         self.connection.connection_listener()
     }
-    pub fn conversation_listener(&self) -> &Arc<ConversationListener> {
+    pub fn conversation_listener(&self) -> &Arc<ConversationListeners> {
         self.message_handler.conversation_listener()
     }
-    pub fn friend_listener(&self) -> &Arc<FriendListener> {
+    pub fn friend_listener(&self) -> &Arc<FriendListeners> {
         self.friend.friend_listener()
     }
-    pub fn group_listener(&self) -> &Arc<GroupListener> {
+    pub fn group_listener(&self) -> &Arc<GroupListeners> {
         self.group.group_listener()
     }
 }

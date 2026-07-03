@@ -1,7 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::friend::FriendListener;
+use crate::domain::listener::friend::FriendListeners;
 use crate::domain::model::friend::FriendInfo;
 use crate::infra::database::friend_dao::FriendDao;
 use crate::infra::database::models::LocalFriend;
@@ -299,7 +299,7 @@ pub struct FriendManager {
     blacks: Arc<RwLock<Vec<String>>>,
     friend_dao: Arc<FriendDao>,
     sync_version_dao: Arc<SyncVersionDao>,
-    friend_listener: Arc<FriendListener>,
+    friend_listener: Arc<FriendListeners>,
 }
 
 impl FriendManager {
@@ -308,7 +308,7 @@ impl FriendManager {
         user_id: String,
         friend_dao: Arc<FriendDao>,
         sync_version_dao: Arc<SyncVersionDao>,
-        friend_listener: Arc<FriendListener>,
+        friend_listener: Arc<FriendListeners>,
     ) -> Self {
         Self {
             http_client,
@@ -321,7 +321,7 @@ impl FriendManager {
         }
     }
 
-    pub fn friend_listener(&self) -> &Arc<FriendListener> {
+    pub fn friend_listener(&self) -> &Arc<FriendListeners> {
         &self.friend_listener
     }
 
