@@ -104,7 +104,6 @@ impl OpenIMClient {
         let conversation_syncer = Arc::new(ConversationSyncer::new(
             context.http_client.clone(),
             context.conversation_dao.clone(),
-            conversation_listener.clone(),
             context.sync_version_dao.clone(),
             config.user_id.clone(),
         ));
