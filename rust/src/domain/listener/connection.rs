@@ -22,6 +22,7 @@ pub struct ConnectionListener {
     pub on_token_expired: ListenerSet<()>,
     pub on_reconnecting: ListenerSet<(u32, u32)>,
     pub on_login_success: ListenerSet<String>,
+    pub on_logout: ListenerSet<()>,
 }
 
 impl ConnectionListener {
@@ -35,6 +36,7 @@ impl ConnectionListener {
             on_token_expired: ListenerSet::new(),
             on_reconnecting: ListenerSet::new(),
             on_login_success: ListenerSet::new(),
+            on_logout: ListenerSet::new(),
         }
     }
 }

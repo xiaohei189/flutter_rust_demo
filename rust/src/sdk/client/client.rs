@@ -388,9 +388,7 @@ impl OpenIMClient {
             }
         }
 
-        self.event_bus.publish(SdkEvent::LoginSuccess {
-            user_id: uid,
-        });
+        self.connection.connection_listener().on_login_success.notify(&uid);
         debug!("[SDK] 用户登录成功: {}", user_id);
         Ok(())
     }
@@ -403,7 +401,7 @@ impl OpenIMClient {
         self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
 
-        self.event_bus.publish(SdkEvent::Logout);
+        self.connection.connection_listener().on_logout.notify(&());
         info!("用户登出成功");
         Ok(())
     }

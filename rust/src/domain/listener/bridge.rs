@@ -33,6 +33,10 @@ pub fn start_event_stream(
     conn.on_token_expired.register(move |_| { let _ = t.send(SdkEvent::TokenExpired); });
     let t = tx.clone();
     conn.on_reconnecting.register(move |(a, m)| { let _ = t.send(SdkEvent::Reconnecting { attempt: *a, max_attempts: *m }); });
+    let t = tx.clone();
+    conn.on_login_success.register(move |uid| { let _ = t.send(SdkEvent::LoginSuccess { user_id: uid.clone() }); });
+    let t = tx.clone();
+    conn.on_logout.register(move |_| { let _ = t.send(SdkEvent::Logout); });
 
     // Conversation events
     let t = tx.clone();
