@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use super::ListenerSet;
 
 /// 连接事件 trait（对齐 Go SDK ConnectionListener 接口）
 pub trait ConnectionListener: Send + Sync {
@@ -40,4 +41,34 @@ impl ConnectionListeners {
     pub fn on_reconnecting(&self, a: u32, m: u32) { self.call(|l| l.on_reconnecting(a, m)); }
     pub fn on_login_success(&self, id: &str) { self.call(|l| l.on_login_success(id)); }
     pub fn on_logout(&self) { self.call(|l| l.on_logout()); }
+}
+
+// === 旧 ListenerSet 版本（逐步迁移后删除）===
+
+pub struct ConnectionListenerSet {
+    pub on_connecting: ListenerSet<()>,
+    pub on_connected: ListenerSet<()>,
+    pub on_disconnected: ListenerSet<String>,
+    pub on_connect_failed: ListenerSet<String>,
+    pub on_kicked_offline: ListenerSet<String>,
+    pub on_token_expired: ListenerSet<()>,
+    pub on_reconnecting: ListenerSet<(u32, u32)>,
+    pub on_login_success: ListenerSet<String>,
+    pub on_logout: ListenerSet<()>,
+}
+
+impl ConnectionListenerSet {
+    pub fn new() -> Self {
+        Self {
+            on_connecting: ListenerSet::new(),
+            on_connected: ListenerSet::new(),
+            on_disconnected: ListenerSet::new(),
+            on_connect_failed: ListenerSet::new(),
+            on_kicked_offline: ListenerSet::new(),
+            on_token_expired: ListenerSet::new(),
+            on_reconnecting: ListenerSet::new(),
+            on_login_success: ListenerSet::new(),
+            on_logout: ListenerSet::new(),
+        }
+    }
 }

@@ -4,7 +4,7 @@ mod conversation;
 mod friend;
 mod group;
 
-use crate::domain::listener::connection::ConnectionListener;
+use crate::domain::listener::connection::ConnectionListenerSet;
 use crate::domain::listener::conversation::ConversationListener;
 use crate::domain::listener::friend::FriendListener;
 use crate::domain::listener::group::GroupListener;
@@ -85,8 +85,8 @@ pub struct OpenIMClient {
 }
 
 impl OpenIMClient {
-    pub fn connection_listener(&self) -> &Arc<ConnectionListener> {
-        self.connection.connection_listener()
+    pub fn connection_listeners(&self) -> &Arc<ConnectionListenerSet> {
+        self.connection.connection_listeners()
     }
     pub fn conversation_listener(&self) -> &Arc<ConversationListener> {
         self.message_handler.conversation_listener()

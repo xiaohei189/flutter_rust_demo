@@ -179,7 +179,7 @@ impl OpenIMClient {
         let ms = message_syncer.clone();
         let cs = conversation_syncer.clone();
         let ct = cancel_token.clone();
-        self.connection.connection_listener().on_connected.register(move |_| {
+        self.connection.connection_listeners().on_connected.register(move |_| {
             let mh = mh.clone();
             let ms = ms.clone();
             let cs = cs.clone();
@@ -389,7 +389,7 @@ impl OpenIMClient {
             }
         }
 
-        self.connection.connection_listener().on_login_success.notify(&uid);
+        self.connection.connection_listeners().on_login_success.notify(&uid);
         debug!("[SDK] 用户登录成功: {}", user_id);
         Ok(())
     }
@@ -402,7 +402,7 @@ impl OpenIMClient {
         self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
 
-        self.connection.connection_listener().on_logout.notify(&());
+        self.connection.connection_listeners().on_logout.notify(&());
         info!("用户登出成功");
         Ok(())
     }

@@ -43,3 +43,29 @@ impl<L: ?Sized + Send + Sync> Default for ListenerRegistry<L> {
         Self::new()
     }
 }
+
+// === 以下为旧 ListenerSet（逐步迁移到 trait 模式后删除）===
+
+/// 回调注册器，线程安全（旧模式，逐步替换为 ListenerRegistry + trait）
+pub struct ListenerSet<T: Send + Sync + 'static> {
+    listeners: std::sync::RwLock<Vec<Arc<dyn Fn(&T) + Send + Sync>>>,
+}
+
+impl<T: Send + Sync + 'static> ListenerSet<T> {
+    pub fn new() -> Self {
+        Self {
+            listeners: std::sync::RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn register<F: Fn(&T) + Send + Sync + 'static>(&self, f: F) {
+        self.listeners.write().unwrap().push(Arc::new(f));
+    }
+
+    pub fn notify(&self, event: &T) {
+        let listeners = self.listeners.read().unwrap().clone();
+        for listener in &listeners {
+            listener(event);
+        }
+    }
+}
