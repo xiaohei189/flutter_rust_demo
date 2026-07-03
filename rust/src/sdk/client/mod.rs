@@ -3,6 +3,11 @@ mod message;
 mod conversation;
 mod friend;
 mod group;
+
+use crate::domain::listener::connection::ConnectionListener;
+use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::friend::FriendListener;
+use crate::domain::listener::group::GroupListener;
 mod online_status;
 pub mod types;
 mod user;
@@ -77,4 +82,19 @@ pub struct OpenIMClient {
     pub(crate) event_bus: Arc<EventBus>,
     pub(crate) cache: Arc<CacheManager>,
     pub(crate) send_queue: Arc<MessageSendQueue>,
+}
+
+impl OpenIMClient {
+    pub fn connection_listener(&self) -> &Arc<ConnectionListener> {
+        self.connection.connection_listener()
+    }
+    pub fn conversation_listener(&self) -> &Arc<ConversationListener> {
+        self.message_handler.conversation_listener()
+    }
+    pub fn friend_listener(&self) -> &Arc<FriendListener> {
+        self.friend.friend_listener()
+    }
+    pub fn group_listener(&self) -> &Arc<GroupListener> {
+        self.group.group_listener()
+    }
 }

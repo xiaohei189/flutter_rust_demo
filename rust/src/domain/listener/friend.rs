@@ -1,7 +1,18 @@
 use crate::domain::model::friend::FriendInfo;
 use super::ListenerSet;
 
-/// 好友事件（替代 SdkEvent::FriendAdded/FriendDeleted/...）
+/// Dart 侧好友事件
+pub enum FriendEvent {
+    Added(Vec<FriendInfo>),
+    Deleted(String),
+    InfoChanged(Vec<FriendInfo>),
+    BlackAdded(String),
+    BlackDeleted(String),
+    ApplicationAdded(String),
+    ApplicationAccepted(String),
+    ApplicationRejected(String),
+}
+
 pub struct FriendListener {
     pub on_added: ListenerSet<Vec<FriendInfo>>,
     pub on_deleted: ListenerSet<String>,

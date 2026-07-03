@@ -1,6 +1,18 @@
 use super::ListenerSet;
 
-/// 连接状态事件（替代 SdkEvent::Connecting/Connected/... 的 EventBus 广播）
+/// Dart 侧连接事件
+pub enum ConnectionEvent {
+    Connecting,
+    Connected,
+    Disconnected(String),
+    ConnectFailed(String),
+    KickedOffline(String),
+    TokenExpired,
+    Reconnecting { attempt: u32, max_attempts: u32 },
+    LoginSuccess(String),
+}
+
+/// 内部 listener（自然类型回调，bridge 层转为 ConnectionEvent）
 pub struct ConnectionListener {
     pub on_connecting: ListenerSet<()>,
     pub on_connected: ListenerSet<()>,

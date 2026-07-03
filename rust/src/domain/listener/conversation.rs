@@ -1,7 +1,19 @@
 use crate::domain::model::conversation::Conversation;
 use super::ListenerSet;
 
-/// 会话事件（替代 SdkEvent::ConversationChanged/NewConversation/...）
+/// Dart 侧会话事件
+pub enum ConversationEvent {
+    Changed(Vec<Conversation>),
+    Deleted(Vec<String>),
+    New(Vec<Conversation>),
+    TotalUnreadCountChanged(i64),
+    SyncStarted,
+    SyncFinished,
+    SyncFailed(String),
+    SyncProgress { progress: i32, message: String },
+    UserInputStatusChanged { conversation_id: String, user_id: String, platform_ids: Vec<i32> },
+}
+
 pub struct ConversationListener {
     pub on_changed: ListenerSet<Vec<Conversation>>,
     pub on_deleted: ListenerSet<Vec<String>>,

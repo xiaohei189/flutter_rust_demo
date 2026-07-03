@@ -13,6 +13,7 @@ pub mod connection;
 pub mod friend;
 pub mod group;
 pub mod message;
+pub mod bridge;
 
 use std::sync::Arc;
 

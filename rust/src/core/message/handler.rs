@@ -153,6 +153,10 @@ impl MessageHandler {
         }
     }
 
+    pub fn conversation_listener(&self) -> &Arc<ConversationListener> {
+        &self.conversation_listener
+    }
+
     pub fn set_user_id(&self, user_id: String) {
         *self.user_id.lock().unwrap() = user_id;
     }

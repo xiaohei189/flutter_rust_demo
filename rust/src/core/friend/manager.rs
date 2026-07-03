@@ -324,6 +324,10 @@ impl FriendManager {
         }
     }
 
+    pub fn friend_listener(&self) -> &Arc<FriendListener> {
+        &self.friend_listener
+    }
+
     pub async fn set_user_id(&self, user_id: String) {
         *self.user_id.write().await = user_id.clone();
         debug!("FriendManager user_id 已更新为: {}", user_id);
