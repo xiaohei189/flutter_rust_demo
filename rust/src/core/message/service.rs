@@ -3,7 +3,8 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::{MessageReceipt, SdkEvent};
 use crate::domain::model::conversation::Conversation;
-use crate::domain::listener::conversation::ConversationListeners;
+use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::model::conversation::Conversation;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
@@ -75,7 +76,7 @@ pub struct MessageService {
     message_dao: Arc<MessageDao>,
     conversation_dao: Arc<ConversationDao>,
     event_bus: Arc<EventBus>,
-    conversation_listener: Arc<ConversationListeners>,
+    conversation_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConversationListener>>>>,
     http_client: Arc<crate::infra::http::client::HttpApiClient>,
     user_id: Arc<std::sync::Mutex<String>>,
 }
@@ -85,7 +86,6 @@ impl MessageService {
         message_dao: Arc<MessageDao>,
         conversation_dao: Arc<ConversationDao>,
         event_bus: Arc<EventBus>,
-        conversation_listener: Arc<ConversationListeners>,
         http_client: Arc<crate::infra::http::client::HttpApiClient>,
         user_id: String,
     ) -> Self {
@@ -93,11 +93,22 @@ impl MessageService {
             message_dao,
             conversation_dao,
             event_bus,
-            conversation_listener,
+            conversation_listener: Arc::new(std::sync::RwLock::new(None)),
             http_client,
             user_id: Arc::new(std::sync::Mutex::new(user_id)),
         }
     }
+
+    pub fn set_conversation_listener(&self, l: Arc<dyn ConversationListener>) {
+        *self.conversation_listener.write().unwrap() = Some(l);
+    }
+
+    fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
+        if let Some(l) = &*self.conversation_listener.read().unwrap() { f(&**l); }
+    }
+
+    fn on_changed(&self, c: &[Conversation]) { self.notify_conv(|l| l.on_changed(c)); }
+    fn on_total_unread_count_changed(&self, count: i64) { self.notify_conv(|l| l.on_total_unread_count_changed(count)); }
 
     pub fn set_user_id(&self, user_id: String) {
         let mut uid = self.user_id.lock().unwrap();
@@ -376,12 +387,12 @@ impl MessageService {
                 is_private: conv.is_private_chat != 0,
                 ex: conv.ex,
             };
-            self.conversation_listener.on_changed.notify(&vec![conversation]);
+            self.on_changed(&[conversation]);
         }
 
         // L169-170: TotalUnreadMessageChanged
         let total_unread = self.conversation_dao.get_total_unread_count().await.unwrap_or(0);
-        self.conversation_listener.on_total_unread_count_changed.notify(&total_unread);
+        self.on_total_unread_count_changed(total_unread);
         self.event_bus.publish(SdkEvent::TotalUnreadCountChanged {
             count: total_unread,
         });
@@ -454,7 +465,7 @@ impl MessageService {
             }
         }
 
-        self.conversation_listener.on_total_unread_count_changed.notify(&0);
+        self.on_total_unread_count_changed(0);
         info!("已标记所有会话消息已读");
         Ok(())
     }
