@@ -17,6 +17,8 @@ use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::friend::FriendListener;
+use crate::domain::listener::group::GroupListener;
 use crate::infra::cache::memory::CacheManager;
 use crate::protocol::sdkws::PushMessages;
 use crate::sdk::client::OpenIMClient;
@@ -32,6 +34,8 @@ impl OpenIMClient {
     pub async fn new(config: ClientConfig) -> Result<Self> {
         let event_bus = Arc::new(EventBus::new());
         let conversation_listener = Arc::new(ConversationListener::new());
+        let friend_listener = Arc::new(FriendListener::new());
+        let group_listener = Arc::new(GroupListener::new());
         let cache = Arc::new(CacheManager::new());
         let cancel_token = CancellationToken::new();
 
@@ -60,6 +64,7 @@ impl OpenIMClient {
             user_id.clone(),
             context.friend_dao.clone(),
             context.sync_version_dao.clone(),
+            friend_listener,
         ));
         let group = Arc::new(GroupManager::new(
             context.http_client.clone(),
@@ -67,6 +72,7 @@ impl OpenIMClient {
             user_id.clone(),
             context.group_dao.clone(),
             context.sync_version_dao.clone(),
+            group_listener,
         ));
         let conversation = Arc::new(ConversationManager::new(
             context.conversation_dao.clone(),

@@ -1,6 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::listener::friend::FriendListener;
 use crate::domain::model::friend::FriendInfo;
 use crate::infra::database::friend_dao::FriendDao;
 use crate::infra::database::models::LocalFriend;
@@ -299,6 +300,7 @@ pub struct FriendManager {
     blacks: Arc<RwLock<Vec<String>>>,
     friend_dao: Arc<FriendDao>,
     sync_version_dao: Arc<SyncVersionDao>,
+    friend_listener: Arc<FriendListener>,
 }
 
 impl FriendManager {
@@ -308,6 +310,7 @@ impl FriendManager {
         user_id: String,
         friend_dao: Arc<FriendDao>,
         sync_version_dao: Arc<SyncVersionDao>,
+        friend_listener: Arc<FriendListener>,
     ) -> Self {
         Self {
             http_client,
@@ -317,6 +320,7 @@ impl FriendManager {
             blacks: Arc::new(RwLock::new(Vec::new())),
             friend_dao,
             sync_version_dao,
+            friend_listener,
         }
     }
 
@@ -386,6 +390,7 @@ impl FriendManager {
         // 更新内存缓存
         *self.friends.write().await = friends.clone();
 
+        self.friend_listener.on_added.notify(&friends);
         self.event_bus.publish(SdkEvent::FriendAdded {
             friends: friends.clone(),
         });
@@ -493,7 +498,8 @@ impl FriendManager {
             let all_changed: Vec<FriendInfo> = resp.insert.iter().chain(resp.update.iter())
                 .map(|s| server_to_friend(s.clone()))
                 .collect();
-            self.event_bus.publish(SdkEvent::FriendAdded {
+            self.friend_listener.on_added.notify(&all_changed);
+        self.event_bus.publish(SdkEvent::FriendAdded {
                 friends: all_changed,
             });
         }
@@ -706,6 +712,7 @@ impl FriendManager {
 
         self.friends.write().await.retain(|f| f.user_id != user_id);
 
+        self.friend_listener.on_deleted.notify(&user_id);
         self.event_bus.publish(SdkEvent::FriendDeleted {
             friend_id: user_id.clone(),
         });
@@ -760,6 +767,7 @@ impl FriendManager {
 
         self.blacks.write().await.push(user_id.clone());
 
+        self.friend_listener.on_black_added.notify(&user_id);
         self.event_bus.publish(SdkEvent::BlackAdded {
             user_id: user_id.clone(),
         });
@@ -777,6 +785,7 @@ impl FriendManager {
 
         self.blacks.write().await.retain(|id| id != &user_id);
 
+        self.friend_listener.on_black_deleted.notify(&user_id);
         self.event_bus.publish(SdkEvent::BlackDeleted {
             black_id: user_id.clone(),
         });
