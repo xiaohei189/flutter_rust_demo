@@ -7,6 +7,8 @@ use super::connection::ConnectionListener;
 use super::conversation::ConversationListener;
 use super::friend::FriendListener;
 use super::group::GroupListener;
+use super::message::MessageListener;
+use super::user::UserListener;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
 use std::sync::Arc;
@@ -17,6 +19,8 @@ pub fn start_event_stream(
     conv: &Arc<ConversationListener>,
     friend: &Arc<FriendListener>,
     group: &Arc<GroupListener>,
+    msg: &Arc<MessageListener>,
+    user: &Arc<UserListener>,
 ) -> mpsc::UnboundedReceiver<SdkEvent> {
     let (tx, rx) = mpsc::unbounded_channel();
 
@@ -76,6 +80,29 @@ pub fn start_event_stream(
     let t = tx.clone();
     group.on_group_info_changed.register(move |g| { let _ = t.send(SdkEvent::GroupInfoChanged { group_id: g.group_id.clone() }); });
     group.on_group_read_receipt.register(move |r| { let _ = tx.send(SdkEvent::GroupReadReceipt { receipts: r.clone() }); });
+
+    // Message events
+    let t = tx.clone();
+    msg.on_new_message.register(move |m| { let _ = t.send(SdkEvent::NewMessage { message: m.clone() }); });
+    let t = tx.clone();
+    msg.on_recv_offline_new_message.register(move |ms| { let _ = t.send(SdkEvent::RecvOfflineNewMessage { messages: ms.clone() }); });
+    let t = tx.clone();
+    msg.on_c2c_read_receipt.register(move |r| { let _ = t.send(SdkEvent::C2CReadReceipt { receipts: r.clone() }); });
+    let t = tx.clone();
+    msg.on_group_read_receipt.register(move |r| { let _ = t.send(SdkEvent::GroupReadReceipt { receipts: r.clone() }); });
+    let t = tx.clone();
+    msg.on_message_revoked.register(move |m| { let _ = t.send(SdkEvent::MessageRevoked { message: m.clone() }); });
+    let t = tx.clone();
+    msg.on_messages_deleted.register(move |ids| { let _ = t.send(SdkEvent::MessagesDeleted { client_msg_ids: ids.clone() }); });
+    msg.on_send_failed.register(move |(id, err)| { let _ = tx.send(SdkEvent::MessageSendFailed { client_msg_id: id.clone(), error: err.clone() }); });
+
+    // User events
+    user.on_user_info_updated.register(move |u| { let _ = tx.send(SdkEvent::UserInfoUpdated { user: u.clone() }); });
+    user.on_user_status_changed.register(move |(uid, st, pids)| {
+        let _ = tx.send(SdkEvent::UserStatusChanged {
+            user_id: uid.clone(), status: *st, platform_ids: pids.clone(),
+        });
+    });
 
     rx
 }
