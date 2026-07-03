@@ -5,7 +5,8 @@ use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::{GroupReadReceipt, MessageReceipt, SdkEvent};
-use crate::domain::listener::conversation::ConversationListeners;
+use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::model::conversation::Conversation;
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::infra::database::{ConversationDao, GroupDao, MessageDao, UserDao};
@@ -127,7 +128,7 @@ pub struct MessageHandler {
     group_dao: Arc<GroupDao>,
     user_id: std::sync::Mutex<String>,
     pub max_seq_recorder: Arc<MaxSeqRecorder>,
-    conversation_listener: Arc<ConversationListeners>,
+    conversation_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConversationListener>>>>,
 }
 
 impl MessageHandler {
@@ -136,7 +137,6 @@ impl MessageHandler {
         conversation_dao: Arc<ConversationDao>,
         user_dao: Arc<UserDao>,
         group_dao: Arc<GroupDao>,
-        conversation_listener: Arc<ConversationListeners>,
     ) -> Self {
         Self {
             message_dao,
@@ -145,13 +145,21 @@ impl MessageHandler {
             group_dao,
             user_id: std::sync::Mutex::new(String::new()),
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
-            conversation_listener,
+            conversation_listener: Arc::new(std::sync::RwLock::new(None)),
         }
     }
 
-    pub fn conversation_listener(&self) -> &Arc<ConversationListeners> {
-        &self.conversation_listener
+    pub fn set_conversation_listener(&self, l: Arc<dyn ConversationListener>) {
+        *self.conversation_listener.write().unwrap() = Some(l);
     }
+
+    fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
+        if let Some(l) = &*self.conversation_listener.read().unwrap() { f(&**l); }
+    }
+
+    fn on_changed(&self, c: &[Conversation]) { self.notify_conv(|l| l.on_changed(c)); }
+    fn on_total_unread_count_changed(&self, count: i64) { self.notify_conv(|l| l.on_total_unread_count_changed(count)); }
+    fn on_user_input_status_changed(&self, cid: &str, uid: &str, pids: &[i32]) { self.notify_conv(|l| l.on_user_input_status_changed(cid, uid, pids)); }
 
     pub fn set_user_id(&self, user_id: String) {
         *self.user_id.lock().unwrap() = user_id;
@@ -327,7 +335,8 @@ impl MessageHandler {
                 if let Ok(typing_elem) = serde_json::from_str::<TypingElem>(&msg.content) {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
-                    self.conversation_listener.on_user_input_status_changed.notify(&(msg.conversation_id.clone(), msg.send_id.clone(), if is_typing { vec![platform_id] } else { vec![] }));
+                    let pids: Vec<i32> = if is_typing { vec![platform_id] } else { vec![] };
+                    self.on_user_input_status_changed(&msg.conversation_id, &msg.send_id, &pids);
                 }
             }
         }
@@ -570,7 +579,7 @@ impl MessageHandler {
                     is_private: conv.is_private_chat != 0,
                     ex: conv.ex,
                 };
-                self.conversation_listener.on_changed.notify(&vec![conversation.clone()]);
+                self.on_changed(&[conversation.clone()]);
             }
         }
 
@@ -580,7 +589,7 @@ impl MessageHandler {
     /// 发布 TotalUnreadCountChanged 事件（由调用方在批量处理完成后统一调用）
     pub async fn publish_total_unread_count_changed(&self) {
         if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
-            self.conversation_listener.on_total_unread_count_changed.notify(&total);
+            self.on_total_unread_count_changed(total);
         }
     }
 
@@ -652,7 +661,7 @@ impl MessageHandler {
 
             // 发布事件
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
-                self.conversation_listener.on_total_unread_count_changed.notify(&total);
+                self.on_total_unread_count_changed(total);
             }
 
             info!("[RECEIPT] self sync conv={}", tips.conversation_id);
@@ -733,7 +742,7 @@ impl MessageHandler {
         } else {
             self.conversation_dao.update_unread_count(&tips_json.conversation_id, 0).await?;
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
-                self.conversation_listener.on_total_unread_count_changed.notify(&total);
+                self.on_total_unread_count_changed(total);
             }
 
             info!("[RECEIPT] notif self sync conv={}", tips_json.conversation_id);
@@ -965,7 +974,7 @@ impl MessageHandler {
                             is_private: conv.is_private_chat != 0,
                             ex: conv.ex,
                         };
-                        self.conversation_listener.on_changed.notify(&vec![updated_conv.clone()]);
+                        self.on_changed(&[updated_conv.clone()]);
                         info!("[REVOKE] 刷新会话 LatestMsg: latest_msg_send_time={}", latest_msg.send_time);
                     }
                 }
