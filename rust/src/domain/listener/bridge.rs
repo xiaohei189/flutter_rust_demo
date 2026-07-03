@@ -3,7 +3,7 @@
 //! 聚合所有模块 listener 为单个 mpsc channel（SdkEvent 格式，兼容现有 Dart 协议）。
 //! EventBus 完全移除后，这是唯一的 Dart 事件通道。
 
-use super::connection::ConnectionListener;
+use super::connection::ConnectionListeners;
 use super::conversation::ConversationListener;
 use super::friend::FriendListener;
 use super::group::GroupListener;
@@ -13,7 +13,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 
 pub fn start_event_stream(
-    conn: &Arc<ConnectionListener>,
+    conn: &Arc<ConnectionListeners>,
     conv: &Arc<ConversationListener>,
     friend: &Arc<FriendListener>,
     group: &Arc<GroupListener>,

@@ -1,19 +1,20 @@
 use super::ListenerSet;
 
-/// Dart 侧连接事件
-pub enum ConnectionEvent {
-    Connecting,
-    Connected,
-    Disconnected(String),
-    ConnectFailed(String),
-    KickedOffline(String),
-    TokenExpired,
-    Reconnecting { attempt: u32, max_attempts: u32 },
-    LoginSuccess(String),
+/// 连接事件（对齐 Go SDK ConnectionListener）
+pub trait ConnectionListener: Send + Sync {
+    fn on_connecting(&self) {}
+    fn on_connected(&self) {}
+    fn on_disconnected(&self, _reason: &str) {}
+    fn on_kicked_offline(&self, _reason: &str) {}
+    fn on_token_expired(&self) {}
+    fn on_reconnecting(&self, _attempt: u32, _max_attempts: u32) {}
+    fn on_login_success(&self, _user_id: &str) {}
+    fn on_logout(&self) {}
 }
 
-/// 内部 listener（自然类型回调，bridge 层转为 ConnectionEvent）
-pub struct ConnectionListener {
+// === 以下为旧 ListenerSet 模式，逐步迁移后删除 ===
+
+pub struct ConnectionListeners {
     pub on_connecting: ListenerSet<()>,
     pub on_connected: ListenerSet<()>,
     pub on_disconnected: ListenerSet<String>,
@@ -25,7 +26,7 @@ pub struct ConnectionListener {
     pub on_logout: ListenerSet<()>,
 }
 
-impl ConnectionListener {
+impl ConnectionListeners {
     pub fn new() -> Self {
         Self {
             on_connecting: ListenerSet::new(),

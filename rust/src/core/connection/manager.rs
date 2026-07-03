@@ -1,6 +1,6 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::connection::ConnectionListener;
+use crate::domain::listener::connection::ConnectionListeners;
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
 use crate::protocol::ws::{OpenIMReq, OpenIMResp, WebSocketConnectResp};
@@ -64,7 +64,7 @@ pub struct ConnectionManager {
     message_batcher: MessageBatcher,
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
     push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>>,
-    connection_listener: Arc<ConnectionListener>,
+    connection_listener: Arc<ConnectionListeners>,
 }
 
 impl ConnectionManager {
@@ -96,12 +96,12 @@ impl ConnectionManager {
             compressor,
             message_batcher,
             push_tx,
-            connection_listener: Arc::new(ConnectionListener::new()),
+            connection_listener: Arc::new(ConnectionListeners::new()),
         }
     }
 
     /// 获取 ConnectionListener
-    pub fn connection_listener(&self) -> &Arc<ConnectionListener> {
+    pub fn connection_listener(&self) -> &Arc<ConnectionListeners> {
         &self.connection_listener
     }
 
