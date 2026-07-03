@@ -74,7 +74,6 @@ impl OpenIMClient {
         let conversation = Arc::new(ConversationManager::new(
             context.conversation_dao.clone(),
             context.message_dao.clone(),
-            conversation_listener.clone(),
         ));
         let online_status = Arc::new(OnlineStatusManager::new(
             context.http_client.clone(),
