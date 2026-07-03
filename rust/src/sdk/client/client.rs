@@ -16,6 +16,7 @@ use crate::domain::config::ClientConfig;
 use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::listener::conversation::ConversationListener;
 use crate::infra::cache::memory::CacheManager;
 use crate::protocol::sdkws::PushMessages;
 use crate::sdk::client::OpenIMClient;
@@ -30,6 +31,7 @@ impl OpenIMClient {
     /// 创建新的 SDK 实例
     pub async fn new(config: ClientConfig) -> Result<Self> {
         let event_bus = Arc::new(EventBus::new());
+        let conversation_listener = Arc::new(ConversationListener::new());
         let cache = Arc::new(CacheManager::new());
         let cancel_token = CancellationToken::new();
 
@@ -86,6 +88,7 @@ impl OpenIMClient {
             context.user_dao.clone(),
             context.group_dao.clone(),
             event_bus.clone(),
+            conversation_listener.clone(),
         ));
 
         let message_syncer = Arc::new(MessageSyncer::new(

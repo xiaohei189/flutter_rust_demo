@@ -5,6 +5,7 @@ use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::{GroupReadReceipt, MessageReceipt, SdkEvent};
+use crate::domain::listener::conversation::ConversationListener;
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::infra::database::{ConversationDao, GroupDao, MessageDao, UserDao};
@@ -128,6 +129,7 @@ pub struct MessageHandler {
     user_id: std::sync::Mutex<String>,
     /// 内存 seq 记录器，用于准确判断未读数（对齐 Go SDK MaxSeqRecorder）
     pub max_seq_recorder: Arc<MaxSeqRecorder>,
+    conversation_listener: Arc<ConversationListener>,
 }
 
 impl MessageHandler {
@@ -137,11 +139,13 @@ impl MessageHandler {
         user_dao: Arc<UserDao>,
         group_dao: Arc<GroupDao>,
         event_bus: Arc<EventBus>,
+        conversation_listener: Arc<ConversationListener>,
     ) -> Self {
         Self {
             message_dao,
             conversation_dao,
             user_dao,
+            conversation_listener,
             group_dao,
             event_bus,
             user_id: std::sync::Mutex::new(String::new()),
@@ -323,6 +327,7 @@ impl MessageHandler {
                 if let Ok(typing_elem) = serde_json::from_str::<TypingElem>(&msg.content) {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
+                    self.conversation_listener.on_user_input_status_changed.notify(&(msg.conversation_id.clone(), msg.send_id.clone(), if is_typing { vec![platform_id] } else { vec![] }));
                     self.event_bus.publish(SdkEvent::ConversationUserInputStatusChanged {
                         data: crate::domain::event::types::InputStatusChangedData {
                             conversation_id: msg.conversation_id.clone(),
@@ -578,6 +583,7 @@ impl MessageHandler {
                     is_private: conv.is_private_chat != 0,
                     ex: conv.ex,
                 };
+                self.conversation_listener.on_changed.notify(&vec![conversation.clone()]);
                 let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
                     conversations: vec![conversation],
                 });
@@ -590,6 +596,7 @@ impl MessageHandler {
     /// 发布 TotalUnreadCountChanged 事件（由调用方在批量处理完成后统一调用）
     pub async fn publish_total_unread_count_changed(&self) {
         if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+            self.conversation_listener.on_total_unread_count_changed.notify(&total);
             let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
         }
     }
@@ -683,7 +690,8 @@ impl MessageHandler {
                 conversations: Vec::new(),
             });
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
-                let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+                self.conversation_listener.on_total_unread_count_changed.notify(&total);
+            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
             }
 
             info!("[RECEIPT] self sync conv={}", tips.conversation_id);
@@ -785,7 +793,8 @@ impl MessageHandler {
                 conversations: Vec::new(),
             });
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
-                let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+                self.conversation_listener.on_total_unread_count_changed.notify(&total);
+            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
             }
 
             info!("[RECEIPT] notif self sync conv={}", tips_json.conversation_id);
@@ -1017,6 +1026,7 @@ impl MessageHandler {
                             is_private: conv.is_private_chat != 0,
                             ex: conv.ex,
                         };
+                        self.conversation_listener.on_changed.notify(&vec![updated_conv.clone()]);
                         let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
                             conversations: vec![updated_conv],
                         });
