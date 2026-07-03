@@ -1,6 +1,6 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::connection::ConnectionListeners;
+use crate::domain::listener::connection::ConnectionListener;
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
 use crate::protocol::ws::{OpenIMReq, OpenIMResp, WebSocketConnectResp};
@@ -64,7 +64,7 @@ pub struct ConnectionManager {
     message_batcher: MessageBatcher,
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
     push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>>,
-    connection_listener: Arc<ConnectionListeners>,
+    connection_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConnectionListener>>>>,
 }
 
 impl ConnectionManager {
@@ -96,14 +96,27 @@ impl ConnectionManager {
             compressor,
             message_batcher,
             push_tx,
-            connection_listener: Arc::new(ConnectionListeners::new()),
+            connection_listener: Arc::new(std::sync::RwLock::new(None)),
         }
     }
 
-    /// 获取 ConnectionListener
-    pub fn connection_listener(&self) -> &Arc<ConnectionListeners> {
-        &self.connection_listener
+    /// 设置连接事件 listener（对齐 Go SDK SetConnectionListener）
+    pub fn set_connection_listener(&self, l: Arc<dyn ConnectionListener>) {
+        *self.connection_listener.write().unwrap() = Some(l);
     }
+
+    fn notify_conn(&self, f: impl FnOnce(&dyn ConnectionListener)) {
+        if let Some(l) = &*self.connection_listener.read().unwrap() { f(&**l); }
+    }
+
+    pub fn on_connected(&self) { self.notify_conn(|l| l.on_connected()); }
+    fn on_connecting(&self) { self.notify_conn(|l| l.on_connecting()); }
+    fn on_disconnected(&self, r: &str) { self.notify_conn(|l| l.on_disconnected(r)); }
+    fn on_kicked_offline(&self, r: &str) { self.notify_conn(|l| l.on_kicked_offline(r)); }
+    fn on_token_expired(&self) { self.notify_conn(|l| l.on_token_expired()); }
+    fn on_reconnecting(&self, a: u32, m: u32) { self.notify_conn(|l| l.on_reconnecting(a, m)); }
+    pub fn on_login_success(&self, id: &str) { self.notify_conn(|l| l.on_login_success(id)); }
+    pub fn on_logout(&self) { self.notify_conn(|l| l.on_logout()); }
 
     /// 设置内部消息通道发送端（由 client.rs 在 login 后调用）
     pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<PushMessages>) {
@@ -145,7 +158,7 @@ impl ConnectionManager {
         const TOKEN_NOT_EXIST_ERR_CODE: i32 = 1507;
 
         self.set_state(ConnectionState::Connecting).await;
-        self.connection_listener.on_connecting.notify(&());
+        self.on_connecting();
 
         let ws_url = self.ws_url.read().await;
         let token = self.token.read().await;
@@ -201,7 +214,7 @@ impl ConnectionManager {
                 // 认证通过 → 发布 Connected，启动读写循环
                 info!("WebSocket auth confirmed by server");
                 *self.writer.write().await = Some(write);
-                self.set_state(ConnectionState::Connected).await;                self.connection_listener.on_connected.notify(&());
+                self.set_state(ConnectionState::Connected).await;                self.on_connected();
                 self.reconnect_attempts.store(0, Ordering::SeqCst);
                 self.spawn_read_loop(read);
                 self.spawn_heartbeat();
@@ -214,7 +227,7 @@ impl ConnectionManager {
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = ConnectionState::Kicked;
                 self.message_batcher.close().await;
-                self.connection_listener.on_kicked_offline.notify(&conn_resp.err_msg);;
+                self.on_kicked_offline(&conn_resp.err_msg);
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) if conn_resp.err_code == TOKEN_NOT_EXIST_ERR_CODE => {
@@ -223,7 +236,7 @@ impl ConnectionManager {
                 self.cancel_token.cancel();
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = ConnectionState::Kicked;
-                self.message_batcher.close().await;                self.connection_listener.on_token_expired.notify(&());
+                self.message_batcher.close().await;                self.on_token_expired();
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) => {
@@ -232,14 +245,16 @@ impl ConnectionManager {
                     conn_resp.err_code, conn_resp.err_msg);
                 *self.state.write().await = ConnectionState::Disconnected;
                 let reason = format!("server rejected: {}", conn_resp.err_msg);
-                self.connection_listener.on_disconnected.notify(&reason);                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
+                self.on_disconnected(&reason);
+                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Err(e) => {
                 // 解析认证消息失败
                 error!("WebSocket auth parse error: {:?}", e);
                 *self.state.write().await = ConnectionState::Disconnected;
                 let reason = format!("auth parse error: {}", e);
-                self.connection_listener.on_disconnected.notify(&reason);                Err(e)
+                self.on_disconnected(&reason);
+                Err(e)
             }
         }
     }
@@ -285,7 +300,8 @@ impl ConnectionManager {
                         }
 
                         let delay = self_clone.calculate_reconnect_delay(attempts);
-                        info!("reconnecting in {:?} (attempt {}/{})", delay, attempts + 1, MAX_RECONNECT_ATTEMPTS);                        self_clone.connection_listener.on_reconnecting.notify(&(attempts + 1, MAX_RECONNECT_ATTEMPTS));
+                        info!("reconnecting in {:?} (attempt {}/{})", delay, attempts + 1, MAX_RECONNECT_ATTEMPTS);
+                        self_clone.on_reconnecting(attempts + 1, MAX_RECONNECT_ATTEMPTS);
 
                         tokio::select! {
                             _ = cancel.cancelled() => break,
@@ -610,7 +626,7 @@ impl ConnectionManager {
         }
         // 关闭 MessageBatcher，flush 剩余缓冲消息
         self.message_batcher.close().await;
-        self.connection_listener.on_disconnected.notify(&"manual disconnect".to_string());
+        self.on_disconnected("manual disconnect");
         info!("WebSocket disconnected (manual)");
     }
 
