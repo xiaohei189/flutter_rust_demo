@@ -62,14 +62,12 @@ impl OpenIMClient {
             user_id.clone(),
             context.friend_dao.clone(),
             context.sync_version_dao.clone(),
-            friend_listener,
         ));
         let group = Arc::new(GroupManager::new(
             context.http_client.clone(),
             user_id.clone(),
             context.group_dao.clone(),
             context.sync_version_dao.clone(),
-            group_listener,
         ));
         let conversation = Arc::new(ConversationManager::new(
             context.conversation_dao.clone(),
