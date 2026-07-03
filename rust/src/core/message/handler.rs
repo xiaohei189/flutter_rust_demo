@@ -125,9 +125,7 @@ pub struct MessageHandler {
     conversation_dao: Arc<ConversationDao>,
     user_dao: Arc<UserDao>,
     group_dao: Arc<GroupDao>,
-    event_bus: Arc<EventBus>,
     user_id: std::sync::Mutex<String>,
-    /// 内存 seq 记录器，用于准确判断未读数（对齐 Go SDK MaxSeqRecorder）
     pub max_seq_recorder: Arc<MaxSeqRecorder>,
     conversation_listener: Arc<ConversationListener>,
 }
@@ -138,18 +136,16 @@ impl MessageHandler {
         conversation_dao: Arc<ConversationDao>,
         user_dao: Arc<UserDao>,
         group_dao: Arc<GroupDao>,
-        event_bus: Arc<EventBus>,
         conversation_listener: Arc<ConversationListener>,
     ) -> Self {
         Self {
             message_dao,
             conversation_dao,
             user_dao,
-            conversation_listener,
             group_dao,
-            event_bus,
             user_id: std::sync::Mutex::new(String::new()),
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
+            conversation_listener,
         }
     }
 
@@ -332,13 +328,6 @@ impl MessageHandler {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
                     self.conversation_listener.on_user_input_status_changed.notify(&(msg.conversation_id.clone(), msg.send_id.clone(), if is_typing { vec![platform_id] } else { vec![] }));
-                    self.event_bus.publish(SdkEvent::ConversationUserInputStatusChanged {
-                        data: crate::domain::event::types::InputStatusChangedData {
-                            conversation_id: msg.conversation_id.clone(),
-                            user_id: msg.send_id.clone(),
-                            platform_ids: if is_typing { vec![platform_id] } else { vec![] },
-                        },
-                    });
                 }
             }
         }
@@ -519,9 +508,6 @@ impl MessageHandler {
             }
 
             if msg.content_type != content_type::TYPING {
-                self.event_bus.publish(SdkEvent::NewMessage {
-                    message: msg.clone(),
-                });
             }
         }
 
@@ -550,9 +536,6 @@ impl MessageHandler {
             Vec::new()
         };
         if !offline_msgs.is_empty() {
-            self.event_bus.publish(SdkEvent::RecvOfflineNewMessage {
-                messages: offline_msgs,
-            });
         }
 
         // 对齐 Go SDK：所有消息处理完成后统一发布会话变更
@@ -588,9 +571,6 @@ impl MessageHandler {
                     ex: conv.ex,
                 };
                 self.conversation_listener.on_changed.notify(&vec![conversation.clone()]);
-                let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
-                    conversations: vec![conversation],
-                });
             }
         }
 
@@ -601,7 +581,6 @@ impl MessageHandler {
     pub async fn publish_total_unread_count_changed(&self) {
         if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
             self.conversation_listener.on_total_unread_count_changed.notify(&total);
-            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
         }
     }
 
@@ -648,30 +627,12 @@ impl MessageHandler {
 
                     // 发布 C2C 已读回执事件（对齐 Go SDK OnRecvC2CReadReceipt）
                     if !updated_client_msg_ids.is_empty() {
-                        self.event_bus.publish(SdkEvent::C2CReadReceipt {
-                            receipts: vec![MessageReceipt {
-                                user_id: tips.mark_as_read_user_id.clone(),
-                                msg_ids: updated_client_msg_ids,
-                                read_time: tips.has_read_seq, // 使用 hasReadSeq 作为 read_time
-                                session_type: session_type_val,
-                            }],
-                        });
                     }
                 }
             } else if session_type_val == session_type::WRITE_GROUP_CHAT
                 || session_type_val == session_type::READ_GROUP_CHAT
             {
                 // 群聊：发布群已读回执事件（对齐 Go SDK OnRecvGroupReadReceipt）
-                self.event_bus.publish(SdkEvent::GroupReadReceipt {
-                    receipts: vec![GroupReadReceipt {
-                        group_id: tips.conversation_id.clone(),
-                        msg_id: tips.seqs.first().map(|s| s.to_string()).unwrap_or_default(),
-                        has_read_user_id_list: vec![tips.mark_as_read_user_id.clone()],
-                        has_read_count: tips.seqs.len() as i32,
-                        group_member_count: 0, // 服务端未提供，需上层查询
-                        read_time: tips.has_read_seq,
-                    }],
-                });
             }
 
             // 重算未读数（对齐 Go SDK doUnreadCount）
@@ -690,12 +651,8 @@ impl MessageHandler {
             self.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
 
             // 发布事件
-            let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
-                conversations: Vec::new(),
-            });
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
                 self.conversation_listener.on_total_unread_count_changed.notify(&total);
-            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
             }
 
             info!("[RECEIPT] self sync conv={}", tips.conversation_id);
@@ -758,29 +715,11 @@ impl MessageHandler {
                     }
 
                     if !updated_client_msg_ids.is_empty() {
-                        self.event_bus.publish(SdkEvent::C2CReadReceipt {
-                            receipts: vec![MessageReceipt {
-                                user_id: tips_json.mark_as_read_user_id.clone(),
-                                msg_ids: updated_client_msg_ids,
-                                read_time: tips_json.has_read_seq,
-                                session_type: session_type_val,
-                            }],
-                        });
                     }
                 }
             } else if session_type_val == session_type::WRITE_GROUP_CHAT
                 || session_type_val == session_type::READ_GROUP_CHAT
             {
-                self.event_bus.publish(SdkEvent::GroupReadReceipt {
-                    receipts: vec![GroupReadReceipt {
-                        group_id: tips_json.conversation_id.clone(),
-                        msg_id: seqs.first().map(|s| s.to_string()).unwrap_or_default(),
-                        has_read_user_id_list: vec![tips_json.mark_as_read_user_id.clone()],
-                        has_read_count: seqs.len() as i32,
-                        group_member_count: 0,
-                        read_time: tips_json.has_read_seq,
-                    }],
-                });
             }
 
             self.do_unread_count(
@@ -793,12 +732,8 @@ impl MessageHandler {
             info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
             self.conversation_dao.update_unread_count(&tips_json.conversation_id, 0).await?;
-            let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
-                conversations: Vec::new(),
-            });
             if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
                 self.conversation_listener.on_total_unread_count_changed.notify(&total);
-            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
             }
 
             info!("[RECEIPT] notif self sync conv={}", tips_json.conversation_id);
@@ -1031,9 +966,6 @@ impl MessageHandler {
                             ex: conv.ex,
                         };
                         self.conversation_listener.on_changed.notify(&vec![updated_conv.clone()]);
-                        let _ = self.event_bus.publish(SdkEvent::ConversationChanged {
-                            conversations: vec![updated_conv],
-                        });
                         info!("[REVOKE] 刷新会话 LatestMsg: latest_msg_send_time={}", latest_msg.send_time);
                     }
                 }
@@ -1041,7 +973,6 @@ impl MessageHandler {
         }
 
         // 6. 触发 OnNewRecvMessageRevoked 回调
-        let _ = self.event_bus.publish(revoked_event);
 
         // 7. 搜索所有引用该消息的 Quote 消息并更新（对齐官方实现）
         if let Err(e) = self.handle_quote_msg_revoke(&tips.conversation_id, &revoked_msg.client_msg_id, &notification_content.to_string()).await {

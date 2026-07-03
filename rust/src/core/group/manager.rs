@@ -340,7 +340,6 @@ pub struct GetFullJoinGroupIDsResp {
 
 pub struct GroupManager {
     http_client: Arc<HttpApiClient>,
-    event_bus: Arc<EventBus>,
     user_id: Arc<RwLock<String>>,
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
@@ -352,7 +351,6 @@ pub struct GroupManager {
 impl GroupManager {
     pub fn new(
         http_client: Arc<HttpApiClient>,
-        event_bus: Arc<EventBus>,
         user_id: String,
         group_dao: Arc<GroupDao>,
         sync_version_dao: Arc<SyncVersionDao>,
@@ -360,7 +358,6 @@ impl GroupManager {
     ) -> Self {
         Self {
             http_client,
-            event_bus,
             user_id: Arc::new(RwLock::new(user_id)),
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
@@ -576,9 +573,6 @@ impl GroupManager {
         let group = server_to_group_info(resp.group);
         self.groups.write().await.push(group.clone());
 
-        self.event_bus.publish(SdkEvent::GroupCreated {
-            group_id: group.group_id.clone(),
-        });
 
         info!("群组已创建: {}", group.group_id);
         Ok(group)
@@ -622,9 +616,6 @@ impl GroupManager {
         self.groups.write().await.retain(|g| g.group_id != group_id);
         self.members.write().await.retain(|m| m.group_id != group_id);
 
-        self.event_bus.publish(SdkEvent::GroupDismissed {
-            group_id: group_id.clone(),
-        });
 
         info!("群组已解散: {}", group_id);
         Ok(())
@@ -657,9 +648,6 @@ impl GroupManager {
             }
         }
 
-        self.event_bus.publish(SdkEvent::GroupInfoChanged {
-            group_id: updates.group_id.clone(),
-        });
 
         info!("群组信息已更新: {}", updates.group_id);
         Ok(())

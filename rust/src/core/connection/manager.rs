@@ -1,7 +1,5 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::EventBus;
-use crate::domain::event::types::SdkEvent;
 use crate::domain::listener::connection::ConnectionListener;
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
@@ -49,7 +47,6 @@ pub struct ConnectionManager {
     writer: Arc<RwLock<Option<WsWriter>>>,
     state: Arc<RwLock<ConnectionState>>,
     pending_requests: Arc<RwLock<HashMap<String, PendingRequest>>>,
-    event_bus: Arc<EventBus>,
     cancel_token: CancellationToken,
 
     msg_incr: AtomicU64,
@@ -71,7 +68,7 @@ pub struct ConnectionManager {
 }
 
 impl ConnectionManager {
-    pub fn new(event_bus: Arc<EventBus>, cancel_token: CancellationToken) -> Self {
+    pub fn new(cancel_token: CancellationToken) -> Self {
         let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>> = Arc::new(std::sync::Mutex::new(None));
         let push_tx_clone = push_tx.clone();
         let compressor = GzipCompressor::new();
@@ -88,7 +85,6 @@ impl ConnectionManager {
             writer: Arc::new(RwLock::new(None)),
             state: Arc::new(RwLock::new(ConnectionState::Disconnected)),
             pending_requests: Arc::new(RwLock::new(HashMap::new())),
-            event_bus,
             cancel_token,
             msg_incr: AtomicU64::new(0),
             token: RwLock::new(String::new()),
@@ -149,7 +145,6 @@ impl ConnectionManager {
         const TOKEN_NOT_EXIST_ERR_CODE: i32 = 1507;
 
         self.set_state(ConnectionState::Connecting).await;
-        self.event_bus.publish(SdkEvent::Connecting);
         self.connection_listener.on_connecting.notify(&());
 
         let ws_url = self.ws_url.read().await;
@@ -206,9 +201,7 @@ impl ConnectionManager {
                 // 认证通过 → 发布 Connected，启动读写循环
                 info!("WebSocket auth confirmed by server");
                 *self.writer.write().await = Some(write);
-                self.set_state(ConnectionState::Connected).await;
-                self.event_bus.publish(SdkEvent::Connected);
-                self.connection_listener.on_connected.notify(&());
+                self.set_state(ConnectionState::Connected).await;                self.connection_listener.on_connected.notify(&());
                 self.reconnect_attempts.store(0, Ordering::SeqCst);
                 self.spawn_read_loop(read);
                 self.spawn_heartbeat();
@@ -221,7 +214,6 @@ impl ConnectionManager {
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = ConnectionState::Kicked;
                 self.message_batcher.close().await;
-                self.event_bus.publish(SdkEvent::KickedOffline { reason: conn_resp.err_msg.clone() });
                 self.connection_listener.on_kicked_offline.notify(&conn_resp.err_msg);;
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
@@ -231,9 +223,7 @@ impl ConnectionManager {
                 self.cancel_token.cancel();
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = ConnectionState::Kicked;
-                self.message_batcher.close().await;
-                self.event_bus.publish(SdkEvent::TokenExpired);
-                self.connection_listener.on_token_expired.notify(&());
+                self.message_batcher.close().await;                self.connection_listener.on_token_expired.notify(&());
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) => {
@@ -242,27 +232,19 @@ impl ConnectionManager {
                     conn_resp.err_code, conn_resp.err_msg);
                 *self.state.write().await = ConnectionState::Disconnected;
                 let reason = format!("server rejected: {}", conn_resp.err_msg);
-                self.connection_listener.on_disconnected.notify(&reason);
-                self.event_bus.publish(SdkEvent::Disconnected { reason,
-                });
-                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
+                self.connection_listener.on_disconnected.notify(&reason);                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Err(e) => {
                 // 解析认证消息失败
                 error!("WebSocket auth parse error: {:?}", e);
                 *self.state.write().await = ConnectionState::Disconnected;
                 let reason = format!("auth parse error: {}", e);
-                self.connection_listener.on_disconnected.notify(&reason);
-                self.event_bus.publish(SdkEvent::Disconnected { reason,
-                });
-                Err(e)
+                self.connection_listener.on_disconnected.notify(&reason);                Err(e)
             }
         }
     }
 
-    fn spawn_reconnect_loop(&self) {
-        let event_bus = self.event_bus.clone();
-        let cancel = self.cancel_token.clone();
+    fn spawn_reconnect_loop(&self) {        let cancel = self.cancel_token.clone();
         let state = self.state.clone();
         let is_manual = self.is_manual_disconnect.clone();
         let self_clone = Arc::new(self.clone_shallow());
@@ -299,19 +281,11 @@ impl ConnectionManager {
                         let attempts = self_clone.reconnect_attempts.fetch_add(1, Ordering::SeqCst);
                         if attempts >= MAX_RECONNECT_ATTEMPTS {
                             error!("max reconnect attempts reached ({})", MAX_RECONNECT_ATTEMPTS);
-                            event_bus.publish(SdkEvent::Disconnected {
-                                reason: "max reconnect attempts".into(),
-                            });
                             break;
                         }
 
                         let delay = self_clone.calculate_reconnect_delay(attempts);
-                        info!("reconnecting in {:?} (attempt {}/{})", delay, attempts + 1, MAX_RECONNECT_ATTEMPTS);
-                        event_bus.publish(SdkEvent::Reconnecting {
-                            attempt: attempts + 1,
-                            max_attempts: MAX_RECONNECT_ATTEMPTS,
-                        });
-                        self_clone.connection_listener.on_reconnecting.notify(&(attempts + 1, MAX_RECONNECT_ATTEMPTS));
+                        info!("reconnecting in {:?} (attempt {}/{})", delay, attempts + 1, MAX_RECONNECT_ATTEMPTS);                        self_clone.connection_listener.on_reconnecting.notify(&(attempts + 1, MAX_RECONNECT_ATTEMPTS));
 
                         tokio::select! {
                             _ = cancel.cancelled() => break,
@@ -344,9 +318,6 @@ impl ConnectionManager {
                                 {
                                     *state.write().await = ConnectionState::Disconnected;
                                 }
-                                event_bus.publish(SdkEvent::Disconnected {
-                                    reason: format!("reconnect failed: {}", e),
-                                });
                             }
                         }
                     }
@@ -373,7 +344,6 @@ impl ConnectionManager {
             writer: self.writer.clone(),
             state: self.state.clone(),
             pending_requests: self.pending_requests.clone(),
-            event_bus: self.event_bus.clone(),
             cancel_token: self.cancel_token.clone(),
             msg_incr: AtomicU64::new(self.msg_incr.load(Ordering::SeqCst)),
             token: RwLock::new(self.token.try_read().map(|t| t.clone()).unwrap_or_default()),
@@ -394,9 +364,7 @@ impl ConnectionManager {
         &self,
         read: futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
     ) {
-        let pending = self.pending_requests.clone();
-        let event_bus = self.event_bus.clone();
-        let cancel = self.cancel_token.clone();
+        let pending = self.pending_requests.clone();        let cancel = self.cancel_token.clone();
         let state = self.state.clone();
         let writer = self.writer.clone();
         let compressor = self.compressor.clone();
@@ -491,9 +459,6 @@ impl ConnectionManager {
                                 {
                                     *state.write().await = ConnectionState::Disconnected;
                                 }
-                                event_bus.publish(SdkEvent::Disconnected {
-                                    reason: "server closed".into(),
-                                });
                                 break;
                             }
                             Some(Err(e)) => {
@@ -507,9 +472,6 @@ impl ConnectionManager {
                                     *state.write().await = ConnectionState::Disconnected;
                                 }
                                 if !manual {
-                                    event_bus.publish(SdkEvent::Disconnected {
-                                        reason: format!("ws error: {}", e),
-                                    });
                                 }
                                 break;
                             }
@@ -519,9 +481,6 @@ impl ConnectionManager {
                                     info!("ws stream ended (manual disconnect)");
                                 } else {
                                     info!("ws stream ended");
-                                    event_bus.publish(SdkEvent::Disconnected {
-                                        reason: "stream ended".into(),
-                                    });
                                 }
                                 {
                                     *state.write().await = ConnectionState::Disconnected;
@@ -538,9 +497,7 @@ impl ConnectionManager {
 
     fn spawn_heartbeat(&self) {
         let writer = self.writer.clone();
-        let state = self.state.clone();
-        let event_bus = self.event_bus.clone();
-        let cancel = self.cancel_token.clone();
+        let state = self.state.clone();        let cancel = self.cancel_token.clone();
 
         tokio::spawn(async move {
             let mut ticker = interval(HEARTBEAT_INTERVAL);
@@ -569,9 +526,6 @@ impl ConnectionManager {
                         if let Err(e) = ping_result {
                             warn!("heartbeat ping failed: {}", e);
                             *state.write().await = ConnectionState::Disconnected;
-                            event_bus.publish(SdkEvent::Disconnected {
-                                reason: format!("ping failed: {}", e),
-                            });
                             break;
                         }
                     }
@@ -657,9 +611,6 @@ impl ConnectionManager {
         // 关闭 MessageBatcher，flush 剩余缓冲消息
         self.message_batcher.close().await;
         self.connection_listener.on_disconnected.notify(&"manual disconnect".to_string());
-                self.event_bus.publish(SdkEvent::Disconnected {
-            reason: "manual disconnect".into(),
-        });
         info!("WebSocket disconnected (manual)");
     }
 
@@ -671,9 +622,6 @@ impl ConnectionManager {
         }
         // 关闭 MessageBatcher，flush 剩余缓冲消息
         self.message_batcher.close().await;
-        self.event_bus.publish(SdkEvent::KickedOffline {
-            reason: reason.clone(),
-        });
         warn!("kicked offline: {}", reason);
     }
 
@@ -702,7 +650,7 @@ mod tests {
     async fn test_connection_manager_creation() {
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new(event_bus, cancel_token);
+        let manager = ConnectionManager::new( cancel_token);
 
         assert_eq!(manager.get_state().await, ConnectionState::Disconnected);
     }
@@ -711,7 +659,7 @@ mod tests {
     async fn test_connection_state_transitions() {
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new(event_bus, cancel_token);
+        let manager = ConnectionManager::new( cancel_token);
 
         manager.set_state(ConnectionState::Connecting).await;
         assert_eq!(manager.get_state().await, ConnectionState::Connecting);
@@ -727,7 +675,7 @@ mod tests {
     async fn test_is_connected() {
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new(event_bus, cancel_token);
+        let manager = ConnectionManager::new( cancel_token);
 
         assert!(!manager.is_connected().await);
 

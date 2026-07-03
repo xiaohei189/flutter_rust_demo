@@ -294,7 +294,6 @@ pub struct UpdateFriendsReq {
 
 pub struct FriendManager {
     http_client: Arc<HttpApiClient>,
-    event_bus: Arc<EventBus>,
     user_id: Arc<RwLock<String>>,
     friends: Arc<RwLock<Vec<FriendInfo>>>,
     blacks: Arc<RwLock<Vec<String>>>,
@@ -306,7 +305,6 @@ pub struct FriendManager {
 impl FriendManager {
     pub fn new(
         http_client: Arc<HttpApiClient>,
-        event_bus: Arc<EventBus>,
         user_id: String,
         friend_dao: Arc<FriendDao>,
         sync_version_dao: Arc<SyncVersionDao>,
@@ -314,7 +312,6 @@ impl FriendManager {
     ) -> Self {
         Self {
             http_client,
-            event_bus,
             user_id: Arc::new(RwLock::new(user_id)),
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
@@ -395,9 +392,6 @@ impl FriendManager {
         *self.friends.write().await = friends.clone();
 
         self.friend_listener.on_added.notify(&friends);
-        self.event_bus.publish(SdkEvent::FriendAdded {
-            friends: friends.clone(),
-        });
 
         info!("好友列表已全量同步, count={}", friends.len());
         Ok(())
@@ -503,9 +497,6 @@ impl FriendManager {
                 .map(|s| server_to_friend(s.clone()))
                 .collect();
             self.friend_listener.on_added.notify(&all_changed);
-        self.event_bus.publish(SdkEvent::FriendAdded {
-                friends: all_changed,
-            });
         }
 
         info!("增量同步好友完成, insert={}, update={}, delete={}",
@@ -717,9 +708,6 @@ impl FriendManager {
         self.friends.write().await.retain(|f| f.user_id != user_id);
 
         self.friend_listener.on_deleted.notify(&user_id);
-        self.event_bus.publish(SdkEvent::FriendDeleted {
-            friend_id: user_id.clone(),
-        });
 
         info!("好友已删除: {}", user_id);
         Ok(())
@@ -772,9 +760,6 @@ impl FriendManager {
         self.blacks.write().await.push(user_id.clone());
 
         self.friend_listener.on_black_added.notify(&user_id);
-        self.event_bus.publish(SdkEvent::BlackAdded {
-            user_id: user_id.clone(),
-        });
 
         info!("已添加到黑名单: {}", user_id);
         Ok(())
@@ -790,9 +775,6 @@ impl FriendManager {
         self.blacks.write().await.retain(|id| id != &user_id);
 
         self.friend_listener.on_black_deleted.notify(&user_id);
-        self.event_bus.publish(SdkEvent::BlackDeleted {
-            black_id: user_id.clone(),
-        });
 
         info!("已从黑名单移除: {}", user_id);
         Ok(())

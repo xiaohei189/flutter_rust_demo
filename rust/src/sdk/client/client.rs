@@ -49,7 +49,6 @@ impl OpenIMClient {
         );
 
         let connection = Arc::new(ConnectionManager::new(
-            event_bus.clone(),
             cancel_token.clone(),
         ));
 
@@ -60,7 +59,6 @@ impl OpenIMClient {
         let user_id = context.user_id.lock().unwrap().clone();
         let friend = Arc::new(FriendManager::new(
             context.http_client.clone(),
-            event_bus.clone(),
             user_id.clone(),
             context.friend_dao.clone(),
             context.sync_version_dao.clone(),
@@ -68,7 +66,6 @@ impl OpenIMClient {
         ));
         let group = Arc::new(GroupManager::new(
             context.http_client.clone(),
-            event_bus.clone(),
             user_id.clone(),
             context.group_dao.clone(),
             context.sync_version_dao.clone(),
@@ -93,7 +90,6 @@ impl OpenIMClient {
             context.conversation_dao.clone(),
             context.user_dao.clone(),
             context.group_dao.clone(),
-            event_bus.clone(),
             conversation_listener.clone(),
         ));
 
