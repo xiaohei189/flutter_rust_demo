@@ -3,6 +3,7 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
 use crate::domain::event::types::{MessageReceipt, SdkEvent};
 use crate::domain::model::conversation::Conversation;
+use crate::domain::listener::conversation::ConversationListener;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
@@ -74,6 +75,7 @@ pub struct MessageService {
     message_dao: Arc<MessageDao>,
     conversation_dao: Arc<ConversationDao>,
     event_bus: Arc<EventBus>,
+    conversation_listener: Arc<ConversationListener>,
     http_client: Arc<crate::infra::http::client::HttpApiClient>,
     user_id: Arc<std::sync::Mutex<String>>,
 }
@@ -83,6 +85,7 @@ impl MessageService {
         message_dao: Arc<MessageDao>,
         conversation_dao: Arc<ConversationDao>,
         event_bus: Arc<EventBus>,
+        conversation_listener: Arc<ConversationListener>,
         http_client: Arc<crate::infra::http::client::HttpApiClient>,
         user_id: String,
     ) -> Self {
@@ -90,6 +93,7 @@ impl MessageService {
             message_dao,
             conversation_dao,
             event_bus,
+            conversation_listener,
             http_client,
             user_id: Arc::new(std::sync::Mutex::new(user_id)),
         }
@@ -372,13 +376,12 @@ impl MessageService {
                 is_private: conv.is_private_chat != 0,
                 ex: conv.ex,
             };
-            self.event_bus.publish(SdkEvent::ConversationChanged {
-                conversations: vec![conversation],
-            });
+            self.conversation_listener.on_changed.notify(&vec![conversation]);
         }
 
         // L169-170: TotalUnreadMessageChanged
         let total_unread = self.conversation_dao.get_total_unread_count().await.unwrap_or(0);
+        self.conversation_listener.on_total_unread_count_changed.notify(&total_unread);
         self.event_bus.publish(SdkEvent::TotalUnreadCountChanged {
             count: total_unread,
         });
@@ -451,7 +454,7 @@ impl MessageService {
             }
         }
 
-        self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: 0 });
+        self.conversation_listener.on_total_unread_count_changed.notify(&0);
         info!("已标记所有会话消息已读");
         Ok(())
     }
