@@ -1,7 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::group::GroupListeners;
+use crate::domain::listener::group::GroupListener;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::infra::database::group_dao::GroupDao;
 use crate::infra::database::models::LocalGroup;
@@ -345,7 +345,7 @@ pub struct GroupManager {
     members: Arc<RwLock<Vec<GroupMember>>>,
     group_dao: Arc<GroupDao>,
     sync_version_dao: Arc<SyncVersionDao>,
-    group_listener: Arc<GroupListeners>,
+    group_listener: Arc<std::sync::RwLock<Option<Arc<dyn GroupListener>>>>,
 }
 
 impl GroupManager {
@@ -354,7 +354,6 @@ impl GroupManager {
         user_id: String,
         group_dao: Arc<GroupDao>,
         sync_version_dao: Arc<SyncVersionDao>,
-        group_listener: Arc<GroupListeners>,
     ) -> Self {
         Self {
             http_client,
@@ -363,13 +362,21 @@ impl GroupManager {
             members: Arc::new(RwLock::new(Vec::new())),
             group_dao,
             sync_version_dao,
-            group_listener,
+            group_listener: Arc::new(std::sync::RwLock::new(None)),
         }
     }
 
-    pub fn group_listener(&self) -> &Arc<GroupListeners> {
-        &self.group_listener
+    pub fn set_group_listener(&self, l: Arc<dyn GroupListener>) {
+        *self.group_listener.write().unwrap() = Some(l);
     }
+
+    fn notify_group(&self, f: impl FnOnce(&dyn GroupListener)) {
+        if let Some(l) = &*self.group_listener.read().unwrap() { f(&**l); }
+    }
+
+    fn on_joined_group_added(&self, g: &GroupInfo) { self.notify_group(|l| l.on_joined_group_added(g)); }
+    fn on_group_info_changed(&self, g: &GroupInfo) { self.notify_group(|l| l.on_group_info_changed(g)); }
+    fn on_group_read_receipt(&self, r: &[GroupReadReceipt]) { self.notify_group(|l| l.on_group_read_receipt(r)); }
 
     pub async fn set_user_id(&self, user_id: String) {
         *self.user_id.write().await = user_id.clone();

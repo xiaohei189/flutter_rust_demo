@@ -1,7 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::friend::FriendListeners;
+use crate::domain::listener::friend::FriendListener;
 use crate::domain::model::friend::FriendInfo;
 use crate::infra::database::friend_dao::FriendDao;
 use crate::infra::database::models::LocalFriend;
@@ -299,7 +299,7 @@ pub struct FriendManager {
     blacks: Arc<RwLock<Vec<String>>>,
     friend_dao: Arc<FriendDao>,
     sync_version_dao: Arc<SyncVersionDao>,
-    friend_listener: Arc<FriendListeners>,
+    friend_listener: Arc<std::sync::RwLock<Option<Arc<dyn FriendListener>>>>,
 }
 
 impl FriendManager {
@@ -308,7 +308,6 @@ impl FriendManager {
         user_id: String,
         friend_dao: Arc<FriendDao>,
         sync_version_dao: Arc<SyncVersionDao>,
-        friend_listener: Arc<FriendListeners>,
     ) -> Self {
         Self {
             http_client,
@@ -317,13 +316,22 @@ impl FriendManager {
             blacks: Arc::new(RwLock::new(Vec::new())),
             friend_dao,
             sync_version_dao,
-            friend_listener,
+            friend_listener: Arc::new(std::sync::RwLock::new(None)),
         }
     }
 
-    pub fn friend_listener(&self) -> &Arc<FriendListeners> {
-        &self.friend_listener
+    pub fn set_friend_listener(&self, l: Arc<dyn FriendListener>) {
+        *self.friend_listener.write().unwrap() = Some(l);
     }
+
+    fn notify_friend(&self, f: impl FnOnce(&dyn FriendListener)) {
+        if let Some(l) = &*self.friend_listener.read().unwrap() { f(&**l); }
+    }
+
+    fn on_added(&self, fs: &[FriendInfo]) { self.notify_friend(|l| l.on_added(fs)); }
+    fn on_deleted(&self, id: &str) { self.notify_friend(|l| l.on_deleted(id)); }
+    fn on_black_added(&self, id: &str) { self.notify_friend(|l| l.on_black_added(id)); }
+    fn on_black_deleted(&self, id: &str) { self.notify_friend(|l| l.on_black_deleted(id)); }
 
     pub async fn set_user_id(&self, user_id: String) {
         *self.user_id.write().await = user_id.clone();
@@ -391,7 +399,7 @@ impl FriendManager {
         // 更新内存缓存
         *self.friends.write().await = friends.clone();
 
-        self.friend_listener.on_added.notify(&friends);
+        self.on_added(&friends);
 
         info!("好友列表已全量同步, count={}", friends.len());
         Ok(())
@@ -496,7 +504,7 @@ impl FriendManager {
             let all_changed: Vec<FriendInfo> = resp.insert.iter().chain(resp.update.iter())
                 .map(|s| server_to_friend(s.clone()))
                 .collect();
-            self.friend_listener.on_added.notify(&all_changed);
+            self.on_added(&all_changed);
         }
 
         info!("增量同步好友完成, insert={}, update={}, delete={}",
@@ -707,7 +715,7 @@ impl FriendManager {
 
         self.friends.write().await.retain(|f| f.user_id != user_id);
 
-        self.friend_listener.on_deleted.notify(&user_id);
+        self.on_deleted(&user_id);
 
         info!("好友已删除: {}", user_id);
         Ok(())
@@ -759,7 +767,7 @@ impl FriendManager {
 
         self.blacks.write().await.push(user_id.clone());
 
-        self.friend_listener.on_black_added.notify(&user_id);
+        self.on_black_added(&user_id);
 
         info!("已添加到黑名单: {}", user_id);
         Ok(())
