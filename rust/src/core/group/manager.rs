@@ -371,6 +371,22 @@ impl GroupManager {
         debug!("GroupManager user_id 已更新为: {}", user_id);
     }
 
+    /// 从本地数据库加载群组列表到内存缓存
+    /// 在登录时调用，确保切换账号后能立即显示已有数据
+    pub async fn load_groups_from_db(&self) {
+        match self.group_dao.get_all_groups().await {
+            Ok(local_groups) => {
+                let groups: Vec<GroupInfo> = local_groups.iter().map(local_to_group_info).collect();
+                let count = groups.len();
+                *self.groups.write().await = groups;
+                info!("从数据库加载群组列表完成, count={}", count);
+            }
+            Err(e) => {
+                warn!("从数据库加载群组列表失败: {}", e);
+            }
+        }
+    }
+
     pub async fn get_joined_group_list(&self) -> Vec<GroupInfo> {
         self.groups.read().await.clone()
     }

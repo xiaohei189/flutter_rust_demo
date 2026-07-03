@@ -325,6 +325,23 @@ impl FriendManager {
         debug!("FriendManager user_id 已更新为: {}", user_id);
     }
 
+    /// 从本地数据库加载好友列表到内存缓存
+    /// 在登录时调用，确保切换账号后能立即显示已有数据
+    pub async fn load_friends_from_db(&self) {
+        let user_id = self.user_id.read().await.clone();
+        match self.friend_dao.get_all(&user_id).await {
+            Ok(local_friends) => {
+                let friends: Vec<FriendInfo> = local_friends.iter().map(local_to_friend_info).collect();
+                let count = friends.len();
+                *self.friends.write().await = friends;
+                info!("从数据库加载好友列表完成, count={}", count);
+            }
+            Err(e) => {
+                warn!("从数据库加载好友列表失败: {}", e);
+            }
+        }
+    }
+
     pub async fn get_friend_list(&self) -> Vec<FriendInfo> {
         self.friends.read().await.clone()
     }

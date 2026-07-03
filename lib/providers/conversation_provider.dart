@@ -128,6 +128,9 @@ final conversationByIdProvider = Provider.family<LocalConversation?, String>((re
 });
 
 /// 未读消息总数 Provider
+/// 直接读取 Rust 侧 TotalUnreadCountChanged 事件推送的权威值，不从会话列表累加
 final totalUnreadCountProvider = Provider<int>((ref) {
-  return ref.watch(conversationListProvider).totalUnreadCount;
+  return ref.watch(
+    messageServiceProvider.select((s) => s.totalUnreadCount),
+  );
 });

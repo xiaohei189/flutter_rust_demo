@@ -15,7 +15,6 @@ impl EventBus {
     }
 
     pub fn publish(&self, event: SdkEvent) {
-        tracing::info!("[EventBus] 发布事件: {:?}", event);
         let _ = self.sender.send(event);
     }
 

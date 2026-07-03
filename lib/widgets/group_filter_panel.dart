@@ -204,20 +204,24 @@ class LeftSlideRoute extends PageRouteBuilder<void> {
           opaque: false,
           barrierDismissible: true,
           barrierColor: Colors.black54,
-          transitionDuration: const Duration(milliseconds: 250),
+          transitionDuration: const Duration(milliseconds: 350),
           reverseTransitionDuration: const Duration(milliseconds: 200),
           pageBuilder: (context, animation, secondaryAnimation) => child,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+              reverseCurve: Curves.easeIn,
+            );
             return SlideTransition(
               position: Tween<Offset>(
-                begin: const Offset(-1, 0),
+                begin: const Offset(-0.4, 0),
                 end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              )),
-              child: child,
+              ).animate(curvedAnimation),
+              child: FadeTransition(
+                opacity: Tween<double>(begin: 0, end: 1).animate(curvedAnimation),
+                child: child,
+              ),
             );
           },
         );

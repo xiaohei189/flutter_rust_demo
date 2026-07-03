@@ -161,7 +161,12 @@ impl OpenIMClient {
         let message_handler = self.message_handler.clone();
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();
+        let conversation_syncer = self.conversation_syncer.clone();
         let cancel_token = self.context.cancel_token.clone();
+
+        // 内部消息通道：对齐 Go SDK 直接调用模式，WS 消息不走 EventBus
+        let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<PushMessages>();
+        self.connection.set_push_sender(push_tx);
 
         tokio::spawn(async move {
             let mut subscription = event_bus.subscribe();
@@ -175,95 +180,44 @@ impl OpenIMClient {
                     event = subscription.next() => {
                         match event {
                             Some(SdkEvent::Connected) => {
-                                // 延迟一小段时间，等待服务器确认（或拒绝）连接
-                                // 避免在 TokenKickedError 场景下在已死连接上启动同步
                                 tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                                 if cancel_token.is_cancelled() {
                                     break;
                                 }
-                                // 检查是否已被踢下线
                                 if message_syncer.is_connection_kicked().await {
                                     info!("push_message_handler: connection was kicked, skipping sync");
                                     continue;
                                 }
-                                info!("push_message_handler: connection established, starting message sync");
+                                info!("push_message_handler: connection established, syncing conversations then messages");
+                                // 对齐 Go SDK：先同步会话，再同步消息
+                                if let Err(e) = conversation_syncer.sync_incremental().await {
+                                    warn!("push_message_handler: conversation sync after reconnect failed, falling back to full sync: {:?}", e);
+                                    if let Err(e2) = conversation_syncer.sync_full().await {
+                                        warn!("push_message_handler: conversation full sync failed: {:?}", e2);
+                                    }
+                                }
                                 if let Err(e) = message_syncer.sync_after_reconnect().await {
-                                    warn!("push_message_handler: sync after reconnect failed: {:?}", e);
+                                    warn!("push_message_handler: message sync after reconnect failed: {:?}", e);
                                 }
+                                message_handler.publish_total_unread_count_changed().await;
                             }
-                            Some(SdkEvent::PushMessage { data, req_identifier }) => {
-                                info!("push_message_handler: received PushMessage event, req_identifier={}, data_len={}", req_identifier, data.len());
-                                match PushMessages::decode(data.as_slice()) {
-                                    Ok(push_messages) => {
-                                        info!("push_message_handler: decoded successfully, msgs={}, notification_msgs={}",
-                                            push_messages.msgs.len(), push_messages.notification_msgs.len());
-
-                                        // 处理普通消息（对齐 Go SDK triggerConversation）
-                                        for (conv_id, pull_msgs) in &push_messages.msgs {
-                                            let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
-                                                let content_str = String::from_utf8_lossy(&msg.content).to_string();
-
-                                                Some(ReceivedMessage {
-                                                    server_msg_id: msg.server_msg_id.clone(),
-                                                    client_msg_id: msg.client_msg_id.clone(),
-                                                    send_id: msg.send_id.clone(),
-                                                    recv_id: msg.recv_id.clone(),
-                                                    sender_platform_id: msg.sender_platform_id,
-                                                    sender_nick_name: msg.sender_nickname.clone(),
-                                                    sender_face_url: msg.sender_face_url.clone(),
-                                                    session_type: msg.session_type,
-                                                    msg_from: msg.msg_from,
-                                                    content_type: msg.content_type,
-                                                    content: content_str,
-                                                    seq: msg.seq,
-                                                    send_time: msg.send_time,
-                                                    create_time: msg.create_time,
-                                                    conversation_id: conv_id.clone(),
-                                                    group_id: msg.group_id.clone(),
-                                                    is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
-                                                })
-                                            }).collect();
-
-                                            let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-
-                                            if !messages.is_empty() {
-                                                info!("push_message_handler: handling {} messages for {}", messages.len(), conv_id);
-                                                if let Err(e) = message_handler.handle_messages(messages).await {
-                                                    warn!("failed to handle push messages for {}: {:?}", conv_id, e);
-                                                }
-                                                if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                                    warn!("push_trigger_and_sync failed for {}: {:?}", conv_id, e);
-                                                }
-                                            } else if !seqs.is_empty() {
-                                                if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                                    warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
-                                                }
-                                            }
-                                        }
-
-                                        // 处理通知消息（对齐 Go SDK triggerNotification）
-                                        for (conv_id, pull_msgs) in &push_messages.notification_msgs {
-                                            notification_handler.handle_notifications(&pull_msgs.msgs).await;
-
-                                            let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-                                            if !seqs.is_empty() {
-                                                if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                                    warn!("push_trigger_and_sync (notification) failed for {}: {:?}", conv_id, e);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        warn!("failed to decode push message: {}", e);
-                                    }
-                                }
+                            Some(SdkEvent::PushNotificationMessages { msgs, .. }) => {
+                                notification_handler.handle_notifications(&msgs).await;
                             }
-                            Some(SdkEvent::PushMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
-                                info!("push_message_handler: received PushMessages event for {}, msg_count={}", conversation_id, msgs.len());
+                            None => {
+                                info!("push_message_handler: event stream closed");
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
+                    push_batch = push_rx.recv() => {
+                        if let Some(batch) = push_batch {
+                            let mut has_message_changes = false;
 
-                                let messages: Vec<ReceivedMessage> = msgs.iter().filter_map(|msg| {
+                            for (conv_id, pull_msgs) in &batch.msgs {
+                                let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
                                     let content_str = String::from_utf8_lossy(&msg.content).to_string();
-
                                     Some(ReceivedMessage {
                                         server_msg_id: msg.server_msg_id.clone(),
                                         client_msg_id: msg.client_msg_id.clone(),
@@ -279,114 +233,38 @@ impl OpenIMClient {
                                         seq: msg.seq,
                                         send_time: msg.send_time,
                                         create_time: msg.create_time,
-                                        conversation_id: conversation_id.clone(),
+                                        conversation_id: conv_id.clone(),
                                         group_id: msg.group_id.clone(),
                                         is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
                                     })
                                 }).collect();
-
-                                let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+                                let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
 
                                 if !messages.is_empty() {
-                                    info!("push_message_handler: handling {} messages for {}", messages.len(), conversation_id);
-                                    if let Err(e) = message_handler.handle_messages(messages).await {
-                                        warn!("failed to handle push messages for {}: {:?}", conversation_id, e);
+                                    match message_handler.handle_messages(messages).await {
+                                        Ok(changed) => { if changed { has_message_changes = true; } }
+                                        Err(e) => warn!("failed to handle push messages for {}: {:?}", conv_id, e),
                                     }
-                                    if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
-                                        warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
+                                    if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                        warn!("push_trigger_and_sync failed for {}: {:?}", conv_id, e);
+                                    }
+                                } else if !seqs.is_empty() {
+                                    if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                                        warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
                                     }
                                 }
                             }
-                            Some(SdkEvent::PushNotificationMessages { conversation_id, msgs, is_end: _, end_seq: _ }) => {
-                                info!("push_message_handler: received PushNotificationMessages for {}, msg_count={}", conversation_id, msgs.len());
 
-                                // 通知消息路由到 NotificationHandler（对齐 Go SDK DoNotification）
-                                notification_handler.handle_notifications(&msgs).await;
-
-                                // 同步 seq
-                                let seqs: Vec<i64> = msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+                            for (_conv_id, pull_msgs) in &batch.notification_msgs {
+                                notification_handler.handle_notifications(&pull_msgs.msgs).await;
+                                let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
                                 if !seqs.is_empty() {
-                                    if let Err(e) = message_syncer.push_trigger_and_sync(&conversation_id, &seqs).await {
-                                        warn!("push_trigger_and_sync failed for {}: {:?}", conversation_id, e);
-                                    }
-                                    // 持久化通知会话的 seq（对齐 Go SDK SetNotificationSeq）
-                                    if let Some(&max_seq) = seqs.iter().max() {
-                                        if let Err(e) = message_syncer.set_notification_seq(&conversation_id, max_seq).await {
-                                            warn!("set_notification_seq failed for {}: {:?}", conversation_id, e);
-                                        }
-                                    }
+                                    let _ = message_syncer.push_trigger_and_sync(_conv_id, &seqs).await;
                                 }
                             }
-                            Some(SdkEvent::BatchedPushMessages { msgs, notification_msgs }) => {
-                                info!("push_message_handler: received BatchedPushMessages, {} msg conversations, {} notification conversations",
-                                    msgs.len(), notification_msgs.len());
 
-                                // 处理普通消息
-                                for (conv_id, pull_msgs) in &msgs {
-                                    let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
-                                        let content_str = String::from_utf8_lossy(&msg.content).to_string();
-                                        Some(ReceivedMessage {
-                                            server_msg_id: msg.server_msg_id.clone(),
-                                            client_msg_id: msg.client_msg_id.clone(),
-                                            send_id: msg.send_id.clone(),
-                                            recv_id: msg.recv_id.clone(),
-                                            sender_platform_id: msg.sender_platform_id,
-                                            sender_nick_name: msg.sender_nickname.clone(),
-                                            sender_face_url: msg.sender_face_url.clone(),
-                                            session_type: msg.session_type,
-                                            msg_from: msg.msg_from,
-                                            content_type: msg.content_type,
-                                            content: content_str,
-                                            seq: msg.seq,
-                                            send_time: msg.send_time,
-                                            create_time: msg.create_time,
-                                            conversation_id: conv_id.clone(),
-                                            group_id: msg.group_id.clone(),
-                                            is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
-                                        })
-                                    }).collect();
-
-                                    let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-
-                                    if !messages.is_empty() {
-                                        info!("push_message_handler: handling {} batched messages for {}", messages.len(), conv_id);
-                                        if let Err(e) = message_handler.handle_messages(messages).await {
-                                            warn!("failed to handle batched messages for {}: {:?}", conv_id, e);
-                                        }
-                                        if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                            warn!("push_trigger_and_sync (batched) failed for {}: {:?}", conv_id, e);
-                                        }
-                                    } else if !seqs.is_empty() {
-                                        if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                            warn!("push_trigger_and_sync (batched seq) failed for {}: {:?}", conv_id, e);
-                                        }
-                                    }
-                                }
-
-                                // 处理通知消息
-                                for (conv_id, pull_msgs) in &notification_msgs {
-                                    notification_handler.handle_notifications(&pull_msgs.msgs).await;
-
-                                    let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-                                    if !seqs.is_empty() {
-                                        if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                            warn!("push_trigger_and_sync (batched notification) failed for {}: {:?}", conv_id, e);
-                                        }
-                                        // 持久化通知会话的 seq（对齐 Go SDK SetNotificationSeq）
-                                        if let Some(&max_seq) = seqs.iter().max() {
-                                            if let Err(e) = message_syncer.set_notification_seq(conv_id, max_seq).await {
-                                                warn!("set_notification_seq (batched) failed for {}: {:?}", conv_id, e);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            Some(other) => {
-                                info!("push_message_handler: event {:?}", other);
-                            }
-                            None => {
-                                info!("push_message_handler: event stream closed");
-                                break;
+                            if has_message_changes {
+                                message_handler.publish_total_unread_count_changed().await;
                             }
                         }
                     }
@@ -428,26 +306,29 @@ impl OpenIMClient {
             warn!("[SDK] ws_url 未配置，跳过 WebSocket 连接");
         }
 
-        // 会话同步和消息同步都移到后台执行，避免阻塞登录流程
-        let conversation_syncer = self.conversation_syncer.clone();
-        let message_syncer = self.message_syncer.clone();
-        let event_bus = self.event_bus.clone();
+        // 好友、群组同步在后台执行
+        // 会话和消息同步已移到 Connected 事件处理器（先会话后消息，对齐 Go SDK）
+        let friend = self.friend.clone();
+        let group = self.group.clone();
         tokio::spawn(async move {
-            debug!("[SDK] 后台开始会话同步");
-            if let Err(e) = conversation_syncer.sync_incremental().await {
-                warn!("[SDK] 登录后会话增量同步失败，回退全量同步: {}", e);
-                if let Err(e2) = conversation_syncer.sync_full().await {
-                    warn!("[SDK] 登录后会话全量同步失败: {}", e2);
+            debug!("[SDK] 后台开始好友同步");
+            if let Err(e) = friend.sync_friends_incremental().await {
+                warn!("[SDK] 登录后好友增量同步失败，回退全量同步: {}", e);
+                if let Err(e2) = friend.sync_friends().await {
+                    warn!("[SDK] 登录后好友全量同步失败: {}", e2);
                 }
             } else {
-                debug!("[SDK] 会话增量同步成功");
+                debug!("[SDK] 好友同步完成");
             }
 
-            debug!("[SDK] 后台开始消息同步");
-            if let Err(e) = message_syncer.sync_on_login().await {
-                warn!("[SDK] 登录后消息同步失败: {}", e);
+            debug!("[SDK] 后台开始群组同步");
+            if let Err(e) = group.sync_groups_incremental().await {
+                warn!("[SDK] 登录后群组增量同步失败，回退全量同步: {}", e);
+                if let Err(e2) = group.sync_groups().await {
+                    warn!("[SDK] 登录后群组全量同步失败: {}", e2);
+                }
             } else {
-                debug!("[SDK] 登录后消息同步完成");
+                debug!("[SDK] 群组同步完成");
             }
         });
 

@@ -86,9 +86,16 @@ class _ChatInputState extends State<ChatInput> {
     super.initState();
     _focusNode = FocusNode();
     _focusNode.onKeyEvent = _handleKeyEvent;
+    _focusNode.addListener(_onFocusChanged);
     widget.controller.addListener(_onTextChanged);
     _hasTextNotifier.value = widget.controller.text.trim().isNotEmpty;
     _initAttachmentItems();
+  }
+
+  void _onFocusChanged() {
+    if (!_focusNode.hasFocus && _activePanel != _InputPanel.none) {
+      _closeAllPanels();
+    }
   }
 
   void _initAttachmentItems() {
@@ -411,9 +418,6 @@ class _ChatInputState extends State<ChatInput> {
         suffixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       ),
       onSubmitted: (_) => _doSend(),
-      onTap: () {
-        if (_activePanel != _InputPanel.none) _closeAllPanels();
-      },
     );
   }
 

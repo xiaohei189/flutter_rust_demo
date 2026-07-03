@@ -262,21 +262,20 @@ impl MessageHandler {
         }
     }
 
-    pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
+    /// 处理消息列表，返回 true 表示有非 typing 的状态变更
+    pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<bool> {
         self.handle_messages_internal(messages, false).await
     }
 
-    /// 处理消息列表（标记为同步来源，会触发 RecvOfflineNewMessage 事件）
-    ///
-    /// 对齐 Go SDK `OnRecvOfflineNewMessage`：在同步过程中收到的消息
-    /// 需要额外通知上层 UI 这些是离线期间积累的消息。
-    pub async fn handle_sync_messages(&self, messages: Vec<ReceivedMessage>) -> Result<()> {
+    /// 处理消息列表（标记为同步来源），返回 true 表示有非 typing 的状态变更
+    pub async fn handle_sync_messages(&self, messages: Vec<ReceivedMessage>) -> Result<bool> {
         self.handle_messages_internal(messages, true).await
     }
 
-    async fn handle_messages_internal(&self, messages: Vec<ReceivedMessage>, is_from_sync: bool) -> Result<()> {
+    /// 返回 true 表示处理了非 typing 的状态变更消息（typing 消息触发 ConversationUserInputStatusChanged 但不计入）
+    async fn handle_messages_internal(&self, messages: Vec<ReceivedMessage>, is_from_sync: bool) -> Result<bool> {
         if messages.is_empty() {
-            return Ok(());
+            return Ok(false);
         }
 
         info!("handling {} messages", messages.len());
@@ -315,7 +314,7 @@ impl MessageHandler {
             .collect();
 
         if normal_messages.is_empty() {
-            return Ok(());
+            return Ok(false);
         }
 
         // 处理 Typing 消息：发布输入状态变化事件（对齐 Go SDK OnConversationUserInputStatusChanged）
@@ -339,6 +338,10 @@ impl MessageHandler {
         let normal_messages: Vec<ReceivedMessage> = normal_messages.into_iter()
             .filter(|m| m.content_type != content_type::TYPING)
             .collect();
+
+        // typing 消息已处理（发布 ConversationUserInputStatusChanged），
+        // 但只有非 typing 消息才需要触发 TotalUnreadCountChanged
+        let has_state_changes = !normal_messages.is_empty();
 
         let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
 
@@ -581,7 +584,14 @@ impl MessageHandler {
             }
         }
 
-        Ok(())
+        Ok(has_state_changes)
+    }
+
+    /// 发布 TotalUnreadCountChanged 事件（由调用方在批量处理完成后统一调用）
+    pub async fn publish_total_unread_count_changed(&self) {
+        if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
+        }
     }
 
     /// 已读回执处理（对齐 Go SDK read_drawing.go doReadDrawing L227-284）
@@ -826,11 +836,8 @@ impl MessageHandler {
             self.conversation_dao.update_unread_count(conversation_id, 0).await?;
         }
 
-        // 对齐 Go SDK：doUnreadCount 只触发未读总数变更，不单独发布 ConversationChanged
-        // ConversationChanged 由 handle_messages_internal 末尾统一发布，避免中间态闪烁
-        if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
-            let _ = self.event_bus.publish(SdkEvent::TotalUnreadCountChanged { count: total });
-        }
+        // 对齐 Go SDK：doUnreadCount 不单独发布 TotalUnreadCountChanged
+        // TotalUnreadCountChanged 由 handle_messages_internal 末尾统一发布，避免中间态闪烁
 
         Ok(())
     }

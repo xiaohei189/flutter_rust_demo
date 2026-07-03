@@ -35,18 +35,39 @@ class _MainScreenState extends State<MainScreen> {
         index: _currentIndex,
         children: _tabs.map((e) => e.widget).toList(),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        items: [
-          for (var i = 0; i < _tabs.length; i++)
-            BottomNavigationBarItem(
-              icon: Icon(_tabs[i].icon),
-              activeIcon: Icon(_tabs[i].activeIcon),
-              label: _tabs[i].label,
-            ),
-        ],
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, child) {
+          final totalUnread = ref.watch(totalUnreadCountProvider);
+          return BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            type: BottomNavigationBarType.fixed,
+            items: [
+              for (var i = 0; i < _tabs.length; i++)
+                BottomNavigationBarItem(
+                  icon: i == 0 && totalUnread > 0
+                      ? Badge(
+                          label: Text(
+                            totalUnread > 99 ? '99+' : '$totalUnread',
+                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                          ),
+                          child: Icon(_tabs[i].icon),
+                        )
+                      : Icon(_tabs[i].icon),
+                  activeIcon: i == 0 && totalUnread > 0
+                      ? Badge(
+                          label: Text(
+                            totalUnread > 99 ? '99+' : '$totalUnread',
+                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                          ),
+                          child: Icon(_tabs[i].activeIcon),
+                        )
+                      : Icon(_tabs[i].activeIcon),
+                  label: _tabs[i].label,
+                ),
+            ],
+          );
+        },
       ),
     );
   }

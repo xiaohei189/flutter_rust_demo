@@ -64,19 +64,21 @@ pub struct ConnectionManager {
     compressor: GzipCompressor,
     /// 推送消息批处理器（对齐 Go SDK message_batcher.go）
     message_batcher: MessageBatcher,
+    /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
+    push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>>,
 }
 
 impl ConnectionManager {
     pub fn new(event_bus: Arc<EventBus>, cancel_token: CancellationToken) -> Self {
-        let event_bus_clone = event_bus.clone();
+        let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>> = Arc::new(std::sync::Mutex::new(None));
+        let push_tx_clone = push_tx.clone();
         let compressor = GzipCompressor::new();
-        let message_batcher = MessageBatcher::new(move |operation_ids, batch| {
-            // 聚合后的推送消息统一发布到 EventBus
+        let message_batcher = MessageBatcher::new(move |_operation_ids, batch| {
+            // 聚合后通过内部通道发送（对齐 Go SDK 直接调用，不走 EventBus）
             if !batch.msgs.is_empty() || !batch.notification_msgs.is_empty() {
-                event_bus_clone.publish(SdkEvent::BatchedPushMessages {
-                    msgs: batch.msgs,
-                    notification_msgs: batch.notification_msgs,
-                });
+                if let Some(tx) = push_tx_clone.lock().unwrap().as_ref() {
+                    let _ = tx.send(batch);
+                }
             }
         });
 
@@ -95,7 +97,13 @@ impl ConnectionManager {
             is_manual_disconnect: Arc::new(RwLock::new(false)),
             compressor,
             message_batcher,
+            push_tx,
         }
+    }
+
+    /// 设置内部消息通道发送端（由 client.rs 在 login 后调用）
+    pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<PushMessages>) {
+        *self.push_tx.lock().unwrap() = Some(tx);
     }
 
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str, platform_id: i32) -> Result<()> {
@@ -364,6 +372,7 @@ impl ConnectionManager {
             compressor: GzipCompressor::new(),
             // 浅克隆用于重连，不共享 batcher（重连后原始 batcher 继续工作）
             message_batcher: MessageBatcher::new(|_, _| {}),
+            push_tx: self.push_tx.clone(),
         }
     }
 
@@ -399,14 +408,11 @@ impl ConnectionManager {
                                             pending.write().await.remove(&resp.msg_incr)
                                         {
                                             let _ = pending_req.tx.send(resp);
-                                        } else {
-                                            // 推送消息
-                                            event_bus.publish(
-                                                SdkEvent::PushMessage {
-                                                    req_identifier: resp.req_identifier,
-                                                    data: resp.data,
-                                                },
-                                            );
+                                        } else if resp.err_code == 0 && !resp.data.is_empty() {
+                                            // 推送消息：对齐 Go SDK 直接分发，不走 EventBus
+                                            if let Ok(push_msgs) = PushMessages::decode(resp.data.as_slice()) {
+                                                message_batcher.enqueue(resp.operation_id, push_msgs).await;
+                                            }
                                         }
                                     }
                                     Err(e) => {

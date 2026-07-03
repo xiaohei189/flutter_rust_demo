@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
+import '../screens/my_profile_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';
@@ -95,18 +96,24 @@ class ProfileDrawerScreen extends ConsumerWidget {
                     ),
                     // 名字 + 二维码 + 箭头（点击进入个人信息）
                     GestureDetector(
+                      behavior: HitTestBehavior.translucent,
                       onTap: () {
                         if (onOpenMyProfile != null) {
                           onOpenMyProfile!();
                           return;
                         }
-                        AppRouter.goToMyProfile(context);
+                        // 用 Navigator.push 推入同一栈，抽屉保持在下方不动
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MyProfileScreen(),
+                          ),
+                        );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                        padding: const EdgeInsets.fromLTRB(20, 12, 14, 4),
                         child: Row(
                           children: [
-                            Flexible(
+                            Expanded(
                               child: Text(
                                 currentUser.name,
                                 style: const TextStyle(
@@ -118,12 +125,26 @@ class ProfileDrawerScreen extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Icon(Icons.qr_code_2, size: 18,
-                                color: AppTheme.textSecondaryColor),
+                            const SizedBox(width: 12),
+                            // QR 码独立热区
+                            Material(
+                              color: Colors.grey.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  // TODO: 打开我的二维码页面
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(Icons.qr_code_2, size: 22,
+                                      color: AppTheme.textPrimaryColor),
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios, size: 12,
-                                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5)),
+                            Icon(Icons.chevron_right, size: 22,
+                                color: AppTheme.textSecondaryColor.withValues(alpha: 0.4)),
                           ],
                         ),
                       ),

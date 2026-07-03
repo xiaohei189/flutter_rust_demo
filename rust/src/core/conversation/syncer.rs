@@ -521,16 +521,8 @@ impl ConversationSyncer {
             }
         }
 
-        // 发布未读数变更事件
-        if !changed_ids.is_empty() {
-            info!(
-                "[ConvSync] sync_conversation_hash_read_seqs: 更新了 {} 个会话的未读数",
-                changed_ids.len()
-            );
-            let _ = self
-                .event_bus
-                .publish(SdkEvent::TotalUnreadCountChanged { count: 0 });
-        }
+        // 对齐 Go SDK：syncHashReadSeqs 只更新 DB，不直接发布事件
+        // 事件由 handle_messages_internal 末尾统一发布
 
         Ok(())
     }

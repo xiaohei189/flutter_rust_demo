@@ -30,6 +30,7 @@ class MessageServiceState {
   final Map<String, UserInfo> userProfiles;
   final UserInfo? loginUserProfile;
   final bool isInitializing;
+  final int totalUnreadCount;
 
   const MessageServiceState({
     this.isConnected = false,
@@ -41,6 +42,7 @@ class MessageServiceState {
     this.userProfiles = const {},
     this.loginUserProfile,
     this.isInitializing = false,
+    this.totalUnreadCount = 0,
   });
 
   MessageServiceState copyWith({
@@ -53,6 +55,7 @@ class MessageServiceState {
     Map<String, UserInfo>? userProfiles,
     UserInfo? loginUserProfile,
     bool? isInitializing,
+    int? totalUnreadCount,
   }) {
     return MessageServiceState(
       isConnected: isConnected ?? this.isConnected,
@@ -64,6 +67,7 @@ class MessageServiceState {
       userProfiles: userProfiles ?? this.userProfiles,
       loginUserProfile: loginUserProfile ?? this.loginUserProfile,
       isInitializing: isInitializing ?? this.isInitializing,
+      totalUnreadCount: totalUnreadCount ?? this.totalUnreadCount,
     );
   }
 }
@@ -955,7 +959,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         this.state = this.state.copyWith(messages: newMessages);
       },
       totalUnreadCountChanged: (count) {
-        // 会话变更已由 conversationChanged 事件单独处理，无需重新加载全部会话
+        this.state = this.state.copyWith(totalUnreadCount: count);
       },
       conversationUserInputStatusChanged: (data) {
         appLog.i('[Input] 输入状态: conv=${data.conversationId} user=${data.userId} platforms=${data.platformIds}');

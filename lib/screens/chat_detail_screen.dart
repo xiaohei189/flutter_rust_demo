@@ -800,13 +800,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
           ? Column(
               children: [
                 Expanded(
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final messageState = ref.watch(
-                        messageListProvider(widget.conversationId),
-                      );
-                      final messages = messageState.messages;
-                      final isLoading = _loadingNotifier.value;
+                  child: Listener(
+                    behavior: HitTestBehavior.translucent,
+                    onPointerDown: (_) => FocusScope.of(context).unfocus(),
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final messageState = ref.watch(
+                          messageListProvider(widget.conversationId),
+                        );
+                        final messages = messageState.messages;
+                        final isLoading = _loadingNotifier.value;
 
                       return MessageList(
                         messages: messages,
@@ -873,7 +876,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                     },
                   ),
                 ),
-                // 引用消息提示栏
+              ),
+              // 引用消息提示栏
                 if (_quotedMessage != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

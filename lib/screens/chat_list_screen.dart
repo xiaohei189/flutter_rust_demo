@@ -12,6 +12,7 @@ import '../widgets/chat_list_item.dart';
 import '../widgets/conversation_title_bar.dart';
 import '../widgets/group_filter_panel.dart';
 import 'profile_drawer_screen.dart';
+import 'my_profile_screen.dart';
 
 /// 会话列表页（参考飞书风格）
 class ChatListScreen extends ConsumerStatefulWidget {
@@ -116,11 +117,24 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           Navigator.of(context).push(LeftSlideRoute(
             child: ProfileDrawerScreen(
               onOpenMyProfile: () {
-                Navigator.of(context).pop();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  AppRouter.goToMyProfile(context);
-                });
+                Navigator.of(context).pushReplacement(
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const MyProfileScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(1, 0),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        )),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
               },
             ),
           ));

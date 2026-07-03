@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 /// 列表行组件
-/// 通用的列表项布局：左侧标签、中间内容/值、右侧尾随图标
-/// 支持点击、自定义尾随组件、值文本样式
+/// 通用的列表项布局：左侧前导图标 + 标签、中间 Spacer、右侧尾随内容/箭头
+/// 支持点击、自定义前导/尾随组件、值文本样式
 class ListRow extends StatelessWidget {
   const ListRow({
     super.key,
     required this.label,
+    this.leading,
     this.value,
     this.placeholder,
     this.trailing,
@@ -19,6 +20,7 @@ class ListRow extends StatelessWidget {
   });
 
   final String label;
+  final Widget? leading;
   final String? value;
   final String? placeholder;
   final Widget? trailing;
@@ -35,6 +37,10 @@ class ListRow extends StatelessWidget {
         padding: padding,
         child: Row(
           children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: 12),
+            ],
             Text(
               label,
               style: const TextStyle(
@@ -64,10 +70,13 @@ class ListRow extends StatelessWidget {
             ],
             if (showArrow) ...[
               const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 14,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 22,
+                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                ),
               ),
             ],
           ],
@@ -128,10 +137,13 @@ class TwoLineListRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Icon(
+                Icons.chevron_right,
+                size: 22,
+                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ),
