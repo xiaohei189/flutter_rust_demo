@@ -205,6 +205,8 @@ impl ConversationSyncer {
     }
 
     pub(crate) fn send(&self, e: ConversationEvent) {
+        let has_tx = self.event_tx.lock().unwrap().is_some();
+        tracing::info!("[SEND] {:?}, has_subscriber={}", std::mem::discriminant(&e), has_tx);
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
@@ -372,10 +374,7 @@ impl ConversationSyncer {
         info!("全量同步完成，同步 {} 个会话", conversations.len());
         self.send(ConversationEvent::Changed(conversations.clone()));
 
-        if let Ok(count) = self.dao.count().await {
-            self.send(ConversationEvent::TotalUnreadCountChanged(count as i64));
-        }
-
+        // 总未读数由 handler.rs 统一发布
         Ok(conversations)
     }
 

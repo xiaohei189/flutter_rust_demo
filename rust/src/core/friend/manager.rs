@@ -325,6 +325,8 @@ impl FriendManager {
     }
 
     pub(crate) fn send(&self, e: FriendEvent) {
+        let has_tx = self.event_tx.lock().unwrap().is_some();
+        tracing::info!("[SEND] {:?}, has_subscriber={}", std::mem::discriminant(&e), has_tx);
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
