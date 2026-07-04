@@ -3,7 +3,7 @@ use crate::domain::error::types::{Result, SdkError};
 use sqlx::SqlitePool;
 
 pub struct ConversationDao {
-    pool: SqlitePool,
+    pub(crate) pool: SqlitePool,
 }
 
 impl ConversationDao {

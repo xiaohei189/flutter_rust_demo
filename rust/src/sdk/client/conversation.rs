@@ -37,14 +37,20 @@ impl OpenIMClient {
     pub async fn get_conversations(&self) -> std::result::Result<Vec<LocalConversation>, SdkError> {
         let dao = self.conversation.dao();
         let conversations = dao.get_all().await?;
-        let unique: std::collections::HashSet<_> = conversations.iter().map(|c| &c.conversation_id).collect();
-        if unique.len() != conversations.len() {
-            tracing::warn!("[SDK] 会话列表有重复！总数={}, 唯一数={}", conversations.len(), unique.len());
+
+        // 诊断：直接查 DB 验证是否有重复
+        let (total,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM local_conversations")
+            .fetch_one(&dao.pool).await.unwrap_or((0,));
+        let (unique_count,): (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT conversation_id) FROM local_conversations")
+            .fetch_one(&dao.pool).await.unwrap_or((0,));
+        tracing::info!("[SDK] DB: total={}, unique={}, loaded={}", total, unique_count, conversations.len());
+
+        if total != unique_count {
+            tracing::warn!("[SDK] DB 有重复行！total={} unique={}", total, unique_count);
             for c in &conversations {
-                tracing::warn!("[SDK]   conv_id={}, user_id={}, group_id={}", c.conversation_id, c.user_id, c.group_id);
+                tracing::warn!("[SDK] DUP: id={}", c.conversation_id);
             }
         }
-        tracing::info!("[SDK] 加载会话列表，共 {} 条", conversations.len());
         Ok(conversations)
     }
 
