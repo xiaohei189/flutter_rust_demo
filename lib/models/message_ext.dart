@@ -212,30 +212,6 @@ extension MessageInfoExt on MessageInfo {
   }
 }
 
-/// ReceivedMessage → MessageInfo 转换
-extension ReceivedMessageExt on ReceivedMessage {
-  MessageInfo toMessageInfo() => MessageInfo(
-        clientMsgId: clientMsgId,
-        serverMsgId: serverMsgId,
-        sendId: sendId,
-        recvId: recvId,
-        groupId: groupId,
-        senderPlatformId: senderPlatformId,
-        senderNickname: senderNickName,
-        senderFaceUrl: senderFaceUrl,
-        sessionType: sessionType,
-        msgFrom: msgFrom,
-        contentType: contentType,
-        content: content,
-        seq: seq,
-        sendTime: sendTime,
-        createTime: createTime,
-        status: 0, // 收到的消息无需显示发送状态
-        isRead: false,
-        attachedInfo: '',
-        ex: '',
-      );
-}
 
 /// 从 messageSent 事件构造 MessageInfo
 MessageInfo messageSentToInfo({
