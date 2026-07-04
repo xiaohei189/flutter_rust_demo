@@ -171,7 +171,7 @@ impl OpenIMBridgeClient {
         tracing::info!("[Bridge] connection_stream subscribed");
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
-                tracing::info!("[Bridge] connection event: smoke test");
+                tracing::info!("[Bridge] connection event: {:?}", &e);
                 let _ = sink.add(e);
             }
             tracing::warn!("[Bridge] connection_stream closed");
@@ -185,7 +185,7 @@ impl OpenIMBridgeClient {
         tracing::info!("[Bridge] conversation_stream subscribed");
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
-                tracing::info!("[Bridge] conversation event: {:?}", std::mem::discriminant(&e));
+                tracing::info!("[Bridge] conversation event: {:?}", &e);
                 let _ = sink.add(e);
             }
         });

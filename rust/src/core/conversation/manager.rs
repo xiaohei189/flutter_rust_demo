@@ -28,7 +28,7 @@ impl ConversationManager {
 
     pub(crate) fn send(&self, e: ConversationEvent) {
         let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", std::mem::discriminant(&e), has_tx);
+        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
