@@ -6,179 +6,85 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 会话模型
-class Conversation {
-  /// 会话 ID
-  final String conversationId;
 
-  /// 会话类型 (1:单聊, 2:群聊, 3:超级群, 4:通知)
-  final int conversationType;
+            
 
-  /// 用户 ID
-  final String userId;
+            
 
-  /// 群组 ID
-  final String groupId;
+            /// 会话模型
+class Conversation  {
+                /// 会话 ID
+final String conversationId;
+/// 会话类型 (1:单聊, 2:群聊, 3:超级群, 4:通知)
+final int conversationType;
+/// 用户 ID
+final String userId;
+/// 群组 ID
+final String groupId;
+/// 显示名称
+final String showName;
+/// 头像 URL
+final String faceUrl;
+/// 接收消息选项 (0:接收, 1:不接收, 2:接收在线消息)
+final int recvMsgOpt;
+/// 未读消息数
+final int unreadCount;
+/// 群组 @ 类型
+final int groupAtType;
+/// 最新消息 seq
+final PlatformInt64 latestMsgSeq;
+/// 最新消息
+final String latestMsg;
+/// 最新消息发送时间
+final PlatformInt64 latestMsgSendTime;
+/// 草稿
+final String draftText;
+/// 草稿修改时间
+final PlatformInt64 draftTextTime;
+/// 是否置顶
+final bool isPinned;
+/// 是否免打扰
+final bool isPrivateChat;
+/// 群聊是否已销毁
+final bool isNotInGroup;
+/// 更新标志
+final int updateFlag;
+/// 同步操作 (insert/update/delete)
+final String? syncAction;
+/// 已读未读更新时间
+final PlatformInt64 updateUnreadCountTime;
+/// 最大 seq
+final PlatformInt64 maxSeq;
+/// 最小 seq
+final PlatformInt64 minSeq;
+/// 是否阅后即焚
+final bool isMsgDestruct;
+/// 阅后即焚时长
+final PlatformInt64 msgDestructTime;
+/// 是否单聊（同 is_private_chat 兼容）
+final bool isPrivate;
+/// 消息免打扰（同 recv_msg_opt 兼容）
+final int burnDuration;
+/// 扩展信息
+final String ex;
 
-  /// 显示名称
-  final String showName;
+                const Conversation({required this.conversationId ,required this.conversationType ,required this.userId ,required this.groupId ,required this.showName ,required this.faceUrl ,required this.recvMsgOpt ,required this.unreadCount ,required this.groupAtType ,required this.latestMsgSeq ,required this.latestMsg ,required this.latestMsgSendTime ,required this.draftText ,required this.draftTextTime ,required this.isPinned ,required this.isPrivateChat ,required this.isNotInGroup ,required this.updateFlag ,this.syncAction ,required this.updateUnreadCountTime ,required this.maxSeq ,required this.minSeq ,required this.isMsgDestruct ,required this.msgDestructTime ,required this.isPrivate ,required this.burnDuration ,required this.ex ,});
 
-  /// 头像 URL
-  final String faceUrl;
+                
+                
 
-  /// 接收消息选项 (0:接收, 1:不接收, 2:接收在线消息)
-  final int recvMsgOpt;
+                
+        @override
+        int get hashCode => conversationId.hashCode^conversationType.hashCode^userId.hashCode^groupId.hashCode^showName.hashCode^faceUrl.hashCode^recvMsgOpt.hashCode^unreadCount.hashCode^groupAtType.hashCode^latestMsgSeq.hashCode^latestMsg.hashCode^latestMsgSendTime.hashCode^draftText.hashCode^draftTextTime.hashCode^isPinned.hashCode^isPrivateChat.hashCode^isNotInGroup.hashCode^updateFlag.hashCode^syncAction.hashCode^updateUnreadCountTime.hashCode^maxSeq.hashCode^minSeq.hashCode^isMsgDestruct.hashCode^msgDestructTime.hashCode^isPrivate.hashCode^burnDuration.hashCode^ex.hashCode;
+        
 
-  /// 未读消息数
-  final int unreadCount;
-
-  /// 群组 @ 类型
-  final int groupAtType;
-
-  /// 最新消息 seq
-  final PlatformInt64 latestMsgSeq;
-
-  /// 最新消息
-  final String latestMsg;
-
-  /// 最新消息发送时间
-  final PlatformInt64 latestMsgSendTime;
-
-  /// 草稿
-  final String draftText;
-
-  /// 草稿修改时间
-  final PlatformInt64 draftTextTime;
-
-  /// 是否置顶
-  final bool isPinned;
-
-  /// 是否免打扰
-  final bool isPrivateChat;
-
-  /// 群聊是否已销毁
-  final bool isNotInGroup;
-
-  /// 更新标志
-  final int updateFlag;
-
-  /// 同步操作 (insert/update/delete)
-  final String? syncAction;
-
-  /// 已读未读更新时间
-  final PlatformInt64 updateUnreadCountTime;
-
-  /// 最大 seq
-  final PlatformInt64 maxSeq;
-
-  /// 最小 seq
-  final PlatformInt64 minSeq;
-
-  /// 是否阅后即焚
-  final bool isMsgDestruct;
-
-  /// 阅后即焚时长
-  final PlatformInt64 msgDestructTime;
-
-  /// 是否单聊（同 is_private_chat 兼容）
-  final bool isPrivate;
-
-  /// 消息免打扰（同 recv_msg_opt 兼容）
-  final int burnDuration;
-
-  /// 扩展信息
-  final String ex;
-
-  const Conversation({
-    required this.conversationId,
-    required this.conversationType,
-    required this.userId,
-    required this.groupId,
-    required this.showName,
-    required this.faceUrl,
-    required this.recvMsgOpt,
-    required this.unreadCount,
-    required this.groupAtType,
-    required this.latestMsgSeq,
-    required this.latestMsg,
-    required this.latestMsgSendTime,
-    required this.draftText,
-    required this.draftTextTime,
-    required this.isPinned,
-    required this.isPrivateChat,
-    required this.isNotInGroup,
-    required this.updateFlag,
-    this.syncAction,
-    required this.updateUnreadCountTime,
-    required this.maxSeq,
-    required this.minSeq,
-    required this.isMsgDestruct,
-    required this.msgDestructTime,
-    required this.isPrivate,
-    required this.burnDuration,
-    required this.ex,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      conversationType.hashCode ^
-      userId.hashCode ^
-      groupId.hashCode ^
-      showName.hashCode ^
-      faceUrl.hashCode ^
-      recvMsgOpt.hashCode ^
-      unreadCount.hashCode ^
-      groupAtType.hashCode ^
-      latestMsgSeq.hashCode ^
-      latestMsg.hashCode ^
-      latestMsgSendTime.hashCode ^
-      draftText.hashCode ^
-      draftTextTime.hashCode ^
-      isPinned.hashCode ^
-      isPrivateChat.hashCode ^
-      isNotInGroup.hashCode ^
-      updateFlag.hashCode ^
-      syncAction.hashCode ^
-      updateUnreadCountTime.hashCode ^
-      maxSeq.hashCode ^
-      minSeq.hashCode ^
-      isMsgDestruct.hashCode ^
-      msgDestructTime.hashCode ^
-      isPrivate.hashCode ^
-      burnDuration.hashCode ^
-      ex.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Conversation &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          conversationType == other.conversationType &&
-          userId == other.userId &&
-          groupId == other.groupId &&
-          showName == other.showName &&
-          faceUrl == other.faceUrl &&
-          recvMsgOpt == other.recvMsgOpt &&
-          unreadCount == other.unreadCount &&
-          groupAtType == other.groupAtType &&
-          latestMsgSeq == other.latestMsgSeq &&
-          latestMsg == other.latestMsg &&
-          latestMsgSendTime == other.latestMsgSendTime &&
-          draftText == other.draftText &&
-          draftTextTime == other.draftTextTime &&
-          isPinned == other.isPinned &&
-          isPrivateChat == other.isPrivateChat &&
-          isNotInGroup == other.isNotInGroup &&
-          updateFlag == other.updateFlag &&
-          syncAction == other.syncAction &&
-          updateUnreadCountTime == other.updateUnreadCountTime &&
-          maxSeq == other.maxSeq &&
-          minSeq == other.minSeq &&
-          isMsgDestruct == other.isMsgDestruct &&
-          msgDestructTime == other.msgDestructTime &&
-          isPrivate == other.isPrivate &&
-          burnDuration == other.burnDuration &&
-          ex == other.ex;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is Conversation &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& conversationType == other.conversationType&& userId == other.userId&& groupId == other.groupId&& showName == other.showName&& faceUrl == other.faceUrl&& recvMsgOpt == other.recvMsgOpt&& unreadCount == other.unreadCount&& groupAtType == other.groupAtType&& latestMsgSeq == other.latestMsgSeq&& latestMsg == other.latestMsg&& latestMsgSendTime == other.latestMsgSendTime&& draftText == other.draftText&& draftTextTime == other.draftTextTime&& isPinned == other.isPinned&& isPrivateChat == other.isPrivateChat&& isNotInGroup == other.isNotInGroup&& updateFlag == other.updateFlag&& syncAction == other.syncAction&& updateUnreadCountTime == other.updateUnreadCountTime&& maxSeq == other.maxSeq&& minSeq == other.minSeq&& isMsgDestruct == other.isMsgDestruct&& msgDestructTime == other.msgDestructTime&& isPrivate == other.isPrivate&& burnDuration == other.burnDuration&& ex == other.ex;
+        
+            }
+            

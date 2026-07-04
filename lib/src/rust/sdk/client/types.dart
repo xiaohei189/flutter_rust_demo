@@ -7,149 +7,157 @@ import '../../domain/model/message.dart';
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-class DeleteMessagesReq {
-  final String conversationId;
-  final List<String> clientMsgIds;
 
-  const DeleteMessagesReq({
-    required this.conversationId,
-    required this.clientMsgIds,
-  });
+            
 
-  @override
-  int get hashCode => conversationId.hashCode ^ clientMsgIds.hashCode;
+            
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DeleteMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          clientMsgIds == other.clientMsgIds;
-}
+            class DeleteMessagesReq  {
+                final String conversationId;
+final List<String> clientMsgIds;
 
-class GetHistoryMessagesReq {
-  final String conversationId;
-  final String startClientMsgId;
-  final PlatformInt64 count;
+                const DeleteMessagesReq({required this.conversationId ,required this.clientMsgIds ,});
 
-  const GetHistoryMessagesReq({
-    required this.conversationId,
-    required this.startClientMsgId,
-    required this.count,
-  });
+                
+                
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^ startClientMsgId.hashCode ^ count.hashCode;
+                
+        @override
+        int get hashCode => conversationId.hashCode^clientMsgIds.hashCode;
+        
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GetHistoryMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          startClientMsgId == other.startClientMsgId &&
-          count == other.count;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is DeleteMessagesReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& clientMsgIds == other.clientMsgIds;
+        
+            }
 
-class GetHistoryMessagesResult {
-  final List<MessageInfo> messages;
-  final bool isEnd;
+class GetHistoryMessagesReq  {
+                final String conversationId;
+final String startClientMsgId;
+final PlatformInt64 count;
 
-  const GetHistoryMessagesResult({required this.messages, required this.isEnd});
+                const GetHistoryMessagesReq({required this.conversationId ,required this.startClientMsgId ,required this.count ,});
 
-  @override
-  int get hashCode => messages.hashCode ^ isEnd.hashCode;
+                
+                
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GetHistoryMessagesResult &&
-          runtimeType == other.runtimeType &&
-          messages == other.messages &&
-          isEnd == other.isEnd;
-}
+                
+        @override
+        int get hashCode => conversationId.hashCode^startClientMsgId.hashCode^count.hashCode;
+        
 
-class MarkMessagesAsReadReq {
-  final String conversationId;
-  final int sessionType;
-  final PlatformInt64 hasReadSeq;
-  final Int64List seqs;
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is GetHistoryMessagesReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& startClientMsgId == other.startClientMsgId&& count == other.count;
+        
+            }
 
-  const MarkMessagesAsReadReq({
-    required this.conversationId,
-    required this.sessionType,
-    required this.hasReadSeq,
-    required this.seqs,
-  });
+class GetHistoryMessagesResult  {
+                final List<MessageInfo> messages;
+final bool isEnd;
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      sessionType.hashCode ^
-      hasReadSeq.hashCode ^
-      seqs.hashCode;
+                const GetHistoryMessagesResult({required this.messages ,required this.isEnd ,});
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MarkMessagesAsReadReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          sessionType == other.sessionType &&
-          hasReadSeq == other.hasReadSeq &&
-          seqs == other.seqs;
-}
+                
+                
 
-class RevokeMessageReq {
-  final String conversationId;
-  final PlatformInt64 seq;
-  final String clientMsgId;
-  final int sessionType;
+                
+        @override
+        int get hashCode => messages.hashCode^isEnd.hashCode;
+        
 
-  const RevokeMessageReq({
-    required this.conversationId,
-    required this.seq,
-    required this.clientMsgId,
-    required this.sessionType,
-  });
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is GetHistoryMessagesResult &&
+                runtimeType == other.runtimeType
+                && messages == other.messages&& isEnd == other.isEnd;
+        
+            }
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      seq.hashCode ^
-      clientMsgId.hashCode ^
-      sessionType.hashCode;
+class MarkMessagesAsReadReq  {
+                final String conversationId;
+final int sessionType;
+final PlatformInt64 hasReadSeq;
+final Int64List seqs;
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is RevokeMessageReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          seq == other.seq &&
-          clientMsgId == other.clientMsgId &&
-          sessionType == other.sessionType;
-}
+                const MarkMessagesAsReadReq({required this.conversationId ,required this.sessionType ,required this.hasReadSeq ,required this.seqs ,});
 
-class SearchMessagesReq {
-  final String conversationId;
-  final String keyword;
+                
+                
 
-  const SearchMessagesReq({
-    required this.conversationId,
-    required this.keyword,
-  });
+                
+        @override
+        int get hashCode => conversationId.hashCode^sessionType.hashCode^hasReadSeq.hashCode^seqs.hashCode;
+        
 
-  @override
-  int get hashCode => conversationId.hashCode ^ keyword.hashCode;
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is MarkMessagesAsReadReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& sessionType == other.sessionType&& hasReadSeq == other.hasReadSeq&& seqs == other.seqs;
+        
+            }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SearchMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          keyword == other.keyword;
-}
+class RevokeMessageReq  {
+                final String conversationId;
+final PlatformInt64 seq;
+final String clientMsgId;
+final int sessionType;
+
+                const RevokeMessageReq({required this.conversationId ,required this.seq ,required this.clientMsgId ,required this.sessionType ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => conversationId.hashCode^seq.hashCode^clientMsgId.hashCode^sessionType.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is RevokeMessageReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& seq == other.seq&& clientMsgId == other.clientMsgId&& sessionType == other.sessionType;
+        
+            }
+
+class SearchMessagesReq  {
+                final String conversationId;
+final String keyword;
+
+                const SearchMessagesReq({required this.conversationId ,required this.keyword ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => conversationId.hashCode^keyword.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is SearchMessagesReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& keyword == other.keyword;
+        
+            }
+            

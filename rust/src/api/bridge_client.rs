@@ -166,30 +166,6 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn event_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        use crate::domain::listener::bridge;
-        let s = sink.clone();
-        let (mut rx, a) = bridge::start_connection_stream();
-        self.inner.set_connection_listener(a);
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = s.add(e); } });
-
-        let s = sink.clone();
-        let (mut rx, a) = bridge::start_conversation_stream();
-        self.inner.set_conversation_listener(a);
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = s.add(e); } });
-
-        let s = sink.clone();
-        let (mut rx, a) = bridge::start_friend_stream();
-        self.inner.set_friend_listener(a);
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = s.add(e); } });
-
-        let (mut rx, a) = bridge::start_group_stream();
-        self.inner.set_group_listener(a);
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
-        Ok(())
-    }
-
-    #[flutter_rust_bridge::frb]
     pub async fn connection_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
         let (mut rx, a) = crate::domain::listener::bridge::start_connection_stream();
         self.inner.set_connection_listener(a);

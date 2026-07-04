@@ -6,10 +6,18 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-enum ConnectionState {
-  disconnected,
-  connecting,
-  connected,
-  reconnecting,
-  kicked,
-}
+
+            
+
+            
+
+            enum ConnectionState {
+                    disconnected,
+connecting,
+connected,
+reconnecting,
+kicked,
+                    ;
+                    
+                }
+            

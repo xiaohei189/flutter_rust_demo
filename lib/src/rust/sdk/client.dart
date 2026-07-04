@@ -6,80 +6,64 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-class FriendApplyInfo {
-  final String userId;
-  final String nickname;
-  final String faceUrl;
-  final PlatformInt64 createTime;
-  final String? reqMsg;
-  final int handleResult;
 
-  const FriendApplyInfo({
-    required this.userId,
-    required this.nickname,
-    required this.faceUrl,
-    required this.createTime,
-    this.reqMsg,
-    required this.handleResult,
-  });
+            
 
-  @override
-  int get hashCode =>
-      userId.hashCode ^
-      nickname.hashCode ^
-      faceUrl.hashCode ^
-      createTime.hashCode ^
-      reqMsg.hashCode ^
-      handleResult.hashCode;
+            
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FriendApplyInfo &&
-          runtimeType == other.runtimeType &&
-          userId == other.userId &&
-          nickname == other.nickname &&
-          faceUrl == other.faceUrl &&
-          createTime == other.createTime &&
-          reqMsg == other.reqMsg &&
-          handleResult == other.handleResult;
-}
+            class FriendApplyInfo  {
+                final String userId;
+final String nickname;
+final String faceUrl;
+final PlatformInt64 createTime;
+final String? reqMsg;
+final int handleResult;
 
-class GroupApplyInfo {
-  final String groupId;
-  final String userId;
-  final String nickname;
-  final String faceUrl;
-  final String reason;
-  final int handleResult;
+                const FriendApplyInfo({required this.userId ,required this.nickname ,required this.faceUrl ,required this.createTime ,this.reqMsg ,required this.handleResult ,});
 
-  const GroupApplyInfo({
-    required this.groupId,
-    required this.userId,
-    required this.nickname,
-    required this.faceUrl,
-    required this.reason,
-    required this.handleResult,
-  });
+                
+                
 
-  @override
-  int get hashCode =>
-      groupId.hashCode ^
-      userId.hashCode ^
-      nickname.hashCode ^
-      faceUrl.hashCode ^
-      reason.hashCode ^
-      handleResult.hashCode;
+                
+        @override
+        int get hashCode => userId.hashCode^nickname.hashCode^faceUrl.hashCode^createTime.hashCode^reqMsg.hashCode^handleResult.hashCode;
+        
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GroupApplyInfo &&
-          runtimeType == other.runtimeType &&
-          groupId == other.groupId &&
-          userId == other.userId &&
-          nickname == other.nickname &&
-          faceUrl == other.faceUrl &&
-          reason == other.reason &&
-          handleResult == other.handleResult;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is FriendApplyInfo &&
+                runtimeType == other.runtimeType
+                && userId == other.userId&& nickname == other.nickname&& faceUrl == other.faceUrl&& createTime == other.createTime&& reqMsg == other.reqMsg&& handleResult == other.handleResult;
+        
+            }
+
+class GroupApplyInfo  {
+                final String groupId;
+final String userId;
+final String nickname;
+final String faceUrl;
+final String reason;
+final int handleResult;
+
+                const GroupApplyInfo({required this.groupId ,required this.userId ,required this.nickname ,required this.faceUrl ,required this.reason ,required this.handleResult ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => groupId.hashCode^userId.hashCode^nickname.hashCode^faceUrl.hashCode^reason.hashCode^handleResult.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is GroupApplyInfo &&
+                runtimeType == other.runtimeType
+                && groupId == other.groupId&& userId == other.userId&& nickname == other.nickname&& faceUrl == other.faceUrl&& reason == other.reason&& handleResult == other.handleResult;
+        
+            }
+            

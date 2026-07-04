@@ -6,212 +6,97 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-class LocalChatLog {
-  final String conversationId;
-  final String clientMsgId;
-  final String serverMsgId;
-  final String sendId;
-  final String recvId;
-  final int senderPlatformId;
-  final String senderNickName;
-  final String senderFaceUrl;
-  final int sessionType;
-  final int msgFrom;
-  final int contentType;
-  final String content;
-  final int isRead;
-  final int status;
-  final PlatformInt64 seq;
-  final PlatformInt64 sendTime;
-  final PlatformInt64 createTime;
-  final String attachedInfo;
-  final String ex;
-  final String localEx;
-  final String groupId;
 
-  const LocalChatLog({
-    required this.conversationId,
-    required this.clientMsgId,
-    required this.serverMsgId,
-    required this.sendId,
-    required this.recvId,
-    required this.senderPlatformId,
-    required this.senderNickName,
-    required this.senderFaceUrl,
-    required this.sessionType,
-    required this.msgFrom,
-    required this.contentType,
-    required this.content,
-    required this.isRead,
-    required this.status,
-    required this.seq,
-    required this.sendTime,
-    required this.createTime,
-    required this.attachedInfo,
-    required this.ex,
-    required this.localEx,
-    required this.groupId,
-  });
+            
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      clientMsgId.hashCode ^
-      serverMsgId.hashCode ^
-      sendId.hashCode ^
-      recvId.hashCode ^
-      senderPlatformId.hashCode ^
-      senderNickName.hashCode ^
-      senderFaceUrl.hashCode ^
-      sessionType.hashCode ^
-      msgFrom.hashCode ^
-      contentType.hashCode ^
-      content.hashCode ^
-      isRead.hashCode ^
-      status.hashCode ^
-      seq.hashCode ^
-      sendTime.hashCode ^
-      createTime.hashCode ^
-      attachedInfo.hashCode ^
-      ex.hashCode ^
-      localEx.hashCode ^
-      groupId.hashCode;
+            
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LocalChatLog &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          clientMsgId == other.clientMsgId &&
-          serverMsgId == other.serverMsgId &&
-          sendId == other.sendId &&
-          recvId == other.recvId &&
-          senderPlatformId == other.senderPlatformId &&
-          senderNickName == other.senderNickName &&
-          senderFaceUrl == other.senderFaceUrl &&
-          sessionType == other.sessionType &&
-          msgFrom == other.msgFrom &&
-          contentType == other.contentType &&
-          content == other.content &&
-          isRead == other.isRead &&
-          status == other.status &&
-          seq == other.seq &&
-          sendTime == other.sendTime &&
-          createTime == other.createTime &&
-          attachedInfo == other.attachedInfo &&
-          ex == other.ex &&
-          localEx == other.localEx &&
-          groupId == other.groupId;
-}
+            class LocalChatLog  {
+                final String conversationId;
+final String clientMsgId;
+final String serverMsgId;
+final String sendId;
+final String recvId;
+final int senderPlatformId;
+final String senderNickName;
+final String senderFaceUrl;
+final int sessionType;
+final int msgFrom;
+final int contentType;
+final String content;
+final int isRead;
+final int status;
+final PlatformInt64 seq;
+final PlatformInt64 sendTime;
+final PlatformInt64 createTime;
+final String attachedInfo;
+final String ex;
+final String localEx;
+final String groupId;
 
-class LocalConversation {
-  final String conversationId;
-  final int conversationType;
-  final String userId;
-  final String groupId;
-  final String showName;
-  final String faceUrl;
-  final String latestMsg;
-  final PlatformInt64 latestMsgSendTime;
-  final int unreadCount;
-  final int recvMsgOpt;
-  final int isPinned;
-  final int isPrivateChat;
-  final int burnDuration;
-  final int groupAtType;
-  final int isNotInGroup;
-  final PlatformInt64 updateUnreadCountTime;
-  final String attachedInfo;
-  final String ex;
-  final String draftText;
-  final PlatformInt64 draftTextTime;
-  final PlatformInt64 maxSeq;
-  final PlatformInt64 minSeq;
-  final int isMsgDestruct;
-  final PlatformInt64 msgDestructTime;
+                const LocalChatLog({required this.conversationId ,required this.clientMsgId ,required this.serverMsgId ,required this.sendId ,required this.recvId ,required this.senderPlatformId ,required this.senderNickName ,required this.senderFaceUrl ,required this.sessionType ,required this.msgFrom ,required this.contentType ,required this.content ,required this.isRead ,required this.status ,required this.seq ,required this.sendTime ,required this.createTime ,required this.attachedInfo ,required this.ex ,required this.localEx ,required this.groupId ,});
 
-  const LocalConversation({
-    required this.conversationId,
-    required this.conversationType,
-    required this.userId,
-    required this.groupId,
-    required this.showName,
-    required this.faceUrl,
-    required this.latestMsg,
-    required this.latestMsgSendTime,
-    required this.unreadCount,
-    required this.recvMsgOpt,
-    required this.isPinned,
-    required this.isPrivateChat,
-    required this.burnDuration,
-    required this.groupAtType,
-    required this.isNotInGroup,
-    required this.updateUnreadCountTime,
-    required this.attachedInfo,
-    required this.ex,
-    required this.draftText,
-    required this.draftTextTime,
-    required this.maxSeq,
-    required this.minSeq,
-    required this.isMsgDestruct,
-    required this.msgDestructTime,
-  });
+                
+                
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      conversationType.hashCode ^
-      userId.hashCode ^
-      groupId.hashCode ^
-      showName.hashCode ^
-      faceUrl.hashCode ^
-      latestMsg.hashCode ^
-      latestMsgSendTime.hashCode ^
-      unreadCount.hashCode ^
-      recvMsgOpt.hashCode ^
-      isPinned.hashCode ^
-      isPrivateChat.hashCode ^
-      burnDuration.hashCode ^
-      groupAtType.hashCode ^
-      isNotInGroup.hashCode ^
-      updateUnreadCountTime.hashCode ^
-      attachedInfo.hashCode ^
-      ex.hashCode ^
-      draftText.hashCode ^
-      draftTextTime.hashCode ^
-      maxSeq.hashCode ^
-      minSeq.hashCode ^
-      isMsgDestruct.hashCode ^
-      msgDestructTime.hashCode;
+                
+        @override
+        int get hashCode => conversationId.hashCode^clientMsgId.hashCode^serverMsgId.hashCode^sendId.hashCode^recvId.hashCode^senderPlatformId.hashCode^senderNickName.hashCode^senderFaceUrl.hashCode^sessionType.hashCode^msgFrom.hashCode^contentType.hashCode^content.hashCode^isRead.hashCode^status.hashCode^seq.hashCode^sendTime.hashCode^createTime.hashCode^attachedInfo.hashCode^ex.hashCode^localEx.hashCode^groupId.hashCode;
+        
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LocalConversation &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          conversationType == other.conversationType &&
-          userId == other.userId &&
-          groupId == other.groupId &&
-          showName == other.showName &&
-          faceUrl == other.faceUrl &&
-          latestMsg == other.latestMsg &&
-          latestMsgSendTime == other.latestMsgSendTime &&
-          unreadCount == other.unreadCount &&
-          recvMsgOpt == other.recvMsgOpt &&
-          isPinned == other.isPinned &&
-          isPrivateChat == other.isPrivateChat &&
-          burnDuration == other.burnDuration &&
-          groupAtType == other.groupAtType &&
-          isNotInGroup == other.isNotInGroup &&
-          updateUnreadCountTime == other.updateUnreadCountTime &&
-          attachedInfo == other.attachedInfo &&
-          ex == other.ex &&
-          draftText == other.draftText &&
-          draftTextTime == other.draftTextTime &&
-          maxSeq == other.maxSeq &&
-          minSeq == other.minSeq &&
-          isMsgDestruct == other.isMsgDestruct &&
-          msgDestructTime == other.msgDestructTime;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is LocalChatLog &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& clientMsgId == other.clientMsgId&& serverMsgId == other.serverMsgId&& sendId == other.sendId&& recvId == other.recvId&& senderPlatformId == other.senderPlatformId&& senderNickName == other.senderNickName&& senderFaceUrl == other.senderFaceUrl&& sessionType == other.sessionType&& msgFrom == other.msgFrom&& contentType == other.contentType&& content == other.content&& isRead == other.isRead&& status == other.status&& seq == other.seq&& sendTime == other.sendTime&& createTime == other.createTime&& attachedInfo == other.attachedInfo&& ex == other.ex&& localEx == other.localEx&& groupId == other.groupId;
+        
+            }
+
+class LocalConversation  {
+                final String conversationId;
+final int conversationType;
+final String userId;
+final String groupId;
+final String showName;
+final String faceUrl;
+final String latestMsg;
+final PlatformInt64 latestMsgSendTime;
+final int unreadCount;
+final int recvMsgOpt;
+final int isPinned;
+final int isPrivateChat;
+final int burnDuration;
+final int groupAtType;
+final int isNotInGroup;
+final PlatformInt64 updateUnreadCountTime;
+final String attachedInfo;
+final String ex;
+final String draftText;
+final PlatformInt64 draftTextTime;
+final PlatformInt64 maxSeq;
+final PlatformInt64 minSeq;
+final int isMsgDestruct;
+final PlatformInt64 msgDestructTime;
+
+                const LocalConversation({required this.conversationId ,required this.conversationType ,required this.userId ,required this.groupId ,required this.showName ,required this.faceUrl ,required this.latestMsg ,required this.latestMsgSendTime ,required this.unreadCount ,required this.recvMsgOpt ,required this.isPinned ,required this.isPrivateChat ,required this.burnDuration ,required this.groupAtType ,required this.isNotInGroup ,required this.updateUnreadCountTime ,required this.attachedInfo ,required this.ex ,required this.draftText ,required this.draftTextTime ,required this.maxSeq ,required this.minSeq ,required this.isMsgDestruct ,required this.msgDestructTime ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => conversationId.hashCode^conversationType.hashCode^userId.hashCode^groupId.hashCode^showName.hashCode^faceUrl.hashCode^latestMsg.hashCode^latestMsgSendTime.hashCode^unreadCount.hashCode^recvMsgOpt.hashCode^isPinned.hashCode^isPrivateChat.hashCode^burnDuration.hashCode^groupAtType.hashCode^isNotInGroup.hashCode^updateUnreadCountTime.hashCode^attachedInfo.hashCode^ex.hashCode^draftText.hashCode^draftTextTime.hashCode^maxSeq.hashCode^minSeq.hashCode^isMsgDestruct.hashCode^msgDestructTime.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is LocalConversation &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& conversationType == other.conversationType&& userId == other.userId&& groupId == other.groupId&& showName == other.showName&& faceUrl == other.faceUrl&& latestMsg == other.latestMsg&& latestMsgSendTime == other.latestMsgSendTime&& unreadCount == other.unreadCount&& recvMsgOpt == other.recvMsgOpt&& isPinned == other.isPinned&& isPrivateChat == other.isPrivateChat&& burnDuration == other.burnDuration&& groupAtType == other.groupAtType&& isNotInGroup == other.isNotInGroup&& updateUnreadCountTime == other.updateUnreadCountTime&& attachedInfo == other.attachedInfo&& ex == other.ex&& draftText == other.draftText&& draftTextTime == other.draftTextTime&& maxSeq == other.maxSeq&& minSeq == other.minSeq&& isMsgDestruct == other.isMsgDestruct&& msgDestructTime == other.msgDestructTime;
+        
+            }
+            

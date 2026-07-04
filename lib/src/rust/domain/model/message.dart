@@ -6,180 +6,91 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 消息信息（FFI 桥接用，将 protobuf MsgData 转换为 Dart 友好的结构体）
-class MessageInfo {
-  final String clientMsgId;
-  final String serverMsgId;
-  final String sendId;
-  final String recvId;
-  final String groupId;
-  final int senderPlatformId;
-  final String senderNickname;
-  final String senderFaceUrl;
-  final int sessionType;
-  final int msgFrom;
-  final int contentType;
-  final String content;
-  final PlatformInt64 seq;
-  final PlatformInt64 sendTime;
-  final PlatformInt64 createTime;
-  final int status;
-  final bool isRead;
-  final String attachedInfo;
-  final String ex;
 
-  const MessageInfo({
-    required this.clientMsgId,
-    required this.serverMsgId,
-    required this.sendId,
-    required this.recvId,
-    required this.groupId,
-    required this.senderPlatformId,
-    required this.senderNickname,
-    required this.senderFaceUrl,
-    required this.sessionType,
-    required this.msgFrom,
-    required this.contentType,
-    required this.content,
-    required this.seq,
-    required this.sendTime,
-    required this.createTime,
-    required this.status,
-    required this.isRead,
-    required this.attachedInfo,
-    required this.ex,
-  });
+            
 
-  @override
-  int get hashCode =>
-      clientMsgId.hashCode ^
-      serverMsgId.hashCode ^
-      sendId.hashCode ^
-      recvId.hashCode ^
-      groupId.hashCode ^
-      senderPlatformId.hashCode ^
-      senderNickname.hashCode ^
-      senderFaceUrl.hashCode ^
-      sessionType.hashCode ^
-      msgFrom.hashCode ^
-      contentType.hashCode ^
-      content.hashCode ^
-      seq.hashCode ^
-      sendTime.hashCode ^
-      createTime.hashCode ^
-      status.hashCode ^
-      isRead.hashCode ^
-      attachedInfo.hashCode ^
-      ex.hashCode;
+            
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MessageInfo &&
-          runtimeType == other.runtimeType &&
-          clientMsgId == other.clientMsgId &&
-          serverMsgId == other.serverMsgId &&
-          sendId == other.sendId &&
-          recvId == other.recvId &&
-          groupId == other.groupId &&
-          senderPlatformId == other.senderPlatformId &&
-          senderNickname == other.senderNickname &&
-          senderFaceUrl == other.senderFaceUrl &&
-          sessionType == other.sessionType &&
-          msgFrom == other.msgFrom &&
-          contentType == other.contentType &&
-          content == other.content &&
-          seq == other.seq &&
-          sendTime == other.sendTime &&
-          createTime == other.createTime &&
-          status == other.status &&
-          isRead == other.isRead &&
-          attachedInfo == other.attachedInfo &&
-          ex == other.ex;
-}
+            /// 消息信息（FFI 桥接用，将 protobuf MsgData 转换为 Dart 友好的结构体）
+class MessageInfo  {
+                final String clientMsgId;
+final String serverMsgId;
+final String sendId;
+final String recvId;
+final String groupId;
+final int senderPlatformId;
+final String senderNickname;
+final String senderFaceUrl;
+final int sessionType;
+final int msgFrom;
+final int contentType;
+final String content;
+final PlatformInt64 seq;
+final PlatformInt64 sendTime;
+final PlatformInt64 createTime;
+final int status;
+final bool isRead;
+final String attachedInfo;
+final String ex;
+
+                const MessageInfo({required this.clientMsgId ,required this.serverMsgId ,required this.sendId ,required this.recvId ,required this.groupId ,required this.senderPlatformId ,required this.senderNickname ,required this.senderFaceUrl ,required this.sessionType ,required this.msgFrom ,required this.contentType ,required this.content ,required this.seq ,required this.sendTime ,required this.createTime ,required this.status ,required this.isRead ,required this.attachedInfo ,required this.ex ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => clientMsgId.hashCode^serverMsgId.hashCode^sendId.hashCode^recvId.hashCode^groupId.hashCode^senderPlatformId.hashCode^senderNickname.hashCode^senderFaceUrl.hashCode^sessionType.hashCode^msgFrom.hashCode^contentType.hashCode^content.hashCode^seq.hashCode^sendTime.hashCode^createTime.hashCode^status.hashCode^isRead.hashCode^attachedInfo.hashCode^ex.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is MessageInfo &&
+                runtimeType == other.runtimeType
+                && clientMsgId == other.clientMsgId&& serverMsgId == other.serverMsgId&& sendId == other.sendId&& recvId == other.recvId&& groupId == other.groupId&& senderPlatformId == other.senderPlatformId&& senderNickname == other.senderNickname&& senderFaceUrl == other.senderFaceUrl&& sessionType == other.sessionType&& msgFrom == other.msgFrom&& contentType == other.contentType&& content == other.content&& seq == other.seq&& sendTime == other.sendTime&& createTime == other.createTime&& status == other.status&& isRead == other.isRead&& attachedInfo == other.attachedInfo&& ex == other.ex;
+        
+            }
 
 /// 收到的消息（从推送消息解码而来，用于事件总线传递）
-class ReceivedMessage {
-  final String serverMsgId;
-  final String clientMsgId;
-  final String sendId;
-  final String recvId;
-  final int senderPlatformId;
-  final String senderNickName;
-  final String senderFaceUrl;
-  final int sessionType;
-  final int msgFrom;
-  final int contentType;
-  final String content;
-  final PlatformInt64 seq;
-  final PlatformInt64 sendTime;
-  final PlatformInt64 createTime;
-  final String conversationId;
-  final String groupId;
+class ReceivedMessage  {
+                final String serverMsgId;
+final String clientMsgId;
+final String sendId;
+final String recvId;
+final int senderPlatformId;
+final String senderNickName;
+final String senderFaceUrl;
+final int sessionType;
+final int msgFrom;
+final int contentType;
+final String content;
+final PlatformInt64 seq;
+final PlatformInt64 sendTime;
+final PlatformInt64 createTime;
+final String conversationId;
+final String groupId;
+/// 是否仅在线推送（online_only 消息不增加未读数）
+final bool isOnlineOnly;
 
-  /// 是否仅在线推送（online_only 消息不增加未读数）
-  final bool isOnlineOnly;
+                const ReceivedMessage({required this.serverMsgId ,required this.clientMsgId ,required this.sendId ,required this.recvId ,required this.senderPlatformId ,required this.senderNickName ,required this.senderFaceUrl ,required this.sessionType ,required this.msgFrom ,required this.contentType ,required this.content ,required this.seq ,required this.sendTime ,required this.createTime ,required this.conversationId ,required this.groupId ,required this.isOnlineOnly ,});
 
-  const ReceivedMessage({
-    required this.serverMsgId,
-    required this.clientMsgId,
-    required this.sendId,
-    required this.recvId,
-    required this.senderPlatformId,
-    required this.senderNickName,
-    required this.senderFaceUrl,
-    required this.sessionType,
-    required this.msgFrom,
-    required this.contentType,
-    required this.content,
-    required this.seq,
-    required this.sendTime,
-    required this.createTime,
-    required this.conversationId,
-    required this.groupId,
-    required this.isOnlineOnly,
-  });
+                
+                
 
-  @override
-  int get hashCode =>
-      serverMsgId.hashCode ^
-      clientMsgId.hashCode ^
-      sendId.hashCode ^
-      recvId.hashCode ^
-      senderPlatformId.hashCode ^
-      senderNickName.hashCode ^
-      senderFaceUrl.hashCode ^
-      sessionType.hashCode ^
-      msgFrom.hashCode ^
-      contentType.hashCode ^
-      content.hashCode ^
-      seq.hashCode ^
-      sendTime.hashCode ^
-      createTime.hashCode ^
-      conversationId.hashCode ^
-      groupId.hashCode ^
-      isOnlineOnly.hashCode;
+                
+        @override
+        int get hashCode => serverMsgId.hashCode^clientMsgId.hashCode^sendId.hashCode^recvId.hashCode^senderPlatformId.hashCode^senderNickName.hashCode^senderFaceUrl.hashCode^sessionType.hashCode^msgFrom.hashCode^contentType.hashCode^content.hashCode^seq.hashCode^sendTime.hashCode^createTime.hashCode^conversationId.hashCode^groupId.hashCode^isOnlineOnly.hashCode;
+        
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ReceivedMessage &&
-          runtimeType == other.runtimeType &&
-          serverMsgId == other.serverMsgId &&
-          clientMsgId == other.clientMsgId &&
-          sendId == other.sendId &&
-          recvId == other.recvId &&
-          senderPlatformId == other.senderPlatformId &&
-          senderNickName == other.senderNickName &&
-          senderFaceUrl == other.senderFaceUrl &&
-          sessionType == other.sessionType &&
-          msgFrom == other.msgFrom &&
-          contentType == other.contentType &&
-          content == other.content &&
-          seq == other.seq &&
-          sendTime == other.sendTime &&
-          createTime == other.createTime &&
-          conversationId == other.conversationId &&
-          groupId == other.groupId &&
-          isOnlineOnly == other.isOnlineOnly;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is ReceivedMessage &&
+                runtimeType == other.runtimeType
+                && serverMsgId == other.serverMsgId&& clientMsgId == other.clientMsgId&& sendId == other.sendId&& recvId == other.recvId&& senderPlatformId == other.senderPlatformId&& senderNickName == other.senderNickName&& senderFaceUrl == other.senderFaceUrl&& sessionType == other.sessionType&& msgFrom == other.msgFrom&& contentType == other.contentType&& content == other.content&& seq == other.seq&& sendTime == other.sendTime&& createTime == other.createTime&& conversationId == other.conversationId&& groupId == other.groupId&& isOnlineOnly == other.isOnlineOnly;
+        
+            }
+            

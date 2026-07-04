@@ -6,57 +6,61 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// @ 用户信息
-class AtInfo {
-  final String atUserId;
-  final String groupNickname;
 
-  const AtInfo({required this.atUserId, required this.groupNickname});
+            
 
-  @override
-  int get hashCode => atUserId.hashCode ^ groupNickname.hashCode;
+            
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AtInfo &&
-          runtimeType == other.runtimeType &&
-          atUserId == other.atUserId &&
-          groupNickname == other.groupNickname;
-}
+            /// @ 用户信息
+class AtInfo  {
+                final String atUserId;
+final String groupNickname;
+
+                const AtInfo({required this.atUserId ,required this.groupNickname ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => atUserId.hashCode^groupNickname.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is AtInfo &&
+                runtimeType == other.runtimeType
+                && atUserId == other.atUserId&& groupNickname == other.groupNickname;
+        
+            }
 
 /// 消息实体（用于富文本）
-class MessageEntity {
-  final String entityType;
-  final int offset;
-  final int length;
-  final String url;
-  final String ex;
+class MessageEntity  {
+                final String entityType;
+final int offset;
+final int length;
+final String url;
+final String ex;
 
-  const MessageEntity({
-    required this.entityType,
-    required this.offset,
-    required this.length,
-    required this.url,
-    required this.ex,
-  });
+                const MessageEntity({required this.entityType ,required this.offset ,required this.length ,required this.url ,required this.ex ,});
 
-  @override
-  int get hashCode =>
-      entityType.hashCode ^
-      offset.hashCode ^
-      length.hashCode ^
-      url.hashCode ^
-      ex.hashCode;
+                
+                
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MessageEntity &&
-          runtimeType == other.runtimeType &&
-          entityType == other.entityType &&
-          offset == other.offset &&
-          length == other.length &&
-          url == other.url &&
-          ex == other.ex;
-}
+                
+        @override
+        int get hashCode => entityType.hashCode^offset.hashCode^length.hashCode^url.hashCode^ex.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is MessageEntity &&
+                runtimeType == other.runtimeType
+                && entityType == other.entityType&& offset == other.offset&& length == other.length&& url == other.url&& ex == other.ex;
+        
+            }
+            
