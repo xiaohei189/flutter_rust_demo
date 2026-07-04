@@ -79,7 +79,6 @@ impl MessageSyncer {
     }
 
     fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
-        if let Some(l) = &*self.conversation_listener.read().unwrap() { f(&**l); }
     }
 
     fn on_sync_started(&self) { self.notify_conv(|l| l.on_sync_started()); }
@@ -631,7 +630,7 @@ impl MessageSyncer {
             sync_version_dao: self.sync_version_dao.clone(),
             notification_seq_dao: self.notification_seq_dao.clone(),
             message_handler: self.message_handler.clone(),
-            conversation_listener: self.conversation_listener.clone(),
+            event_tx: self.event_tx.clone(),
             max_concurrent_pulls: self.max_concurrent_pulls,
             pull_msg_num: self.pull_msg_num,
             user_id: self.user_id.clone(),

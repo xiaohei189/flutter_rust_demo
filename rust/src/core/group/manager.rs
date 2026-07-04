@@ -376,7 +376,6 @@ impl GroupManager {
     }
 
     fn notify_group(&self, f: impl FnOnce(&dyn GroupListener)) {
-        if let Some(l) = &*self.group_listener.read().unwrap() { f(&**l); }
     }
 
     fn on_joined_group_added(&self, g: &GroupInfo) { self.notify_group(|l| l.on_joined_group_added(g)); }

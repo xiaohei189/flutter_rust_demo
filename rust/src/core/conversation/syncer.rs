@@ -369,9 +369,8 @@ impl ConversationSyncer {
             }
         }
 
-        self.send(ConversationEvent::Changed(conversations));
-
         info!("全量同步完成，同步 {} 个会话", conversations.len());
+        self.send(ConversationEvent::Changed(conversations.clone()));
 
         if let Ok(count) = self.dao.count().await {
             self.send(ConversationEvent::TotalUnreadCountChanged(count as i64));

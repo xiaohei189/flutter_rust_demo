@@ -9,6 +9,10 @@ import '../core/online/manager.dart';
 import '../domain/config.dart';
 import '../domain/constant/enums.dart';
 import '../domain/event/types.dart';
+import '../domain/listener/connection.dart';
+import '../domain/listener/conversation.dart';
+import '../domain/listener/friend.dart';
+import '../domain/listener/group.dart';
 import '../domain/model/conversation.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
@@ -17,7 +21,6 @@ import '../domain/model/msg_struct.dart';
 import '../domain/model/user.dart';
 import '../frb_generated.dart';
 import '../infra/database/models.dart';
-import '../lib.dart';
 import '../sdk/client.dart';
 import '../sdk/client/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
@@ -454,9 +457,9 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> clearConversationDraft({required String conversationId});
 
-  Stream<SdkEvent> connectionStream();
+  Stream<ConnectionEvent> connectionStream();
 
-  Stream<SdkEvent> conversationStream();
+  Stream<ConversationEvent> conversationStream();
 
   Future<GroupInfo> createGroup({
     required String groupName,
@@ -474,7 +477,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> dismissGroup({required String groupId});
 
-  Stream<SdkEvent> friendStream();
+  Stream<FriendEvent> friendStream();
 
   Future<List<String>> getBlackList();
 
@@ -593,7 +596,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
 
-  Stream<SdkEvent> groupStream();
+  Stream<GroupEvent> groupStream();
 
   /// 隐藏会话（对齐 Go SDK `HideConversation`）
   Future<void> hideConversation({required String conversationId});

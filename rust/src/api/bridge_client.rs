@@ -166,94 +166,38 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn connection_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        use crate::domain::listener::connection::ConnectionEvent::*;
+    pub async fn connection_stream(&self, sink: StreamSink<crate::domain::listener::connection::ConnectionEvent>) -> Result<()> {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         self.inner.connection.set_event_sender(tx);
-        tokio::spawn(async move {
-            while let Some(e) = rx.recv().await {
-                let se = match e {
-                    Connecting => SdkEvent::Connecting,
-                    Connected => SdkEvent::Connected,
-                    Disconnected(r) => SdkEvent::Disconnected { reason: r },
-                    KickedOffline(r) => SdkEvent::KickedOffline { reason: r },
-                    TokenExpired => SdkEvent::TokenExpired,
-                    Reconnecting { attempt, max_attempts } => SdkEvent::Reconnecting { attempt, max_attempts },
-                    LoginSuccess(id) => SdkEvent::LoginSuccess { user_id: id },
-                    Logout => SdkEvent::Logout,
-                    _ => continue,
-                };
-                let _ = sink.add(se);
-            }
-        });
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn conversation_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        use crate::domain::listener::conversation::ConversationEvent::*;
-        use crate::domain::event::types::InputStatusChangedData;
+    pub async fn conversation_stream(&self, sink: StreamSink<crate::domain::listener::conversation::ConversationEvent>) -> Result<()> {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         self.inner.message_handler.set_event_sender(tx.clone());
         self.inner.message_service.set_event_sender(tx.clone());
         self.inner.message_syncer.set_event_sender(tx.clone());
         self.inner.conversation_syncer.set_event_sender(tx.clone());
         self.inner.conversation.set_event_sender(tx);
-        tokio::spawn(async move {
-            while let Some(e) = rx.recv().await {
-                let se = match e {
-                    Changed(c) => SdkEvent::ConversationChanged { conversations: c },
-                    Deleted(ids) => SdkEvent::ConversationDeleted { conversation_ids: ids },
-                    TotalUnreadCountChanged(c) => SdkEvent::TotalUnreadCountChanged { count: c },
-                    SyncStarted => SdkEvent::SyncStarted,
-                    SyncFinished => SdkEvent::SyncFinished,
-                    SyncFailed(e) => SdkEvent::SyncFailed { error: e },
-                    SyncProgress { progress, message } => SdkEvent::SyncProgress { progress: progress as u8, message },
-                    UserInputStatusChanged { conversation_id, user_id, platform_ids } =>
-                        SdkEvent::ConversationUserInputStatusChanged { data: InputStatusChangedData { conversation_id, user_id, platform_ids } },
-                    _ => continue,
-                };
-                let _ = sink.add(se);
-            }
-        });
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn friend_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        use crate::domain::listener::friend::FriendEvent::*;
+    pub async fn friend_stream(&self, sink: StreamSink<crate::domain::listener::friend::FriendEvent>) -> Result<()> {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         self.inner.friend.set_event_sender(tx);
-        tokio::spawn(async move {
-            while let Some(e) = rx.recv().await {
-                let se = match e {
-                    Added(f) => SdkEvent::FriendAdded { friends: f },
-                    Deleted(id) => SdkEvent::FriendDeleted { friend_id: id },
-                    BlackAdded(id) => SdkEvent::BlackAdded { user_id: id },
-                    BlackDeleted(id) => SdkEvent::BlackDeleted { black_id: id },
-                    _ => continue,
-                };
-                let _ = sink.add(se);
-            }
-        });
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn group_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        use crate::domain::listener::group::GroupEvent::*;
+    pub async fn group_stream(&self, sink: StreamSink<crate::domain::listener::group::GroupEvent>) -> Result<()> {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         self.inner.group.set_event_sender(tx);
-        tokio::spawn(async move {
-            while let Some(e) = rx.recv().await {
-                let se = match e {
-                    GroupInfoChanged(g) => SdkEvent::GroupInfoChanged { group_id: g.group_id },
-                    GroupReadReceipt(r) => SdkEvent::GroupReadReceipt { receipts: r },
-                    _ => continue,
-                };
-                let _ = sink.add(se);
-            }
-        });
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 

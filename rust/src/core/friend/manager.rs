@@ -329,7 +329,6 @@ impl FriendManager {
     }
 
     fn notify_friend(&self, f: impl FnOnce(&dyn FriendListener)) {
-        if let Some(l) = &*self.friend_listener.read().unwrap() { f(&**l); }
     }
 
     fn on_added(&self, fs: &[FriendInfo]) { self.notify_friend(|l| l.on_added(fs)); }
