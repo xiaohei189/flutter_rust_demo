@@ -328,7 +328,19 @@ impl FriendManager {
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
+    fn notify_friend(&self, f: impl FnOnce(&dyn FriendListener)) {
+        if let Some(l) = &*self.friend_listener.read().unwrap() { f(&**l); }
+    }
 
+    fn on_added(&self, fs: &[FriendInfo]) { self.notify_friend(|l| l.on_added(fs)); }
+    fn on_deleted(&self, id: &str) { self.notify_friend(|l| l.on_deleted(id)); }
+    fn on_black_added(&self, id: &str) { self.notify_friend(|l| l.on_black_added(id)); }
+    fn on_black_deleted(&self, id: &str) { self.notify_friend(|l| l.on_black_deleted(id)); }
+
+    pub async fn set_user_id(&self, user_id: String) {
+        *self.user_id.write().await = user_id.clone();
+        debug!("FriendManager user_id 已更新为: {}", user_id);
+    }
 
     /// 从本地数据库加载好友列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据
