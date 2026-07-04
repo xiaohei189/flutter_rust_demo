@@ -3,7 +3,7 @@ use crate::core::message::handler::MessageHandler;
 use crate::domain::model::message::ReceivedMessage;
 use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::{ConversationListener, ConversationEvent};
 use crate::infra::database::{ConversationDao, MessageDao, NotificationSeqDao, SyncVersionDao};
 use crate::infra::database::models::LocalNotificationSeq;
 use std::collections::HashMap;
@@ -31,7 +31,7 @@ pub struct MessageSyncer {
     sync_version_dao: Arc<SyncVersionDao>,
     notification_seq_dao: Arc<NotificationSeqDao>,
     message_handler: Arc<MessageHandler>,
-    conversation_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConversationListener>>>>,
+    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
     max_concurrent_pulls: usize,
     pull_msg_num: i64,
     user_id: String,
@@ -60,7 +60,7 @@ impl MessageSyncer {
             sync_version_dao,
             notification_seq_dao,
             message_handler,
-            conversation_listener: Arc::new(std::sync::RwLock::new(None)),
+            event_tx: Arc::new(std::sync::Mutex::new(None)),
             max_concurrent_pulls: 5,
             pull_msg_num: 50,
             user_id,
@@ -70,8 +70,12 @@ impl MessageSyncer {
         }
     }
 
-    pub fn set_conversation_listener(&self, l: Arc<dyn ConversationListener>) {
-        *self.conversation_listener.write().unwrap() = Some(l);
+    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
+        *self.event_tx.lock().unwrap() = Some(tx);
+    }
+
+    pub(crate) fn send(&self, e: ConversationEvent) {
+        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
     fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
@@ -144,22 +148,22 @@ impl MessageSyncer {
         }
 
         info!("重连后开始增量同步消息");
-        self.on_sync_started();
-        self.on_sync_progress(1, "重连后开始同步");
+        self.send(ConversationEvent::SyncStarted);
+        self.send(ConversationEvent::SyncProgress { progress: 1, message: "重连后开始同步".into() });
 
         let server_max_seqs = match self.get_server_max_seqs().await {
             Ok(seqs) => seqs,
             Err(e) => {
                 let error_msg = format!("{}", e);
-                self.on_sync_failed(&error_msg);
+                self.send(ConversationEvent::SyncFailed(error_msg.to_string()));
                 return Err(e);
             }
         };
 
         if server_max_seqs.is_empty() {
             info!("服务端无会话 seq，跳过同步");
-            self.on_sync_progress(100, "同步完成（无需同步）");
-            self.on_sync_finished();
+            self.send(ConversationEvent::SyncProgress { progress: 100, message: "同步完成（无需同步）".into() });
+            self.send(ConversationEvent::SyncFinished);
             return Ok(());
         }
 
@@ -169,14 +173,14 @@ impl MessageSyncer {
 
         match self.sync_incremental_messages(&server_max_seqs).await {
             Ok(()) => {
-                self.on_sync_progress(100, "重连后同步完成");
-                self.on_sync_finished();
+                self.send(ConversationEvent::SyncProgress { progress: 100, message: "重连后同步完成".into() });
+                self.send(ConversationEvent::SyncFinished);
                 info!("重连后增量同步完成");
                 Ok(())
             }
             Err(e) => {
                 let error_msg = format!("{}", e);
-                self.on_sync_failed(&error_msg);
+                self.send(ConversationEvent::SyncFailed(error_msg.to_string()));
                 Err(e)
             }
         }
@@ -195,21 +199,21 @@ impl MessageSyncer {
         info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
 
         // 通知同步开始（对齐 Go SDK OnSyncServerStart）
-        self.on_sync_started();
-        self.on_sync_progress(1, "同步开始");
+        self.send(ConversationEvent::SyncStarted);
+        self.send(ConversationEvent::SyncProgress { progress: 1, message: "同步开始".into() });
 
         match self.sync_all_conversations(reinstalled).await {
             Ok(()) => {
                 // 同步完成：进度 100（对齐 Go SDK OnSyncServerProgress(100) + OnSyncServerFinish）
-                self.on_sync_progress(100, "同步完成");
-                self.on_sync_finished();
+                self.send(ConversationEvent::SyncProgress { progress: 100, message: "同步完成".into() });
+                self.send(ConversationEvent::SyncFinished);
                 info!("=== 消息同步成功: sync_on_login ===");
                 Ok(())
             }
             Err(e) => {
                 // 同步失败：发布 SyncFailed 事件（对齐 Go SDK OnSyncServerFailed）
                 let error_msg = format!("{}", e);
-                self.on_sync_failed(&error_msg);
+                self.send(ConversationEvent::SyncFailed(error_msg.to_string()));
                 error!("=== 消息同步失败: sync_on_login, error={} ===", e);
                 Err(e)
             }
@@ -316,7 +320,7 @@ impl MessageSyncer {
 
         if server_max_seqs.is_empty() {
             info!("服务端无会话记录，跳过同步");
-            self.on_sync_finished();
+            self.send(ConversationEvent::SyncFinished);
             return Ok(());
         }
 

@@ -1,7 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::friend::FriendListener;
+use crate::domain::listener::friend::{FriendListener, FriendEvent};
 use crate::domain::model::friend::FriendInfo;
 use crate::infra::database::friend_dao::FriendDao;
 use crate::infra::database::models::LocalFriend;
@@ -299,7 +299,7 @@ pub struct FriendManager {
     blacks: Arc<RwLock<Vec<String>>>,
     friend_dao: Arc<FriendDao>,
     sync_version_dao: Arc<SyncVersionDao>,
-    friend_listener: Arc<std::sync::RwLock<Option<Arc<dyn FriendListener>>>>,
+    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<FriendEvent>>>>,
 }
 
 impl FriendManager {
@@ -316,12 +316,16 @@ impl FriendManager {
             blacks: Arc::new(RwLock::new(Vec::new())),
             friend_dao,
             sync_version_dao,
-            friend_listener: Arc::new(std::sync::RwLock::new(None)),
+            event_tx: Arc::new(std::sync::Mutex::new(None)),
         }
     }
 
-    pub fn set_friend_listener(&self, l: Arc<dyn FriendListener>) {
-        *self.friend_listener.write().unwrap() = Some(l);
+    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<FriendEvent>) {
+        *self.event_tx.lock().unwrap() = Some(tx);
+    }
+
+    pub(crate) fn send(&self, e: FriendEvent) {
+        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
     fn notify_friend(&self, f: impl FnOnce(&dyn FriendListener)) {
@@ -399,7 +403,7 @@ impl FriendManager {
         // 更新内存缓存
         *self.friends.write().await = friends.clone();
 
-        self.on_added(&friends);
+        self.send(FriendEvent::Added(friends.to_vec()));
 
         info!("好友列表已全量同步, count={}", friends.len());
         Ok(())
@@ -504,7 +508,7 @@ impl FriendManager {
             let all_changed: Vec<FriendInfo> = resp.insert.iter().chain(resp.update.iter())
                 .map(|s| server_to_friend(s.clone()))
                 .collect();
-            self.on_added(&all_changed);
+            self.send(FriendEvent::Added(all_changed.to_vec()));
         }
 
         info!("增量同步好友完成, insert={}, update={}, delete={}",
@@ -715,7 +719,7 @@ impl FriendManager {
 
         self.friends.write().await.retain(|f| f.user_id != user_id);
 
-        self.on_deleted(&user_id);
+        self.send(FriendEvent::Deleted(user_id.to_string()));
 
         info!("好友已删除: {}", user_id);
         Ok(())
@@ -767,7 +771,7 @@ impl FriendManager {
 
         self.blacks.write().await.push(user_id.clone());
 
-        self.on_black_added(&user_id);
+        self.send(FriendEvent::BlackAdded(user_id.to_string()));
 
         info!("已添加到黑名单: {}", user_id);
         Ok(())
@@ -782,7 +786,7 @@ impl FriendManager {
 
         self.blacks.write().await.retain(|id| id != &user_id);
 
-        self.on_black_deleted(&user_id);
+        self.send(FriendEvent::BlackDeleted(user_id.to_string()));
 
         info!("已从黑名单移除: {}", user_id);
         Ok(())

@@ -1,7 +1,7 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::group::GroupListener;
+use crate::domain::listener::group::{GroupListener, GroupEvent};
 use crate::domain::event::types::GroupReadReceipt;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::infra::database::group_dao::GroupDao;
@@ -346,7 +346,7 @@ pub struct GroupManager {
     members: Arc<RwLock<Vec<GroupMember>>>,
     group_dao: Arc<GroupDao>,
     sync_version_dao: Arc<SyncVersionDao>,
-    group_listener: Arc<std::sync::RwLock<Option<Arc<dyn GroupListener>>>>,
+    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<GroupEvent>>>>,
 }
 
 impl GroupManager {
@@ -363,12 +363,16 @@ impl GroupManager {
             members: Arc::new(RwLock::new(Vec::new())),
             group_dao,
             sync_version_dao,
-            group_listener: Arc::new(std::sync::RwLock::new(None)),
+            event_tx: Arc::new(std::sync::Mutex::new(None)),
         }
     }
 
-    pub fn set_group_listener(&self, l: Arc<dyn GroupListener>) {
-        *self.group_listener.write().unwrap() = Some(l);
+    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<GroupEvent>) {
+        *self.event_tx.lock().unwrap() = Some(tx);
+    }
+
+    pub(crate) fn send(&self, e: GroupEvent) {
+        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
     fn notify_group(&self, f: impl FnOnce(&dyn GroupListener)) {
