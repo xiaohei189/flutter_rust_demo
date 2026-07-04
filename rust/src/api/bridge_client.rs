@@ -167,15 +167,14 @@ impl OpenIMBridgeClient {
 
     #[flutter_rust_bridge::frb]
     pub async fn event_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
-        use crate::domain::listener::bridge;
-        // 4 个独立 listener → 汇聚到同一个 sink
+        // 兼容旧 Dart 协议：内部汇聚 4 个独立 listener
         let s = sink.clone();
-        let (mut rx, a) = bridge::start_connection_stream();
+        let (mut rx, a) = crate::domain::listener::bridge::start_connection_stream();
         self.inner.connection.set_connection_listener(a);
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = s.add(e); } });
 
         let s = sink.clone();
-        let (mut rx, a) = bridge::start_conversation_stream();
+        let (mut rx, a) = crate::domain::listener::bridge::start_conversation_stream();
         self.inner.message_handler.set_conversation_listener(a.clone());
         self.inner.message_service.set_conversation_listener(a.clone());
         self.inner.message_syncer.set_conversation_listener(a.clone());
@@ -184,14 +183,49 @@ impl OpenIMBridgeClient {
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = s.add(e); } });
 
         let s = sink.clone();
-        let (mut rx, a) = bridge::start_friend_stream();
+        let (mut rx, a) = crate::domain::listener::bridge::start_friend_stream();
         self.inner.friend.set_friend_listener(a);
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = s.add(e); } });
 
-        let (mut rx, a) = bridge::start_group_stream();
+        let (mut rx, a) = crate::domain::listener::bridge::start_group_stream();
         self.inner.group.set_group_listener(a);
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        Ok(())
+    }
 
+    #[flutter_rust_bridge::frb]
+    pub async fn connection_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
+        let (mut rx, a) = crate::domain::listener::bridge::start_connection_stream();
+        self.inner.connection.set_connection_listener(a);
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        Ok(())
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn conversation_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
+        let (mut rx, a) = crate::domain::listener::bridge::start_conversation_stream();
+        self.inner.message_handler.set_conversation_listener(a.clone());
+        self.inner.message_service.set_conversation_listener(a.clone());
+        self.inner.message_syncer.set_conversation_listener(a.clone());
+        self.inner.conversation_syncer.set_conversation_listener(a.clone());
+        self.inner.conversation.set_conversation_listener(a);
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        Ok(())
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn friend_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
+        let (mut rx, a) = crate::domain::listener::bridge::start_friend_stream();
+        self.inner.friend.set_friend_listener(a);
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        Ok(())
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn group_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
+        let (mut rx, a) = crate::domain::listener::bridge::start_group_stream();
+        self.inner.group.set_group_listener(a);
+        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
