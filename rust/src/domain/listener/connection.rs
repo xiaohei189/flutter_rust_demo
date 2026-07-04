@@ -19,6 +19,7 @@ pub trait ConnectionListener: Send + Sync {
     fn on_connecting(&self) {}
     fn on_connected(&self) {}
     fn on_disconnected(&self, _reason: &str) {}
+    fn on_connect_failed(&self, _error: &str) {}
     fn on_kicked_offline(&self, _reason: &str) {}
     fn on_token_expired(&self) {}
     fn on_reconnecting(&self, _attempt: u32, _max_attempts: u32) {}
