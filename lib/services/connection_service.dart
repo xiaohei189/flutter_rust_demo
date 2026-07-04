@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../src/rust/domain/event/types.dart' show SdkEvent;
+import '../src/rust/domain/listener/connection.dart';
 import '../utils/app_logger.dart';
 import 'im_client.dart';
 
@@ -77,29 +77,15 @@ class ConnectionService {
   }
 
   /// 处理统一事件
-  void _handleEvent(SdkEvent event) {
+  void _handleEvent(ConnectionEvent event) {
     event.maybeWhen(
-      connected: () {
-        _updateStatus(ConnectionStatus.connected);
-      },
-      connecting: () {
-        _updateStatus(ConnectionStatus.connecting);
-      },
-      disconnected: (reason) {
-        _updateStatus(ConnectionStatus.disconnected);
-      },
-      connectFailed: (error) {
-        _updateStatus(ConnectionStatus.failed);
-      },
-      reconnecting: (attempt, maxAttempts) {
-        _updateStatus(ConnectionStatus.connecting);
-      },
-      kickedOffline: (reason) {
-        _updateStatus(ConnectionStatus.kickedOffline);
-      },
-      tokenExpired: () {
-        _updateStatus(ConnectionStatus.tokenExpired);
-      },
+      connected: () => _updateStatus(ConnectionStatus.connected),
+      connecting: () => _updateStatus(ConnectionStatus.connecting),
+      disconnected: (_) => _updateStatus(ConnectionStatus.disconnected),
+      connectFailed: (_) => _updateStatus(ConnectionStatus.failed),
+      reconnecting: (_, _) => _updateStatus(ConnectionStatus.connecting),
+      kickedOffline: (_) => _updateStatus(ConnectionStatus.kickedOffline),
+      tokenExpired: () => _updateStatus(ConnectionStatus.tokenExpired),
       orElse: () {},
     );
   }

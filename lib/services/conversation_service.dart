@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../src/rust/domain/event/types.dart' show SdkEvent;
+import '../src/rust/domain/listener/conversation.dart';
 import '../src/rust/infra/database/models.dart' show LocalConversation;
 import '../utils/app_logger.dart';
 import 'im_client.dart';
@@ -109,7 +109,7 @@ class ConversationService {
   }
 
   /// 处理统一事件
-  void _handleEvent(SdkEvent event) {
+  void _handleEvent(ConversationEvent event) {
     event.maybeWhen(
       syncStarted: () {
         _updateSyncStatus(ConversationSyncStatus.syncing);
@@ -120,52 +120,26 @@ class ConversationService {
         _updateSyncProgress(100);
         loadConversations();
       },
-      syncProgress: (progress, message) {
+      syncProgress: (progress, _) {
         _updateSyncStatus(ConversationSyncStatus.syncing);
         _updateSyncProgress(progress);
       },
-      syncFailed: (error) {
+      syncFailed: (_) {
         _updateSyncStatus(ConversationSyncStatus.failed);
       },
-      newConversation: (conversations) {
+      new_: (_) {
         loadConversations();
       },
-      conversationChanged: (conversations) {
+      changed: (_) {
         loadConversations();
       },
-      conversationDeleted: (conversationIds) {
-        for (final id in conversationIds) {
+      deleted: (ids) {
+        for (final id in ids) {
           _conversations.removeWhere((c) => c.conversationId == id);
         }
         _notifyConversationsChanged();
       },
-      newMessage: (message) {
-        loadConversations();
-      },
-      messageSent: (
-        clientMsgId,
-        serverMsgId,
-        sendTime,
-        status,
-        conversationId,
-        sendId,
-        recvId,
-        groupId,
-        sessionType,
-        contentType,
-        content,
-        senderNickname,
-        senderFaceUrl,
-      ) {
-        loadConversations();
-      },
-      messageRevoked: (conversationId, seq, clientMsgId, revokerId, revokerRole, revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId, sourceMessageSenderNickname, sessionType, isAdminRevoke) {
-        loadConversations();
-      },
-      messagesDeleted: (conversationId, clientMsgIds) {
-        loadConversations();
-      },
-      totalUnreadCountChanged: (count) {
+      totalUnreadCountChanged: (_) {
         _notifyConversationsChanged();
       },
       orElse: () {},

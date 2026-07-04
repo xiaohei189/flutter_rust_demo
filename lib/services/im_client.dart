@@ -4,7 +4,10 @@ import 'package:path_provider/path_provider.dart';
 
 import '../src/rust/api/bridge_client.dart';
 import '../src/rust/api/simple.dart';
-import '../src/rust/domain/event/types.dart' show SdkEvent;
+import '../src/rust/domain/listener/connection.dart';
+import '../src/rust/domain/listener/conversation.dart';
+import '../src/rust/domain/listener/friend.dart';
+import '../src/rust/domain/listener/group.dart';
 import '../src/rust/domain/config.dart';
 import '../utils/app_logger.dart';
 
@@ -109,24 +112,8 @@ class ImClient {
     _isInitializing = false;
   }
   
-  /// 连接事件流
-  Stream<SdkEvent> get connectionStream {
-    if (_client == null) throw StateError('客户端未创建');
-    return _client!.connectionStream();
-  }
-  /// 会话事件流
-  Stream<SdkEvent> get conversationStream {
-    if (_client == null) throw StateError('客户端未创建');
-    return _client!.conversationStream();
-  }
-  /// 好友事件流
-  Stream<SdkEvent> get friendStream {
-    if (_client == null) throw StateError('客户端未创建');
-    return _client!.friendStream();
-  }
-  /// 群组事件流
-  Stream<SdkEvent> get groupStream {
-    if (_client == null) throw StateError('客户端未创建');
-    return _client!.groupStream();
-  }
+  Stream<ConnectionEvent> get connectionStream => _client!.connectionStream();
+  Stream<ConversationEvent> get conversationStream => _client!.conversationStream();
+  Stream<FriendEvent> get friendStream => _client!.friendStream();
+  Stream<GroupEvent> get groupStream => _client!.groupStream();
 }

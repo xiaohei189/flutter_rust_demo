@@ -14,7 +14,10 @@ import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo
 import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
-import 'package:flutter_rust_demo/src/rust/domain/event/types.dart' show SdkEvent;
+import 'package:flutter_rust_demo/src/rust/domain/listener/connection.dart';
+import 'package:flutter_rust_demo/src/rust/domain/listener/conversation.dart';
+import 'package:flutter_rust_demo/src/rust/domain/listener/friend.dart';
+import 'package:flutter_rust_demo/src/rust/domain/listener/group.dart';
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
 import 'package:flutter_rust_demo/services/navigation_service.dart';
@@ -648,7 +651,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 处理统一事件（连接、会话、消息）
-  void _handleEvent(SdkEvent event) {
+  void _handleEvent(dynamic event) {
     event.maybeWhen(
       connecting: () {
         appLog.i('[MessageService] 正在连接...');
