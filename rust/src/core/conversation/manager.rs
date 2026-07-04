@@ -1,5 +1,5 @@
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::ConversationEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::message_dao::MessageDao;
@@ -10,7 +10,7 @@ use tracing::{debug, info};
 pub struct ConversationManager {
     dao: Arc<ConversationDao>,
     message_dao: Arc<MessageDao>,
-    conversation_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConversationListener>>>>,
+    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
 }
 
 impl ConversationManager {
@@ -18,20 +18,17 @@ impl ConversationManager {
         Self {
             dao,
             message_dao,
-            conversation_listener: Arc::new(std::sync::RwLock::new(None)),
+            event_tx: Arc::new(std::sync::Mutex::new(None)),
         }
     }
 
-    pub fn set_conversation_listener(&self, l: Arc<dyn ConversationListener>) {
-        *self.conversation_listener.write().unwrap() = Some(l);
+    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
+        *self.event_tx.lock().unwrap() = Some(tx);
     }
 
-    fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
-        if let Some(l) = &*self.conversation_listener.read().unwrap() { f(&**l); }
+    pub(crate) fn send(&self, e: ConversationEvent) {
+        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
-
-    pub fn on_changed(&self, c: &[Conversation]) { self.notify_conv(|l| l.on_changed(c)); }
-    pub fn on_deleted(&self, ids: &[String]) { self.notify_conv(|l| l.on_deleted(ids)); }
 
     pub fn dao(&self) -> Arc<ConversationDao> {
         self.dao.clone()
@@ -71,7 +68,7 @@ impl ConversationManager {
     pub async fn upsert_conversation(&self, conv: Conversation) -> Result<()> {
         let local = domain_to_local(conv.clone());
         self.dao.upsert(&local).await?;
-        self.on_changed(&[conv]);
+        self.send(ConversationEvent::Changed(vec![conv]));
         Ok(())
     }
 
@@ -84,7 +81,7 @@ impl ConversationManager {
 
     pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
         self.dao.delete(conversation_id).await?;
-        self.on_deleted(&[conversation_id.to_string()]);
+        self.send(ConversationEvent::Deleted(vec![conversation_id.to_string()]));
         Ok(())
     }
 

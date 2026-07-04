@@ -1,7 +1,7 @@
 use serde::Deserializer;
 
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationListener;
+use crate::domain::listener::conversation::ConversationEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::sync_version_dao::SyncVersionDao;
@@ -173,7 +173,7 @@ fn server_to_domain(s: ServerConversation) -> Conversation {
 pub struct ConversationSyncer {
     http_client: Arc<HttpApiClient>,
     dao: Arc<ConversationDao>,
-    conversation_listener: Arc<std::sync::RwLock<Option<Arc<dyn ConversationListener>>>>,
+    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
     sync_version_dao: Arc<SyncVersionDao>,
     user_id: Arc<RwLock<String>>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
@@ -192,7 +192,7 @@ impl ConversationSyncer {
         Self {
             http_client,
             dao,
-            conversation_listener: Arc::new(std::sync::RwLock::new(None)),
+            event_tx: Arc::new(std::sync::Mutex::new(None)),
             sync_version_dao,
             user_id: Arc::new(RwLock::new(user_id)),
             connection: None,
@@ -200,17 +200,13 @@ impl ConversationSyncer {
         }
     }
 
-    pub fn set_conversation_listener(&self, l: Arc<dyn ConversationListener>) {
-        *self.conversation_listener.write().unwrap() = Some(l);
+    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
+        *self.event_tx.lock().unwrap() = Some(tx);
     }
 
-    fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
-        if let Some(l) = &*self.conversation_listener.read().unwrap() { f(&**l); }
+    pub(crate) fn send(&self, e: ConversationEvent) {
+        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
-
-    fn on_changed(&self, c: &[Conversation]) { self.notify_conv(|l| l.on_changed(c)); }
-    fn on_deleted(&self, ids: &[String]) { self.notify_conv(|l| l.on_deleted(ids)); }
-    fn on_total_unread_count_changed(&self, count: i64) { self.notify_conv(|l| l.on_total_unread_count_changed(count)); }
 
     /// 设置 WebSocket 连接管理器（用于 Hash Read Seq 同步）
     pub fn set_connection(&mut self, connection: Arc<crate::core::connection::manager::ConnectionManager>) {
@@ -268,7 +264,7 @@ impl ConversationSyncer {
         // 4. 处理增量变更
         for conv_id in &resp.delete {
             self.dao.delete(conv_id).await?;
-            self.on_deleted(&vec![conv_id.clone()]);
+            self.send(ConversationEvent::Deleted(vec![conv_id.clone()]));
         }
 
         for s in &resp.update {
@@ -290,7 +286,7 @@ impl ConversationSyncer {
                 .chain(resp.insert.iter())
                 .map(|s| server_to_domain(s.clone()))
                 .collect();
-            self.on_changed(&changed);
+            self.send(ConversationEvent::Changed(changed));
         }
 
         // 5. 持久化版本号到数据库（对齐 Go SDK `updateVersionInfo`）
@@ -373,12 +369,12 @@ impl ConversationSyncer {
             }
         }
 
-        self.on_changed(&conversations);
+        self.send(ConversationEvent::Changed(conversations));
 
         info!("全量同步完成，同步 {} 个会话", conversations.len());
 
         if let Ok(count) = self.dao.count().await {
-            self.on_total_unread_count_changed(count as i64);
+            self.send(ConversationEvent::TotalUnreadCountChanged(count as i64));
         }
 
         Ok(conversations)
@@ -509,7 +505,7 @@ impl ConversationSyncer {
                                 .iter()
                                 .map(|c| c.conversation_id.clone()),
                         );
-                        self.on_changed(&conversations_to_insert);
+                        self.send(ConversationEvent::Changed(conversations_to_insert));
                     }
                 }
                 Err(e) => {
