@@ -673,9 +673,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       syncStarted: () => this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: 0),
       syncFinished: () { this.state = this.state.copyWith(isSyncingConversations: false, syncProgress: 100); _loadConversations(); },
       syncProgress: (p, _) => this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: p),
-      totalUnreadCountChanged: (c) => this.state = this.state.copyWith(totalUnreadCount: c),
-      changed: (_) => _loadConversations(),
-      new_: (_) => _loadConversations(),
+      totalUnreadCountChanged: (c) {
+        appLog.i('[MsgSvc] totalUnreadCountChanged: $c');
+        this.state = this.state.copyWith(totalUnreadCount: c);
+      },
+      changed: (_) { appLog.i('[MsgSvc] conversationChanged'); _loadConversations(); },
+      new_: (_) { appLog.i('[MsgSvc] newConversation'); _loadConversations(); },
+      deleted: (_) => appLog.i('[MsgSvc] conversationDeleted'),
+      userInputStatusChanged: (cid, uid, _) => appLog.i('[MsgSvc] typing: conv=$cid user=$uid'),
+      syncFailed: (e) => appLog.i('[MsgSvc] syncFailed: $e'),
       orElse: () {},
     );
   }
