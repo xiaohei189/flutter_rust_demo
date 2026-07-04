@@ -454,6 +454,10 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<void> clearConversationDraft({required String conversationId});
 
+  Stream<SdkEvent> connectionStream();
+
+  Stream<SdkEvent> conversationStream();
+
   Future<GroupInfo> createGroup({
     required String groupName,
     required int groupType,
@@ -471,6 +475,8 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   Future<void> dismissGroup({required String groupId});
 
   Stream<SdkEvent> eventStream();
+
+  Stream<SdkEvent> friendStream();
 
   Future<List<String>> getBlackList();
 
@@ -588,6 +594,8 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   });
 
   Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
+
+  Stream<SdkEvent> groupStream();
 
   /// 隐藏会话（对齐 Go SDK `HideConversation`）
   Future<void> hideConversation({required String conversationId});
