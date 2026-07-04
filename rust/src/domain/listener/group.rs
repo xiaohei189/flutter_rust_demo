@@ -1,5 +1,16 @@
 use crate::domain::event::types::GroupReadReceipt;
 use crate::domain::model::group::GroupInfo;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum GroupEvent {
+    JoinedGroupAdded(GroupInfo),
+    JoinedGroupDeleted(GroupInfo),
+    GroupInfoChanged(GroupInfo),
+    MemberAdded(String),
+    MemberDeleted(String),
+    GroupReadReceipt(Vec<GroupReadReceipt>),
+}
 
 /// group 事件（对齐 Go SDK GroupListener）
 pub trait GroupListener: Send + Sync {

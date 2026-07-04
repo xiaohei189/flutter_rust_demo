@@ -1,4 +1,18 @@
 use crate::domain::model::conversation::Conversation;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ConversationEvent {
+    Changed(Vec<Conversation>),
+    Deleted(Vec<String>),
+    New(Vec<Conversation>),
+    TotalUnreadCountChanged(i64),
+    SyncStarted,
+    SyncFinished,
+    SyncFailed(String),
+    SyncProgress { progress: i32, message: String },
+    UserInputStatusChanged { conversation_id: String, user_id: String, platform_ids: Vec<i32> },
+}
 
 /// conversation 事件（对齐 Go SDK ConversationListener）
 pub trait ConversationListener: Send + Sync {

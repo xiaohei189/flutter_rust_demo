@@ -16,6 +16,7 @@ use crate::domain::config::ClientConfig;
 use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::listener::connection::ConnectionEvent;
 use crate::infra::cache::memory::CacheManager;
 use crate::protocol::sdkws::PushMessages;
 use crate::sdk::client::OpenIMClient;
@@ -369,7 +370,7 @@ impl OpenIMClient {
             }
         }
 
-        self.connection.on_login_success(&uid);
+        self.connection.send(ConnectionEvent::LoginSuccess(uid));
         debug!("[SDK] 用户登录成功: {}", user_id);
         Ok(())
     }
@@ -382,7 +383,7 @@ impl OpenIMClient {
         self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
 
-        self.connection.on_logout();
+        self.connection.send(ConnectionEvent::Logout);
         info!("用户登出成功");
         Ok(())
     }

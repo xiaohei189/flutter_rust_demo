@@ -1,4 +1,17 @@
 use crate::domain::model::friend::FriendInfo;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum FriendEvent {
+    Added(Vec<FriendInfo>),
+    Deleted(String),
+    InfoChanged(Vec<FriendInfo>),
+    BlackAdded(String),
+    BlackDeleted(String),
+    ApplicationAdded(String),
+    ApplicationAccepted(String),
+    ApplicationRejected(String),
+}
 
 /// friend 事件（对齐 Go SDK FriendListener）
 pub trait FriendListener: Send + Sync {
