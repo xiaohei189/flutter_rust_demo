@@ -36,7 +36,9 @@ impl OpenIMClient {
 
     pub async fn get_conversations(&self) -> std::result::Result<Vec<LocalConversation>, SdkError> {
         let dao = self.conversation.dao();
-        dao.get_all().await
+        let conversations = dao.get_all().await?;
+        tracing::info!("[SDK] 加载会话列表，共 {} 条", conversations.len());
+        Ok(conversations)
     }
 
     pub async fn get_conversation(&self, conversation_id: &str) -> std::result::Result<Option<LocalConversation>, SdkError> {

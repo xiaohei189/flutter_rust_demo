@@ -155,7 +155,7 @@ impl MessageHandler {
 
     pub(crate) fn send(&self, e: ConversationEvent) {
         let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
+        tracing::info!("[ConversationEvent] {:?}, has_subscriber={}", &e, has_tx);
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
