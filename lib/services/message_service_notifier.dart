@@ -703,12 +703,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
     try {
       final conversations = await _client!.getConversations();
-      appLog.i('[MessageService] 加载会话列表，共 ${conversations.length} 条');
-      // 直接用 DB 数据替换，不清空列表（避免 UI 闪烁）
       final newConversations = List<LocalConversation>.from(this.state.conversations);
       final dbIds = conversations.map((c) => c.conversationId).toSet();
-      // 移除 DB 中不存在的会话
       newConversations.removeWhere((c) => !dbIds.contains(c.conversationId));
+      // 去重：移除 DB 中重复的同 ID 行（兜底 DB 无 UNIQUE 约束的情况）
+      final seenIds = <String>{};
+      newConversations.removeWhere((c) => !seenIds.add(c.conversationId));
       for (final conv in conversations) {
         final index = newConversations.indexWhere((c) => c.conversationId == conv.conversationId);
         if (index >= 0) {
