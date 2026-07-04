@@ -651,8 +651,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   void _onConnectionEvent(ConnectionEvent event) {
+    appLog.i('[MsgSvc] _onConnectionEvent: ${event.runtimeType}');
     event.maybeWhen(
       connected: () {
+        appLog.i('[MsgSvc] connected!');
         this.state = this.state.copyWith(isConnected: true);
         _loadConversations();
       },

@@ -74,6 +74,8 @@ impl ConnectionManager {
     }
 
     pub(crate) fn send(&self, e: ConnectionEvent) {
+        let has_tx = self.event_tx.lock().unwrap().is_some();
+        tracing::info!("[ConnMgr] send event, has_tx={}", has_tx);
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 

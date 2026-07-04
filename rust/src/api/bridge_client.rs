@@ -168,20 +168,34 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn connection_stream(&self, sink: StreamSink<crate::domain::listener::connection::ConnectionEvent>) -> Result<()> {
         let mut rx = self.inner.take_conn_rx().ok_or_else(|| anyhow::anyhow!("connection stream already taken"))?;
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        tracing::info!("[Bridge] connection_stream subscribed");
+        tokio::spawn(async move {
+            while let Some(e) = rx.recv().await {
+                tracing::info!("[Bridge] connection event: smoke test");
+                let _ = sink.add(e);
+            }
+            tracing::warn!("[Bridge] connection_stream closed");
+        });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn conversation_stream(&self, sink: StreamSink<crate::domain::listener::conversation::ConversationEvent>) -> Result<()> {
         let mut rx = self.inner.take_conv_rx().ok_or_else(|| anyhow::anyhow!("conversation stream already taken"))?;
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        tracing::info!("[Bridge] conversation_stream subscribed");
+        tokio::spawn(async move {
+            while let Some(e) = rx.recv().await {
+                tracing::info!("[Bridge] conversation event: {:?}", std::mem::discriminant(&e));
+                let _ = sink.add(e);
+            }
+        });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn friend_stream(&self, sink: StreamSink<crate::domain::listener::friend::FriendEvent>) -> Result<()> {
         let mut rx = self.inner.take_friend_rx().ok_or_else(|| anyhow::anyhow!("friend stream already taken"))?;
+        tracing::info!("[Bridge] friend_stream subscribed");
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
@@ -189,6 +203,7 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn group_stream(&self, sink: StreamSink<crate::domain::listener::group::GroupEvent>) -> Result<()> {
         let mut rx = self.inner.take_group_rx().ok_or_else(|| anyhow::anyhow!("group stream already taken"))?;
+        tracing::info!("[Bridge] group_stream subscribed");
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
