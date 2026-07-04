@@ -167,36 +167,28 @@ impl OpenIMBridgeClient {
 
     #[flutter_rust_bridge::frb]
     pub async fn connection_stream(&self, sink: StreamSink<crate::domain::listener::connection::ConnectionEvent>) -> Result<()> {
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        self.inner.connection.set_event_sender(tx);
+        let mut rx = self.inner.take_conn_rx().ok_or_else(|| anyhow::anyhow!("connection stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn conversation_stream(&self, sink: StreamSink<crate::domain::listener::conversation::ConversationEvent>) -> Result<()> {
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        self.inner.message_handler.set_event_sender(tx.clone());
-        self.inner.message_service.set_event_sender(tx.clone());
-        self.inner.message_syncer.set_event_sender(tx.clone());
-        self.inner.conversation_syncer.set_event_sender(tx.clone());
-        self.inner.conversation.set_event_sender(tx);
+        let mut rx = self.inner.take_conv_rx().ok_or_else(|| anyhow::anyhow!("conversation stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn friend_stream(&self, sink: StreamSink<crate::domain::listener::friend::FriendEvent>) -> Result<()> {
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        self.inner.friend.set_event_sender(tx);
+        let mut rx = self.inner.take_friend_rx().ok_or_else(|| anyhow::anyhow!("friend stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn group_stream(&self, sink: StreamSink<crate::domain::listener::group::GroupEvent>) -> Result<()> {
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        self.inner.group.set_event_sender(tx);
+        let mut rx = self.inner.take_group_rx().ok_or_else(|| anyhow::anyhow!("group stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }

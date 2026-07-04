@@ -31,6 +31,9 @@ use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
 use crate::domain::event::EventBus;
 use crate::domain::listener::connection::ConnectionEvent;
+use crate::domain::listener::conversation::ConversationEvent;
+use crate::domain::listener::friend::FriendEvent;
+use crate::domain::listener::group::GroupEvent;
 use crate::infra::cache::memory::CacheManager;
 use crate::sdk::context::RuntimeContext;
 use serde::{Deserialize, Serialize};
@@ -79,10 +82,27 @@ pub struct OpenIMClient {
     pub(crate) event_bus: Arc<EventBus>,
     pub(crate) cache: Arc<CacheManager>,
     pub(crate) send_queue: Arc<MessageSendQueue>,
+    // Pre-created event receivers (capture events from login time)
+    pub(crate) conn_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>>>>,
+    pub(crate) conv_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>>>>,
+    pub(crate) friend_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>>>>,
+    pub(crate) group_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>>>>,
 }
 
 impl OpenIMClient {
     pub fn set_connection_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
         self.connection.set_event_sender(tx);
+    }
+    pub fn take_conn_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>> {
+        self.conn_rx.lock().unwrap().take()
+    }
+    pub fn take_conv_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>> {
+        self.conv_rx.lock().unwrap().take()
+    }
+    pub fn take_friend_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>> {
+        self.friend_rx.lock().unwrap().take()
+    }
+    pub fn take_group_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>> {
+        self.group_rx.lock().unwrap().take()
     }
 }

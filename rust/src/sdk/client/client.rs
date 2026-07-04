@@ -17,6 +17,9 @@ use crate::domain::error::types::Result;
 use crate::domain::event::EventBus;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::listener::connection::ConnectionEvent;
+use crate::domain::listener::conversation::ConversationEvent;
+use crate::domain::listener::friend::FriendEvent;
+use crate::domain::listener::group::GroupEvent;
 use crate::infra::cache::memory::CacheManager;
 use crate::protocol::sdkws::PushMessages;
 use crate::sdk::client::OpenIMClient;
@@ -120,6 +123,20 @@ impl OpenIMClient {
 
         let send_queue = MessageSendQueue::new();
 
+        // 创建 4 个事件通道，在 login 之前设置 sender，login 期间的事件不会丢失
+        let (conn_tx, conn_rx) = tokio::sync::mpsc::unbounded_channel::<ConnectionEvent>();
+        connection.set_event_sender(conn_tx);
+        let (conv_tx, conv_rx) = tokio::sync::mpsc::unbounded_channel::<ConversationEvent>();
+        message_handler.set_event_sender(conv_tx.clone());
+        message_service.set_event_sender(conv_tx.clone());
+        message_syncer.set_event_sender(conv_tx.clone());
+        conversation_syncer.set_event_sender(conv_tx.clone());
+        conversation.set_event_sender(conv_tx);
+        let (friend_tx, friend_rx) = tokio::sync::mpsc::unbounded_channel::<FriendEvent>();
+        friend.set_event_sender(friend_tx);
+        let (group_tx, group_rx) = tokio::sync::mpsc::unbounded_channel::<GroupEvent>();
+        group.set_event_sender(group_tx);
+
         debug!("OpenIM SDK 初始化完成");
 
         Ok(Self {
@@ -139,6 +156,10 @@ impl OpenIMClient {
             event_bus,
             cache,
             send_queue,
+            conn_rx: Arc::new(std::sync::Mutex::new(Some(conn_rx))),
+            conv_rx: Arc::new(std::sync::Mutex::new(Some(conv_rx))),
+            friend_rx: Arc::new(std::sync::Mutex::new(Some(friend_rx))),
+            group_rx: Arc::new(std::sync::Mutex::new(Some(group_rx))),
         })
     }
 
