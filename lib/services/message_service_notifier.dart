@@ -652,7 +652,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   void _onConnectionEvent(ConnectionEvent event) {
     event.maybeWhen(
-      connected: () => this.state = this.state.copyWith(isConnected: true),
+      connected: () {
+        this.state = this.state.copyWith(isConnected: true);
+        _loadConversations();
+      },
       kickedOffline: (_) => this.state = this.state.copyWith(isConnected: false),
       tokenExpired: () {
         this.state = this.state.copyWith(isConnected: false);
