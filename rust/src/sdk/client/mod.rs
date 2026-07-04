@@ -4,7 +4,6 @@ mod conversation;
 mod friend;
 mod group;
 
-use crate::domain::listener::bridge::BridgeImpl;
 mod online_status;
 pub mod types;
 mod user;
@@ -81,15 +80,4 @@ pub struct OpenIMClient {
     pub(crate) send_queue: Arc<MessageSendQueue>,
 }
 
-impl OpenIMClient {
-    pub fn setup_listeners(&self, bridge: Arc<BridgeImpl>) {
-        self.connection.set_connection_listener(bridge.clone());
-        self.message_handler.set_conversation_listener(bridge.clone());
-        self.friend.set_friend_listener(bridge.clone());
-        self.group.set_group_listener(bridge.clone());
-        self.message_syncer.set_conversation_listener(bridge.clone());
-        self.conversation_syncer.set_conversation_listener(bridge.clone());
-        self.conversation.set_conversation_listener(bridge.clone());
-        self.message_service.set_conversation_listener(bridge);
-    }
-}
+impl OpenIMClient {}
