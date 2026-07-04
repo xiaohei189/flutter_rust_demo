@@ -6,15 +6,12 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `get_log_dir`
 
-            // These functions are ignored because they are not marked as `pub`: `get_log_dir`
-
-
-            /// 设置日志目录（应在 init_logger 前调用）
-Future<void>  setLogDirectory({required String path }) => RustLib.instance.api.crateApiSimpleSetLogDirectory(path: path);
+/// 设置日志目录（应在 init_logger 前调用）
+Future<void> setLogDirectory({required String path}) =>
+    RustLib.instance.api.crateApiSimpleSetLogDirectory(path: path);
 
 /// 初始化 Rust 日志系统（同时输出到文件和控制台）
-Future<void>  initLogger({required String logLevel }) => RustLib.instance.api.crateApiSimpleInitLogger(logLevel: logLevel);
-
-            
-            
+Future<void> initLogger({required String logLevel}) =>
+    RustLib.instance.api.crateApiSimpleInitLogger(logLevel: logLevel);

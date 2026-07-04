@@ -89,7 +89,7 @@ class ConversationService {
     if (_subscription != null) return;
 
     try {
-      _subscription = ImClient.instance.eventStream.listen(
+      _subscription = ImClient.instance.conversationStream.listen(
         _handleEvent,
         onError: (error) {
           appLog.e('[ConversationService] 事件流错误: $error');

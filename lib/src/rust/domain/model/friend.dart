@@ -6,47 +6,65 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 好友信息模型
+class FriendInfo {
+  /// 用户 ID
+  final String userId;
 
-            
+  /// 昵称
+  final String nickname;
 
-            
+  /// 头像 URL
+  final String faceUrl;
 
-            /// 好友信息模型
-class FriendInfo  {
-                /// 用户 ID
-final String userId;
-/// 昵称
-final String nickname;
-/// 头像 URL
-final String faceUrl;
-/// 性别 (0:未知, 1:男, 2:女)
-final int gender;
-/// 备注
-final String remark;
-/// 创建时间
-final PlatformInt64 createTime;
-/// 添加来源
-final String addSource;
-/// 扩展字段
-final String ex;
+  /// 性别 (0:未知, 1:男, 2:女)
+  final int gender;
 
-                const FriendInfo({required this.userId ,required this.nickname ,required this.faceUrl ,required this.gender ,required this.remark ,required this.createTime ,required this.addSource ,required this.ex ,});
+  /// 备注
+  final String remark;
 
-                
-                
+  /// 创建时间
+  final PlatformInt64 createTime;
 
-                
-        @override
-        int get hashCode => userId.hashCode^nickname.hashCode^faceUrl.hashCode^gender.hashCode^remark.hashCode^createTime.hashCode^addSource.hashCode^ex.hashCode;
-        
+  /// 添加来源
+  final String addSource;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is FriendInfo &&
-                runtimeType == other.runtimeType
-                && userId == other.userId&& nickname == other.nickname&& faceUrl == other.faceUrl&& gender == other.gender&& remark == other.remark&& createTime == other.createTime&& addSource == other.addSource&& ex == other.ex;
-        
-            }
-            
+  /// 扩展字段
+  final String ex;
+
+  const FriendInfo({
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.gender,
+    required this.remark,
+    required this.createTime,
+    required this.addSource,
+    required this.ex,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      gender.hashCode ^
+      remark.hashCode ^
+      createTime.hashCode ^
+      addSource.hashCode ^
+      ex.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FriendInfo &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          gender == other.gender &&
+          remark == other.remark &&
+          createTime == other.createTime &&
+          addSource == other.addSource &&
+          ex == other.ex;
+}

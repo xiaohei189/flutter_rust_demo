@@ -56,7 +56,7 @@ class ConnectionService {
     if (_subscription != null) return;
 
     try {
-      _subscription = ImClient.instance.eventStream.listen(
+      _subscription = ImClient.instance.connectionStream.listen(
         _handleEvent,
         onError: (error) {
           appLog.e('[ConnectionService] 事件流错误: $error');

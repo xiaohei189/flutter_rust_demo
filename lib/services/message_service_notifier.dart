@@ -76,7 +76,7 @@ class MessageServiceState {
 class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   final Ref _ref;
   fb.OpenImBridgeClient? _client;
-  StreamSubscription<dynamic>? _eventStreamSubscription;
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
   /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
   final Set<String> _seenClientMsgIds = {};
 
@@ -522,8 +522,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       // 关闭已有客户端（热重启或重复登录场景），避免两个实例同时存在导致被踢
       if (_client != null) {
         appLog.i('[MessageService] 关闭已有客户端，重新初始化');
-        await _eventStreamSubscription?.cancel();
-        _eventStreamSubscription = null;
+        for (final s in _subscriptions) { await s.cancel(); }
+        _subscriptions.clear();
         try {
           await _client!.disconnect();
         } catch (e) {
@@ -564,10 +564,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       );
       unawaited(_loadConversations());
 
-      _eventStreamSubscription = _client!.eventStream().listen(
-        _handleEvent,
-      );
-      appLog.i('[MessageService] SDK 初始化完成，事件流已注册');
+      _subscriptions.add(_client!.connectionStream().listen(_handleEvent));
+      _subscriptions.add(_client!.conversationStream().listen(_handleEvent));
+      _subscriptions.add(_client!.friendStream().listen(_handleEvent));
+      _subscriptions.add(_client!.groupStream().listen(_handleEvent));
+      appLog.i('[MessageService] 4 模块事件流已注册');
 
       this.state = this.state.copyWith(isConnected: true);
       appLog.i('✅ 客户端连接成功');
@@ -1164,8 +1165,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   Future<void> disconnect() async {
-    await _eventStreamSubscription?.cancel();
-    _eventStreamSubscription = null;
+    for (final s in _subscriptions) { await s.cancel(); }
+    _subscriptions.clear();
     await _client?.disconnect();
     _client = null;
     this.state = const MessageServiceState();

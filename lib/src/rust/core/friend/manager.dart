@@ -6,62 +6,65 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+class CheckFriendResult {
+  final String userId;
+  final int result;
 
-            
+  const CheckFriendResult({required this.userId, required this.result});
 
-            
+  @override
+  int get hashCode => userId.hashCode ^ result.hashCode;
 
-            class CheckFriendResult  {
-                final String userId;
-final int result;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CheckFriendResult &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          result == other.result;
+}
 
-                const CheckFriendResult({required this.userId ,required this.result ,});
+class SearchFriendItem {
+  final String friendUserId;
+  final String nickname;
+  final String faceUrl;
+  final String remark;
+  final String ex;
+  final PlatformInt64 createTime;
 
-                
-                
+  /// 1=好友, 2=黑名单
+  final int relationship;
 
-                
-        @override
-        int get hashCode => userId.hashCode^result.hashCode;
-        
+  const SearchFriendItem({
+    required this.friendUserId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.remark,
+    required this.ex,
+    required this.createTime,
+    required this.relationship,
+  });
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is CheckFriendResult &&
-                runtimeType == other.runtimeType
-                && userId == other.userId&& result == other.result;
-        
-            }
+  @override
+  int get hashCode =>
+      friendUserId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      remark.hashCode ^
+      ex.hashCode ^
+      createTime.hashCode ^
+      relationship.hashCode;
 
-class SearchFriendItem  {
-                final String friendUserId;
-final String nickname;
-final String faceUrl;
-final String remark;
-final String ex;
-final PlatformInt64 createTime;
-/// 1=好友, 2=黑名单
-final int relationship;
-
-                const SearchFriendItem({required this.friendUserId ,required this.nickname ,required this.faceUrl ,required this.remark ,required this.ex ,required this.createTime ,required this.relationship ,});
-
-                
-                
-
-                
-        @override
-        int get hashCode => friendUserId.hashCode^nickname.hashCode^faceUrl.hashCode^remark.hashCode^ex.hashCode^createTime.hashCode^relationship.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is SearchFriendItem &&
-                runtimeType == other.runtimeType
-                && friendUserId == other.friendUserId&& nickname == other.nickname&& faceUrl == other.faceUrl&& remark == other.remark&& ex == other.ex&& createTime == other.createTime&& relationship == other.relationship;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SearchFriendItem &&
+          runtimeType == other.runtimeType &&
+          friendUserId == other.friendUserId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          remark == other.remark &&
+          ex == other.ex &&
+          createTime == other.createTime &&
+          relationship == other.relationship;
+}

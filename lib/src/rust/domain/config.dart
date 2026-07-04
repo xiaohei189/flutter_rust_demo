@@ -6,45 +6,59 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 客户端配置
+class ClientConfig {
+  /// 用户 ID
+  final String userId;
 
-            
+  /// 认证 token
+  final String token;
 
-            
+  /// 平台 ID (1: iOS, 2: Android, 3: Windows, 4: macOS, 5: Web, 6: MiniProgram, 7: Linux)
+  final int platformId;
 
-            /// 客户端配置
-class ClientConfig  {
-                /// 用户 ID
-final String userId;
-/// 认证 token
-final String token;
-/// 平台 ID (1: iOS, 2: Android, 3: Windows, 4: macOS, 5: Web, 6: MiniProgram, 7: Linux)
-final int platformId;
-/// WebSocket 地址
-final String? wsUrl;
-/// API 基础 URL
-final String apiBaseUrl;
-/// 文件上传 URL
-final String? uploadUrl;
-/// 数据存储目录
-final String dataDir;
+  /// WebSocket 地址
+  final String? wsUrl;
 
-                const ClientConfig({required this.userId ,required this.token ,required this.platformId ,this.wsUrl ,required this.apiBaseUrl ,this.uploadUrl ,required this.dataDir ,});
+  /// API 基础 URL
+  final String apiBaseUrl;
 
-                
-                
+  /// 文件上传 URL
+  final String? uploadUrl;
 
-                
-        @override
-        int get hashCode => userId.hashCode^token.hashCode^platformId.hashCode^wsUrl.hashCode^apiBaseUrl.hashCode^uploadUrl.hashCode^dataDir.hashCode;
-        
+  /// 数据存储目录
+  final String dataDir;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is ClientConfig &&
-                runtimeType == other.runtimeType
-                && userId == other.userId&& token == other.token&& platformId == other.platformId&& wsUrl == other.wsUrl&& apiBaseUrl == other.apiBaseUrl&& uploadUrl == other.uploadUrl&& dataDir == other.dataDir;
-        
-            }
-            
+  const ClientConfig({
+    required this.userId,
+    required this.token,
+    required this.platformId,
+    this.wsUrl,
+    required this.apiBaseUrl,
+    this.uploadUrl,
+    required this.dataDir,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^
+      token.hashCode ^
+      platformId.hashCode ^
+      wsUrl.hashCode ^
+      apiBaseUrl.hashCode ^
+      uploadUrl.hashCode ^
+      dataDir.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientConfig &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          token == other.token &&
+          platformId == other.platformId &&
+          wsUrl == other.wsUrl &&
+          apiBaseUrl == other.apiBaseUrl &&
+          uploadUrl == other.uploadUrl &&
+          dataDir == other.dataDir;
+}

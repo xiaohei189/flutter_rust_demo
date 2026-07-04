@@ -6,26 +6,8 @@
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>
+abstract class MsgData implements RustOpaqueInterface {}
 
-            
-
-            
-
-            
-                // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MsgData>>
-                abstract class MsgData implements RustOpaqueInterface {
-                    
-
-                    
-                }
-                
-
-
-                // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< PullMsgs>>
-                abstract class PullMsgs implements RustOpaqueInterface {
-                    
-
-                    
-                }
-                
-            
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< PullMsgs>>
+abstract class PullMsgs implements RustOpaqueInterface {}

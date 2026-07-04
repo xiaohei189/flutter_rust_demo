@@ -6,47 +6,65 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 用户信息模型
+class UserInfo {
+  /// 用户 ID
+  final String userId;
 
-            
+  /// 昵称
+  final String nickname;
 
-            
+  /// 头像 URL
+  final String faceUrl;
 
-            /// 用户信息模型
-class UserInfo  {
-                /// 用户 ID
-final String userId;
-/// 昵称
-final String nickname;
-/// 头像 URL
-final String faceUrl;
-/// 性别 (0:未知, 1:男, 2:女)
-final int gender;
-/// 手机号
-final String telephone;
-/// 邮箱
-final String email;
-/// 备注
-final String remark;
-/// 全局免打扰
-final int globalRecvMsgOpt;
+  /// 性别 (0:未知, 1:男, 2:女)
+  final int gender;
 
-                const UserInfo({required this.userId ,required this.nickname ,required this.faceUrl ,required this.gender ,required this.telephone ,required this.email ,required this.remark ,required this.globalRecvMsgOpt ,});
+  /// 手机号
+  final String telephone;
 
-                
-                
+  /// 邮箱
+  final String email;
 
-                
-        @override
-        int get hashCode => userId.hashCode^nickname.hashCode^faceUrl.hashCode^gender.hashCode^telephone.hashCode^email.hashCode^remark.hashCode^globalRecvMsgOpt.hashCode;
-        
+  /// 备注
+  final String remark;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is UserInfo &&
-                runtimeType == other.runtimeType
-                && userId == other.userId&& nickname == other.nickname&& faceUrl == other.faceUrl&& gender == other.gender&& telephone == other.telephone&& email == other.email&& remark == other.remark&& globalRecvMsgOpt == other.globalRecvMsgOpt;
-        
-            }
-            
+  /// 全局免打扰
+  final int globalRecvMsgOpt;
+
+  const UserInfo({
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.gender,
+    required this.telephone,
+    required this.email,
+    required this.remark,
+    required this.globalRecvMsgOpt,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      gender.hashCode ^
+      telephone.hashCode ^
+      email.hashCode ^
+      remark.hashCode ^
+      globalRecvMsgOpt.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserInfo &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          gender == other.gender &&
+          telephone == other.telephone &&
+          email == other.email &&
+          remark == other.remark &&
+          globalRecvMsgOpt == other.globalRecvMsgOpt;
+}

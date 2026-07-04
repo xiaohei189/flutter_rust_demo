@@ -3,7 +3,6 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
@@ -30,628 +29,1304 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'sdk/client.dart';
 import 'sdk/client/types.dart';
 
+abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
+  RustLibApiImplPlatform({
+    required super.handler,
+    required super.wire,
+    required super.generalizedFrbRustBinding,
+    required super.portManager,
+  });
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_MsgDataPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_OpenImBridgeClientPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
+
+  CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_PullMsgsPtr => wire
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs;
+
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  MsgData
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  );
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
+
+  @protected
+  PullMsgs
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    dynamic raw,
+  );
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
+
+  @protected
+  Map<String, PullMsgs>
+  dco_decode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(
+    dynamic raw,
+  );
+
+  @protected
+  MsgData
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  );
+
+  @protected
+  OpenImBridgeClient
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    dynamic raw,
+  );
 
+  @protected
+  PullMsgs
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    dynamic raw,
+  );
 
+  @protected
+  RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw);
 
-                abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
-                  RustLibApiImplPlatform({
-                    required super.handler,
-                    required super.wire,
-                    required super.generalizedFrbRustBinding,
-                    required super.portManager,
-                  });
+  @protected
+  RustStreamSink<SdkEvent> dco_decode_StreamSink_sdk_event_Sse(dynamic raw);
 
-                  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_MsgDataPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData;
+  @protected
+  String dco_decode_String(dynamic raw);
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_OpenImBridgeClientPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
+  @protected
+  AtInfo dco_decode_at_info(dynamic raw);
 
-CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_PullMsgsPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs;
+  @protected
+  bool dco_decode_bool(dynamic raw);
 
+  @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw);
 
+  @protected
+  ClientConfig dco_decode_box_autoadd_client_config(dynamic raw);
 
-                  @protected AnyhowException dco_decode_AnyhowException(dynamic raw);
+  @protected
+  DeleteMessagesReq dco_decode_box_autoadd_delete_messages_req(dynamic raw);
 
-@protected MsgData dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(dynamic raw);
+  @protected
+  GetHistoryMessagesReq dco_decode_box_autoadd_get_history_messages_req(
+    dynamic raw,
+  );
 
-@protected OpenImBridgeClient dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  int dco_decode_box_autoadd_i_32(dynamic raw);
 
-@protected PullMsgs dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(dynamic raw);
+  @protected
+  InputStatusChangedData dco_decode_box_autoadd_input_status_changed_data(
+    dynamic raw,
+  );
 
-@protected OpenImBridgeClient dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  LocalConversation dco_decode_box_autoadd_local_conversation(dynamic raw);
 
-@protected Map<String, PullMsgs> dco_decode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(dynamic raw);
+  @protected
+  MarkMessagesAsReadReq dco_decode_box_autoadd_mark_messages_as_read_req(
+    dynamic raw,
+  );
 
-@protected MsgData dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(dynamic raw);
+  @protected
+  Message dco_decode_box_autoadd_message(dynamic raw);
 
-@protected OpenImBridgeClient dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(dynamic raw);
+  @protected
+  MessageExtensionData dco_decode_box_autoadd_message_extension_data(
+    dynamic raw,
+  );
 
-@protected PullMsgs dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(dynamic raw);
+  @protected
+  ReceivedMessage dco_decode_box_autoadd_received_message(dynamic raw);
 
-@protected RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw);
+  @protected
+  RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
 
-@protected RustStreamSink<SdkEvent> dco_decode_StreamSink_sdk_event_Sse(dynamic raw);
+  @protected
+  SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw);
 
-@protected String dco_decode_String(dynamic raw);
+  @protected
+  UserInfo dco_decode_box_autoadd_user_info(dynamic raw);
 
-@protected AtInfo dco_decode_at_info(dynamic raw);
+  @protected
+  CheckFriendResult dco_decode_check_friend_result(dynamic raw);
 
-@protected bool dco_decode_bool(dynamic raw);
+  @protected
+  ClientConfig dco_decode_client_config(dynamic raw);
 
-@protected bool dco_decode_box_autoadd_bool(dynamic raw);
+  @protected
+  ConnectionState dco_decode_connection_state(dynamic raw);
 
-@protected ClientConfig dco_decode_box_autoadd_client_config(dynamic raw);
+  @protected
+  Conversation dco_decode_conversation(dynamic raw);
 
-@protected DeleteMessagesReq dco_decode_box_autoadd_delete_messages_req(dynamic raw);
+  @protected
+  DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw);
 
-@protected GetHistoryMessagesReq dco_decode_box_autoadd_get_history_messages_req(dynamic raw);
+  @protected
+  double dco_decode_f_64(dynamic raw);
 
-@protected int dco_decode_box_autoadd_i_32(dynamic raw);
+  @protected
+  FriendApplyInfo dco_decode_friend_apply_info(dynamic raw);
 
-@protected InputStatusChangedData dco_decode_box_autoadd_input_status_changed_data(dynamic raw);
+  @protected
+  FriendInfo dco_decode_friend_info(dynamic raw);
 
-@protected LocalConversation dco_decode_box_autoadd_local_conversation(dynamic raw);
+  @protected
+  GetHistoryMessagesReq dco_decode_get_history_messages_req(dynamic raw);
 
-@protected MarkMessagesAsReadReq dco_decode_box_autoadd_mark_messages_as_read_req(dynamic raw);
+  @protected
+  GetHistoryMessagesResult dco_decode_get_history_messages_result(dynamic raw);
 
-@protected Message dco_decode_box_autoadd_message(dynamic raw);
+  @protected
+  GroupApplyInfo dco_decode_group_apply_info(dynamic raw);
 
-@protected MessageExtensionData dco_decode_box_autoadd_message_extension_data(dynamic raw);
+  @protected
+  GroupInfo dco_decode_group_info(dynamic raw);
 
-@protected ReceivedMessage dco_decode_box_autoadd_received_message(dynamic raw);
+  @protected
+  GroupMember dco_decode_group_member(dynamic raw);
 
-@protected RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
+  @protected
+  GroupReadReceipt dco_decode_group_read_receipt(dynamic raw);
 
-@protected SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw);
+  @protected
+  int dco_decode_i_32(dynamic raw);
 
-@protected UserInfo dco_decode_box_autoadd_user_info(dynamic raw);
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
-@protected CheckFriendResult dco_decode_check_friend_result(dynamic raw);
+  @protected
+  InputStatusChangedData dco_decode_input_status_changed_data(dynamic raw);
 
-@protected ClientConfig dco_decode_client_config(dynamic raw);
+  @protected
+  List<MsgData>
+  dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    dynamic raw,
+  );
 
-@protected ConnectionState dco_decode_connection_state(dynamic raw);
+  @protected
+  List<String> dco_decode_list_String(dynamic raw);
 
-@protected Conversation dco_decode_conversation(dynamic raw);
+  @protected
+  List<AtInfo> dco_decode_list_at_info(dynamic raw);
 
-@protected DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw);
+  @protected
+  List<CheckFriendResult> dco_decode_list_check_friend_result(dynamic raw);
 
-@protected double dco_decode_f_64(dynamic raw);
+  @protected
+  List<Conversation> dco_decode_list_conversation(dynamic raw);
 
-@protected FriendApplyInfo dco_decode_friend_apply_info(dynamic raw);
+  @protected
+  List<FriendApplyInfo> dco_decode_list_friend_apply_info(dynamic raw);
 
-@protected FriendInfo dco_decode_friend_info(dynamic raw);
+  @protected
+  List<FriendInfo> dco_decode_list_friend_info(dynamic raw);
 
-@protected GetHistoryMessagesReq dco_decode_get_history_messages_req(dynamic raw);
+  @protected
+  List<GroupApplyInfo> dco_decode_list_group_apply_info(dynamic raw);
 
-@protected GetHistoryMessagesResult dco_decode_get_history_messages_result(dynamic raw);
+  @protected
+  List<GroupInfo> dco_decode_list_group_info(dynamic raw);
 
-@protected GroupApplyInfo dco_decode_group_apply_info(dynamic raw);
+  @protected
+  List<GroupMember> dco_decode_list_group_member(dynamic raw);
 
-@protected GroupInfo dco_decode_group_info(dynamic raw);
+  @protected
+  List<GroupReadReceipt> dco_decode_list_group_read_receipt(dynamic raw);
 
-@protected GroupMember dco_decode_group_member(dynamic raw);
+  @protected
+  List<LocalChatLog> dco_decode_list_local_chat_log(dynamic raw);
 
-@protected GroupReadReceipt dco_decode_group_read_receipt(dynamic raw);
+  @protected
+  List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
 
-@protected int dco_decode_i_32(dynamic raw);
+  @protected
+  List<MessageEntity> dco_decode_list_message_entity(dynamic raw);
 
-@protected PlatformInt64 dco_decode_i_64(dynamic raw);
+  @protected
+  List<MessageInfo> dco_decode_list_message_info(dynamic raw);
 
-@protected InputStatusChangedData dco_decode_input_status_changed_data(dynamic raw);
+  @protected
+  List<MessageReceipt> dco_decode_list_message_receipt(dynamic raw);
 
-@protected List<MsgData> dco_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(dynamic raw);
+  @protected
+  List<OnlineStatus> dco_decode_list_online_status(dynamic raw);
 
-@protected List<String> dco_decode_list_String(dynamic raw);
+  @protected
+  Int32List dco_decode_list_prim_i_32_strict(dynamic raw);
 
-@protected List<AtInfo> dco_decode_list_at_info(dynamic raw);
+  @protected
+  Int64List dco_decode_list_prim_i_64_strict(dynamic raw);
 
-@protected List<CheckFriendResult> dco_decode_list_check_friend_result(dynamic raw);
+  @protected
+  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
-@protected List<Conversation> dco_decode_list_conversation(dynamic raw);
+  @protected
+  List<ReceivedMessage> dco_decode_list_received_message(dynamic raw);
 
-@protected List<FriendApplyInfo> dco_decode_list_friend_apply_info(dynamic raw);
+  @protected
+  List<(String, PullMsgs)>
+  dco_decode_list_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(
+    dynamic raw,
+  );
 
-@protected List<FriendInfo> dco_decode_list_friend_info(dynamic raw);
+  @protected
+  List<SearchFriendItem> dco_decode_list_search_friend_item(dynamic raw);
 
-@protected List<GroupApplyInfo> dco_decode_list_group_apply_info(dynamic raw);
+  @protected
+  List<UserInfo> dco_decode_list_user_info(dynamic raw);
 
-@protected List<GroupInfo> dco_decode_list_group_info(dynamic raw);
+  @protected
+  LocalChatLog dco_decode_local_chat_log(dynamic raw);
 
-@protected List<GroupMember> dco_decode_list_group_member(dynamic raw);
+  @protected
+  LocalConversation dco_decode_local_conversation(dynamic raw);
 
-@protected List<GroupReadReceipt> dco_decode_list_group_read_receipt(dynamic raw);
+  @protected
+  MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
-@protected List<LocalChatLog> dco_decode_list_local_chat_log(dynamic raw);
+  @protected
+  Message dco_decode_message(dynamic raw);
 
-@protected List<LocalConversation> dco_decode_list_local_conversation(dynamic raw);
+  @protected
+  MessageEntity dco_decode_message_entity(dynamic raw);
 
-@protected List<MessageEntity> dco_decode_list_message_entity(dynamic raw);
+  @protected
+  MessageExtensionData dco_decode_message_extension_data(dynamic raw);
 
-@protected List<MessageInfo> dco_decode_list_message_info(dynamic raw);
+  @protected
+  MessageInfo dco_decode_message_info(dynamic raw);
 
-@protected List<MessageReceipt> dco_decode_list_message_receipt(dynamic raw);
+  @protected
+  MessageReceipt dco_decode_message_receipt(dynamic raw);
 
-@protected List<OnlineStatus> dco_decode_list_online_status(dynamic raw);
+  @protected
+  OnlineStatus dco_decode_online_status(dynamic raw);
 
-@protected Int32List dco_decode_list_prim_i_32_strict(dynamic raw);
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
 
-@protected Int64List dco_decode_list_prim_i_64_strict(dynamic raw);
+  @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
 
-@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+  @protected
+  int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
 
-@protected List<ReceivedMessage> dco_decode_list_received_message(dynamic raw);
+  @protected
+  LocalConversation? dco_decode_opt_box_autoadd_local_conversation(dynamic raw);
 
-@protected List<(String,PullMsgs)> dco_decode_list_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(dynamic raw);
+  @protected
+  ReceivedMessage dco_decode_received_message(dynamic raw);
 
-@protected List<SearchFriendItem> dco_decode_list_search_friend_item(dynamic raw);
+  @protected
+  (String, PullMsgs)
+  dco_decode_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(
+    dynamic raw,
+  );
 
-@protected List<UserInfo> dco_decode_list_user_info(dynamic raw);
+  @protected
+  RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
 
-@protected LocalChatLog dco_decode_local_chat_log(dynamic raw);
+  @protected
+  SdkEvent dco_decode_sdk_event(dynamic raw);
 
-@protected LocalConversation dco_decode_local_conversation(dynamic raw);
+  @protected
+  SearchFriendItem dco_decode_search_friend_item(dynamic raw);
 
-@protected MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
+  @protected
+  SearchMessagesReq dco_decode_search_messages_req(dynamic raw);
 
-@protected Message dco_decode_message(dynamic raw);
+  @protected
+  SessionType dco_decode_session_type(dynamic raw);
 
-@protected MessageEntity dco_decode_message_entity(dynamic raw);
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
-@protected MessageExtensionData dco_decode_message_extension_data(dynamic raw);
+  @protected
+  BigInt dco_decode_u_64(dynamic raw);
 
-@protected MessageInfo dco_decode_message_info(dynamic raw);
+  @protected
+  int dco_decode_u_8(dynamic raw);
 
-@protected MessageReceipt dco_decode_message_receipt(dynamic raw);
+  @protected
+  void dco_decode_unit(dynamic raw);
 
-@protected OnlineStatus dco_decode_online_status(dynamic raw);
+  @protected
+  UserInfo dco_decode_user_info(dynamic raw);
 
-@protected String? dco_decode_opt_String(dynamic raw);
+  @protected
+  BigInt dco_decode_usize(dynamic raw);
 
-@protected bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
-@protected int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
+  @protected
+  MsgData
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  );
 
-@protected LocalConversation? dco_decode_opt_box_autoadd_local_conversation(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected ReceivedMessage dco_decode_received_message(dynamic raw);
+  @protected
+  PullMsgs
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    SseDeserializer deserializer,
+  );
 
-@protected (String,PullMsgs) dco_decode_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
+  @protected
+  Map<String, PullMsgs>
+  sse_decode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(
+    SseDeserializer deserializer,
+  );
 
-@protected SdkEvent dco_decode_sdk_event(dynamic raw);
+  @protected
+  MsgData
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  );
 
-@protected SearchFriendItem dco_decode_search_friend_item(dynamic raw);
+  @protected
+  OpenImBridgeClient
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
 
-@protected SearchMessagesReq dco_decode_search_messages_req(dynamic raw);
+  @protected
+  PullMsgs
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    SseDeserializer deserializer,
+  );
 
-@protected SessionType dco_decode_session_type(dynamic raw);
+  @protected
+  RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(
+    SseDeserializer deserializer,
+  );
 
-@protected int dco_decode_u_32(dynamic raw);
+  @protected
+  RustStreamSink<SdkEvent> sse_decode_StreamSink_sdk_event_Sse(
+    SseDeserializer deserializer,
+  );
 
-@protected BigInt dco_decode_u_64(dynamic raw);
+  @protected
+  String sse_decode_String(SseDeserializer deserializer);
 
-@protected int dco_decode_u_8(dynamic raw);
+  @protected
+  AtInfo sse_decode_at_info(SseDeserializer deserializer);
 
-@protected void dco_decode_unit(dynamic raw);
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
 
-@protected UserInfo dco_decode_user_info(dynamic raw);
+  @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
 
-@protected BigInt dco_decode_usize(dynamic raw);
+  @protected
+  ClientConfig sse_decode_box_autoadd_client_config(
+    SseDeserializer deserializer,
+  );
 
-@protected AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+  @protected
+  DeleteMessagesReq sse_decode_box_autoadd_delete_messages_req(
+    SseDeserializer deserializer,
+  );
 
-@protected MsgData sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(SseDeserializer deserializer);
+  @protected
+  GetHistoryMessagesReq sse_decode_box_autoadd_get_history_messages_req(
+    SseDeserializer deserializer,
+  );
 
-@protected OpenImBridgeClient sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
 
-@protected PullMsgs sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(SseDeserializer deserializer);
+  @protected
+  InputStatusChangedData sse_decode_box_autoadd_input_status_changed_data(
+    SseDeserializer deserializer,
+  );
 
-@protected OpenImBridgeClient sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  LocalConversation sse_decode_box_autoadd_local_conversation(
+    SseDeserializer deserializer,
+  );
 
-@protected Map<String, PullMsgs> sse_decode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(SseDeserializer deserializer);
+  @protected
+  MarkMessagesAsReadReq sse_decode_box_autoadd_mark_messages_as_read_req(
+    SseDeserializer deserializer,
+  );
 
-@protected MsgData sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(SseDeserializer deserializer);
+  @protected
+  Message sse_decode_box_autoadd_message(SseDeserializer deserializer);
 
-@protected OpenImBridgeClient sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(SseDeserializer deserializer);
+  @protected
+  MessageExtensionData sse_decode_box_autoadd_message_extension_data(
+    SseDeserializer deserializer,
+  );
 
-@protected PullMsgs sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(SseDeserializer deserializer);
+  @protected
+  ReceivedMessage sse_decode_box_autoadd_received_message(
+    SseDeserializer deserializer,
+  );
 
-@protected RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(SseDeserializer deserializer);
+  @protected
+  RevokeMessageReq sse_decode_box_autoadd_revoke_message_req(
+    SseDeserializer deserializer,
+  );
 
-@protected RustStreamSink<SdkEvent> sse_decode_StreamSink_sdk_event_Sse(SseDeserializer deserializer);
+  @protected
+  SearchMessagesReq sse_decode_box_autoadd_search_messages_req(
+    SseDeserializer deserializer,
+  );
 
-@protected String sse_decode_String(SseDeserializer deserializer);
+  @protected
+  UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer);
 
-@protected AtInfo sse_decode_at_info(SseDeserializer deserializer);
+  @protected
+  CheckFriendResult sse_decode_check_friend_result(
+    SseDeserializer deserializer,
+  );
 
-@protected bool sse_decode_bool(SseDeserializer deserializer);
+  @protected
+  ClientConfig sse_decode_client_config(SseDeserializer deserializer);
 
-@protected bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
+  @protected
+  ConnectionState sse_decode_connection_state(SseDeserializer deserializer);
 
-@protected ClientConfig sse_decode_box_autoadd_client_config(SseDeserializer deserializer);
+  @protected
+  Conversation sse_decode_conversation(SseDeserializer deserializer);
 
-@protected DeleteMessagesReq sse_decode_box_autoadd_delete_messages_req(SseDeserializer deserializer);
+  @protected
+  DeleteMessagesReq sse_decode_delete_messages_req(
+    SseDeserializer deserializer,
+  );
 
-@protected GetHistoryMessagesReq sse_decode_box_autoadd_get_history_messages_req(SseDeserializer deserializer);
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer);
 
-@protected int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
+  @protected
+  FriendApplyInfo sse_decode_friend_apply_info(SseDeserializer deserializer);
 
-@protected InputStatusChangedData sse_decode_box_autoadd_input_status_changed_data(SseDeserializer deserializer);
+  @protected
+  FriendInfo sse_decode_friend_info(SseDeserializer deserializer);
 
-@protected LocalConversation sse_decode_box_autoadd_local_conversation(SseDeserializer deserializer);
+  @protected
+  GetHistoryMessagesReq sse_decode_get_history_messages_req(
+    SseDeserializer deserializer,
+  );
 
-@protected MarkMessagesAsReadReq sse_decode_box_autoadd_mark_messages_as_read_req(SseDeserializer deserializer);
+  @protected
+  GetHistoryMessagesResult sse_decode_get_history_messages_result(
+    SseDeserializer deserializer,
+  );
 
-@protected Message sse_decode_box_autoadd_message(SseDeserializer deserializer);
+  @protected
+  GroupApplyInfo sse_decode_group_apply_info(SseDeserializer deserializer);
 
-@protected MessageExtensionData sse_decode_box_autoadd_message_extension_data(SseDeserializer deserializer);
+  @protected
+  GroupInfo sse_decode_group_info(SseDeserializer deserializer);
 
-@protected ReceivedMessage sse_decode_box_autoadd_received_message(SseDeserializer deserializer);
+  @protected
+  GroupMember sse_decode_group_member(SseDeserializer deserializer);
 
-@protected RevokeMessageReq sse_decode_box_autoadd_revoke_message_req(SseDeserializer deserializer);
+  @protected
+  GroupReadReceipt sse_decode_group_read_receipt(SseDeserializer deserializer);
 
-@protected SearchMessagesReq sse_decode_box_autoadd_search_messages_req(SseDeserializer deserializer);
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer);
 
-@protected UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer);
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
-@protected CheckFriendResult sse_decode_check_friend_result(SseDeserializer deserializer);
+  @protected
+  InputStatusChangedData sse_decode_input_status_changed_data(
+    SseDeserializer deserializer,
+  );
 
-@protected ClientConfig sse_decode_client_config(SseDeserializer deserializer);
+  @protected
+  List<MsgData>
+  sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    SseDeserializer deserializer,
+  );
 
-@protected ConnectionState sse_decode_connection_state(SseDeserializer deserializer);
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
 
-@protected Conversation sse_decode_conversation(SseDeserializer deserializer);
+  @protected
+  List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer);
 
-@protected DeleteMessagesReq sse_decode_delete_messages_req(SseDeserializer deserializer);
+  @protected
+  List<CheckFriendResult> sse_decode_list_check_friend_result(
+    SseDeserializer deserializer,
+  );
 
-@protected double sse_decode_f_64(SseDeserializer deserializer);
+  @protected
+  List<Conversation> sse_decode_list_conversation(SseDeserializer deserializer);
 
-@protected FriendApplyInfo sse_decode_friend_apply_info(SseDeserializer deserializer);
+  @protected
+  List<FriendApplyInfo> sse_decode_list_friend_apply_info(
+    SseDeserializer deserializer,
+  );
 
-@protected FriendInfo sse_decode_friend_info(SseDeserializer deserializer);
+  @protected
+  List<FriendInfo> sse_decode_list_friend_info(SseDeserializer deserializer);
 
-@protected GetHistoryMessagesReq sse_decode_get_history_messages_req(SseDeserializer deserializer);
+  @protected
+  List<GroupApplyInfo> sse_decode_list_group_apply_info(
+    SseDeserializer deserializer,
+  );
 
-@protected GetHistoryMessagesResult sse_decode_get_history_messages_result(SseDeserializer deserializer);
+  @protected
+  List<GroupInfo> sse_decode_list_group_info(SseDeserializer deserializer);
 
-@protected GroupApplyInfo sse_decode_group_apply_info(SseDeserializer deserializer);
+  @protected
+  List<GroupMember> sse_decode_list_group_member(SseDeserializer deserializer);
 
-@protected GroupInfo sse_decode_group_info(SseDeserializer deserializer);
+  @protected
+  List<GroupReadReceipt> sse_decode_list_group_read_receipt(
+    SseDeserializer deserializer,
+  );
 
-@protected GroupMember sse_decode_group_member(SseDeserializer deserializer);
+  @protected
+  List<LocalChatLog> sse_decode_list_local_chat_log(
+    SseDeserializer deserializer,
+  );
 
-@protected GroupReadReceipt sse_decode_group_read_receipt(SseDeserializer deserializer);
+  @protected
+  List<LocalConversation> sse_decode_list_local_conversation(
+    SseDeserializer deserializer,
+  );
 
-@protected int sse_decode_i_32(SseDeserializer deserializer);
+  @protected
+  List<MessageEntity> sse_decode_list_message_entity(
+    SseDeserializer deserializer,
+  );
 
-@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+  @protected
+  List<MessageInfo> sse_decode_list_message_info(SseDeserializer deserializer);
 
-@protected InputStatusChangedData sse_decode_input_status_changed_data(SseDeserializer deserializer);
+  @protected
+  List<MessageReceipt> sse_decode_list_message_receipt(
+    SseDeserializer deserializer,
+  );
 
-@protected List<MsgData> sse_decode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(SseDeserializer deserializer);
+  @protected
+  List<OnlineStatus> sse_decode_list_online_status(
+    SseDeserializer deserializer,
+  );
 
-@protected List<String> sse_decode_list_String(SseDeserializer deserializer);
+  @protected
+  Int32List sse_decode_list_prim_i_32_strict(SseDeserializer deserializer);
 
-@protected List<AtInfo> sse_decode_list_at_info(SseDeserializer deserializer);
+  @protected
+  Int64List sse_decode_list_prim_i_64_strict(SseDeserializer deserializer);
 
-@protected List<CheckFriendResult> sse_decode_list_check_friend_result(SseDeserializer deserializer);
+  @protected
+  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
-@protected List<Conversation> sse_decode_list_conversation(SseDeserializer deserializer);
+  @protected
+  List<ReceivedMessage> sse_decode_list_received_message(
+    SseDeserializer deserializer,
+  );
 
-@protected List<FriendApplyInfo> sse_decode_list_friend_apply_info(SseDeserializer deserializer);
+  @protected
+  List<(String, PullMsgs)>
+  sse_decode_list_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(
+    SseDeserializer deserializer,
+  );
 
-@protected List<FriendInfo> sse_decode_list_friend_info(SseDeserializer deserializer);
+  @protected
+  List<SearchFriendItem> sse_decode_list_search_friend_item(
+    SseDeserializer deserializer,
+  );
 
-@protected List<GroupApplyInfo> sse_decode_list_group_apply_info(SseDeserializer deserializer);
+  @protected
+  List<UserInfo> sse_decode_list_user_info(SseDeserializer deserializer);
 
-@protected List<GroupInfo> sse_decode_list_group_info(SseDeserializer deserializer);
+  @protected
+  LocalChatLog sse_decode_local_chat_log(SseDeserializer deserializer);
 
-@protected List<GroupMember> sse_decode_list_group_member(SseDeserializer deserializer);
+  @protected
+  LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
-@protected List<GroupReadReceipt> sse_decode_list_group_read_receipt(SseDeserializer deserializer);
+  @protected
+  MarkMessagesAsReadReq sse_decode_mark_messages_as_read_req(
+    SseDeserializer deserializer,
+  );
 
-@protected List<LocalChatLog> sse_decode_list_local_chat_log(SseDeserializer deserializer);
+  @protected
+  Message sse_decode_message(SseDeserializer deserializer);
 
-@protected List<LocalConversation> sse_decode_list_local_conversation(SseDeserializer deserializer);
+  @protected
+  MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
 
-@protected List<MessageEntity> sse_decode_list_message_entity(SseDeserializer deserializer);
+  @protected
+  MessageExtensionData sse_decode_message_extension_data(
+    SseDeserializer deserializer,
+  );
 
-@protected List<MessageInfo> sse_decode_list_message_info(SseDeserializer deserializer);
+  @protected
+  MessageInfo sse_decode_message_info(SseDeserializer deserializer);
 
-@protected List<MessageReceipt> sse_decode_list_message_receipt(SseDeserializer deserializer);
+  @protected
+  MessageReceipt sse_decode_message_receipt(SseDeserializer deserializer);
 
-@protected List<OnlineStatus> sse_decode_list_online_status(SseDeserializer deserializer);
+  @protected
+  OnlineStatus sse_decode_online_status(SseDeserializer deserializer);
 
-@protected Int32List sse_decode_list_prim_i_32_strict(SseDeserializer deserializer);
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
 
-@protected Int64List sse_decode_list_prim_i_64_strict(SseDeserializer deserializer);
+  @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
 
-@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+  @protected
+  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
 
-@protected List<ReceivedMessage> sse_decode_list_received_message(SseDeserializer deserializer);
+  @protected
+  LocalConversation? sse_decode_opt_box_autoadd_local_conversation(
+    SseDeserializer deserializer,
+  );
 
-@protected List<(String,PullMsgs)> sse_decode_list_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(SseDeserializer deserializer);
+  @protected
+  ReceivedMessage sse_decode_received_message(SseDeserializer deserializer);
 
-@protected List<SearchFriendItem> sse_decode_list_search_friend_item(SseDeserializer deserializer);
+  @protected
+  (String, PullMsgs)
+  sse_decode_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(
+    SseDeserializer deserializer,
+  );
 
-@protected List<UserInfo> sse_decode_list_user_info(SseDeserializer deserializer);
+  @protected
+  RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
 
-@protected LocalChatLog sse_decode_local_chat_log(SseDeserializer deserializer);
+  @protected
+  SdkEvent sse_decode_sdk_event(SseDeserializer deserializer);
 
-@protected LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
+  @protected
+  SearchFriendItem sse_decode_search_friend_item(SseDeserializer deserializer);
 
-@protected MarkMessagesAsReadReq sse_decode_mark_messages_as_read_req(SseDeserializer deserializer);
+  @protected
+  SearchMessagesReq sse_decode_search_messages_req(
+    SseDeserializer deserializer,
+  );
 
-@protected Message sse_decode_message(SseDeserializer deserializer);
+  @protected
+  SessionType sse_decode_session_type(SseDeserializer deserializer);
 
-@protected MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
-@protected MessageExtensionData sse_decode_message_extension_data(SseDeserializer deserializer);
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer);
 
-@protected MessageInfo sse_decode_message_info(SseDeserializer deserializer);
+  @protected
+  int sse_decode_u_8(SseDeserializer deserializer);
 
-@protected MessageReceipt sse_decode_message_receipt(SseDeserializer deserializer);
+  @protected
+  void sse_decode_unit(SseDeserializer deserializer);
 
-@protected OnlineStatus sse_decode_online_status(SseDeserializer deserializer);
+  @protected
+  UserInfo sse_decode_user_info(SseDeserializer deserializer);
 
-@protected String? sse_decode_opt_String(SseDeserializer deserializer);
+  @protected
+  BigInt sse_decode_usize(SseDeserializer deserializer);
 
-@protected bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+  @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  );
 
-@protected int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    MsgData self,
+    SseSerializer serializer,
+  );
 
-@protected LocalConversation? sse_decode_opt_box_autoadd_local_conversation(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
 
-@protected ReceivedMessage sse_decode_received_message(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    PullMsgs self,
+    SseSerializer serializer,
+  );
 
-@protected (String,PullMsgs) sse_decode_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
 
-@protected RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(
+    Map<String, PullMsgs> self,
+    SseSerializer serializer,
+  );
 
-@protected SdkEvent sse_decode_sdk_event(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    MsgData self,
+    SseSerializer serializer,
+  );
 
-@protected SearchFriendItem sse_decode_search_friend_item(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
 
-@protected SearchMessagesReq sse_decode_search_messages_req(SseDeserializer deserializer);
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    PullMsgs self,
+    SseSerializer serializer,
+  );
 
-@protected SessionType sse_decode_session_type(SseDeserializer deserializer);
+  @protected
+  void sse_encode_StreamSink_i_32_Sse(
+    RustStreamSink<int> self,
+    SseSerializer serializer,
+  );
 
-@protected int sse_decode_u_32(SseDeserializer deserializer);
+  @protected
+  void sse_encode_StreamSink_sdk_event_Sse(
+    RustStreamSink<SdkEvent> self,
+    SseSerializer serializer,
+  );
 
-@protected BigInt sse_decode_u_64(SseDeserializer deserializer);
+  @protected
+  void sse_encode_String(String self, SseSerializer serializer);
 
-@protected int sse_decode_u_8(SseDeserializer deserializer);
+  @protected
+  void sse_encode_at_info(AtInfo self, SseSerializer serializer);
 
-@protected void sse_decode_unit(SseDeserializer deserializer);
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
 
-@protected UserInfo sse_decode_user_info(SseDeserializer deserializer);
+  @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
 
-@protected BigInt sse_decode_usize(SseDeserializer deserializer);
+  @protected
+  void sse_encode_box_autoadd_client_config(
+    ClientConfig self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_AnyhowException(AnyhowException self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_delete_messages_req(
+    DeleteMessagesReq self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(MsgData self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_get_history_messages_req(
+    GetHistoryMessagesReq self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
 
-@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(PullMsgs self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_input_status_changed_data(
+    InputStatusChangedData self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_local_conversation(
+    LocalConversation self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_Map_String_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs_None(Map<String, PullMsgs> self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_mark_messages_as_read_req(
+    MarkMessagesAsReadReq self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(MsgData self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_message(Message self, SseSerializer serializer);
 
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(OpenImBridgeClient self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_message_extension_data(
+    MessageExtensionData self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(PullMsgs self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_received_message(
+    ReceivedMessage self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_StreamSink_i_32_Sse(RustStreamSink<int> self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_revoke_message_req(
+    RevokeMessageReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_search_messages_req(
+    SearchMessagesReq self,
+    SseSerializer serializer,
+  );
 
-@protected void sse_encode_StreamSink_sdk_event_Sse(RustStreamSink<SdkEvent> self, SseSerializer serializer);
-
-@protected void sse_encode_String(String self, SseSerializer serializer);
-
-@protected void sse_encode_at_info(AtInfo self, SseSerializer serializer);
-
-@protected void sse_encode_bool(bool self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_client_config(ClientConfig self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_delete_messages_req(DeleteMessagesReq self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_get_history_messages_req(GetHistoryMessagesReq self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_input_status_changed_data(InputStatusChangedData self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_local_conversation(LocalConversation self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_mark_messages_as_read_req(MarkMessagesAsReadReq self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_message(Message self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_message_extension_data(MessageExtensionData self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_received_message(ReceivedMessage self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_revoke_message_req(RevokeMessageReq self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_search_messages_req(SearchMessagesReq self, SseSerializer serializer);
-
-@protected void sse_encode_box_autoadd_user_info(UserInfo self, SseSerializer serializer);
-
-@protected void sse_encode_check_friend_result(CheckFriendResult self, SseSerializer serializer);
-
-@protected void sse_encode_client_config(ClientConfig self, SseSerializer serializer);
-
-@protected void sse_encode_connection_state(ConnectionState self, SseSerializer serializer);
-
-@protected void sse_encode_conversation(Conversation self, SseSerializer serializer);
-
-@protected void sse_encode_delete_messages_req(DeleteMessagesReq self, SseSerializer serializer);
-
-@protected void sse_encode_f_64(double self, SseSerializer serializer);
-
-@protected void sse_encode_friend_apply_info(FriendApplyInfo self, SseSerializer serializer);
-
-@protected void sse_encode_friend_info(FriendInfo self, SseSerializer serializer);
-
-@protected void sse_encode_get_history_messages_req(GetHistoryMessagesReq self, SseSerializer serializer);
-
-@protected void sse_encode_get_history_messages_result(GetHistoryMessagesResult self, SseSerializer serializer);
-
-@protected void sse_encode_group_apply_info(GroupApplyInfo self, SseSerializer serializer);
-
-@protected void sse_encode_group_info(GroupInfo self, SseSerializer serializer);
-
-@protected void sse_encode_group_member(GroupMember self, SseSerializer serializer);
-
-@protected void sse_encode_group_read_receipt(GroupReadReceipt self, SseSerializer serializer);
-
-@protected void sse_encode_i_32(int self, SseSerializer serializer);
-
-@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
-
-@protected void sse_encode_input_status_changed_data(InputStatusChangedData self, SseSerializer serializer);
-
-@protected void sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(List<MsgData> self, SseSerializer serializer);
-
-@protected void sse_encode_list_String(List<String> self, SseSerializer serializer);
-
-@protected void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_check_friend_result(List<CheckFriendResult> self, SseSerializer serializer);
-
-@protected void sse_encode_list_conversation(List<Conversation> self, SseSerializer serializer);
-
-@protected void sse_encode_list_friend_apply_info(List<FriendApplyInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_friend_info(List<FriendInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_group_apply_info(List<GroupApplyInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_group_info(List<GroupInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_group_member(List<GroupMember> self, SseSerializer serializer);
-
-@protected void sse_encode_list_group_read_receipt(List<GroupReadReceipt> self, SseSerializer serializer);
-
-@protected void sse_encode_list_local_chat_log(List<LocalChatLog> self, SseSerializer serializer);
-
-@protected void sse_encode_list_local_conversation(List<LocalConversation> self, SseSerializer serializer);
-
-@protected void sse_encode_list_message_entity(List<MessageEntity> self, SseSerializer serializer);
-
-@protected void sse_encode_list_message_info(List<MessageInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_list_message_receipt(List<MessageReceipt> self, SseSerializer serializer);
-
-@protected void sse_encode_list_online_status(List<OnlineStatus> self, SseSerializer serializer);
-
-@protected void sse_encode_list_prim_i_32_strict(Int32List self, SseSerializer serializer);
-
-@protected void sse_encode_list_prim_i_64_strict(Int64List self, SseSerializer serializer);
-
-@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
-
-@protected void sse_encode_list_received_message(List<ReceivedMessage> self, SseSerializer serializer);
-
-@protected void sse_encode_list_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(List<(String,PullMsgs)> self, SseSerializer serializer);
-
-@protected void sse_encode_list_search_friend_item(List<SearchFriendItem> self, SseSerializer serializer);
-
-@protected void sse_encode_list_user_info(List<UserInfo> self, SseSerializer serializer);
-
-@protected void sse_encode_local_chat_log(LocalChatLog self, SseSerializer serializer);
-
-@protected void sse_encode_local_conversation(LocalConversation self, SseSerializer serializer);
-
-@protected void sse_encode_mark_messages_as_read_req(MarkMessagesAsReadReq self, SseSerializer serializer);
-
-@protected void sse_encode_message(Message self, SseSerializer serializer);
-
-@protected void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);
-
-@protected void sse_encode_message_extension_data(MessageExtensionData self, SseSerializer serializer);
-
-@protected void sse_encode_message_info(MessageInfo self, SseSerializer serializer);
-
-@protected void sse_encode_message_receipt(MessageReceipt self, SseSerializer serializer);
-
-@protected void sse_encode_online_status(OnlineStatus self, SseSerializer serializer);
-
-@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
-
-@protected void sse_encode_opt_box_autoadd_local_conversation(LocalConversation? self, SseSerializer serializer);
-
-@protected void sse_encode_received_message(ReceivedMessage self, SseSerializer serializer);
-
-@protected void sse_encode_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs((String,PullMsgs) self, SseSerializer serializer);
-
-@protected void sse_encode_revoke_message_req(RevokeMessageReq self, SseSerializer serializer);
-
-@protected void sse_encode_sdk_event(SdkEvent self, SseSerializer serializer);
-
-@protected void sse_encode_search_friend_item(SearchFriendItem self, SseSerializer serializer);
-
-@protected void sse_encode_search_messages_req(SearchMessagesReq self, SseSerializer serializer);
-
-@protected void sse_encode_session_type(SessionType self, SseSerializer serializer);
-
-@protected void sse_encode_u_32(int self, SseSerializer serializer);
-
-@protected void sse_encode_u_64(BigInt self, SseSerializer serializer);
-
-@protected void sse_encode_u_8(int self, SseSerializer serializer);
-
-@protected void sse_encode_unit(void self, SseSerializer serializer);
-
-@protected void sse_encode_user_info(UserInfo self, SseSerializer serializer);
-
-@protected void sse_encode_usize(BigInt self, SseSerializer serializer);
-                }
-                
-
+  @protected
+  void sse_encode_box_autoadd_user_info(
+    UserInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_check_friend_result(
+    CheckFriendResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_client_config(ClientConfig self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_connection_state(
+    ConnectionState self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_conversation(Conversation self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_delete_messages_req(
+    DeleteMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_friend_apply_info(
+    FriendApplyInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_friend_info(FriendInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_get_history_messages_req(
+    GetHistoryMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_get_history_messages_result(
+    GetHistoryMessagesResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_group_apply_info(
+    GroupApplyInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_group_info(GroupInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_group_member(GroupMember self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_group_read_receipt(
+    GroupReadReceipt self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_input_status_changed_data(
+    InputStatusChangedData self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_list_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    List<MsgData> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_at_info(List<AtInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_check_friend_result(
+    List<CheckFriendResult> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_conversation(
+    List<Conversation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_friend_apply_info(
+    List<FriendApplyInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_friend_info(
+    List<FriendInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_apply_info(
+    List<GroupApplyInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_info(
+    List<GroupInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_member(
+    List<GroupMember> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_read_receipt(
+    List<GroupReadReceipt> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_local_chat_log(
+    List<LocalChatLog> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_local_conversation(
+    List<LocalConversation> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_message_entity(
+    List<MessageEntity> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_message_info(
+    List<MessageInfo> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_message_receipt(
+    List<MessageReceipt> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_online_status(
+    List<OnlineStatus> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_i_32_strict(
+    Int32List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_i_64_strict(
+    Int64List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+    Uint8List self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_received_message(
+    List<ReceivedMessage> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_list_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(
+    List<(String, PullMsgs)> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_search_friend_item(
+    List<SearchFriendItem> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_user_info(List<UserInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_local_chat_log(LocalChatLog self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_local_conversation(
+    LocalConversation self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_mark_messages_as_read_req(
+    MarkMessagesAsReadReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_message(Message self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_message_extension_data(
+    MessageExtensionData self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_message_info(MessageInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_message_receipt(
+    MessageReceipt self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_online_status(OnlineStatus self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_local_conversation(
+    LocalConversation? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_received_message(
+    ReceivedMessage self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_record_string_auto_owned_rust_opaque_flutter_rust_bridgefor_generated_rust_auto_opaque_inner_pull_msgs(
+    (String, PullMsgs) self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_revoke_message_req(
+    RevokeMessageReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_sdk_event(SdkEvent self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_search_friend_item(
+    SearchFriendItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_search_messages_req(
+    SearchMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_session_type(SessionType self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_8(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_user_info(UserInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_usize(BigInt self, SseSerializer serializer);
+}
 
 // Section: wire_class
 
 class RustLibWire implements BaseWire {
-            RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+  RustLibWire.fromExternalLibrary(ExternalLibrary lib);
 
-            void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(ptr);
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+        ptr,
+      );
 
-void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(ptr);
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+        ptr,
+      );
 
-void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(ptr);
-        }
-        @JS('wasm_bindgen') external RustLibWasmModule get wasmModule;
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    int ptr,
+  ) => wasmModule
+      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+        ptr,
+      );
+}
 
-        @JS() @anonymous extension type RustLibWasmModule._(JSObject _) implements JSObject {
-            external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(int ptr);
+@JS('wasm_bindgen')
+external RustLibWasmModule get wasmModule;
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(int ptr);
+@JS()
+@anonymous
+extension type RustLibWasmModule._(JSObject _) implements JSObject {
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMsgData(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(int ptr);
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  );
 
-external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(int ptr);
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    int ptr,
+  );
 
-external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(int ptr);
-        }
-        
+  external void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    int ptr,
+  );
+
+  external void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPullMsgs(
+    int ptr,
+  );
+}

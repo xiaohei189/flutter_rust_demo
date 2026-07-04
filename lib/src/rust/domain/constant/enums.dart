@@ -6,18 +6,5 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-
-            
-
-            
-
-            /// 会话类型
-enum SessionType {
-                    singleChat,
-writeGroupChat,
-readGroupChat,
-notificationChat,
-                    ;
-                    
-                }
-            
+/// 会话类型
+enum SessionType { singleChat, writeGroupChat, readGroupChat, notificationChat }

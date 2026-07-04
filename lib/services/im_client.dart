@@ -109,11 +109,24 @@ class ImClient {
     _isInitializing = false;
   }
   
-  /// 获取统一事件流
-  Stream<SdkEvent> get eventStream {
-    if (_client == null) {
-      throw StateError('客户端未创建');
-    }
-    return _client!.eventStream();
+  /// 连接事件流
+  Stream<SdkEvent> get connectionStream {
+    if (_client == null) throw StateError('客户端未创建');
+    return _client!.connectionStream();
+  }
+  /// 会话事件流
+  Stream<SdkEvent> get conversationStream {
+    if (_client == null) throw StateError('客户端未创建');
+    return _client!.conversationStream();
+  }
+  /// 好友事件流
+  Stream<SdkEvent> get friendStream {
+    if (_client == null) throw StateError('客户端未创建');
+    return _client!.friendStream();
+  }
+  /// 群组事件流
+  Stream<SdkEvent> get groupStream {
+    if (_client == null) throw StateError('客户端未创建');
+    return _client!.groupStream();
   }
 }
