@@ -78,61 +78,7 @@ impl MessageSyncer {
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
-    fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
-        if let Some(l) = &*self.conversation_listener.read().unwrap() { f(&**l); }
-    }
 
-    fn on_sync_started(&self) { self.notify_conv(|l| l.on_sync_started()); }
-    fn on_sync_finished(&self) { self.notify_conv(|l| l.on_sync_finished()); }
-    fn on_sync_failed(&self, e: &str) { self.notify_conv(|l| l.on_sync_failed(e)); }
-    fn on_sync_progress(&self, p: i32, m: &str) { self.notify_conv(|l| l.on_sync_progress(p, m)); }
-
-    /// 从服务端获取所有会话的最新 maxSeq
-    ///
-    /// 含 3 次重试 + 指数退避（2s → 4s），对齐 Go SDK `msg_sync.go:429-449`
-    pub async fn get_server_max_seqs(&self) -> Result<HashMap<String, i64>> {
-        use openim_protocol::sdkws::{GetMaxSeqReq, GetMaxSeqResp};
-
-        let max_retries = 3u32;
-        let mut retry_interval = std::time::Duration::from_secs(2);
-
-        for retry in 0..max_retries {
-            if retry > 0 {
-                warn!(
-                    "[MsgSync] getServerMaxSeq 第 {} 次重试，等待 {:?}",
-                    retry + 1, retry_interval
-                );
-                tokio::time::sleep(retry_interval).await;
-                retry_interval *= 2;
-            }
-
-            let req = GetMaxSeqReq {
-                user_id: self.user_id.clone(),
-            };
-            match self.connection.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(
-                ws_req_identifier::GET_NEWEST_SEQ,
-                &req,
-            ).await {
-                Ok(resp) => {
-                    info!(
-                        "[MsgSync] getServerMaxSeq 成功 (retry={}, count={})",
-                        retry, resp.max_seqs.len()
-                    );
-                    return Ok(resp.max_seqs);
-                }
-                Err(e) => {
-                    warn!("[MsgSync] getServerMaxSeq 失败 (retry={}): {:?}", retry + 1, e);
-                    if retry == max_retries - 1 {
-                        return Err(SdkError::network(format!(
-                            "getServerMaxSeq {} 次重试均失败: {}",
-                            max_retries, e
-                        )));
-                    }
-                }
-            }
-        }
-        unreachable!()
-    }
 
     /// 重连后增量同步：先从服务端获取 maxSeq，再与本地对比拉取消息
     /// 检查连接是否已被踢下线

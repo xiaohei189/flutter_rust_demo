@@ -193,8 +193,12 @@ impl OpenIMBridgeClient {
     pub async fn conversation_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
         use crate::domain::listener::conversation::ConversationEvent::*;
         use crate::domain::event::types::InputStatusChangedData;
-        let (mut rx, a) = crate::domain::listener::bridge::start_conversation_stream();
-        self.inner.set_conversation_listener(a);
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        self.inner.message_handler.set_event_sender(tx.clone());
+        self.inner.message_service.set_event_sender(tx.clone());
+        self.inner.message_syncer.set_event_sender(tx.clone());
+        self.inner.conversation_syncer.set_event_sender(tx.clone());
+        self.inner.conversation.set_event_sender(tx);
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
                 let se = match e {
@@ -218,8 +222,8 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn friend_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
         use crate::domain::listener::friend::FriendEvent::*;
-        let (mut rx, a) = crate::domain::listener::bridge::start_friend_stream();
-        self.inner.set_friend_listener(a);
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        self.inner.friend.set_event_sender(tx);
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
                 let se = match e {
@@ -238,8 +242,8 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn group_stream(&self, sink: StreamSink<SdkEvent>) -> Result<()> {
         use crate::domain::listener::group::GroupEvent::*;
-        let (mut rx, a) = crate::domain::listener::bridge::start_group_stream();
-        self.inner.set_group_listener(a);
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        self.inner.group.set_event_sender(tx);
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
                 let se = match e {
