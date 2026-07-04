@@ -165,8 +165,12 @@ impl ConnectionManager {
             *ws_url, *token, *send_id, *platform_id, operation_id
         );
 
-        let (ws_stream, _) = connect_async(&full_url)
+        let (ws_stream, _) = tokio::time::timeout(Duration::from_secs(10), connect_async(&full_url))
             .await
+            .map_err(|_| {
+                error!("WebSocket connect timeout after 10s, url={}", full_url);
+                SdkError::connection("WebSocket connect timeout (10s)")
+            })?
             .map_err(|e| {
                 error!("WebSocket connect failed: {}, url={}", e, full_url);
                 SdkError::connection(format!("WebSocket connect failed: {}", e))
