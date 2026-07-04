@@ -30,10 +30,7 @@ use crate::core::notification::handler::NotificationHandler;
 use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
 use crate::domain::event::EventBus;
-use crate::domain::listener::connection::ConnectionListener;
-use crate::domain::listener::conversation::ConversationListener;
-use crate::domain::listener::friend::FriendListener;
-use crate::domain::listener::group::GroupListener;
+use crate::domain::listener::connection::ConnectionEvent;
 use crate::infra::cache::memory::CacheManager;
 use crate::sdk::context::RuntimeContext;
 use serde::{Deserialize, Serialize};
@@ -85,20 +82,7 @@ pub struct OpenIMClient {
 }
 
 impl OpenIMClient {
-    pub fn set_connection_listener(&self, l: Arc<dyn ConnectionListener>) {
-        self.connection.set_connection_listener(l);
-    }
-    pub fn set_conversation_listener(&self, l: Arc<dyn ConversationListener>) {
-        self.message_handler.set_conversation_listener(l.clone());
-        self.message_service.set_conversation_listener(l.clone());
-        self.message_syncer.set_conversation_listener(l.clone());
-        self.conversation_syncer.set_conversation_listener(l.clone());
-        self.conversation.set_conversation_listener(l);
-    }
-    pub fn set_friend_listener(&self, l: Arc<dyn FriendListener>) {
-        self.friend.set_friend_listener(l);
-    }
-    pub fn set_group_listener(&self, l: Arc<dyn GroupListener>) {
-        self.group.set_group_listener(l);
+    pub fn set_connection_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
+        self.connection.set_event_sender(tx);
     }
 }
