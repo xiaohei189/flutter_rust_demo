@@ -144,6 +144,7 @@ mod android_logcat {
 static LOG_DIR: OnceLock<String> = OnceLock::new();
 static LOG_INITIALIZED: Mutex<bool> = Mutex::new(false);
 static LOG_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
+static CONSOLE_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
 
 /// 获取当前设置的日志目录
 fn get_log_dir() -> Option<&'static str> {
@@ -195,7 +196,9 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
 
     // 控制台输出：桌面端走 stdout，Android 走 logcat
     #[cfg(not(target_os = "android"))]
-    let (non_blocking_console, _console_guard) = tracing_appender::non_blocking(std::io::stdout());
+    let (non_blocking_console, console_guard) = tracing_appender::non_blocking(std::io::stdout());
+    #[cfg(not(target_os = "android"))]
+    let _ = CONSOLE_GUARD.set(console_guard);
     #[cfg(not(target_os = "android"))]
     let console_layer = Some(
         tracing_subscriber::fmt::layer()
@@ -226,6 +229,7 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
                 .with_line_number(true)
                 .with_thread_ids(true)
                 .with_target(true)
+                .with_span_events(tracing_subscriber::fmt::format::FmtSpan::ACTIVE)
         )
         .with(console_layer)
         .try_init();

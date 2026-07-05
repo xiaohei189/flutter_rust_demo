@@ -8,16 +8,16 @@ use futures_util::stream::SplitSink;
 use futures_util::{SinkExt, StreamExt};
 use prost::Message;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::{oneshot, RwLock};
-use tokio::time::{interval, timeout, sleep, MissedTickBehavior};
+use tokio::time::{interval, sleep, timeout, MissedTickBehavior};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info, info_span, warn};
 
 type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -76,7 +76,9 @@ impl ConnectionManager {
     pub(crate) fn send(&self, e: ConnectionEvent) {
         let has_tx = self.event_tx.lock().unwrap().is_some();
         tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
-        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
+        if let Some(tx) = &*self.event_tx.lock().unwrap() {
+            let _ = tx.send(e);
+        }
     }
 
     pub fn new(cancel_token: CancellationToken) -> Self {
@@ -183,28 +185,16 @@ impl ConnectionManager {
         // Go 在 HTTP 握手阶段通过 response body 获取认证结果
         // Rust 侧 tokio_tungstenite 握手成功后服务端首条消息即为认证响应
         let auth_result: std::result::Result<WebSocketConnectResp, SdkError> = match read.next().await {
-            Some(Ok(WsMessage::Text(text))) => {
-                serde_json::from_str::<WebSocketConnectResp>(&text)
-                    .map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
-            }
+            Some(Ok(WsMessage::Text(text))) => serde_json::from_str::<WebSocketConnectResp>(&text).map_err(|e| SdkError::connection(format!("auth parse error: {}", e))),
             Some(Ok(WsMessage::Binary(data))) => {
                 // 尝试解压后解析
                 let data = self.compressor.decompress(&data).unwrap_or(data);
-                serde_json::from_slice::<WebSocketConnectResp>(&data)
-                    .map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
+                serde_json::from_slice::<WebSocketConnectResp>(&data).map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
             }
-            Some(Ok(WsMessage::Close(_))) => {
-                Err(SdkError::connection("server closed during auth"))
-            }
-            Some(Err(e)) => {
-                Err(SdkError::connection(format!("ws error during auth: {}", e)))
-            }
-            None => {
-                Err(SdkError::connection("stream ended during auth"))
-            }
-            _ => {
-                Err(SdkError::connection("unexpected message during auth"))
-            }
+            Some(Ok(WsMessage::Close(_))) => Err(SdkError::connection("server closed during auth")),
+            Some(Err(e)) => Err(SdkError::connection(format!("ws error during auth: {}", e))),
+            None => Err(SdkError::connection("stream ended during auth")),
+            _ => Err(SdkError::connection("unexpected message during auth")),
         };
 
         match auth_result {
@@ -212,8 +202,11 @@ impl ConnectionManager {
                 // 认证通过 → 发布 Connected，启动读写循环
                 info!("WebSocket auth confirmed by server");
                 *self.writer.write().await = Some(write);
-                self.set_state(ConnectionState::Connected).await;                self.send(ConnectionEvent::Connected);
-        if let Some(hook) = &*self.on_connected_hook.lock().unwrap() { hook(); }
+                self.set_state(ConnectionState::Connected).await;
+                self.send(ConnectionEvent::Connected);
+                if let Some(hook) = &*self.on_connected_hook.lock().unwrap() {
+                    hook();
+                }
                 self.reconnect_attempts.store(0, Ordering::SeqCst);
                 self.spawn_read_loop(read);
                 self.spawn_heartbeat();
@@ -235,13 +228,13 @@ impl ConnectionManager {
                 self.cancel_token.cancel();
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = ConnectionState::Kicked;
-                self.message_batcher.close().await;                self.send(ConnectionEvent::TokenExpired);
+                self.message_batcher.close().await;
+                self.send(ConnectionEvent::TokenExpired);
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) => {
                 // 其他服务端错误：短暂断开后允许重连
-                warn!("WebSocket auth failed: errCode={}, errMsg={}",
-                    conn_resp.err_code, conn_resp.err_msg);
+                warn!("WebSocket auth failed: errCode={}, errMsg={}", conn_resp.err_code, conn_resp.err_msg);
                 *self.state.write().await = ConnectionState::Disconnected;
                 let reason = format!("server rejected: {}", conn_resp.err_msg);
                 self.send(ConnectionEvent::Disconnected(reason.to_string()));
@@ -258,7 +251,8 @@ impl ConnectionManager {
         }
     }
 
-    fn spawn_reconnect_loop(&self) {        let cancel = self.cancel_token.clone();
+    fn spawn_reconnect_loop(&self) {
+        let cancel = self.cancel_token.clone();
         let state = self.state.clone();
         let is_manual = self.is_manual_disconnect.clone();
         let self_clone = Arc::new(self.clone_shallow());
@@ -274,16 +268,16 @@ impl ConnectionManager {
                         loop {
                             let current_state = state.read().await.clone();
                             let manual = { *is_manual.read().await };
-                            
+
                             if manual {
                                 info!("reconnect_loop: manual disconnect, stopping");
                                 return;
                             }
-                            
+
                             if current_state == ConnectionState::Disconnected || current_state == ConnectionState::Reconnecting {
                                 break;
                             }
-                            
+
                             tokio::time::sleep(Duration::from_secs(1)).await;
                         }
                     } => {
@@ -349,7 +343,7 @@ impl ConnectionManager {
         } else {
             60
         };
-        
+
         let delay = Duration::from_secs(delay_secs as u64);
         delay.min(RECONNECT_MAX_DELAY)
     }
@@ -376,16 +370,15 @@ impl ConnectionManager {
         }
     }
 
-    fn spawn_read_loop(
-        &self,
-        read: futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
-    ) {
-        let pending = self.pending_requests.clone();        let cancel = self.cancel_token.clone();
+    fn spawn_read_loop(&self, read: futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) {
+        let pending = self.pending_requests.clone();
+        let cancel = self.cancel_token.clone();
         let state = self.state.clone();
         let writer = self.writer.clone();
         let compressor = self.compressor.clone();
         let message_batcher = self.message_batcher.clone();
         let is_manual_disconnect = self.is_manual_disconnect.clone();
+        let event_tx = self.event_tx.clone();
 
         tokio::spawn(async move {
             let mut read = read;
@@ -427,30 +420,76 @@ impl ConnectionManager {
                             // 尝试 JSON 解码为 OpenIMResp
                             match serde_json::from_slice::<OpenIMResp>(&data) {
                                 Ok(resp) => {
-                                    debug!("decoded binary message as OpenIMResp, req_identifier={}, err_code={}",
-                                        resp.req_identifier, resp.err_code);
-                                    
-                                    // 根据 req_identifier 判断消息类型
-                                    if resp.req_identifier == crate::domain::constant::types::ws_push_identifier::PUSH_MSG && resp.err_code == 0 {
-                                        // data 字段是 protobuf 编码的 PushMessages → 通过 MessageBatcher 聚合
-                                        match PushMessages::decode(resp.data.as_slice()) {
-                                            Ok(push_msgs) => {
-                                                info!("received push messages: {} conversations with msgs, {} with notifications", 
-                                                    push_msgs.msgs.len(), push_msgs.notification_msgs.len());
-                                                message_batcher.enqueue(resp.operation_id, push_msgs).await;
-                                            }
-                                            Err(e) => {
-                                                warn!("failed to decode push messages from protobuf: {}", e);
+                                    let span = info_span!(
+                                        "ws_binary_resp",
+                                        operation_id = %resp.operation_id
+                                    );
+                                    let _enter = span.enter();
+
+                                    use crate::domain::constant::types::{ws_push_identifier, ws_req_identifier};
+                                    match resp.req_identifier {
+                                        // PushMsg (2001) — 对齐 Go case constant.PushMsg
+                                        ws_push_identifier::PUSH_MSG => {
+                                            match PushMessages::decode(resp.data.as_slice()) {
+                                                Ok(push_msgs) => {
+                                                    info!("received push messages: {} conversations with msgs, {} with notifications",
+                                                        push_msgs.msgs.len(), push_msgs.notification_msgs.len());
+                                                    message_batcher.enqueue(resp.operation_id, push_msgs).await;
+                                                }
+                                                Err(e) => {
+                                                    error!("doWSPushMsg failed: {}", e);
+                                                }
                                             }
                                         }
-                                    } else {
-                                        // RPC 响应（包括错误响应），通知等待的通道
-                                        if resp.err_code != 0 {
-                                            warn!("server error response: req_identifier={}, err_code={}, err_msg={}", 
-                                                resp.req_identifier, resp.err_code, resp.err_msg);
+                                        // LogoutMsg (2003) — 对齐 Go case constant.LogoutMsg
+                                        ws_push_identifier::LOGOUT_MSG => {
+                                            if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
+                                                let _ = req.tx.send(resp);
+                                            }
+                                            *is_manual_disconnect.write().await = true;
+                                            message_batcher.close().await;
+                                            if let Some(tx) = &*event_tx.lock().unwrap() {
+                                                let _ = tx.send(ConnectionEvent::Logout);
+                                            }
+                                            cancel.cancel();
+                                            break;
                                         }
-                                        if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
-                                            let _ = req.tx.send(resp);
+                                        // KickOnlineMsg (2002) — 对齐 Go case constant.KickOnlineMsg
+                                        // 被踢一定是服务端推送，无对应 pending，无需 NotifyResp
+                                        ws_push_identifier::KICK_ONLINE_MSG => {
+                                            debug!("socket receive client kicked offline");
+                                            *is_manual_disconnect.write().await = true;
+                                            *state.write().await = ConnectionState::Kicked;
+                                            message_batcher.close().await;
+                                            if let Some(tx) = &*event_tx.lock().unwrap() {
+                                                let _ = tx.send(ConnectionEvent::KickedOffline(resp.err_msg.to_string()));
+                                            }
+                                            cancel.cancel();
+                                            break;
+                                        }
+                                        // GetNewestSeq / PullMsgByRange / SendMsg / SendSignalMsg
+                                        // PullMsgBySeqList / GetConvMaxReadSeq / PullConvLastMessage
+                                        // SetBackgroundStatus — 对齐 Go case fallthrough: NotifyResp
+                                        ws_req_identifier::GET_NEWEST_SEQ
+                                        | ws_req_identifier::PULL_MSG_BY_RANGE
+                                        | ws_req_identifier::SEND_MSG
+                                        | ws_req_identifier::SEND_SIGNAL_MSG
+                                        | ws_req_identifier::PULL_MSG_BY_SEQ_LIST
+                                        | ws_req_identifier::GET_CONV_MAX_READ_SEQ
+                                        | ws_req_identifier::PULL_CONV_LAST_MESSAGE
+                                        | ws_push_identifier::SET_BACKGROUND_STATUS => {
+                                            if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
+                                                let _ = req.tx.send(resp);
+                                            }
+                                        }
+                                        // WsSubUserOnlineStatus (2005) — 对齐 Go case constant.WsSubUserOnlineStatus
+                                        ws_push_identifier::WS_SUB_USER_ONLINE_STATUS => {
+                                            warn!("WsSubUserOnlineStatus handler not yet implemented, operation_id={}", resp.operation_id);
+                                        }
+                                        // 未知类型 — 对齐 Go default: return sdkerrs.ErrMsgBinaryTypeNotSupport
+                                        _ => {
+                                            error!("binary message type not support: req_identifier={}, operation_id={}",
+                                                resp.req_identifier, resp.operation_id);
                                         }
                                     }
                                 }
@@ -513,7 +552,8 @@ impl ConnectionManager {
 
     fn spawn_heartbeat(&self) {
         let writer = self.writer.clone();
-        let state = self.state.clone();        let cancel = self.cancel_token.clone();
+        let state = self.state.clone();
+        let cancel = self.cancel_token.clone();
 
         tokio::spawn(async move {
             let mut ticker = interval(HEARTBEAT_INTERVAL);
@@ -550,11 +590,7 @@ impl ConnectionManager {
         });
     }
 
-    pub async fn send_rpc<T: prost::Message, R: prost::Message + Default>(
-        &self,
-        req_identifier: i32,
-        data: &T,
-    ) -> Result<R> {
+    pub async fn send_rpc<T: prost::Message, R: prost::Message + Default>(&self, req_identifier: i32, data: &T) -> Result<R> {
         let data_bytes = data.encode_to_vec();
 
         let msg_incr = format!("rpc_{}", self.msg_incr.fetch_add(1, Ordering::SeqCst));
@@ -580,20 +616,15 @@ impl ConnectionManager {
             },
         );
 
-        let req_json = serde_json::to_string(&req)
-            .map_err(|e| SdkError::unknown(format!("serialize rpc request: {}", e)))?;
+        let req_json = serde_json::to_string(&req).map_err(|e| SdkError::unknown(format!("serialize rpc request: {}", e)))?;
 
         // Gzip 压缩（对齐 Go SDK compressor.go CompressWithPool）
-        let compressed = self.compressor.compress(req_json.as_bytes())
-            .map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
+        let compressed = self.compressor.compress(req_json.as_bytes()).map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
 
         let send_result = {
             let mut w = self.writer.write().await;
             if let Some(writer) = w.as_mut() {
-                writer
-                    .send(WsMessage::Binary(compressed))
-                    .await
-                    .map_err(|e| SdkError::connection(format!("send failed: {}", e)))
+                writer.send(WsMessage::Binary(compressed)).await.map_err(|e| SdkError::connection(format!("send failed: {}", e)))
             } else {
                 Err(SdkError::connection("not connected"))
             }
@@ -607,8 +638,7 @@ impl ConnectionManager {
         match timeout(RPC_TIMEOUT, rx).await {
             Ok(Ok(resp)) => {
                 if resp.is_success() {
-                    R::decode(resp.data.as_slice())
-                        .map_err(|e| SdkError::unknown(format!("decode response: {}", e)))
+                    R::decode(resp.data.as_slice()).map_err(|e| SdkError::unknown(format!("decode response: {}", e)))
                 } else {
                     Err(SdkError::api(resp.err_code, &resp.err_msg))
                 }
@@ -666,7 +696,7 @@ mod tests {
     async fn test_connection_manager_creation() {
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new( cancel_token);
+        let manager = ConnectionManager::new(cancel_token);
 
         assert_eq!(manager.get_state().await, ConnectionState::Disconnected);
     }
@@ -675,7 +705,7 @@ mod tests {
     async fn test_connection_state_transitions() {
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new( cancel_token);
+        let manager = ConnectionManager::new(cancel_token);
 
         manager.set_state(ConnectionState::Connecting).await;
         assert_eq!(manager.get_state().await, ConnectionState::Connecting);
@@ -691,7 +721,7 @@ mod tests {
     async fn test_is_connected() {
         let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new( cancel_token);
+        let manager = ConnectionManager::new(cancel_token);
 
         assert!(!manager.is_connected().await);
 
