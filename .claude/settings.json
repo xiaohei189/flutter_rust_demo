@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter *)",
+      "Bash(cargo *)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  }
+}

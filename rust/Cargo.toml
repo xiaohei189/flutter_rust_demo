@@ -45,6 +45,9 @@ clap = { version = "4.5", features = ["derive"] }
 
 # Phase 2: 新 core 模块数据库访问
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "migrate", "macros"] }
+tracing-opentelemetry = "0.28"
+opentelemetry = "0.27"
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
 
 [profile.release]
 opt-level = "z"       # 最小体积

@@ -334,6 +334,8 @@ impl MessageHandler {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
                     let pids: Vec<i32> = if is_typing { vec![platform_id] } else { vec![] };
+                    info!("typing: conversation_id={}, user_id={}, is_typing={}, platform_ids={:?}",
+                        msg.conversation_id, msg.send_id, is_typing, pids);
                     self.send(ConversationEvent::UserInputStatusChanged { conversation_id: msg.conversation_id.clone(), user_id: msg.send_id.clone(), platform_ids: pids });
                 }
             }

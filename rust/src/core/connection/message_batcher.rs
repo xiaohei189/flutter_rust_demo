@@ -12,6 +12,17 @@ const LOW_LOAD_WINDOW: Duration = Duration::from_secs(10);
 const LOW_LOAD_MESSAGE_LIMIT: usize = 20;
 const HIGH_LOAD_MESSAGE_LIMIT: usize = 200;
 
+/// 聚合多批 operationID 为单个标识，对齐 Go doBatch 的 Batch_op1$op2$op3 格式
+pub fn join_operation_ids(operation_ids: &[String]) -> String {
+    if operation_ids.is_empty() {
+        return "unknown".to_string();
+    }
+    if operation_ids.len() == 1 {
+        return operation_ids[0].clone();
+    }
+    format!("Batch_{}", operation_ids.join("$"))
+}
+
 #[derive(Clone, Debug)]
 struct ArrivalRecord {
     ts: Instant,
@@ -82,6 +93,7 @@ impl MessageBatcher {
     }
 
     /// 入队一批推送消息，自适应聚合后分发
+    #[tracing::instrument(level = "debug", skip(self, batch), fields(operationID = %operation_id))]
     pub async fn enqueue(&self, operation_id: String, batch: PushMessages) {
         let mut inner = self.inner.lock().await;
         let now = Instant::now();

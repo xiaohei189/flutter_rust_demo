@@ -5,8 +5,22 @@ use crate::infra::database::pool::create_pool;
 use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
+
+// 操作 ID task-local（对齐 Go context.WithValue("operationID")）
+// 同 task 内跨 await 自动继承，跨 tokio::spawn/channel 断开
+tokio::task_local! {
+    pub(crate) static OPERATION_ID: String;
+}
+
+static OP_ID_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+/// 生成操作 ID，格式: {prefix}_{seq}
+pub fn gen_operation_id(prefix: &str) -> String {
+    format!("{}_{}", prefix, OP_ID_COUNTER.fetch_add(1, Ordering::SeqCst))
+}
 
 /// SDK 运行时上下文，管理所有依赖组件的生命周期
 pub struct RuntimeContext {
@@ -67,7 +81,7 @@ impl RuntimeContext {
         let http_client = Arc::new(HttpApiClient::new(
             config.api_base_url.clone(),
             config.token.clone(),
-            operation_id.clone(),
+            "sdk_init".to_string(),
         ));
 
         Ok(Self {

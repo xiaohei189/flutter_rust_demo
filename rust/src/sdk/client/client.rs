@@ -164,6 +164,7 @@ impl OpenIMClient {
     }
 
     /// 连接到服务器
+    #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id))]
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
         self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
         self.spawn_push_message_handler();
@@ -180,7 +181,8 @@ impl OpenIMClient {
         let cancel_token = self.context.cancel_token.clone();
 
         // 内部消息通道：对齐 Go SDK 直接调用模式，WS 消息不走 EventBus
-        let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<PushMessages>();
+        // 携带 trace context 以便跨 task 传递
+        let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<(PushMessages, tracing::Span)>();
         self.connection.set_push_sender(push_tx);
 
         // 对齐 Go SDK：Connected 事件直接回调同步，不走 EventBus
@@ -231,8 +233,9 @@ impl OpenIMClient {
                         }
                     }
                     push_batch = push_rx.recv() => {
-                        if let Some(batch) = push_batch {
+                        if let Some((batch, span)) = push_batch {
                             let mut has_message_changes = false;
+                            let _enter = span.enter();
 
                             for (conv_id, pull_msgs) in &batch.msgs {
                                 let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
@@ -293,12 +296,14 @@ impl OpenIMClient {
     }
 
     /// 断开连接
+    #[tracing::instrument(level = "info", skip(self))]
     pub async fn disconnect(&self) {
         self.context.shutdown();
         info!("SDK 已断开连接");
     }
 
     /// 登录
+    #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id))]
     pub async fn login(&self, user_id: &str, token: &str) -> Result<()> {
         info!("[SDK] 开始登录，user_id={}", user_id);
         
@@ -397,6 +402,7 @@ impl OpenIMClient {
     }
 
     /// 登出
+    #[tracing::instrument(level = "info", skip(self))]
     pub async fn logout(&self) -> Result<()> {
         self.user.clear().await;
         self.friend.clear().await;
@@ -410,16 +416,19 @@ impl OpenIMClient {
     }
 
     /// 获取事件总线（内部使用）
+    #[tracing::instrument(level = "info", skip(self))]
     pub fn event_bus(&self) -> Arc<EventBus> {
         self.event_bus.clone()
     }
 
     /// 获取当前登录用户 ID
+    #[tracing::instrument(level = "info", skip(self))]
     pub fn login_user_id(&self) -> String {
         self.context.get_user_id()
     }
 
     /// 同步所有会话的 Hash Read Seq（用于前台唤醒）
+    #[tracing::instrument(level = "info", skip(self))]
     pub async fn sync_all_conversation_hash_read_seqs(&self) -> Result<()> {
         self.conversation_syncer
             .sync_conversation_hash_read_seqs(&self.message_handler.max_seq_recorder)
@@ -430,12 +439,14 @@ impl OpenIMClient {
     ///
     /// 版本号持久化到数据库，重连后无需全量同步。
     /// 收到会话变更通知时调用。
+    #[tracing::instrument(level = "info", skip(self))]
     pub async fn incr_sync_conversations(&self) -> Result<()> {
         self.conversation_syncer.sync_incremental_with_lock().await?;
         Ok(())
     }
 
     /// 获取连接状态
+    #[tracing::instrument(level = "info", skip(self))]
     pub async fn get_connection_state(&self) -> crate::core::connection::manager::ConnectionState {
         self.connection.get_state().await
     }

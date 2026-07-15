@@ -34,6 +34,7 @@ impl OpenIMClient {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     pub async fn get_conversations(&self) -> std::result::Result<Vec<LocalConversation>, SdkError> {
         let dao = self.conversation.dao();
         let conversations = dao.get_all().await?;
@@ -54,27 +55,33 @@ impl OpenIMClient {
         Ok(conversations)
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     pub async fn get_conversation(&self, conversation_id: &str) -> std::result::Result<Option<LocalConversation>, SdkError> {
         let dao = self.conversation.dao();
         dao.get_by_id(conversation_id).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id, unread_count = %unread_count))]
     pub async fn update_conversation_unread_count(&self, conversation_id: &str, unread_count: i64) -> Result<()> {
         self.conversation.update_unread_count(conversation_id, unread_count as i32).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id, is_pinned = %is_pinned))]
     pub async fn set_conversation_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
         self.conversation.set_pinned(conversation_id, is_pinned).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
         self.conversation.delete_conversation(conversation_id).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     pub async fn set_conversation_draft(&self, conversation_id: &str, draft_text: &str) -> Result<()> {
         self.conversation.set_draft(conversation_id, draft_text).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id, is_private = %is_private))]
     pub async fn set_conversation_private(&self, conversation_id: &str, is_private: bool) -> Result<()> {
         self.conversation.set_private_chat(conversation_id, is_private).await
     }
@@ -87,11 +94,13 @@ impl OpenIMClient {
         self.conversation.clear_draft(conversation_id).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id, session_type = %session_type))]
     pub async fn mark_conversation_message_as_read(&self, conversation_id: String, session_type: i32) -> Result<()> {
         self.message_service.mark_conversation_message_as_read(conversation_id, session_type).await
     }
 
     /// 标记所有会话消息已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
+    #[tracing::instrument(skip_all)]
     pub async fn mark_all_conversation_as_read(&self) -> Result<()> {
         self.message_service.mark_all_conversation_as_read().await
     }
@@ -131,6 +140,7 @@ impl OpenIMClient {
     /// 隐藏会话（对齐 Go SDK `HideConversation`）
     ///
     /// 重置会话的未读数、最新消息、草稿等，使其不出现在会话列表中。
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     pub async fn hide_conversation(
         &self,
         conversation_id: &str,
@@ -142,6 +152,7 @@ impl OpenIMClient {
     ///
     /// 根据 conversation_id 查找已有会话，更新传入的字段，然后 upsert。
     /// 只更新非空/非默认的字段。
+    #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     pub async fn set_conversation(
         &self,
         conversation_id: &str,

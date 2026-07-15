@@ -181,6 +181,7 @@ async fn insert_message_before_send_impl(
 }
 
 /// 执行消息发送的核心逻辑（独立函数版本，供队列调用）
+#[tracing::instrument(skip_all, fields(client_msg_id = %msg.client_msg_id))]
 async fn do_send_message_impl(
     context: Arc<RuntimeContext>,
     connection: Arc<ConnectionManager>,
@@ -268,12 +269,14 @@ async fn do_send_message_impl(
 }
 
 impl OpenIMClient {
+    #[tracing::instrument(skip_all, fields(source_id = %source_id))]
     pub async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgData, SdkError> {
         self.send_msg_inner(msg, source_id, offline_push_info, false).await
     }
 
     /// 发送仅在线消息（isOnlineOnly）：不持久化、不同步、不更新会话
     /// 对齐 Go SDK SendMessage 的 isOnlineOnly=true 分支
+    #[tracing::instrument(skip_all, fields(source_id = %source_id))]
     pub async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgData, SdkError> {
         self.send_msg_inner(msg, source_id, None, true).await
     }
@@ -340,24 +343,28 @@ impl OpenIMClient {
         Ok(result)
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_text_message(text);
         msg.session_type = session_type;
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_markdown_message(text);
         msg.session_type = session_type;
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_advanced_text_message(text, entities);
         msg.session_type = session_type;
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let upload_result = self.file_uploader.upload_image(file_path, None).await
             .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
@@ -374,6 +381,7 @@ impl OpenIMClient {
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_image_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgData, SdkError> {
         let upload_result = self.file_uploader.upload_image(file_path, Some(progress.clone())).await
             .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
@@ -390,6 +398,7 @@ impl OpenIMClient {
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let path = std::path::Path::new(file_path);
         let file_name = path.file_name()
@@ -411,6 +420,7 @@ impl OpenIMClient {
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_file_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgData, SdkError> {
         let path = std::path::Path::new(file_path);
         let file_name = path.file_name()
@@ -433,6 +443,7 @@ impl OpenIMClient {
     }
 
     /// 发送语音消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_sound_message(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgData, SdkError> {
         let path = std::path::Path::new(file_path);
         let file_name = path.file_name()
@@ -454,6 +465,7 @@ impl OpenIMClient {
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_sound_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgData, SdkError> {
         let path = std::path::Path::new(file_path);
         let file_name = path.file_name()
@@ -476,6 +488,7 @@ impl OpenIMClient {
     }
 
     /// 发送视频消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_video_message(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgData, SdkError> {
         // 上传视频文件
         let v_path = std::path::Path::new(video_path);
@@ -510,6 +523,7 @@ impl OpenIMClient {
     }
 
     /// 发送视频消息（带上传进度回调，进度跟踪主视频文件）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_video_message_with_progress(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgData, SdkError> {
         // 上传视频文件（带进度回调）
         let v_path = std::path::Path::new(video_path);
@@ -544,6 +558,7 @@ impl OpenIMClient {
     }
 
     /// 发送 @ 消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_at_text_message(&self, text: &str, at_user_ids: Vec<String>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let at_users_info: Vec<crate::domain::model::msg_struct::AtInfo> = at_user_ids.iter().map(|uid| {
             crate::domain::model::msg_struct::AtInfo {
@@ -557,6 +572,7 @@ impl OpenIMClient {
     }
 
     /// 发送自定义消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_custom_message(&self, data: &str, desc: &str, extension: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_custom_message(data, desc, extension);
         msg.session_type = session_type;
@@ -564,6 +580,7 @@ impl OpenIMClient {
     }
 
     /// 发送引用消息（对齐 Go SDK `CreateQuoteMessage` + `SendMessage`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_quote_message(&self, text: &str, quote: crate::domain::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_quote_message(text, Box::new(quote));
         msg.session_type = session_type;
@@ -571,6 +588,7 @@ impl OpenIMClient {
     }
 
     /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_merger_message(&self, title: &str, summary_list: Vec<String>, context_list: Vec<MsgStruct>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_merger_message(context_list, title, summary_list);
         msg.session_type = session_type;
@@ -578,6 +596,7 @@ impl OpenIMClient {
     }
 
     /// 发送名片消息（对齐 Go SDK `CreateCardMessage` + `SendMessage`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_card_message(&self, user_id: &str, nickname: &str, face_url: &str, ex: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let elem = crate::domain::model::msg_struct::CardElem {
             user_id: user_id.to_string(),
@@ -591,6 +610,7 @@ impl OpenIMClient {
     }
 
     /// 发送位置消息（对齐 Go SDK `CreateLocationMessage` + `SendMessage`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_location_message(&self, description: &str, longitude: f64, latitude: f64, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_location_message(description, longitude, latitude);
         msg.session_type = session_type;
@@ -598,6 +618,7 @@ impl OpenIMClient {
     }
 
     /// 发送表情消息（对齐 Go SDK `CreateFaceMessage` + `SendMessage`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_face_message(&self, index: i32, data: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_face_message(index, data);
         msg.session_type = session_type;
@@ -605,6 +626,7 @@ impl OpenIMClient {
     }
 
     /// 转发消息（对齐 Go SDK `ForwardMessage`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn forward_message(&self, msg_data: MsgData, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg_struct = MsgStruct::from(&msg_data);
         msg_struct.session_type = session_type;
@@ -612,6 +634,7 @@ impl OpenIMClient {
     }
 
     /// 从 URL 创建图片消息（对齐 Go SDK `CreateImageMessage(sourcePath="")`）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_image_message_from_url(&self, source_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let picture = crate::domain::model::msg_struct::PictureBaseInfo {
             url: source_url.to_string(),
@@ -623,6 +646,7 @@ impl OpenIMClient {
     }
 
     /// 从 URL 创建语音消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_sound_message_from_url(&self, source_url: &str, duration: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let elem = crate::domain::model::msg_struct::SoundElem {
             source_url: source_url.to_string(),
@@ -635,6 +659,7 @@ impl OpenIMClient {
     }
 
     /// 从 URL 创建视频消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_video_message_from_url(&self, source_url: &str, duration: i64, snapshot_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let elem = crate::domain::model::msg_struct::VideoElem {
             video_url: source_url.to_string(),
@@ -648,6 +673,7 @@ impl OpenIMClient {
     }
 
     /// 从 URL 创建文件消息
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_file_message_from_url(&self, source_url: &str, file_name: &str, file_size: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let elem = crate::domain::model::msg_struct::FileElem {
             source_url: source_url.to_string(),
@@ -661,12 +687,14 @@ impl OpenIMClient {
     }
 
     /// 发送分段 @ 消息（对齐 Go SDK `CreateAtTextMessage` 带 quote_msg）
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_at_text_message_with_quote(&self, text: &str, at_user_list: Vec<String>, at_users_info: Vec<crate::domain::model::msg_struct::AtInfo>, quote_msg: Option<Box<MsgStruct>>, source_id: &str, session_type: i32) -> std::result::Result<MsgData, SdkError> {
         let mut msg = MsgStruct::create_at_text_message(text, at_user_list, at_users_info, quote_msg);
         msg.session_type = session_type;
         self.send_msg(msg, source_id, None).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, count = %req.count))]
     pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
 
         let start_time = if req.start_client_msg_id.is_empty() {
@@ -700,6 +728,7 @@ impl OpenIMClient {
         })
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, seq = %req.seq))]
     pub async fn revoke_message(&self, req: RevokeMessageReq) -> Result<()> {
         self.message_service.revoke_message(
             req.conversation_id,
@@ -709,6 +738,7 @@ impl OpenIMClient {
         ).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id))]
     pub async fn delete_messages(&self, req: DeleteMessagesReq) -> Result<()> {
         self.message_service.delete_messages(
             req.conversation_id,
@@ -716,6 +746,7 @@ impl OpenIMClient {
         ).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id))]
     pub async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()> {
         self.message_service.mark_messages_as_read(
             req.conversation_id,
@@ -725,6 +756,7 @@ impl OpenIMClient {
         ).await
     }
 
+    #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, keyword = %req.keyword))]
     pub async fn search_local_messages(&self, req: SearchMessagesReq) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
         self.message_service.search_local_messages(
             req.conversation_id,
@@ -737,6 +769,7 @@ impl OpenIMClient {
     ///
     /// Typing 消息不入库、不更新会话、不计未读、不触发离线推送。
     /// 通过 WS RPC 直接发送，设置 options 全部为 false。
+    #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type, focus = %focus))]
     pub async fn send_typing(&self, source_id: &str, session_type: i32, focus: bool) -> std::result::Result<(), SdkError> {
         let send_id = self.context.user_id.lock().unwrap().clone();
         let platform_id = self.context.config.platform_id;

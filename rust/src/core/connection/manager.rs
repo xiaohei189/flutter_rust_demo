@@ -63,7 +63,8 @@ pub struct ConnectionManager {
     /// 推送消息批处理器（对齐 Go SDK message_batcher.go）
     message_batcher: MessageBatcher,
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
-    push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>>,
+    /// 携带 Span 以便跨 task 传递 trace context
+    push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>>>>,
     pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConnectionEvent>>>>,
     pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
@@ -82,14 +83,16 @@ impl ConnectionManager {
     }
 
     pub fn new(cancel_token: CancellationToken) -> Self {
-        let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<PushMessages>>>> = Arc::new(std::sync::Mutex::new(None));
+        let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>>>> = Arc::new(std::sync::Mutex::new(None));
         let push_tx_clone = push_tx.clone();
         let compressor = GzipCompressor::new();
         let message_batcher = MessageBatcher::new(move |_operation_ids, batch| {
             // 聚合后通过内部通道发送（对齐 Go SDK 直接调用，不走 EventBus）
+            // 携带当前 span context 以便跨 task 传递
             if !batch.msgs.is_empty() || !batch.notification_msgs.is_empty() {
                 if let Some(tx) = push_tx_clone.lock().unwrap().as_ref() {
-                    let _ = tx.send(batch);
+                    let span = tracing::Span::current();
+                    let _ = tx.send((batch, span));
                 }
             }
         });
@@ -115,10 +118,11 @@ impl ConnectionManager {
     }
 
     /// 设置内部消息通道发送端（由 client.rs 在 login 后调用）
-    pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<PushMessages>) {
+    pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>) {
         *self.push_tx.lock().unwrap() = Some(tx);
     }
 
+    #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id, platform_id = platform_id))]
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str, platform_id: i32) -> Result<()> {
         // 关闭已有连接（热重启或重复登录场景），避免旧连接残留导致新连接被踢
         {
@@ -590,6 +594,7 @@ impl ConnectionManager {
         });
     }
 
+    #[tracing::instrument(level = "debug", skip(self, data), fields(req_identifier = req_identifier))]
     pub async fn send_rpc<T: prost::Message, R: prost::Message + Default>(&self, req_identifier: i32, data: &T) -> Result<R> {
         let data_bytes = data.encode_to_vec();
 
@@ -597,6 +602,8 @@ impl ConnectionManager {
         let token = self.token.read().await.clone();
         let send_id = self.send_id.read().await.clone();
         let operation_id = format!("op_{}_{}", req_identifier, msg_incr);
+
+        tracing::Span::current().record("operationID", &operation_id);
 
         let req = OpenIMReq {
             req_identifier,
