@@ -4,14 +4,24 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import '../infra/logger/config.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-// These functions are ignored because they are not marked as `pub`: `get_log_dir`
 
 /// 设置日志目录（应在 init_logger 前调用）
 Future<void> setLogDirectory({required String path}) =>
     RustLib.instance.api.crateApiSimpleSetLogDirectory(path: path);
 
-/// 初始化 Rust 日志系统（同时输出到文件和控制台）
+/// 初始化 Rust 日志系统（兼容旧接口，内部委托给 init_otel_subscriber）
 Future<void> initLogger({required String logLevel}) =>
     RustLib.instance.api.crateApiSimpleInitLogger(logLevel: logLevel);
+
+/// 初始化日志系统（完整配置）
+Future<void> initLoggerV2({required LogConfig config}) =>
+    RustLib.instance.api.crateApiSimpleInitLoggerV2(config: config);
+
+/// 设置是否打印 span 进入/退出事件（应在 init_logger 前调用）
+///
+/// 启用后，每个 #[tracing::instrument] 注解的方法在进入和退出时都会输出日志，
+/// 即使方法内部没有手动调用 info!() 等宏。
+Future<void> setLogSpanEvents({required bool enabled}) =>
+    RustLib.instance.api.crateApiSimpleSetLogSpanEvents(enabled: enabled);

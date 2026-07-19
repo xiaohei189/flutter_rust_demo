@@ -173,3 +173,21 @@ pub async fn init_logger_v2(config: LogConfig) -> anyhow::Result<()> {
     *initialized = true;
     Ok(())
 }
+
+/// 设置是否打印 span 进入/退出事件（应在 init_logger 前调用）
+///
+/// 启用后，每个 #[tracing::instrument] 注解的方法在进入和退出时都会输出日志，
+/// 即使方法内部没有手动调用 info!() 等宏。
+#[flutter_rust_bridge::frb]
+pub fn set_log_span_events(enabled: bool) {
+    let config = LOG_CONFIG.get();
+    if let Some(c) = config {
+        let mut updated = c.clone();
+        updated.is_log_span_events = enabled;
+        let _ = LOG_CONFIG.set(updated);
+    } else {
+        let mut c = LogConfig::default();
+        c.is_log_span_events = enabled;
+        let _ = LOG_CONFIG.set(c);
+    }
+}

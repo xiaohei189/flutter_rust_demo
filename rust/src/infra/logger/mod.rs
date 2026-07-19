@@ -9,7 +9,7 @@
 //! - `sdk_info!` / `sdk_debug!` / `sdk_warn!` / `sdk_error!`
 //! - `sdk_span!`
 
-mod config;
+pub mod config;
 mod otel;
 mod macros_;
 

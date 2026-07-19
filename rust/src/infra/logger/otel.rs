@@ -7,32 +7,307 @@ use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::trace::TracerProvider;
 use std::collections::HashMap;
 use std::fmt;
+use std::io::Write;
+use std::sync::Mutex;
+use std::time::Instant;
 use tracing::Span;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_subscriber::fmt::MakeWriter;
+use tracing_subscriber::fmt::FormatEvent;
+use tracing_subscriber::fmt::FmtContext;
 use tracing_subscriber::fmt::format::Writer;
-use tracing_subscriber::fmt::{FmtContext, FormatEvent};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Registry;
+use tracing_subscriber::Layer;
 
 use super::config::LogConfig;
 
-/// 自定义 FormatEvent：手动控制每一行输出（去掉 target/module path，强制文件:行号）
+// ============================================================================
+// CompactLayer — 参考 JSON formatter 实现，使用 Layer trait 精确控制 span 生命周期
+// ============================================================================
+
+/// 每个 span 的运行时状态
+struct SpanState {
+    name: String,
+    target: String,
+    file: Option<String>,
+    line: Option<u32>,
+    fields: String,
+    trace_id: Option<String>,
+    span_id: Option<String>,
+    start: Instant,
+    /// 是否已输出过 enter 日志（async fn 多次 poll 去重）
+    enter_emitted: bool,
+}
+
+/// 自定义 Layer：手动控制紧凑格式输出
 ///
-/// 格式：
-///   `<ts> <LEVEL> <span_name>{trace_id=... span_id=... field=val}: <message> <file:line>`
+/// 输出格式：
+///   `<ts> <LEVEL> <file:line> <span_name>{fields, trace_id, span_id}: <message>`
 ///
-/// 与之前 `TraceIdFormatter<F>` 的关键区别：
-/// - **完全不用 `Format::<Full, _>`**，自己写每一段，避免 `Full` 模式输出 target
-/// - **不输出 target/module path**（原 `Full` 会输出 `rust_lib_...::manager`）
-/// - **强制输出文件:行号**（直接读 `event.metadata()`）
-/// - **按 `with_ansi` 决定是否给级别加颜色**（formatter 自管 ANSI）
-struct CompactFormatter {
+/// 与 `FormatEvent` 方案的关键区别：
+/// - 实现 `Layer` trait，直接挂钩 `on_new_span` / `on_enter` / `on_close` / `on_event`
+/// - `on_enter` 时从 OTel 读取 trace_id 并缓存到 `SpanState`
+/// - `on_close` 时从缓存读取 trace_id（不受 OTel layer 清理影响）
+/// - `enter_emitted` 标志天然去重 async fn 多次 poll
+/// - 不依赖 `fmt::Layer` 的 span 事件合成，事件类型天然可区分
+pub struct CompactLayer<W> {
+    make_writer: W,
+    with_ansi: bool,
+    log_span_events: bool,
+    spans: Mutex<HashMap<u64, SpanState>>,
+}
+
+impl<W: Clone> Clone for CompactLayer<W> {
+    fn clone(&self) -> Self {
+        Self {
+            make_writer: self.make_writer.clone(),
+            with_ansi: self.with_ansi,
+            log_span_events: self.log_span_events,
+            spans: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+impl<W> CompactLayer<W> {
+    pub fn new(make_writer: W, with_ansi: bool, log_span_events: bool) -> Self {
+        Self {
+            make_writer,
+            with_ansi,
+            log_span_events,
+            spans: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+// ANSI 颜色码
+const GREY: &str = "\x1b[90m";
+const CYAN: &str = "\x1b[36m";
+const DIM: &str = "\x1b[2m";
+const RESET: &str = "\x1b[0m";
+
+impl<S, W> Layer<S> for CompactLayer<W>
+where
+    S: tracing::Subscriber + for<'a> LookupSpan<'a>,
+    W: for<'writer> MakeWriter<'writer> + 'static,
+{
+    fn on_new_span(
+        &self,
+        attrs: &tracing::span::Attributes<'_>,
+        id: &tracing::span::Id,
+        _ctx: tracing_subscriber::layer::Context<'_, S>,
+    ) {
+        let meta = attrs.metadata();
+        let mut fields = String::new();
+        attrs.record(&mut FieldVisitor(&mut fields));
+
+        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+        spans.insert(
+            id.into_u64(),
+            SpanState {
+                name: meta.name().to_string(),
+                target: meta.target().to_string(),
+                file: meta.file().map(|s| s.to_string()),
+                line: meta.line(),
+                fields,
+                trace_id: None,
+                span_id: None,
+                start: Instant::now(),
+                enter_emitted: false,
+            },
+        );
+    }
+
+    fn on_enter(&self, id: &tracing::span::Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
+        let span_id_u64 = id.into_u64();
+
+        // 在锁内完成状态更新，克隆需要的数据，锁外执行 IO
+        let enter_data = {
+            let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(state) = spans.get_mut(&span_id_u64) {
+                // 首次 enter 时读取 OTel trace_id / span_id 并缓存
+                if state.trace_id.is_none() {
+                    if let Some(span) = ctx.span(id) {
+                        if let Some(otel) = span.extensions().get::<tracing_opentelemetry::OtelData>() {
+                            if let (Some(tid), Some(sid)) = (otel.builder.trace_id, otel.builder.span_id) {
+                                state.trace_id = Some(tid.to_string());
+                                state.span_id = Some(sid.to_string());
+                            }
+                        }
+                    }
+                    state.start = Instant::now();
+                }
+
+                if self.log_span_events && !state.enter_emitted {
+                    state.enter_emitted = true;
+                    Some((
+                        state.name.clone(),
+                        state.fields.clone(),
+                        state.trace_id.clone(),
+                        state.span_id.clone(),
+                        state.file.clone(),
+                        state.line,
+                    ))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }; // 锁释放
+
+        if let Some((name, fields, trace_id, span_id, file, line)) = enter_data {
+            let ts = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
+            let mut writer = self.make_writer.make_writer();
+            let _ = write_span_event(
+                &mut writer,
+                self.with_ansi,
+                &ts,
+                "INFO ",
+                file.as_deref(),
+                line,
+                &name,
+                &fields,
+                trace_id.as_deref(),
+                span_id.as_deref(),
+                "enter",
+            );
+        }
+    }
+
+    fn on_close(&self, id: tracing::span::Id, _ctx: tracing_subscriber::layer::Context<'_, S>) {
+        let span_id_u64 = id.into_u64();
+
+        // 在锁内完成状态移除，克隆数据，锁外执行 IO
+        let close_data = {
+            let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+            spans.remove(&span_id_u64).and_then(|state| {
+                if self.log_span_events {
+                    let busy = state.start.elapsed();
+                    Some((
+                        state.name,
+                        state.fields,
+                        state.trace_id,
+                        state.span_id,
+                        state.file,
+                        state.line,
+                        busy,
+                    ))
+                } else {
+                    None
+                }
+            })
+        }; // 锁释放
+
+        if let Some((name, fields, trace_id, span_id, file, line, busy)) = close_data {
+            let ts = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
+            let mut writer = self.make_writer.make_writer();
+            let msg = format!("close time.busy={:.2}ms", busy.as_secs_f64() * 1000.0);
+            let _ = write_span_event(
+                &mut writer,
+                self.with_ansi,
+                &ts,
+                "INFO ",
+                file.as_deref(),
+                line,
+                &name,
+                &fields,
+                trace_id.as_deref(),
+                span_id.as_deref(),
+                &msg,
+            );
+        }
+    }
+
+    fn on_event(&self, _event: &tracing::Event<'_>, _ctx: tracing_subscriber::layer::Context<'_, S>) {
+        // 普通事件由 fmt::Layer 处理，CompactLayer 只负责 span 生命周期事件
+    }
+}
+
+// ============================================================================
+// 辅助函数
+// ============================================================================
+
+/// 写 span 生命周期事件（enter / close）
+fn write_span_event(
+    writer: &mut dyn Write,
+    with_ansi: bool,
+    ts: &str,
+    level: &str,
+    file: Option<&str>,
+    line: Option<u32>,
+    span_name: &str,
+    fields: &str,
+    trace_id: Option<&str>,
+    span_id: Option<&str>,
+    message: &str,
+) -> std::io::Result<()> {
+    // 1) 时间戳
+    if with_ansi {
+        write!(writer, "{}{}{} ", GREY, ts, RESET)?;
+    } else {
+        write!(writer, "{} ", ts)?;
+    }
+
+    // 2) 级别
+    if with_ansi {
+        write!(writer, "\x1b[32m{}{}\x1b[0m ", level, RESET)?;
+    } else {
+        write!(writer, "{} ", level)?;
+    }
+
+    // 3) 文件:行号
+    if let (Some(f), Some(l)) = (file, line) {
+        let f = shorten_cargo_path(f);
+        if with_ansi {
+            write!(writer, "{}{}:{}{} ", GREY, f, l, RESET)?;
+        } else {
+            write!(writer, "{}:{} ", f, l)?;
+        }
+    }
+
+    // 4) span_name{fields, trace_id, span_id}
+    if with_ansi {
+        write!(writer, "{}{}{}", CYAN, span_name, RESET)?;
+    } else {
+        write!(writer, "{}", span_name)?;
+    }
+
+    let mut inner = String::new();
+    if !fields.is_empty() {
+        inner.push_str(&fields.replace(' ', ", "));
+    }
+    if let (Some(tid), Some(sid)) = (trace_id, span_id) {
+        if !inner.is_empty() {
+            inner.push_str(", ");
+        }
+        inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
+    }
+
+    if !inner.is_empty() {
+        if with_ansi {
+            write!(writer, "{}{{{}}}{}", DIM, inner, RESET)?;
+        } else {
+            write!(writer, "{{{}}}", inner)?;
+        }
+    }
+    write!(writer, " ")?;
+
+    // 5) 消息
+    writeln!(writer, "{}", message)?;
+
+    Ok(())
+}
+
+/// 事件格式化器：只负责普通事件（span 事件由 CompactLayer 处理）
+struct EventFormatter {
     with_ansi: bool,
 }
 
-impl<S, N> FormatEvent<S, N> for CompactFormatter
+impl<S, N> FormatEvent<S, N> for EventFormatter
 where
     S: tracing::Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> tracing_subscriber::fmt::FormatFields<'a> + 'static,
@@ -43,12 +318,6 @@ where
         mut writer: Writer<'_>,
         event: &tracing::Event<'_>,
     ) -> fmt::Result {
-        // 颜色码
-        const GREY: &str = "\x1b[90m";  // 暗灰：时间、文件
-        const CYAN: &str = "\x1b[36m";  // 青色：span 链
-        const DIM: &str = "\x1b[2m";    // 暗色：trace/span
-        const RESET: &str = "\x1b[0m";
-
         // 1) 时间戳
         let ts = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ");
         if self.with_ansi {
@@ -72,7 +341,7 @@ where
             write!(writer, "{:<5} ", *level)?;
         }
 
-        // 3) 文件:行号（紧跟 level）
+        // 3) 文件:行号
         if let (Some(file), Some(line)) = (event.metadata().file(), event.metadata().line()) {
             let file = shorten_cargo_path(file);
             if self.with_ansi {
@@ -82,12 +351,7 @@ where
             }
         }
 
-        // 4) span_name{fields, trace_id, span_id}
-        let span = Span::current();
-        let cx = span.context();
-        let otel_span = cx.span();
-        let sc = otel_span.span_context();
-
+        // 4) span 链（从 event scope 读取）
         if let Some(scope) = ctx.event_scope() {
             for span_ref in scope.from_root() {
                 let name = span_ref.metadata().name();
@@ -97,50 +361,70 @@ where
                     .map(|f| f.as_str())
                     .unwrap_or("");
 
+                let otel_info: Option<(String, String)> = extensions
+                    .get::<tracing_opentelemetry::OtelData>()
+                    .and_then(|data| {
+                        match (data.builder.trace_id, data.builder.span_id) {
+                            (Some(tid), Some(sid)) => Some((tid.to_string(), sid.to_string())),
+                            _ => None,
+                        }
+                    });
+
+                let fallback_sc = {
+                    let span = Span::current();
+                    let cx = span.context();
+                    let otel_span = cx.span();
+                    otel_span.span_context().clone()
+                };
+
                 if self.with_ansi {
                     write!(writer, "{}{}{}", CYAN, name, RESET)?;
-                    // 构建 {fields, trace_id, span_id}
                     let mut inner = String::new();
                     if !fields_str.is_empty() {
-                        // fields_str 是 "key1=v1 key2=v2" 格式，转为 "key1=v1, key2=v2"
                         inner.push_str(&fields_str.replace(' ', ", "));
                     }
-                    if sc.is_valid() {
+                    if let Some((ref tid, ref sid)) = otel_info {
                         if !inner.is_empty() {
                             inner.push_str(", ");
                         }
-                        inner.push_str(&format!("trace_id={}, span_id={}", sc.trace_id(), sc.span_id()));
+                        inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
+                    } else if fallback_sc.is_valid() {
+                        if !inner.is_empty() {
+                            inner.push_str(", ");
+                        }
+                        inner.push_str(&format!("trace_id={}, span_id={}", fallback_sc.trace_id(), fallback_sc.span_id()));
                     }
                     if !inner.is_empty() {
                         write!(writer, "{}{{{}}}{}", DIM, inner, RESET)?;
                     }
                     write!(writer, " ")?;
-                } else if fields_str.is_empty() && !sc.is_valid() {
-                    write!(writer, "{} ", name)?;
                 } else {
-                    write!(writer, "{}", name)?;
-                    let mut inner = String::new();
-                    if !fields_str.is_empty() {
-                        inner.push_str(&fields_str.replace(' ', ", "));
-                    }
-                    if sc.is_valid() {
-                        if !inner.is_empty() {
-                            inner.push_str(", ");
+                    let has_otel = otel_info.is_some() || fallback_sc.is_valid();
+                    if fields_str.is_empty() && !has_otel {
+                        write!(writer, "{} ", name)?;
+                    } else {
+                        write!(writer, "{}", name)?;
+                        let mut inner = String::new();
+                        if !fields_str.is_empty() {
+                            inner.push_str(&fields_str.replace(' ', ", "));
                         }
-                        inner.push_str(&format!("trace_id={}, span_id={}", sc.trace_id(), sc.span_id()));
+                        if let Some((ref tid, ref sid)) = otel_info {
+                            if !inner.is_empty() {
+                                inner.push_str(", ");
+                            }
+                            inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
+                        } else if fallback_sc.is_valid() {
+                            if !inner.is_empty() {
+                                inner.push_str(", ");
+                            }
+                            inner.push_str(&format!("trace_id={}, span_id={}", fallback_sc.trace_id(), fallback_sc.span_id()));
+                        }
+                        if !inner.is_empty() {
+                            write!(writer, "{{{}}}", inner)?;
+                        }
+                        write!(writer, " ")?;
                     }
-                    if !inner.is_empty() {
-                        write!(writer, "{{{}}}", inner)?;
-                    }
-                    write!(writer, " ")?;
                 }
-            }
-        } else if sc.is_valid() {
-            // 没有 span，但有 trace_id
-            if self.with_ansi {
-                write!(writer, "{}{{trace_id={}, span_id={}}}{} ", DIM, sc.trace_id(), sc.span_id(), RESET)?;
-            } else {
-                write!(writer, "{{trace_id={}, span_id={}}} ", sc.trace_id(), sc.span_id())?;
             }
         }
 
@@ -148,8 +432,26 @@ where
         ctx.field_format().format_fields(writer.by_ref(), event)?;
 
         writeln!(writer)?;
-
         Ok(())
+    }
+}
+
+/// 记录 span 字段的 visitor
+struct FieldVisitor<'a>(&'a mut String);
+
+impl<'a> tracing::field::Visit for FieldVisitor<'a> {
+    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn fmt::Debug) {
+        if !self.0.is_empty() {
+            self.0.push(' ');
+        }
+        self.0.push_str(&format!("{}={:?}", field.name(), value));
+    }
+
+    fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+        if !self.0.is_empty() {
+            self.0.push(' ');
+        }
+        self.0.push_str(&format!("{}={}", field.name(), value));
     }
 }
 
@@ -184,6 +486,10 @@ fn shorten_cargo_path(file: &str) -> String {
     }
     file.to_string()
 }
+
+// ============================================================================
+// 公共 API
+// ============================================================================
 
 /// 从当前 tracing span 的 OTel 上下文中提取 trace_id 字符串
 pub fn extract_trace_id() -> String {
@@ -241,8 +547,6 @@ pub fn context_from_traceparent(traceparent: &str) -> Context {
 
 /// 初始化 OTel subscriber（文件 + OTel + 可选控制台）
 pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
-    use tracing_subscriber::fmt::format::FmtSpan;
-
     // --- EnvFilter ---
     let mut env_filter = tracing_subscriber::EnvFilter::builder()
         .with_default_directive(config.level_filter().into())
@@ -260,17 +564,21 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     let (non_blocking_file, _file_guard) = tracing_appender::non_blocking(file_appender);
     std::mem::forget(_file_guard);
 
-    let file_layer = tracing_subscriber::fmt::layer()
-        .with_writer(non_blocking_file)
+    // 事件格式化：委托给 fmt::Layer（线程安全、久经测试）
+    let file_layer_fmt = tracing_subscriber::fmt::layer()
+        .with_writer(non_blocking_file.clone())
         .with_ansi(false)
-        .event_format(CompactFormatter { with_ansi: false });
+        .with_span_events(FmtSpan::NONE);
+
+    // span 事件：由 CompactLayer 处理（enter/close）
+    let file_layer_span = CompactLayer::new(non_blocking_file, false, config.is_log_span_events);
 
     // --- OTel 层 ---
     let provider = TracerProvider::builder().build();
     let tracer = provider.tracer("openim-rust-sdk");
     let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
 
-    // --- 控制台层（禁用时写入 sink） ---
+    // --- 控制台层 ---
     #[cfg(not(target_os = "android"))]
     let (console_writer, _console_guard) = if config.is_log_standard_output {
         tracing_appender::non_blocking(std::io::stdout())
@@ -287,19 +595,27 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
         nc
     };
 
-    let console_layer = tracing_subscriber::fmt::layer()
-        .with_writer(console_writer)
+    let console_layer_fmt = tracing_subscriber::fmt::layer()
+        .with_writer(console_writer.clone())
         .with_ansi(!cfg!(target_os = "android"))
-        .event_format(CompactFormatter {
-            with_ansi: !cfg!(target_os = "android"),
-        });
+        .with_span_events(FmtSpan::NONE);
+
+    let console_layer_span = CompactLayer::new(
+        console_writer,
+        !cfg!(target_os = "android"),
+        config.is_log_span_events,
+    );
 
     // --- 组装 subscriber ---
+    // fmt::Layer 处理普通事件，CompactLayer 处理 span 生命周期事件
+    // OTel layer 在 span layer 之前：确保 on_enter 时 OTel span 已创建
     tracing_subscriber::registry()
         .with(env_filter)
-        .with(file_layer)
+        .with(file_layer_fmt)
+        .with(file_layer_span)
         .with(otel_layer)
-        .with(console_layer)
+        .with(console_layer_fmt)
+        .with(console_layer_span)
         .try_init()?;
 
     tracing::info!(
@@ -307,8 +623,8 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
         sdk.version = %config.sdk_version,
         system.type = %config.system_type,
         platform.name = %config.platform_name,
-        "[SDK] 日志已初始化 level={} json={} stdout={}",
-        config.log_level, config.is_log_json, config.is_log_standard_output,
+        "[SDK] 日志已初始化 level={} json={} stdout={} span_events={}",
+        config.log_level, config.is_log_json, config.is_log_standard_output, config.is_log_span_events,
     );
 
     Ok(())

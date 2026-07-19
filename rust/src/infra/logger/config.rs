@@ -19,6 +19,9 @@ pub struct LogConfig {
     pub platform_name: String,
     /// SDK 版本号
     pub sdk_version: String,
+    /// 是否打印 span 进入/退出事件（FmtSpan::ENTER | FmtSpan::CLOSE）
+    /// 启用后即使 span 内没有 info!() 调用，也会在 span 进入/退出时输出日志
+    pub is_log_span_events: bool,
 }
 
 impl Default for LogConfig {
@@ -32,6 +35,7 @@ impl Default for LogConfig {
             system_type: String::new(),
             platform_name: String::new(),
             sdk_version: env!("CARGO_PKG_VERSION").to_string(),
+            is_log_span_events: true,
         }
     }
 }

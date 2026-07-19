@@ -26,6 +26,7 @@ import 'domain/model/msg_struct.dart';
 import 'domain/model/user.dart';
 import 'frb_generated.dart';
 import 'infra/database/models.dart';
+import 'infra/logger/config.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 import 'sdk/client.dart';
 import 'sdk/client/types.dart';
@@ -114,6 +115,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   LocalConversation dco_decode_box_autoadd_local_conversation(dynamic raw);
+
+  @protected
+  LogConfig dco_decode_box_autoadd_log_config(dynamic raw);
 
   @protected
   MarkMessagesAsReadReq dco_decode_box_autoadd_mark_messages_as_read_req(
@@ -256,6 +260,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation dco_decode_local_conversation(dynamic raw);
 
   @protected
+  LogConfig dco_decode_log_config(dynamic raw);
+
+  @protected
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
   @protected
@@ -391,6 +398,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation sse_decode_box_autoadd_local_conversation(
     SseDeserializer deserializer,
   );
+
+  @protected
+  LogConfig sse_decode_box_autoadd_log_config(SseDeserializer deserializer);
 
   @protected
   MarkMessagesAsReadReq sse_decode_box_autoadd_mark_messages_as_read_req(
@@ -563,6 +573,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
   @protected
+  LogConfig sse_decode_log_config(SseDeserializer deserializer);
+
+  @protected
   MarkMessagesAsReadReq sse_decode_mark_messages_as_read_req(
     SseDeserializer deserializer,
   );
@@ -721,6 +734,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_local_conversation(
     LocalConversation self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_log_config(
+    LogConfig self,
     SseSerializer serializer,
   );
 
@@ -954,6 +973,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     LocalConversation self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_log_config(LogConfig self, SseSerializer serializer);
 
   @protected
   void sse_encode_mark_messages_as_read_req(

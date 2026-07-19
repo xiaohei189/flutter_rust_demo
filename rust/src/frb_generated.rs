@@ -34,7 +34,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.11.1";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1365252407;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1259629489;
 
 // Section: executor
 
@@ -4594,6 +4594,35 @@ fn wire__crate__api__simple__init_logger_impl(
         },
     )
 }
+fn wire__crate__api__simple__init_logger_v2_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "init_logger_v2",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_config = <crate::infra::logger::config::LogConfig>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let output_ok = crate::api::simple::init_logger_v2(api_config).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -5146,6 +5175,34 @@ fn wire__crate__api__simple__set_log_directory_impl(
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
                         crate::api::simple::set_log_directory(api_path);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__simple__set_log_span_events_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "set_log_span_events",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_enabled = <bool>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::api::simple::set_log_span_events(api_enabled);
                     })?;
                     Ok(output_ok)
                 })())
@@ -6203,6 +6260,32 @@ impl SseDecode for crate::infra::database::models::LocalConversation {
     }
 }
 
+impl SseDecode for crate::infra::logger::config::LogConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_logLevel = <u32>::sse_decode(deserializer);
+        let mut var_isLogStandardOutput = <bool>::sse_decode(deserializer);
+        let mut var_logFilePath = <String>::sse_decode(deserializer);
+        let mut var_logRemainCount = <u32>::sse_decode(deserializer);
+        let mut var_isLogJson = <bool>::sse_decode(deserializer);
+        let mut var_systemType = <String>::sse_decode(deserializer);
+        let mut var_platformName = <String>::sse_decode(deserializer);
+        let mut var_sdkVersion = <String>::sse_decode(deserializer);
+        let mut var_isLogSpanEvents = <bool>::sse_decode(deserializer);
+        return crate::infra::logger::config::LogConfig {
+            log_level: var_logLevel,
+            is_log_standard_output: var_isLogStandardOutput,
+            log_file_path: var_logFilePath,
+            log_remain_count: var_logRemainCount,
+            is_log_json: var_isLogJson,
+            system_type: var_systemType,
+            platform_name: var_platformName,
+            sdk_version: var_sdkVersion,
+            is_log_span_events: var_isLogSpanEvents,
+        };
+    }
+}
+
 impl SseDecode for crate::sdk::client::types::MarkMessagesAsReadReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -6629,27 +6712,29 @@ fn pde_ffi_dispatcher_primary_impl(
         117 => wire__crate__api__bridge_client__get_total_unread_msg_count_impl(port, ptr, rust_vec_len, data_len),
         118 => wire__crate__api__bridge_client__incr_sync_conversations_impl(port, ptr, rust_vec_len, data_len),
         119 => wire__crate__api__simple__init_logger_impl(port, ptr, rust_vec_len, data_len),
-        120 => wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
-        121 => wire__crate__api__bridge_client__mark_all_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
-        122 => wire__crate__api__bridge_client__network_status_changed_impl(port, ptr, rust_vec_len, data_len),
-        123 => wire__crate__api__bridge_client__send_advanced_quote_message_impl(port, ptr, rust_vec_len, data_len),
-        124 => wire__crate__api__bridge_client__send_at_text_message_with_quote_impl(port, ptr, rust_vec_len, data_len),
-        125 => wire__crate__api__bridge_client__send_card_message_impl(port, ptr, rust_vec_len, data_len),
-        126 => wire__crate__api__bridge_client__send_face_message_impl(port, ptr, rust_vec_len, data_len),
-        127 => wire__crate__api__bridge_client__send_file_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        128 => wire__crate__api__bridge_client__send_image_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        129 => wire__crate__api__bridge_client__send_location_message_impl(port, ptr, rust_vec_len, data_len),
-        130 => wire__crate__api__bridge_client__send_merger_message_impl(port, ptr, rust_vec_len, data_len),
-        131 => wire__crate__api__bridge_client__send_quote_message_impl(port, ptr, rust_vec_len, data_len),
-        132 => wire__crate__api__bridge_client__send_sound_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        133 => wire__crate__api__bridge_client__send_typing_impl(port, ptr, rust_vec_len, data_len),
-        134 => wire__crate__api__bridge_client__send_video_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        135 => wire__crate__api__bridge_client__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
-        136 => wire__crate__api__simple__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
-        137 => wire__crate__api__bridge_client__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
-        138 => wire__crate__api__bridge_client__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
-        139 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
-        140 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        120 => wire__crate__api__simple__init_logger_v2_impl(port, ptr, rust_vec_len, data_len),
+        121 => wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
+        122 => wire__crate__api__bridge_client__mark_all_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
+        123 => wire__crate__api__bridge_client__network_status_changed_impl(port, ptr, rust_vec_len, data_len),
+        124 => wire__crate__api__bridge_client__send_advanced_quote_message_impl(port, ptr, rust_vec_len, data_len),
+        125 => wire__crate__api__bridge_client__send_at_text_message_with_quote_impl(port, ptr, rust_vec_len, data_len),
+        126 => wire__crate__api__bridge_client__send_card_message_impl(port, ptr, rust_vec_len, data_len),
+        127 => wire__crate__api__bridge_client__send_face_message_impl(port, ptr, rust_vec_len, data_len),
+        128 => wire__crate__api__bridge_client__send_file_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        129 => wire__crate__api__bridge_client__send_image_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        130 => wire__crate__api__bridge_client__send_location_message_impl(port, ptr, rust_vec_len, data_len),
+        131 => wire__crate__api__bridge_client__send_merger_message_impl(port, ptr, rust_vec_len, data_len),
+        132 => wire__crate__api__bridge_client__send_quote_message_impl(port, ptr, rust_vec_len, data_len),
+        133 => wire__crate__api__bridge_client__send_sound_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        134 => wire__crate__api__bridge_client__send_typing_impl(port, ptr, rust_vec_len, data_len),
+        135 => wire__crate__api__bridge_client__send_video_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        136 => wire__crate__api__bridge_client__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
+        137 => wire__crate__api__simple__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
+        138 => wire__crate__api__simple__set_log_span_events_impl(port, ptr, rust_vec_len, data_len),
+        139 => wire__crate__api__bridge_client__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
+        140 => wire__crate__api__bridge_client__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
+        141 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
+        142 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -7134,6 +7219,29 @@ impl flutter_rust_bridge::IntoDart for crate::infra::database::models::LocalConv
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::database::models::LocalConversation {}
 impl flutter_rust_bridge::IntoIntoDart<crate::infra::database::models::LocalConversation> for crate::infra::database::models::LocalConversation {
     fn into_into_dart(self) -> crate::infra::database::models::LocalConversation {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::infra::logger::config::LogConfig {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.log_level.into_into_dart().into_dart(),
+            self.is_log_standard_output.into_into_dart().into_dart(),
+            self.log_file_path.into_into_dart().into_dart(),
+            self.log_remain_count.into_into_dart().into_dart(),
+            self.is_log_json.into_into_dart().into_dart(),
+            self.system_type.into_into_dart().into_dart(),
+            self.platform_name.into_into_dart().into_dart(),
+            self.sdk_version.into_into_dart().into_dart(),
+            self.is_log_span_events.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::logger::config::LogConfig {}
+impl flutter_rust_bridge::IntoIntoDart<crate::infra::logger::config::LogConfig> for crate::infra::logger::config::LogConfig {
+    fn into_into_dart(self) -> crate::infra::logger::config::LogConfig {
         self
     }
 }
@@ -8057,6 +8165,21 @@ impl SseEncode for crate::infra::database::models::LocalConversation {
         <i64>::sse_encode(self.min_seq, serializer);
         <i32>::sse_encode(self.is_msg_destruct, serializer);
         <i64>::sse_encode(self.msg_destruct_time, serializer);
+    }
+}
+
+impl SseEncode for crate::infra::logger::config::LogConfig {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.log_level, serializer);
+        <bool>::sse_encode(self.is_log_standard_output, serializer);
+        <String>::sse_encode(self.log_file_path, serializer);
+        <u32>::sse_encode(self.log_remain_count, serializer);
+        <bool>::sse_encode(self.is_log_json, serializer);
+        <String>::sse_encode(self.system_type, serializer);
+        <String>::sse_encode(self.platform_name, serializer);
+        <String>::sse_encode(self.sdk_version, serializer);
+        <bool>::sse_encode(self.is_log_span_events, serializer);
     }
 }
 
