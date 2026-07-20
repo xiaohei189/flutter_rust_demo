@@ -534,8 +534,13 @@ pub fn span_from_remote_trace_id(
     );
 
     let parent_cx = Context::new().with_remote_span_context(remote_sc);
-    let span = tracing::info_span!("remote_span", otel.name = %name);
-    span.set_parent(parent_cx);
+    // 在创建 span 前 attach remote parent 到当前线程 OTel context，
+    // 使 on_new_span 时 parent_context 能从 OtelContext::current() 继承 trace_id。
+    // （set_parent 在 on_new_span 之后执行，builder.trace_id 已被生成，不会被覆盖）
+    let span = {
+        let _guard = parent_cx.attach();
+        tracing::info_span!("remote_span", otel.name = %name)
+    };
     span
 }
 

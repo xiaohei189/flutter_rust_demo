@@ -21,7 +21,6 @@ use opentelemetry::trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, Tra
 use opentelemetry::Context;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, info_span, warn};
-use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -433,7 +432,11 @@ impl ConnectionManager {
                             // 尝试 JSON 解码为 OpenIMResp
                             match serde_json::from_slice::<OpenIMResp>(&data) {
                                 Ok(resp) => {
-                                    let span = if let Ok(trace_id) = TraceId::from_hex(&resp.operation_id) {
+                                    // 在创建 span 前 attach remote parent 到当前线程 OTel context，
+                                    // 使 on_new_span 时 parent_context 能从 OtelContext::current() 继承 trace_id，
+                                    // 避免生成新 trace_id 导致链路断裂。
+                                    let span = {
+                                        let _cx_guard = if let Ok(trace_id) = TraceId::from_hex(&resp.operation_id) {
                                             let remote_sc = SpanContext::new(
                                                 trace_id,
                                                 SpanId::INVALID,
@@ -441,13 +444,12 @@ impl ConnectionManager {
                                                 true,
                                                 TraceState::default(),
                                             );
-                                            let parent_cx = Context::new().with_remote_span_context(remote_sc);
-                                            let span = info_span!("ws_binary_resp");
-                                            span.set_parent(parent_cx);
-                                            span
+                                            Some(Context::new().with_remote_span_context(remote_sc).attach())
                                         } else {
-                                            info_span!("ws_binary_resp")
+                                            None
                                         };
+                                        info_span!("ws_binary_resp")
+                                    };
                                     let _enter = span.enter();
                                     info!("ws binary response: req_identifier={}, operation_id={}", resp.req_identifier, resp.operation_id);
 
