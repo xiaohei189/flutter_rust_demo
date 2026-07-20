@@ -234,18 +234,19 @@ where
 
 /// 从 OtelData 提取 (trace_id, span_id)
 ///
-/// - `trace_id`：优先从 `builder.trace_id`（根 span），若为 None 则从 `parent_cx` 继承（子 span）
+/// - `trace_id`：优先从 `parent_cx` 继承（子 span / 通过 set_parent 设置 remote parent 的 span），
+///   若 parent_cx 无效则回退到 `builder.trace_id`（根 span）
 /// - `span_id`：始终从 `builder.span_id` 获取
 fn otel_trace_span_id(data: &tracing_opentelemetry::OtelData) -> (Option<String>, Option<String>) {
-    let trace_id = data.builder.trace_id.or_else(|| {
+    let trace_id = {
         let parent_span = data.parent_cx.span();
         let sc = parent_span.span_context();
         if sc.is_valid() {
             Some(sc.trace_id())
         } else {
-            None
+            data.builder.trace_id
         }
-    });
+    };
     let span_id = data.builder.span_id;
     (trace_id.map(|t| t.to_string()), span_id.map(|s| s.to_string()))
 }
