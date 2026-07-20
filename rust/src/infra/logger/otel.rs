@@ -132,9 +132,10 @@ where
                 if state.trace_id.is_none() {
                     if let Some(span) = ctx.span(id) {
                         if let Some(otel) = span.extensions().get::<tracing_opentelemetry::OtelData>() {
-                            if let (Some(tid), Some(sid)) = (otel.builder.trace_id, otel.builder.span_id) {
-                                state.trace_id = Some(tid.to_string());
-                                state.span_id = Some(sid.to_string());
+                            let (tid, sid) = otel_trace_span_id(otel);
+                            if let (Some(tid), Some(sid)) = (tid, sid) {
+                                state.trace_id = Some(tid);
+                                state.span_id = Some(sid);
                             }
                         }
                     }
@@ -230,6 +231,24 @@ where
 // ============================================================================
 // 辅助函数
 // ============================================================================
+
+/// 从 OtelData 提取 (trace_id, span_id)
+///
+/// - `trace_id`：优先从 `builder.trace_id`（根 span），若为 None 则从 `parent_cx` 继承（子 span）
+/// - `span_id`：始终从 `builder.span_id` 获取
+fn otel_trace_span_id(data: &tracing_opentelemetry::OtelData) -> (Option<String>, Option<String>) {
+    let trace_id = data.builder.trace_id.or_else(|| {
+        let parent_span = data.parent_cx.span();
+        let sc = parent_span.span_context();
+        if sc.is_valid() {
+            Some(sc.trace_id())
+        } else {
+            None
+        }
+    });
+    let span_id = data.builder.span_id;
+    (trace_id.map(|t| t.to_string()), span_id.map(|s| s.to_string()))
+}
 
 /// 写 span 生命周期事件（enter / close）
 fn write_span_event(
@@ -364,18 +383,12 @@ where
                 let otel_info: Option<(String, String)> = extensions
                     .get::<tracing_opentelemetry::OtelData>()
                     .and_then(|data| {
-                        match (data.builder.trace_id, data.builder.span_id) {
-                            (Some(tid), Some(sid)) => Some((tid.to_string(), sid.to_string())),
+                        let (tid, sid) = otel_trace_span_id(data);
+                        match (tid, sid) {
+                            (Some(tid), Some(sid)) => Some((tid, sid)),
                             _ => None,
                         }
                     });
-
-                let fallback_sc = {
-                    let span = Span::current();
-                    let cx = span.context();
-                    let otel_span = cx.span();
-                    otel_span.span_context().clone()
-                };
 
                 if self.with_ansi {
                     write!(writer, "{}{}{}", CYAN, name, RESET)?;
@@ -388,18 +401,13 @@ where
                             inner.push_str(", ");
                         }
                         inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
-                    } else if fallback_sc.is_valid() {
-                        if !inner.is_empty() {
-                            inner.push_str(", ");
-                        }
-                        inner.push_str(&format!("trace_id={}, span_id={}", fallback_sc.trace_id(), fallback_sc.span_id()));
                     }
                     if !inner.is_empty() {
                         write!(writer, "{}{{{}}}{}", DIM, inner, RESET)?;
                     }
                     write!(writer, " ")?;
                 } else {
-                    let has_otel = otel_info.is_some() || fallback_sc.is_valid();
+                    let has_otel = otel_info.is_some();
                     if fields_str.is_empty() && !has_otel {
                         write!(writer, "{} ", name)?;
                     } else {
@@ -413,11 +421,6 @@ where
                                 inner.push_str(", ");
                             }
                             inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
-                        } else if fallback_sc.is_valid() {
-                            if !inner.is_empty() {
-                                inner.push_str(", ");
-                            }
-                            inner.push_str(&format!("trace_id={}, span_id={}", fallback_sc.trace_id(), fallback_sc.span_id()));
                         }
                         if !inner.is_empty() {
                             write!(writer, "{{{}}}", inner)?;
@@ -504,6 +507,9 @@ pub fn extract_trace_id() -> String {
 }
 
 /// 从服务端回传的 trace_id 字符串重建 tracing span（带 remote parent）
+///
+/// 注意：tracing 0.1 的 span 名称必须是字面量，因此用固定名 `remote_span`，
+/// 实际 span 名记录在 `otel.name` 字段中。
 pub fn span_from_remote_trace_id(
     name: &str,
     trace_id_hex: &str,
@@ -511,7 +517,7 @@ pub fn span_from_remote_trace_id(
 ) -> Span {
     let trace_id = TraceId::from_hex(trace_id_hex).unwrap_or(TraceId::INVALID);
     if trace_id == TraceId::INVALID {
-        return tracing::info_span!("{}", name);
+        return tracing::info_span!("remote_span", otel.name = %name);
     }
 
     let parent_span_id = parent_span_id_hex
@@ -527,7 +533,7 @@ pub fn span_from_remote_trace_id(
     );
 
     let parent_cx = Context::new().with_remote_span_context(remote_sc);
-    let span = tracing::info_span!("{}", name);
+    let span = tracing::info_span!("remote_span", otel.name = %name);
     span.set_parent(parent_cx);
     span
 }
@@ -568,7 +574,8 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     let file_layer_fmt = tracing_subscriber::fmt::layer()
         .with_writer(non_blocking_file.clone())
         .with_ansi(false)
-        .with_span_events(FmtSpan::NONE);
+        .with_span_events(FmtSpan::NONE)
+        .event_format(EventFormatter { with_ansi: false });
 
     // span 事件：由 CompactLayer 处理（enter/close）
     let file_layer_span = CompactLayer::new(non_blocking_file, false, config.is_log_span_events);
@@ -598,7 +605,10 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     let console_layer_fmt = tracing_subscriber::fmt::layer()
         .with_writer(console_writer.clone())
         .with_ansi(!cfg!(target_os = "android"))
-        .with_span_events(FmtSpan::NONE);
+        .with_span_events(FmtSpan::NONE)
+        .event_format(EventFormatter {
+            with_ansi: !cfg!(target_os = "android"),
+        });
 
     let console_layer_span = CompactLayer::new(
         console_writer,

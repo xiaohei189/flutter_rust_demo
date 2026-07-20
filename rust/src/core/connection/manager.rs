@@ -1,6 +1,7 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::listener::connection::{ConnectionEvent, ConnectionListener};
+use crate::infra::logger::extract_trace_id;
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
 use crate::protocol::ws::{OpenIMReq, OpenIMResp, WebSocketConnectResp};
@@ -16,8 +17,11 @@ use tokio::sync::{oneshot, RwLock};
 use tokio::time::{interval, sleep, timeout, MissedTickBehavior};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use opentelemetry::trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, TraceId, TraceState};
+use opentelemetry::Context;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, info_span, warn};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -164,7 +168,12 @@ impl ConnectionManager {
         let token = self.token.read().await;
         let send_id = self.send_id.read().await;
         let platform_id = self.platform_id.read().await;
-        let operation_id = format!("conn_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+        let trace_id = extract_trace_id();
+        let operation_id = if trace_id.is_empty() {
+            format!("conn_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
+        } else {
+            trace_id
+        };
 
         let full_url = format!(
             "{}/?token={}&sendID={}&platformID={}&operationID={}&isBackground=false&isMsgResp=true&sdkType=js&compression=gzip",
@@ -424,10 +433,21 @@ impl ConnectionManager {
                             // 尝试 JSON 解码为 OpenIMResp
                             match serde_json::from_slice::<OpenIMResp>(&data) {
                                 Ok(resp) => {
-                                    let span = info_span!(
-                                        "ws_binary_resp",
-                                        operation_id = %resp.operation_id
-                                    );
+                                    let span = if let Ok(trace_id) = TraceId::from_hex(&resp.operation_id) {
+                                            let remote_sc = SpanContext::new(
+                                                trace_id,
+                                                SpanId::INVALID,
+                                                TraceFlags::SAMPLED,
+                                                true,
+                                                TraceState::default(),
+                                            );
+                                            let parent_cx = Context::new().with_remote_span_context(remote_sc);
+                                            let span = info_span!("ws_binary_resp");
+                                            span.set_parent(parent_cx);
+                                            span
+                                        } else {
+                                            info_span!("ws_binary_resp")
+                                        };
                                     let _enter = span.enter();
 
                                     use crate::domain::constant::types::{ws_push_identifier, ws_req_identifier};
@@ -594,14 +614,19 @@ impl ConnectionManager {
         });
     }
 
-    #[tracing::instrument(level = "debug", skip(self, data), fields(req_identifier = req_identifier))]
+    #[tracing::instrument(level = "info", skip(self, data), fields(req_identifier = req_identifier))]
     pub async fn send_rpc<T: prost::Message, R: prost::Message + Default>(&self, req_identifier: i32, data: &T) -> Result<R> {
         let data_bytes = data.encode_to_vec();
 
         let msg_incr = format!("rpc_{}", self.msg_incr.fetch_add(1, Ordering::SeqCst));
         let token = self.token.read().await.clone();
         let send_id = self.send_id.read().await.clone();
-        let operation_id = format!("op_{}_{}", req_identifier, msg_incr);
+        let trace_id = extract_trace_id();
+        let operation_id = if trace_id.is_empty() {
+            format!("op_{}_{}", req_identifier, msg_incr)
+        } else {
+            trace_id
+        };
 
         tracing::Span::current().record("operationID", &operation_id);
 
