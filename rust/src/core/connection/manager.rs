@@ -449,6 +449,7 @@ impl ConnectionManager {
                                             info_span!("ws_binary_resp")
                                         };
                                     let _enter = span.enter();
+                                    info!("ws binary response: req_identifier={}, operation_id={}", resp.req_identifier, resp.operation_id);
 
                                     use crate::domain::constant::types::{ws_push_identifier, ws_req_identifier};
                                     match resp.req_identifier {
@@ -467,6 +468,7 @@ impl ConnectionManager {
                                         }
                                         // LogoutMsg (2003) — 对齐 Go case constant.LogoutMsg
                                         ws_push_identifier::LOGOUT_MSG => {
+                                            info!("ws logout message: operation_id={}", resp.operation_id);
                                             if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
                                                 let _ = req.tx.send(resp);
                                             }
@@ -481,7 +483,7 @@ impl ConnectionManager {
                                         // KickOnlineMsg (2002) — 对齐 Go case constant.KickOnlineMsg
                                         // 被踢一定是服务端推送，无对应 pending，无需 NotifyResp
                                         ws_push_identifier::KICK_ONLINE_MSG => {
-                                            debug!("socket receive client kicked offline");
+                                            warn!("ws kick online message: operation_id={}", resp.operation_id);
                                             *is_manual_disconnect.write().await = true;
                                             *state.write().await = ConnectionState::Kicked;
                                             message_batcher.close().await;
@@ -502,6 +504,8 @@ impl ConnectionManager {
                                         | ws_req_identifier::GET_CONV_MAX_READ_SEQ
                                         | ws_req_identifier::PULL_CONV_LAST_MESSAGE
                                         | ws_push_identifier::SET_BACKGROUND_STATUS => {
+                                            info!("ws notify response: req_identifier={}, msg_incr={}, operation_id={}",
+                                                resp.req_identifier, resp.msg_incr, resp.operation_id);
                                             if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
                                                 let _ = req.tx.send(resp);
                                             }
