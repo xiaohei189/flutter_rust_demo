@@ -1,7 +1,7 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::listener::connection::{ConnectionEvent, ConnectionListener};
-use crate::infra::logger::extract_trace_id;
+use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
 use crate::protocol::ws::{OpenIMReq, OpenIMResp, WebSocketConnectResp};
@@ -432,14 +432,19 @@ impl ConnectionManager {
                             // 尝试 JSON 解码为 OpenIMResp
                             match serde_json::from_slice::<OpenIMResp>(&data) {
                                 Ok(resp) => {
+                                    // 用 decode_operation_id 解析客户端透传的 trace_id:span_id，
                                     // 在创建 span 前 attach remote parent 到当前线程 OTel context，
-                                    // 使 on_new_span 时 parent_context 能从 OtelContext::current() 继承 trace_id，
-                                    // 避免生成新 trace_id 导致链路断裂。
+                                    // 使 on_new_span 时 parent_context 能从 OtelContext::current() 继承 trace_id。
+                                    // （set_parent 在 on_new_span 之后执行，无法覆盖已生成的新 trace_id）
+                                    let (trace_id_str, span_id_str) = decode_operation_id(&resp.operation_id);
                                     let span = {
-                                        let _cx_guard = if let Ok(trace_id) = TraceId::from_hex(&resp.operation_id) {
+                                        let _cx_guard = if let Ok(trace_id) = TraceId::from_hex(trace_id_str) {
+                                            let parent_span_id = span_id_str
+                                                .and_then(|s| SpanId::from_hex(s).ok())
+                                                .unwrap_or_else(|| SpanId::from(1u64));
                                             let remote_sc = SpanContext::new(
                                                 trace_id,
-                                                SpanId::INVALID,
+                                                parent_span_id,
                                                 TraceFlags::SAMPLED,
                                                 true,
                                                 TraceState::default(),
@@ -628,10 +633,12 @@ impl ConnectionManager {
         let token = self.token.read().await.clone();
         let send_id = self.send_id.read().await.clone();
         let trace_id = extract_trace_id();
-        let operation_id = if trace_id.is_empty() {
+        let span_id = extract_span_id();
+        let operation_id = encode_operation_id(&trace_id, span_id);
+        let operation_id = if operation_id.is_empty() {
             format!("op_{}_{}", req_identifier, msg_incr)
         } else {
-            trace_id
+            operation_id
         };
 
         tracing::Span::current().record("operationID", &operation_id);
@@ -640,7 +647,7 @@ impl ConnectionManager {
             req_identifier,
             token,
             send_id,
-            operation_id,
+            operation_id: operation_id.clone(),
             msg_incr: msg_incr.clone(),
             data: data_bytes,
         };
