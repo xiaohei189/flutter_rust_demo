@@ -90,19 +90,43 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  AdvancedTextElem dco_decode_advanced_text_elem(dynamic raw);
+
+  @protected
   AtInfo dco_decode_at_info(dynamic raw);
+
+  @protected
+  AtTextElem dco_decode_at_text_elem(dynamic raw);
 
   @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  AdvancedTextElem dco_decode_box_autoadd_advanced_text_elem(dynamic raw);
+
+  @protected
+  AtTextElem dco_decode_box_autoadd_at_text_elem(dynamic raw);
+
+  @protected
   bool dco_decode_box_autoadd_bool(dynamic raw);
+
+  @protected
+  CardElem dco_decode_box_autoadd_card_elem(dynamic raw);
 
   @protected
   ClientConfig dco_decode_box_autoadd_client_config(dynamic raw);
 
   @protected
+  CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw);
+
+  @protected
   DeleteMessagesReq dco_decode_box_autoadd_delete_messages_req(dynamic raw);
+
+  @protected
+  FaceElem dco_decode_box_autoadd_face_elem(dynamic raw);
+
+  @protected
+  FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
 
   @protected
   GetHistoryMessagesReq dco_decode_box_autoadd_get_history_messages_req(
@@ -119,6 +143,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation dco_decode_box_autoadd_local_conversation(dynamic raw);
 
   @protected
+  LocationElem dco_decode_box_autoadd_location_elem(dynamic raw);
+
+  @protected
   LogConfig dco_decode_box_autoadd_log_config(dynamic raw);
 
   @protected
@@ -127,13 +154,43 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Message dco_decode_box_autoadd_message(dynamic raw);
+  MarkdownTextElem dco_decode_box_autoadd_markdown_text_elem(dynamic raw);
+
+  @protected
+  MergeElem dco_decode_box_autoadd_merge_elem(dynamic raw);
+
+  @protected
+  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
+
+  @protected
+  OfflinePushInfo dco_decode_box_autoadd_offline_push_info(dynamic raw);
+
+  @protected
+  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
+
+  @protected
+  QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw);
 
   @protected
   RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
 
   @protected
   SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw);
+
+  @protected
+  SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw);
+
+  @protected
+  TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
+
+  @protected
+  VideoElem dco_decode_box_autoadd_video_elem(dynamic raw);
+
+  @protected
+  MsgStruct dco_decode_box_msg_struct(dynamic raw);
+
+  @protected
+  CardElem dco_decode_card_elem(dynamic raw);
 
   @protected
   CheckFriendResult dco_decode_check_friend_result(dynamic raw);
@@ -154,10 +211,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ConversationEvent dco_decode_conversation_event(dynamic raw);
 
   @protected
+  CustomElem dco_decode_custom_elem(dynamic raw);
+
+  @protected
   DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw);
 
   @protected
   double dco_decode_f_64(dynamic raw);
+
+  @protected
+  FaceElem dco_decode_face_elem(dynamic raw);
+
+  @protected
+  FileElem dco_decode_file_elem(dynamic raw);
 
   @protected
   FriendApplyInfo dco_decode_friend_apply_info(dynamic raw);
@@ -238,6 +304,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<MessageInfo> dco_decode_list_message_info(dynamic raw);
 
   @protected
+  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw);
+
+  @protected
   List<OnlineStatus> dco_decode_list_online_status(dynamic raw);
 
   @protected
@@ -262,13 +331,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation dco_decode_local_conversation(dynamic raw);
 
   @protected
+  LocationElem dco_decode_location_elem(dynamic raw);
+
+  @protected
   LogConfig dco_decode_log_config(dynamic raw);
 
   @protected
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw);
 
   @protected
-  Message dco_decode_message(dynamic raw);
+  MarkdownTextElem dco_decode_markdown_text_elem(dynamic raw);
+
+  @protected
+  MergeElem dco_decode_merge_elem(dynamic raw);
 
   @protected
   MessageEntity dco_decode_message_entity(dynamic raw);
@@ -277,19 +352,82 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MessageInfo dco_decode_message_info(dynamic raw);
 
   @protected
+  MsgStruct dco_decode_msg_struct(dynamic raw);
+
+  @protected
+  OfflinePushInfo dco_decode_offline_push_info(dynamic raw);
+
+  @protected
   OnlineStatus dco_decode_online_status(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  AdvancedTextElem? dco_decode_opt_box_autoadd_advanced_text_elem(dynamic raw);
+
+  @protected
+  AtTextElem? dco_decode_opt_box_autoadd_at_text_elem(dynamic raw);
+
+  @protected
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+
+  @protected
+  CardElem? dco_decode_opt_box_autoadd_card_elem(dynamic raw);
+
+  @protected
+  CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw);
+
+  @protected
+  FaceElem? dco_decode_opt_box_autoadd_face_elem(dynamic raw);
+
+  @protected
+  FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
 
   @protected
   LocalConversation? dco_decode_opt_box_autoadd_local_conversation(dynamic raw);
+
+  @protected
+  LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw);
+
+  @protected
+  MarkdownTextElem? dco_decode_opt_box_autoadd_markdown_text_elem(dynamic raw);
+
+  @protected
+  MergeElem? dco_decode_opt_box_autoadd_merge_elem(dynamic raw);
+
+  @protected
+  OfflinePushInfo? dco_decode_opt_box_autoadd_offline_push_info(dynamic raw);
+
+  @protected
+  PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw);
+
+  @protected
+  QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw);
+
+  @protected
+  SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw);
+
+  @protected
+  TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw);
+
+  @protected
+  VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw);
+
+  @protected
+  MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw);
+
+  @protected
+  PictureBaseInfo dco_decode_picture_base_info(dynamic raw);
+
+  @protected
+  PictureElem dco_decode_picture_elem(dynamic raw);
+
+  @protected
+  QuoteElem dco_decode_quote_elem(dynamic raw);
 
   @protected
   RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
@@ -301,7 +439,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SearchMessagesReq dco_decode_search_messages_req(dynamic raw);
 
   @protected
+  SendTypingResp dco_decode_send_typing_resp(dynamic raw);
+
+  @protected
   SessionType dco_decode_session_type(dynamic raw);
+
+  @protected
+  SoundElem dco_decode_sound_elem(dynamic raw);
+
+  @protected
+  TextElem dco_decode_text_elem(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -317,6 +464,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt dco_decode_usize(dynamic raw);
+
+  @protected
+  VideoElem dco_decode_video_elem(dynamic raw);
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
@@ -367,13 +517,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AdvancedTextElem sse_decode_advanced_text_elem(SseDeserializer deserializer);
+
+  @protected
   AtInfo sse_decode_at_info(SseDeserializer deserializer);
+
+  @protected
+  AtTextElem sse_decode_at_text_elem(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  AdvancedTextElem sse_decode_box_autoadd_advanced_text_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  AtTextElem sse_decode_box_autoadd_at_text_elem(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
+  CardElem sse_decode_box_autoadd_card_elem(SseDeserializer deserializer);
 
   @protected
   ClientConfig sse_decode_box_autoadd_client_config(
@@ -381,9 +548,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer);
+
+  @protected
   DeleteMessagesReq sse_decode_box_autoadd_delete_messages_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  FaceElem sse_decode_box_autoadd_face_elem(SseDeserializer deserializer);
+
+  @protected
+  FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
 
   @protected
   GetHistoryMessagesReq sse_decode_box_autoadd_get_history_messages_req(
@@ -402,6 +578,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  LocationElem sse_decode_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   LogConfig sse_decode_box_autoadd_log_config(SseDeserializer deserializer);
 
   @protected
@@ -410,7 +591,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Message sse_decode_box_autoadd_message(SseDeserializer deserializer);
+  MarkdownTextElem sse_decode_box_autoadd_markdown_text_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  MergeElem sse_decode_box_autoadd_merge_elem(SseDeserializer deserializer);
+
+  @protected
+  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
+
+  @protected
+  OfflinePushInfo sse_decode_box_autoadd_offline_push_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PictureElem sse_decode_box_autoadd_picture_elem(SseDeserializer deserializer);
+
+  @protected
+  QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer);
 
   @protected
   RevokeMessageReq sse_decode_box_autoadd_revoke_message_req(
@@ -421,6 +621,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SearchMessagesReq sse_decode_box_autoadd_search_messages_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer);
+
+  @protected
+  TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
+
+  @protected
+  VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer);
+
+  @protected
+  MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer);
+
+  @protected
+  CardElem sse_decode_card_elem(SseDeserializer deserializer);
 
   @protected
   CheckFriendResult sse_decode_check_friend_result(
@@ -443,12 +658,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ConversationEvent sse_decode_conversation_event(SseDeserializer deserializer);
 
   @protected
+  CustomElem sse_decode_custom_elem(SseDeserializer deserializer);
+
+  @protected
   DeleteMessagesReq sse_decode_delete_messages_req(
     SseDeserializer deserializer,
   );
 
   @protected
   double sse_decode_f_64(SseDeserializer deserializer);
+
+  @protected
+  FaceElem sse_decode_face_elem(SseDeserializer deserializer);
+
+  @protected
+  FileElem sse_decode_file_elem(SseDeserializer deserializer);
 
   @protected
   FriendApplyInfo sse_decode_friend_apply_info(SseDeserializer deserializer);
@@ -547,6 +771,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<MessageInfo> sse_decode_list_message_info(SseDeserializer deserializer);
 
   @protected
+  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer);
+
+  @protected
   List<OnlineStatus> sse_decode_list_online_status(
     SseDeserializer deserializer,
   );
@@ -575,6 +802,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation sse_decode_local_conversation(SseDeserializer deserializer);
 
   @protected
+  LocationElem sse_decode_location_elem(SseDeserializer deserializer);
+
+  @protected
   LogConfig sse_decode_log_config(SseDeserializer deserializer);
 
   @protected
@@ -583,7 +813,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  Message sse_decode_message(SseDeserializer deserializer);
+  MarkdownTextElem sse_decode_markdown_text_elem(SseDeserializer deserializer);
+
+  @protected
+  MergeElem sse_decode_merge_elem(SseDeserializer deserializer);
 
   @protected
   MessageEntity sse_decode_message_entity(SseDeserializer deserializer);
@@ -592,13 +825,43 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MessageInfo sse_decode_message_info(SseDeserializer deserializer);
 
   @protected
+  MsgStruct sse_decode_msg_struct(SseDeserializer deserializer);
+
+  @protected
+  OfflinePushInfo sse_decode_offline_push_info(SseDeserializer deserializer);
+
+  @protected
   OnlineStatus sse_decode_online_status(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
+  AdvancedTextElem? sse_decode_opt_box_autoadd_advanced_text_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  AtTextElem? sse_decode_opt_box_autoadd_at_text_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
+  CardElem? sse_decode_opt_box_autoadd_card_elem(SseDeserializer deserializer);
+
+  @protected
+  CustomElem? sse_decode_opt_box_autoadd_custom_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  FaceElem? sse_decode_opt_box_autoadd_face_elem(SseDeserializer deserializer);
+
+  @protected
+  FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
@@ -607,6 +870,61 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LocalConversation? sse_decode_opt_box_autoadd_local_conversation(
     SseDeserializer deserializer,
   );
+
+  @protected
+  LocationElem? sse_decode_opt_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  MarkdownTextElem? sse_decode_opt_box_autoadd_markdown_text_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  MergeElem? sse_decode_opt_box_autoadd_merge_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OfflinePushInfo? sse_decode_opt_box_autoadd_offline_push_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PictureElem? sse_decode_opt_box_autoadd_picture_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  QuoteElem? sse_decode_opt_box_autoadd_quote_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  SoundElem? sse_decode_opt_box_autoadd_sound_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer);
+
+  @protected
+  VideoElem? sse_decode_opt_box_autoadd_video_elem(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer);
+
+  @protected
+  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer);
+
+  @protected
+  PictureElem sse_decode_picture_elem(SseDeserializer deserializer);
+
+  @protected
+  QuoteElem sse_decode_quote_elem(SseDeserializer deserializer);
 
   @protected
   RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
@@ -620,7 +938,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SendTypingResp sse_decode_send_typing_resp(SseDeserializer deserializer);
+
+  @protected
   SessionType sse_decode_session_type(SseDeserializer deserializer);
+
+  @protected
+  SoundElem sse_decode_sound_elem(SseDeserializer deserializer);
+
+  @protected
+  TextElem sse_decode_text_elem(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -636,6 +963,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  VideoElem sse_decode_video_elem(SseDeserializer deserializer);
 
   @protected
   void sse_encode_AnyhowException(
@@ -698,13 +1028,40 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_advanced_text_elem(
+    AdvancedTextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_at_info(AtInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_at_text_elem(AtTextElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_advanced_text_elem(
+    AdvancedTextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_at_text_elem(
+    AtTextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_card_elem(
+    CardElem self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_box_autoadd_client_config(
@@ -713,8 +1070,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_custom_elem(
+    CustomElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_delete_messages_req(
     DeleteMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_face_elem(
+    FaceElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_file_elem(
+    FileElem self,
     SseSerializer serializer,
   );
 
@@ -740,6 +1115,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_location_elem(
+    LocationElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_log_config(
     LogConfig self,
     SseSerializer serializer,
@@ -752,7 +1133,40 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_box_autoadd_message(Message self, SseSerializer serializer);
+  void sse_encode_box_autoadd_markdown_text_elem(
+    MarkdownTextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_merge_elem(
+    MergeElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_msg_struct(
+    MsgStruct self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_offline_push_info(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_picture_elem(
+    PictureElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_quote_elem(
+    QuoteElem self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_box_autoadd_revoke_message_req(
@@ -765,6 +1179,30 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     SearchMessagesReq self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_box_autoadd_sound_elem(
+    SoundElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_text_elem(
+    TextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_video_elem(
+    VideoElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_card_elem(CardElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_check_friend_result(
@@ -797,6 +1235,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_custom_elem(CustomElem self, SseSerializer serializer);
+
+  @protected
   void sse_encode_delete_messages_req(
     DeleteMessagesReq self,
     SseSerializer serializer,
@@ -804,6 +1245,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_f_64(double self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_face_elem(FaceElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_file_elem(FileElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_friend_apply_info(
@@ -935,6 +1382,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_msg_struct(
+    List<MsgStruct> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_online_status(
     List<OnlineStatus> self,
     SseSerializer serializer,
@@ -977,6 +1430,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_location_elem(LocationElem self, SseSerializer serializer);
+
+  @protected
   void sse_encode_log_config(LogConfig self, SseSerializer serializer);
 
   @protected
@@ -986,7 +1442,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_message(Message self, SseSerializer serializer);
+  void sse_encode_markdown_text_elem(
+    MarkdownTextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_merge_elem(MergeElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_message_entity(MessageEntity self, SseSerializer serializer);
@@ -995,13 +1457,58 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_message_info(MessageInfo self, SseSerializer serializer);
 
   @protected
+  void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_offline_push_info(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_online_status(OnlineStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_advanced_text_elem(
+    AdvancedTextElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_at_text_elem(
+    AtTextElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_card_elem(
+    CardElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_custom_elem(
+    CustomElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_face_elem(
+    FaceElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_file_elem(
+    FileElem? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
@@ -1011,6 +1518,75 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     LocalConversation? self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_box_autoadd_location_elem(
+    LocationElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_markdown_text_elem(
+    MarkdownTextElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_merge_elem(
+    MergeElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_offline_push_info(
+    OfflinePushInfo? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_picture_elem(
+    PictureElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_quote_elem(
+    QuoteElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_sound_elem(
+    SoundElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_text_elem(
+    TextElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_video_elem(
+    VideoElem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_msg_struct(MsgStruct? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_revoke_message_req(
@@ -1031,7 +1607,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_send_typing_resp(
+    SendTypingResp self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_session_type(SessionType self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sound_elem(SoundElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_text_elem(TextElem self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);
@@ -1047,6 +1635,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_video_elem(VideoElem self, SseSerializer serializer);
 }
 
 // Section: wire_class

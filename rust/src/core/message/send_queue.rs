@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use tokio::sync::{mpsc, oneshot};
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, Span};
 
 use crate::domain::error::types::SdkError;
 use crate::protocol::sdkws::UserSendMsgResp;
@@ -71,10 +71,14 @@ impl MessageSendQueue {
     where
         F: FnOnce() -> BoxFuture<SendResult> + Send + 'static,
     {
+        let current_span = Span::current();
         let (result_tx, result_rx) = oneshot::channel();
 
         let task = SendTask {
-            send_fn: Box::new(send_fn),
+            send_fn: Box::new(move || {
+                let _guard = current_span.enter();
+                send_fn()
+            }),
             result_tx,
         };
 

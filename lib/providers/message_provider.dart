@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../services/message_service_notifier.dart';
 import '../src/rust/domain/constant/enums.dart';
-import '../src/rust/api/bridge_client.dart' show Message;
+import '../src/rust/domain/model/msg_struct.dart' show MsgStruct;
 import 'message_service_provider.dart';
 
 /// 消息列表状态
@@ -153,7 +153,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
   }
 
   /// 用发送结果构建 MessageInfo 并添加到列表中（对齐 Go SDK sendMessage 返回值）
-  void _addSentMessage(Message result) {
+  void _addSentMessage(MsgStruct result) {
     // 同步写入全局状态，确保 _syncState() 不会覆盖掉这条消息
     _messageService.upsertSentMessage(_conversationId, result);
     // 再更新本地列表

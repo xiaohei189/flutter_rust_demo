@@ -1,4 +1,5 @@
 use crate::core::connection::message_batcher::MessageBatcher;
+use crate::domain::constant::types::req_identifier_name;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::listener::connection::{ConnectionEvent, ConnectionListener};
 use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
@@ -456,7 +457,9 @@ impl ConnectionManager {
                                         info_span!("ws_binary_resp")
                                     };
                                     let _enter = span.enter();
-                                    info!("ws binary response: req_identifier={}, operation_id={}", resp.req_identifier, resp.operation_id);
+                                    debug!("WebSocket received message: req_identifier={}({}), msg_incr={}, operation_id={}, err_code={}, err_msg={}, data_len={}",
+                                        resp.req_identifier, req_identifier_name(resp.req_identifier),
+                                        resp.msg_incr, resp.operation_id, resp.err_code, resp.err_msg, resp.data.len());
 
                                     use crate::domain::constant::types::{ws_push_identifier, ws_req_identifier};
                                     match resp.req_identifier {
@@ -475,7 +478,7 @@ impl ConnectionManager {
                                         }
                                         // LogoutMsg (2003) — 对齐 Go case constant.LogoutMsg
                                         ws_push_identifier::LOGOUT_MSG => {
-                                            info!("ws logout message: operation_id={}", resp.operation_id);
+                                            info!("ws logout message");
                                             if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
                                                 let _ = req.tx.send(resp);
                                             }
@@ -490,7 +493,7 @@ impl ConnectionManager {
                                         // KickOnlineMsg (2002) — 对齐 Go case constant.KickOnlineMsg
                                         // 被踢一定是服务端推送，无对应 pending，无需 NotifyResp
                                         ws_push_identifier::KICK_ONLINE_MSG => {
-                                            warn!("ws kick online message: operation_id={}", resp.operation_id);
+                                            warn!("ws kick online message: err_msg={}", resp.err_msg);
                                             *is_manual_disconnect.write().await = true;
                                             *state.write().await = ConnectionState::Kicked;
                                             message_batcher.close().await;
@@ -511,20 +514,18 @@ impl ConnectionManager {
                                         | ws_req_identifier::GET_CONV_MAX_READ_SEQ
                                         | ws_req_identifier::PULL_CONV_LAST_MESSAGE
                                         | ws_push_identifier::SET_BACKGROUND_STATUS => {
-                                            info!("ws notify response: req_identifier={}, msg_incr={}, operation_id={}",
-                                                resp.req_identifier, resp.msg_incr, resp.operation_id);
                                             if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
                                                 let _ = req.tx.send(resp);
                                             }
                                         }
                                         // WsSubUserOnlineStatus (2005) — 对齐 Go case constant.WsSubUserOnlineStatus
                                         ws_push_identifier::WS_SUB_USER_ONLINE_STATUS => {
-                                            warn!("WsSubUserOnlineStatus handler not yet implemented, operation_id={}", resp.operation_id);
+                                            warn!("WsSubUserOnlineStatus handler not yet implemented");
                                         }
                                         // 未知类型 — 对齐 Go default: return sdkerrs.ErrMsgBinaryTypeNotSupport
                                         _ => {
-                                            error!("binary message type not support: req_identifier={}, operation_id={}",
-                                                resp.req_identifier, resp.operation_id);
+                                            error!("binary message type not support: req_identifier={}({})",
+                                                resp.req_identifier, req_identifier_name(resp.req_identifier));
                                         }
                                     }
                                 }
@@ -625,8 +626,12 @@ impl ConnectionManager {
         });
     }
 
-    #[tracing::instrument(level = "info", skip(self, data), fields(req_identifier = req_identifier))]
-    pub async fn send_rpc<T: prost::Message, R: prost::Message + Default>(&self, req_identifier: i32, data: &T) -> Result<R> {
+    #[tracing::instrument(level = "info", skip(self, data))]
+    pub async fn send_rpc<T, R>(&self, req_identifier: i32, data: &T) -> Result<R>
+    where
+        T: prost::Message + std::fmt::Debug,
+        R: prost::Message + Default + std::fmt::Debug,
+    {
         let data_bytes = data.encode_to_vec();
 
         let msg_incr = format!("rpc_{}", self.msg_incr.fetch_add(1, Ordering::SeqCst));
@@ -643,6 +648,12 @@ impl ConnectionManager {
 
         tracing::Span::current().record("operationID", &operation_id);
 
+        debug!(
+            msg_incr = %msg_incr,
+            req_name = req_identifier_name(req_identifier),
+            "ws rpc 请求"
+        );
+
         let req = OpenIMReq {
             req_identifier,
             token,
@@ -652,6 +663,8 @@ impl ConnectionManager {
             data: data_bytes,
         };
 
+        let req_json = serde_json::to_string(&req).map_err(|e| SdkError::unknown(format!("serialize rpc request: {}", e)))?;
+
         let (tx, rx) = oneshot::channel();
         self.pending_requests.write().await.insert(
             msg_incr,
@@ -660,8 +673,6 @@ impl ConnectionManager {
                 timer: tokio::time::Instant::now(),
             },
         );
-
-        let req_json = serde_json::to_string(&req).map_err(|e| SdkError::unknown(format!("serialize rpc request: {}", e)))?;
 
         // Gzip 压缩（对齐 Go SDK compressor.go CompressWithPool）
         let compressed = self.compressor.compress(req_json.as_bytes()).map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
@@ -683,8 +694,25 @@ impl ConnectionManager {
         match timeout(RPC_TIMEOUT, rx).await {
             Ok(Ok(resp)) => {
                 if resp.is_success() {
-                    R::decode(resp.data.as_slice()).map_err(|e| SdkError::unknown(format!("decode response: {}", e)))
+                    match R::decode(resp.data.as_slice()) {
+                        Ok(r) => {
+                            debug!(
+                                msg_incr = %resp.msg_incr,
+                                req_name = req_identifier_name(resp.req_identifier),
+                                "ws rpc 响应成功"
+                            );
+                            Ok(r)
+                        }
+                        Err(e) => Err(SdkError::unknown(format!("decode response: {}", e))),
+                    }
                 } else {
+                    info!(
+                        msg_incr = %resp.msg_incr,
+                        req_name = req_identifier_name(resp.req_identifier),
+                        err_code = resp.err_code,
+                        err_msg = %resp.err_msg,
+                        "ws recv rpc response (error)"
+                    );
                     Err(SdkError::api(resp.err_code, &resp.err_msg))
                 }
             }

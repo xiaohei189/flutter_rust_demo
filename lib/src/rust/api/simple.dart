@@ -19,9 +19,10 @@ Future<void> initLogger({required String logLevel}) =>
 Future<void> initLoggerV2({required LogConfig config}) =>
     RustLib.instance.api.crateApiSimpleInitLoggerV2(config: config);
 
-/// 设置是否打印 span 进入/退出事件（应在 init_logger 前调用）
+/// 设置是否打印 span 进入/退出事件（可在 init_logger 前后调用）
 ///
 /// 启用后，每个 #[tracing::instrument] 注解的方法在进入和退出时都会输出日志，
 /// 即使方法内部没有手动调用 info!() 等宏。
+/// 运行时也可切换，立即生效。
 Future<void> setLogSpanEvents({required bool enabled}) =>
     RustLib.instance.api.crateApiSimpleSetLogSpanEvents(enabled: enabled);

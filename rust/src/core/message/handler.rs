@@ -15,7 +15,7 @@ use crate::protocol::sdkws::{MarkAsReadTips, RevokeMsgTips};
 use prost::Message as ProstMessage;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{debug, info, warn, error};
+use tracing::{debug, info, warn, error, trace};
 use rand::Rng;
 
 /// 从 JSON 内容解析 RevokeMsgTips（对齐 Go SDK UnmarshalNotificationElem）
@@ -131,6 +131,19 @@ pub struct MessageHandler {
     pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
 }
 
+/// 将 content_type 数字转为可读名称
+fn content_type_name(ct: i32) -> &'static str {
+    match ct {
+        101 => "Text", 102 => "Picture", 103 => "Sound", 104 => "Video",
+        105 => "File", 106 => "AtText", 107 => "Merger", 108 => "Card",
+        109 => "Location", 110 => "Custom", 113 => "Typing", 114 => "Quote",
+        115 => "Face", 117 => "AdvancedText", 118 => "MarkdownText",
+        119 => "CustomNotTrigger", 120 => "CustomOnlineOnly",
+        121 => "ReactionModifier", 122 => "ReactionDeleter",
+        _ => "Unknown",
+    }
+}
+
 impl MessageHandler {
     pub fn new(
         message_dao: Arc<MessageDao>,
@@ -155,7 +168,7 @@ impl MessageHandler {
 
     pub(crate) fn send(&self, e: ConversationEvent) {
         let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
+        tracing::info!("[Event] {:?}, has_subscriber={}", &e, has_tx);
         if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
     }
 
@@ -273,11 +286,13 @@ impl MessageHandler {
     }
 
     /// 处理消息列表，返回 true 表示有非 typing 的状态变更
+    #[tracing::instrument(skip_all, fields(msg_count = %messages.len()))]
     pub async fn handle_messages(&self, messages: Vec<ReceivedMessage>) -> Result<bool> {
         self.handle_messages_internal(messages, false).await
     }
 
     /// 处理消息列表（标记为同步来源），返回 true 表示有非 typing 的状态变更
+    #[tracing::instrument(skip_all, fields(msg_count = %messages.len()))]
     pub async fn handle_sync_messages(&self, messages: Vec<ReceivedMessage>) -> Result<bool> {
         self.handle_messages_internal(messages, true).await
     }
@@ -287,9 +302,6 @@ impl MessageHandler {
         if messages.is_empty() {
             return Ok(false);
         }
-
-        info!("handling {} messages", messages.len());
-
         // 已读回执处理（对齐 Go SDK read_drawing.go L227-284）
         for msg in &messages {
             if msg.content_type == HAS_READ_RECEIPT {
@@ -328,14 +340,18 @@ impl MessageHandler {
         }
 
         // 处理 Typing 消息：发布输入状态变化事件（对齐 Go SDK OnConversationUserInputStatusChanged）
+        let login_user_id = self.user_id.lock().unwrap().clone();
         for msg in &normal_messages {
             if msg.content_type == content_type::TYPING {
+                // 对齐 Go SDK entering.go:162 —— 忽略自己发出的 typing 推送
+                if msg.send_id == login_user_id {
+                    trace!("[Typing] 忽略自身 typing 推送: conv={}", msg.conversation_id);
+                    continue;
+                }
                 if let Ok(typing_elem) = serde_json::from_str::<TypingElem>(&msg.content) {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
                     let pids: Vec<i32> = if is_typing { vec![platform_id] } else { vec![] };
-                    info!("typing: conversation_id={}, user_id={}, is_typing={}, platform_ids={:?}",
-                        msg.conversation_id, msg.send_id, is_typing, pids);
                     self.send(ConversationEvent::UserInputStatusChanged { conversation_id: msg.conversation_id.clone(), user_id: msg.send_id.clone(), platform_ids: pids });
                 }
             }
@@ -345,6 +361,11 @@ impl MessageHandler {
         let normal_messages: Vec<ReceivedMessage> = normal_messages.into_iter()
             .filter(|m| m.content_type != content_type::TYPING)
             .collect();
+
+        // 过滤 typing 后无剩余消息，直接返回
+        if normal_messages.is_empty() {
+            return Ok(false);
+        }
 
         // typing 消息已处理（发布 ConversationUserInputStatusChanged），
         // 但只有非 typing 消息才需要触发 TotalUnreadCountChanged
@@ -360,11 +381,12 @@ impl MessageHandler {
         }
 
         let login_user_id = self.user_id.lock().unwrap().clone();
-        debug!("[MSG_DIAG] handle_messages: login_user={}, msg_count={}", login_user_id, normal_messages.len());
+        debug!("[MsgHandler] 收到 {} 条消息", normal_messages.len());
         for msg in &normal_messages {
-            info!("[MSG_DIAG]   msg: conv={}, send_id={}, seq={}, is_self={}, content_type={}",
+            trace!("[MsgHandler]   conv={}, send_id={}, seq={}, self={}, type={}({})",
                 msg.conversation_id, msg.send_id, msg.seq,
-                msg.send_id == login_user_id, msg.content_type);
+                msg.send_id == login_user_id,
+                content_type_name(msg.content_type), msg.content_type);
         }
         let mut insert_list: Vec<LocalChatLog> = Vec::new();
         let mut batch_update_list: Vec<(String, i64)> = Vec::new(); // (client_msg_id, seq)
@@ -425,26 +447,24 @@ impl MessageHandler {
                     }
                 } else {
                     // CLIENT_DUP: 消息已存在（重复推送或 seq 间隙补偿拉取），跳过不插入
-                    info!("[MSG] 跳过重复消息: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
+                    debug!("[MsgHandler] 跳过重复消息: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
                 }
             }
         }
 
         // 批量更新 seq（对齐 Go SDK batchUpdateMessageList）
         if !batch_update_list.is_empty() {
-            info!("batch update seq for {} messages", batch_update_list.len());
+            debug!("[MsgHandler] 更新 seq: {} 条", batch_update_list.len());
             self.message_dao.batch_update_seq(&batch_update_list).await?;
         }
 
         // 批量插入消息（对齐 Go SDK batchInsertMessageList）
         if !insert_list.is_empty() {
-            info!("准备插入 {} 条消息到数据库", insert_list.len());
             for log in &insert_list {
-                debug!("  待插入: conv={}, client_msg_id={}, seq={}, status={}",
-                      log.conversation_id, log.client_msg_id, log.seq, log.status);
+                trace!("[MsgHandler]   插入: conv={}, client_msg_id={}, seq={}",
+                      log.conversation_id, log.client_msg_id, log.seq);
             }
             self.message_dao.batch_insert(&insert_list).await?;
-            info!("消息插入数据库完成");
         }
 
         let mut seen_convs = std::collections::HashSet::new();
@@ -491,7 +511,7 @@ impl MessageHandler {
                         msg_destruct_time: 0,
                     };
                     self.conversation_dao.upsert(&conv).await?;
-                    info!("创建新会话: {}", msg.conversation_id);
+                    debug!("[MsgHandler] 创建新会话: {}", msg.conversation_id);
                 }
             }
 
@@ -509,31 +529,18 @@ impl MessageHandler {
                 
                 // 只有别人发的消息才增加未读数
                 if !is_self {
-                    debug!("[UNREAD_DIAG] 增加未读: conv={}, seq={}, send_id={}", msg.conversation_id, msg.seq, msg.send_id);
                     self.conversation_dao
                         .increase_unread_count(&msg.conversation_id, msg.seq)
                         .await?;
                 }
             }
-
-            if msg.content_type != content_type::TYPING {
-            }
         }
 
-        // 诊断：汇总未读数变化
-        let unread_convs: Vec<String> = to_notify.iter()
-            .filter(|m| m.send_id != login_user_id)
-            .map(|m| m.conversation_id.clone())
-            .collect();
-        info!("[UNREAD_DIAG] to_notify 总数={}, 非自己消息数={}", to_notify.len(), unread_convs.len());
-        for conv_id in &unread_convs {
-            if let Ok(Some(c)) = self.conversation_dao.get_by_id(conv_id).await {
-                debug!("[UNREAD_DIAG] 会话 {} 未读数={}", conv_id, c.unread_count);
-            }
-        }
-
-        info!("handled {} messages ({} inserted, {} duplicates skipped)", 
-            normal_messages.len(), insert_list.len(), normal_messages.len() - insert_list.len());
+        // 汇总日志
+        let skipped = normal_messages.len() - insert_list.len() - batch_update_list.len();
+        info!("[MsgHandler] 完成: total={}, inserted={}, seq_updated={}, skipped={}, notify={}",
+            normal_messages.len(), insert_list.len(), batch_update_list.len(),
+            skipped, to_notify.len());
 
         // 离线新消息通知（对齐 Go SDK OnRecvOfflineNewMessage）
         // 同步过程中收到的消息需要额外通知上层 UI（必须在 for msg in &to_notify 之后消费）

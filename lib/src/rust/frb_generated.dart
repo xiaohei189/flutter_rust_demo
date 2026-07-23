@@ -498,7 +498,7 @@ abstract class RustLibApi extends BaseApi {
     required SearchMessagesReq req,
   });
 
-  Future<Message>
+  Future<MsgStruct>
   crateApiBridgeClientOpenImBridgeClientSendAdvancedTextMessage({
     required OpenImBridgeClient that,
     required String text,
@@ -507,7 +507,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendAtTextMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendAtTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required List<String> atUserIds,
@@ -515,7 +515,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendCustomMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendCustomMessage({
     required OpenImBridgeClient that,
     required String data,
     required String desc,
@@ -524,7 +524,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendFileMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendFileMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -539,7 +539,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendImageMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendImageMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -554,14 +554,14 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendMarkdownMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendMarkdownMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendSoundMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendSoundMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -578,14 +578,14 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 duration,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendTextMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendVideoMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendVideoMessage({
     required OpenImBridgeClient that,
     required String videoPath,
     required String snapshotPath,
@@ -716,7 +716,7 @@ abstract class RustLibApi extends BaseApi {
     required String clientMsgId,
   });
 
-  Future<Message> crateApiBridgeClientEditMessage({
+  Future<MsgStruct> crateApiBridgeClientEditMessage({
     required String conversationId,
     required String clientMsgId,
     required String content,
@@ -728,13 +728,13 @@ abstract class RustLibApi extends BaseApi {
     required List<String> clientMsgIds,
   });
 
-  Future<Message> crateApiBridgeClientForwardMessage({
-    required Message msgData,
+  Future<MsgStruct> crateApiBridgeClientForwardMessage({
+    required MsgStruct msgStruct,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientForwardMessageByClientId({
+  Future<MsgStruct> crateApiBridgeClientForwardMessageByClientId({
     required String clientMsgId,
     required String sourceId,
     required SessionType sessionType,
@@ -784,7 +784,7 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiBridgeClientNetworkStatusChanged();
 
-  Future<Message> crateApiBridgeClientSendAdvancedQuoteMessage({
+  Future<MsgStruct> crateApiBridgeClientSendAdvancedQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -795,7 +795,7 @@ abstract class RustLibApi extends BaseApi {
     required List<MessageEntity> messageEntities,
   });
 
-  Future<Message> crateApiBridgeClientSendAtTextMessageWithQuote({
+  Future<MsgStruct> crateApiBridgeClientSendAtTextMessageWithQuote({
     required String text,
     required List<String> atUserList,
     required List<AtInfo> atUsersInfo,
@@ -803,7 +803,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendCardMessage({
+  Future<MsgStruct> crateApiBridgeClientSendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -812,14 +812,14 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendFaceMessage({
+  Future<MsgStruct> crateApiBridgeClientSendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendFileMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendFileMessageFromUrl({
     required String sourceUrl,
     required String fileName,
     required PlatformInt64 fileSize,
@@ -827,13 +827,13 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendImageMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendLocationMessage({
+  Future<MsgStruct> crateApiBridgeClientSendLocationMessage({
     required String description,
     required double longitude,
     required double latitude,
@@ -841,14 +841,14 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendMergerMessage({
+  Future<MsgStruct> crateApiBridgeClientSendMergerMessage({
     required String title,
     required List<String> summaryList,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<Message> crateApiBridgeClientSendQuoteMessage({
+  Future<MsgStruct> crateApiBridgeClientSendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -858,20 +858,20 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 quoteSendTime,
   });
 
-  Future<Message> crateApiBridgeClientSendSoundMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendSoundMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<void> crateApiBridgeClientSendTyping({
+  Future<SendTypingResp> crateApiBridgeClientSendTyping({
     required String sourceId,
     required SessionType sessionType,
     required bool focus,
   });
 
-  Future<Message> crateApiBridgeClientSendVideoMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendVideoMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String snapshotUrl,
@@ -3893,7 +3893,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message>
+  Future<MsgStruct>
   crateApiBridgeClientOpenImBridgeClientSendAdvancedTextMessage({
     required OpenImBridgeClient that,
     required String text,
@@ -3921,7 +3921,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -3940,7 +3940,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendAtTextMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendAtTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required List<String> atUserIds,
@@ -3967,7 +3967,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -3986,7 +3986,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendCustomMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendCustomMessage({
     required OpenImBridgeClient that,
     required String data,
     required String desc,
@@ -4015,7 +4015,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4041,7 +4041,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendFileMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendFileMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4066,7 +4066,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4114,7 +4114,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             );
           },
           codec: SseCodec(
-            decodeSuccessData: sse_decode_message,
+            decodeSuccessData: sse_decode_msg_struct,
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
@@ -4135,7 +4135,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendImageMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendImageMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4160,7 +4160,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4208,7 +4208,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             );
           },
           codec: SseCodec(
-            decodeSuccessData: sse_decode_message,
+            decodeSuccessData: sse_decode_msg_struct,
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
@@ -4229,7 +4229,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendMarkdownMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendMarkdownMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
@@ -4254,7 +4254,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4273,7 +4273,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendSoundMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendSoundMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4300,7 +4300,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4350,7 +4350,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             );
           },
           codec: SseCodec(
-            decodeSuccessData: sse_decode_message,
+            decodeSuccessData: sse_decode_msg_struct,
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
@@ -4378,7 +4378,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendTextMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
@@ -4403,7 +4403,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4422,7 +4422,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientOpenImBridgeClientSendVideoMessage({
+  Future<MsgStruct> crateApiBridgeClientOpenImBridgeClientSendVideoMessage({
     required OpenImBridgeClient that,
     required String videoPath,
     required String snapshotPath,
@@ -4451,7 +4451,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
@@ -4517,7 +4517,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             );
           },
           codec: SseCodec(
-            decodeSuccessData: sse_decode_message,
+            decodeSuccessData: sse_decode_msg_struct,
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
@@ -5373,7 +5373,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientEditMessage({
+  Future<MsgStruct> crateApiBridgeClientEditMessage({
     required String conversationId,
     required String clientMsgId,
     required String content,
@@ -5395,7 +5395,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientEditMessageConstMeta,
@@ -5447,8 +5447,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientForwardMessage({
-    required Message msgData,
+  Future<MsgStruct> crateApiBridgeClientForwardMessage({
+    required MsgStruct msgStruct,
     required String sourceId,
     required SessionType sessionType,
   }) {
@@ -5456,7 +5456,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_box_autoadd_message(msgData, serializer);
+          sse_encode_box_autoadd_msg_struct(msgStruct, serializer);
           sse_encode_String(sourceId, serializer);
           sse_encode_session_type(sessionType, serializer);
           pdeCallFfi(
@@ -5467,11 +5467,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientForwardMessageConstMeta,
-        argValues: [msgData, sourceId, sessionType],
+        argValues: [msgStruct, sourceId, sessionType],
         apiImpl: this,
       ),
     );
@@ -5480,11 +5480,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiBridgeClientForwardMessageConstMeta =>
       const TaskConstMeta(
         debugName: "forward_message",
-        argNames: ["msgData", "sourceId", "sessionType"],
+        argNames: ["msgStruct", "sourceId", "sessionType"],
       );
 
   @override
-  Future<Message> crateApiBridgeClientForwardMessageByClientId({
+  Future<MsgStruct> crateApiBridgeClientForwardMessageByClientId({
     required String clientMsgId,
     required String sourceId,
     required SessionType sessionType,
@@ -5504,7 +5504,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientForwardMessageByClientIdConstMeta,
@@ -5928,7 +5928,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "network_status_changed", argNames: []);
 
   @override
-  Future<Message> crateApiBridgeClientSendAdvancedQuoteMessage({
+  Future<MsgStruct> crateApiBridgeClientSendAdvancedQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -5958,7 +5958,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendAdvancedQuoteMessageConstMeta,
@@ -5993,7 +5993,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendAtTextMessageWithQuote({
+  Future<MsgStruct> crateApiBridgeClientSendAtTextMessageWithQuote({
     required String text,
     required List<String> atUserList,
     required List<AtInfo> atUsersInfo,
@@ -6017,7 +6017,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendAtTextMessageWithQuoteConstMeta,
@@ -6040,7 +6040,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendCardMessage({
+  Future<MsgStruct> crateApiBridgeClientSendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -6066,7 +6066,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendCardMessageConstMeta,
@@ -6090,7 +6090,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendFaceMessage({
+  Future<MsgStruct> crateApiBridgeClientSendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
@@ -6112,7 +6112,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendFaceMessageConstMeta,
@@ -6129,7 +6129,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendFileMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendFileMessageFromUrl({
     required String sourceUrl,
     required String fileName,
     required PlatformInt64 fileSize,
@@ -6153,7 +6153,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendFileMessageFromUrlConstMeta,
@@ -6176,7 +6176,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendImageMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
@@ -6196,7 +6196,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendImageMessageFromUrlConstMeta,
@@ -6213,7 +6213,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendLocationMessage({
+  Future<MsgStruct> crateApiBridgeClientSendLocationMessage({
     required String description,
     required double longitude,
     required double latitude,
@@ -6237,7 +6237,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendLocationMessageConstMeta,
@@ -6260,7 +6260,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendMergerMessage({
+  Future<MsgStruct> crateApiBridgeClientSendMergerMessage({
     required String title,
     required List<String> summaryList,
     required String sourceId,
@@ -6282,7 +6282,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendMergerMessageConstMeta,
@@ -6299,7 +6299,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendQuoteMessage({
+  Future<MsgStruct> crateApiBridgeClientSendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -6327,7 +6327,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendQuoteMessageConstMeta,
@@ -6360,7 +6360,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendSoundMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendSoundMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String sourceId,
@@ -6382,7 +6382,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendSoundMessageFromUrlConstMeta,
@@ -6399,7 +6399,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiBridgeClientSendTyping({
+  Future<SendTypingResp> crateApiBridgeClientSendTyping({
     required String sourceId,
     required SessionType sessionType,
     required bool focus,
@@ -6419,7 +6419,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
+          decodeSuccessData: sse_decode_send_typing_resp,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendTypingConstMeta,
@@ -6436,7 +6436,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Message> crateApiBridgeClientSendVideoMessageFromUrl({
+  Future<MsgStruct> crateApiBridgeClientSendVideoMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String snapshotUrl,
@@ -6460,7 +6460,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_message,
+          decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiBridgeClientSendVideoMessageFromUrlConstMeta,
@@ -6798,6 +6798,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AdvancedTextElem dco_decode_advanced_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return AdvancedTextElem(
+      text: dco_decode_String(arr[0]),
+      messageEntityList: dco_decode_list_message_entity(arr[1]),
+    );
+  }
+
+  @protected
   AtInfo dco_decode_at_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -6810,9 +6822,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AtTextElem dco_decode_at_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return AtTextElem(
+      text: dco_decode_String(arr[0]),
+      atUserList: dco_decode_list_String(arr[1]),
+      atUsersInfo: dco_decode_list_at_info(arr[2]),
+      quoteMessage: dco_decode_opt_box_msg_struct(arr[3]),
+    );
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
+  }
+
+  @protected
+  AdvancedTextElem dco_decode_box_autoadd_advanced_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_advanced_text_elem(raw);
+  }
+
+  @protected
+  AtTextElem dco_decode_box_autoadd_at_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_at_text_elem(raw);
   }
 
   @protected
@@ -6822,15 +6860,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CardElem dco_decode_box_autoadd_card_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_card_elem(raw);
+  }
+
+  @protected
   ClientConfig dco_decode_box_autoadd_client_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_client_config(raw);
   }
 
   @protected
+  CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_custom_elem(raw);
+  }
+
+  @protected
   DeleteMessagesReq dco_decode_box_autoadd_delete_messages_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_delete_messages_req(raw);
+  }
+
+  @protected
+  FaceElem dco_decode_box_autoadd_face_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_face_elem(raw);
+  }
+
+  @protected
+  FileElem dco_decode_box_autoadd_file_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_file_elem(raw);
   }
 
   @protected
@@ -6860,6 +6922,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  LocationElem dco_decode_box_autoadd_location_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_location_elem(raw);
+  }
+
+  @protected
   LogConfig dco_decode_box_autoadd_log_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_log_config(raw);
@@ -6874,9 +6942,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  Message dco_decode_box_autoadd_message(dynamic raw) {
+  MarkdownTextElem dco_decode_box_autoadd_markdown_text_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_message(raw);
+    return dco_decode_markdown_text_elem(raw);
+  }
+
+  @protected
+  MergeElem dco_decode_box_autoadd_merge_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_merge_elem(raw);
+  }
+
+  @protected
+  MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_msg_struct(raw);
+  }
+
+  @protected
+  OfflinePushInfo dco_decode_box_autoadd_offline_push_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_offline_push_info(raw);
+  }
+
+  @protected
+  PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_picture_elem(raw);
+  }
+
+  @protected
+  QuoteElem dco_decode_box_autoadd_quote_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_quote_elem(raw);
   }
 
   @protected
@@ -6889,6 +6987,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_search_messages_req(raw);
+  }
+
+  @protected
+  SoundElem dco_decode_box_autoadd_sound_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_sound_elem(raw);
+  }
+
+  @protected
+  TextElem dco_decode_box_autoadd_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_text_elem(raw);
+  }
+
+  @protected
+  VideoElem dco_decode_box_autoadd_video_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_video_elem(raw);
+  }
+
+  @protected
+  MsgStruct dco_decode_box_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_msg_struct(raw);
+  }
+
+  @protected
+  CardElem dco_decode_card_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return CardElem(
+      userId: dco_decode_String(arr[0]),
+      nickname: dco_decode_String(arr[1]),
+      faceUrl: dco_decode_String(arr[2]),
+      ex: dco_decode_String(arr[3]),
+    );
   }
 
   @protected
@@ -7030,6 +7166,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CustomElem dco_decode_custom_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return CustomElem(
+      data: dco_decode_String(arr[0]),
+      extension_: dco_decode_String(arr[1]),
+      description: dco_decode_String(arr[2]),
+    );
+  }
+
+  @protected
   DeleteMessagesReq dco_decode_delete_messages_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -7045,6 +7194,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   double dco_decode_f_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as double;
+  }
+
+  @protected
+  FaceElem dco_decode_face_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return FaceElem(
+      index: dco_decode_i_32(arr[0]),
+      data: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  FileElem dco_decode_file_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return FileElem(
+      filePath: dco_decode_String(arr[0]),
+      uuid: dco_decode_String(arr[1]),
+      sourceUrl: dco_decode_String(arr[2]),
+      fileName: dco_decode_String(arr[3]),
+      fileSize: dco_decode_i_64(arr[4]),
+      fileType: dco_decode_String(arr[5]),
+    );
   }
 
   @protected
@@ -7325,6 +7502,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<MsgStruct> dco_decode_list_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_msg_struct).toList();
+  }
+
+  @protected
   List<OnlineStatus> dco_decode_list_online_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_online_status).toList();
@@ -7426,6 +7609,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  LocationElem dco_decode_location_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return LocationElem(
+      description: dco_decode_String(arr[0]),
+      longitude: dco_decode_f_64(arr[1]),
+      latitude: dco_decode_f_64(arr[2]),
+    );
+  }
+
+  @protected
   LogConfig dco_decode_log_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -7459,31 +7655,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  Message dco_decode_message(dynamic raw) {
+  MarkdownTextElem dco_decode_markdown_text_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 19)
-      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
-    return Message(
-      sendId: dco_decode_String(arr[0]),
-      recvId: dco_decode_String(arr[1]),
-      groupId: dco_decode_String(arr[2]),
-      clientMsgId: dco_decode_String(arr[3]),
-      serverMsgId: dco_decode_String(arr[4]),
-      senderPlatformId: dco_decode_i_32(arr[5]),
-      senderNickname: dco_decode_String(arr[6]),
-      senderFaceUrl: dco_decode_String(arr[7]),
-      sessionType: dco_decode_i_32(arr[8]),
-      msgFrom: dco_decode_i_32(arr[9]),
-      contentType: dco_decode_i_32(arr[10]),
-      content: dco_decode_String(arr[11]),
-      seq: dco_decode_i_64(arr[12]),
-      sendTime: dco_decode_i_64(arr[13]),
-      createTime: dco_decode_i_64(arr[14]),
-      status: dco_decode_i_32(arr[15]),
-      isRead: dco_decode_bool(arr[16]),
-      attachedInfo: dco_decode_String(arr[17]),
-      ex: dco_decode_String(arr[18]),
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return MarkdownTextElem(content: dco_decode_String(arr[0]));
+  }
+
+  @protected
+  MergeElem dco_decode_merge_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return MergeElem(
+      title: dco_decode_String(arr[0]),
+      abstractList: dco_decode_list_String(arr[1]),
+      multiMessage: dco_decode_list_msg_struct(arr[2]),
     );
   }
 
@@ -7532,6 +7721,67 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MsgStruct dco_decode_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 35)
+      throw Exception('unexpected arr length: expect 35 but see ${arr.length}');
+    return MsgStruct(
+      clientMsgId: dco_decode_String(arr[0]),
+      serverMsgId: dco_decode_String(arr[1]),
+      createTime: dco_decode_i_64(arr[2]),
+      sendTime: dco_decode_i_64(arr[3]),
+      sessionType: dco_decode_i_32(arr[4]),
+      sendId: dco_decode_String(arr[5]),
+      recvId: dco_decode_String(arr[6]),
+      msgFrom: dco_decode_i_32(arr[7]),
+      contentType: dco_decode_i_32(arr[8]),
+      senderPlatformId: dco_decode_i_32(arr[9]),
+      senderNickname: dco_decode_String(arr[10]),
+      senderFaceUrl: dco_decode_String(arr[11]),
+      groupId: dco_decode_String(arr[12]),
+      content: dco_decode_String(arr[13]),
+      seq: dco_decode_i_64(arr[14]),
+      isRead: dco_decode_bool(arr[15]),
+      status: dco_decode_i_32(arr[16]),
+      attachedInfo: dco_decode_String(arr[17]),
+      ex: dco_decode_String(arr[18]),
+      localEx: dco_decode_String(arr[19]),
+      textElem: dco_decode_opt_box_autoadd_text_elem(arr[20]),
+      pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[21]),
+      soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[22]),
+      videoElem: dco_decode_opt_box_autoadd_video_elem(arr[23]),
+      fileElem: dco_decode_opt_box_autoadd_file_elem(arr[24]),
+      atTextElem: dco_decode_opt_box_autoadd_at_text_elem(arr[25]),
+      quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[26]),
+      mergeElem: dco_decode_opt_box_autoadd_merge_elem(arr[27]),
+      cardElem: dco_decode_opt_box_autoadd_card_elem(arr[28]),
+      locationElem: dco_decode_opt_box_autoadd_location_elem(arr[29]),
+      faceElem: dco_decode_opt_box_autoadd_face_elem(arr[30]),
+      customElem: dco_decode_opt_box_autoadd_custom_elem(arr[31]),
+      advancedTextElem: dco_decode_opt_box_autoadd_advanced_text_elem(arr[32]),
+      markdownTextElem: dco_decode_opt_box_autoadd_markdown_text_elem(arr[33]),
+      offlinePush: dco_decode_opt_box_autoadd_offline_push_info(arr[34]),
+    );
+  }
+
+  @protected
+  OfflinePushInfo dco_decode_offline_push_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return OfflinePushInfo(
+      title: dco_decode_String(arr[0]),
+      desc: dco_decode_String(arr[1]),
+      ex: dco_decode_String(arr[2]),
+      iosPushSound: dco_decode_String(arr[3]),
+      iosBadgeCount: dco_decode_bool(arr[4]),
+      signalInfo: dco_decode_String(arr[5]),
+    );
+  }
+
+  @protected
   OnlineStatus dco_decode_online_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -7551,9 +7801,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AdvancedTextElem? dco_decode_opt_box_autoadd_advanced_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_advanced_text_elem(raw);
+  }
+
+  @protected
+  AtTextElem? dco_decode_opt_box_autoadd_at_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_at_text_elem(raw);
+  }
+
+  @protected
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
+  CardElem? dco_decode_opt_box_autoadd_card_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_card_elem(raw);
+  }
+
+  @protected
+  CustomElem? dco_decode_opt_box_autoadd_custom_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_custom_elem(raw);
+  }
+
+  @protected
+  FaceElem? dco_decode_opt_box_autoadd_face_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_face_elem(raw);
+  }
+
+  @protected
+  FileElem? dco_decode_opt_box_autoadd_file_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_file_elem(raw);
   }
 
   @protected
@@ -7568,6 +7854,109 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_local_conversation(raw);
+  }
+
+  @protected
+  LocationElem? dco_decode_opt_box_autoadd_location_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_location_elem(raw);
+  }
+
+  @protected
+  MarkdownTextElem? dco_decode_opt_box_autoadd_markdown_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_markdown_text_elem(raw);
+  }
+
+  @protected
+  MergeElem? dco_decode_opt_box_autoadd_merge_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_merge_elem(raw);
+  }
+
+  @protected
+  OfflinePushInfo? dco_decode_opt_box_autoadd_offline_push_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_offline_push_info(raw);
+  }
+
+  @protected
+  PictureElem? dco_decode_opt_box_autoadd_picture_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_picture_elem(raw);
+  }
+
+  @protected
+  QuoteElem? dco_decode_opt_box_autoadd_quote_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_quote_elem(raw);
+  }
+
+  @protected
+  SoundElem? dco_decode_opt_box_autoadd_sound_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_sound_elem(raw);
+  }
+
+  @protected
+  TextElem? dco_decode_opt_box_autoadd_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_text_elem(raw);
+  }
+
+  @protected
+  VideoElem? dco_decode_opt_box_autoadd_video_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_video_elem(raw);
+  }
+
+  @protected
+  MsgStruct? dco_decode_opt_box_msg_struct(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_msg_struct(raw);
+  }
+
+  @protected
+  PictureBaseInfo dco_decode_picture_base_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return PictureBaseInfo(
+      width: dco_decode_i_32(arr[0]),
+      height: dco_decode_i_32(arr[1]),
+      pictureType: dco_decode_String(arr[2]),
+      size: dco_decode_i_64(arr[3]),
+      url: dco_decode_String(arr[4]),
+      uuid: dco_decode_String(arr[5]),
+    );
+  }
+
+  @protected
+  PictureElem dco_decode_picture_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return PictureElem(
+      sourcePath: dco_decode_String(arr[0]),
+      sourcePicture: dco_decode_picture_base_info(arr[1]),
+      bigPicture: dco_decode_picture_base_info(arr[2]),
+      snapshotPicture: dco_decode_picture_base_info(arr[3]),
+    );
+  }
+
+  @protected
+  QuoteElem dco_decode_quote_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return QuoteElem(
+      text: dco_decode_String(arr[0]),
+      quoteMessage: dco_decode_opt_box_msg_struct(arr[1]),
+      messageEntityList: dco_decode_list_message_entity(arr[2]),
+    );
   }
 
   @protected
@@ -7614,9 +8003,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SendTypingResp dco_decode_send_typing_resp(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return SendTypingResp(
+      serverMsgId: dco_decode_String(arr[0]),
+      clientMsgId: dco_decode_String(arr[1]),
+      sendTime: dco_decode_i_64(arr[2]),
+    );
+  }
+
+  @protected
   SessionType dco_decode_session_type(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return SessionType.values[raw as int];
+  }
+
+  @protected
+  SoundElem dco_decode_sound_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return SoundElem(
+      uuid: dco_decode_String(arr[0]),
+      soundPath: dco_decode_String(arr[1]),
+      sourceUrl: dco_decode_String(arr[2]),
+      dataSize: dco_decode_i_64(arr[3]),
+      duration: dco_decode_i_64(arr[4]),
+      soundType: dco_decode_String(arr[5]),
+    );
+  }
+
+  @protected
+  TextElem dco_decode_text_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return TextElem(content: dco_decode_String(arr[0]));
   }
 
   @protected
@@ -7659,6 +8086,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BigInt dco_decode_usize(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dcoDecodeU64(raw);
+  }
+
+  @protected
+  VideoElem dco_decode_video_elem(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 13)
+      throw Exception('unexpected arr length: expect 13 but see ${arr.length}');
+    return VideoElem(
+      videoPath: dco_decode_String(arr[0]),
+      videoUuid: dco_decode_String(arr[1]),
+      videoUrl: dco_decode_String(arr[2]),
+      videoType: dco_decode_String(arr[3]),
+      videoSize: dco_decode_i_64(arr[4]),
+      duration: dco_decode_i_64(arr[5]),
+      snapshotPath: dco_decode_String(arr[6]),
+      snapshotUuid: dco_decode_String(arr[7]),
+      snapshotSize: dco_decode_i_64(arr[8]),
+      snapshotUrl: dco_decode_String(arr[9]),
+      snapshotWidth: dco_decode_i_32(arr[10]),
+      snapshotHeight: dco_decode_i_32(arr[11]),
+      snapshotType: dco_decode_String(arr[12]),
+    );
   }
 
   @protected
@@ -7751,11 +8201,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AdvancedTextElem sse_decode_advanced_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_text = sse_decode_String(deserializer);
+    var var_messageEntityList = sse_decode_list_message_entity(deserializer);
+    return AdvancedTextElem(
+      text: var_text,
+      messageEntityList: var_messageEntityList,
+    );
+  }
+
+  @protected
   AtInfo sse_decode_at_info(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_atUserId = sse_decode_String(deserializer);
     var var_groupNickname = sse_decode_String(deserializer);
     return AtInfo(atUserId: var_atUserId, groupNickname: var_groupNickname);
+  }
+
+  @protected
+  AtTextElem sse_decode_at_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_text = sse_decode_String(deserializer);
+    var var_atUserList = sse_decode_list_String(deserializer);
+    var var_atUsersInfo = sse_decode_list_at_info(deserializer);
+    var var_quoteMessage = sse_decode_opt_box_msg_struct(deserializer);
+    return AtTextElem(
+      text: var_text,
+      atUserList: var_atUserList,
+      atUsersInfo: var_atUsersInfo,
+      quoteMessage: var_quoteMessage,
+    );
   }
 
   @protected
@@ -7765,9 +8241,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AdvancedTextElem sse_decode_box_autoadd_advanced_text_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_advanced_text_elem(deserializer));
+  }
+
+  @protected
+  AtTextElem sse_decode_box_autoadd_at_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_at_text_elem(deserializer));
+  }
+
+  @protected
   bool sse_decode_box_autoadd_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_bool(deserializer));
+  }
+
+  @protected
+  CardElem sse_decode_box_autoadd_card_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_card_elem(deserializer));
   }
 
   @protected
@@ -7779,11 +8275,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CustomElem sse_decode_box_autoadd_custom_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_custom_elem(deserializer));
+  }
+
+  @protected
   DeleteMessagesReq sse_decode_box_autoadd_delete_messages_req(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_delete_messages_req(deserializer));
+  }
+
+  @protected
+  FaceElem sse_decode_box_autoadd_face_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_face_elem(deserializer));
+  }
+
+  @protected
+  FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_file_elem(deserializer));
   }
 
   @protected
@@ -7815,6 +8329,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  LocationElem sse_decode_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_location_elem(deserializer));
+  }
+
+  @protected
   LogConfig sse_decode_box_autoadd_log_config(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_log_config(deserializer));
@@ -7829,9 +8351,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  Message sse_decode_box_autoadd_message(SseDeserializer deserializer) {
+  MarkdownTextElem sse_decode_box_autoadd_markdown_text_elem(
+    SseDeserializer deserializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_message(deserializer));
+    return (sse_decode_markdown_text_elem(deserializer));
+  }
+
+  @protected
+  MergeElem sse_decode_box_autoadd_merge_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_merge_elem(deserializer));
+  }
+
+  @protected
+  MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_msg_struct(deserializer));
+  }
+
+  @protected
+  OfflinePushInfo sse_decode_box_autoadd_offline_push_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_offline_push_info(deserializer));
+  }
+
+  @protected
+  PictureElem sse_decode_box_autoadd_picture_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_picture_elem(deserializer));
+  }
+
+  @protected
+  QuoteElem sse_decode_box_autoadd_quote_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_quote_elem(deserializer));
   }
 
   @protected
@@ -7848,6 +8406,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_search_messages_req(deserializer));
+  }
+
+  @protected
+  SoundElem sse_decode_box_autoadd_sound_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_sound_elem(deserializer));
+  }
+
+  @protected
+  TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_text_elem(deserializer));
+  }
+
+  @protected
+  VideoElem sse_decode_box_autoadd_video_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_video_elem(deserializer));
+  }
+
+  @protected
+  MsgStruct sse_decode_box_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_msg_struct(deserializer));
+  }
+
+  @protected
+  CardElem sse_decode_card_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_userId = sse_decode_String(deserializer);
+    var var_nickname = sse_decode_String(deserializer);
+    var var_faceUrl = sse_decode_String(deserializer);
+    var var_ex = sse_decode_String(deserializer);
+    return CardElem(
+      userId: var_userId,
+      nickname: var_nickname,
+      faceUrl: var_faceUrl,
+      ex: var_ex,
+    );
   }
 
   @protected
@@ -8036,6 +8633,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CustomElem sse_decode_custom_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_data = sse_decode_String(deserializer);
+    var var_extension_ = sse_decode_String(deserializer);
+    var var_description = sse_decode_String(deserializer);
+    return CustomElem(
+      data: var_data,
+      extension_: var_extension_,
+      description: var_description,
+    );
+  }
+
+  @protected
   DeleteMessagesReq sse_decode_delete_messages_req(
     SseDeserializer deserializer,
   ) {
@@ -8052,6 +8662,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   double sse_decode_f_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getFloat64();
+  }
+
+  @protected
+  FaceElem sse_decode_face_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_index = sse_decode_i_32(deserializer);
+    var var_data = sse_decode_String(deserializer);
+    return FaceElem(index: var_index, data: var_data);
+  }
+
+  @protected
+  FileElem sse_decode_file_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_filePath = sse_decode_String(deserializer);
+    var var_uuid = sse_decode_String(deserializer);
+    var var_sourceUrl = sse_decode_String(deserializer);
+    var var_fileName = sse_decode_String(deserializer);
+    var var_fileSize = sse_decode_i_64(deserializer);
+    var var_fileType = sse_decode_String(deserializer);
+    return FileElem(
+      filePath: var_filePath,
+      uuid: var_uuid,
+      sourceUrl: var_sourceUrl,
+      fileName: var_fileName,
+      fileSize: var_fileSize,
+      fileType: var_fileType,
+    );
   }
 
   @protected
@@ -8466,6 +9103,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <MsgStruct>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_msg_struct(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<OnlineStatus> sse_decode_list_online_status(
     SseDeserializer deserializer,
   ) {
@@ -8633,6 +9282,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  LocationElem sse_decode_location_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_description = sse_decode_String(deserializer);
+    var var_longitude = sse_decode_f_64(deserializer);
+    var var_latitude = sse_decode_f_64(deserializer);
+    return LocationElem(
+      description: var_description,
+      longitude: var_longitude,
+      latitude: var_latitude,
+    );
+  }
+
+  @protected
   LogConfig sse_decode_log_config(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_logLevel = sse_decode_u_32(deserializer);
@@ -8675,47 +9337,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  Message sse_decode_message(SseDeserializer deserializer) {
+  MarkdownTextElem sse_decode_markdown_text_elem(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_sendId = sse_decode_String(deserializer);
-    var var_recvId = sse_decode_String(deserializer);
-    var var_groupId = sse_decode_String(deserializer);
-    var var_clientMsgId = sse_decode_String(deserializer);
-    var var_serverMsgId = sse_decode_String(deserializer);
-    var var_senderPlatformId = sse_decode_i_32(deserializer);
-    var var_senderNickname = sse_decode_String(deserializer);
-    var var_senderFaceUrl = sse_decode_String(deserializer);
-    var var_sessionType = sse_decode_i_32(deserializer);
-    var var_msgFrom = sse_decode_i_32(deserializer);
-    var var_contentType = sse_decode_i_32(deserializer);
     var var_content = sse_decode_String(deserializer);
-    var var_seq = sse_decode_i_64(deserializer);
-    var var_sendTime = sse_decode_i_64(deserializer);
-    var var_createTime = sse_decode_i_64(deserializer);
-    var var_status = sse_decode_i_32(deserializer);
-    var var_isRead = sse_decode_bool(deserializer);
-    var var_attachedInfo = sse_decode_String(deserializer);
-    var var_ex = sse_decode_String(deserializer);
-    return Message(
-      sendId: var_sendId,
-      recvId: var_recvId,
-      groupId: var_groupId,
-      clientMsgId: var_clientMsgId,
-      serverMsgId: var_serverMsgId,
-      senderPlatformId: var_senderPlatformId,
-      senderNickname: var_senderNickname,
-      senderFaceUrl: var_senderFaceUrl,
-      sessionType: var_sessionType,
-      msgFrom: var_msgFrom,
-      contentType: var_contentType,
-      content: var_content,
-      seq: var_seq,
-      sendTime: var_sendTime,
-      createTime: var_createTime,
-      status: var_status,
-      isRead: var_isRead,
-      attachedInfo: var_attachedInfo,
-      ex: var_ex,
+    return MarkdownTextElem(content: var_content);
+  }
+
+  @protected
+  MergeElem sse_decode_merge_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_title = sse_decode_String(deserializer);
+    var var_abstractList = sse_decode_list_String(deserializer);
+    var var_multiMessage = sse_decode_list_msg_struct(deserializer);
+    return MergeElem(
+      title: var_title,
+      abstractList: var_abstractList,
+      multiMessage: var_multiMessage,
     );
   }
 
@@ -8782,6 +9419,110 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MsgStruct sse_decode_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_clientMsgId = sse_decode_String(deserializer);
+    var var_serverMsgId = sse_decode_String(deserializer);
+    var var_createTime = sse_decode_i_64(deserializer);
+    var var_sendTime = sse_decode_i_64(deserializer);
+    var var_sessionType = sse_decode_i_32(deserializer);
+    var var_sendId = sse_decode_String(deserializer);
+    var var_recvId = sse_decode_String(deserializer);
+    var var_msgFrom = sse_decode_i_32(deserializer);
+    var var_contentType = sse_decode_i_32(deserializer);
+    var var_senderPlatformId = sse_decode_i_32(deserializer);
+    var var_senderNickname = sse_decode_String(deserializer);
+    var var_senderFaceUrl = sse_decode_String(deserializer);
+    var var_groupId = sse_decode_String(deserializer);
+    var var_content = sse_decode_String(deserializer);
+    var var_seq = sse_decode_i_64(deserializer);
+    var var_isRead = sse_decode_bool(deserializer);
+    var var_status = sse_decode_i_32(deserializer);
+    var var_attachedInfo = sse_decode_String(deserializer);
+    var var_ex = sse_decode_String(deserializer);
+    var var_localEx = sse_decode_String(deserializer);
+    var var_textElem = sse_decode_opt_box_autoadd_text_elem(deserializer);
+    var var_pictureElem = sse_decode_opt_box_autoadd_picture_elem(deserializer);
+    var var_soundElem = sse_decode_opt_box_autoadd_sound_elem(deserializer);
+    var var_videoElem = sse_decode_opt_box_autoadd_video_elem(deserializer);
+    var var_fileElem = sse_decode_opt_box_autoadd_file_elem(deserializer);
+    var var_atTextElem = sse_decode_opt_box_autoadd_at_text_elem(deserializer);
+    var var_quoteElem = sse_decode_opt_box_autoadd_quote_elem(deserializer);
+    var var_mergeElem = sse_decode_opt_box_autoadd_merge_elem(deserializer);
+    var var_cardElem = sse_decode_opt_box_autoadd_card_elem(deserializer);
+    var var_locationElem = sse_decode_opt_box_autoadd_location_elem(
+      deserializer,
+    );
+    var var_faceElem = sse_decode_opt_box_autoadd_face_elem(deserializer);
+    var var_customElem = sse_decode_opt_box_autoadd_custom_elem(deserializer);
+    var var_advancedTextElem = sse_decode_opt_box_autoadd_advanced_text_elem(
+      deserializer,
+    );
+    var var_markdownTextElem = sse_decode_opt_box_autoadd_markdown_text_elem(
+      deserializer,
+    );
+    var var_offlinePush = sse_decode_opt_box_autoadd_offline_push_info(
+      deserializer,
+    );
+    return MsgStruct(
+      clientMsgId: var_clientMsgId,
+      serverMsgId: var_serverMsgId,
+      createTime: var_createTime,
+      sendTime: var_sendTime,
+      sessionType: var_sessionType,
+      sendId: var_sendId,
+      recvId: var_recvId,
+      msgFrom: var_msgFrom,
+      contentType: var_contentType,
+      senderPlatformId: var_senderPlatformId,
+      senderNickname: var_senderNickname,
+      senderFaceUrl: var_senderFaceUrl,
+      groupId: var_groupId,
+      content: var_content,
+      seq: var_seq,
+      isRead: var_isRead,
+      status: var_status,
+      attachedInfo: var_attachedInfo,
+      ex: var_ex,
+      localEx: var_localEx,
+      textElem: var_textElem,
+      pictureElem: var_pictureElem,
+      soundElem: var_soundElem,
+      videoElem: var_videoElem,
+      fileElem: var_fileElem,
+      atTextElem: var_atTextElem,
+      quoteElem: var_quoteElem,
+      mergeElem: var_mergeElem,
+      cardElem: var_cardElem,
+      locationElem: var_locationElem,
+      faceElem: var_faceElem,
+      customElem: var_customElem,
+      advancedTextElem: var_advancedTextElem,
+      markdownTextElem: var_markdownTextElem,
+      offlinePush: var_offlinePush,
+    );
+  }
+
+  @protected
+  OfflinePushInfo sse_decode_offline_push_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_title = sse_decode_String(deserializer);
+    var var_desc = sse_decode_String(deserializer);
+    var var_ex = sse_decode_String(deserializer);
+    var var_iosPushSound = sse_decode_String(deserializer);
+    var var_iosBadgeCount = sse_decode_bool(deserializer);
+    var var_signalInfo = sse_decode_String(deserializer);
+    return OfflinePushInfo(
+      title: var_title,
+      desc: var_desc,
+      ex: var_ex,
+      iosPushSound: var_iosPushSound,
+      iosBadgeCount: var_iosBadgeCount,
+      signalInfo: var_signalInfo,
+    );
+  }
+
+  @protected
   OnlineStatus sse_decode_online_status(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_userId = sse_decode_String(deserializer);
@@ -8806,11 +9547,83 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AdvancedTextElem? sse_decode_opt_box_autoadd_advanced_text_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_advanced_text_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  AtTextElem? sse_decode_opt_box_autoadd_at_text_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_at_text_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_box_autoadd_bool(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  CardElem? sse_decode_opt_box_autoadd_card_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_card_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  CustomElem? sse_decode_opt_box_autoadd_custom_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_custom_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  FaceElem? sse_decode_opt_box_autoadd_face_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_face_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  FileElem? sse_decode_opt_box_autoadd_file_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_file_elem(deserializer));
     } else {
       return null;
     }
@@ -8838,6 +9651,179 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     } else {
       return null;
     }
+  }
+
+  @protected
+  LocationElem? sse_decode_opt_box_autoadd_location_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_location_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  MarkdownTextElem? sse_decode_opt_box_autoadd_markdown_text_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_markdown_text_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  MergeElem? sse_decode_opt_box_autoadd_merge_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_merge_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  OfflinePushInfo? sse_decode_opt_box_autoadd_offline_push_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_offline_push_info(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PictureElem? sse_decode_opt_box_autoadd_picture_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_picture_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  QuoteElem? sse_decode_opt_box_autoadd_quote_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_quote_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  SoundElem? sse_decode_opt_box_autoadd_sound_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_sound_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  TextElem? sse_decode_opt_box_autoadd_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_text_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  VideoElem? sse_decode_opt_box_autoadd_video_elem(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_video_elem(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  MsgStruct? sse_decode_opt_box_msg_struct(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_msg_struct(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PictureBaseInfo sse_decode_picture_base_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_width = sse_decode_i_32(deserializer);
+    var var_height = sse_decode_i_32(deserializer);
+    var var_pictureType = sse_decode_String(deserializer);
+    var var_size = sse_decode_i_64(deserializer);
+    var var_url = sse_decode_String(deserializer);
+    var var_uuid = sse_decode_String(deserializer);
+    return PictureBaseInfo(
+      width: var_width,
+      height: var_height,
+      pictureType: var_pictureType,
+      size: var_size,
+      url: var_url,
+      uuid: var_uuid,
+    );
+  }
+
+  @protected
+  PictureElem sse_decode_picture_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sourcePath = sse_decode_String(deserializer);
+    var var_sourcePicture = sse_decode_picture_base_info(deserializer);
+    var var_bigPicture = sse_decode_picture_base_info(deserializer);
+    var var_snapshotPicture = sse_decode_picture_base_info(deserializer);
+    return PictureElem(
+      sourcePath: var_sourcePath,
+      sourcePicture: var_sourcePicture,
+      bigPicture: var_bigPicture,
+      snapshotPicture: var_snapshotPicture,
+    );
+  }
+
+  @protected
+  QuoteElem sse_decode_quote_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_text = sse_decode_String(deserializer);
+    var var_quoteMessage = sse_decode_opt_box_msg_struct(deserializer);
+    var var_messageEntityList = sse_decode_list_message_entity(deserializer);
+    return QuoteElem(
+      text: var_text,
+      quoteMessage: var_quoteMessage,
+      messageEntityList: var_messageEntityList,
+    );
   }
 
   @protected
@@ -8890,10 +9876,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SendTypingResp sse_decode_send_typing_resp(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_serverMsgId = sse_decode_String(deserializer);
+    var var_clientMsgId = sse_decode_String(deserializer);
+    var var_sendTime = sse_decode_i_64(deserializer);
+    return SendTypingResp(
+      serverMsgId: var_serverMsgId,
+      clientMsgId: var_clientMsgId,
+      sendTime: var_sendTime,
+    );
+  }
+
+  @protected
   SessionType sse_decode_session_type(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return SessionType.values[inner];
+  }
+
+  @protected
+  SoundElem sse_decode_sound_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_uuid = sse_decode_String(deserializer);
+    var var_soundPath = sse_decode_String(deserializer);
+    var var_sourceUrl = sse_decode_String(deserializer);
+    var var_dataSize = sse_decode_i_64(deserializer);
+    var var_duration = sse_decode_i_64(deserializer);
+    var var_soundType = sse_decode_String(deserializer);
+    return SoundElem(
+      uuid: var_uuid,
+      soundPath: var_soundPath,
+      sourceUrl: var_sourceUrl,
+      dataSize: var_dataSize,
+      duration: var_duration,
+      soundType: var_soundType,
+    );
+  }
+
+  @protected
+  TextElem sse_decode_text_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_content = sse_decode_String(deserializer);
+    return TextElem(content: var_content);
   }
 
   @protected
@@ -8940,6 +9965,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BigInt sse_decode_usize(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getBigUint64();
+  }
+
+  @protected
+  VideoElem sse_decode_video_elem(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_videoPath = sse_decode_String(deserializer);
+    var var_videoUuid = sse_decode_String(deserializer);
+    var var_videoUrl = sse_decode_String(deserializer);
+    var var_videoType = sse_decode_String(deserializer);
+    var var_videoSize = sse_decode_i_64(deserializer);
+    var var_duration = sse_decode_i_64(deserializer);
+    var var_snapshotPath = sse_decode_String(deserializer);
+    var var_snapshotUuid = sse_decode_String(deserializer);
+    var var_snapshotSize = sse_decode_i_64(deserializer);
+    var var_snapshotUrl = sse_decode_String(deserializer);
+    var var_snapshotWidth = sse_decode_i_32(deserializer);
+    var var_snapshotHeight = sse_decode_i_32(deserializer);
+    var var_snapshotType = sse_decode_String(deserializer);
+    return VideoElem(
+      videoPath: var_videoPath,
+      videoUuid: var_videoUuid,
+      videoUrl: var_videoUrl,
+      videoType: var_videoType,
+      videoSize: var_videoSize,
+      duration: var_duration,
+      snapshotPath: var_snapshotPath,
+      snapshotUuid: var_snapshotUuid,
+      snapshotSize: var_snapshotSize,
+      snapshotUrl: var_snapshotUrl,
+      snapshotWidth: var_snapshotWidth,
+      snapshotHeight: var_snapshotHeight,
+      snapshotType: var_snapshotType,
+    );
   }
 
   @protected
@@ -9082,10 +10140,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_advanced_text_elem(
+    AdvancedTextElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.text, serializer);
+    sse_encode_list_message_entity(self.messageEntityList, serializer);
+  }
+
+  @protected
   void sse_encode_at_info(AtInfo self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.atUserId, serializer);
     sse_encode_String(self.groupNickname, serializer);
+  }
+
+  @protected
+  void sse_encode_at_text_elem(AtTextElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.text, serializer);
+    sse_encode_list_String(self.atUserList, serializer);
+    sse_encode_list_at_info(self.atUsersInfo, serializer);
+    sse_encode_opt_box_msg_struct(self.quoteMessage, serializer);
   }
 
   @protected
@@ -9095,9 +10172,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_advanced_text_elem(
+    AdvancedTextElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_advanced_text_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_at_text_elem(
+    AtTextElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_at_text_elem(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_bool(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_card_elem(
+    CardElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_card_elem(self, serializer);
   }
 
   @protected
@@ -9110,12 +10214,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_custom_elem(
+    CustomElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_custom_elem(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_delete_messages_req(
     DeleteMessagesReq self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_delete_messages_req(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_face_elem(
+    FaceElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_face_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_file_elem(
+    FileElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_file_elem(self, serializer);
   }
 
   @protected
@@ -9152,6 +10283,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_location_elem(
+    LocationElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_location_elem(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_log_config(
     LogConfig self,
     SseSerializer serializer,
@@ -9170,9 +10310,57 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_box_autoadd_message(Message self, SseSerializer serializer) {
+  void sse_encode_box_autoadd_markdown_text_elem(
+    MarkdownTextElem self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_message(self, serializer);
+    sse_encode_markdown_text_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_merge_elem(
+    MergeElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_merge_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_msg_struct(
+    MsgStruct self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_msg_struct(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_offline_push_info(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_offline_push_info(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_picture_elem(
+    PictureElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_picture_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_quote_elem(
+    QuoteElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_quote_elem(self, serializer);
   }
 
   @protected
@@ -9191,6 +10379,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_search_messages_req(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_sound_elem(
+    SoundElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_sound_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_text_elem(
+    TextElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_text_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_video_elem(
+    VideoElem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_video_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_msg_struct(MsgStruct self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_msg_struct(self, serializer);
+  }
+
+  @protected
+  void sse_encode_card_elem(CardElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.userId, serializer);
+    sse_encode_String(self.nickname, serializer);
+    sse_encode_String(self.faceUrl, serializer);
+    sse_encode_String(self.ex, serializer);
   }
 
   @protected
@@ -9339,6 +10569,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_custom_elem(CustomElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.data, serializer);
+    sse_encode_String(self.extension_, serializer);
+    sse_encode_String(self.description, serializer);
+  }
+
+  @protected
   void sse_encode_delete_messages_req(
     DeleteMessagesReq self,
     SseSerializer serializer,
@@ -9352,6 +10590,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_f_64(double self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putFloat64(self);
+  }
+
+  @protected
+  void sse_encode_face_elem(FaceElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+    sse_encode_String(self.data, serializer);
+  }
+
+  @protected
+  void sse_encode_file_elem(FileElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.filePath, serializer);
+    sse_encode_String(self.uuid, serializer);
+    sse_encode_String(self.sourceUrl, serializer);
+    sse_encode_String(self.fileName, serializer);
+    sse_encode_i_64(self.fileSize, serializer);
+    sse_encode_String(self.fileType, serializer);
   }
 
   @protected
@@ -9687,6 +10943,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_msg_struct(
+    List<MsgStruct> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_msg_struct(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_online_status(
     List<OnlineStatus> self,
     SseSerializer serializer,
@@ -9811,6 +11079,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_location_elem(LocationElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.description, serializer);
+    sse_encode_f_64(self.longitude, serializer);
+    sse_encode_f_64(self.latitude, serializer);
+  }
+
+  @protected
   void sse_encode_log_config(LogConfig self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_u_32(self.logLevel, serializer);
@@ -9837,27 +11113,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_message(Message self, SseSerializer serializer) {
+  void sse_encode_markdown_text_elem(
+    MarkdownTextElem self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.sendId, serializer);
-    sse_encode_String(self.recvId, serializer);
-    sse_encode_String(self.groupId, serializer);
-    sse_encode_String(self.clientMsgId, serializer);
-    sse_encode_String(self.serverMsgId, serializer);
-    sse_encode_i_32(self.senderPlatformId, serializer);
-    sse_encode_String(self.senderNickname, serializer);
-    sse_encode_String(self.senderFaceUrl, serializer);
-    sse_encode_i_32(self.sessionType, serializer);
-    sse_encode_i_32(self.msgFrom, serializer);
-    sse_encode_i_32(self.contentType, serializer);
     sse_encode_String(self.content, serializer);
-    sse_encode_i_64(self.seq, serializer);
-    sse_encode_i_64(self.sendTime, serializer);
-    sse_encode_i_64(self.createTime, serializer);
-    sse_encode_i_32(self.status, serializer);
-    sse_encode_bool(self.isRead, serializer);
-    sse_encode_String(self.attachedInfo, serializer);
-    sse_encode_String(self.ex, serializer);
+  }
+
+  @protected
+  void sse_encode_merge_elem(MergeElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.title, serializer);
+    sse_encode_list_String(self.abstractList, serializer);
+    sse_encode_list_msg_struct(self.multiMessage, serializer);
   }
 
   @protected
@@ -9895,6 +11164,66 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_msg_struct(MsgStruct self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.clientMsgId, serializer);
+    sse_encode_String(self.serverMsgId, serializer);
+    sse_encode_i_64(self.createTime, serializer);
+    sse_encode_i_64(self.sendTime, serializer);
+    sse_encode_i_32(self.sessionType, serializer);
+    sse_encode_String(self.sendId, serializer);
+    sse_encode_String(self.recvId, serializer);
+    sse_encode_i_32(self.msgFrom, serializer);
+    sse_encode_i_32(self.contentType, serializer);
+    sse_encode_i_32(self.senderPlatformId, serializer);
+    sse_encode_String(self.senderNickname, serializer);
+    sse_encode_String(self.senderFaceUrl, serializer);
+    sse_encode_String(self.groupId, serializer);
+    sse_encode_String(self.content, serializer);
+    sse_encode_i_64(self.seq, serializer);
+    sse_encode_bool(self.isRead, serializer);
+    sse_encode_i_32(self.status, serializer);
+    sse_encode_String(self.attachedInfo, serializer);
+    sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.localEx, serializer);
+    sse_encode_opt_box_autoadd_text_elem(self.textElem, serializer);
+    sse_encode_opt_box_autoadd_picture_elem(self.pictureElem, serializer);
+    sse_encode_opt_box_autoadd_sound_elem(self.soundElem, serializer);
+    sse_encode_opt_box_autoadd_video_elem(self.videoElem, serializer);
+    sse_encode_opt_box_autoadd_file_elem(self.fileElem, serializer);
+    sse_encode_opt_box_autoadd_at_text_elem(self.atTextElem, serializer);
+    sse_encode_opt_box_autoadd_quote_elem(self.quoteElem, serializer);
+    sse_encode_opt_box_autoadd_merge_elem(self.mergeElem, serializer);
+    sse_encode_opt_box_autoadd_card_elem(self.cardElem, serializer);
+    sse_encode_opt_box_autoadd_location_elem(self.locationElem, serializer);
+    sse_encode_opt_box_autoadd_face_elem(self.faceElem, serializer);
+    sse_encode_opt_box_autoadd_custom_elem(self.customElem, serializer);
+    sse_encode_opt_box_autoadd_advanced_text_elem(
+      self.advancedTextElem,
+      serializer,
+    );
+    sse_encode_opt_box_autoadd_markdown_text_elem(
+      self.markdownTextElem,
+      serializer,
+    );
+    sse_encode_opt_box_autoadd_offline_push_info(self.offlinePush, serializer);
+  }
+
+  @protected
+  void sse_encode_offline_push_info(
+    OfflinePushInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.title, serializer);
+    sse_encode_String(self.desc, serializer);
+    sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.iosPushSound, serializer);
+    sse_encode_bool(self.iosBadgeCount, serializer);
+    sse_encode_String(self.signalInfo, serializer);
+  }
+
+  @protected
   void sse_encode_online_status(OnlineStatus self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.userId, serializer);
@@ -9913,12 +11242,90 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_advanced_text_elem(
+    AdvancedTextElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_advanced_text_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_at_text_elem(
+    AtTextElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_at_text_elem(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_card_elem(
+    CardElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_card_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_custom_elem(
+    CustomElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_custom_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_face_elem(
+    FaceElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_face_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_file_elem(
+    FileElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_file_elem(self, serializer);
     }
   }
 
@@ -9943,6 +11350,167 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (self != null) {
       sse_encode_box_autoadd_local_conversation(self, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_location_elem(
+    LocationElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_location_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_markdown_text_elem(
+    MarkdownTextElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_markdown_text_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_merge_elem(
+    MergeElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_merge_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_offline_push_info(
+    OfflinePushInfo? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_offline_push_info(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_picture_elem(
+    PictureElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_picture_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_quote_elem(
+    QuoteElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_quote_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_sound_elem(
+    SoundElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_sound_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_text_elem(
+    TextElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_text_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_video_elem(
+    VideoElem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_video_elem(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_msg_struct(
+    MsgStruct? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_msg_struct(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_picture_base_info(
+    PictureBaseInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.width, serializer);
+    sse_encode_i_32(self.height, serializer);
+    sse_encode_String(self.pictureType, serializer);
+    sse_encode_i_64(self.size, serializer);
+    sse_encode_String(self.url, serializer);
+    sse_encode_String(self.uuid, serializer);
+  }
+
+  @protected
+  void sse_encode_picture_elem(PictureElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.sourcePath, serializer);
+    sse_encode_picture_base_info(self.sourcePicture, serializer);
+    sse_encode_picture_base_info(self.bigPicture, serializer);
+    sse_encode_picture_base_info(self.snapshotPicture, serializer);
+  }
+
+  @protected
+  void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.text, serializer);
+    sse_encode_opt_box_msg_struct(self.quoteMessage, serializer);
+    sse_encode_list_message_entity(self.messageEntityList, serializer);
   }
 
   @protected
@@ -9983,9 +11551,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_send_typing_resp(
+    SendTypingResp self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.serverMsgId, serializer);
+    sse_encode_String(self.clientMsgId, serializer);
+    sse_encode_i_64(self.sendTime, serializer);
+  }
+
+  @protected
   void sse_encode_session_type(SessionType self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_sound_elem(SoundElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.uuid, serializer);
+    sse_encode_String(self.soundPath, serializer);
+    sse_encode_String(self.sourceUrl, serializer);
+    sse_encode_i_64(self.dataSize, serializer);
+    sse_encode_i_64(self.duration, serializer);
+    sse_encode_String(self.soundType, serializer);
+  }
+
+  @protected
+  void sse_encode_text_elem(TextElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.content, serializer);
   }
 
   @protected
@@ -10022,6 +11618,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_usize(BigInt self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putBigUint64(self);
+  }
+
+  @protected
+  void sse_encode_video_elem(VideoElem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.videoPath, serializer);
+    sse_encode_String(self.videoUuid, serializer);
+    sse_encode_String(self.videoUrl, serializer);
+    sse_encode_String(self.videoType, serializer);
+    sse_encode_i_64(self.videoSize, serializer);
+    sse_encode_i_64(self.duration, serializer);
+    sse_encode_String(self.snapshotPath, serializer);
+    sse_encode_String(self.snapshotUuid, serializer);
+    sse_encode_i_64(self.snapshotSize, serializer);
+    sse_encode_String(self.snapshotUrl, serializer);
+    sse_encode_i_32(self.snapshotWidth, serializer);
+    sse_encode_i_32(self.snapshotHeight, serializer);
+    sse_encode_String(self.snapshotType, serializer);
   }
 }
 
@@ -10574,7 +12188,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         req: req,
       );
 
-  Future<Message> sendAdvancedTextMessage({
+  Future<MsgStruct> sendAdvancedTextMessage({
     required String text,
     required List<MessageEntity> entities,
     required String sourceId,
@@ -10588,7 +12202,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendAtTextMessage({
+  Future<MsgStruct> sendAtTextMessage({
     required String text,
     required List<String> atUserIds,
     required String sourceId,
@@ -10602,7 +12216,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendCustomMessage({
+  Future<MsgStruct> sendCustomMessage({
     required String data,
     required String desc,
     required String extension_,
@@ -10618,7 +12232,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendFileMessage({
+  Future<MsgStruct> sendFileMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -10643,7 +12257,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendImageMessage({
+  Future<MsgStruct> sendImageMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -10668,7 +12282,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendMarkdownMessage({
+  Future<MsgStruct> sendMarkdownMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -10680,7 +12294,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendSoundMessage({
+  Future<MsgStruct> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -10709,7 +12323,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         duration: duration,
       );
 
-  Future<Message> sendTextMessage({
+  Future<MsgStruct> sendTextMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -10721,7 +12335,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
         sessionType: sessionType,
       );
 
-  Future<Message> sendVideoMessage({
+  Future<MsgStruct> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,

@@ -110,6 +110,7 @@ impl MessageSyncer {
             let req = GetMaxSeqReq {
                 user_id: self.user_id.clone(),
             };
+            info!("[MsgSync] getServerMaxSeq 请求: user_id={}", req.user_id);
             match self.connection.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(
                 ws_req_identifier::GET_NEWEST_SEQ,
                 &req,
@@ -511,6 +512,7 @@ impl MessageSyncer {
         Ok(())
     }
 
+    #[tracing::instrument(skip_all, fields(conv_count = %seq_map.len()))]
     async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>) -> Result<()> {
         let req = PullMessageBySeqsReq {
             user_id: self.user_id.clone(),
@@ -526,10 +528,18 @@ impl MessageSyncer {
             order: 0,
         };
 
+        info!("[MsgSync] pull_and_handle_messages 请求: user_id={}, conv_count={}, seq_ranges={:?}",
+            req.user_id, req.seq_ranges.len(),
+            req.seq_ranges.iter().map(|r| format!("{}:[{},{}]", r.conversation_id, r.begin, r.end)).collect::<Vec<_>>());
+
         let resp: PullMessageBySeqsResp = self.connection
             .send_rpc(1002, &req)
             .await
             .map_err(|e| SdkError::network(format!("pull messages failed: {}", e)))?;
+
+        info!("[MsgSync] pull_and_handle_messages: {} conversations, msgs_count={}",
+            resp.msgs.len(),
+            resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
 
         self.handle_pulled_messages(&resp.msgs).await?;
 
@@ -560,10 +570,17 @@ impl MessageSyncer {
             order: 0,
         };
 
+        info!("[MsgSync] pull_and_handle_messages_reinstall 请求: user_id={}, conv_count={}, total={}",
+            req.user_id, req.seq_ranges.len(), total);
+
         let resp: PullMessageBySeqsResp = self.connection
             .send_rpc(1002, &req)
             .await
             .map_err(|e| SdkError::network(format!("pull messages failed: {}", e)))?;
+
+        info!("[MsgSync] pull_and_handle_messages_reinstall: {} conversations, msgs_count={}",
+            resp.msgs.len(),
+            resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
 
         self.handle_pulled_messages(&resp.msgs).await?;
 

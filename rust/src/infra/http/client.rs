@@ -65,7 +65,8 @@ impl HttpApiClient {
 
         // 记录请求
         let body_json = serde_json::to_string(body).unwrap_or_default();
-        tracing::info!("[HTTP] POST {} 开始 - Body: {}", route, body_json);
+        tracing::info!("[HTTP] POST {} 开始", route);
+        tracing::debug!("[HTTP] POST {} Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
         let response = self
@@ -115,7 +116,8 @@ impl HttpApiClient {
 
         // 记录请求
         let body_json = serde_json::to_string(body).unwrap_or_default();
-        tracing::info!("[HTTP] POST {} (no_auth) 开始 - Body: {}", route, body_json);
+        tracing::info!("[HTTP] POST {} (no_auth) 开始", route);
+        tracing::debug!("[HTTP] POST {} (no_auth) Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
         let response = self

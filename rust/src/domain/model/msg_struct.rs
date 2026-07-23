@@ -215,6 +215,7 @@ pub struct OfflinePushInfo {
 
 /// 消息结构体（对齐 Go SDK sdk_struct.MsgStruct）
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MsgStruct {
     pub client_msg_id: String,
     pub server_msg_id: String,

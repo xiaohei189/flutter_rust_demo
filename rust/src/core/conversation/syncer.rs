@@ -405,6 +405,8 @@ impl ConversationSyncer {
             GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp,
         };
 
+        info!("[ConvSync] get_conversations_hash_read_seq 请求: user_id={}", user_id);
+
         let resp: GetConversationsHasReadAndMaxSeqResp = connection
             .send_rpc(
                 ws_req_identifier::GET_CONV_MAX_READ_SEQ,
@@ -419,6 +421,8 @@ impl ConversationSyncer {
                 error!("[ConvSync] 获取会话 Hash Read Seq 失败: {}", e);
                 SdkError::network(format!("sync hash read seq failed: {}", e))
             })?;
+
+        info!("[ConvSync] get_conversations_hash_read_seq: {} conversations", resp.seqs.len());
 
         if resp.seqs.is_empty() {
             return Ok(());

@@ -14,89 +14,8 @@ use crate::sdk::client::{FriendApplyInfo, GroupApplyInfo, OpenIMClient};
 use crate::infra::database::models::LocalChatLog;
 use anyhow::{Result, anyhow};
 use crate::frb_generated::StreamSink;
-use openim_protocol::sdkws::MsgData as ProtocolMsgData;
 use std::sync::{Arc, OnceLock};
 
-/// 本地 Message，完整对齐协议层 MsgData / Go MsgStruct
-/// 入口出口通过 From trait 与 ProtocolMsgData 互转
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Message {
-    pub send_id: String,
-    pub recv_id: String,
-    pub group_id: String,
-    pub client_msg_id: String,
-    pub server_msg_id: String,
-    pub sender_platform_id: i32,
-    pub sender_nickname: String,
-    pub sender_face_url: String,
-    pub session_type: i32,
-    pub msg_from: i32,
-    pub content_type: i32,
-    pub content: String,
-    pub seq: i64,
-    pub send_time: i64,
-    pub create_time: i64,
-    pub status: i32,
-    pub is_read: bool,
-    pub attached_info: String,
-    pub ex: String,
-}
-
-impl From<ProtocolMsgData> for Message {
-    fn from(msg: ProtocolMsgData) -> Self {
-        Self {
-            send_id: msg.send_id,
-            recv_id: msg.recv_id,
-            group_id: msg.group_id,
-            client_msg_id: msg.client_msg_id,
-            server_msg_id: msg.server_msg_id,
-            sender_platform_id: msg.sender_platform_id,
-            sender_nickname: msg.sender_nickname,
-            sender_face_url: msg.sender_face_url,
-            session_type: msg.session_type,
-            msg_from: msg.msg_from,
-            content_type: msg.content_type,
-            content: String::from_utf8_lossy(&msg.content).to_string(),
-            seq: msg.seq,
-            send_time: msg.send_time,
-            create_time: msg.create_time,
-            status: msg.status,
-            is_read: msg.is_read,
-            attached_info: msg.attached_info,
-            ex: msg.ex,
-        }
-    }
-}
-
-impl From<Message> for ProtocolMsgData {
-    fn from(msg: Message) -> Self {
-        Self {
-            send_id: msg.send_id,
-            recv_id: msg.recv_id,
-            group_id: msg.group_id,
-            client_msg_id: msg.client_msg_id,
-            server_msg_id: msg.server_msg_id,
-            sender_platform_id: msg.sender_platform_id,
-            sender_nickname: msg.sender_nickname,
-            sender_face_url: msg.sender_face_url,
-            session_type: msg.session_type,
-            msg_from: msg.msg_from,
-            content_type: msg.content_type,
-            content: msg.content.into_bytes(),
-            seq: msg.seq,
-            send_time: msg.send_time,
-            create_time: msg.create_time,
-            status: msg.status,
-            is_read: msg.is_read,
-            options: Default::default(),
-            offline_push_info: None,
-            at_user_id_list: vec![],
-            attached_info: msg.attached_info,
-            ex: msg.ex,
-        }
-    }
-}
 
 // ============================================================================
 // 全局客户端持有者
@@ -207,21 +126,21 @@ impl OpenIMBridgeClient {
 
 
     #[flutter_rust_bridge::frb]
-    pub async fn send_text_message(&self, text: String, source_id: String, session_type: SessionType) -> Result<Message> {
+    pub async fn send_text_message(&self, text: String, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
         self.inner.send_text_message(&text, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn send_markdown_message(&self, text: String, source_id: String, session_type: SessionType) -> Result<Message> {
+    pub async fn send_markdown_message(&self, text: String, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
         self.inner.send_markdown_message(&text, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn send_advanced_text_message(&self, text: String, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: String, session_type: SessionType) -> Result<Message> {
+    pub async fn send_advanced_text_message(&self, text: String, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
         self.inner.send_advanced_text_message(&text, entities, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -823,7 +742,7 @@ impl OpenIMBridgeClient {
         file_path: String,
         source_id: String,
         session_type: SessionType,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         self.inner.send_image_message(&file_path, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -835,7 +754,7 @@ impl OpenIMBridgeClient {
         file_path: String,
         source_id: String,
         session_type: SessionType,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         self.inner.send_file_message(&file_path, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -848,7 +767,7 @@ impl OpenIMBridgeClient {
         source_id: String,
         session_type: SessionType,
         duration: i64,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         self.inner.send_sound_message(&file_path, &source_id, session_type.into(), duration).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -862,7 +781,7 @@ impl OpenIMBridgeClient {
         source_id: String,
         session_type: SessionType,
         duration: i64,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         self.inner.send_video_message(&video_path, &snapshot_path, &source_id, session_type.into(), duration).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -878,7 +797,7 @@ impl OpenIMBridgeClient {
         source_id: String,
         session_type: SessionType,
         sink: StreamSink<i32>,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
@@ -895,7 +814,7 @@ impl OpenIMBridgeClient {
         source_id: String,
         session_type: SessionType,
         sink: StreamSink<i32>,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
@@ -913,7 +832,7 @@ impl OpenIMBridgeClient {
         session_type: SessionType,
         duration: i64,
         sink: StreamSink<i32>,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
@@ -932,7 +851,7 @@ impl OpenIMBridgeClient {
         session_type: SessionType,
         duration: i64,
         sink: StreamSink<i32>,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         let progress: crate::core::file::uploader::ProgressCallback = std::sync::Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
@@ -948,7 +867,7 @@ impl OpenIMBridgeClient {
         at_user_ids: Vec<String>,
         source_id: String,
         session_type: SessionType,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         self.inner.send_at_text_message(&text, at_user_ids, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -962,7 +881,7 @@ impl OpenIMBridgeClient {
         extension: String,
         source_id: String,
         session_type: SessionType,
-    ) -> Result<Message> {
+    ) -> Result<MsgStruct> {
         self.inner.send_custom_message(&data, &desc, &extension, &source_id, session_type.into()).await
             .map(|msg| msg.into())
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -1014,7 +933,7 @@ pub async fn send_quote_message(
     quote_client_msg_id: String,
     quote_send_id: String,
     quote_send_time: i64,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let quote_struct = crate::domain::model::msg_struct::MsgStruct {
         content: quote_text,
@@ -1034,7 +953,7 @@ pub async fn send_merger_message(
     summary_list: Vec<String>,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     // 将 summary_list 中的内容作为 MsgStruct 文本消息
     let context_list: Vec<crate::domain::model::msg_struct::MsgStruct> = summary_list
@@ -1054,7 +973,7 @@ pub async fn send_card_message(
     ex: String,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_card_message(&user_id, &nickname, &face_url, &ex, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1068,7 +987,7 @@ pub async fn send_location_message(
     latitude: f64,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_location_message(&description, longitude, latitude, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1081,7 +1000,7 @@ pub async fn send_face_message(
     data: String,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_face_message(index, &data, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1094,13 +1013,13 @@ pub async fn send_face_message(
 /// 转发消息（对齐 Go SDK `ForwardMessage`）
 #[flutter_rust_bridge::frb]
 pub async fn forward_message(
-    msg_data: Message,
+    msg_struct: MsgStruct,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
-    let result = client.forward_message(msg_data.into(), &source_id, session_type.into()).await?;
-    Ok(result.into())
+    let result = client.forward_message(msg_struct, &source_id, session_type.into()).await?;
+    Ok(result)
 }
 
 /// 转发消息（按 clientMsgId 查找消息并转发）
@@ -1109,7 +1028,7 @@ pub async fn forward_message_by_client_id(
     client_msg_id: String,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let log = client
         .context
@@ -1118,11 +1037,10 @@ pub async fn forward_message_by_client_id(
         .await?
         .ok_or_else(|| anyhow!("消息不存在: {}", client_msg_id))?;
     let msg_struct = MsgStruct::from(&log);
-    let msg_data = ProtocolMsgData::from(&msg_struct);
     let result = client
-        .forward_message(msg_data, &source_id, session_type.into())
+        .forward_message(msg_struct, &source_id, session_type.into())
         .await?;
-    Ok(result.into())
+    Ok(result)
 }
 
 /// 按 seq 获取单条历史消息（对齐 Go SDK `GetHistoryMessageBySeq`）
@@ -1182,16 +1100,36 @@ pub async fn mark_all_conversation_message_as_read() -> Result<()> {
         .map_err(|e| anyhow::anyhow!("{}", e))
 }
 
+/// Typing 响应结果
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SendTypingResp {
+    pub server_msg_id: String,
+    pub client_msg_id: String,
+    pub send_time: i64,
+}
+
+impl From<crate::protocol::sdkws::UserSendMsgResp> for SendTypingResp {
+    fn from(resp: crate::protocol::sdkws::UserSendMsgResp) -> Self {
+        Self {
+            server_msg_id: resp.server_msg_id,
+            client_msg_id: resp.client_msg_id,
+            send_time: resp.send_time,
+        }
+    }
+}
+
 /// 发送正在输入通知（对齐 Go SDK `TypingStatusUpdate` / `ChangeInputStates`）
 ///
 /// source_id: 对方用户 ID 或群组 ID
 /// session_type: 会话类型（1=单聊, 2=群聊）
 /// focus: true=正在输入, false=停止输入
 #[flutter_rust_bridge::frb]
-pub async fn send_typing(source_id: String, session_type: SessionType, focus: bool) -> Result<()> {
+pub async fn send_typing(source_id: String, session_type: SessionType, focus: bool) -> Result<SendTypingResp> {
     let client = client_holder()?;
-    client.send_typing(&source_id, session_type.into(), focus).await
-        .map_err(|e| anyhow::anyhow!("{}", e))
+    let resp = client.send_typing(&source_id, session_type.into(), focus).await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+    Ok(resp.into())
 }
 
 /// 发送高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage` + `SendMessage`）
@@ -1208,7 +1146,7 @@ pub async fn send_advanced_quote_message(
     quote_send_id: String,
     quote_send_time: i64,
     message_entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let quote_struct = crate::domain::model::msg_struct::MsgStruct {
         content: quote_text,
@@ -1236,7 +1174,7 @@ pub async fn edit_message(
     client_msg_id: String,
     content: String,
     content_type: i32,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.edit_message(
         &conversation_id, &client_msg_id, &content, content_type,
@@ -1254,7 +1192,7 @@ pub async fn send_image_message_from_url(
     source_url: String,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_image_message_from_url(&source_url, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1267,7 +1205,7 @@ pub async fn send_sound_message_from_url(
     duration: i64,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_sound_message_from_url(&source_url, duration, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1281,7 +1219,7 @@ pub async fn send_video_message_from_url(
     snapshot_url: String,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_video_message_from_url(&source_url, duration, &snapshot_url, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1295,7 +1233,7 @@ pub async fn send_file_message_from_url(
     file_size: i64,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_file_message_from_url(&source_url, &file_name, file_size, &source_id, session_type.into()).await?;
     Ok(result.into())
@@ -1309,7 +1247,7 @@ pub async fn send_at_text_message_with_quote(
     at_users_info: Vec<crate::domain::model::msg_struct::AtInfo>,
     source_id: String,
     session_type: SessionType,
-) -> Result<Message> {
+) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.send_at_text_message_with_quote(&text, at_user_list, at_users_info, None, &source_id, session_type.into()).await?;
     Ok(result.into())

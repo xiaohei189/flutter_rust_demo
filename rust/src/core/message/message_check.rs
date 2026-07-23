@@ -238,10 +238,18 @@ impl MessageChecker {
             order,
         };
 
+        info!("[MsgCheck] fetch_missing_messages 请求: user_id={}, conv={}, seqs={:?}, order={}",
+            req.user_id, conversation_id, seq_list, order);
+
         let resp: GetSeqMessageResp = self.connection
             .send_rpc(ws_req_identifier::PULL_MSG_BY_SEQ_LIST, &req)
             .await
             .map_err(|e| SdkError::network(format!("fetch missing messages by seq list failed: {}", e)))?;
+
+        info!("[MsgCheck] fetch_missing_messages: conv={}, seqs_requested={}, msgs_fetched={}",
+            conversation_id,
+            seq_list.len(),
+            resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
 
         // 入库拉取到的消息
         let mut fetched_messages = Vec::new();

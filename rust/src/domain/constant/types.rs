@@ -18,6 +18,27 @@ pub mod ws_push_identifier {
     pub const WS_SUB_USER_ONLINE_STATUS: i32 = 2005;
 }
 
+/// 将 req_identifier 数值转换为中文描述（同时覆盖请求/推送两类标识）
+pub fn req_identifier_name(id: i32) -> &'static str {
+    match id {
+        // 请求标识 1001-1007
+        ws_req_identifier::GET_NEWEST_SEQ => "获取最新序列号",
+        ws_req_identifier::PULL_MSG_BY_RANGE => "按范围拉取消息",
+        ws_req_identifier::SEND_MSG => "发送消息",
+        ws_req_identifier::SEND_SIGNAL_MSG => "发送信号消息",
+        ws_req_identifier::PULL_MSG_BY_SEQ_LIST => "按序列号列表拉取消息",
+        ws_req_identifier::GET_CONV_MAX_READ_SEQ => "获取会话最大已读序列",
+        ws_req_identifier::PULL_CONV_LAST_MESSAGE => "拉取会话最新消息",
+        // 推送标识 2001-2005
+        ws_push_identifier::PUSH_MSG => "推送消息",
+        ws_push_identifier::KICK_ONLINE_MSG => "踢下线消息",
+        ws_push_identifier::LOGOUT_MSG => "登出消息",
+        ws_push_identifier::SET_BACKGROUND_STATUS => "设置后台状态",
+        ws_push_identifier::WS_SUB_USER_ONLINE_STATUS => "订阅用户在线状态",
+        _ => "未知指令",
+    }
+}
+
 /// 消息内容类型
 pub mod content_type {
     pub const TEXT: i32 = 101;

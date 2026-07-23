@@ -6,6 +6,25 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 富文本元素（对齐 Go SDK AdvancedTextElem）
+class AdvancedTextElem {
+  final String text;
+  final List<MessageEntity> messageEntityList;
+
+  const AdvancedTextElem({required this.text, required this.messageEntityList});
+
+  @override
+  int get hashCode => text.hashCode ^ messageEntityList.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AdvancedTextElem &&
+          runtimeType == other.runtimeType &&
+          text == other.text &&
+          messageEntityList == other.messageEntityList;
+}
+
 /// @ 用户信息
 class AtInfo {
   final String atUserId;
@@ -23,6 +42,221 @@ class AtInfo {
           runtimeType == other.runtimeType &&
           atUserId == other.atUserId &&
           groupNickname == other.groupNickname;
+}
+
+/// @ 消息元素（对齐 Go SDK AtTextElem）
+class AtTextElem {
+  final String text;
+  final List<String> atUserList;
+  final List<AtInfo> atUsersInfo;
+  final MsgStruct? quoteMessage;
+
+  const AtTextElem({
+    required this.text,
+    required this.atUserList,
+    required this.atUsersInfo,
+    this.quoteMessage,
+  });
+
+  @override
+  int get hashCode =>
+      text.hashCode ^
+      atUserList.hashCode ^
+      atUsersInfo.hashCode ^
+      quoteMessage.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AtTextElem &&
+          runtimeType == other.runtimeType &&
+          text == other.text &&
+          atUserList == other.atUserList &&
+          atUsersInfo == other.atUsersInfo &&
+          quoteMessage == other.quoteMessage;
+}
+
+/// 名片元素（对齐 Go SDK CardElem）
+class CardElem {
+  final String userId;
+  final String nickname;
+  final String faceUrl;
+  final String ex;
+
+  const CardElem({
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.ex,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^ nickname.hashCode ^ faceUrl.hashCode ^ ex.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CardElem &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          ex == other.ex;
+}
+
+/// 自定义元素（对齐 Go SDK CustomElem）
+class CustomElem {
+  final String data;
+  final String extension_;
+  final String description;
+
+  const CustomElem({
+    required this.data,
+    required this.extension_,
+    required this.description,
+  });
+
+  @override
+  int get hashCode =>
+      data.hashCode ^ extension_.hashCode ^ description.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CustomElem &&
+          runtimeType == other.runtimeType &&
+          data == other.data &&
+          extension_ == other.extension_ &&
+          description == other.description;
+}
+
+/// 表情元素（对齐 Go SDK FaceElem）
+class FaceElem {
+  final int index;
+  final String data;
+
+  const FaceElem({required this.index, required this.data});
+
+  @override
+  int get hashCode => index.hashCode ^ data.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FaceElem &&
+          runtimeType == other.runtimeType &&
+          index == other.index &&
+          data == other.data;
+}
+
+/// 文件消息元素（对齐 Go SDK FileElem）
+class FileElem {
+  final String filePath;
+  final String uuid;
+  final String sourceUrl;
+  final String fileName;
+  final PlatformInt64 fileSize;
+  final String fileType;
+
+  const FileElem({
+    required this.filePath,
+    required this.uuid,
+    required this.sourceUrl,
+    required this.fileName,
+    required this.fileSize,
+    required this.fileType,
+  });
+
+  @override
+  int get hashCode =>
+      filePath.hashCode ^
+      uuid.hashCode ^
+      sourceUrl.hashCode ^
+      fileName.hashCode ^
+      fileSize.hashCode ^
+      fileType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FileElem &&
+          runtimeType == other.runtimeType &&
+          filePath == other.filePath &&
+          uuid == other.uuid &&
+          sourceUrl == other.sourceUrl &&
+          fileName == other.fileName &&
+          fileSize == other.fileSize &&
+          fileType == other.fileType;
+}
+
+/// 位置元素（对齐 Go SDK LocationElem）
+class LocationElem {
+  final String description;
+  final double longitude;
+  final double latitude;
+
+  const LocationElem({
+    required this.description,
+    required this.longitude,
+    required this.latitude,
+  });
+
+  @override
+  int get hashCode =>
+      description.hashCode ^ longitude.hashCode ^ latitude.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LocationElem &&
+          runtimeType == other.runtimeType &&
+          description == other.description &&
+          longitude == other.longitude &&
+          latitude == other.latitude;
+}
+
+/// Markdown 文本元素（对齐 Go SDK MarkdownTextElem）
+class MarkdownTextElem {
+  final String content;
+
+  const MarkdownTextElem({required this.content});
+
+  @override
+  int get hashCode => content.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarkdownTextElem &&
+          runtimeType == other.runtimeType &&
+          content == other.content;
+}
+
+/// 合并转发元素（对齐 Go SDK MergeElem）
+class MergeElem {
+  final String title;
+  final List<String> abstractList;
+  final List<MsgStruct> multiMessage;
+
+  const MergeElem({
+    required this.title,
+    required this.abstractList,
+    required this.multiMessage,
+  });
+
+  @override
+  int get hashCode =>
+      title.hashCode ^ abstractList.hashCode ^ multiMessage.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MergeElem &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          abstractList == other.abstractList &&
+          multiMessage == other.multiMessage;
 }
 
 /// 消息实体（用于富文本）
@@ -59,4 +293,425 @@ class MessageEntity {
           length == other.length &&
           url == other.url &&
           ex == other.ex;
+}
+
+/// 消息结构体（对齐 Go SDK sdk_struct.MsgStruct）
+class MsgStruct {
+  final String clientMsgId;
+  final String serverMsgId;
+  final PlatformInt64 createTime;
+  final PlatformInt64 sendTime;
+  final int sessionType;
+  final String sendId;
+  final String recvId;
+  final int msgFrom;
+  final int contentType;
+  final int senderPlatformId;
+  final String senderNickname;
+  final String senderFaceUrl;
+  final String groupId;
+  final String content;
+  final PlatformInt64 seq;
+  final bool isRead;
+  final int status;
+  final String attachedInfo;
+  final String ex;
+  final String localEx;
+  final TextElem? textElem;
+  final PictureElem? pictureElem;
+  final SoundElem? soundElem;
+  final VideoElem? videoElem;
+  final FileElem? fileElem;
+  final AtTextElem? atTextElem;
+  final QuoteElem? quoteElem;
+  final MergeElem? mergeElem;
+  final CardElem? cardElem;
+  final LocationElem? locationElem;
+  final FaceElem? faceElem;
+  final CustomElem? customElem;
+  final AdvancedTextElem? advancedTextElem;
+  final MarkdownTextElem? markdownTextElem;
+  final OfflinePushInfo? offlinePush;
+
+  const MsgStruct({
+    required this.clientMsgId,
+    required this.serverMsgId,
+    required this.createTime,
+    required this.sendTime,
+    required this.sessionType,
+    required this.sendId,
+    required this.recvId,
+    required this.msgFrom,
+    required this.contentType,
+    required this.senderPlatformId,
+    required this.senderNickname,
+    required this.senderFaceUrl,
+    required this.groupId,
+    required this.content,
+    required this.seq,
+    required this.isRead,
+    required this.status,
+    required this.attachedInfo,
+    required this.ex,
+    required this.localEx,
+    this.textElem,
+    this.pictureElem,
+    this.soundElem,
+    this.videoElem,
+    this.fileElem,
+    this.atTextElem,
+    this.quoteElem,
+    this.mergeElem,
+    this.cardElem,
+    this.locationElem,
+    this.faceElem,
+    this.customElem,
+    this.advancedTextElem,
+    this.markdownTextElem,
+    this.offlinePush,
+  });
+
+  @override
+  int get hashCode =>
+      clientMsgId.hashCode ^
+      serverMsgId.hashCode ^
+      createTime.hashCode ^
+      sendTime.hashCode ^
+      sessionType.hashCode ^
+      sendId.hashCode ^
+      recvId.hashCode ^
+      msgFrom.hashCode ^
+      contentType.hashCode ^
+      senderPlatformId.hashCode ^
+      senderNickname.hashCode ^
+      senderFaceUrl.hashCode ^
+      groupId.hashCode ^
+      content.hashCode ^
+      seq.hashCode ^
+      isRead.hashCode ^
+      status.hashCode ^
+      attachedInfo.hashCode ^
+      ex.hashCode ^
+      localEx.hashCode ^
+      textElem.hashCode ^
+      pictureElem.hashCode ^
+      soundElem.hashCode ^
+      videoElem.hashCode ^
+      fileElem.hashCode ^
+      atTextElem.hashCode ^
+      quoteElem.hashCode ^
+      mergeElem.hashCode ^
+      cardElem.hashCode ^
+      locationElem.hashCode ^
+      faceElem.hashCode ^
+      customElem.hashCode ^
+      advancedTextElem.hashCode ^
+      markdownTextElem.hashCode ^
+      offlinePush.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MsgStruct &&
+          runtimeType == other.runtimeType &&
+          clientMsgId == other.clientMsgId &&
+          serverMsgId == other.serverMsgId &&
+          createTime == other.createTime &&
+          sendTime == other.sendTime &&
+          sessionType == other.sessionType &&
+          sendId == other.sendId &&
+          recvId == other.recvId &&
+          msgFrom == other.msgFrom &&
+          contentType == other.contentType &&
+          senderPlatformId == other.senderPlatformId &&
+          senderNickname == other.senderNickname &&
+          senderFaceUrl == other.senderFaceUrl &&
+          groupId == other.groupId &&
+          content == other.content &&
+          seq == other.seq &&
+          isRead == other.isRead &&
+          status == other.status &&
+          attachedInfo == other.attachedInfo &&
+          ex == other.ex &&
+          localEx == other.localEx &&
+          textElem == other.textElem &&
+          pictureElem == other.pictureElem &&
+          soundElem == other.soundElem &&
+          videoElem == other.videoElem &&
+          fileElem == other.fileElem &&
+          atTextElem == other.atTextElem &&
+          quoteElem == other.quoteElem &&
+          mergeElem == other.mergeElem &&
+          cardElem == other.cardElem &&
+          locationElem == other.locationElem &&
+          faceElem == other.faceElem &&
+          customElem == other.customElem &&
+          advancedTextElem == other.advancedTextElem &&
+          markdownTextElem == other.markdownTextElem &&
+          offlinePush == other.offlinePush;
+}
+
+/// 离线推送信息（对齐 Go SDK OfflinePushInfo）
+class OfflinePushInfo {
+  final String title;
+  final String desc;
+  final String ex;
+  final String iosPushSound;
+  final bool iosBadgeCount;
+  final String signalInfo;
+
+  const OfflinePushInfo({
+    required this.title,
+    required this.desc,
+    required this.ex,
+    required this.iosPushSound,
+    required this.iosBadgeCount,
+    required this.signalInfo,
+  });
+
+  @override
+  int get hashCode =>
+      title.hashCode ^
+      desc.hashCode ^
+      ex.hashCode ^
+      iosPushSound.hashCode ^
+      iosBadgeCount.hashCode ^
+      signalInfo.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OfflinePushInfo &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          desc == other.desc &&
+          ex == other.ex &&
+          iosPushSound == other.iosPushSound &&
+          iosBadgeCount == other.iosBadgeCount &&
+          signalInfo == other.signalInfo;
+}
+
+/// 图片基础信息
+class PictureBaseInfo {
+  final int width;
+  final int height;
+  final String pictureType;
+  final PlatformInt64 size;
+  final String url;
+  final String uuid;
+
+  const PictureBaseInfo({
+    required this.width,
+    required this.height,
+    required this.pictureType,
+    required this.size,
+    required this.url,
+    required this.uuid,
+  });
+
+  @override
+  int get hashCode =>
+      width.hashCode ^
+      height.hashCode ^
+      pictureType.hashCode ^
+      size.hashCode ^
+      url.hashCode ^
+      uuid.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PictureBaseInfo &&
+          runtimeType == other.runtimeType &&
+          width == other.width &&
+          height == other.height &&
+          pictureType == other.pictureType &&
+          size == other.size &&
+          url == other.url &&
+          uuid == other.uuid;
+}
+
+/// 图片消息元素（对齐 Go SDK PictureElem）
+class PictureElem {
+  final String sourcePath;
+  final PictureBaseInfo sourcePicture;
+  final PictureBaseInfo bigPicture;
+  final PictureBaseInfo snapshotPicture;
+
+  const PictureElem({
+    required this.sourcePath,
+    required this.sourcePicture,
+    required this.bigPicture,
+    required this.snapshotPicture,
+  });
+
+  @override
+  int get hashCode =>
+      sourcePath.hashCode ^
+      sourcePicture.hashCode ^
+      bigPicture.hashCode ^
+      snapshotPicture.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PictureElem &&
+          runtimeType == other.runtimeType &&
+          sourcePath == other.sourcePath &&
+          sourcePicture == other.sourcePicture &&
+          bigPicture == other.bigPicture &&
+          snapshotPicture == other.snapshotPicture;
+}
+
+/// 引用消息元素（对齐 Go SDK QuoteElem）
+class QuoteElem {
+  final String text;
+  final MsgStruct? quoteMessage;
+
+  /// 高级引用消息的消息实体列表（对齐 Go SDK QuoteElem.MessageEntityList）
+  final List<MessageEntity> messageEntityList;
+
+  const QuoteElem({
+    required this.text,
+    this.quoteMessage,
+    required this.messageEntityList,
+  });
+
+  @override
+  int get hashCode =>
+      text.hashCode ^ quoteMessage.hashCode ^ messageEntityList.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QuoteElem &&
+          runtimeType == other.runtimeType &&
+          text == other.text &&
+          quoteMessage == other.quoteMessage &&
+          messageEntityList == other.messageEntityList;
+}
+
+/// 语音消息元素（对齐 Go SDK SoundElem）
+class SoundElem {
+  final String uuid;
+  final String soundPath;
+  final String sourceUrl;
+  final PlatformInt64 dataSize;
+  final PlatformInt64 duration;
+  final String soundType;
+
+  const SoundElem({
+    required this.uuid,
+    required this.soundPath,
+    required this.sourceUrl,
+    required this.dataSize,
+    required this.duration,
+    required this.soundType,
+  });
+
+  @override
+  int get hashCode =>
+      uuid.hashCode ^
+      soundPath.hashCode ^
+      sourceUrl.hashCode ^
+      dataSize.hashCode ^
+      duration.hashCode ^
+      soundType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SoundElem &&
+          runtimeType == other.runtimeType &&
+          uuid == other.uuid &&
+          soundPath == other.soundPath &&
+          sourceUrl == other.sourceUrl &&
+          dataSize == other.dataSize &&
+          duration == other.duration &&
+          soundType == other.soundType;
+}
+
+/// 文本消息元素（对齐 Go SDK TextElem）
+class TextElem {
+  final String content;
+
+  const TextElem({required this.content});
+
+  @override
+  int get hashCode => content.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TextElem &&
+          runtimeType == other.runtimeType &&
+          content == other.content;
+}
+
+/// 视频消息元素（对齐 Go SDK VideoElem）
+class VideoElem {
+  final String videoPath;
+  final String videoUuid;
+  final String videoUrl;
+  final String videoType;
+  final PlatformInt64 videoSize;
+  final PlatformInt64 duration;
+  final String snapshotPath;
+  final String snapshotUuid;
+  final PlatformInt64 snapshotSize;
+  final String snapshotUrl;
+  final int snapshotWidth;
+  final int snapshotHeight;
+  final String snapshotType;
+
+  const VideoElem({
+    required this.videoPath,
+    required this.videoUuid,
+    required this.videoUrl,
+    required this.videoType,
+    required this.videoSize,
+    required this.duration,
+    required this.snapshotPath,
+    required this.snapshotUuid,
+    required this.snapshotSize,
+    required this.snapshotUrl,
+    required this.snapshotWidth,
+    required this.snapshotHeight,
+    required this.snapshotType,
+  });
+
+  @override
+  int get hashCode =>
+      videoPath.hashCode ^
+      videoUuid.hashCode ^
+      videoUrl.hashCode ^
+      videoType.hashCode ^
+      videoSize.hashCode ^
+      duration.hashCode ^
+      snapshotPath.hashCode ^
+      snapshotUuid.hashCode ^
+      snapshotSize.hashCode ^
+      snapshotUrl.hashCode ^
+      snapshotWidth.hashCode ^
+      snapshotHeight.hashCode ^
+      snapshotType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VideoElem &&
+          runtimeType == other.runtimeType &&
+          videoPath == other.videoPath &&
+          videoUuid == other.videoUuid &&
+          videoUrl == other.videoUrl &&
+          videoType == other.videoType &&
+          videoSize == other.videoSize &&
+          duration == other.duration &&
+          snapshotPath == other.snapshotPath &&
+          snapshotUuid == other.snapshotUuid &&
+          snapshotSize == other.snapshotSize &&
+          snapshotUrl == other.snapshotUrl &&
+          snapshotWidth == other.snapshotWidth &&
+          snapshotHeight == other.snapshotHeight &&
+          snapshotType == other.snapshotType;
 }

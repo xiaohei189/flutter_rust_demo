@@ -6,7 +6,7 @@ import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
 import 'package:flutter_rust_demo/models/message_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart' as fb;
-import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart' show Message;
+import 'package:flutter_rust_demo/src/rust/domain/model/msg_struct.dart' show MsgStruct;
 import 'package:flutter_rust_demo/src/rust/domain/config.dart';
 import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
@@ -102,7 +102,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 将发送结果写入全局消息状态（替代已移除的 messageSent 事件）
-  void upsertSentMessage(String conversationId, Message result) {
+  void upsertSentMessage(String conversationId, MsgStruct result) {
     final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     final idx = list.indexWhere((m) => m.clientMsgId == result.clientMsgId);
@@ -284,7 +284,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
-  Future<Message> sendTextMessage({
+  Future<MsgStruct> sendTextMessage({
     required String recvId,
     required String text,
     required SessionType sessionType,
@@ -305,7 +305,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送 Markdown 消息
-  Future<Message> sendMarkdownMessage({
+  Future<MsgStruct> sendMarkdownMessage({
     required String recvId,
     required String text,
     required SessionType sessionType,
@@ -336,7 +336,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送图片消息
-  Future<Message> sendImageMessage({
+  Future<MsgStruct> sendImageMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -350,7 +350,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送视频消息
-  Future<Message> sendVideoMessage({
+  Future<MsgStruct> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
@@ -368,7 +368,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送语音消息
-  Future<Message> sendSoundMessage({
+  Future<MsgStruct> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -384,7 +384,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送文件消息
-  Future<Message> sendFileMessage({
+  Future<MsgStruct> sendFileMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -398,7 +398,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送位置消息
-  Future<Message> sendLocationMessage({
+  Future<MsgStruct> sendLocationMessage({
     required String description,
     required double latitude,
     required double longitude,
@@ -416,7 +416,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送表情消息
-  Future<Message> sendFaceMessage({
+  Future<MsgStruct> sendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
@@ -432,7 +432,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送名片消息
-  Future<Message> sendCardMessage({
+  Future<MsgStruct> sendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -452,7 +452,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 发送引用消息
-  Future<Message> sendQuoteMessage({
+  Future<MsgStruct> sendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,

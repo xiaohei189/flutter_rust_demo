@@ -8,6 +8,7 @@ use opentelemetry_sdk::trace::TracerProvider;
 use std::collections::HashMap;
 use std::fmt;
 use std::io::Write;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
 use tracing::Span;
@@ -38,6 +39,7 @@ struct SpanState {
     fields: String,
     trace_id: Option<String>,
     span_id: Option<String>,
+    parent_span_id: Option<String>,
     start: Instant,
     /// 是否已输出过 enter 日志（async fn 多次 poll 去重）
     enter_emitted: bool,
@@ -85,6 +87,7 @@ impl<W> CompactLayer<W> {
 
 // ANSI 颜色码
 const GREY: &str = "\x1b[90m";
+const WHITE: &str = "\x1b[37m";
 const CYAN: &str = "\x1b[36m";
 const DIM: &str = "\x1b[2m";
 const RESET: &str = "\x1b[0m";
@@ -115,6 +118,7 @@ where
                 fields,
                 trace_id: None,
                 span_id: None,
+                parent_span_id: None,
                 start: Instant::now(),
                 enter_emitted: false,
             },
@@ -132,23 +136,25 @@ where
                 if state.trace_id.is_none() {
                     if let Some(span) = ctx.span(id) {
                         if let Some(otel) = span.extensions().get::<tracing_opentelemetry::OtelData>() {
-                            let (tid, sid) = otel_trace_span_id(otel);
+                            let (tid, sid, psid) = otel_trace_span_id(otel);
                             if let (Some(tid), Some(sid)) = (tid, sid) {
                                 state.trace_id = Some(tid);
                                 state.span_id = Some(sid);
+                                state.parent_span_id = psid;
                             }
                         }
                     }
                     state.start = Instant::now();
                 }
 
-                if self.log_span_events && !state.enter_emitted {
+                if self.log_span_events && SPAN_EVENTS_ENABLED.load(Ordering::Relaxed) && !state.enter_emitted {
                     state.enter_emitted = true;
                     Some((
                         state.name.clone(),
                         state.fields.clone(),
                         state.trace_id.clone(),
                         state.span_id.clone(),
+                        state.parent_span_id.clone(),
                         state.file.clone(),
                         state.line,
                     ))
@@ -160,7 +166,7 @@ where
             }
         }; // 锁释放
 
-        if let Some((name, fields, trace_id, span_id, file, line)) = enter_data {
+        if let Some((name, fields, trace_id, span_id, parent_span_id, file, line)) = enter_data {
             let ts = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
             let mut writer = self.make_writer.make_writer();
             let _ = write_span_event(
@@ -174,6 +180,7 @@ where
                 &fields,
                 trace_id.as_deref(),
                 span_id.as_deref(),
+                parent_span_id.as_deref(),
                 "enter",
             );
         }
@@ -186,13 +193,14 @@ where
         let close_data = {
             let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
             spans.remove(&span_id_u64).and_then(|state| {
-                if self.log_span_events {
+                if self.log_span_events && SPAN_EVENTS_ENABLED.load(Ordering::Relaxed) {
                     let busy = state.start.elapsed();
                     Some((
                         state.name,
                         state.fields,
                         state.trace_id,
                         state.span_id,
+                        state.parent_span_id,
                         state.file,
                         state.line,
                         busy,
@@ -203,7 +211,7 @@ where
             })
         }; // 锁释放
 
-        if let Some((name, fields, trace_id, span_id, file, line, busy)) = close_data {
+        if let Some((name, fields, trace_id, span_id, parent_span_id, file, line, busy)) = close_data {
             let ts = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
             let mut writer = self.make_writer.make_writer();
             let msg = format!("close time.busy={:.2}ms", busy.as_secs_f64() * 1000.0);
@@ -218,6 +226,7 @@ where
                 &fields,
                 trace_id.as_deref(),
                 span_id.as_deref(),
+                parent_span_id.as_deref(),
                 &msg,
             );
         }
@@ -235,20 +244,33 @@ where
 /// 从 OtelData 提取 (trace_id, span_id)
 ///
 /// - `trace_id`：优先从 `parent_cx` 继承（子 span / 通过 set_parent 设置 remote parent 的 span），
-///   若 parent_cx 无效则回退到 `builder.trace_id`（根 span）
+///   若 parent_cx 的 trace_id 无效则回退到 `builder.trace_id`（根 span）
 /// - `span_id`：始终从 `builder.span_id` 获取
-fn otel_trace_span_id(data: &tracing_opentelemetry::OtelData) -> (Option<String>, Option<String>) {
+///
+/// 注意：只检查 `trace_id` 有效性，不检查 `span_id`。
+/// 当 remote parent 只有 trace_id 没有 span_id 时（如服务端回传的 operation_id），
+/// `is_valid()` 会因 span_id 为 INVALID 而返回 false，导致 trace_id 继承失败。
+fn otel_trace_span_id(data: &tracing_opentelemetry::OtelData) -> (Option<String>, Option<String>, Option<String>) {
     let trace_id = {
         let parent_span = data.parent_cx.span();
         let sc = parent_span.span_context();
-        if sc.is_valid() {
+        if sc.trace_id() != opentelemetry::trace::TraceId::INVALID {
             Some(sc.trace_id())
         } else {
             data.builder.trace_id
         }
     };
     let span_id = data.builder.span_id;
-    (trace_id.map(|t| t.to_string()), span_id.map(|s| s.to_string()))
+    let parent_span_id = {
+        let parent_span = data.parent_cx.span();
+        let sc = parent_span.span_context();
+        if sc.span_id() != opentelemetry::trace::SpanId::INVALID {
+            Some(sc.span_id().to_string())
+        } else {
+            None
+        }
+    };
+    (trace_id.map(|t| t.to_string()), span_id.map(|s| s.to_string()), parent_span_id)
 }
 
 /// 写 span 生命周期事件（enter / close）
@@ -263,6 +285,7 @@ fn write_span_event(
     fields: &str,
     trace_id: Option<&str>,
     span_id: Option<&str>,
+    parent_span_id: Option<&str>,
     message: &str,
 ) -> std::io::Result<()> {
     // 1) 时间戳
@@ -306,10 +329,16 @@ fn write_span_event(
         }
         inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
     }
+    if let Some(psid) = parent_span_id {
+        if !inner.is_empty() {
+            inner.push_str(", ");
+        }
+        inner.push_str(&format!("parent_span_id={}", psid));
+    }
 
     if !inner.is_empty() {
         if with_ansi {
-            write!(writer, "{}{{{}}}{}", DIM, inner, RESET)?;
+            write!(writer, "{}{{{}}}{}", GREY, inner, RESET)?;
         } else {
             write!(writer, "{{{}}}", inner)?;
         }
@@ -371,9 +400,18 @@ where
             }
         }
 
-        // 4) span 链（从 event scope 读取）
+        // 4) 消息内容
+        if self.with_ansi {
+            write!(writer, "{}", WHITE)?;
+        }
+        ctx.field_format().format_fields(writer.by_ref(), event)?;
+        if self.with_ansi {
+            write!(writer, "{}", RESET)?;
+        }
+
+        // 5) span 信息放在最后，key=value 格式
         if let Some(scope) = ctx.event_scope() {
-            for span_ref in scope.from_root() {
+            if let Some(span_ref) = scope.from_root().last() {
                 let name = span_ref.metadata().name();
                 let extensions = span_ref.extensions();
                 let fields_str = extensions
@@ -384,7 +422,7 @@ where
                 let otel_info: Option<(String, String)> = extensions
                     .get::<tracing_opentelemetry::OtelData>()
                     .and_then(|data| {
-                        let (tid, sid) = otel_trace_span_id(data);
+                        let (tid, sid, _psid) = otel_trace_span_id(data);
                         match (tid, sid) {
                             (Some(tid), Some(sid)) => Some((tid, sid)),
                             _ => None,
@@ -392,48 +430,25 @@ where
                     });
 
                 if self.with_ansi {
-                    write!(writer, "{}{}{}", CYAN, name, RESET)?;
-                    let mut inner = String::new();
+                    write!(writer, " {}span={}", GREY, name)?;
                     if !fields_str.is_empty() {
-                        inner.push_str(&fields_str.replace(' ', ", "));
+                        write!(writer, " {}", fields_str.replace('=', "=").replace(' ', " "))?;
                     }
                     if let Some((ref tid, ref sid)) = otel_info {
-                        if !inner.is_empty() {
-                            inner.push_str(", ");
-                        }
-                        inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
+                        write!(writer, " trace_id={} span_id={}", tid, sid)?;
                     }
-                    if !inner.is_empty() {
-                        write!(writer, "{}{{{}}}{}", DIM, inner, RESET)?;
-                    }
-                    write!(writer, " ")?;
+                    write!(writer, "{}", RESET)?;
                 } else {
-                    let has_otel = otel_info.is_some();
-                    if fields_str.is_empty() && !has_otel {
-                        write!(writer, "{} ", name)?;
-                    } else {
-                        write!(writer, "{}", name)?;
-                        let mut inner = String::new();
-                        if !fields_str.is_empty() {
-                            inner.push_str(&fields_str.replace(' ', ", "));
-                        }
-                        if let Some((ref tid, ref sid)) = otel_info {
-                            if !inner.is_empty() {
-                                inner.push_str(", ");
-                            }
-                            inner.push_str(&format!("trace_id={}, span_id={}", tid, sid));
-                        }
-                        if !inner.is_empty() {
-                            write!(writer, "{{{}}}", inner)?;
-                        }
-                        write!(writer, " ")?;
+                    write!(writer, " span={}", name)?;
+                    if !fields_str.is_empty() {
+                        write!(writer, " {}", fields_str)?;
+                    }
+                    if let Some((ref tid, ref sid)) = otel_info {
+                        write!(writer, " trace_id={} span_id={}", tid, sid)?;
                     }
                 }
             }
         }
-
-        // 5) 消息内容
-        ctx.field_format().format_fields(writer.by_ref(), event)?;
 
         writeln!(writer)?;
         Ok(())
@@ -507,6 +522,47 @@ pub fn extract_trace_id() -> String {
     }
 }
 
+/// 从当前 tracing span 的 OTel 上下文中提取 span_id
+pub fn extract_span_id() -> Option<SpanId> {
+    let span = Span::current();
+    let cx = span.context();
+    let span_ref = cx.span();
+    let sc = span_ref.span_context();
+    if sc.is_valid() {
+        Some(sc.span_id())
+    } else {
+        None
+    }
+}
+
+/// 将 trace_id 和 span_id 编码为透传用的 operationID
+/// 格式: `{trace_id}:{span_id}`，服务端原样回传后由 decode_operation_id 解析
+pub fn encode_operation_id(trace_id: &str, span_id: Option<SpanId>) -> String {
+    if trace_id.is_empty() {
+        return String::new();
+    }
+    match span_id {
+        Some(sid) => format!("{}:{}", trace_id, sid),
+        None => trace_id.to_string(),
+    }
+}
+
+/// 从服务端回传的 operationID 解析出 trace_id 和 span_id
+/// 兼容两种格式: `{trace_id}:{span_id}` 或 `{trace_id}`
+pub fn decode_operation_id(operation_id: &str) -> (&str, Option<&str>) {
+    if let Some(idx) = operation_id.rfind(':') {
+        let trace_id = &operation_id[..idx];
+        let span_id = &operation_id[idx + 1..];
+        // 验证 trace_id 是32位 hex 且 span_id 是16位 hex
+        if trace_id.len() == 32 && trace_id.chars().all(|c| c.is_ascii_hexdigit())
+            && span_id.len() == 16 && span_id.chars().all(|c| c.is_ascii_hexdigit())
+        {
+            return (trace_id, Some(span_id));
+        }
+    }
+    (operation_id, None)
+}
+
 /// 从服务端回传的 trace_id 字符串重建 tracing span（带 remote parent）
 ///
 /// 注意：tracing 0.1 的 span 名称必须是字面量，因此用固定名 `remote_span`，
@@ -527,7 +583,7 @@ pub fn span_from_remote_trace_id(
 
     let remote_sc = SpanContext::new(
         trace_id,
-        if parent_span_id == SpanId::INVALID { SpanId::INVALID } else { parent_span_id },
+        if parent_span_id == SpanId::INVALID { SpanId::from(1u64) } else { parent_span_id },
         TraceFlags::SAMPLED,
         true,
         TraceState::default(),
@@ -557,13 +613,23 @@ pub fn context_from_traceparent(traceparent: &str) -> Context {
     propagator.extract(&carrier)
 }
 
+/// 运行时开关：控制 span enter/close 日志是否输出
+static SPAN_EVENTS_ENABLED: AtomicBool = AtomicBool::new(true);
+
+/// 设置 span enter/close 日志开关
+pub fn set_span_events_enabled(enabled: bool) {
+    SPAN_EVENTS_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
 /// 初始化 OTel subscriber（文件 + OTel + 可选控制台）
 pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     // --- EnvFilter ---
+    // 默认 info，自己的 crate 开启 trace
     let mut env_filter = tracing_subscriber::EnvFilter::builder()
-        .with_default_directive(config.level_filter().into())
+        .with_default_directive(tracing_subscriber::filter::LevelFilter::INFO.into())
         .from_env_lossy();
     env_filter = env_filter
+        .add_directive("rust_lib_flutter_rust_demo=trace".parse().unwrap())
         .add_directive("hyper=warn".parse().unwrap())
         .add_directive("reqwest=warn".parse().unwrap())
         .add_directive("tower=warn".parse().unwrap())

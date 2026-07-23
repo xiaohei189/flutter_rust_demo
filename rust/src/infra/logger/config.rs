@@ -27,7 +27,7 @@ pub struct LogConfig {
 impl Default for LogConfig {
     fn default() -> Self {
         Self {
-            log_level: 2,           // info
+            log_level: 0,           // trace
             is_log_standard_output: true,
             log_file_path: "./logs".to_string(),
             log_remain_count: 7,
@@ -35,7 +35,7 @@ impl Default for LogConfig {
             system_type: String::new(),
             platform_name: String::new(),
             sdk_version: env!("CARGO_PKG_VERSION").to_string(),
-            is_log_span_events: true,
+            is_log_span_events: false,
         }
     }
 }
