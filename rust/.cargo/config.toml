@@ -22,3 +22,6 @@ opt-level = 3
 codegen-units = 1
 lto = true
 incremental = false
+
+[env]
+PROTOC = "C:\\Users\\11456\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.Protobuf_Microsoft.Winget.Source_8wekyb3d8bbwe\\bin\\protoc.exe"
