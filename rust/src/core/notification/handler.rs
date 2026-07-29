@@ -17,7 +17,6 @@ use crate::core::user::manager::UserManager;
 use crate::domain::constant::types::notification_type;
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
-use crate::domain::model::message::ReceivedMessage;
 use crate::protocol::sdkws::MsgData;
 use serde::Deserialize;
 use std::sync::Arc;

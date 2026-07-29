@@ -402,7 +402,7 @@ async fn test_message_flow() {
 
     let mut a_events = a_sdk.event_bus().subscribe();
 
-    let mark_result = b_sdk.mark_conversation_as_read(conv_id.clone(), 1).await;
+    let mark_result = b_sdk.mark_conversation_message_as_read(conv_id.clone(), 1).await;
     assert!(mark_result.is_ok(), "B 标记已读失败: {:?}", mark_result.err());
 
     // 验证 B 收到 ConversationChanged(unread_count=0)
@@ -652,8 +652,8 @@ async fn test_message_flow() {
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     let context_list: Vec<rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct> = vec![
-        rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct::from(&merger_msg_1),
-        rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct::from(&merger_msg_2),
+        merger_msg_1.clone(),
+        merger_msg_2.clone(),
     ];
     let merger_result = a_sdk.send_merger_message(
         "合并转发标题",
@@ -1379,7 +1379,7 @@ async fn test_mark_specific_messages_as_read() {
 
     // Phase 5: 验证消息级别 is_read 状态
     // 注意: mark_messages_as_read 仅标记消息级别 is_read，
-    //       不更新会话 unread_count（需通过 mark_conversation_as_read 更新）
+    //       不更新会话 unread_count（需通过 mark_conversation_message_as_read 更新）
     println!("\n========== Phase 5: 验证消息级别 is_read ==========");
 
     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -2002,7 +2002,7 @@ async fn test_total_unread_count() {
     println!("Phase 4 通过: total_unread = {}", total);
 
     // Phase 5: B 标记与 A 的会话已读
-    sdk_b.mark_conversation_as_read(conv_a_b, 1).await.unwrap();
+    sdk_b.mark_conversation_message_as_read(conv_a_b, 1).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Phase 6: 验证 total == 2
@@ -2011,7 +2011,7 @@ async fn test_total_unread_count() {
     println!("Phase 6 通过: total_unread = {}", total);
 
     // Phase 7: B 标记与 C 的会话也已读
-    sdk_b.mark_conversation_as_read(conv_c_b, 1).await.unwrap();
+    sdk_b.mark_conversation_message_as_read(conv_c_b, 1).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Phase 8: 验证 total == 0
@@ -2199,7 +2199,7 @@ async fn test_group_message_flow() {
 
     // Phase 6: B 标记群会话已读
     println!("\n========== Phase 6: B 标记群会话已读 ==========");
-    sdk_b.mark_conversation_as_read(conv_id_b.clone(), 3).await.unwrap();
+    sdk_b.mark_conversation_message_as_read(conv_id_b.clone(), 3).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let conv_b = sdk_b.get_conversation(&conv_id_b).await.unwrap().unwrap();
@@ -2209,7 +2209,7 @@ async fn test_group_message_flow() {
 
     // Phase 7: C 标记群会话已读
     println!("\n========== Phase 7: C 标记群会话已读 ==========");
-    sdk_c.mark_conversation_as_read(conv_id_c.clone(), 3).await.unwrap();
+    sdk_c.mark_conversation_message_as_read(conv_id_c.clone(), 3).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let conv_c = sdk_c.get_conversation(&conv_id_c).await.unwrap().unwrap();
@@ -2305,7 +2305,7 @@ async fn test_online_only_message() {
     // Phase 3: B 标记已读，清零未读数
     println!("\n========== Phase 3: B 标记已读 ==========");
 
-    b_sdk.mark_conversation_as_read(conv_id.clone(), st).await.unwrap();
+    b_sdk.mark_conversation_message_as_read(conv_id.clone(), st).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let conv = b_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
@@ -2688,7 +2688,7 @@ async fn test_concurrent_send_stress() {
     // Phase 4: B 标记已读
     println!("\n========== Phase 4: B 标记已读 ==========");
 
-    b_sdk.mark_conversation_as_read(conv_id.clone(), st).await.unwrap();
+    b_sdk.mark_conversation_message_as_read(conv_id.clone(), st).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let conv = b_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
@@ -2848,7 +2848,7 @@ async fn test_concurrent_send_stress() {
     assert!(mixed_msgs.len() >= 3, "应有 >= 3 条混合类型消息");
 
     // A 标记全部已读
-    a_sdk_arc.mark_conversation_as_read(conv_id.clone(), st).await.unwrap();
+    a_sdk_arc.mark_conversation_message_as_read(conv_id.clone(), st).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let conv = a_sdk_arc.get_conversation(&conv_id).await.unwrap().unwrap();

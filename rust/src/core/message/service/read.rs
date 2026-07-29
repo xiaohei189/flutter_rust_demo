@@ -1,261 +1,16 @@
-use crate::domain::constant::types::{notification_type, session_type};
+//! 标记已读逻辑（单会话/批量/按 seq）
+
+use super::MessageService;
+use super::req::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
+use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::EventBus;
-use crate::domain::event::types::{MessageReceipt, SdkEvent};
+use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
-use crate::domain::listener::conversation::{ConversationListener, ConversationEvent};
-use crate::infra::database::{ConversationDao, MessageDao};
-use crate::infra::database::models::LocalChatLog;
-use crate::infra::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use crate::domain::listener::conversation::ConversationEvent;
+use crate::infra::http::routes::{MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ};
 use tracing::{error, info, warn};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RevokeMessageReq {
-    #[serde(rename = "conversationID")]
-    pub conversation_id: String,
-    #[serde(rename = "seq")]
-    pub seq: i64,
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(rename = "clientMsgID")]
-    pub client_msg_id: String,
-    #[serde(rename = "sessionType")]
-    pub session_type: i32,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeleteMessagesReq {
-    #[serde(rename = "conversationID")]
-    pub conversation_id: String,
-    #[serde(rename = "clientMsgIDs")]
-    pub client_msg_ids: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MarkMessagesAsReadReq {
-    #[serde(rename = "conversationID")]
-    pub conversation_id: String,
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(rename = "sessionType")]
-    pub session_type: i32,
-    #[serde(rename = "hasReadSeq")]
-    pub has_read_seq: i64,
-    #[serde(rename = "seqs")]
-    pub seqs: Vec<i64>,
-}
-
-/// 标记整个会话为已读的请求（对齐 Go SDK `MarkConversationAsReadReq`）
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MarkConversationAsReadReq {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(rename = "conversationID")]
-    pub conversation_id: String,
-    #[serde(rename = "hasReadSeq")]
-    pub has_read_seq: i64,
-    #[serde(rename = "seqs")]
-    pub seqs: Vec<i64>,
-}
-
-/// 批量标记所有会话为已读的请求
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MarkAllConversationAsReadReq {
-    #[serde(rename = "conversationIDs")]
-    pub conversation_ids: Vec<String>,
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(rename = "hasReadSeqs")]
-    pub has_read_seqs: Vec<i64>,
-}
-
-pub struct MessageService {
-    message_dao: Arc<MessageDao>,
-    conversation_dao: Arc<ConversationDao>,
-    event_bus: Arc<EventBus>,
-    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
-    http_client: Arc<crate::infra::http::client::HttpApiClient>,
-    user_id: Arc<std::sync::Mutex<String>>,
-}
-
 impl MessageService {
-    pub fn new(
-        message_dao: Arc<MessageDao>,
-        conversation_dao: Arc<ConversationDao>,
-        event_bus: Arc<EventBus>,
-        http_client: Arc<crate::infra::http::client::HttpApiClient>,
-        user_id: String,
-    ) -> Self {
-        Self {
-            message_dao,
-            conversation_dao,
-            event_bus,
-            event_tx: Arc::new(std::sync::Mutex::new(None)),
-            http_client,
-            user_id: Arc::new(std::sync::Mutex::new(user_id)),
-        }
-    }
-
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        *self.event_tx.lock().unwrap() = Some(tx);
-    }
-
-    pub(crate) fn send(&self, e: ConversationEvent) {
-        let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
-        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
-    }
-
-    pub fn set_user_id(&self, user_id: String) {
-        let mut uid = self.user_id.lock().unwrap();
-        *uid = user_id;
-    }
-
-    /// 撤回消息（对齐 Go SDK revoke.go waitForMessageSyncSeq + revokeOneMessage）
-    ///
-    /// 如果 seq 为 0，从本地数据库查找；若仍未同步，等待并重试（最多 5 次，每次 2 秒）。
-    pub async fn revoke_message(
-        &self,
-        conversation_id: String,
-        seq: i64,
-        client_msg_id: String,
-        session_type: i32,
-    ) -> Result<()> {
-        let user_id = self.user_id.lock().unwrap().clone();
-
-        // 如果 seq 为 0，从本地数据库查找（对齐 Go SDK waitForMessageSyncSeq）
-        let final_seq = if seq == 0 {
-            self.wait_for_message_sync_seq(&conversation_id, &client_msg_id).await?
-        } else {
-            seq
-        };
-
-        let req = RevokeMessageReq {
-            conversation_id: conversation_id.clone(),
-            seq: final_seq,
-            user_id: user_id.clone(),
-            client_msg_id: client_msg_id.clone(),
-            session_type,
-        };
-
-        let _resp: serde_json::Value = self.http_client.post(REVOKE_MSG, &req).await?;
-
-        // 获取原消息信息用于构建事件
-        let original_msg = self.message_dao.get_by_client_msg_id(&conversation_id, &client_msg_id).await?;
-        
-        // 更新本地数据库：标记消息为已撤回
-        self.message_dao
-            .update_content_type(&conversation_id, &client_msg_id, notification_type::REVOKE)
-            .await?;
-
-        // 构建完整的 MessageRevoked 事件
-        let revoke_time = chrono::Utc::now().timestamp_millis();
-        let (source_message_send_time, source_message_send_id, source_message_sender_nickname) = 
-            if let Some(msg) = original_msg {
-                (msg.send_time, msg.send_id.clone(), msg.sender_nick_name.clone())
-            } else {
-                (0, String::new(), String::new())
-            };
-
-        self.event_bus.publish(SdkEvent::MessageRevoked {
-            conversation_id: conversation_id.clone(),
-            seq: final_seq,
-            client_msg_id: client_msg_id.clone(),
-            revoker_id: user_id.clone(),
-            revoker_role: 0,
-            revoker_nickname: String::new(),
-            revoke_time,
-            source_message_send_time,
-            source_message_send_id,
-            source_message_sender_nickname,
-            session_type,
-            is_admin_revoke: false,
-        });
-
-        info!("消息已撤回: conversation_id={}, seq={}", conversation_id, final_seq);
-        Ok(())
-    }
-
-    /// 等待消息 seq 同步到本地数据库（对齐 Go SDK waitForMessageSyncSeq）
-    ///
-    /// 消息发送后 seq 可能尚未同步到本地，需要等待 sync 完成。
-    /// 最多重试 5 次，每次等待 2 秒。
-    async fn wait_for_message_sync_seq(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-    ) -> Result<i64> {
-        for attempt in 0..5 {
-            if let Ok(Some(msg)) = self.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await {
-                if msg.seq > 0 {
-                    return Ok(msg.seq);
-                }
-            }
-            if attempt < 4 {
-                warn!(
-                    "消息 seq 尚未同步 (attempt={}), 等待重试: client_msg_id={}",
-                    attempt + 1, client_msg_id
-                );
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            }
-        }
-        Err(SdkError::invalid_argument(format!(
-            "消息 seq 未同步，无法撤回: client_msg_id={}", client_msg_id
-        )))
-    }
-
-    /// 删除消息（对齐 Go SDK deleteMessage）
-    ///
-    /// 服务端 API 需要 seqs，从本地数据库查找。
-    pub async fn delete_messages(
-        &self,
-        conversation_id: String,
-        client_msg_ids: Vec<String>,
-    ) -> Result<()> {
-        // 从本地数据库查找每条消息的 seq
-        let mut seqs = Vec::new();
-        for client_msg_id in &client_msg_ids {
-            if let Ok(Some(msg)) = self.message_dao.get_by_client_msg_id(&conversation_id, client_msg_id).await {
-                if msg.seq > 0 {
-                    seqs.push(msg.seq);
-                }
-            }
-        }
-
-        // 调用服务端 API（需要 seqs）
-        use crate::infra::http::routes::DELETE_MSGS;
-        #[derive(serde::Serialize)]
-        struct ServerDeleteReq {
-            #[serde(rename = "conversationID")]
-            conversation_id: String,
-            seqs: Vec<i64>,
-            #[serde(rename = "userID")]
-            user_id: String,
-        }
-        let user_id = self.user_id.lock().unwrap().clone();
-        let req = ServerDeleteReq {
-            conversation_id: conversation_id.clone(),
-            seqs,
-            user_id,
-        };
-        let _resp: serde_json::Value = self.http_client.post(DELETE_MSGS, &req).await?;
-
-        // 删除本地数据库中的消息
-        for client_msg_id in &client_msg_ids {
-            self.message_dao.delete_by_client_msg_id(&conversation_id, client_msg_id).await?;
-        }
-
-        self.event_bus.publish(SdkEvent::MessagesDeleted {
-            conversation_id: conversation_id.clone(),
-            client_msg_ids: client_msg_ids.clone(),
-        });
-
-        info!("消息已删除: conversation_id={}, count={}", conversation_id, client_msg_ids.len());
-        Ok(())
-    }
-
     /// 标记会话消息已读（严格对齐 Go SDK `markConversationMessageAsRead` read_drawing.go L46-104）
     ///
     /// 流程（逐行对齐 Go SDK）：
@@ -392,7 +147,7 @@ impl MessageService {
     }
 
     /// 调用服务端 `markConversationAsRead` API（对齐 Go SDK `server_api.go` L17-22）
-    async fn mark_conversation_as_read_server(
+    pub(crate) async fn mark_conversation_as_read_server(
         &self,
         conversation_id: &str,
         has_read_seq: i64,
@@ -461,17 +216,5 @@ impl MessageService {
         // 总未读数由 handler.rs 统一发布
         info!("已标记所有会话消息已读");
         Ok(())
-    }
-
-    /// 本地搜索消息
-    pub async fn search_local_messages(
-        &self,
-        conversation_id: String,
-        keyword: String,
-        max_count: i64,
-    ) -> Result<Vec<LocalChatLog>> {
-        let results = self.message_dao.search_by_keyword(&conversation_id, &keyword, max_count).await?;
-        info!("本地搜索消息: conv={}, keyword={}, count={}", conversation_id, keyword, results.len());
-        Ok(results)
     }
 }

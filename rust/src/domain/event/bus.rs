@@ -73,7 +73,7 @@ impl EventSubscription {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::model::message::ReceivedMessage;
+    use crate::protocol::sdkws::MsgData;
     use super::*;
 
     #[tokio::test]
@@ -98,24 +98,17 @@ mod tests {
         let mut sub2 = bus.subscribe();
 
         bus.publish(SdkEvent::NewMessage {
-            message: ReceivedMessage {
-                server_msg_id: String::new(),
+            message: MsgData {
                 client_msg_id: "msg_1".into(),
                 send_id: "user_1".into(),
                 recv_id: "user_2".into(),
                 sender_platform_id: 1,
-                sender_nick_name: String::new(),
-                sender_face_url: String::new(),
-                session_type: 1,
-                msg_from: 100,
                 content_type: 101,
-                content: "{\"text\":\"hello\"}".into(),
+                content: b"{\"text\":\"hello\"}".to_vec(),
                 seq: 1,
                 send_time: 1000,
-                is_online_only: false,
                 create_time: 1000,
-                conversation_id: "conv_1".into(),
-                group_id: String::new(),
+                ..Default::default()
             },
         });
 

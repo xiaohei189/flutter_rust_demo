@@ -1,5 +1,6 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::file::uploader::{FileUploader, ProgressCallback};
+use crate::core::message::content_type::ContentTypeUtils;
 use crate::domain::constant::enums::MessageSendStatus;
 use crate::domain::error::types::Result;
 use crate::domain::error::types::SdkError;
@@ -40,13 +41,17 @@ fn conversation_id_for_msg(msg: &MsgStruct) -> String {
     }
 }
 
+/// 获取 content_type 的中文描述
+fn content_type_name(ct: i32) -> &'static str {
+    ContentTypeUtils::display_name_zh(ct)
+}
+
 /// 处理媒体内容上传（独立函数版本）
 async fn process_media_content_impl(
     file_uploader: &FileUploader,
     msg: &MsgStruct,
 ) -> std::result::Result<String, SdkError> {
-    let media_types = [102, 103, 104, 105];
-    if !media_types.contains(&msg.content_type) {
+    if !ContentTypeUtils::is_media(msg.content_type) {
         return Ok(msg.content.clone());
     }
 
@@ -180,7 +185,7 @@ async fn insert_message_before_send_impl(
 }
 
 /// 执行消息发送的核心逻辑（独立函数版本，供队列调用）
-#[tracing::instrument(skip_all, fields(client_msg_id = %msg.client_msg_id))]
+#[tracing::instrument(skip_all)]
 async fn do_send_message_impl(
     context: Arc<RuntimeContext>,
     connection: Arc<ConnectionManager>,
@@ -191,8 +196,8 @@ async fn do_send_message_impl(
 ) -> std::result::Result<UserSendMsgResp, SdkError> {
     let start = std::time::Instant::now();
     let conversation_id = conversation_id_for_msg(&msg);
-    info!("[SendMsg] 开始: conv={}, content_type={}, online_only={}",
-        conversation_id, msg.content_type, online_only);
+    info!("[SendMsg] 开始: conv={}, content_type={}({}), online_only={}",
+        conversation_id, msg.content_type, content_type_name(msg.content_type), online_only);
 
     let send_time = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -276,7 +281,7 @@ async fn do_send_message_impl(
 }
 
 impl OpenIMClient {
-    #[tracing::instrument(skip_all, fields(source_id = %source_id))]
+    #[tracing::instrument(skip_all)]
     pub async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError> {
         self.send_msg_inner(msg, source_id, offline_push_info, false).await
     }

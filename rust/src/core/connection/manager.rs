@@ -767,7 +767,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection_manager_creation() {
-        let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
         let manager = ConnectionManager::new(cancel_token);
 
@@ -776,7 +775,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_connection_state_transitions() {
-        let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
         let manager = ConnectionManager::new(cancel_token);
 
@@ -792,7 +790,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_connected() {
-        let event_bus = Arc::new(EventBus::new());
         let cancel_token = CancellationToken::new();
         let manager = ConnectionManager::new(cancel_token);
 

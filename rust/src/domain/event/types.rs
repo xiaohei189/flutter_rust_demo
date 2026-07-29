@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use crate::domain::model::conversation::Conversation;
 use crate::domain::model::friend::FriendInfo;
-use crate::domain::model::message::ReceivedMessage;
 use crate::domain::model::user::UserInfo;
 use crate::protocol::sdkws::MsgData;
 
@@ -79,7 +78,7 @@ pub enum SdkEvent {
         error: String,
     },
     NewMessage {
-        message: ReceivedMessage,
+        message: MsgData,
     },
     MessageSent {
         client_msg_id: String,
@@ -134,11 +133,11 @@ pub enum SdkEvent {
     },
     /// 离线新消息通知（对齐 Go SDK `OnRecvOfflineNewMessage`）
     RecvOfflineNewMessage {
-        messages: Vec<ReceivedMessage>,
+        messages: Vec<MsgData>,
     },
     /// 消息被编辑通知（对齐 Go SDK `OnMsgEdited` / `OnRecvMessageModified`）
     MsgEdited {
-        message: ReceivedMessage,
+        message: MsgData,
     },
     /// 消息扩展（Reaction）新增（对齐 Go SDK `OnRecvMessageExtensionsAdded`）
     MessageExtensionsAdded {
@@ -362,26 +361,22 @@ mod tests {
 
     #[test]
     fn test_sdk_event_new_message() {
-        use crate::domain::model::message::ReceivedMessage;
         let event = SdkEvent::NewMessage {
-            message: ReceivedMessage {
+            message: MsgData {
                 server_msg_id: "srv_1".into(),
                 client_msg_id: "msg_1".into(),
                 send_id: "user_1".into(),
                 recv_id: "user_2".into(),
                 sender_platform_id: 1,
-                sender_nick_name: "User1".into(),
-                sender_face_url: String::new(),
+                sender_nickname: "User1".into(),
                 session_type: 1,
                 msg_from: 100,
                 content_type: 101,
-                content: "{\"text\":\"hello\"}".into(),
+                content: b"{\"text\":\"hello\"}".to_vec(),
                 seq: 1,
                 send_time: 1000,
                 create_time: 1000,
-                conversation_id: "conv_1".into(),
-                group_id: String::new(),
-                is_online_only: false,
+                ..Default::default()
             },
         };
         assert_eq!(event.event_type(), "new_message");
@@ -484,26 +479,19 @@ mod tests {
 
     #[test]
     fn test_recv_offline_new_message_event_type() {
-        use crate::domain::model::message::ReceivedMessage;
         let event = SdkEvent::RecvOfflineNewMessage {
-            messages: vec![ReceivedMessage {
+            messages: vec![MsgData {
                 server_msg_id: "srv_off".into(),
                 client_msg_id: "msg_off".into(),
                 send_id: "user_1".into(),
                 recv_id: "user_2".into(),
                 sender_platform_id: 1,
-                sender_nick_name: String::new(),
-                sender_face_url: String::new(),
-                session_type: 1,
-                msg_from: 100,
                 content_type: 101,
-                content: "{\"text\":\"offline msg\"}".into(),
+                content: b"{\"text\":\"offline msg\"}".to_vec(),
                 seq: 5,
                 send_time: 1700000000,
                 create_time: 1700000000,
-                conversation_id: "si_u1_u2".into(),
-                group_id: String::new(),
-                is_online_only: false,
+                ..Default::default()
             }],
         };
         assert_eq!(event.event_type(), "recv_offline_new_message");
@@ -511,26 +499,19 @@ mod tests {
 
     #[test]
     fn test_msg_edited_event_type() {
-        use crate::domain::model::message::ReceivedMessage;
         let event = SdkEvent::MsgEdited {
-            message: ReceivedMessage {
+            message: MsgData {
                 server_msg_id: "srv_edit".into(),
                 client_msg_id: "msg_edit".into(),
                 send_id: "user_1".into(),
                 recv_id: "user_2".into(),
                 sender_platform_id: 1,
-                sender_nick_name: String::new(),
-                sender_face_url: String::new(),
-                session_type: 1,
-                msg_from: 100,
                 content_type: 101,
-                content: "{\"text\":\"edited\"}".into(),
+                content: b"{\"text\":\"edited\"}".to_vec(),
                 seq: 10,
                 send_time: 1700000000,
                 create_time: 1700000000,
-                conversation_id: "si_u1_u2".into(),
-                group_id: String::new(),
-                is_online_only: false,
+                ..Default::default()
             },
         };
         assert_eq!(event.event_type(), "msg_edited");

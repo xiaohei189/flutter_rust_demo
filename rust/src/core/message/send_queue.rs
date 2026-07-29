@@ -5,11 +5,9 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, info, warn, Span};
 
+use crate::core::message::content_type::ContentTypeUtils;
 use crate::domain::error::types::SdkError;
 use crate::protocol::sdkws::UserSendMsgResp;
-
-/// 媒体消息 content_type（图片/语音/视频/文件）
-const MEDIA_CONTENT_TYPES: [i32; 4] = [102, 103, 104, 105];
 
 /// 单条消息的发送结果
 pub type SendResult = std::result::Result<UserSendMsgResp, SdkError>;
@@ -82,7 +80,7 @@ impl MessageSendQueue {
             result_tx,
         };
 
-        let tx = if is_media_content_type(content_type) {
+        let tx = if ContentTypeUtils::is_media(content_type) {
             &self.low_tx
         } else {
             &self.high_tx
@@ -99,11 +97,121 @@ impl MessageSendQueue {
 
     /// 判断 content_type 是否为媒体类型
     pub fn is_media_type(content_type: i32) -> bool {
-        is_media_content_type(content_type)
+        ContentTypeUtils::is_media(content_type)
     }
 }
 
-/// 判断是否为媒体消息类型（图片/语音/视频/文件）
-fn is_media_content_type(content_type: i32) -> bool {
-    MEDIA_CONTENT_TYPES.contains(&content_type)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================================================
+    // ContentTypeUtils::is_media 路由测试
+    // ========================================================================
+
+    #[test]
+    fn test_media_types_are_media() {
+        assert!(ContentTypeUtils::is_media(102)); // PICTURE
+        assert!(ContentTypeUtils::is_media(103)); // SOUND
+        assert!(ContentTypeUtils::is_media(104)); // VIDEO
+        assert!(ContentTypeUtils::is_media(105)); // FILE
+    }
+
+    #[test]
+    fn test_non_media_types() {
+        assert!(!ContentTypeUtils::is_media(101)); // TEXT
+        assert!(!ContentTypeUtils::is_media(106)); // AT_TEXT
+        assert!(!ContentTypeUtils::is_media(113)); // TYPING
+        assert!(!ContentTypeUtils::is_media(114)); // QUOTE
+        assert!(!ContentTypeUtils::is_media(119)); // CUSTOM_NOT_TRIGGER
+        assert!(!ContentTypeUtils::is_media(120)); // CUSTOM_ONLINE_ONLY
+        assert!(!ContentTypeUtils::is_media(0));
+        assert!(!ContentTypeUtils::is_media(-1));
+        assert!(!ContentTypeUtils::is_media(999));
+    }
+
+    #[test]
+    fn test_is_media_type_public_api() {
+        // 确保公开 API 和 ContentTypeUtils 行为一致
+        assert_eq!(MessageSendQueue::is_media_type(102), ContentTypeUtils::is_media(102));
+        assert_eq!(MessageSendQueue::is_media_type(101), ContentTypeUtils::is_media(101));
+    }
+
+    // ========================================================================
+    // 队列路由行为测试
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_text_message_goes_to_high_lane() {
+        let queue = MessageSendQueue::new();
+        // 文本消息应走 high lane，并正常返回结果
+        let result = queue.submit(101, || {
+            Box::pin(async {
+                Ok(UserSendMsgResp {
+                    server_msg_id: "srv_1".to_string(),
+                    client_msg_id: "cli_1".to_string(),
+                    send_time: 1000,
+                })
+            })
+        }).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().server_msg_id, "srv_1");
+    }
+
+    #[tokio::test]
+    async fn test_media_message_goes_to_low_lane() {
+        let queue = MessageSendQueue::new();
+        // 媒体消息应走 low lane，并正常返回结果
+        let result = queue.submit(102, || {
+            Box::pin(async {
+                Ok(UserSendMsgResp {
+                    server_msg_id: "srv_media".to_string(),
+                    client_msg_id: "cli_media".to_string(),
+                    send_time: 2000,
+                })
+            })
+        }).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().server_msg_id, "srv_media");
+    }
+
+    #[tokio::test]
+    async fn test_send_failure_propagates() {
+        let queue = MessageSendQueue::new();
+        let result = queue.submit(101, || {
+            Box::pin(async {
+                Err(SdkError::message_send("network timeout"))
+            })
+        }).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_fifo_order_within_lane() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let counter = Arc::new(AtomicUsize::new(0));
+        let queue = MessageSendQueue::new();
+
+        // 提交 3 条文本消息，验证顺序执行
+        let mut results = Vec::new();
+        for i in 0..3 {
+            let c = counter.clone();
+            let result = queue.submit(101, move || {
+                let order = c.fetch_add(1, Ordering::SeqCst);
+                Box::pin(async move {
+                    Ok(UserSendMsgResp {
+                        server_msg_id: format!("srv_{}_{}", order, i),
+                        client_msg_id: format!("cli_{}", i),
+                        send_time: i as i64 * 1000,
+                    })
+                })
+            }).await;
+            results.push(result.unwrap());
+        }
+
+        // 同一 lane 内应按提交顺序执行
+        assert_eq!(results[0].server_msg_id, "srv_0_0");
+        assert_eq!(results[1].server_msg_id, "srv_1_1");
+        assert_eq!(results[2].server_msg_id, "srv_2_2");
+    }
 }

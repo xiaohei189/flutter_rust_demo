@@ -240,7 +240,7 @@ async fn test_conversation_mark_read() {
     assert!(conv.unread_count > 0, "User2 应有未读, 实际: {}", conv.unread_count);
     println!("阶段一标记前未读数: {}", conv.unread_count);
 
-    let mark_result = user2_sdk.mark_conversation_as_read(conv_id.clone(), 1).await;
+    let mark_result = user2_sdk.mark_conversation_message_as_read(conv_id.clone(), 1).await;
     assert!(mark_result.is_ok(), "标记已读失败: {:?}", mark_result.err());
 
     let conv = user2_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
@@ -308,7 +308,7 @@ async fn test_conversation_mark_read() {
     assert!(conv.unread_count > 0, "同步后应有未读, 实际: {}", conv.unread_count);
     println!("重新登录后未读数: {}", conv.unread_count);
 
-    let mark_result = user2_sdk_fresh.mark_conversation_as_read(conv_id.clone(), 1).await;
+    let mark_result = user2_sdk_fresh.mark_conversation_message_as_read(conv_id.clone(), 1).await;
     assert!(mark_result.is_ok(), "fallback 标记已读失败: {:?}", mark_result.err());
 
     let conv = user2_sdk_fresh.get_conversation(&conv_id).await.unwrap().unwrap();
@@ -731,7 +731,7 @@ async fn test_conversation_lifecycle() {
 
     // Step 5: 标记已读
     println!("[5/6] 标记已读...");
-    let mark_result = user2_sdk.mark_conversation_as_read(conv_id.clone(), 1).await;
+    let mark_result = user2_sdk.mark_conversation_message_as_read(conv_id.clone(), 1).await;
     assert!(mark_result.is_ok(), "标记已读失败");
     let conv_after_read = user2_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
     assert_eq!(conv_after_read.unread_count, 0, "已读后未读数应为0");
@@ -876,7 +876,7 @@ async fn test_unread_count_after_message() {
     println!("B 的未读数: {}", conv.unread_count);
 
     // B 标记已读
-    user2_sdk.mark_conversation_as_read(conv_id.clone(), 1).await.unwrap();
+    user2_sdk.mark_conversation_message_as_read(conv_id.clone(), 1).await.unwrap();
 
     // 验证 B 的未读数清零
     let conv_after = user2_sdk.get_conversation(&conv_id).await.unwrap().unwrap();

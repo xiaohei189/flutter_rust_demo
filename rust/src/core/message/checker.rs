@@ -6,10 +6,13 @@
 //! 1. `validate_and_fill_internal_gaps` — 块内连续性检查
 //! 2. `validate_and_fill_inter_block_gaps` — 块间连续性检查
 //! 3. `validate_and_fill_end_block_continuity` — 末尾连续性检查
+//!
+//! **状态**: 预留模块，尚未接入 syncer 主流程。
+//! 待消息翻页加载功能完善后由 `MessageSyncer` 或 SDK 层调用。
+#![allow(dead_code)]
 
 use crate::domain::constant::types::{msg_status, pull_msg_num, ws_req_identifier};
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::model::message::ReceivedMessage;
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::core::connection::manager::ConnectionManager;
@@ -252,13 +255,13 @@ impl MessageChecker {
             resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
 
         // 入库拉取到的消息
-        let mut fetched_messages = Vec::new();
+        let mut fetched_logs: Vec<LocalChatLog> = Vec::new();
         for (conv_id, pull_msgs) in &resp.msgs {
             for msg_data in &pull_msgs.msgs {
-                let content = String::from_utf8_lossy(&msg_data.content).to_string();
-                let received_msg = ReceivedMessage {
-                    server_msg_id: msg_data.server_msg_id.clone(),
+                let local_log = LocalChatLog {
+                    conversation_id: conv_id.clone(),
                     client_msg_id: msg_data.client_msg_id.clone(),
+                    server_msg_id: msg_data.server_msg_id.clone(),
                     send_id: msg_data.send_id.clone(),
                     recv_id: msg_data.recv_id.clone(),
                     sender_platform_id: msg_data.sender_platform_id,
@@ -267,71 +270,47 @@ impl MessageChecker {
                     session_type: msg_data.session_type,
                     msg_from: msg_data.msg_from,
                     content_type: msg_data.content_type,
-                    content,
+                    content: String::from_utf8_lossy(&msg_data.content).to_string(),
+                    is_read: 0,
+                    status: msg_status::SEND_SUCCESS as i32,
                     seq: msg_data.seq,
                     send_time: msg_data.send_time,
                     create_time: msg_data.create_time,
-                    conversation_id: conv_id.clone(),
+                    attached_info: String::new(),
+                    ex: String::new(),
+                    local_ex: String::new(),
                     group_id: msg_data.group_id.clone(),
-                    is_online_only: msg_data.options.get("isOnlineOnly").copied().unwrap_or(false),
                 };
-                fetched_messages.push(received_msg);
+                fetched_logs.push(local_log);
             }
 
             // 如果服务端标记 is_end=true，更新会话的 min_seq / max_seq
             if pull_msgs.is_end {
                 let end_seq = pull_msgs.end_seq;
                 if end_seq > 0 {
-                    self.update_conversation_seq边界(conv_id, end_seq, is_reverse).await;
+                    self.update_conversation_seq_boundary(conv_id, end_seq, is_reverse).await;
                 }
             }
         }
 
-        if !fetched_messages.is_empty() {
-            // 将 ReceivedMessage 转为 LocalChatLog
-            let local_logs: Vec<LocalChatLog> = fetched_messages.iter().map(|m| {
-                LocalChatLog {
-                    conversation_id: m.conversation_id.clone(),
-                    client_msg_id: m.client_msg_id.clone(),
-                    server_msg_id: m.server_msg_id.clone(),
-                    send_id: m.send_id.clone(),
-                    recv_id: m.recv_id.clone(),
-                    sender_platform_id: m.sender_platform_id,
-                    sender_nick_name: m.sender_nick_name.clone(),
-                    sender_face_url: m.sender_face_url.clone(),
-                    session_type: m.session_type,
-                    msg_from: m.msg_from,
-                    content_type: m.content_type,
-                    content: m.content.clone(),
-                    is_read: 0,
-                    status: msg_status::SEND_SUCCESS as i32,
-                    seq: m.seq,
-                    send_time: m.send_time,
-                    create_time: m.create_time,
-                    attached_info: String::new(),
-                    ex: String::new(),
-                    local_ex: String::new(),
-                    group_id: m.group_id.clone(),
-                }
-            }).collect();
-
+        if !fetched_logs.is_empty() {
             // 入库
-            if let Err(e) = self.message_dao.batch_insert(&local_logs).await {
+            if let Err(e) = self.message_dao.batch_insert(&fetched_logs).await {
                 warn!("[MsgCheck] 缺失消息入库失败: {}", e);
             }
 
             info!(
                 "[MsgCheck] 补拉缺失消息: conv={}, count={}",
-                conversation_id, local_logs.len()
+                conversation_id, fetched_logs.len()
             );
-            Ok(Some(local_logs))
+            Ok(Some(fetched_logs))
         } else {
             Ok(None)
         }
     }
 
     /// 更新会话的 min_seq 或 max_seq（对齐 Go SDK `setConversationMinSeq`）
-    async fn update_conversation_seq边界(&self, conversation_id: &str, end_seq: i64, is_reverse: bool) {
+    async fn update_conversation_seq_boundary(&self, conversation_id: &str, end_seq: i64, is_reverse: bool) {
         if is_reverse {
             // 反向拉取：更新 max_seq（取较小值）
             if let Ok(current) = self.conversation_dao.get_max_seq(conversation_id).await {
@@ -593,11 +572,144 @@ mod tests {
 
     #[test]
     fn test_merge_sorted_arrays_limit() {
-        let a = vec![make_log("a1", 1, 1000), make_log("a2", 3, 3000)];
-        let b = vec![make_log("b1", 2, 2000), make_log("b2", 4, 4000)];
+        // is_desc=true 要求输入已按降序排列
+        let a = vec![make_log("a2", 3, 3000), make_log("a1", 1, 1000)];
+        let b = vec![make_log("b2", 4, 4000), make_log("b1", 2, 2000)];
         let merged = merge_sorted_arrays(&a, &b, 2, true);
         assert_eq!(merged.len(), 2);
         assert_eq!(merged[0].seq, 4);
         assert_eq!(merged[1].seq, 3);
+    }
+
+    // ========================================================================
+    // 边界条件测试
+    // ========================================================================
+
+    #[test]
+    fn test_get_max_min_empty_messages() {
+        let msgs: Vec<LocalChatLog> = vec![];
+        let (max, min, list) = get_max_and_min_have_seq_list(&msgs);
+        assert_eq!(max, 0);
+        assert_eq!(min, 0);
+        assert!(list.is_empty());
+    }
+
+    #[test]
+    fn test_get_max_min_all_zero_seq() {
+        let msgs = vec![
+            make_log("a", 0, 1000),
+            make_log("b", 0, 2000),
+        ];
+        let (max, min, list) = get_max_and_min_have_seq_list(&msgs);
+        assert_eq!(max, 0);
+        assert_eq!(min, 0);
+        assert!(list.is_empty(), "seq=0 should not be included");
+    }
+
+    #[test]
+    fn test_get_max_min_single_message() {
+        let msgs = vec![make_log("a", 42, 1000)];
+        let (max, min, list) = get_max_and_min_have_seq_list(&msgs);
+        assert_eq!(max, 42);
+        assert_eq!(min, 42);
+        assert_eq!(list, vec![42]);
+    }
+
+    #[test]
+    fn test_get_lost_seq_no_gaps() {
+        // 完全没有间隙
+        let lost = get_lost_seq_list_with_limit_length(1, 5, &[1, 2, 3, 4, 5], false);
+        assert!(lost.is_empty());
+    }
+
+    #[test]
+    fn test_get_lost_seq_all_missing() {
+        // 范围内全部缺失
+        let lost = get_lost_seq_list_with_limit_length(1, 5, &[], false);
+        assert_eq!(lost, vec![1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn test_get_lost_seq_min_zero_returns_empty() {
+        // min_seq <= 0 应返回空
+        let lost = get_lost_seq_list_with_limit_length(0, 10, &[], false);
+        assert!(lost.is_empty());
+        let lost = get_lost_seq_list_with_limit_length(-1, 10, &[], false);
+        assert!(lost.is_empty());
+    }
+
+    #[test]
+    fn test_get_lost_seq_limit_forward_takes_tail() {
+        // 正向拉取超限时取后 N 个（靠近 maxSeq 端）
+        // range [1, 100]，have=[]，limit=50 → 应取 [51..100]
+        let lost = get_lost_seq_list_with_limit_length(1, 100, &[], false);
+        assert_eq!(lost.len(), 50);
+        assert_eq!(*lost.first().unwrap(), 51);
+        assert_eq!(*lost.last().unwrap(), 100);
+    }
+
+    #[test]
+    fn test_get_lost_seq_limit_reverse_takes_head() {
+        // 反向拉取超限时取前 N 个（靠近 minSeq 端）
+        // range [1, 100]，have=[]，limit=50 → 应取 [1..50]
+        let lost = get_lost_seq_list_with_limit_length(1, 100, &[], true);
+        assert_eq!(lost.len(), 50);
+        assert_eq!(*lost.first().unwrap(), 1);
+        assert_eq!(*lost.last().unwrap(), 50);
+    }
+
+    #[test]
+    fn test_merge_sorted_arrays_empty_inputs() {
+        let empty: Vec<LocalChatLog> = vec![];
+        let a = vec![make_log("a1", 1, 1000)];
+
+        // 一个为空
+        let merged = merge_sorted_arrays(&a, &empty, 10, true);
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].seq, 1);
+
+        // 两个都为空
+        let merged = merge_sorted_arrays(&empty, &empty, 10, true);
+        assert!(merged.is_empty());
+    }
+
+    #[test]
+    fn test_merge_sorted_arrays_same_send_time() {
+        // send_time 相同时应按 seq 排序
+        let a = vec![make_log("a1", 3, 1000)];
+        let b = vec![make_log("b1", 5, 1000)];
+
+        // 降序：seq 大的在前
+        let merged = merge_sorted_arrays(&a, &b, 10, true);
+        assert_eq!(merged[0].seq, 5);
+        assert_eq!(merged[1].seq, 3);
+
+        // 升序：seq 小的在前
+        let merged = merge_sorted_arrays(&a, &b, 10, false);
+        assert_eq!(merged[0].seq, 3);
+        assert_eq!(merged[1].seq, 5);
+    }
+
+    #[test]
+    fn test_merge_sorted_arrays_limit_zero() {
+        let a = vec![make_log("a1", 1, 1000)];
+        let b = vec![make_log("b1", 2, 2000)];
+        let merged = merge_sorted_arrays(&a, &b, 0, true);
+        assert!(merged.is_empty(), "limit=0 should return empty");
+    }
+
+    #[test]
+    fn test_first_conversation_id_empty() {
+        let msgs: Vec<LocalChatLog> = vec![];
+        assert_eq!(first_conversation_id(&msgs), "");
+    }
+
+    #[test]
+    fn test_first_conversation_id_takes_first() {
+        let msgs = vec![
+            make_log("a", 1, 1000),
+            make_log("b", 2, 2000),
+        ];
+        assert_eq!(first_conversation_id(&msgs), "conv_1");
     }
 }

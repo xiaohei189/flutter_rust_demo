@@ -7,7 +7,6 @@ use crate::core::group::manager::GroupManager;
 use crate::core::message::handler::MessageHandler;
 use crate::core::message::send_queue::MessageSendQueue;
 use crate::core::notification::handler::NotificationHandler;
-use crate::domain::model::message::ReceivedMessage;
 use crate::core::message::service::MessageService;
 use crate::core::message::syncer::MessageSyncer;
 use crate::core::online::manager::OnlineStatusManager;
@@ -238,32 +237,11 @@ impl OpenIMClient {
                             let _enter = span.enter();
 
                             for (conv_id, pull_msgs) in &batch.msgs {
-                                let messages: Vec<ReceivedMessage> = pull_msgs.msgs.iter().filter_map(|msg| {
-                                    let content_str = String::from_utf8_lossy(&msg.content).to_string();
-                                    Some(ReceivedMessage {
-                                        server_msg_id: msg.server_msg_id.clone(),
-                                        client_msg_id: msg.client_msg_id.clone(),
-                                        send_id: msg.send_id.clone(),
-                                        recv_id: msg.recv_id.clone(),
-                                        sender_platform_id: msg.sender_platform_id,
-                                        sender_nick_name: msg.sender_nickname.clone(),
-                                        sender_face_url: msg.sender_face_url.clone(),
-                                        session_type: msg.session_type,
-                                        msg_from: msg.msg_from,
-                                        content_type: msg.content_type,
-                                        content: content_str,
-                                        seq: msg.seq,
-                                        send_time: msg.send_time,
-                                        create_time: msg.create_time,
-                                        conversation_id: conv_id.clone(),
-                                        group_id: msg.group_id.clone(),
-                                        is_online_only: msg.options.get("isOnlineOnly").copied().unwrap_or(false),
-                                    })
-                                }).collect();
+                                let messages = pull_msgs.msgs.clone();
                                 let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
 
                                 if !messages.is_empty() {
-                                    match message_handler.handle_messages(messages).await {
+                                    match message_handler.handle_messages(conv_id, messages).await {
                                         Ok(changed) => { if changed { has_message_changes = true; } }
                                         Err(e) => warn!("failed to handle push messages for {}: {:?}", conv_id, e),
                                     }

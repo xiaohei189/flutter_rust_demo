@@ -1,6 +1,5 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::message::handler::MessageHandler;
-use crate::domain::model::message::ReceivedMessage;
 use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::listener::conversation::{ConversationListener, ConversationEvent};
@@ -24,6 +23,22 @@ pub fn is_notification(conversation_id: &str) -> bool {
     conversation_id.starts_with("n_")
 }
 
+/// 消息同步器 — 负责从服务端拉取缺失消息并交给 handler 入库
+///
+/// 对齐 Go SDK `internal/conversation_msg/msg_sync.go`
+///
+/// # 核心流程
+///
+/// 1. 收到推送通知（或登录/重连）后触发同步
+/// 2. 比较本地 max_seq 与服务端 max_seq，计算差量
+/// 3. 通过 WebSocket RPC 分批拉取缺失消息（并发控制）
+/// 4. 将拉取结果交给 `MessageHandler` 分类入库 + 触发事件
+///
+/// # 并发安全
+///
+/// - 全局 `sync_lock` 防止重复触发同步
+/// - 每会话 `per_conv_sync_locks` 防止同一会话并发 pull
+/// - `Semaphore` 控制最大并发拉取数
 pub struct MessageSyncer {
     connection: Arc<ConnectionManager>,
     conversation_dao: Arc<ConversationDao>,
@@ -595,32 +610,9 @@ impl MessageSyncer {
     }
 
     async fn handle_pulled_messages(&self, msgs: &HashMap<String, PullMsgs>) -> Result<()> {
-        let mut all_messages = Vec::new();
-
         for (conv_id, pull_msgs) in msgs {
-            for msg_data in &pull_msgs.msgs {
-                // MsgData.content 是 bytes (Vec<u8>)，需要转为 String
-                let content = String::from_utf8_lossy(&msg_data.content).to_string();
-                let received_msg = ReceivedMessage {
-                    server_msg_id: msg_data.server_msg_id.clone(),
-                    client_msg_id: msg_data.client_msg_id.clone(),
-                    send_id: msg_data.send_id.clone(),
-                    recv_id: msg_data.recv_id.clone(),
-                    sender_platform_id: msg_data.sender_platform_id,
-                    sender_nick_name: msg_data.sender_nickname.clone(),
-                    sender_face_url: msg_data.sender_face_url.clone(),
-                    session_type: msg_data.session_type,
-                    msg_from: msg_data.msg_from,
-                    content_type: msg_data.content_type,
-                    content,
-                    seq: msg_data.seq,
-                    send_time: msg_data.send_time,
-                    create_time: msg_data.create_time,
-                    conversation_id: conv_id.clone(),
-                    group_id: msg_data.group_id.clone(),
-                    is_online_only: msg_data.options.get("isOnlineOnly").copied().unwrap_or(false),
-                };
-                all_messages.push(received_msg);
+            if pull_msgs.msgs.is_empty() {
+                continue;
             }
 
             // 更新 synced_max_seqs：取当前批次消息的最大 seq
@@ -631,11 +623,10 @@ impl MessageSyncer {
                     synced.insert(conv_id.clone(), max_seq_in_batch);
                 }
             }
-        }
 
-        if !all_messages.is_empty() {
-            // 使用 handle_sync_messages 标记为同步来源，触发 RecvOfflineNewMessage 事件
-            self.message_handler.handle_sync_messages(all_messages).await?;
+            // 直接传 MsgData，按会话调用 handler
+            let messages = pull_msgs.msgs.clone();
+            self.message_handler.handle_sync_messages(conv_id, messages).await?;
         }
 
         Ok(())
@@ -664,6 +655,32 @@ impl MessageSyncer {
 mod tests {
     use super::*;
     use prost::Message;
+
+    // ========================================================================
+    // is_notification 纯逻辑测试
+    // ========================================================================
+
+    #[test]
+    fn test_is_notification_with_n_prefix() {
+        assert!(is_notification("n_friend_apply"));
+        assert!(is_notification("n_group_change"));
+        assert!(is_notification("n_"));
+        assert!(is_notification("n_12345"));
+    }
+
+    #[test]
+    fn test_is_notification_normal_conversations() {
+        assert!(!is_notification("conv_123"));
+        assert!(!is_notification("si_user1_user2")); // 单聊 ID
+        assert!(!is_notification("sg_group_123")); // 群聊 ID
+        assert!(!is_notification(""));
+        assert!(!is_notification("N_uppercase")); // 大写 N 不算
+        assert!(!is_notification("notification")); // 没有 n_ 前缀
+    }
+
+    // ========================================================================
+    // protobuf 编解码测试
+    // ========================================================================
 
     #[test]
     fn test_seq_range_protobuf_encode_decode() {

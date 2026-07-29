@@ -300,6 +300,7 @@ fn is_empty(batch: &PushMessages) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::sdkws::MsgData;
 
     #[test]
     fn test_compute_delay_low_load() {
@@ -367,8 +368,11 @@ mod tests {
             });
         });
 
+        // 非空批次：包含一条消息
+        let mut msgs = HashMap::new();
+        msgs.insert("conv1".into(), PullMsgs { msgs: vec![MsgData::default()], is_end: false, end_seq: 1 });
         let batch = PushMessages {
-            msgs: HashMap::new(),
+            msgs,
             notification_msgs: HashMap::new(),
         };
         batcher.enqueue("op1".into(), batch).await;
@@ -391,8 +395,11 @@ mod tests {
             });
         });
 
+        // 非空批次
+        let mut msgs = HashMap::new();
+        msgs.insert("conv1".into(), PullMsgs { msgs: vec![MsgData::default()], is_end: false, end_seq: 1 });
         let batch = PushMessages {
-            msgs: HashMap::new(),
+            msgs,
             notification_msgs: HashMap::new(),
         };
         batcher.enqueue("op1".into(), batch).await;

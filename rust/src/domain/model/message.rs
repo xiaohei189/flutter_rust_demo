@@ -1,29 +1,6 @@
 use openim_protocol::sdkws::MsgData;
 use serde::{Deserialize, Serialize};
 
-/// 收到的消息（从推送消息解码而来，用于事件总线传递）
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ReceivedMessage {
-    pub server_msg_id: String,
-    pub client_msg_id: String,
-    pub send_id: String,
-    pub recv_id: String,
-    pub sender_platform_id: i32,
-    pub sender_nick_name: String,
-    pub sender_face_url: String,
-    pub session_type: i32,
-    pub msg_from: i32,
-    pub content_type: i32,
-    pub content: String,
-    pub seq: i64,
-    pub send_time: i64,
-    pub create_time: i64,
-    pub conversation_id: String,
-    pub group_id: String,
-    /// 是否仅在线推送（online_only 消息不增加未读数）
-    pub is_online_only: bool,
-}
-
 /// 消息信息（FFI 桥接用，将 protobuf MsgData 转换为 Dart 友好的结构体）
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

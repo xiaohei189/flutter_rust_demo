@@ -1141,8 +1141,8 @@ fn mime_from_bytes(data: &[u8]) -> String {
     }
     match data {
         [0xFF, 0xD8, 0xFF, ..] => "image/jpeg".to_string(),
-        [0x89, 0x50, 0x4E, 0x47] => "image/png".to_string(),
-        [0x47, 0x49, 0x46, 0x38] => "image/gif".to_string(),
+        [0x89, 0x50, 0x4E, 0x47, ..] => "image/png".to_string(),
+        [0x47, 0x49, 0x46, 0x38, ..] => "image/gif".to_string(),
         [0x52, 0x49, 0x46, 0x46] => {
             // RIFF container - check for WEBP or AVI
             if data.len() >= 12 && &data[8..12] == b"WEBP" {
@@ -1154,7 +1154,7 @@ fn mime_from_bytes(data: &[u8]) -> String {
             }
         }
         [0x1A, 0x45, 0xDF, 0xA3] => "video/webm".to_string(),
-        [0x00, 0x00, 0x00, _] => {
+        [0x00, 0x00, 0x00, _, ..] => {
             // ftyp box - MP4/MOV
             if data.len() >= 8 && &data[4..8] == b"ftyp" {
                 "video/mp4".to_string()
