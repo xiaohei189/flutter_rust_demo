@@ -7,7 +7,6 @@ use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::types::SdkEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::domain::listener::conversation::ConversationEvent;
-use crate::infra::http::routes::{MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ};
 use tracing::{error, info, warn};
 
 impl MessageService {
@@ -160,8 +159,7 @@ impl MessageService {
             has_read_seq,
             seqs: seqs.to_vec(),
         };
-        let _resp: serde_json::Value = self.http_client.post(MARK_CONVERSATION_AS_READ, &req).await?;
-        Ok(())
+        self.api.mark_conversation_as_read_on_server(&req).await
     }
 
     /// 标记消息已读（按 seq 列表，对齐 Go SDK `markMsgAsRead2Server`）
@@ -182,7 +180,7 @@ impl MessageService {
             seqs: seqs.clone(),
         };
 
-        let _resp: serde_json::Value = self.http_client.post(MARK_MSGS_AS_READ, &req).await?;
+        self.api.mark_messages_as_read_on_server(&req).await?;
 
         // 更新本地数据库：标记消息为已读（排除自己发的）
         if !seqs.is_empty() {

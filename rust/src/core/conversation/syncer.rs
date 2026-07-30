@@ -1,177 +1,26 @@
-use serde::Deserializer;
+//! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::listener::conversation::ConversationEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::sync_version_dao::SyncVersionDao;
-use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{
-    GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS,
-    GET_INCREMENTAL_CONVERSATION,
-};
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn, error};
-use serde::{Deserialize, Serialize};
+
+use super::api::{ConversationServerApi, HttpConversationApi};
+use super::converter::{domain_to_local, server_to_domain};
 
 // ========== 常量 ==========
 
 /// 版本同步表名（对齐 Go SDK `model_struct.LocalConversation{}.TableName()`）
 const CONVERSATION_TABLE_NAME: &str = "local_conversations";
 
-// ========== Request/Response Structs ==========
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GetAllConversationsReq {
-    #[serde(rename = "ownerUserID")]
-    pub owner_user_id: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetAllConversationsResp {
-    #[serde(default)]
-    pub conversations: Option<Vec<ServerConversation>>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GetIncrementalConversationReq {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(rename = "versionID")]
-    pub version_id: String,
-    pub version: u64,
-}
-
-/// serde 反序列化辅助：将 JSON null 视为 Default（空 Vec 等）
-fn deserialize_null_default<'de, D, T>(d: D) -> std::result::Result<T, D::Error>
-where
-    D: Deserializer<'de>,
-    T: Default + Deserialize<'de>,
-{
-    Option::<T>::deserialize(d).map(|x| x.unwrap_or_default())
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetIncrementalConversationResp {
-    pub version: u64,
-    #[serde(rename = "versionID")]
-    pub version_id: String,
-    pub full: bool,
-    #[serde(default, deserialize_with = "deserialize_null_default")]
-    pub delete: Vec<String>,
-    #[serde(default, deserialize_with = "deserialize_null_default")]
-    pub insert: Vec<ServerConversation>,
-    #[serde(default, deserialize_with = "deserialize_null_default")]
-    pub update: Vec<ServerConversation>,
-}
-
-/// 按 ID 查询会话的请求（对齐 Go SDK `getConversationsByIDsFromServer`）
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GetConversationsByIDsReq {
-    #[serde(rename = "ownerUserID")]
-    pub owner_user_id: String,
-    #[serde(rename = "conversationIDs")]
-    pub conversation_ids: Vec<String>,
-}
-
-/// 按 ID 查询会话的响应
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetConversationsByIDsResp {
-    #[serde(default)]
-    pub conversations: Option<Vec<ServerConversation>>,
-}
-
-/// 获取所有会话 ID 的请求（对齐 Go SDK `getAllConversationIDsFromServer`）
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GetFullConversationIDsReq {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-}
-
-/// 获取所有会话 ID 的响应（对齐 Go SDK `GetFullOwnerConversationIDsResp`）
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetFullConversationIDsResp {
-    pub version: u64,
-    #[serde(rename = "versionID")]
-    pub version_id: String,
-    pub equal: bool,
-    #[serde(default, rename = "conversationIDs", deserialize_with = "deserialize_null_default")]
-    pub conversation_ids: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct ServerConversation {
-    #[serde(rename = "ownerUserID", default)]
-    pub owner_user_id: String,
-    #[serde(rename = "conversationID", default)]
-    pub conversation_id: String,
-    #[serde(rename = "conversationType")]
-    pub conversation_type: i32,
-    #[serde(rename = "recvMsgOpt")]
-    pub recv_msg_opt: i32,
-    #[serde(rename = "userID", default)]
-    pub user_id: String,
-    #[serde(rename = "groupID", default)]
-    pub group_id: String,
-    #[serde(rename = "isPinned")]
-    pub is_pinned: bool,
-    #[serde(rename = "isPrivateChat")]
-    pub is_private_chat: bool,
-    #[serde(rename = "groupAtType")]
-    pub group_at_type: i32,
-    #[serde(default)]
-    pub ex: String,
-    #[serde(rename = "attachedInfo", default)]
-    pub attached_info: String,
-    #[serde(rename = "burnDuration")]
-    pub burn_duration: i32,
-    #[serde(rename = "minSeq")]
-    pub min_seq: i64,
-    #[serde(rename = "maxSeq")]
-    pub max_seq: i64,
-    #[serde(rename = "msgDestructTime")]
-    pub msg_destruct_time: i64,
-    #[serde(rename = "isMsgDestruct")]
-    pub is_msg_destruct: bool,
-}
-
-fn server_to_domain(s: ServerConversation) -> Conversation {
-    Conversation {
-        conversation_id: s.conversation_id,
-        conversation_type: s.conversation_type,
-        user_id: s.user_id,
-        group_id: s.group_id,
-        show_name: String::new(),
-        face_url: String::new(),
-        recv_msg_opt: s.recv_msg_opt,
-        unread_count: 0,
-        group_at_type: s.group_at_type,
-        latest_msg_seq: s.max_seq,
-        latest_msg: String::new(),
-        latest_msg_send_time: 0,
-        draft_text: String::new(),
-        draft_text_time: 0,
-        is_pinned: s.is_pinned,
-        is_private_chat: s.is_private_chat,
-        is_not_in_group: false,
-        update_flag: 0,
-        sync_action: None,
-        update_unread_count_time: 0,
-        max_seq: s.max_seq,
-        min_seq: s.min_seq,
-        is_msg_destruct: s.is_msg_destruct,
-        msg_destruct_time: s.msg_destruct_time,
-        is_private: s.is_private_chat,
-        burn_duration: s.burn_duration,
-        ex: s.ex,
-    }
-}
-
 pub struct ConversationSyncer {
-    http_client: Arc<HttpApiClient>,
+    api: Arc<dyn ConversationServerApi>,
     dao: Arc<ConversationDao>,
     pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
     sync_version_dao: Arc<SyncVersionDao>,
@@ -184,13 +33,32 @@ pub struct ConversationSyncer {
 
 impl ConversationSyncer {
     pub fn new(
-        http_client: Arc<HttpApiClient>,
+        http_client: Arc<crate::infra::http::client::HttpApiClient>,
         dao: Arc<ConversationDao>,
         sync_version_dao: Arc<SyncVersionDao>,
         user_id: String,
     ) -> Self {
         Self {
-            http_client,
+            api: Arc::new(HttpConversationApi::new(http_client)),
+            dao,
+            event_tx: Arc::new(std::sync::Mutex::new(None)),
+            sync_version_dao,
+            user_id: Arc::new(RwLock::new(user_id)),
+            connection: None,
+            sync_mutex: tokio::sync::Mutex::new(()),
+        }
+    }
+
+    /// 使用自定义 API 实现构造（用于测试 mock）
+    #[cfg(test)]
+    pub fn new_with_api(
+        api: Arc<dyn ConversationServerApi>,
+        dao: Arc<ConversationDao>,
+        sync_version_dao: Arc<SyncVersionDao>,
+        user_id: String,
+    ) -> Self {
+        Self {
+            api,
             dao,
             event_tx: Arc::new(std::sync::Mutex::new(None)),
             sync_version_dao,
@@ -248,7 +116,8 @@ impl ConversationSyncer {
 
         // 2. 请求增量数据
         let resp = match self
-            .pull_incremental(local_version, &local_version_id)
+            .api
+            .pull_incremental(user_id.clone(), local_version, local_version_id.clone())
             .await
         {
             Ok(r) => r,
@@ -271,13 +140,13 @@ impl ConversationSyncer {
 
         for s in &resp.update {
             let domain = server_to_domain(s.clone());
-            let local = crate::core::conversation::manager::domain_to_local(domain);
+            let local = domain_to_local(domain);
             self.dao.upsert_preserving_local_fields(&local).await?;
         }
 
         for s in &resp.insert {
             let domain = server_to_domain(s.clone());
-            let local = crate::core::conversation::manager::domain_to_local(domain);
+            let local = domain_to_local(domain);
             self.dao.upsert_preserving_local_fields(&local).await?;
         }
 
@@ -330,7 +199,8 @@ impl ConversationSyncer {
     pub async fn sync_full(&self) -> Result<Vec<Conversation>> {
         info!("开始全量同步会话");
 
-        let resp = match self.pull_all().await {
+        let user_id = self.user_id.read().await.clone();
+        let resp = match self.api.pull_all(user_id).await {
             Ok(r) => r,
             Err(e) => {
                 return Err(e);
@@ -356,7 +226,7 @@ impl ConversationSyncer {
 
         // 使用保留本地字段的 upsert 方法插入所有服务端会话
         for conv in &conversations {
-            let local = crate::core::conversation::manager::domain_to_local(conv.clone());
+            let local = domain_to_local(conv.clone());
             self.dao.upsert_preserving_local_fields(&local).await?;
         }
 
@@ -452,7 +322,7 @@ impl ConversationSyncer {
             };
 
             if let Some(local_conv) = local_map.get(conv_id) {
-                // 本地存在该会话 → 检查是否需要更新未读数
+                // 本地存在该会话 -> 检查是否需要更新未读数
                 if local_conv.unread_count != unread_count {
                     if let Err(e) = self.dao.update_unread_count(conv_id, unread_count).await {
                         error!(
@@ -463,7 +333,7 @@ impl ConversationSyncer {
                     changed_ids.push(conv_id.clone());
                 }
             } else {
-                // 本地不存在该会话 → 收集待同步列表（对齐 Go SDK sync.go:82）
+                // 本地不存在该会话 -> 收集待同步列表（对齐 Go SDK sync.go:82）
                 conversation_ids_need_sync.push(conv_id.clone());
             }
         }
@@ -474,8 +344,10 @@ impl ConversationSyncer {
                 "[ConvSync] {} 个会话不在本地，从服务端拉取",
                 conversation_ids_need_sync.len()
             );
+            let user_id = self.user_id.read().await.clone();
             match self
-                .pull_conversations_by_ids(&conversation_ids_need_sync)
+                .api
+                .pull_conversations_by_ids(user_id, conversation_ids_need_sync.clone())
                 .await
             {
                 Ok(server_convs) => {
@@ -491,7 +363,7 @@ impl ConversationSyncer {
                             };
                             domain.unread_count = unread_count;
                         }
-                        let local = crate::core::conversation::manager::domain_to_local(domain.clone());
+                        let local = domain_to_local(domain.clone());
                         if let Err(e) = self.dao.upsert(&local).await {
                             error!(
                                 "[ConvSync] 插入会话 {} 失败: {}",
@@ -523,75 +395,6 @@ impl ConversationSyncer {
         // 事件由 handle_messages_internal 末尾统一发布
 
         Ok(())
-    }
-
-    // ========================================================================
-    // HTTP / RPC 拉取方法
-    // ========================================================================
-
-    async fn pull_all(&self) -> Result<GetAllConversationsResp> {
-        let user_id = self.user_id.read().await.clone();
-        let req = GetAllConversationsReq {
-            owner_user_id: user_id,
-        };
-        debug!("从服务器拉取所有会话");
-        let resp: GetAllConversationsResp = self.http_client.post(GET_ALL_CONVERSATION_LIST, &req).await?;
-        debug!(
-            "拉取到 {} 个会话",
-            resp.conversations.as_ref().map_or(0, |v| v.len())
-        );
-        Ok(resp)
-    }
-
-    async fn pull_incremental(
-        &self,
-        version: u64,
-        version_id: &str,
-    ) -> Result<GetIncrementalConversationResp> {
-        let user_id = self.user_id.read().await.clone();
-        let req = GetIncrementalConversationReq {
-            user_id,
-            version_id: version_id.to_string(),
-            version,
-        };
-        debug!(
-            "从服务器拉取增量会话，版本: {}, version_id: {}",
-            version, version_id
-        );
-        let resp: GetIncrementalConversationResp =
-            self.http_client.post(GET_INCREMENTAL_CONVERSATION, &req).await?;
-        debug!(
-            "增量响应: full={}, insert={}, update={}, delete={}",
-            resp.full,
-            resp.insert.len(),
-            resp.update.len(),
-            resp.delete.len()
-        );
-        Ok(resp)
-    }
-
-    /// 按 ID 列表从服务端拉取会话（对齐 Go SDK `getConversationsByIDsFromServer`）
-    async fn pull_conversations_by_ids(
-        &self,
-        conversation_ids: &[String],
-    ) -> Result<Vec<ServerConversation>> {
-        let user_id = self.user_id.read().await.clone();
-        let req = GetConversationsByIDsReq {
-            owner_user_id: user_id,
-            conversation_ids: conversation_ids.to_vec(),
-        };
-        let resp: GetConversationsByIDsResp =
-            self.http_client.post(GET_CONVERSATIONS, &req).await?;
-        Ok(resp.conversations.unwrap_or_default())
-    }
-
-    /// 获取所有会话 ID（对齐 Go SDK `getAllConversationIDsFromServer`）
-    async fn pull_full_conversation_ids(&self) -> Result<GetFullConversationIDsResp> {
-        let user_id = self.user_id.read().await.clone();
-        let req = GetFullConversationIDsReq { user_id };
-        let resp: GetFullConversationIDsResp =
-            self.http_client.post(GET_FULL_CONVERSATION_IDS, &req).await?;
-        Ok(resp)
     }
 
     // ========================================================================
@@ -627,6 +430,7 @@ impl ConversationSyncer {
 mod tests {
     use super::*;
     use crate::infra::database::pool::create_pool_memory;
+    use crate::infra::http::client::HttpApiClient;
 
     #[tokio::test]
     async fn test_conversation_syncer_creation() {
@@ -647,69 +451,5 @@ mod tests {
 
         assert_eq!(syncer.get_sync_version().await, 0);
         assert_eq!(syncer.get_sync_version_id().await, "");
-    }
-
-    #[tokio::test]
-    async fn test_server_conversation_to_domain() {
-        let server = ServerConversation {
-            conversation_id: "si_user1_user2".to_string(),
-            conversation_type: 1,
-            user_id: "user2".to_string(),
-            group_id: String::new(),
-            owner_user_id: "user1".to_string(),
-            recv_msg_opt: 0,
-            is_pinned: false,
-            is_private_chat: false,
-            group_at_type: 0,
-            ex: String::new(),
-            attached_info: String::new(),
-            burn_duration: 0,
-            min_seq: 0,
-            max_seq: 100,
-            msg_destruct_time: 0,
-            is_msg_destruct: false,
-        };
-
-        let domain = server_to_domain(server);
-        assert_eq!(domain.conversation_id, "si_user1_user2");
-        assert_eq!(domain.conversation_type, 1);
-        assert_eq!(domain.user_id, "user2");
-        assert_eq!(domain.recv_msg_opt, 0);
-        assert_eq!(domain.latest_msg_seq, 100);
-        assert!(!domain.is_pinned);
-    }
-
-    #[tokio::test]
-    async fn test_get_all_conversations_req_serialization() {
-        let req = GetAllConversationsReq {
-            owner_user_id: "test_user".to_string(),
-        };
-        let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("ownerUserID"));
-        assert!(json.contains("test_user"));
-    }
-
-    #[tokio::test]
-    async fn test_get_incremental_conversation_req_serialization() {
-        let req = GetIncrementalConversationReq {
-            user_id: "test_user".to_string(),
-            version_id: "abc123".to_string(),
-            version: 42,
-        };
-        let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("versionID"));
-        assert!(json.contains("abc123"));
-        assert!(json.contains("42"));
-    }
-
-    #[tokio::test]
-    async fn test_get_conversations_by_ids_req_serialization() {
-        let req = GetConversationsByIDsReq {
-            owner_user_id: "user1".to_string(),
-            conversation_ids: vec!["si_u1_u2".to_string(), "g_group1".to_string()],
-        };
-        let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("ownerUserID"));
-        assert!(json.contains("conversationIDs"));
     }
 }

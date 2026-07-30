@@ -395,4 +395,41 @@ mod tests {
         let conv = conversation_dao.get_by_id("conv_partial").await.unwrap().unwrap();
         assert_eq!(conv.unread_count, 1, "unread should be 1 (3-2)");
     }
+
+    // ========================================================================
+    // 群聊已读回执
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_read_receipt_group_chat_clears_unread() {
+        let pool = create_pool_memory().await.unwrap();
+        let message_dao = Arc::new(MessageDao::new(pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let handler = MessageHandler::new(
+            message_dao.clone(),
+            conversation_dao.clone(),
+            Arc::new(UserDao::new(pool.clone())),
+            Arc::new(GroupDao::new(pool)),
+        );
+        handler.set_user_id("user_1".to_string());
+
+        // 创建群聊会话（conversation_type = 3 = WRITE_GROUP_CHAT）
+        let mut group_conv = make_conv("conv_group", 5);
+        group_conv.conversation_type = 3; // WRITE_GROUP_CHAT
+        conversation_dao.upsert(&group_conv).await.unwrap();
+
+        // 插入群消息
+        message_dao.batch_insert(&[
+            make_local_msg("conv_group", "g1", 1, "user_2"),
+            make_local_msg("conv_group", "g2", 2, "user_3"),
+        ]).await.unwrap();
+
+        // 收到群聊已读回执（user_2 标记已读）
+        let receipt = make_receipt_msg("conv_group", "user_2", vec![1, 2], 2);
+        handler.handle_messages("conv_group", vec![receipt]).await.unwrap();
+
+        // 群聊：未读数直接清零
+        let conv = conversation_dao.get_by_id("conv_group").await.unwrap().unwrap();
+        assert_eq!(conv.unread_count, 0, "group chat unread should be 0 after receipt");
+    }
 }

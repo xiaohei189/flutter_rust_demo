@@ -107,7 +107,7 @@ impl OpenIMClient {
             context.message_dao.clone(),
             context.conversation_dao.clone(),
             event_bus.clone(),
-            context.http_client.clone(),
+            Arc::new(crate::core::message::service::HttpMessageApi::new(context.http_client.clone())),
             config.user_id.clone(),
         ));
 

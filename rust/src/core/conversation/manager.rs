@@ -1,11 +1,15 @@
-use crate::domain::error::types::{Result, SdkError};
+//! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
+
+use crate::domain::error::types::Result;
 use crate::domain::listener::conversation::ConversationEvent;
 use crate::domain::model::conversation::Conversation;
 use crate::infra::database::conversation_dao::ConversationDao;
 use crate::infra::database::message_dao::MessageDao;
-use crate::infra::database::models::LocalConversation;
+
 use std::sync::Arc;
 use tracing::{debug, info};
+
+use super::converter::{domain_to_local, local_to_domain};
 
 pub struct ConversationManager {
     dao: Arc<ConversationDao>,
@@ -38,7 +42,7 @@ impl ConversationManager {
 
     pub async fn get_all_conversations(&self) -> Result<Vec<Conversation>> {
         let mut local_convs = self.dao.get_all().await?;
-        
+
         // 回填空的 latest_msg（从消息数据库获取最新消息）
         for conv in &mut local_convs {
             if conv.latest_msg.is_empty() {
@@ -56,7 +60,7 @@ impl ConversationManager {
                 }
             }
         }
-        
+
         Ok(local_convs.into_iter().map(|lc| local_to_domain(lc)).collect())
     }
 
@@ -129,67 +133,6 @@ impl ConversationManager {
         self.dao.clear_all().await?;
         info!("会话数据已清空");
         Ok(())
-    }
-}
-
-fn local_to_domain(lc: LocalConversation) -> Conversation {
-    Conversation {
-        conversation_id: lc.conversation_id,
-        conversation_type: lc.conversation_type,
-        user_id: lc.user_id,
-        group_id: lc.group_id,
-        show_name: lc.show_name,
-        face_url: lc.face_url,
-        recv_msg_opt: lc.recv_msg_opt,
-        unread_count: lc.unread_count,
-        group_at_type: lc.group_at_type,
-        latest_msg_seq: lc.max_seq,
-        latest_msg: lc.latest_msg,
-        latest_msg_send_time: lc.latest_msg_send_time,
-        draft_text: lc.draft_text,
-        draft_text_time: lc.draft_text_time,
-        is_pinned: lc.is_pinned != 0,
-        is_private_chat: lc.is_private_chat != 0,
-        is_not_in_group: lc.is_not_in_group != 0,
-        update_flag: 0,
-        sync_action: None,
-        update_unread_count_time: lc.update_unread_count_time,
-        max_seq: lc.max_seq,
-        min_seq: lc.min_seq,
-        is_msg_destruct: lc.is_msg_destruct != 0,
-        msg_destruct_time: lc.msg_destruct_time,
-        is_private: lc.is_private_chat != 0,
-        burn_duration: lc.burn_duration,
-        ex: lc.ex,
-    }
-}
-
-pub fn domain_to_local(conv: Conversation) -> LocalConversation {
-    LocalConversation {
-        conversation_id: conv.conversation_id,
-        conversation_type: conv.conversation_type,
-        user_id: conv.user_id,
-        group_id: conv.group_id,
-        show_name: conv.show_name,
-        face_url: conv.face_url,
-        latest_msg: conv.latest_msg,
-        latest_msg_send_time: conv.latest_msg_send_time,
-        unread_count: conv.unread_count,
-        recv_msg_opt: conv.recv_msg_opt,
-        is_pinned: if conv.is_pinned { 1 } else { 0 },
-        is_private_chat: if conv.is_private_chat { 1 } else { 0 },
-        burn_duration: 0,
-        group_at_type: conv.group_at_type,
-        is_not_in_group: if conv.is_not_in_group { 1 } else { 0 },
-        update_unread_count_time: 0,
-        attached_info: String::new(),
-        ex: String::new(),
-        draft_text: conv.draft_text,
-        draft_text_time: conv.draft_text_time,
-        max_seq: conv.latest_msg_seq,
-        min_seq: 0,
-        is_msg_destruct: 0,
-        msg_destruct_time: 0,
     }
 }
 

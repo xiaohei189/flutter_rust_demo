@@ -58,3 +58,6 @@ strip = true          # 去除调试符号
 [features]
 default = ["ffi"]
 ffi = ["flutter_rust_bridge"]
+
+[dev-dependencies]
+wiremock = "0.6"

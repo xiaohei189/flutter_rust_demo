@@ -214,4 +214,55 @@ mod tests {
         assert_eq!(results[1].server_msg_id, "srv_1_1");
         assert_eq!(results[2].server_msg_id, "srv_2_2");
     }
+
+    // ========================================================================
+    // 双 Lane 并发不互阻测试
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_lanes_do_not_block_each_other() {
+        use std::time::Duration;
+        let queue = MessageSendQueue::new();
+        let start = tokio::time::Instant::now();
+
+        // 先提交媒体消息（Lane B），sleep 200ms 模拟上传
+        let q2 = queue.clone();
+        let media_handle = tokio::spawn(async move {
+            q2.submit(102, || Box::pin(async {
+                tokio::time::sleep(Duration::from_millis(200)).await;
+                Ok(UserSendMsgResp {
+                    server_msg_id: "media".to_string(),
+                    client_msg_id: "cli_media".to_string(),
+                    send_time: 0,
+                })
+            })).await
+        });
+
+        // 等 10ms 确保媒体任务已进入 lane_worker
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        // 再提交文本消息（Lane A），应立即返回
+        let text_result = queue.submit(101, || Box::pin(async {
+            Ok(UserSendMsgResp {
+                server_msg_id: "text".to_string(),
+                client_msg_id: "cli_text".to_string(),
+                send_time: 0,
+            })
+        })).await;
+
+        let text_elapsed = start.elapsed();
+        assert!(text_result.is_ok());
+        assert_eq!(text_result.unwrap().server_msg_id, "text");
+
+        // 关键断言：文本完成时间 < 100ms（远小于媒体的 200ms）
+        assert!(
+            text_elapsed < Duration::from_millis(100),
+            "text lane was blocked by media lane: {:?}", text_elapsed
+        );
+
+        // 等待媒体完成
+        let media_result = media_handle.await.unwrap();
+        assert!(media_result.is_ok());
+        assert_eq!(media_result.unwrap().server_msg_id, "media");
+    }
 }
