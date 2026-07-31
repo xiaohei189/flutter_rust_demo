@@ -1,7 +1,6 @@
 use crate::domain::constant::enums::SessionType;
 use crate::domain::error::types::Result;
 use crate::domain::error::types::SdkError;
-use crate::domain::model::conversation::Conversation;
 use crate::infra::database::models::LocalConversation;
 use crate::sdk::client::OpenIMClient;
 
@@ -86,8 +85,8 @@ impl OpenIMClient {
         self.conversation.set_private_chat(conversation_id, is_private).await
     }
 
-    pub async fn get_pinned_conversations(&self) -> std::result::Result<Vec<Conversation>, SdkError> {
-        self.conversation.get_pinned_conversations().await
+    pub async fn get_pinned_conversations(&self) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+        self.conversation.dao().get_pinned().await
     }
 
     pub async fn clear_conversation_draft(&self, conversation_id: &str) -> Result<()> {
@@ -162,12 +161,11 @@ impl OpenIMClient {
         group_at_type: Option<i32>,
         ex: Option<&str>,
     ) -> Result<()> {
-        let existing = self.conversation.get_conversation(conversation_id).await?;
-        let mut conv = existing.unwrap_or_else(|| {
-            crate::domain::model::conversation::Conversation {
-                conversation_id: conversation_id.to_string(),
-                ..Default::default()
-            }
+        let dao = self.conversation.dao();
+        let existing = dao.get_by_id(conversation_id).await?;
+        let mut conv = existing.unwrap_or_else(|| LocalConversation {
+            conversation_id: conversation_id.to_string(),
+            ..Default::default()
         });
 
         if let Some(opt) = recv_msg_opt {
@@ -178,7 +176,6 @@ impl OpenIMClient {
         }
         if let Some(private) = is_private_chat {
             conv.is_private_chat = private;
-            conv.is_private = private;
         }
         if let Some(at_type) = group_at_type {
             conv.group_at_type = at_type;
@@ -187,6 +184,6 @@ impl OpenIMClient {
             conv.ex = ex_val.to_string();
         }
 
-        self.conversation.upsert_conversation(conv).await
+        dao.upsert(&conv).await
     }
 }

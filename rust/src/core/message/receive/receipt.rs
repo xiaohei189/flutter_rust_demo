@@ -1,15 +1,17 @@
-use super::*;
+//! 已读回执处理（impl MessageHandler）
+
+use super::handler::MessageHandler;
 use crate::domain::constant::types::session_type;
-use crate::domain::error::types::SdkError;
+use crate::domain::error::types::{Result, SdkError};
 use crate::domain::listener::conversation::ConversationEvent;
-use crate::protocol::sdkws::MarkAsReadTips;
+use crate::protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;
 
 impl MessageHandler {
     /// 发布 TotalUnreadCountChanged 事件（由调用方在批量处理完成后统一调用）
     pub async fn publish_total_unread_count_changed(&self) {
-        if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+        if let Ok(total) = self.stores.conversation_dao.get_total_unread_count().await {
             self.send(ConversationEvent::TotalUnreadCountChanged(total));
         }
     }
@@ -25,11 +27,11 @@ impl MessageHandler {
         let tips = MarkAsReadTips::decode(msg.content.as_slice())
             .map_err(|e| SdkError::invalid_argument(format!("解析 MarkAsReadTips 失败: {}", e)))?;
 
-        let login_user_id = self.user_id.lock().unwrap().clone();
+        let login_user_id = self.user_id.get().await;
 
         if tips.mark_as_read_user_id != login_user_id {
             // 别人发来的已读回执：对方标记我的消息为已读
-            let conversation = self.conversation_dao.get_by_id(&tips.conversation_id).await?;
+            let conversation = self.stores.conversation_dao.get_by_id(&tips.conversation_id).await?;
             let session_type_val = conversation.as_ref()
                 .map(|c| c.conversation_type)
                 .unwrap_or(msg.session_type);
@@ -54,9 +56,9 @@ impl MessageHandler {
 
         } else {
             // 自己的已读回执（其他设备同步过来的）
-            self.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
+            self.stores.conversation_dao.update_unread_count(&tips.conversation_id, 0).await?;
 
-            if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+            if let Ok(total) = self.stores.conversation_dao.get_total_unread_count().await {
                 self.send(ConversationEvent::TotalUnreadCountChanged(total));
             }
 
@@ -91,23 +93,23 @@ impl MessageHandler {
             .map_err(|e| SdkError::invalid_argument(format!("解析 detail JSON 失败: {}", e)))?;
         let seqs = tips_json.seqs.unwrap_or_default();
 
-        let login_user_id = self.user_id.lock().unwrap().clone();
+        let login_user_id = self.user_id.get().await;
 
         if tips_json.mark_as_read_user_id != login_user_id {
-            let conversation = self.conversation_dao.get_by_id(&tips_json.conversation_id).await?;
+            let conversation = self.stores.conversation_dao.get_by_id(&tips_json.conversation_id).await?;
             let session_type_val = conversation.as_ref()
                 .map(|c| c.conversation_type)
                 .unwrap_or(msg.session_type);
 
             if session_type_val == session_type::SINGLE_CHAT {
                 if !seqs.is_empty() {
-                    let messages = self.message_dao.get_by_seqs(&tips_json.conversation_id, &seqs).await?;
+                    let messages = self.stores.message_dao.get_by_seqs(&tips_json.conversation_id, &seqs).await?;
                     let mut updated_client_msg_ids: Vec<String> = Vec::new();
 
                     for mut m in messages {
                         if m.is_read == 0 {
                             m.is_read = 1;
-                            self.message_dao.mark_as_read_by_seqs_all(
+                            self.stores.message_dao.mark_as_read_by_seqs_all(
                                 &tips_json.conversation_id,
                                 &[m.seq],
                             ).await?;
@@ -132,8 +134,8 @@ impl MessageHandler {
 
             info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
-            self.conversation_dao.update_unread_count(&tips_json.conversation_id, 0).await?;
-            if let Ok(total) = self.conversation_dao.get_total_unread_count().await {
+            self.stores.conversation_dao.update_unread_count(&tips_json.conversation_id, 0).await?;
+            if let Ok(total) = self.stores.conversation_dao.get_total_unread_count().await {
                 self.send(ConversationEvent::TotalUnreadCountChanged(total));
             }
 
@@ -154,7 +156,7 @@ impl MessageHandler {
         if session_type_val == session_type::SINGLE_CHAT {
             // 幂等性检查：如果 has_read_seq 对应的消息已读，说明已处理过此回执
             if !seqs.is_empty() {
-                if let Ok(Some(msg)) = self.message_dao.get_by_seq(has_read_seq).await {
+                if let Ok(Some(msg)) = self.stores.message_dao.get_by_seq(has_read_seq).await {
                     if msg.is_read != 0 {
                         return Ok(());
                     }
@@ -163,8 +165,8 @@ impl MessageHandler {
 
             // 标记消息已读（排除自己发的）
             if !seqs.is_empty() {
-                let login_user_id = self.user_id.lock().unwrap().clone();
-                self.message_dao.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
+                let login_user_id = self.user_id.get().await;
+                self.stores.message_dao.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
             }
 
             // 计算未读数 = max_seq - has_read_seq
@@ -175,10 +177,10 @@ impl MessageHandler {
                 0
             };
 
-            self.conversation_dao.update_unread_count(conversation_id, unread_count).await?;
+            self.stores.conversation_dao.update_unread_count(conversation_id, unread_count).await?;
 
         } else {
-            self.conversation_dao.update_unread_count(conversation_id, 0).await?;
+            self.stores.conversation_dao.update_unread_count(conversation_id, 0).await?;
         }
 
         Ok(())
@@ -188,14 +190,28 @@ impl MessageHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::message::handler::MessageHandler;
     use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
-    use crate::infra::database::{ConversationDao, MessageDao, UserDao, GroupDao};
+    use crate::domain::model::UserId;
+    use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::database::models::{LocalChatLog, LocalConversation};
     use crate::infra::database::pool::create_pool_memory;
     use crate::protocol::sdkws::MarkAsReadTips;
+    use crate::sdk::context::Stores;
     use prost::Message as ProstMessage;
     use std::sync::Arc;
+
+    fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
+        Arc::new(Stores {
+            message_dao: Arc::new(MessageDao::new(pool.clone())),
+            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
+            friend_dao: Arc::new(FriendDao::new(pool.clone())),
+            user_dao: Arc::new(UserDao::new(pool.clone())),
+            group_dao: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
+        })
+    }
 
     fn make_receipt_msg(conv_id: &str, mark_user: &str, seqs: Vec<i64>, has_read_seq: i64) -> MsgData {
         let tips = MarkAsReadTips {
@@ -254,11 +270,11 @@ mod tests {
             latest_msg_send_time: 0,
             unread_count: unread,
             recv_msg_opt: 0,
-            is_pinned: 0,
-            is_private_chat: 0,
+            is_pinned: false,
+            is_private_chat: false,
             burn_duration: 0,
             group_at_type: 0,
-            is_not_in_group: 0,
+            is_not_in_group: false,
             update_unread_count_time: 0,
             attached_info: String::new(),
             ex: String::new(),
@@ -266,7 +282,7 @@ mod tests {
             draft_text_time: 0,
             max_seq: 10,
             min_seq: 0,
-            is_msg_destruct: 0,
+            is_msg_destruct: false,
             msg_destruct_time: 0,
         }
     }
@@ -274,17 +290,11 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_single_chat_marks_messages_read() {
         let pool = create_pool_memory().await.unwrap();
-        let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            message_dao.clone(),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let message_dao = stores.message_dao.clone();
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
-        // 预插入消息 + 会话
         let msgs = vec![
             make_local_msg("conv_read", "msg_1", 1, "user_2"),
             make_local_msg("conv_read", "msg_2", 2, "user_2"),
@@ -294,15 +304,12 @@ mod tests {
         conversation_dao.upsert(&make_conv("conv_read", 3)).await.unwrap();
         handler.max_seq_recorder.set("conv_read", 3);
 
-        // 收到 user_2 的已读回执，标记 seq 1,2,3 已读
         let receipt = make_receipt_msg("conv_read", "user_2", vec![1, 2, 3], 3);
         handler.handle_messages("conv_read", vec![receipt]).await.unwrap();
 
-        // 验证消息被标记为已读
         let logs = message_dao.get_by_conversation("conv_read", 0, 100).await.unwrap();
         assert!(logs.iter().all(|m| m.is_read == 1), "all messages should be marked as read");
 
-        // 验证未读数清零
         let conv = conversation_dao.get_by_id("conv_read").await.unwrap().unwrap();
         assert_eq!(conv.unread_count, 0, "unread should be 0 after read receipt");
     }
@@ -310,19 +317,12 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_self_sync_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
-        let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            message_dao.clone(),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
         conversation_dao.upsert(&make_conv("conv_self_read", 5)).await.unwrap();
 
-        // 自己的已读回执（其他设备同步）
         let receipt = make_receipt_msg("conv_self_read", "user_1", vec![], 5);
         handler.handle_messages("conv_self_read", vec![receipt]).await.unwrap();
 
@@ -333,21 +333,15 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_publishes_total_unread_changed() {
         let pool = create_pool_memory().await.unwrap();
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         handler.set_event_sender(tx);
 
         conversation_dao.upsert(&make_conv("conv_ev", 3)).await.unwrap();
 
-        // 自己的已读回执 → 触发 TotalUnreadCountChanged
         let receipt = make_receipt_msg("conv_ev", "user_1", vec![], 3);
         handler.handle_messages("conv_ev", vec![receipt]).await.unwrap();
 
@@ -364,15 +358,10 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_partial_seqs() {
         let pool = create_pool_memory().await.unwrap();
-        let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            message_dao.clone(),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let message_dao = stores.message_dao.clone();
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
         let msgs = vec![
             make_local_msg("conv_partial", "msg_1", 1, "user_2"),
@@ -383,7 +372,6 @@ mod tests {
         conversation_dao.upsert(&make_conv("conv_partial", 3)).await.unwrap();
         handler.max_seq_recorder.set("conv_partial", 3);
 
-        // 只标记 seq 1,2 已读，has_read_seq=2
         let receipt = make_receipt_msg("conv_partial", "user_2", vec![1, 2], 2);
         handler.handle_messages("conv_partial", vec![receipt]).await.unwrap();
 
@@ -391,44 +379,30 @@ mod tests {
         let read_count = logs.iter().filter(|m| m.is_read == 1).count();
         assert_eq!(read_count, 2, "only seq 1,2 should be marked read");
 
-        // 未读数 = max_seq(3) - has_read_seq(2) = 1
         let conv = conversation_dao.get_by_id("conv_partial").await.unwrap().unwrap();
         assert_eq!(conv.unread_count, 1, "unread should be 1 (3-2)");
     }
 
-    // ========================================================================
-    // 群聊已读回执
-    // ========================================================================
-
     #[tokio::test]
     async fn test_read_receipt_group_chat_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
-        let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            message_dao.clone(),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let message_dao = stores.message_dao.clone();
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
-        // 创建群聊会话（conversation_type = 3 = WRITE_GROUP_CHAT）
         let mut group_conv = make_conv("conv_group", 5);
-        group_conv.conversation_type = 3; // WRITE_GROUP_CHAT
+        group_conv.conversation_type = 3;
         conversation_dao.upsert(&group_conv).await.unwrap();
 
-        // 插入群消息
         message_dao.batch_insert(&[
             make_local_msg("conv_group", "g1", 1, "user_2"),
             make_local_msg("conv_group", "g2", 2, "user_3"),
         ]).await.unwrap();
 
-        // 收到群聊已读回执（user_2 标记已读）
         let receipt = make_receipt_msg("conv_group", "user_2", vec![1, 2], 2);
         handler.handle_messages("conv_group", vec![receipt]).await.unwrap();
 
-        // 群聊：未读数直接清零
         let conv = conversation_dao.get_by_id("conv_group").await.unwrap().unwrap();
         assert_eq!(conv.unread_count, 0, "group chat unread should be 0 after receipt");
     }

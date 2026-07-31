@@ -1,4 +1,6 @@
 use crate::domain::constant::enums::{MessageSendStatus, SessionType};
+use crate::domain::constant::types::msg_status;
+use crate::protocol::sdkws::MsgData;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
@@ -26,13 +28,42 @@ pub struct LocalChatLog {
     pub group_id: String,
 }
 
+impl From<(&str, &MsgData)> for LocalChatLog {
+    fn from((conv_id, msg): (&str, &MsgData)) -> Self {
+        Self {
+            conversation_id: conv_id.to_string(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: String::from_utf8_lossy(&msg.content).to_string(),
+            is_read: 0,
+            status: msg_status::SEND_SUCCESS as i32,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
+    }
+}
+
 impl LocalChatLog {
     pub fn send_status(&self) -> MessageSendStatus {
         MessageSendStatus::from_i32(self.status)
     }
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, serde::Serialize, serde::Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct LocalConversation {
     pub conversation_id: String,
     pub conversation_type: i32,
@@ -44,11 +75,11 @@ pub struct LocalConversation {
     pub latest_msg_send_time: i64,
     pub unread_count: i32,
     pub recv_msg_opt: i32,
-    pub is_pinned: i32,
-    pub is_private_chat: i32,
+    pub is_pinned: bool,
+    pub is_private_chat: bool,
     pub burn_duration: i32,
     pub group_at_type: i32,
-    pub is_not_in_group: i32,
+    pub is_not_in_group: bool,
     pub update_unread_count_time: i64,
     pub attached_info: String,
     pub ex: String,
@@ -56,7 +87,7 @@ pub struct LocalConversation {
     pub draft_text_time: i64,
     pub max_seq: i64,
     pub min_seq: i64,
-    pub is_msg_destruct: i32,
+    pub is_msg_destruct: bool,
     pub msg_destruct_time: i64,
 }
 

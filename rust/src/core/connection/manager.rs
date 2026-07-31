@@ -1,6 +1,7 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::constant::types::req_identifier_name;
 use crate::domain::error::types::{Result, SdkError};
+use crate::domain::event::publisher::EventPublisher;
 use crate::domain::listener::connection::{ConnectionEvent, ConnectionListener};
 use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
 use crate::protocol::compressor::GzipCompressor;
@@ -69,21 +70,18 @@ pub struct ConnectionManager {
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
     /// 携带 Span 以便跨 task 传递 trace context
     push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>>>>,
-    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConnectionEvent>>>>,
+    pub(crate) events: EventPublisher<ConnectionEvent>,
     pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
 
 impl ConnectionManager {
     pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
-        *self.event_tx.lock().unwrap() = Some(tx);
+        self.events.set_sender(tx);
     }
 
     pub(crate) fn send(&self, e: ConnectionEvent) {
-        let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
-        if let Some(tx) = &*self.event_tx.lock().unwrap() {
-            let _ = tx.send(e);
-        }
+        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
+        self.events.publish(e);
     }
 
     pub fn new(cancel_token: CancellationToken) -> Self {
@@ -116,7 +114,7 @@ impl ConnectionManager {
             compressor,
             message_batcher,
             push_tx,
-            event_tx: Arc::new(std::sync::Mutex::new(None)),
+            events: EventPublisher::new(),
             on_connected_hook: Arc::new(std::sync::Mutex::new(None)),
         }
     }
@@ -378,7 +376,7 @@ impl ConnectionManager {
             // 浅克隆用于重连，不共享 batcher（重连后原始 batcher 继续工作）
             message_batcher: MessageBatcher::new(|_, _| {}),
             push_tx: self.push_tx.clone(),
-            event_tx: self.event_tx.clone(),
+            events: self.events.clone(),
             on_connected_hook: self.on_connected_hook.clone(),
         }
     }
@@ -391,7 +389,7 @@ impl ConnectionManager {
         let compressor = self.compressor.clone();
         let message_batcher = self.message_batcher.clone();
         let is_manual_disconnect = self.is_manual_disconnect.clone();
-        let event_tx = self.event_tx.clone();
+        let events = self.events.clone();
 
         tokio::spawn(async move {
             let mut read = read;
@@ -484,9 +482,7 @@ impl ConnectionManager {
                                             }
                                             *is_manual_disconnect.write().await = true;
                                             message_batcher.close().await;
-                                            if let Some(tx) = &*event_tx.lock().unwrap() {
-                                                let _ = tx.send(ConnectionEvent::Logout);
-                                            }
+                                            events.publish(ConnectionEvent::Logout);
                                             cancel.cancel();
                                             break;
                                         }
@@ -497,9 +493,7 @@ impl ConnectionManager {
                                             *is_manual_disconnect.write().await = true;
                                             *state.write().await = ConnectionState::Kicked;
                                             message_batcher.close().await;
-                                            if let Some(tx) = &*event_tx.lock().unwrap() {
-                                                let _ = tx.send(ConnectionEvent::KickedOffline(resp.err_msg.to_string()));
-                                            }
+                                            events.publish(ConnectionEvent::KickedOffline(resp.err_msg.to_string()));
                                             cancel.cancel();
                                             break;
                                         }

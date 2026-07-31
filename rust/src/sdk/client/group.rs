@@ -17,7 +17,7 @@ impl OpenIMClient {
         group_type: GroupType,
         member_ids: &[String],
     ) -> Result<GroupInfo> {
-        let user_id = self.context.user_id.lock().unwrap().clone();
+        let user_id = self.context.user_id.get_blocking();
         self.group.create_group(
             group_name.to_string(),
             None,

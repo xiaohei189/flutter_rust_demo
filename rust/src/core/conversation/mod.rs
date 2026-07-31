@@ -5,7 +5,7 @@
 //! 本模块负责会话的完整生命周期管理，包括：
 //! - **本地管理**：CRUD、置顶、免打扰、未读数、草稿等
 //! - **服务端同步**：增量同步、全量同步、Hash Read Seq 同步
-//! - **模型转换**：Server / Domain / Local 三层模型互转
+//! - **模型转换**：Server -> Local 一步转换（对齐 Go SDK `ServerConversationToLocal`）
 //!
 //! # 数据流
 //!
@@ -21,7 +21,7 @@
 //! | [`manager`] | `ConversationManager` | 本地 CRUD（置顶/免打扰/未读数/草稿） |
 //! | [`syncer`] | `ConversationSyncer` | 服务端同步（增量/全量/HashReadSeq） |
 //! | [`api`] | `ConversationServerApi` | HTTP 调用抽象 trait（便于测试 mock） |
-//! | [`converter`] | - | Server/Domain/Local 三层模型互转 |
+//! | [`converter`] | - | ServerConversation -> LocalConversation 转换（`From` trait） |
 //! | [`types`] | - | 请求/响应 DTO 定义 |
 
 pub mod manager;

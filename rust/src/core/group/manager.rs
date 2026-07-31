@@ -1,12 +1,12 @@
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::bus::EventBus;
+use crate::domain::event::publisher::EventPublisher;
 use crate::domain::event::types::SdkEvent;
 use crate::domain::listener::group::{GroupListener, GroupEvent};
 use crate::domain::event::types::GroupReadReceipt;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
-use crate::infra::database::group_dao::GroupDao;
+use crate::domain::model::UserId;
 use crate::infra::database::models::LocalGroup;
-use crate::infra::database::sync_version_dao::SyncVersionDao;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,
@@ -18,6 +18,7 @@ use crate::infra::http::routes::{
     ACCEPT_GROUP_APPLICATION, REFUSE_GROUP_APPLICATION,
     TRANSFER_GROUP_OWNER, MUTE_GROUP, CANCEL_MUTE_GROUP, MUTE_GROUP_MEMBER, CANCEL_MUTE_GROUP_MEMBER,
 };
+use crate::sdk::context::Stores;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -340,41 +341,41 @@ pub struct GetFullJoinGroupIDsResp {
 }
 
 pub struct GroupManager {
+    /// 外部依赖
     http_client: Arc<HttpApiClient>,
-    user_id: Arc<RwLock<String>>,
+    stores: Arc<Stores>,
+    /// 身份
+    user_id: UserId,
+    /// 内部状态
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
-    group_dao: Arc<GroupDao>,
-    sync_version_dao: Arc<SyncVersionDao>,
-    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<GroupEvent>>>>,
+    /// 事件
+    pub(crate) events: EventPublisher<GroupEvent>,
 }
 
 impl GroupManager {
     pub fn new(
         http_client: Arc<HttpApiClient>,
-        user_id: String,
-        group_dao: Arc<GroupDao>,
-        sync_version_dao: Arc<SyncVersionDao>,
+        stores: Arc<Stores>,
+        user_id: UserId,
     ) -> Self {
         Self {
             http_client,
-            user_id: Arc::new(RwLock::new(user_id)),
+            stores,
+            user_id,
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
-            group_dao,
-            sync_version_dao,
-            event_tx: Arc::new(std::sync::Mutex::new(None)),
+            events: EventPublisher::new(),
         }
     }
 
     pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<GroupEvent>) {
-        *self.event_tx.lock().unwrap() = Some(tx);
+        self.events.set_sender(tx);
     }
 
     pub(crate) fn send(&self, e: GroupEvent) {
-        let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
-        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
+        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
+        self.events.publish(e);
     }
 
     fn notify_group(&self, f: impl FnOnce(&dyn GroupListener)) {
@@ -385,14 +386,14 @@ impl GroupManager {
     fn on_group_read_receipt(&self, r: &[GroupReadReceipt]) { self.notify_group(|l| l.on_group_read_receipt(r)); }
 
     pub async fn set_user_id(&self, user_id: String) {
-        *self.user_id.write().await = user_id.clone();
+        self.user_id.set(user_id.clone()).await;
         debug!("GroupManager user_id 已更新为: {}", user_id);
     }
 
     /// 从本地数据库加载群组列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据
     pub async fn load_groups_from_db(&self) {
-        match self.group_dao.get_all_groups().await {
+        match self.stores.group_dao.get_all_groups().await {
             Ok(local_groups) => {
                 let groups: Vec<GroupInfo> = local_groups.iter().map(local_to_group_info).collect();
                 let count = groups.len();
@@ -411,7 +412,7 @@ impl GroupManager {
 
     /// 全量同步群组列表（对齐 Go SDK FullSync）
     pub async fn sync_groups(&self) -> Result<()> {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let req = GetJoinedGroupListReq {
             user_id: user_id.clone(),
             pagination: Pagination {
@@ -432,7 +433,7 @@ impl GroupManager {
         // 持久化到数据库
         for group in &groups {
             let local = group_info_to_local(group);
-            if let Err(e) = self.group_dao.upsert_group(&local).await {
+            if let Err(e) = self.stores.group_dao.upsert_group(&local).await {
                 warn!("全量同步群组到数据库失败: {}", e);
             }
         }
@@ -452,11 +453,11 @@ impl GroupManager {
     /// 4. 否则处理 delete/insert/update 增量合并
     /// 5. 更新版本号
     pub async fn sync_groups_incremental(&self) -> Result<()> {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let table_name = "local_groups";
 
         // 1. 获取本地版本
-        let (version_id, version) = match self.sync_version_dao.get_version_sync(table_name, &user_id).await? {
+        let (version_id, version) = match self.stores.sync_version_dao.get_version_sync(table_name, &user_id).await? {
             Some((vid, v)) => (vid, v),
             None => (String::new(), 0),
         };
@@ -490,7 +491,7 @@ impl GroupManager {
         if !resp.delete.is_empty() {
             info!("增量同步: 删除 {} 个群组", resp.delete.len());
             for group_id in &resp.delete {
-                if let Err(e) = self.group_dao.delete_group(group_id).await {
+                if let Err(e) = self.stores.group_dao.delete_group(group_id).await {
                     warn!("增量删除群组数据库操作失败: {}", e);
                 }
             }
@@ -501,7 +502,7 @@ impl GroupManager {
         for s in &resp.insert {
             let group_info = server_to_group_info(s.clone());
             let local = group_info_to_local(&group_info);
-            if let Err(e) = self.group_dao.upsert_group(&local).await {
+            if let Err(e) = self.stores.group_dao.upsert_group(&local).await {
                 warn!("增量插入群组数据库操作失败: {}", e);
             }
             self.groups.write().await.push(group_info);
@@ -511,7 +512,7 @@ impl GroupManager {
         for s in &resp.update {
             let group_info = server_to_group_info(s.clone());
             let local = group_info_to_local(&group_info);
-            if let Err(e) = self.group_dao.upsert_group(&local).await {
+            if let Err(e) = self.stores.group_dao.upsert_group(&local).await {
                 warn!("增量更新群组数据库操作失败: {}", e);
             }
             let mut groups = self.groups.write().await;
@@ -525,14 +526,14 @@ impl GroupManager {
         // 4d. 排序版本变化时刷新内存列表
         if resp.sort_version > 0 {
             info!("群组排序版本变化 (sortVersion={}), 刷新内存列表", resp.sort_version);
-            if let Ok(local_groups) = self.group_dao.get_all_groups().await {
+            if let Ok(local_groups) = self.stores.group_dao.get_all_groups().await {
                 let groups: Vec<GroupInfo> = local_groups.iter().map(local_to_group_info).collect();
                 *self.groups.write().await = groups;
             }
         }
 
         // 5. 更新版本号
-        if let Err(e) = self.sync_version_dao.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
+        if let Err(e) = self.stores.sync_version_dao.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
             warn!("更新群组同步版本失败: {}", e);
         }
 
@@ -782,7 +783,7 @@ impl GroupManager {
     }
 
     pub async fn get_group_application_list(&self) -> Result<GetGroupApplicationListResp> {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let req = GetGroupApplicationListReq {
             from_user_id: user_id,
             pagination: Pagination {
@@ -796,7 +797,7 @@ impl GroupManager {
 
     /// 获取管理员收到的群组申请列表（对齐 Go SDK GetGroupApplicationListAsRecipient）
     pub async fn get_group_application_list_as_recipient(&self) -> Result<GetGroupApplicationListResp> {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let req = GetGroupApplicationListReq {
             from_user_id: user_id,
             pagination: Pagination {
@@ -810,7 +811,7 @@ impl GroupManager {
 
     /// 获取自己发出的群组申请列表（对齐 Go SDK GetGroupApplicationListAsApplicant）
     pub async fn get_group_application_list_as_applicant(&self) -> Result<GetGroupApplicationListResp> {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let req = GetGroupApplicationListReq {
             from_user_id: user_id,
             pagination: Pagination {
@@ -828,7 +829,7 @@ impl GroupManager {
         struct UnhandledCountReq {
             user_id: String,
         }
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let req = UnhandledCountReq { user_id };
         #[derive(Deserialize, Default)]
         struct UnhandledCountResp {
@@ -913,7 +914,7 @@ impl GroupManager {
         offset: i32,
         count: i32,
     ) -> Result<Vec<GroupInfo>> {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let req = GetJoinedGroupListReq {
             user_id,
             pagination: Pagination {

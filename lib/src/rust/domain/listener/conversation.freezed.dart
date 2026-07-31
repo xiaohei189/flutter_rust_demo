@@ -19,9 +19,9 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$ConversationEvent {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -36,9 +36,9 @@ mixin _$ConversationEvent {
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -53,9 +53,9 @@ mixin _$ConversationEvent {
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -145,7 +145,7 @@ abstract class _$$ConversationEvent_ChangedImplCopyWith<$Res> {
     $Res Function(_$ConversationEvent_ChangedImpl) then,
   ) = __$$ConversationEvent_ChangedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<Conversation> field0});
+  $Res call({List<LocalConversation> field0});
 }
 
 /// @nodoc
@@ -168,7 +168,7 @@ class __$$ConversationEvent_ChangedImplCopyWithImpl<$Res>
         null == field0
             ? _value._field0
             : field0 // ignore: cast_nullable_to_non_nullable
-                  as List<Conversation>,
+                  as List<LocalConversation>,
       ),
     );
   }
@@ -177,13 +177,13 @@ class __$$ConversationEvent_ChangedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
-  const _$ConversationEvent_ChangedImpl(final List<Conversation> field0)
+  const _$ConversationEvent_ChangedImpl(final List<LocalConversation> field0)
     : _field0 = field0,
       super._();
 
-  final List<Conversation> _field0;
+  final List<LocalConversation> _field0;
   @override
-  List<Conversation> get field0 {
+  List<LocalConversation> get field0 {
     if (_field0 is EqualUnmodifiableListView) return _field0;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_field0);
@@ -220,9 +220,9 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -241,9 +241,9 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -262,9 +262,9 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -346,11 +346,12 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
 }
 
 abstract class ConversationEvent_Changed extends ConversationEvent {
-  const factory ConversationEvent_Changed(final List<Conversation> field0) =
-      _$ConversationEvent_ChangedImpl;
+  const factory ConversationEvent_Changed(
+    final List<LocalConversation> field0,
+  ) = _$ConversationEvent_ChangedImpl;
   const ConversationEvent_Changed._() : super._();
 
-  List<Conversation> get field0;
+  List<LocalConversation> get field0;
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -441,9 +442,9 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -462,9 +463,9 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -483,9 +484,9 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -587,7 +588,7 @@ abstract class _$$ConversationEvent_NewImplCopyWith<$Res> {
     $Res Function(_$ConversationEvent_NewImpl) then,
   ) = __$$ConversationEvent_NewImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<Conversation> field0});
+  $Res call({List<LocalConversation> field0});
 }
 
 /// @nodoc
@@ -609,7 +610,7 @@ class __$$ConversationEvent_NewImplCopyWithImpl<$Res>
         null == field0
             ? _value._field0
             : field0 // ignore: cast_nullable_to_non_nullable
-                  as List<Conversation>,
+                  as List<LocalConversation>,
       ),
     );
   }
@@ -618,13 +619,13 @@ class __$$ConversationEvent_NewImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$ConversationEvent_NewImpl extends ConversationEvent_New {
-  const _$ConversationEvent_NewImpl(final List<Conversation> field0)
+  const _$ConversationEvent_NewImpl(final List<LocalConversation> field0)
     : _field0 = field0,
       super._();
 
-  final List<Conversation> _field0;
+  final List<LocalConversation> _field0;
   @override
-  List<Conversation> get field0 {
+  List<LocalConversation> get field0 {
     if (_field0 is EqualUnmodifiableListView) return _field0;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_field0);
@@ -662,9 +663,9 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -683,9 +684,9 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -704,9 +705,9 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -788,11 +789,11 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
 }
 
 abstract class ConversationEvent_New extends ConversationEvent {
-  const factory ConversationEvent_New(final List<Conversation> field0) =
+  const factory ConversationEvent_New(final List<LocalConversation> field0) =
       _$ConversationEvent_NewImpl;
   const ConversationEvent_New._() : super._();
 
-  List<Conversation> get field0;
+  List<LocalConversation> get field0;
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -882,9 +883,9 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -903,9 +904,9 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -924,9 +925,9 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -1073,9 +1074,9 @@ class _$ConversationEvent_SyncStartedImpl
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -1094,9 +1095,9 @@ class _$ConversationEvent_SyncStartedImpl
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -1115,9 +1116,9 @@ class _$ConversationEvent_SyncStartedImpl
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -1253,9 +1254,9 @@ class _$ConversationEvent_SyncFinishedImpl
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -1274,9 +1275,9 @@ class _$ConversationEvent_SyncFinishedImpl
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -1295,9 +1296,9 @@ class _$ConversationEvent_SyncFinishedImpl
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -1463,9 +1464,9 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -1484,9 +1485,9 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -1505,9 +1506,9 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -1695,9 +1696,9 @@ class _$ConversationEvent_SyncProgressImpl
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -1716,9 +1717,9 @@ class _$ConversationEvent_SyncProgressImpl
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -1737,9 +1738,9 @@ class _$ConversationEvent_SyncProgressImpl
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,
@@ -1950,9 +1951,9 @@ class _$ConversationEvent_UserInputStatusChangedImpl
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(List<Conversation> field0) changed,
+    required TResult Function(List<LocalConversation> field0) changed,
     required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<Conversation> field0) new_,
+    required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
     required TResult Function() syncStarted,
     required TResult Function() syncFinished,
@@ -1971,9 +1972,9 @@ class _$ConversationEvent_UserInputStatusChangedImpl
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<Conversation> field0)? changed,
+    TResult? Function(List<LocalConversation> field0)? changed,
     TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<Conversation> field0)? new_,
+    TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
     TResult? Function()? syncStarted,
     TResult? Function()? syncFinished,
@@ -1992,9 +1993,9 @@ class _$ConversationEvent_UserInputStatusChangedImpl
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<Conversation> field0)? changed,
+    TResult Function(List<LocalConversation> field0)? changed,
     TResult Function(List<String> field0)? deleted,
-    TResult Function(List<Conversation> field0)? new_,
+    TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
     TResult Function()? syncStarted,
     TResult Function()? syncFinished,

@@ -18,7 +18,7 @@ impl MessageService {
         client_msg_id: String,
         session_type: i32,
     ) -> Result<()> {
-        let user_id = self.user_id.lock().unwrap().clone();
+        let user_id = self.user_id.get().await;
 
         // 如果 seq 为 0，从本地数据库查找（对齐 Go SDK waitForMessageSyncSeq）
         let final_seq = if seq == 0 {
@@ -53,13 +53,13 @@ impl MessageService {
         seq: i64,
         session_type: i32,
     ) -> Result<()> {
-        let user_id = self.user_id.lock().unwrap().clone();
+        let user_id = self.user_id.get().await;
 
         // 获取原消息信息用于构建事件
-        let original_msg = self.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await?;
+        let original_msg = self.stores.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await?;
 
         // 更新本地数据库：标记消息为已撤回
-        self.message_dao
+        self.stores.message_dao
             .update_content_type(conversation_id, client_msg_id, notification_type::REVOKE)
             .await?;
 
@@ -100,7 +100,7 @@ impl MessageService {
         client_msg_id: &str,
     ) -> Result<i64> {
         for attempt in 0..5 {
-            if let Ok(Some(msg)) = self.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await {
+            if let Ok(Some(msg)) = self.stores.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await {
                 if msg.seq > 0 {
                     return Ok(msg.seq);
                 }

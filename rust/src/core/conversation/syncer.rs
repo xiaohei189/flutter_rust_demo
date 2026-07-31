@@ -1,10 +1,11 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::domain::error::types::{Result, SdkError};
+use crate::domain::event::publisher::EventPublisher;
 use crate::domain::listener::conversation::ConversationEvent;
-use crate::domain::model::conversation::Conversation;
-use crate::infra::database::conversation_dao::ConversationDao;
-use crate::infra::database::sync_version_dao::SyncVersionDao;
+use crate::domain::model::UserId;
+use crate::infra::database::models::LocalConversation;
+use crate::sdk::context::Stores;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -12,7 +13,6 @@ use tokio::sync::RwLock;
 use tracing::{debug, info, warn, error};
 
 use super::api::{ConversationServerApi, HttpConversationApi};
-use super::converter::{domain_to_local, server_to_domain};
 
 // ========== 常量 ==========
 
@@ -20,11 +20,13 @@ use super::converter::{domain_to_local, server_to_domain};
 const CONVERSATION_TABLE_NAME: &str = "local_conversations";
 
 pub struct ConversationSyncer {
+    /// 外部依赖
     api: Arc<dyn ConversationServerApi>,
-    dao: Arc<ConversationDao>,
-    pub(crate) event_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<ConversationEvent>>>>,
-    sync_version_dao: Arc<SyncVersionDao>,
-    user_id: Arc<RwLock<String>>,
+    stores: Arc<Stores>,
+    /// 身份
+    user_id: UserId,
+    /// 事件
+    pub(crate) events: EventPublisher<ConversationEvent>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
     connection: Option<Arc<crate::core::connection::manager::ConnectionManager>>,
     /// 增量同步互斥锁（对齐 Go SDK `conversationSyncMutex`）
@@ -34,16 +36,14 @@ pub struct ConversationSyncer {
 impl ConversationSyncer {
     pub fn new(
         http_client: Arc<crate::infra::http::client::HttpApiClient>,
-        dao: Arc<ConversationDao>,
-        sync_version_dao: Arc<SyncVersionDao>,
-        user_id: String,
+        stores: Arc<Stores>,
+        user_id: UserId,
     ) -> Self {
         Self {
             api: Arc::new(HttpConversationApi::new(http_client)),
-            dao,
-            event_tx: Arc::new(std::sync::Mutex::new(None)),
-            sync_version_dao,
-            user_id: Arc::new(RwLock::new(user_id)),
+            stores,
+            user_id,
+            events: EventPublisher::new(),
             connection: None,
             sync_mutex: tokio::sync::Mutex::new(()),
         }
@@ -53,29 +53,26 @@ impl ConversationSyncer {
     #[cfg(test)]
     pub fn new_with_api(
         api: Arc<dyn ConversationServerApi>,
-        dao: Arc<ConversationDao>,
-        sync_version_dao: Arc<SyncVersionDao>,
-        user_id: String,
+        stores: Arc<Stores>,
+        user_id: UserId,
     ) -> Self {
         Self {
             api,
-            dao,
-            event_tx: Arc::new(std::sync::Mutex::new(None)),
-            sync_version_dao,
-            user_id: Arc::new(RwLock::new(user_id)),
+            stores,
+            user_id,
+            events: EventPublisher::new(),
             connection: None,
             sync_mutex: tokio::sync::Mutex::new(()),
         }
     }
 
     pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        *self.event_tx.lock().unwrap() = Some(tx);
+        self.events.set_sender(tx);
     }
 
     pub(crate) fn send(&self, e: ConversationEvent) {
-        let has_tx = self.event_tx.lock().unwrap().is_some();
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, has_tx);
-        if let Some(tx) = &*self.event_tx.lock().unwrap() { let _ = tx.send(e); }
+        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
+        self.events.publish(e);
     }
 
     /// 设置 WebSocket 连接管理器（用于 Hash Read Seq 同步）
@@ -84,8 +81,7 @@ impl ConversationSyncer {
     }
 
     pub async fn set_user_id(&self, user_id: String) {
-        let mut uid = self.user_id.write().await;
-        *uid = user_id;
+        self.user_id.set(user_id).await;
     }
 
     // ========================================================================
@@ -93,12 +89,12 @@ impl ConversationSyncer {
     // ========================================================================
 
     /// 增量同步会话（版本号持久化到数据库，对齐 Go SDK `VersionSynchronizer.IncrementalSync`）
-    pub async fn sync_incremental(&self) -> Result<Vec<Conversation>> {
-        let user_id = self.user_id.read().await.clone();
+    pub async fn sync_incremental(&self) -> Result<Vec<LocalConversation>> {
+        let user_id = self.user_id.get().await;
 
         // 1. 从数据库获取本地版本信息（对齐 Go SDK `getVersionInfo`）
         let (local_version_id, local_version) = match self
-            .sync_version_dao
+            .stores.sync_version_dao
             .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
             .await?
         {
@@ -134,35 +130,33 @@ impl ConversationSyncer {
 
         // 4. 处理增量变更
         for conv_id in &resp.delete {
-            self.dao.delete(conv_id).await?;
+            self.stores.conversation_dao.delete(conv_id).await?;
             self.send(ConversationEvent::Deleted(vec![conv_id.clone()]));
         }
 
         for s in &resp.update {
-            let domain = server_to_domain(s.clone());
-            let local = domain_to_local(domain);
-            self.dao.upsert_preserving_local_fields(&local).await?;
+            let local: LocalConversation = s.clone().into();
+            self.stores.conversation_dao.upsert_preserving_local_fields(&local).await?;
         }
 
         for s in &resp.insert {
-            let domain = server_to_domain(s.clone());
-            let local = domain_to_local(domain);
-            self.dao.upsert_preserving_local_fields(&local).await?;
+            let local: LocalConversation = s.clone().into();
+            self.stores.conversation_dao.upsert_preserving_local_fields(&local).await?;
         }
 
         if !resp.update.is_empty() || !resp.insert.is_empty() {
-            let changed: Vec<Conversation> = resp
+            let changed: Vec<LocalConversation> = resp
                 .update
                 .iter()
                 .chain(resp.insert.iter())
-                .map(|s| server_to_domain(s.clone()))
+                .map(|s| s.clone().into())
                 .collect();
             self.send(ConversationEvent::Changed(changed));
         }
 
         // 5. 持久化版本号到数据库（对齐 Go SDK `updateVersionInfo`）
         if let Err(e) = self
-            .sync_version_dao
+            .stores.sync_version_dao
             .set_version_sync(
                 CONVERSATION_TABLE_NAME,
                 &user_id,
@@ -181,13 +175,13 @@ impl ConversationSyncer {
             resp.delete.len()
         );
 
-        let inserted_convs: Vec<Conversation> =
-            resp.insert.iter().map(|s| server_to_domain(s.clone())).collect();
+        let inserted_convs: Vec<LocalConversation> =
+            resp.insert.iter().map(|s| s.clone().into()).collect();
         Ok(inserted_convs)
     }
 
     /// 加锁版本的增量同步（对齐 Go SDK `IncrSyncConversationsWithLock`）
-    pub async fn sync_incremental_with_lock(&self) -> Result<Vec<Conversation>> {
+    pub async fn sync_incremental_with_lock(&self) -> Result<Vec<LocalConversation>> {
         let _guard = self.sync_mutex.lock().await;
         self.sync_incremental().await
     }
@@ -196,10 +190,10 @@ impl ConversationSyncer {
     // 全量同步
     // ========================================================================
 
-    pub async fn sync_full(&self) -> Result<Vec<Conversation>> {
+    pub async fn sync_full(&self) -> Result<Vec<LocalConversation>> {
         info!("开始全量同步会话");
 
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         let resp = match self.api.pull_all(user_id).await {
             Ok(r) => r,
             Err(e) => {
@@ -207,16 +201,16 @@ impl ConversationSyncer {
             }
         };
 
-        let conversations: Vec<Conversation> = resp
+        let conversations: Vec<LocalConversation> = resp
             .conversations
             .unwrap_or_default()
             .into_iter()
-            .map(server_to_domain)
+            .map(|s| s.into())
             .collect();
 
         // 保留本地 latest_msg 等字段：先记录本地所有会话 ID
         let local_ids: std::collections::HashSet<String> = self
-            .dao
+            .stores.conversation_dao
             .get_all()
             .await
             .unwrap_or_default()
@@ -226,8 +220,8 @@ impl ConversationSyncer {
 
         // 使用保留本地字段的 upsert 方法插入所有服务端会话
         for conv in &conversations {
-            let local = domain_to_local(conv.clone());
-            self.dao.upsert_preserving_local_fields(&local).await?;
+            let local = conv.clone();
+            self.stores.conversation_dao.upsert_preserving_local_fields(&local).await?;
         }
 
         // 删除服务端不再返回的会话（即本地存在但服务端不存在的）
@@ -237,7 +231,7 @@ impl ConversationSyncer {
             .collect();
         for local_id in &local_ids {
             if !server_ids.contains(local_id) {
-                self.dao.delete(local_id).await?;
+                self.stores.conversation_dao.delete(local_id).await?;
             }
         }
 
@@ -259,7 +253,7 @@ impl ConversationSyncer {
     /// 此处补齐该逻辑。
     pub async fn sync_conversation_hash_read_seqs(
         &self,
-        max_seq_recorder: &crate::core::message::handler::MaxSeqRecorder,
+        max_seq_recorder: &crate::core::message::MaxSeqRecorder,
     ) -> Result<()> {
         let connection = match &self.connection {
             Some(c) => c,
@@ -269,7 +263,7 @@ impl ConversationSyncer {
             }
         };
 
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         use crate::domain::constant::types::ws_req_identifier;
         use crate::protocol::msg::{
             GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp,
@@ -302,7 +296,7 @@ impl ConversationSyncer {
         let mut conversation_ids_need_sync: Vec<String> = Vec::new();
 
         // 获取所有本地会话
-        let local_conversations = self.dao.get_all().await.unwrap_or_default();
+        let local_conversations = self.stores.conversation_dao.get_all().await.unwrap_or_default();
         let mut local_map: HashMap<String, crate::infra::database::models::LocalConversation> =
             HashMap::new();
         for conv in local_conversations {
@@ -324,7 +318,7 @@ impl ConversationSyncer {
             if let Some(local_conv) = local_map.get(conv_id) {
                 // 本地存在该会话 -> 检查是否需要更新未读数
                 if local_conv.unread_count != unread_count {
-                    if let Err(e) = self.dao.update_unread_count(conv_id, unread_count).await {
+                    if let Err(e) = self.stores.conversation_dao.update_unread_count(conv_id, unread_count).await {
                         error!(
                             "[ConvSync] 更新会话 {} 未读数失败: {}",
                             conv_id, e
@@ -344,7 +338,7 @@ impl ConversationSyncer {
                 "[ConvSync] {} 个会话不在本地，从服务端拉取",
                 conversation_ids_need_sync.len()
             );
-            let user_id = self.user_id.read().await.clone();
+            let user_id = self.user_id.get().await;
             match self
                 .api
                 .pull_conversations_by_ids(user_id, conversation_ids_need_sync.clone())
@@ -353,7 +347,7 @@ impl ConversationSyncer {
                 Ok(server_convs) => {
                     let mut conversations_to_insert = Vec::new();
                     for s in &server_convs {
-                        let mut domain = server_to_domain(s.clone());
+                        let mut domain: LocalConversation = s.clone().into();
                         // 计算未读数
                         if let Some(seq_info) = resp.seqs.get(&domain.conversation_id) {
                             let unread_count = if seq_info.max_seq > seq_info.has_read_seq {
@@ -363,8 +357,8 @@ impl ConversationSyncer {
                             };
                             domain.unread_count = unread_count;
                         }
-                        let local = domain_to_local(domain.clone());
-                        if let Err(e) = self.dao.upsert(&local).await {
+                        let local = domain.clone();
+                        if let Err(e) = self.stores.conversation_dao.upsert(&local).await {
                             error!(
                                 "[ConvSync] 插入会话 {} 失败: {}",
                                 domain.conversation_id, e
@@ -402,9 +396,9 @@ impl ConversationSyncer {
     // ========================================================================
 
     pub async fn get_sync_version(&self) -> u64 {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         match self
-            .sync_version_dao
+            .stores.sync_version_dao
             .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
             .await
         {
@@ -414,9 +408,9 @@ impl ConversationSyncer {
     }
 
     pub async fn get_sync_version_id(&self) -> String {
-        let user_id = self.user_id.read().await.clone();
+        let user_id = self.user_id.get().await;
         match self
-            .sync_version_dao
+            .stores.sync_version_dao
             .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
             .await
         {
@@ -429,14 +423,28 @@ impl ConversationSyncer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::model::UserId;
     use crate::infra::database::pool::create_pool_memory;
+    use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::http::client::HttpApiClient;
+
+    fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
+        Arc::new(Stores {
+            message_dao: Arc::new(MessageDao::new(pool.clone())),
+            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
+            friend_dao: Arc::new(FriendDao::new(pool.clone())),
+            user_dao: Arc::new(UserDao::new(pool.clone())),
+            group_dao: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
+        })
+    }
 
     #[tokio::test]
     async fn test_conversation_syncer_creation() {
         let pool = create_pool_memory().await.unwrap();
-        let dao = Arc::new(ConversationDao::new(pool.clone()));
-        let sync_version_dao = Arc::new(SyncVersionDao::new(pool));
+        let stores = make_test_stores(pool);
         let http_client = Arc::new(HttpApiClient::new(
             "http://localhost:10002".to_string(),
             "test_token".to_string(),
@@ -444,9 +452,8 @@ mod tests {
         ));
         let syncer = ConversationSyncer::new(
             http_client,
-            dao,
-            sync_version_dao,
-            "test_user".to_string(),
+            stores,
+            UserId::new("test_user"),
         );
 
         assert_eq!(syncer.get_sync_version().await, 0);

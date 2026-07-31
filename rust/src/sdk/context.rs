@@ -1,12 +1,13 @@
 use crate::domain::config::ClientConfig;
 use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::EventBus;
+use crate::domain::model::UserId;
 use crate::infra::database::pool::create_pool;
 use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
 // 操作 ID task-local（对齐 Go context.WithValue("operationID")）
@@ -22,6 +23,24 @@ pub fn gen_operation_id(prefix: &str) -> String {
     format!("{}_{}", prefix, OP_ID_COUNTER.fetch_add(1, Ordering::SeqCst))
 }
 
+/// 所有 DAO 的聚合（按领域分组，生命周期由 RuntimeContext 管理）
+pub struct Stores {
+    pub message_dao: Arc<MessageDao>,
+    pub conversation_dao: Arc<ConversationDao>,
+    pub friend_dao: Arc<FriendDao>,
+    pub user_dao: Arc<UserDao>,
+    pub group_dao: Arc<GroupDao>,
+    pub sync_version_dao: Arc<SyncVersionDao>,
+    pub notification_seq_dao: Arc<NotificationSeqDao>,
+    pub sending_message_dao: Arc<SendingMessageDao>,
+}
+
+/// 基础设施（网络 + 数据库连接）
+pub struct Infra {
+    pub http_client: Arc<HttpApiClient>,
+    pub db_pool: SqlitePool,
+}
+
 /// SDK 运行时上下文，管理所有依赖组件的生命周期
 pub struct RuntimeContext {
     /// 客户端配置
@@ -31,29 +50,13 @@ pub struct RuntimeContext {
     /// 取消令牌，用于优雅关闭
     pub cancel_token: CancellationToken,
     /// 当前登录用户 ID
-    pub user_id: Mutex<String>,
+    pub user_id: UserId,
     /// 操作 ID（用于追踪请求）
     pub operation_id: String,
-    /// 数据库连接池
-    pub db_pool: SqlitePool,
-    /// 消息 DAO
-    pub message_dao: Arc<MessageDao>,
-    /// 会话 DAO
-    pub conversation_dao: Arc<ConversationDao>,
-    /// 好友 DAO
-    pub friend_dao: Arc<FriendDao>,
-    /// 用户 DAO
-    pub user_dao: Arc<UserDao>,
-    /// 群组 DAO
-    pub group_dao: Arc<GroupDao>,
-    /// 同步版本 DAO
-    pub sync_version_dao: Arc<SyncVersionDao>,
-    /// 通知 seq DAO
-    pub notification_seq_dao: Arc<NotificationSeqDao>,
-    /// 发送中消息 DAO（崩溃恢复）
-    pub sending_message_dao: Arc<SendingMessageDao>,
-    /// HTTP API 客户端
-    pub http_client: Arc<HttpApiClient>,
+    /// 持久化层聚合（Arc 共享给各模块）
+    pub stores: Arc<Stores>,
+    /// 基础设施
+    pub infra: Infra,
 }
 
 impl RuntimeContext {
@@ -88,29 +91,33 @@ impl RuntimeContext {
             config,
             event_bus,
             cancel_token,
-            user_id: Mutex::new("".to_string()),
+            user_id: UserId::new(""),
             operation_id,
-            db_pool,
-            message_dao,
-            conversation_dao,
-            friend_dao,
-            user_dao,
-            group_dao,
-            sync_version_dao,
-            notification_seq_dao,
-            sending_message_dao,
-            http_client,
+            stores: Arc::new(Stores {
+                message_dao,
+                conversation_dao,
+                friend_dao,
+                user_dao,
+                group_dao,
+                sync_version_dao,
+                notification_seq_dao,
+                sending_message_dao,
+            }),
+            infra: Infra {
+                http_client,
+                db_pool,
+            },
         })
     }
 
     /// 设置当前登录用户 ID
     pub fn set_user_id(&self, user_id: String) {
-        *self.user_id.lock().unwrap() = user_id;
+        self.user_id.set_blocking(user_id);
     }
 
     /// 获取当前用户 ID
     pub fn get_user_id(&self) -> String {
-        self.user_id.lock().unwrap().clone()
+        self.user_id.get_blocking()
     }
 
     /// 获取取消令牌的克隆

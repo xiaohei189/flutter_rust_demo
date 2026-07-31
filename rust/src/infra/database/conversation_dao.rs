@@ -225,7 +225,7 @@ impl ConversationDao {
         sqlx::query(
             "UPDATE local_conversations SET is_pinned = ? WHERE conversation_id = ?",
         )
-        .bind(if is_pinned { 1 } else { 0 })
+        .bind(is_pinned)
         .bind(conversation_id)
         .execute(&self.pool)
         .await
@@ -237,7 +237,7 @@ impl ConversationDao {
         sqlx::query(
             "UPDATE local_conversations SET is_private_chat = ? WHERE conversation_id = ?",
         )
-        .bind(if is_private { 1 } else { 0 })
+        .bind(is_private)
         .bind(conversation_id)
         .execute(&self.pool)
         .await
@@ -438,11 +438,11 @@ mod tests {
             latest_msg_send_time: 0,
             unread_count: 0,
             recv_msg_opt: 0,
-            is_pinned: 0,
-            is_private_chat: 0,
+            is_pinned: false,
+            is_private_chat: false,
             burn_duration: 0,
             group_at_type: 0,
-            is_not_in_group: 0,
+            is_not_in_group: false,
             update_unread_count_time: 0,
             attached_info: String::new(),
             ex: String::new(),
@@ -450,7 +450,7 @@ mod tests {
             draft_text_time: 0,
             max_seq: 0,
             min_seq: 0,
-            is_msg_destruct: 0,
+            is_msg_destruct: false,
             msg_destruct_time: 0,
         }
     }

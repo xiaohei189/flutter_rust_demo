@@ -4,11 +4,11 @@ use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::file::uploader::FileUploader;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
-use crate::core::message::handler::MessageHandler;
-use crate::core::message::send_queue::MessageSendQueue;
+use crate::core::message::MessageHandler;
+use crate::core::message::MessageSendQueue;
 use crate::core::notification::handler::NotificationHandler;
-use crate::core::message::service::MessageService;
-use crate::core::message::syncer::MessageSyncer;
+use crate::core::message::MessageService;
+use crate::core::message::MessageSyncer;
 use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
 use crate::domain::config::ClientConfig;
@@ -50,65 +50,54 @@ impl OpenIMClient {
         ));
 
         let user = Arc::new(UserManager::new(
-            context.http_client.clone(),
+            context.infra.http_client.clone(),
             event_bus.clone(),
         ));
-        let user_id = context.user_id.lock().unwrap().clone();
         let friend = Arc::new(FriendManager::new(
-            context.http_client.clone(),
-            user_id.clone(),
-            context.friend_dao.clone(),
-            context.sync_version_dao.clone(),
+            context.infra.http_client.clone(),
+            context.stores.clone(),
+            context.user_id.clone(),
         ));
         let group = Arc::new(GroupManager::new(
-            context.http_client.clone(),
-            user_id.clone(),
-            context.group_dao.clone(),
-            context.sync_version_dao.clone(),
+            context.infra.http_client.clone(),
+            context.stores.clone(),
+            context.user_id.clone(),
         ));
         let conversation = Arc::new(ConversationManager::new(
-            context.conversation_dao.clone(),
-            context.message_dao.clone(),
+            context.stores.clone(),
         ));
         let online_status = Arc::new(OnlineStatusManager::new(
-            context.http_client.clone(),
+            context.infra.http_client.clone(),
             event_bus.clone(),
         ));
 
         let file_uploader = Arc::new(FileUploader::new(
-            context.http_client.clone(),
+            context.infra.http_client.clone(),
         ));
 
         let message_handler = Arc::new(MessageHandler::new(
-            context.message_dao.clone(),
-            context.conversation_dao.clone(),
-            context.user_dao.clone(),
-            context.group_dao.clone(),
+            context.stores.clone(),
+            context.user_id.clone(),
         ));
 
         let message_syncer = Arc::new(MessageSyncer::new(
             connection.clone(),
-            context.conversation_dao.clone(),
-            context.message_dao.clone(),
-            context.sync_version_dao.clone(),
-            context.notification_seq_dao.clone(),
+            context.stores.clone(),
             message_handler.clone(),
-            config.user_id.clone(),
+            context.user_id.clone(),
         ));
 
         let conversation_syncer = Arc::new(ConversationSyncer::new(
-            context.http_client.clone(),
-            context.conversation_dao.clone(),
-            context.sync_version_dao.clone(),
-            config.user_id.clone(),
+            context.infra.http_client.clone(),
+            context.stores.clone(),
+            context.user_id.clone(),
         ));
 
         let message_service = Arc::new(MessageService::new(
-            context.message_dao.clone(),
-            context.conversation_dao.clone(),
+            context.stores.clone(),
+            Arc::new(crate::core::message::HttpMessageApi::new(context.infra.http_client.clone())),
             event_bus.clone(),
-            Arc::new(crate::core::message::service::HttpMessageApi::new(context.http_client.clone())),
-            config.user_id.clone(),
+            context.user_id.clone(),
         ));
 
         let notification_handler = Arc::new(NotificationHandler::new(

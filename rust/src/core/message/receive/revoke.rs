@@ -1,9 +1,11 @@
-use super::*;
+//! 撤回通知处理（impl MessageHandler）
+
+use super::handler::MessageHandler;
 use crate::domain::constant::types::notification_type::REVOKE;
-use crate::domain::error::types::SdkError;
+use crate::domain::error::types::{Result, SdkError};
 use crate::domain::event::types::SdkEvent;
 use crate::domain::listener::conversation::ConversationEvent;
-use crate::protocol::sdkws::RevokeMsgTips;
+use crate::protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
 /// 撤回通知扩展结构（protobuf RevokeMsgTips 不含 revokerNickname，此结构补充）
@@ -86,15 +88,15 @@ impl MessageHandler {
         let fallback = tips.revoker_user_id.clone();
 
         if tips.is_admin_revoke || tips.sesstion_type == crate::domain::constant::types::session_type::SINGLE_CHAT {
-            if let Ok(Some(user)) = self.user_dao.get_by_id(&tips.revoker_user_id).await {
+            if let Ok(Some(user)) = self.stores.user_dao.get_by_id(&tips.revoker_user_id).await {
                 if !user.name.is_empty() {
                     return (user.name, 0);
                 }
             }
         } else if tips.sesstion_type == crate::domain::constant::types::session_type::WRITE_GROUP_CHAT
             || tips.sesstion_type == crate::domain::constant::types::session_type::READ_GROUP_CHAT {
-            if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
-                if let Ok(members) = self.group_dao.get_members(&conv.group_id).await {
+            if let Ok(Some(conv)) = self.stores.conversation_dao.get_by_id(&tips.conversation_id).await {
+                if let Ok(members) = self.stores.group_dao.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
                         revoker_role = member.role_level;
                         if !member.nickname.is_empty() {
@@ -110,7 +112,7 @@ impl MessageHandler {
     /// 撤回通知处理（严格对齐 Go SDK revoke_message）
     pub(crate) async fn handle_revoke_notification(&self, tips: &RevokeMsgTips, server_revoker_nickname: &str, server_revoker_role: i32) -> Result<()> {
         // 1. 获取被撤回的消息
-        let revoked_msg = self.message_dao.get_by_conversation_and_seq(&tips.conversation_id, tips.seq).await?
+        let revoked_msg = self.stores.message_dao.get_by_conversation_and_seq(&tips.conversation_id, tips.seq).await?
             .ok_or_else(|| {
                 let err_msg = format!("被撤回的消息不存在: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
                 warn!("[REVOKE] {}", err_msg);
@@ -137,8 +139,8 @@ impl MessageHandler {
         info!("[REVOKE-DEBUG] 最终昵称: '{}', user_id: '{}'", revoker_nickname, tips.revoker_user_id);
         if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::types::session_type::WRITE_GROUP_CHAT
             || tips.sesstion_type == crate::domain::constant::types::session_type::READ_GROUP_CHAT {
-            if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
-                if let Ok(members) = self.group_dao.get_members(&conv.group_id).await {
+            if let Ok(Some(conv)) = self.stores.conversation_dao.get_by_id(&tips.conversation_id).await {
+                if let Ok(members) = self.stores.group_dao.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
                         revoker_role = member.role_level;
                     }
@@ -178,7 +180,7 @@ impl MessageHandler {
         });
         info!("[REVOKE-DEBUG] 写入DB的notification_content: {}", notification_content);
         
-        self.message_dao.update_message_content_and_type(
+        self.stores.message_dao.update_message_content_and_type(
             &tips.conversation_id,
             &revoked_msg.client_msg_id,
             &notification_content.to_string(),
@@ -188,43 +190,18 @@ impl MessageHandler {
         info!("[REVOKE] 更新消息内容类型和内容: content_type={}, content={}", REVOKE, notification_content);
 
         // 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg
-        if let Ok(Some(conv)) = self.conversation_dao.get_by_id(&tips.conversation_id).await {
+        if let Ok(Some(conv)) = self.stores.conversation_dao.get_by_id(&tips.conversation_id).await {
             let latest_seq: i64 = serde_json::from_str::<serde_json::Value>(&conv.latest_msg)
                 .ok()
                 .and_then(|v| v.get("seq").and_then(|s| s.as_i64()))
                 .unwrap_or(0);
             if latest_seq <= tips.seq {
-                if let Ok(latest_msgs) = self.message_dao.get_by_conversation(&tips.conversation_id, 0, 1).await {
+                if let Ok(latest_msgs) = self.stores.message_dao.get_by_conversation(&tips.conversation_id, 0, 1).await {
                     if let Some(latest_msg) = latest_msgs.first() {
-                        let updated_conv = crate::domain::model::conversation::Conversation {
-                            conversation_id: conv.conversation_id,
-                            conversation_type: conv.conversation_type,
-                            user_id: conv.user_id,
-                            group_id: conv.group_id,
-                            show_name: conv.show_name,
-                            face_url: conv.face_url,
-                            latest_msg: latest_msg.content.clone(),
-                            latest_msg_send_time: latest_msg.send_time,
-                            unread_count: conv.unread_count,
-                            recv_msg_opt: conv.recv_msg_opt,
-                            is_pinned: conv.is_pinned != 0,
-                            is_not_in_group: conv.is_not_in_group != 0,
-                            draft_text: conv.draft_text,
-                            draft_text_time: conv.draft_text_time,
-                            is_private_chat: conv.is_private_chat != 0,
-                            burn_duration: conv.burn_duration as i32,
-                            group_at_type: conv.group_at_type,
-                            update_unread_count_time: conv.update_unread_count_time,
-                            latest_msg_seq: latest_msg.seq,
-                            max_seq: conv.max_seq,
-                            min_seq: conv.min_seq,
-                            is_msg_destruct: conv.is_msg_destruct != 0,
-                            msg_destruct_time: conv.msg_destruct_time,
-                            update_flag: 0,
-                            sync_action: None,
-                            is_private: conv.is_private_chat != 0,
-                            ex: conv.ex,
-                        };
+                        let mut updated_conv = conv.clone();
+                        updated_conv.latest_msg = latest_msg.content.clone();
+                        updated_conv.latest_msg_send_time = latest_msg.send_time;
+                        updated_conv.max_seq = latest_msg.seq;
                         self.send(ConversationEvent::Changed(vec![updated_conv.clone()]));
                         info!("[REVOKE] 刷新会话 LatestMsg: latest_msg_send_time={}", latest_msg.send_time);
                     }
@@ -250,7 +227,7 @@ impl MessageHandler {
         revoked_client_msg_id: &str,
         revoke_notification_content: &str,
     ) -> Result<()> {
-        let quote_msgs = self.message_dao.search_by_content_type(conversation_id, 104).await?;
+        let quote_msgs = self.stores.message_dao.search_by_content_type(conversation_id, 104).await?;
         
         if quote_msgs.is_empty() {
             info!("[REVOKE] 没有找到引用消息");
@@ -264,7 +241,7 @@ impl MessageHandler {
                 if let Some(quote_message) = quote_elem.get("quoteMessage") {
                     if let Some(client_msg_id) = quote_message.get("clientMsgID").and_then(|v| v.as_str()) {
                         if client_msg_id == revoked_client_msg_id {
-                            self.message_dao.update_message_content_and_type(
+                            self.stores.message_dao.update_message_content_and_type(
                                 conversation_id,
                                 &quote_msg.client_msg_id,
                                 revoke_notification_content,
@@ -416,11 +393,26 @@ mod tests {
     // 撤回通知集成测试（内存 DB）
     // ========================================================================
 
-    use crate::infra::database::{ConversationDao, MessageDao, UserDao, GroupDao};
+    use crate::domain::model::UserId;
+    use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::database::models::{LocalChatLog, LocalConversation};
     use crate::infra::database::pool::create_pool_memory;
     use crate::domain::constant::types::notification_type::REVOKE as REVOKE_CT;
+    use crate::sdk::context::Stores;
     use std::sync::Arc;
+
+    fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
+        Arc::new(Stores {
+            message_dao: Arc::new(MessageDao::new(pool.clone())),
+            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
+            friend_dao: Arc::new(FriendDao::new(pool.clone())),
+            user_dao: Arc::new(UserDao::new(pool.clone())),
+            group_dao: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
+        })
+    }
 
     fn make_revoke_notification(conv_id: &str, target_seq: i64, target_client_msg_id: &str, revoker: &str) -> MsgData {
         let detail = serde_json::json!({
@@ -473,17 +465,11 @@ mod tests {
     #[tokio::test]
     async fn test_revoke_notification_updates_message() {
         let pool = create_pool_memory().await.unwrap();
-        let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            message_dao.clone(),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let message_dao = stores.message_dao.clone();
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
-        // 预插入被撤回的消息
         message_dao.batch_insert(&[make_local_msg("conv_revoke", "msg_target", 5, "user_1")]).await.unwrap();
         let conv = LocalConversation {
             conversation_id: "conv_revoke".to_string(),
@@ -491,20 +477,18 @@ mod tests {
             user_id: String::new(), group_id: String::new(),
             show_name: String::new(), face_url: String::new(),
             latest_msg: String::new(), latest_msg_send_time: 0,
-            unread_count: 0, recv_msg_opt: 0, is_pinned: 0,
-            is_private_chat: 0, burn_duration: 0, group_at_type: 0,
-            is_not_in_group: 0, update_unread_count_time: 0,
+            unread_count: 0, recv_msg_opt: 0, is_pinned: false,
+            is_private_chat: false, burn_duration: 0, group_at_type: 0,
+            is_not_in_group: false, update_unread_count_time: 0,
             attached_info: String::new(), ex: String::new(),
             draft_text: String::new(), draft_text_time: 0,
-            max_seq: 5, min_seq: 0, is_msg_destruct: 0, msg_destruct_time: 0,
+            max_seq: 5, min_seq: 0, is_msg_destruct: false, msg_destruct_time: 0,
         };
         conversation_dao.upsert(&conv).await.unwrap();
 
-        // 发送撤回通知
         let notif = make_revoke_notification("conv_revoke", 5, "msg_target", "user_1");
         handler.handle_messages("conv_revoke", vec![notif]).await.unwrap();
 
-        // 验证消息 content_type 已更新为 REVOKE
         let msg = message_dao.get_by_conversation_and_seq("conv_revoke", 5).await.unwrap().unwrap();
         assert_eq!(msg.content_type, REVOKE_CT, "content_type should be REVOKE");
         assert!(msg.content.contains("revokerNickname"), "content should contain revoke info");
@@ -514,19 +498,13 @@ mod tests {
     #[tokio::test]
     async fn test_revoke_quote_message_updated() {
         let pool = create_pool_memory().await.unwrap();
-        let message_dao = Arc::new(MessageDao::new(pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
-        let handler = MessageHandler::new(
-            message_dao.clone(),
-            conversation_dao.clone(),
-            Arc::new(UserDao::new(pool.clone())),
-            Arc::new(GroupDao::new(pool)),
-        );
-        handler.set_user_id("user_1".to_string());
+        let stores = make_test_stores(pool);
+        let message_dao = stores.message_dao.clone();
+        let conversation_dao = stores.conversation_dao.clone();
+        let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
-        // 预插入原始消息 + 引用消息
         let mut quote_msg = make_local_msg("conv_quote", "quote_msg", 6, "user_2");
-        quote_msg.content_type = 104; // QUOTE
+        quote_msg.content_type = 104;
         quote_msg.content = serde_json::json!({
             "text": "my reply",
             "quoteMessage": {
@@ -545,24 +523,21 @@ mod tests {
             user_id: String::new(), group_id: String::new(),
             show_name: String::new(), face_url: String::new(),
             latest_msg: String::new(), latest_msg_send_time: 0,
-            unread_count: 0, recv_msg_opt: 0, is_pinned: 0,
-            is_private_chat: 0, burn_duration: 0, group_at_type: 0,
-            is_not_in_group: 0, update_unread_count_time: 0,
+            unread_count: 0, recv_msg_opt: 0, is_pinned: false,
+            is_private_chat: false, burn_duration: 0, group_at_type: 0,
+            is_not_in_group: false, update_unread_count_time: 0,
             attached_info: String::new(), ex: String::new(),
             draft_text: String::new(), draft_text_time: 0,
-            max_seq: 6, min_seq: 0, is_msg_destruct: 0, msg_destruct_time: 0,
+            max_seq: 6, min_seq: 0, is_msg_destruct: false, msg_destruct_time: 0,
         };
         conversation_dao.upsert(&conv).await.unwrap();
 
-        // 撤回原始消息
         let notif = make_revoke_notification("conv_quote", 3, "msg_origin", "user_1");
         handler.handle_messages("conv_quote", vec![notif]).await.unwrap();
 
-        // 验证原始消息已撤回
         let origin = message_dao.get_by_conversation_and_seq("conv_quote", 3).await.unwrap().unwrap();
         assert_eq!(origin.content_type, REVOKE_CT);
 
-        // 验证引用消息也被更新
         let quote = message_dao.get_by_conversation_and_seq("conv_quote", 6).await.unwrap().unwrap();
         assert_eq!(quote.content_type, REVOKE_CT, "quote message should also be revoked");
     }

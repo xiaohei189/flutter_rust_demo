@@ -1,3 +1,5 @@
+//! **STATUS: WIP — 未接入主流程，勿依赖**
+//!
 //! Seq gap 异常消息处理 — 消息列表连续性检查与缺失补拉
 //!
 //! 对齐 Go SDK `internal/conversation_msg/message_check.go`

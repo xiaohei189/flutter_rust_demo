@@ -17,7 +17,7 @@ impl MessageService {
         // 从本地数据库查找每条消息的 seq
         let mut seqs = Vec::new();
         for client_msg_id in &client_msg_ids {
-            if let Ok(Some(msg)) = self.message_dao.get_by_client_msg_id(&conversation_id, client_msg_id).await {
+            if let Ok(Some(msg)) = self.stores.message_dao.get_by_client_msg_id(&conversation_id, client_msg_id).await {
                 if msg.seq > 0 {
                     seqs.push(msg.seq);
                 }
@@ -25,7 +25,7 @@ impl MessageService {
         }
 
         // 通知服务端（失败则整体失败，本地不变更）
-        let user_id = self.user_id.lock().unwrap().clone();
+        let user_id = self.user_id.get().await;
         self.api.delete_on_server(&conversation_id, &seqs, &user_id).await?;
 
         // 服务端成功后删除本地
@@ -42,7 +42,7 @@ impl MessageService {
         client_msg_ids: &[String],
     ) -> Result<()> {
         for client_msg_id in client_msg_ids {
-            self.message_dao.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
+            self.stores.message_dao.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
         }
 
         self.event_bus.publish(SdkEvent::MessagesDeleted {

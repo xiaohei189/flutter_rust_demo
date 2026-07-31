@@ -45,4 +45,17 @@ impl SendingMessageDao {
         .map_err(|e| SdkError::database(format!("get all sending messages: {}", e)))?;
         Ok(rows)
     }
+
+    /// 根据 conversation_id + client_msg_id 查询发送中消息
+    pub async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalSendingMessage>> {
+        let row = sqlx::query_as::<_, LocalSendingMessage>(
+            "SELECT conversation_id, client_msg_id, ex FROM local_sending_messages WHERE conversation_id = ? AND client_msg_id = ?",
+        )
+        .bind(conversation_id)
+        .bind(client_msg_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("get sending message by client_msg_id: {}", e)))?;
+        Ok(row)
+    }
 }

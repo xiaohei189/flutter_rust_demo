@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, info, warn, Span};
 
-use crate::core::message::content_type::ContentTypeUtils;
+use crate::core::message::shared::content_type::ContentTypeUtils;
 use crate::domain::error::types::SdkError;
 use crate::protocol::sdkws::UserSendMsgResp;
 

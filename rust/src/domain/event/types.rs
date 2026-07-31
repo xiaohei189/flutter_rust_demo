@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::domain::model::conversation::Conversation;
+use crate::infra::database::models::LocalConversation;
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::user::UserInfo;
 use crate::protocol::sdkws::MsgData;
@@ -156,7 +156,7 @@ pub enum SdkEvent {
         client_msg_ids: Vec<String>,
     },
     ConversationChanged {
-        conversations: Vec<Conversation>,
+        conversations: Vec<LocalConversation>,
     },
     /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
     UpdateLatestMessageReadState {
@@ -166,7 +166,7 @@ pub enum SdkEvent {
         conversation_ids: Vec<String>,
     },
     NewConversation {
-        conversations: Vec<Conversation>,
+        conversations: Vec<LocalConversation>,
     },
     TotalUnreadCountChanged {
         count: i64,

@@ -12,11 +12,12 @@
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
-use crate::core::message::handler::MessageHandler;
+use crate::core::message::MessageHandler;
 use crate::core::user::manager::UserManager;
 use crate::domain::constant::types::notification_type;
 use crate::domain::event::bus::EventBus;
 use crate::domain::event::types::SdkEvent;
+use crate::domain::model::UserId;
 use crate::protocol::sdkws::MsgData;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -207,7 +208,7 @@ pub struct NotificationHandler {
     conversation_syncer: Arc<ConversationSyncer>,
     message_handler: Arc<MessageHandler>,
     event_bus: Arc<EventBus>,
-    user_id: std::sync::Mutex<String>,
+    user_id: UserId,
 }
 
 impl NotificationHandler {
@@ -226,12 +227,12 @@ impl NotificationHandler {
             conversation_syncer,
             message_handler,
             event_bus,
-            user_id: std::sync::Mutex::new(String::new()),
+            user_id: UserId::new(""),
         }
     }
 
     pub fn set_user_id(&self, user_id: String) {
-        *self.user_id.lock().unwrap() = user_id;
+        self.user_id.set_blocking(user_id);
     }
 
     /// 处理通知消息列表（对齐 Go SDK Work() 方法的 CmdNotification 路由）
