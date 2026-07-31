@@ -84,3 +84,17 @@ mod tests {
         assert_eq!(found.unwrap().name, "Alice");
     }
 }
+
+// ====================================================================
+// Repository trait 实现
+// ====================================================================
+
+use crate::domain::repository::user::UserRepository;
+
+#[async_trait::async_trait]
+impl UserRepository for UserDao {
+    async fn upsert(&self, user: &LocalUser) -> Result<()> { UserDao::upsert(self, user).await }
+    async fn batch_upsert(&self, users: &[LocalUser]) -> Result<()> { self.batch_upsert(users).await }
+    async fn get_by_id(&self, user_id: &str) -> Result<Option<LocalUser>> { self.get_by_id(user_id).await }
+    async fn delete(&self, user_id: &str) -> Result<()> { self.delete(user_id).await }
+}

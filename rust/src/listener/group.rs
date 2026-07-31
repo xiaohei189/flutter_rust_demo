@@ -1,4 +1,4 @@
-use crate::domain::event::types::GroupReadReceipt;
+use crate::event::types::GroupReadReceipt;
 use crate::domain::model::group::GroupInfo;
 use serde::{Deserialize, Serialize};
 
@@ -21,4 +21,5 @@ pub trait GroupListener: Send + Sync {
     fn on_member_deleted(&self, _group_id: &str) {}
     fn on_group_read_receipt(&self, _receipts: &[GroupReadReceipt]) {}
 }
+
 

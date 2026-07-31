@@ -3,7 +3,7 @@
 use super::handler::MessageHandler;
 use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::listener::conversation::ConversationEvent;
+use crate::listener::conversation::ConversationEvent;
 use crate::protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;
@@ -407,3 +407,4 @@ mod tests {
         assert_eq!(conv.unread_count, 0, "group chat unread should be 0 after receipt");
     }
 }
+

@@ -135,3 +135,19 @@ mod tests {
         assert_eq!(all[0].nickname, "Bob");
     }
 }
+// ====================================================================
+// Repository trait 实现
+// ====================================================================
+
+use crate::domain::repository::friend::FriendRepository;
+
+#[async_trait::async_trait]
+impl FriendRepository for FriendDao {
+    async fn upsert(&self, friend: &LocalFriend) -> Result<()> { FriendDao::upsert(self, friend).await }
+    async fn batch_upsert(&self, friends: &[LocalFriend]) -> Result<()> { self.batch_upsert(friends).await }
+    async fn get_all(&self, owner_user_id: &str) -> Result<Vec<LocalFriend>> { self.get_all(owner_user_id).await }
+    async fn get_by_id(&self, owner_user_id: &str, friend_user_id: &str) -> Result<Option<LocalFriend>> { self.get_by_id(owner_user_id, friend_user_id).await }
+    async fn delete(&self, owner_user_id: &str, friend_user_id: &str) -> Result<()> { self.delete(owner_user_id, friend_user_id).await }
+    async fn batch_delete(&self, owner_user_id: &str, friend_user_ids: &[String]) -> Result<()> { self.batch_delete(owner_user_id, friend_user_ids).await }
+    async fn search_friends(&self, owner_user_id: &str, keyword: &str) -> Result<Vec<LocalFriend>> { self.search_friends(owner_user_id, keyword).await }
+}

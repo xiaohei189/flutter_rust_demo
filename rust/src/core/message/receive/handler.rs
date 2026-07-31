@@ -9,8 +9,8 @@ use crate::domain::constant::types::content_type;
 use crate::domain::constant::types::msg_status;
 use crate::domain::constant::types::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::domain::error::types::Result;
-use crate::domain::event::publisher::EventPublisher;
-use crate::domain::listener::conversation::ConversationEvent;
+use crate::event::publisher::EventPublisher;
+use crate::listener::conversation::ConversationEvent;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
@@ -400,7 +400,7 @@ impl MessageHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::event::bus::EventBus;
+    use crate::event::bus::EventBus;
     use crate::infra::database::pool::create_pool_memory;
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 
@@ -959,3 +959,4 @@ mod tests {
         assert_eq!(conv.unread_count, 1);
     }
 }
+

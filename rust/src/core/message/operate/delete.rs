@@ -2,7 +2,7 @@
 
 use super::MessageService;
 use crate::domain::error::types::Result;
-use crate::domain::event::types::SdkEvent;
+use crate::event::types::SdkEvent;
 use tracing::info;
 
 impl MessageService {
@@ -53,3 +53,4 @@ impl MessageService {
         Ok(())
     }
 }
+

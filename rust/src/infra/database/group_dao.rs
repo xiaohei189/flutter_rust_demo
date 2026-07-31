@@ -198,3 +198,22 @@ mod tests {
         assert_eq!(members[0].nickname, "Alice");
     }
 }
+
+// ====================================================================
+// Repository trait 实现
+// ====================================================================
+
+use crate::domain::repository::group::GroupRepository;
+
+#[async_trait::async_trait]
+impl GroupRepository for GroupDao {
+    async fn upsert_group(&self, group: &LocalGroup) -> Result<()> { GroupDao::upsert_group(self, group).await }
+    async fn get_all_groups(&self) -> Result<Vec<LocalGroup>> { self.get_all_groups().await }
+    async fn get_group(&self, group_id: &str) -> Result<Option<LocalGroup>> { self.get_group(group_id).await }
+    async fn delete_group(&self, group_id: &str) -> Result<()> { self.delete_group(group_id).await }
+    async fn upsert_member(&self, member: &LocalGroupMember) -> Result<()> { self.upsert_member(member).await }
+    async fn batch_upsert_members(&self, members: &[LocalGroupMember]) -> Result<()> { self.batch_upsert_members(members).await }
+    async fn get_members(&self, group_id: &str) -> Result<Vec<LocalGroupMember>> { self.get_members(group_id).await }
+    async fn delete_member(&self, group_id: &str, user_id: &str) -> Result<()> { self.delete_member(group_id, user_id).await }
+    async fn delete_members_by_group(&self, group_id: &str) -> Result<()> { self.delete_members_by_group(group_id).await }
+}

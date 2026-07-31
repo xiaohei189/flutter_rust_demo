@@ -1,8 +1,8 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::publisher::EventPublisher;
-use crate::domain::listener::conversation::ConversationEvent;
+use crate::event::publisher::EventPublisher;
+use crate::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::infra::database::models::LocalConversation;
 use crate::sdk::context::Stores;
@@ -94,7 +94,7 @@ impl ConversationSyncer {
 
         // 1. 从数据库获取本地版本信息（对齐 Go SDK `getVersionInfo`）
         let (local_version_id, local_version) = match self
-            .stores.sync_version_dao
+            .stores.sync_version_repo
             .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
             .await?
         {
@@ -130,18 +130,18 @@ impl ConversationSyncer {
 
         // 4. 处理增量变更
         for conv_id in &resp.delete {
-            self.stores.conversation_dao.delete(conv_id).await?;
+            self.stores.conversation_repo.delete(conv_id).await?;
             self.send(ConversationEvent::Deleted(vec![conv_id.clone()]));
         }
 
         for s in &resp.update {
             let local: LocalConversation = s.clone().into();
-            self.stores.conversation_dao.upsert_preserving_local_fields(&local).await?;
+            self.stores.conversation_repo.upsert_preserving_local_fields(&local).await?;
         }
 
         for s in &resp.insert {
             let local: LocalConversation = s.clone().into();
-            self.stores.conversation_dao.upsert_preserving_local_fields(&local).await?;
+            self.stores.conversation_repo.upsert_preserving_local_fields(&local).await?;
         }
 
         if !resp.update.is_empty() || !resp.insert.is_empty() {
@@ -156,7 +156,7 @@ impl ConversationSyncer {
 
         // 5. 持久化版本号到数据库（对齐 Go SDK `updateVersionInfo`）
         if let Err(e) = self
-            .stores.sync_version_dao
+            .stores.sync_version_repo
             .set_version_sync(
                 CONVERSATION_TABLE_NAME,
                 &user_id,
@@ -210,7 +210,7 @@ impl ConversationSyncer {
 
         // 保留本地 latest_msg 等字段：先记录本地所有会话 ID
         let local_ids: std::collections::HashSet<String> = self
-            .stores.conversation_dao
+            .stores.conversation_repo
             .get_all()
             .await
             .unwrap_or_default()
@@ -221,7 +221,7 @@ impl ConversationSyncer {
         // 使用保留本地字段的 upsert 方法插入所有服务端会话
         for conv in &conversations {
             let local = conv.clone();
-            self.stores.conversation_dao.upsert_preserving_local_fields(&local).await?;
+            self.stores.conversation_repo.upsert_preserving_local_fields(&local).await?;
         }
 
         // 删除服务端不再返回的会话（即本地存在但服务端不存在的）
@@ -231,7 +231,7 @@ impl ConversationSyncer {
             .collect();
         for local_id in &local_ids {
             if !server_ids.contains(local_id) {
-                self.stores.conversation_dao.delete(local_id).await?;
+                self.stores.conversation_repo.delete(local_id).await?;
             }
         }
 
@@ -296,7 +296,7 @@ impl ConversationSyncer {
         let mut conversation_ids_need_sync: Vec<String> = Vec::new();
 
         // 获取所有本地会话
-        let local_conversations = self.stores.conversation_dao.get_all().await.unwrap_or_default();
+        let local_conversations = self.stores.conversation_repo.get_all().await.unwrap_or_default();
         let mut local_map: HashMap<String, crate::infra::database::models::LocalConversation> =
             HashMap::new();
         for conv in local_conversations {
@@ -318,7 +318,7 @@ impl ConversationSyncer {
             if let Some(local_conv) = local_map.get(conv_id) {
                 // 本地存在该会话 -> 检查是否需要更新未读数
                 if local_conv.unread_count != unread_count {
-                    if let Err(e) = self.stores.conversation_dao.update_unread_count(conv_id, unread_count).await {
+                    if let Err(e) = self.stores.conversation_repo.update_unread_count(conv_id, unread_count).await {
                         error!(
                             "[ConvSync] 更新会话 {} 未读数失败: {}",
                             conv_id, e
@@ -358,7 +358,7 @@ impl ConversationSyncer {
                             domain.unread_count = unread_count;
                         }
                         let local = domain.clone();
-                        if let Err(e) = self.stores.conversation_dao.upsert(&local).await {
+                        if let Err(e) = self.stores.conversation_repo.upsert(&local).await {
                             error!(
                                 "[ConvSync] 插入会话 {} 失败: {}",
                                 domain.conversation_id, e
@@ -398,7 +398,7 @@ impl ConversationSyncer {
     pub async fn get_sync_version(&self) -> u64 {
         let user_id = self.user_id.get().await;
         match self
-            .stores.sync_version_dao
+            .stores.sync_version_repo
             .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
             .await
         {
@@ -410,7 +410,7 @@ impl ConversationSyncer {
     pub async fn get_sync_version_id(&self) -> String {
         let user_id = self.user_id.get().await;
         match self
-            .stores.sync_version_dao
+            .stores.sync_version_repo
             .get_version_sync(CONVERSATION_TABLE_NAME, &user_id)
             .await
         {
@@ -460,3 +460,5 @@ mod tests {
         assert_eq!(syncer.get_sync_version_id().await, "");
     }
 }
+
+

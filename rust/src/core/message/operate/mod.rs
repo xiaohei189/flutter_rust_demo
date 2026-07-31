@@ -13,9 +13,9 @@ pub use req::*;
 pub use http_api::HttpMessageApi;
 pub use crate::core::message::ports::MessageServerApi;
 
-use crate::domain::event::EventBus;
-use crate::domain::event::publisher::EventPublisher;
-use crate::domain::listener::conversation::ConversationEvent;
+use crate::event::EventBus;
+use crate::event::publisher::EventPublisher;
+use crate::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::sdk::context::Stores;
 use std::sync::Arc;
@@ -219,3 +219,4 @@ mod tests {
         assert!(logs.iter().all(|m| m.is_read == 1));
     }
 }
+

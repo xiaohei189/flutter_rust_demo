@@ -1,8 +1,8 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::constant::types::req_identifier_name;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::publisher::EventPublisher;
-use crate::domain::listener::connection::{ConnectionEvent, ConnectionListener};
+use crate::event::publisher::EventPublisher;
+use crate::listener::connection::{ConnectionEvent, ConnectionListener};
 use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
@@ -793,3 +793,4 @@ mod tests {
         assert!(manager.is_connected().await);
     }
 }
+

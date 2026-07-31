@@ -15,8 +15,8 @@ use crate::core::group::manager::GroupManager;
 use crate::core::message::MessageHandler;
 use crate::core::user::manager::UserManager;
 use crate::domain::constant::types::notification_type;
-use crate::domain::event::bus::EventBus;
-use crate::domain::event::types::SdkEvent;
+use crate::event::bus::EventBus;
+use crate::event::types::SdkEvent;
 use crate::domain::model::UserId;
 use crate::protocol::sdkws::MsgData;
 use serde::Deserialize;
@@ -547,3 +547,4 @@ impl NotificationHandler {
         Ok(())
     }
 }
+

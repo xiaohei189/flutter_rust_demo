@@ -659,3 +659,31 @@ mod tests {
         assert_eq!(msgs[0].is_read, 1);
     }
 }
+
+
+// ====================================================================
+// Repository trait 实现
+// 注: 方法体委托给同名 inherent 方法（Rust 中 inherent 优先于 trait，无递归）
+// ====================================================================
+
+use crate::domain::repository::message::MessageRepository;
+
+#[async_trait::async_trait]
+impl MessageRepository for MessageDao {
+    async fn batch_insert(&self, logs: &[LocalChatLog]) -> Result<()> { MessageDao::batch_insert(self, logs).await }
+    async fn get_by_conversation(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> { self.get_by_conversation(conversation_id, start_time, count).await }
+    async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> { self.get_max_seq(conversation_id).await }
+    async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> { self.get_by_client_msg_id(conversation_id, client_msg_id).await }
+    async fn get_by_seq(&self, seq: i64) -> Result<Option<LocalChatLog>> { self.get_by_seq(seq).await }
+    async fn get_by_conversation_and_seq(&self, conversation_id: &str, seq: i64) -> Result<Option<LocalChatLog>> { self.get_by_conversation_and_seq(conversation_id, seq).await }
+    async fn get_by_client_msg_ids(&self, client_msg_ids: &[String]) -> Result<Vec<LocalChatLog>> { self.get_by_client_msg_ids(client_msg_ids).await }
+    async fn mark_as_read_by_seqs(&self, conversation_id: &str, seqs: &[i64], user_id: &str) -> Result<()> { self.mark_as_read_by_seqs(conversation_id, seqs, user_id).await }
+    async fn delete_by_conversation(&self, conversation_id: &str) -> Result<()> { self.delete_by_conversation(conversation_id).await }
+    async fn delete_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> { self.delete_by_seqs(conversation_id, seqs).await }
+    async fn search_by_content(&self, conversation_id: &str, keyword: &str) -> Result<Vec<LocalChatLog>> { self.search_by_content(conversation_id, keyword).await }
+    async fn update_status(&self, client_msg_id: &str, status: i32) -> Result<()> { self.update_status(client_msg_id, status).await }
+    async fn update_to_sent(&self, client_msg_id: &str, server_msg_id: &str, seq: i64, send_time: i64) -> Result<()> { self.update_to_sent(client_msg_id, server_msg_id, seq, send_time).await }
+    async fn get_seqs_in_range(&self, conversation_id: &str, min_seq: i64, max_seq: i64) -> Result<Vec<i64>> { self.get_seqs_in_range(conversation_id, min_seq, max_seq).await }
+    async fn get_by_seq_range(&self, conversation_id: &str, start_seq: i64, end_seq: i64, count: i64) -> Result<Vec<LocalChatLog>> { self.get_by_seq_range(conversation_id, start_seq, end_seq, count).await }
+}
+

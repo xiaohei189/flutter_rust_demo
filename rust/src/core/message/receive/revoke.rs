@@ -3,8 +3,8 @@
 use super::handler::MessageHandler;
 use crate::domain::constant::types::notification_type::REVOKE;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::conversation::ConversationEvent;
+use crate::event::types::SdkEvent;
+use crate::listener::conversation::ConversationEvent;
 use crate::protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
@@ -542,3 +542,4 @@ mod tests {
         assert_eq!(quote.content_type, REVOKE_CT, "quote message should also be revoked");
     }
 }
+

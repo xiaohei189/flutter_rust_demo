@@ -4,9 +4,9 @@ use super::MessageService;
 use super::req::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
 use crate::domain::constant::types::session_type;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::types::SdkEvent;
+use crate::event::types::SdkEvent;
 use crate::infra::database::models::LocalConversation;
-use crate::domain::listener::conversation::ConversationEvent;
+use crate::listener::conversation::ConversationEvent;
 use tracing::{error, info, warn};
 
 impl MessageService {
@@ -187,3 +187,4 @@ impl MessageService {
         Ok(())
     }
 }
+

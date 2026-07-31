@@ -50,7 +50,7 @@ impl_adapter!(FriendAdapter, FriendEvent, super::friend::FriendListener,
 
 impl_adapter!(GroupAdapter, GroupEvent, super::group::GroupListener,
     on_group_info_changed(g: &crate::domain::model::group::GroupInfo) => GroupEvent::GroupInfoChanged(g.clone()),
-    on_group_read_receipt(r: &[crate::domain::event::types::GroupReadReceipt]) => GroupEvent::GroupReadReceipt(r.to_vec()),
+    on_group_read_receipt(r: &[crate::event::types::GroupReadReceipt]) => GroupEvent::GroupReadReceipt(r.to_vec()),
 );
 
 macro_rules! start_stream {
@@ -66,3 +66,4 @@ start_stream!(start_connection_stream, ConnectionEvent, ConnAdapter);
 start_stream!(start_conversation_stream, ConversationEvent, ConvAdapter);
 start_stream!(start_friend_stream, FriendEvent, FriendAdapter);
 start_stream!(start_group_stream, GroupEvent, GroupAdapter);
+

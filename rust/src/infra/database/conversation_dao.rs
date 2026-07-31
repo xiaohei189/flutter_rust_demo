@@ -609,3 +609,28 @@ mod tests {
         assert_eq!(saved3.unread_count, 1, "unread_count should NOT be overwritten");
     }
 }
+
+// ====================================================================
+// Repository trait 实现
+// ====================================================================
+
+use crate::domain::repository::conversation::ConversationRepository;
+
+#[async_trait::async_trait]
+impl ConversationRepository for ConversationDao {
+    async fn upsert(&self, conv: &LocalConversation) -> Result<()> { ConversationDao::upsert(self, conv).await }
+    async fn upsert_preserving_local_fields(&self, conv: &LocalConversation) -> Result<()> { self.upsert_preserving_local_fields(conv).await }
+    async fn get_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> { self.get_by_id(conversation_id).await }
+    async fn get_all(&self) -> Result<Vec<LocalConversation>> { self.get_all().await }
+    async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()> { self.update_unread_count(conversation_id, count).await }
+    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, unread_inc: i32) -> Result<()> { self.update_after_new_message(conversation_id, latest_msg, send_time, unread_inc).await }
+    async fn delete(&self, conversation_id: &str) -> Result<()> { self.delete(conversation_id).await }
+    async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> { self.batch_delete(conversation_ids).await }
+    async fn get_all_ids(&self) -> Result<Vec<String>> { self.get_all_ids().await }
+    async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { self.update_draft(conversation_id, draft_text, draft_time).await }
+    async fn reset_unread_count(&self, conversation_id: &str) -> Result<()> { self.reset_unread_count(conversation_id).await }
+    async fn toggle_pin(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { self.toggle_pin(conversation_id, is_pinned).await }
+    async fn get_total_unread_count(&self) -> Result<i32> { self.get_total_unread_count().await }
+    async fn get_total_count(&self) -> Result<i32> { self.get_total_count().await }
+}
+

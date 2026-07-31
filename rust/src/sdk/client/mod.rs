@@ -29,12 +29,11 @@ use crate::core::message::MessageSyncer;
 use crate::core::notification::handler::NotificationHandler;
 use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
-use crate::domain::event::EventBus;
-use crate::domain::listener::connection::ConnectionEvent;
-use crate::domain::listener::conversation::ConversationEvent;
-use crate::domain::listener::friend::FriendEvent;
-use crate::domain::listener::group::GroupEvent;
-use crate::infra::cache::memory::CacheManager;
+use crate::event::EventBus;
+use crate::listener::connection::ConnectionEvent;
+use crate::listener::conversation::ConversationEvent;
+use crate::listener::friend::FriendEvent;
+use crate::listener::group::GroupEvent;
 use crate::sdk::context::RuntimeContext;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -80,8 +79,7 @@ pub struct OpenIMClient {
     pub(crate) file_uploader: Arc<FileUploader>,
     pub(crate) message_service: Arc<MessageService>,
     pub(crate) event_bus: Arc<EventBus>,
-    pub(crate) cache: Arc<CacheManager>,
-    pub(crate) send_queue: Arc<MessageSendQueue>,
+        pub(crate) send_queue: Arc<MessageSendQueue>,
     // Pre-created event receivers (capture events from login time)
     pub(crate) conn_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>>>>,
     pub(crate) conv_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>>>>,
@@ -106,3 +104,6 @@ impl OpenIMClient {
         self.group_rx.lock().unwrap().take()
     }
 }
+
+
+

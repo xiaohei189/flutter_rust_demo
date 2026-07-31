@@ -374,7 +374,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_connection_stream_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_sink = <StreamSink<crate::domain::listener::connection::ConnectionEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::listener::connection::ConnectionEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -413,7 +413,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_sink = <StreamSink<crate::domain::listener::conversation::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::listener::conversation::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -687,7 +687,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_friend_stream_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_sink = <StreamSink<crate::domain::listener::friend::FriendEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::listener::friend::FriendEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -1939,7 +1939,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_group_stream_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_sink = <StreamSink<crate::domain::listener::group::GroupEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
+            let api_sink = <StreamSink<crate::listener::group::GroupEvent, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -2489,7 +2489,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
         move || {
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_config = <crate::domain::config::ClientConfig>::sse_decode(&mut deserializer);
+            let api_config = <crate::sdk::config::ClientConfig>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -5362,7 +5362,7 @@ impl SseDecode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpa
     }
 }
 
-impl SseDecode for StreamSink<crate::domain::listener::connection::ConnectionEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseDecode for StreamSink<crate::listener::connection::ConnectionEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
@@ -5370,7 +5370,7 @@ impl SseDecode for StreamSink<crate::domain::listener::connection::ConnectionEve
     }
 }
 
-impl SseDecode for StreamSink<crate::domain::listener::conversation::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseDecode for StreamSink<crate::listener::conversation::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
@@ -5378,7 +5378,7 @@ impl SseDecode for StreamSink<crate::domain::listener::conversation::Conversatio
     }
 }
 
-impl SseDecode for StreamSink<crate::domain::listener::friend::FriendEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseDecode for StreamSink<crate::listener::friend::FriendEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
@@ -5386,7 +5386,7 @@ impl SseDecode for StreamSink<crate::domain::listener::friend::FriendEvent, flut
     }
 }
 
-impl SseDecode for StreamSink<crate::domain::listener::group::GroupEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseDecode for StreamSink<crate::listener::group::GroupEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <String>::sse_decode(deserializer);
@@ -5492,7 +5492,7 @@ impl SseDecode for crate::core::friend::manager::CheckFriendResult {
     }
 }
 
-impl SseDecode for crate::domain::config::ClientConfig {
+impl SseDecode for crate::sdk::config::ClientConfig {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_userId = <String>::sse_decode(deserializer);
@@ -5502,7 +5502,7 @@ impl SseDecode for crate::domain::config::ClientConfig {
         let mut var_apiBaseUrl = <String>::sse_decode(deserializer);
         let mut var_uploadUrl = <Option<String>>::sse_decode(deserializer);
         let mut var_dataDir = <String>::sse_decode(deserializer);
-        return crate::domain::config::ClientConfig {
+        return crate::sdk::config::ClientConfig {
             user_id: var_userId,
             token: var_token,
             platform_id: var_platformId,
@@ -5514,46 +5514,46 @@ impl SseDecode for crate::domain::config::ClientConfig {
     }
 }
 
-impl SseDecode for crate::domain::listener::connection::ConnectionEvent {
+impl SseDecode for crate::listener::connection::ConnectionEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut tag_ = <i32>::sse_decode(deserializer);
         match tag_ {
             0 => {
-                return crate::domain::listener::connection::ConnectionEvent::Connecting;
+                return crate::listener::connection::ConnectionEvent::Connecting;
             }
             1 => {
-                return crate::domain::listener::connection::ConnectionEvent::Connected;
+                return crate::listener::connection::ConnectionEvent::Connected;
             }
             2 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::connection::ConnectionEvent::Disconnected(var_field0);
+                return crate::listener::connection::ConnectionEvent::Disconnected(var_field0);
             }
             3 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::connection::ConnectionEvent::ConnectFailed(var_field0);
+                return crate::listener::connection::ConnectionEvent::ConnectFailed(var_field0);
             }
             4 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::connection::ConnectionEvent::KickedOffline(var_field0);
+                return crate::listener::connection::ConnectionEvent::KickedOffline(var_field0);
             }
             5 => {
-                return crate::domain::listener::connection::ConnectionEvent::TokenExpired;
+                return crate::listener::connection::ConnectionEvent::TokenExpired;
             }
             6 => {
                 let mut var_attempt = <u32>::sse_decode(deserializer);
                 let mut var_maxAttempts = <u32>::sse_decode(deserializer);
-                return crate::domain::listener::connection::ConnectionEvent::Reconnecting {
+                return crate::listener::connection::ConnectionEvent::Reconnecting {
                     attempt: var_attempt,
                     max_attempts: var_maxAttempts,
                 };
             }
             7 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::connection::ConnectionEvent::LoginSuccess(var_field0);
+                return crate::listener::connection::ConnectionEvent::LoginSuccess(var_field0);
             }
             8 => {
-                return crate::domain::listener::connection::ConnectionEvent::Logout;
+                return crate::listener::connection::ConnectionEvent::Logout;
             }
             _ => {
                 unimplemented!("");
@@ -5577,41 +5577,41 @@ impl SseDecode for crate::core::connection::manager::ConnectionState {
     }
 }
 
-impl SseDecode for crate::domain::listener::conversation::ConversationEvent {
+impl SseDecode for crate::listener::conversation::ConversationEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut tag_ = <i32>::sse_decode(deserializer);
         match tag_ {
             0 => {
                 let mut var_field0 = <Vec<crate::infra::database::models::LocalConversation>>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::Changed(var_field0);
+                return crate::listener::conversation::ConversationEvent::Changed(var_field0);
             }
             1 => {
                 let mut var_field0 = <Vec<String>>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::Deleted(var_field0);
+                return crate::listener::conversation::ConversationEvent::Deleted(var_field0);
             }
             2 => {
                 let mut var_field0 = <Vec<crate::infra::database::models::LocalConversation>>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::New(var_field0);
+                return crate::listener::conversation::ConversationEvent::New(var_field0);
             }
             3 => {
                 let mut var_field0 = <i64>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::TotalUnreadCountChanged(var_field0);
+                return crate::listener::conversation::ConversationEvent::TotalUnreadCountChanged(var_field0);
             }
             4 => {
-                return crate::domain::listener::conversation::ConversationEvent::SyncStarted;
+                return crate::listener::conversation::ConversationEvent::SyncStarted;
             }
             5 => {
-                return crate::domain::listener::conversation::ConversationEvent::SyncFinished;
+                return crate::listener::conversation::ConversationEvent::SyncFinished;
             }
             6 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::SyncFailed(var_field0);
+                return crate::listener::conversation::ConversationEvent::SyncFailed(var_field0);
             }
             7 => {
                 let mut var_progress = <i32>::sse_decode(deserializer);
                 let mut var_message = <String>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::SyncProgress {
+                return crate::listener::conversation::ConversationEvent::SyncProgress {
                     progress: var_progress,
                     message: var_message,
                 };
@@ -5620,7 +5620,7 @@ impl SseDecode for crate::domain::listener::conversation::ConversationEvent {
                 let mut var_conversationId = <String>::sse_decode(deserializer);
                 let mut var_userId = <String>::sse_decode(deserializer);
                 let mut var_platformIds = <Vec<i32>>::sse_decode(deserializer);
-                return crate::domain::listener::conversation::ConversationEvent::UserInputStatusChanged {
+                return crate::listener::conversation::ConversationEvent::UserInputStatusChanged {
                     conversation_id: var_conversationId,
                     user_id: var_userId,
                     platform_ids: var_platformIds,
@@ -5715,42 +5715,42 @@ impl SseDecode for crate::sdk::client::FriendApplyInfo {
     }
 }
 
-impl SseDecode for crate::domain::listener::friend::FriendEvent {
+impl SseDecode for crate::listener::friend::FriendEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut tag_ = <i32>::sse_decode(deserializer);
         match tag_ {
             0 => {
                 let mut var_field0 = <Vec<crate::domain::model::friend::FriendInfo>>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::Added(var_field0);
+                return crate::listener::friend::FriendEvent::Added(var_field0);
             }
             1 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::Deleted(var_field0);
+                return crate::listener::friend::FriendEvent::Deleted(var_field0);
             }
             2 => {
                 let mut var_field0 = <Vec<crate::domain::model::friend::FriendInfo>>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::InfoChanged(var_field0);
+                return crate::listener::friend::FriendEvent::InfoChanged(var_field0);
             }
             3 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::BlackAdded(var_field0);
+                return crate::listener::friend::FriendEvent::BlackAdded(var_field0);
             }
             4 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::BlackDeleted(var_field0);
+                return crate::listener::friend::FriendEvent::BlackDeleted(var_field0);
             }
             5 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::ApplicationAdded(var_field0);
+                return crate::listener::friend::FriendEvent::ApplicationAdded(var_field0);
             }
             6 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::ApplicationAccepted(var_field0);
+                return crate::listener::friend::FriendEvent::ApplicationAccepted(var_field0);
             }
             7 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::friend::FriendEvent::ApplicationRejected(var_field0);
+                return crate::listener::friend::FriendEvent::ApplicationRejected(var_field0);
             }
             _ => {
                 unimplemented!("");
@@ -5829,34 +5829,34 @@ impl SseDecode for crate::sdk::client::GroupApplyInfo {
     }
 }
 
-impl SseDecode for crate::domain::listener::group::GroupEvent {
+impl SseDecode for crate::listener::group::GroupEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut tag_ = <i32>::sse_decode(deserializer);
         match tag_ {
             0 => {
                 let mut var_field0 = <crate::domain::model::group::GroupInfo>::sse_decode(deserializer);
-                return crate::domain::listener::group::GroupEvent::JoinedGroupAdded(var_field0);
+                return crate::listener::group::GroupEvent::JoinedGroupAdded(var_field0);
             }
             1 => {
                 let mut var_field0 = <crate::domain::model::group::GroupInfo>::sse_decode(deserializer);
-                return crate::domain::listener::group::GroupEvent::JoinedGroupDeleted(var_field0);
+                return crate::listener::group::GroupEvent::JoinedGroupDeleted(var_field0);
             }
             2 => {
                 let mut var_field0 = <crate::domain::model::group::GroupInfo>::sse_decode(deserializer);
-                return crate::domain::listener::group::GroupEvent::GroupInfoChanged(var_field0);
+                return crate::listener::group::GroupEvent::GroupInfoChanged(var_field0);
             }
             3 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::group::GroupEvent::MemberAdded(var_field0);
+                return crate::listener::group::GroupEvent::MemberAdded(var_field0);
             }
             4 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::domain::listener::group::GroupEvent::MemberDeleted(var_field0);
+                return crate::listener::group::GroupEvent::MemberDeleted(var_field0);
             }
             5 => {
-                let mut var_field0 = <Vec<crate::domain::event::types::GroupReadReceipt>>::sse_decode(deserializer);
-                return crate::domain::listener::group::GroupEvent::GroupReadReceipt(var_field0);
+                let mut var_field0 = <Vec<crate::event::types::GroupReadReceipt>>::sse_decode(deserializer);
+                return crate::listener::group::GroupEvent::GroupReadReceipt(var_field0);
             }
             _ => {
                 unimplemented!("");
@@ -5913,7 +5913,7 @@ impl SseDecode for crate::domain::model::group::GroupMember {
     }
 }
 
-impl SseDecode for crate::domain::event::types::GroupReadReceipt {
+impl SseDecode for crate::event::types::GroupReadReceipt {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_groupId = <String>::sse_decode(deserializer);
@@ -5922,7 +5922,7 @@ impl SseDecode for crate::domain::event::types::GroupReadReceipt {
         let mut var_hasReadCount = <i32>::sse_decode(deserializer);
         let mut var_groupMemberCount = <i32>::sse_decode(deserializer);
         let mut var_readTime = <i64>::sse_decode(deserializer);
-        return crate::domain::event::types::GroupReadReceipt {
+        return crate::event::types::GroupReadReceipt {
             group_id: var_groupId,
             msg_id: var_msgId,
             has_read_user_id_list: var_hasReadUserIdList,
@@ -6043,13 +6043,13 @@ impl SseDecode for Vec<crate::domain::model::group::GroupMember> {
     }
 }
 
-impl SseDecode for Vec<crate::domain::event::types::GroupReadReceipt> {
+impl SseDecode for Vec<crate::event::types::GroupReadReceipt> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<crate::domain::event::types::GroupReadReceipt>::sse_decode(deserializer));
+            ans_.push(<crate::event::types::GroupReadReceipt>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -7263,7 +7263,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::core::friend::manager::CheckFriend
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::config::ClientConfig {
+impl flutter_rust_bridge::IntoDart for crate::sdk::config::ClientConfig {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.user_id.into_into_dart().into_dart(),
@@ -7277,36 +7277,36 @@ impl flutter_rust_bridge::IntoDart for crate::domain::config::ClientConfig {
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::config::ClientConfig {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::config::ClientConfig> for crate::domain::config::ClientConfig {
-    fn into_into_dart(self) -> crate::domain::config::ClientConfig {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::config::ClientConfig {}
+impl flutter_rust_bridge::IntoIntoDart<crate::sdk::config::ClientConfig> for crate::sdk::config::ClientConfig {
+    fn into_into_dart(self) -> crate::sdk::config::ClientConfig {
         self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::listener::connection::ConnectionEvent {
+impl flutter_rust_bridge::IntoDart for crate::listener::connection::ConnectionEvent {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
-            crate::domain::listener::connection::ConnectionEvent::Connecting => [0.into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::Connected => [1.into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::Disconnected(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::ConnectFailed(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::KickedOffline(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::TokenExpired => [5.into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
+            crate::listener::connection::ConnectionEvent::Connecting => [0.into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::Connected => [1.into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::Disconnected(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::ConnectFailed(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::KickedOffline(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::TokenExpired => [5.into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
                 [6.into_dart(), attempt.into_into_dart().into_dart(), max_attempts.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::listener::connection::ConnectionEvent::LoginSuccess(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::connection::ConnectionEvent::Logout => [8.into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::LoginSuccess(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::connection::ConnectionEvent::Logout => [8.into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::listener::connection::ConnectionEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::listener::connection::ConnectionEvent> for crate::domain::listener::connection::ConnectionEvent {
-    fn into_into_dart(self) -> crate::domain::listener::connection::ConnectionEvent {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::listener::connection::ConnectionEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::listener::connection::ConnectionEvent> for crate::listener::connection::ConnectionEvent {
+    fn into_into_dart(self) -> crate::listener::connection::ConnectionEvent {
         self
     }
 }
@@ -7330,20 +7330,20 @@ impl flutter_rust_bridge::IntoIntoDart<crate::core::connection::manager::Connect
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::listener::conversation::ConversationEvent {
+impl flutter_rust_bridge::IntoDart for crate::listener::conversation::ConversationEvent {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
-            crate::domain::listener::conversation::ConversationEvent::Changed(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::New(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::TotalUnreadCountChanged(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::SyncStarted => [4.into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::SyncFinished => [5.into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::SyncFailed(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::conversation::ConversationEvent::SyncProgress { progress, message } => {
+            crate::listener::conversation::ConversationEvent::Changed(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::New(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::TotalUnreadCountChanged(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::SyncStarted => [4.into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::SyncFinished => [5.into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::SyncFailed(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::conversation::ConversationEvent::SyncProgress { progress, message } => {
                 [7.into_dart(), progress.into_into_dart().into_dart(), message.into_into_dart().into_dart()].into_dart()
             }
-            crate::domain::listener::conversation::ConversationEvent::UserInputStatusChanged {
+            crate::listener::conversation::ConversationEvent::UserInputStatusChanged {
                 conversation_id,
                 user_id,
                 platform_ids,
@@ -7360,9 +7360,9 @@ impl flutter_rust_bridge::IntoDart for crate::domain::listener::conversation::Co
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::listener::conversation::ConversationEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::listener::conversation::ConversationEvent> for crate::domain::listener::conversation::ConversationEvent {
-    fn into_into_dart(self) -> crate::domain::listener::conversation::ConversationEvent {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::listener::conversation::ConversationEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::listener::conversation::ConversationEvent> for crate::listener::conversation::ConversationEvent {
+    fn into_into_dart(self) -> crate::listener::conversation::ConversationEvent {
         self
     }
 }
@@ -7448,26 +7448,26 @@ impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::FriendApplyInfo> for 
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::listener::friend::FriendEvent {
+impl flutter_rust_bridge::IntoDart for crate::listener::friend::FriendEvent {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
-            crate::domain::listener::friend::FriendEvent::Added(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::InfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::BlackAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::BlackDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::ApplicationAdded(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::ApplicationAccepted(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::friend::FriendEvent::ApplicationRejected(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::Added(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::InfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::BlackAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::BlackDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::ApplicationAdded(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::ApplicationAccepted(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::friend::FriendEvent::ApplicationRejected(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::listener::friend::FriendEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::listener::friend::FriendEvent> for crate::domain::listener::friend::FriendEvent {
-    fn into_into_dart(self) -> crate::domain::listener::friend::FriendEvent {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::listener::friend::FriendEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::listener::friend::FriendEvent> for crate::listener::friend::FriendEvent {
+    fn into_into_dart(self) -> crate::listener::friend::FriendEvent {
         self
     }
 }
@@ -7543,24 +7543,24 @@ impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::GroupApplyInfo> for c
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::listener::group::GroupEvent {
+impl flutter_rust_bridge::IntoDart for crate::listener::group::GroupEvent {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
-            crate::domain::listener::group::GroupEvent::JoinedGroupAdded(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::group::GroupEvent::JoinedGroupDeleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::group::GroupEvent::GroupInfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::group::GroupEvent::MemberAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::group::GroupEvent::MemberDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::domain::listener::group::GroupEvent::GroupReadReceipt(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::group::GroupEvent::JoinedGroupAdded(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::group::GroupEvent::JoinedGroupDeleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::group::GroupEvent::GroupInfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::group::GroupEvent::MemberAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::group::GroupEvent::MemberDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::listener::group::GroupEvent::GroupReadReceipt(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::listener::group::GroupEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::listener::group::GroupEvent> for crate::domain::listener::group::GroupEvent {
-    fn into_into_dart(self) -> crate::domain::listener::group::GroupEvent {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::listener::group::GroupEvent {}
+impl flutter_rust_bridge::IntoIntoDart<crate::listener::group::GroupEvent> for crate::listener::group::GroupEvent {
+    fn into_into_dart(self) -> crate::listener::group::GroupEvent {
         self
     }
 }
@@ -7609,7 +7609,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::group::GroupMember>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::event::types::GroupReadReceipt {
+impl flutter_rust_bridge::IntoDart for crate::event::types::GroupReadReceipt {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.group_id.into_into_dart().into_dart(),
@@ -7622,9 +7622,9 @@ impl flutter_rust_bridge::IntoDart for crate::domain::event::types::GroupReadRec
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::event::types::GroupReadReceipt {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::event::types::GroupReadReceipt> for crate::domain::event::types::GroupReadReceipt {
-    fn into_into_dart(self) -> crate::domain::event::types::GroupReadReceipt {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::event::types::GroupReadReceipt {}
+impl flutter_rust_bridge::IntoIntoDart<crate::event::types::GroupReadReceipt> for crate::event::types::GroupReadReceipt {
+    fn into_into_dart(self) -> crate::event::types::GroupReadReceipt {
         self
     }
 }
@@ -8175,28 +8175,28 @@ impl SseEncode for RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpa
     }
 }
 
-impl SseEncode for StreamSink<crate::domain::listener::connection::ConnectionEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseEncode for StreamSink<crate::listener::connection::ConnectionEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         unimplemented!("")
     }
 }
 
-impl SseEncode for StreamSink<crate::domain::listener::conversation::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseEncode for StreamSink<crate::listener::conversation::ConversationEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         unimplemented!("")
     }
 }
 
-impl SseEncode for StreamSink<crate::domain::listener::friend::FriendEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseEncode for StreamSink<crate::listener::friend::FriendEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         unimplemented!("")
     }
 }
 
-impl SseEncode for StreamSink<crate::domain::listener::group::GroupEvent, flutter_rust_bridge::for_generated::SseCodec> {
+impl SseEncode for StreamSink<crate::listener::group::GroupEvent, flutter_rust_bridge::for_generated::SseCodec> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         unimplemented!("")
@@ -8275,7 +8275,7 @@ impl SseEncode for crate::core::friend::manager::CheckFriendResult {
     }
 }
 
-impl SseEncode for crate::domain::config::ClientConfig {
+impl SseEncode for crate::sdk::config::ClientConfig {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.user_id, serializer);
@@ -8288,41 +8288,41 @@ impl SseEncode for crate::domain::config::ClientConfig {
     }
 }
 
-impl SseEncode for crate::domain::listener::connection::ConnectionEvent {
+impl SseEncode for crate::listener::connection::ConnectionEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         match self {
-            crate::domain::listener::connection::ConnectionEvent::Connecting => {
+            crate::listener::connection::ConnectionEvent::Connecting => {
                 <i32>::sse_encode(0, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::Connected => {
+            crate::listener::connection::ConnectionEvent::Connected => {
                 <i32>::sse_encode(1, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::Disconnected(field0) => {
+            crate::listener::connection::ConnectionEvent::Disconnected(field0) => {
                 <i32>::sse_encode(2, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::ConnectFailed(field0) => {
+            crate::listener::connection::ConnectionEvent::ConnectFailed(field0) => {
                 <i32>::sse_encode(3, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::KickedOffline(field0) => {
+            crate::listener::connection::ConnectionEvent::KickedOffline(field0) => {
                 <i32>::sse_encode(4, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::TokenExpired => {
+            crate::listener::connection::ConnectionEvent::TokenExpired => {
                 <i32>::sse_encode(5, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
+            crate::listener::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
                 <i32>::sse_encode(6, serializer);
                 <u32>::sse_encode(attempt, serializer);
                 <u32>::sse_encode(max_attempts, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::LoginSuccess(field0) => {
+            crate::listener::connection::ConnectionEvent::LoginSuccess(field0) => {
                 <i32>::sse_encode(7, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::connection::ConnectionEvent::Logout => {
+            crate::listener::connection::ConnectionEvent::Logout => {
                 <i32>::sse_encode(8, serializer);
             }
             _ => {
@@ -8351,42 +8351,42 @@ impl SseEncode for crate::core::connection::manager::ConnectionState {
     }
 }
 
-impl SseEncode for crate::domain::listener::conversation::ConversationEvent {
+impl SseEncode for crate::listener::conversation::ConversationEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         match self {
-            crate::domain::listener::conversation::ConversationEvent::Changed(field0) => {
+            crate::listener::conversation::ConversationEvent::Changed(field0) => {
                 <i32>::sse_encode(0, serializer);
                 <Vec<crate::infra::database::models::LocalConversation>>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::Deleted(field0) => {
+            crate::listener::conversation::ConversationEvent::Deleted(field0) => {
                 <i32>::sse_encode(1, serializer);
                 <Vec<String>>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::New(field0) => {
+            crate::listener::conversation::ConversationEvent::New(field0) => {
                 <i32>::sse_encode(2, serializer);
                 <Vec<crate::infra::database::models::LocalConversation>>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::TotalUnreadCountChanged(field0) => {
+            crate::listener::conversation::ConversationEvent::TotalUnreadCountChanged(field0) => {
                 <i32>::sse_encode(3, serializer);
                 <i64>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::SyncStarted => {
+            crate::listener::conversation::ConversationEvent::SyncStarted => {
                 <i32>::sse_encode(4, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::SyncFinished => {
+            crate::listener::conversation::ConversationEvent::SyncFinished => {
                 <i32>::sse_encode(5, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::SyncFailed(field0) => {
+            crate::listener::conversation::ConversationEvent::SyncFailed(field0) => {
                 <i32>::sse_encode(6, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::SyncProgress { progress, message } => {
+            crate::listener::conversation::ConversationEvent::SyncProgress { progress, message } => {
                 <i32>::sse_encode(7, serializer);
                 <i32>::sse_encode(progress, serializer);
                 <String>::sse_encode(message, serializer);
             }
-            crate::domain::listener::conversation::ConversationEvent::UserInputStatusChanged {
+            crate::listener::conversation::ConversationEvent::UserInputStatusChanged {
                 conversation_id,
                 user_id,
                 platform_ids,
@@ -8459,39 +8459,39 @@ impl SseEncode for crate::sdk::client::FriendApplyInfo {
     }
 }
 
-impl SseEncode for crate::domain::listener::friend::FriendEvent {
+impl SseEncode for crate::listener::friend::FriendEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         match self {
-            crate::domain::listener::friend::FriendEvent::Added(field0) => {
+            crate::listener::friend::FriendEvent::Added(field0) => {
                 <i32>::sse_encode(0, serializer);
                 <Vec<crate::domain::model::friend::FriendInfo>>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::Deleted(field0) => {
+            crate::listener::friend::FriendEvent::Deleted(field0) => {
                 <i32>::sse_encode(1, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::InfoChanged(field0) => {
+            crate::listener::friend::FriendEvent::InfoChanged(field0) => {
                 <i32>::sse_encode(2, serializer);
                 <Vec<crate::domain::model::friend::FriendInfo>>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::BlackAdded(field0) => {
+            crate::listener::friend::FriendEvent::BlackAdded(field0) => {
                 <i32>::sse_encode(3, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::BlackDeleted(field0) => {
+            crate::listener::friend::FriendEvent::BlackDeleted(field0) => {
                 <i32>::sse_encode(4, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::ApplicationAdded(field0) => {
+            crate::listener::friend::FriendEvent::ApplicationAdded(field0) => {
                 <i32>::sse_encode(5, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::ApplicationAccepted(field0) => {
+            crate::listener::friend::FriendEvent::ApplicationAccepted(field0) => {
                 <i32>::sse_encode(6, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::friend::FriendEvent::ApplicationRejected(field0) => {
+            crate::listener::friend::FriendEvent::ApplicationRejected(field0) => {
                 <i32>::sse_encode(7, serializer);
                 <String>::sse_encode(field0, serializer);
             }
@@ -8545,33 +8545,33 @@ impl SseEncode for crate::sdk::client::GroupApplyInfo {
     }
 }
 
-impl SseEncode for crate::domain::listener::group::GroupEvent {
+impl SseEncode for crate::listener::group::GroupEvent {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         match self {
-            crate::domain::listener::group::GroupEvent::JoinedGroupAdded(field0) => {
+            crate::listener::group::GroupEvent::JoinedGroupAdded(field0) => {
                 <i32>::sse_encode(0, serializer);
                 <crate::domain::model::group::GroupInfo>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::group::GroupEvent::JoinedGroupDeleted(field0) => {
+            crate::listener::group::GroupEvent::JoinedGroupDeleted(field0) => {
                 <i32>::sse_encode(1, serializer);
                 <crate::domain::model::group::GroupInfo>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::group::GroupEvent::GroupInfoChanged(field0) => {
+            crate::listener::group::GroupEvent::GroupInfoChanged(field0) => {
                 <i32>::sse_encode(2, serializer);
                 <crate::domain::model::group::GroupInfo>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::group::GroupEvent::MemberAdded(field0) => {
+            crate::listener::group::GroupEvent::MemberAdded(field0) => {
                 <i32>::sse_encode(3, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::group::GroupEvent::MemberDeleted(field0) => {
+            crate::listener::group::GroupEvent::MemberDeleted(field0) => {
                 <i32>::sse_encode(4, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::domain::listener::group::GroupEvent::GroupReadReceipt(field0) => {
+            crate::listener::group::GroupEvent::GroupReadReceipt(field0) => {
                 <i32>::sse_encode(5, serializer);
-                <Vec<crate::domain::event::types::GroupReadReceipt>>::sse_encode(field0, serializer);
+                <Vec<crate::event::types::GroupReadReceipt>>::sse_encode(field0, serializer);
             }
             _ => {
                 unimplemented!("");
@@ -8608,7 +8608,7 @@ impl SseEncode for crate::domain::model::group::GroupMember {
     }
 }
 
-impl SseEncode for crate::domain::event::types::GroupReadReceipt {
+impl SseEncode for crate::event::types::GroupReadReceipt {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.group_id, serializer);
@@ -8714,12 +8714,12 @@ impl SseEncode for Vec<crate::domain::model::group::GroupMember> {
     }
 }
 
-impl SseEncode for Vec<crate::domain::event::types::GroupReadReceipt> {
+impl SseEncode for Vec<crate::event::types::GroupReadReceipt> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::domain::event::types::GroupReadReceipt>::sse_encode(item, serializer);
+            <crate::event::types::GroupReadReceipt>::sse_encode(item, serializer);
         }
     }
 }
@@ -9468,3 +9468,4 @@ mod web {
 }
 #[cfg(target_family = "wasm")]
 pub use web::*;
+

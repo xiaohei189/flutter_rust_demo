@@ -1,9 +1,9 @@
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::bus::EventBus;
-use crate::domain::event::publisher::EventPublisher;
-use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::group::{GroupListener, GroupEvent};
-use crate::domain::event::types::GroupReadReceipt;
+use crate::event::bus::EventBus;
+use crate::event::publisher::EventPublisher;
+use crate::event::types::SdkEvent;
+use crate::listener::group::{GroupListener, GroupEvent};
+use crate::event::types::GroupReadReceipt;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::UserId;
 use crate::infra::database::models::LocalGroup;
@@ -393,7 +393,7 @@ impl GroupManager {
     /// 从本地数据库加载群组列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据
     pub async fn load_groups_from_db(&self) {
-        match self.stores.group_dao.get_all_groups().await {
+        match self.stores.group_repo.get_all_groups().await {
             Ok(local_groups) => {
                 let groups: Vec<GroupInfo> = local_groups.iter().map(local_to_group_info).collect();
                 let count = groups.len();
@@ -433,7 +433,7 @@ impl GroupManager {
         // 持久化到数据库
         for group in &groups {
             let local = group_info_to_local(group);
-            if let Err(e) = self.stores.group_dao.upsert_group(&local).await {
+            if let Err(e) = self.stores.group_repo.upsert_group(&local).await {
                 warn!("全量同步群组到数据库失败: {}", e);
             }
         }
@@ -457,7 +457,7 @@ impl GroupManager {
         let table_name = "local_groups";
 
         // 1. 获取本地版本
-        let (version_id, version) = match self.stores.sync_version_dao.get_version_sync(table_name, &user_id).await? {
+        let (version_id, version) = match self.stores.sync_version_repo.get_version_sync(table_name, &user_id).await? {
             Some((vid, v)) => (vid, v),
             None => (String::new(), 0),
         };
@@ -491,7 +491,7 @@ impl GroupManager {
         if !resp.delete.is_empty() {
             info!("增量同步: 删除 {} 个群组", resp.delete.len());
             for group_id in &resp.delete {
-                if let Err(e) = self.stores.group_dao.delete_group(group_id).await {
+                if let Err(e) = self.stores.group_repo.delete_group(group_id).await {
                     warn!("增量删除群组数据库操作失败: {}", e);
                 }
             }
@@ -502,7 +502,7 @@ impl GroupManager {
         for s in &resp.insert {
             let group_info = server_to_group_info(s.clone());
             let local = group_info_to_local(&group_info);
-            if let Err(e) = self.stores.group_dao.upsert_group(&local).await {
+            if let Err(e) = self.stores.group_repo.upsert_group(&local).await {
                 warn!("增量插入群组数据库操作失败: {}", e);
             }
             self.groups.write().await.push(group_info);
@@ -512,7 +512,7 @@ impl GroupManager {
         for s in &resp.update {
             let group_info = server_to_group_info(s.clone());
             let local = group_info_to_local(&group_info);
-            if let Err(e) = self.stores.group_dao.upsert_group(&local).await {
+            if let Err(e) = self.stores.group_repo.upsert_group(&local).await {
                 warn!("增量更新群组数据库操作失败: {}", e);
             }
             let mut groups = self.groups.write().await;
@@ -526,14 +526,14 @@ impl GroupManager {
         // 4d. 排序版本变化时刷新内存列表
         if resp.sort_version > 0 {
             info!("群组排序版本变化 (sortVersion={}), 刷新内存列表", resp.sort_version);
-            if let Ok(local_groups) = self.stores.group_dao.get_all_groups().await {
+            if let Ok(local_groups) = self.stores.group_repo.get_all_groups().await {
                 let groups: Vec<GroupInfo> = local_groups.iter().map(local_to_group_info).collect();
                 *self.groups.write().await = groups;
             }
         }
 
         // 5. 更新版本号
-        if let Err(e) = self.stores.sync_version_dao.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
+        if let Err(e) = self.stores.sync_version_repo.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
             warn!("更新群组同步版本失败: {}", e);
         }
 
@@ -1252,3 +1252,5 @@ mod tests {
         assert!(json.contains("violation"));
     }
 }
+
+

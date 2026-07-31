@@ -2,10 +2,10 @@
 //!
 //! 基于新 SDK 架构的统一桥接客户端，所有操作委托给 OpenIMClient。
 
-use crate::domain::config::ClientConfig;
+use crate::sdk::config::ClientConfig;
 use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::constant::enums::{ContentType, SessionType};
-use crate::domain::event::types::SdkEvent;
+use crate::event::types::SdkEvent;
 use crate::sdk::client::types::{
     DeleteMessagesReq, GetHistoryMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
     SearchMessagesReq,
@@ -85,7 +85,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn connection_stream(&self, sink: StreamSink<crate::domain::listener::connection::ConnectionEvent>) -> Result<()> {
+    pub async fn connection_stream(&self, sink: StreamSink<crate::listener::connection::ConnectionEvent>) -> Result<()> {
         let mut rx = self.inner.take_conn_rx().ok_or_else(|| anyhow::anyhow!("connection stream already taken"))?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -97,7 +97,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn conversation_stream(&self, sink: StreamSink<crate::domain::listener::conversation::ConversationEvent>) -> Result<()> {
+    pub async fn conversation_stream(&self, sink: StreamSink<crate::listener::conversation::ConversationEvent>) -> Result<()> {
         let mut rx = self.inner.take_conv_rx().ok_or_else(|| anyhow::anyhow!("conversation stream already taken"))?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -108,14 +108,14 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn friend_stream(&self, sink: StreamSink<crate::domain::listener::friend::FriendEvent>) -> Result<()> {
+    pub async fn friend_stream(&self, sink: StreamSink<crate::listener::friend::FriendEvent>) -> Result<()> {
         let mut rx = self.inner.take_friend_rx().ok_or_else(|| anyhow::anyhow!("friend stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn group_stream(&self, sink: StreamSink<crate::domain::listener::group::GroupEvent>) -> Result<()> {
+    pub async fn group_stream(&self, sink: StreamSink<crate::listener::group::GroupEvent>) -> Result<()> {
         let mut rx = self.inner.take_group_rx().ok_or_else(|| anyhow::anyhow!("group stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
@@ -1334,7 +1334,7 @@ pub async fn delete_message_from_local_storage(
     let client = client_holder()?;
     client.context.stores.message_dao.mark_as_deleted(&conversation_id, &client_msg_id).await?;
 
-    client.event_bus().publish(crate::domain::event::types::SdkEvent::MessagesDeleted {
+    client.event_bus().publish(crate::event::types::SdkEvent::MessagesDeleted {
         conversation_id,
         client_msg_ids: vec![client_msg_id],
     });
@@ -1355,7 +1355,7 @@ pub async fn delete_all_msg_from_local_and_svr() -> Result<()> {
                 .update_unread_count(&conv.conversation_id, 0).await;
         }
     }
-    client.event_bus().publish(crate::domain::event::types::SdkEvent::TotalUnreadCountChanged { count: 0 });
+    client.event_bus().publish(crate::event::types::SdkEvent::TotalUnreadCountChanged { count: 0 });
     Ok(())
 }
 
@@ -1376,7 +1376,7 @@ pub async fn clear_conversation_and_delete_all_msg(conversation_id: String) -> R
     // 重置会话（清空最新消息、未读数等）
     client.context.stores.conversation_dao.update_unread_count(&conversation_id, 0).await?;
     // 发布事件
-    client.event_bus().publish(crate::domain::event::types::SdkEvent::ConversationChanged {
+    client.event_bus().publish(crate::event::types::SdkEvent::ConversationChanged {
         conversations: vec![],
     });
     Ok(())
@@ -1400,7 +1400,7 @@ pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> 
     // 删除会话记录
     client.context.stores.conversation_dao.delete(&conversation_id).await?;
     // 发布事件
-    client.event_bus().publish(crate::domain::event::types::SdkEvent::ConversationDeleted {
+    client.event_bus().publish(crate::event::types::SdkEvent::ConversationDeleted {
         conversation_ids: vec![conversation_id],
     });
     Ok(())
@@ -1524,3 +1524,4 @@ pub async fn un_init_sdk() -> Result<()> {
         .map_err(|e| anyhow::anyhow!("{}", e))?;
     Ok(())
 }
+

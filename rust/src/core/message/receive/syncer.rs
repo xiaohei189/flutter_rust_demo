@@ -7,8 +7,8 @@ use super::handler::MessageHandler;
 use crate::core::message::ports::SyncerRemoteApi;
 use crate::domain::constant::types::ws_req_identifier;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::publisher::EventPublisher;
-use crate::domain::listener::conversation::{ConversationListener, ConversationEvent};
+use crate::event::publisher::EventPublisher;
+use crate::listener::conversation::{ConversationListener, ConversationEvent};
 use crate::domain::model::UserId;
 use crate::infra::database::models::LocalNotificationSeq;
 use crate::sdk::context::Stores;
@@ -809,3 +809,4 @@ mod tests {
         assert!(syncer2.is_connection_kicked().await);
     }
 }
+

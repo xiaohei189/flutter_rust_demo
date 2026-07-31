@@ -1,6 +1,6 @@
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::bus::EventBus;
-use crate::domain::event::types::SdkEvent;
+use crate::event::bus::EventBus;
+use crate::event::types::SdkEvent;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS, GET_SUBSCRIBE_USERS_STATUS};
 use serde::{Deserialize, Serialize};
@@ -272,3 +272,4 @@ mod tests {
         assert_eq!(status::ONLINE, 1);
     }
 }
+

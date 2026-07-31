@@ -1,6 +1,6 @@
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::bus::EventBus;
-use crate::domain::event::types::SdkEvent;
+use crate::event::bus::EventBus;
+use crate::event::types::SdkEvent;
 use crate::domain::model::user::UserInfo;
  use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};
@@ -262,3 +262,4 @@ mod tests {
         assert!(json.contains("New Name"));
     }
 }
+

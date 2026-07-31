@@ -128,3 +128,20 @@ mod tests {
         assert!(!dao.is_reinstalled().await.unwrap());
     }
 }
+
+// ====================================================================
+// Repository trait 实现
+// ====================================================================
+
+use crate::domain::repository::sync_version::SyncVersionRepository;
+
+#[async_trait::async_trait]
+impl SyncVersionRepository for SyncVersionDao {
+    async fn is_conversation_id_list_empty(&self) -> Result<bool> { SyncVersionDao::is_conversation_id_list_empty(self).await }
+    async fn get_sdk_version(&self) -> Result<Option<(String, bool)>> { self.get_sdk_version().await }
+    async fn is_reinstalled(&self) -> Result<bool> { self.is_reinstalled().await }
+    async fn get_version_sync(&self, table_name: &str, entity_id: &str) -> Result<Option<(String, u64)>> { self.get_version_sync(table_name, entity_id).await }
+    async fn set_version_sync(&self, table_name: &str, entity_id: &str, version_id: &str, version: u64) -> Result<()> { self.set_version_sync(table_name, entity_id, version_id, version).await }
+    async fn delete_version_sync(&self, table_name: &str, entity_id: &str) -> Result<()> { self.delete_version_sync(table_name, entity_id).await }
+    async fn mark_reinstall_complete(&self, version: &str) -> Result<()> { self.mark_reinstall_complete(version).await }
+}

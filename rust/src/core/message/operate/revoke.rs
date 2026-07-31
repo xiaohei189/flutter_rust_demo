@@ -4,7 +4,7 @@ use super::MessageService;
 use super::req::RevokeMessageReq;
 use crate::domain::constant::types::notification_type;
 use crate::domain::error::types::{Result, SdkError};
-use crate::domain::event::types::SdkEvent;
+use crate::event::types::SdkEvent;
 use tracing::{info, warn};
 
 impl MessageService {
@@ -118,3 +118,4 @@ impl MessageService {
         )))
     }
 }
+

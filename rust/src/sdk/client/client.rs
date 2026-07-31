@@ -11,15 +11,14 @@ use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
 use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
-use crate::domain::config::ClientConfig;
+use crate::sdk::config::ClientConfig;
 use crate::domain::error::types::Result;
-use crate::domain::event::EventBus;
-use crate::domain::event::types::SdkEvent;
-use crate::domain::listener::connection::ConnectionEvent;
-use crate::domain::listener::conversation::ConversationEvent;
-use crate::domain::listener::friend::FriendEvent;
-use crate::domain::listener::group::GroupEvent;
-use crate::infra::cache::memory::CacheManager;
+use crate::event::EventBus;
+use crate::event::types::SdkEvent;
+use crate::listener::connection::ConnectionEvent;
+use crate::listener::conversation::ConversationEvent;
+use crate::listener::friend::FriendEvent;
+use crate::listener::group::GroupEvent;
 use crate::protocol::sdkws::PushMessages;
 use crate::sdk::client::OpenIMClient;
 use crate::sdk::context::RuntimeContext;
@@ -33,8 +32,7 @@ impl OpenIMClient {
     /// 创建新的 SDK 实例
     pub async fn new(config: ClientConfig) -> Result<Self> {
         let event_bus = Arc::new(EventBus::new());
-        let cache = Arc::new(CacheManager::new());
-        let cancel_token = CancellationToken::new();
+                let cancel_token = CancellationToken::new();
 
         let context = Arc::new(
             RuntimeContext::new(
@@ -142,8 +140,7 @@ impl OpenIMClient {
             file_uploader,
             message_service,
             event_bus,
-            cache,
-            send_queue,
+                        send_queue,
             conn_rx: Arc::new(std::sync::Mutex::new(Some(conn_rx))),
             conv_rx: Arc::new(std::sync::Mutex::new(Some(conv_rx))),
             friend_rx: Arc::new(std::sync::Mutex::new(Some(friend_rx))),
@@ -423,3 +420,5 @@ impl OpenIMClient {
         self.connection.is_connected().await
     }
 }
+
+
