@@ -195,7 +195,7 @@ impl MessageSyncer {
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            let _ = self.stores.conversation_dao.update_max_seq(conv_id, *max_seq).await;
+            let _ = self.stores.conversation_repo.update_max_seq(conv_id, *max_seq).await;
         }
 
         match self.sync_incremental_messages(&server_max_seqs).await {
@@ -222,7 +222,7 @@ impl MessageSyncer {
             return Ok(());
         }
 
-        let reinstalled = self.stores.sync_version_dao.is_reinstalled().await?;
+        let reinstalled = self.stores.sync_version_repo.is_reinstalled().await?;
         info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
 
         self.send(ConversationEvent::SyncStarted);
@@ -294,10 +294,10 @@ impl MessageSyncer {
 
     /// 从本地 DB 加载已同步的 max_seq 到内存
     pub async fn load_synced_max_seqs(&self) -> Result<()> {
-        let conv_seqs = self.stores.conversation_dao.get_all_seq_pairs().await?;
+        let conv_seqs = self.stores.conversation_repo.get_all_seq_pairs().await?;
         let mut map = self.synced_max_seqs.write().await;
         for (conv_id, seq) in conv_seqs {
-            let local_max = self.stores.message_dao.get_max_seq(&conv_id).await.unwrap_or(0);
+            let local_max = self.stores.message_repo.get_max_seq(&conv_id).await.unwrap_or(0);
             map.insert(conv_id, local_max);
         }
 
@@ -340,14 +340,14 @@ impl MessageSyncer {
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            let _ = self.stores.conversation_dao.update_max_seq(conv_id, *max_seq).await;
+            let _ = self.stores.conversation_repo.update_max_seq(conv_id, *max_seq).await;
         }
 
         self.load_synced_max_seqs().await?;
 
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs).await?;
-            self.stores.sync_version_dao.mark_reinstall_complete("1.0.0").await?;
+            self.stores.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
         } else {
             self.sync_incremental_messages(&server_max_seqs).await?;
         }
@@ -360,7 +360,7 @@ impl MessageSyncer {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
         for (conversation_id, server_max_seq) in max_seq_to_sync {
-            let local_max_seq = self.stores.message_dao.get_max_seq(conversation_id).await.unwrap_or(0);
+            let local_max_seq = self.stores.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -397,7 +397,7 @@ impl MessageSyncer {
                 continue;
             }
 
-            let local_max_seq = self.stores.message_dao.get_max_seq(conversation_id).await.unwrap_or(0);
+            let local_max_seq = self.stores.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -667,7 +667,7 @@ mod tests {
             friend_dao: Arc::new(FriendDao::new(pool.clone())),
             user_dao: Arc::new(UserDao::new(pool.clone())),
             group_dao: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         });
@@ -721,7 +721,7 @@ mod tests {
     #[tokio::test]
     async fn test_handle_pulled_messages_stores_and_updates_seq() {
         let (stores, handler) = setup_db().await;
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let remote = Arc::new(MockSyncerApi::new());
         let syncer = make_syncer(remote, stores, handler);
         let mut msgs_map = HashMap::new();
@@ -736,7 +736,7 @@ mod tests {
     #[tokio::test]
     async fn test_sync_incremental_only_pulls_gap() {
         let (stores, handler) = setup_db().await;
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         message_dao.batch_insert(&[make_local_msg("conv_a", "a1", 1), make_local_msg("conv_a", "a2", 2), make_local_msg("conv_a", "a3", 3)]).await.unwrap();
         let mut pull_msgs = HashMap::new();
         pull_msgs.insert("conv_a".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_a", 4, "msg4"), make_msg_data("conv_a", 5, "msg5")], ..Default::default() });
@@ -780,7 +780,7 @@ mod tests {
     #[tokio::test]
     async fn test_sync_on_login_full_flow() {
         let (stores, handler) = setup_db().await;
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_login".to_string(), 2i64);
         let mut pull_msgs = HashMap::new();

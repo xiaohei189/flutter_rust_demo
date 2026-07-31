@@ -623,14 +623,34 @@ impl ConversationRepository for ConversationDao {
     async fn get_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> { self.get_by_id(conversation_id).await }
     async fn get_all(&self) -> Result<Vec<LocalConversation>> { self.get_all().await }
     async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()> { self.update_unread_count(conversation_id, count).await }
-    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, unread_inc: i32) -> Result<()> { self.update_after_new_message(conversation_id, latest_msg, send_time, unread_inc).await }
+    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()> { self.update_after_new_message(conversation_id, latest_msg, send_time, seq).await }
     async fn delete(&self, conversation_id: &str) -> Result<()> { self.delete(conversation_id).await }
     async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> { self.batch_delete(conversation_ids).await }
     async fn get_all_ids(&self) -> Result<Vec<String>> { self.get_all_ids().await }
     async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { self.update_draft(conversation_id, draft_text, draft_time).await }
     async fn reset_unread_count(&self, conversation_id: &str) -> Result<()> { self.reset_unread_count(conversation_id).await }
     async fn toggle_pin(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { self.toggle_pin(conversation_id, is_pinned).await }
-    async fn get_total_unread_count(&self) -> Result<i32> { self.get_total_unread_count().await }
+    async fn get_total_unread_count(&self) -> Result<i32> { self.get_total_unread_count().await.map(|v| v as i32) }
     async fn get_total_count(&self) -> Result<i32> { self.get_total_count().await }
+    async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { self.set_pinned(conversation_id, is_pinned).await }
+    async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> { self.set_private_chat(conversation_id, is_private).await }
+    async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { self.set_draft(conversation_id, draft_text, draft_time).await }
+    async fn get_pinned(&self) -> Result<Vec<LocalConversation>> { self.get_pinned().await }
+    async fn count(&self) -> Result<i32> { self.count().await.map(|v| v as i32) }
+    async fn clear_all(&self) -> Result<()> { self.clear_all().await }
+    async fn update_latest_msg(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()> { self.update_latest_msg(conversation_id, latest_msg, send_time).await }
+    async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> { self.get_max_seq(conversation_id).await }
+    async fn update_after_sent_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()> { self.update_after_sent_message(conversation_id, latest_msg, send_time).await }
+    async fn get_all_seq_pairs(&self) -> Result<Vec<(String, i64)>> { self.get_all_seq_pairs().await }
+    async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> { self.get_min_seq(conversation_id).await }
+    async fn update_min_seq(&self, conversation_id: &str, seq: i64) -> Result<()> { self.update_min_seq(conversation_id, seq).await }
+    async fn update_max_seq(&self, conversation_id: &str, seq: i64) -> Result<()> { self.update_max_seq(conversation_id, seq).await }
+    async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> { self.get_split(offset, count).await }
+    async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> { self.get_multiple(conversation_ids).await }
+    async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>> { self.search(keyword).await }
+    async fn reset(&self, conversation_id: &str) -> Result<()> { self.reset(conversation_id).await }
+    async fn increase_unread_count(&self, conversation_id: &str, seq: i64) -> Result<()> { self.increase_unread_count(conversation_id, seq).await }
+    async fn get_unread_count(&self, conversation_id: &str) -> Result<i32> { self.get_unread_count(conversation_id).await }
+    async fn get_by_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> { self.get_multiple(conversation_ids).await }
 }
 

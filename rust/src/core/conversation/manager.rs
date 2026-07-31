@@ -33,6 +33,10 @@ impl ConversationManager {
         self.events.publish(e);
     }
 
+    pub fn dao(&self) -> Arc<dyn crate::domain::repository::conversation::ConversationRepository> {
+        self.stores.conversation_repo.clone()
+}
+
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
         let mut local_convs = self.stores.conversation_repo.get_all().await?;
 
@@ -112,7 +116,7 @@ impl ConversationManager {
         self.stores.conversation_repo.get_pinned().await
     }
 
-    pub async fn count(&self) -> Result<usize> {
+    pub async fn count(&self) -> Result<i32> {
         self.stores.conversation_repo.count().await
     }
 
@@ -131,12 +135,12 @@ mod tests {
 
     fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
         Arc::new(Stores {
-            message_dao: Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
-            user_dao: Arc::new(UserDao::new(pool.clone())),
-            group_dao: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         })
@@ -241,6 +245,3 @@ mod tests {
         assert_eq!(conv.draft_text, "");
     }
 }
-
-
-

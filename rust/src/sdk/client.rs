@@ -1,3 +1,19 @@
+mod message;
+mod conversation;
+mod friend;
+mod group;
+
+mod online_status;
+pub mod types;
+mod user;
+
+pub use self::message::*;
+pub use self::conversation::*;
+pub use self::friend::*;
+pub use self::group::*;
+pub use self::online_status::*;
+pub use self::user::*;
+
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::conversation::manager::ConversationManager;
 use crate::core::conversation::syncer::ConversationSyncer;
@@ -6,28 +22,99 @@ use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::message::MessageHandler;
 use crate::core::message::MessageSendQueue;
-use crate::core::notification::handler::NotificationHandler;
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
+use crate::core::notification::handler::NotificationHandler;
 use crate::core::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
-use crate::sdk::config::ClientConfig;
-use crate::domain::error::types::Result;
 use crate::event::EventBus;
-use crate::event::types::SdkEvent;
 use crate::listener::connection::ConnectionEvent;
 use crate::listener::conversation::ConversationEvent;
 use crate::listener::friend::FriendEvent;
 use crate::listener::group::GroupEvent;
-use crate::protocol::sdkws::PushMessages;
-use crate::sdk::client::OpenIMClient;
 use crate::sdk::context::RuntimeContext;
-use prost::Message as ProstMessage;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
+// ============================================================================
+// SDK API 类型定义
+// ============================================================================
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FriendApplyInfo {
+    pub user_id: String,
+    pub nickname: String,
+    pub face_url: String,
+    pub create_time: i64,
+    pub req_msg: Option<String>,
+    pub handle_result: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupApplyInfo {
+    pub group_id: String,
+    pub user_id: String,
+    pub nickname: String,
+    pub face_url: String,
+    pub reason: String,
+    pub handle_result: i32,
+}
+
+pub struct OpenIMClient {
+    pub(crate) context: Arc<RuntimeContext>,
+    pub(crate) connection: Arc<ConnectionManager>,
+    pub(crate) user: Arc<UserManager>,
+    pub(crate) friend: Arc<FriendManager>,
+    pub(crate) group: Arc<GroupManager>,
+    pub(crate) conversation: Arc<ConversationManager>,
+    pub(crate) message_syncer: Arc<MessageSyncer>,
+    pub(crate) message_handler: Arc<MessageHandler>,
+    pub(crate) notification_handler: Arc<NotificationHandler>,
+    pub(crate) conversation_syncer: Arc<ConversationSyncer>,
+    pub(crate) online_status: Arc<OnlineStatusManager>,
+    pub(crate) file_uploader: Arc<FileUploader>,
+    pub(crate) message_service: Arc<MessageService>,
+    pub(crate) event_bus: Arc<EventBus>,
+        pub(crate) send_queue: Arc<MessageSendQueue>,
+    // Pre-created event receivers (capture events from login time)
+    pub(crate) conn_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>>>>,
+    pub(crate) conv_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>>>>,
+    pub(crate) friend_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>>>>,
+    pub(crate) group_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>>>>,
+}
+
+impl OpenIMClient {
+    pub fn set_connection_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
+        self.connection.set_event_sender(tx);
+    }
+    pub fn take_conn_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>> {
+        self.conn_rx.lock().unwrap().take()
+    }
+    pub fn take_conv_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>> {
+        self.conv_rx.lock().unwrap().take()
+    }
+    pub fn take_friend_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>> {
+        self.friend_rx.lock().unwrap().take()
+    }
+    pub fn take_group_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>> {
+        self.group_rx.lock().unwrap().take()
+    }
+}
+
+
+
+
+
+use crate::sdk::config::ClientConfig;
+use crate::domain::error::types::Result;
+use crate::event::types::SdkEvent;
+use crate::protocol::sdkws::PushMessages;
+use prost::Message as ProstMessage;
 use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::{info, warn, debug};
-
 impl OpenIMClient {
     /// 创建新的 SDK 实例
     pub async fn new(config: ClientConfig) -> Result<Self> {

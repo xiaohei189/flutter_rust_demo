@@ -38,19 +38,8 @@ impl OpenIMClient {
         let dao = self.conversation.dao();
         let conversations = dao.get_all().await?;
 
-        // 诊断：直接查 DB 验证是否有重复
-        let (total,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM local_conversations")
-            .fetch_one(&dao.pool).await.unwrap_or((0,));
-        let (unique_count,): (i64,) = sqlx::query_as("SELECT COUNT(DISTINCT conversation_id) FROM local_conversations")
-            .fetch_one(&dao.pool).await.unwrap_or((0,));
-        tracing::info!("[SDK] DB: total={}, unique={}, loaded={}", total, unique_count, conversations.len());
+        tracing::info!("[SDK] DB: loaded={}", conversations.len());
 
-        if total != unique_count {
-            tracing::warn!("[SDK] DB 有重复行！total={} unique={}", total, unique_count);
-            for c in &conversations {
-                tracing::warn!("[SDK] DUP: id={}", c.conversation_id);
-            }
-        }
         Ok(conversations)
     }
 

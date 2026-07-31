@@ -10,7 +10,7 @@ pub trait ConversationRepository: Send + Sync {
     async fn get_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>>;
     async fn get_all(&self) -> Result<Vec<LocalConversation>>;
     async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()>;
-    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, unread_inc: i32) -> Result<()>;
+    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()>;
     async fn delete(&self, conversation_id: &str) -> Result<()>;
     async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()>;
     async fn get_all_ids(&self) -> Result<Vec<String>>;
@@ -27,4 +27,17 @@ pub trait ConversationRepository: Send + Sync {
     async fn count(&self) -> Result<i32>;
     async fn clear_all(&self) -> Result<()>;
     async fn update_latest_msg(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()>;
+    async fn get_max_seq(&self, conversation_id: &str) -> Result<i64>;
+    async fn update_after_sent_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()>;
+    async fn get_all_seq_pairs(&self) -> Result<Vec<(String, i64)>>;
+    async fn get_min_seq(&self, conversation_id: &str) -> Result<i64>;
+    async fn update_min_seq(&self, conversation_id: &str, seq: i64) -> Result<()>;
+    async fn update_max_seq(&self, conversation_id: &str, seq: i64) -> Result<()>;
+    async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>>;
+    async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>>;
+    async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>>;
+    async fn reset(&self, conversation_id: &str) -> Result<()>;
+    async fn increase_unread_count(&self, conversation_id: &str, seq: i64) -> Result<()>;
+    async fn get_unread_count(&self, conversation_id: &str) -> Result<i32>;
+    async fn get_by_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>>;
 }

@@ -73,8 +73,8 @@ impl MessageHandler {
         self.user_id.set_blocking(user_id);
     }
 
-    pub fn message_dao(&self) -> Arc<crate::infra::database::MessageDao> {
-        self.stores.message_dao.clone()
+    pub fn message_dao(&self) -> Arc<dyn crate::domain::repository::message::MessageRepository> {
+        self.stores.message_repo.clone()
     }
 
     /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
@@ -224,7 +224,7 @@ impl MessageHandler {
         let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
 
         // 批量查库去重
-        let existing_logs = self.stores.message_dao.get_by_client_msg_ids(&client_msg_ids).await.unwrap_or_default();
+        let existing_logs = self.stores.message_repo.get_by_client_msg_ids(&client_msg_ids).await.unwrap_or_default();
         let mut existing_map: HashMap<String, LocalChatLog> = HashMap::new();
         for log in existing_logs {
             existing_map.insert(log.client_msg_id.clone(), log);
@@ -296,7 +296,7 @@ impl MessageHandler {
         // 批量更新 seq
         if !batch_update_list.is_empty() {
             debug!("[MsgHandler] 更新 seq: {} 条", batch_update_list.len());
-            self.stores.message_dao.batch_update_seq(&batch_update_list).await?;
+            self.stores.message_repo.batch_update_seq(&batch_update_list).await?;
         }
 
         // 批量插入消息
@@ -305,7 +305,7 @@ impl MessageHandler {
                 trace!("[MsgHandler]   插入: conv={}, client_msg_id={}, seq={}",
                       log.conversation_id, log.client_msg_id, log.seq);
             }
-            self.stores.message_dao.batch_insert(&insert_list).await?;
+            self.stores.message_repo.batch_insert(&insert_list).await?;
         }
 
         let mut seen_convs = std::collections::HashSet::new();
@@ -317,7 +317,7 @@ impl MessageHandler {
             let content_str = String::from_utf8_lossy(&msg.content);
 
             if seen_convs.insert(conv_id.to_string()) {
-                let existing = self.stores.conversation_dao.get_by_id(conv_id).await?;
+                let existing = self.stores.conversation_repo.get_by_id(conv_id).await?;
                 if existing.is_none() {
                     let show_name = if msg.session_type == 1 {
                         msg.sender_nickname.clone()
@@ -351,18 +351,18 @@ impl MessageHandler {
                         is_msg_destruct: false,
                         msg_destruct_time: 0,
                     };
-                    self.stores.conversation_dao.upsert(&conv).await?;
+                    self.stores.conversation_repo.upsert(&conv).await?;
                     debug!("[MsgHandler] 创建新会话: {}", conv_id);
                 }
             }
 
             if is_conversation_update && !is_online_only {
-                self.stores.conversation_dao
+                self.stores.conversation_repo
                     .update_latest_msg(conv_id, &content_str, msg.send_time)
                     .await?;
                 
                 if !is_self {
-                    self.stores.conversation_dao
+                    self.stores.conversation_repo
                         .increase_unread_count(conv_id, msg.seq)
                         .await?;
                 }
@@ -388,7 +388,7 @@ impl MessageHandler {
 
         // 对齐 Go SDK：所有消息处理完成后统一发布会话变更
         for conv_id in &seen_convs {
-            if let Ok(Some(conv)) = self.stores.conversation_dao.get_by_id(&conv_id).await {
+            if let Ok(Some(conv)) = self.stores.conversation_repo.get_by_id(&conv_id).await {
                 self.send(ConversationEvent::Changed(vec![conv.clone()]));
             }
         }
@@ -407,12 +407,12 @@ mod tests {
     /// 创建测试用 Stores
     fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
         Arc::new(Stores {
-            message_dao: Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
-            user_dao: Arc::new(UserDao::new(pool.clone())),
-            group_dao: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         })
@@ -617,7 +617,7 @@ mod tests {
     async fn test_dedup_via_insert_ignore() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool.clone());
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new(""));
 
         let msgs = vec![make_msg("msg_1", "conv_1", 1)];
@@ -635,8 +635,8 @@ mod tests {
     async fn test_tip_message_not_stored() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
-        let conversation_dao = stores.conversation_dao.clone();
+        let message_dao = stores.message_repo.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new(""));
 
         let mut conv = make_conv("conv_tip");
@@ -660,7 +660,7 @@ mod tests {
     async fn test_typing_message_not_stored_and_no_event() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let event_bus = Arc::new(EventBus::new());
         let mut sub = event_bus.subscribe();
         let handler = MessageHandler::new(stores, UserId::new(""));
@@ -678,8 +678,8 @@ mod tests {
     async fn test_normal_message_increments_unread() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
-        let conversation_dao = stores.conversation_dao.clone();
+        let message_dao = stores.message_repo.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new(""));
 
         let msgs1 = vec![msg_with_ct("msg_1", "conv_normal", 1, content_type::TEXT)];
@@ -703,7 +703,7 @@ mod tests {
     async fn test_latest_msg_updated_correctly() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let conversation_dao = stores.conversation_dao.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new(""));
 
         let msg1_content = r#"{"text":"hello"}"#;
@@ -739,7 +739,7 @@ mod tests {
     async fn test_latest_msg_updated_for_other_user_message() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let conversation_dao = stores.conversation_dao.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new("self_user"));
 
         let msg_content = r#"{"text":"message from other"}"#;
@@ -762,8 +762,8 @@ mod tests {
     async fn test_no_trigger_conv_stored_but_no_conv_update() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
-        let conversation_dao = stores.conversation_dao.clone();
+        let message_dao = stores.message_repo.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new(""));
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
@@ -803,7 +803,7 @@ mod tests {
     async fn test_self_message_seq_backfill() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new("user_1"));
 
         let local_msg = LocalChatLog {
@@ -847,7 +847,7 @@ mod tests {
     async fn test_duplicate_in_batch_second_dropped_by_db() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new("other_user"));
 
         let msgs = vec![
@@ -865,7 +865,7 @@ mod tests {
     async fn test_online_only_message_not_stored() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new("self_user"));
 
         let msgs = vec![{
@@ -934,8 +934,8 @@ mod tests {
     async fn test_group_chat_message_creates_group_conversation() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
-        let conversation_dao = stores.conversation_dao.clone();
+        let message_dao = stores.message_repo.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let handler = MessageHandler::new(stores, UserId::new("self_user"));
 
         let msgs = vec![{

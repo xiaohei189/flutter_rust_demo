@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/user.dart';
-import '../src/rust/im/model/conversation.dart' as im_conv;
+import '../src/rust/infra/database/models.dart';
 
 /// 导航服务 - 封装导航逻辑，提供统一的导航方法
 /// 
@@ -51,7 +51,7 @@ class NavigationService {
   
   /// 导航到聊天详情页
   void goToChatDetail(
-    im_conv.LocalConversation conversation, {
+    LocalConversation conversation, {
     bool preLoaded = false,
   }) {
     final context = _context;
@@ -74,7 +74,7 @@ class NavigationService {
   }
 
   /// 导航到聊天设置页
-  void goToChatSettings(im_conv.LocalConversation conversation) {
+  void goToChatSettings(LocalConversation conversation) {
     final context = _context;
     if (context != null) {
       context.push('/chat/${conversation.conversationId}/settings');
@@ -90,7 +90,7 @@ class NavigationService {
   }
 
   /// 导航到群组信息页
-  void goToGroupInfo(im_conv.LocalConversation conversation) {
+  void goToGroupInfo(LocalConversation conversation) {
     final context = _context;
     if (context != null) {
       context.push('/group/${conversation.conversationId}/info');

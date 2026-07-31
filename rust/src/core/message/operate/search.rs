@@ -13,7 +13,7 @@ impl MessageService {
         keyword: String,
         max_count: i64,
     ) -> Result<Vec<LocalChatLog>> {
-        let results = self.stores.message_dao.search_by_keyword(&conversation_id, &keyword, max_count).await?;
+        let results = self.stores.message_repo.search_by_keyword(&conversation_id, &keyword, max_count).await?;
         info!("本地搜索消息: conv={}, keyword={}, count={}", conversation_id, keyword, results.len());
         Ok(results)
     }

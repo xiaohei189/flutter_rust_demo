@@ -246,7 +246,7 @@ async fn do_send_message_impl(
                         }
                     }
                 }
-                context.stores.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed).await?;
+                context.stores.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
                 context.event_bus.publish(SdkEvent::MessageSendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
                     error: format!("{}", e),
@@ -1052,7 +1052,7 @@ impl OpenIMClient {
                 if msg.status == MessageSendStatus::Sending as i32 {
                     // 状态仍为 Sending → 标记为 SendFailed
                     if let Err(e) = self.context.stores.message_repo
-                        .update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed).await
+                        .update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed.into()).await
                     {
                         warn!("更新sending消息状态失败: client_msg_id={}, err={}", sm.client_msg_id, e);
                     }

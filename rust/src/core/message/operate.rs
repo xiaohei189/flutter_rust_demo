@@ -163,7 +163,7 @@ mod tests {
     async fn test_search_local_messages() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_s", "msg_1", 1, "user_2"), make_local_msg("conv_s", "msg_2", 2, "user_2")]).await.unwrap();
         let results = service.search_local_messages("conv_s".to_string(), "hello".to_string(), 10).await.unwrap();
@@ -174,8 +174,8 @@ mod tests {
     async fn test_mark_conversation_as_read_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
-        let conversation_dao = stores.conversation_dao.clone();
+        let message_dao = stores.message_repo.clone();
+        let conversation_dao = stores.conversation_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_read", "msg_1", 1, "user_2"), make_local_msg("conv_read", "msg_2", 2, "user_2")]).await.unwrap();
         conversation_dao.upsert(&make_conv("conv_read", 2)).await.unwrap();
@@ -188,7 +188,7 @@ mod tests {
     async fn test_revoke_message_success_marks_local() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_r", "msg_r1", 5, "user_1")]).await.unwrap();
         service.revoke_message("conv_r".into(), 5, "msg_r1".into(), 1).await.unwrap();
@@ -200,7 +200,7 @@ mod tests {
     async fn test_delete_messages_success_removes_local() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_d", "msg_d1", 1, "user_2"), make_local_msg("conv_d", "msg_d2", 2, "user_2")]).await.unwrap();
         service.delete_messages("conv_d".into(), vec!["msg_d1".into(), "msg_d2".into()]).await.unwrap();
@@ -211,7 +211,7 @@ mod tests {
     async fn test_mark_messages_as_read_success() {
         let pool = create_pool_memory().await.unwrap();
         let stores = make_test_stores(pool);
-        let message_dao = stores.message_dao.clone();
+        let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_mr", "m1", 1, "user_2"), make_local_msg("conv_mr", "m2", 2, "user_2")]).await.unwrap();
         service.mark_messages_as_read("conv_mr".into(), 1, 2, vec![1, 2]).await.unwrap();

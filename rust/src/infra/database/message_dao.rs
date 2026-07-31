@@ -685,5 +685,25 @@ impl MessageRepository for MessageDao {
     async fn update_to_sent(&self, client_msg_id: &str, server_msg_id: &str, seq: i64, send_time: i64) -> Result<()> { self.update_to_sent(client_msg_id, server_msg_id, seq, send_time).await }
     async fn get_seqs_in_range(&self, conversation_id: &str, min_seq: i64, max_seq: i64) -> Result<Vec<i64>> { self.get_seqs_in_range(conversation_id, min_seq, max_seq).await }
     async fn get_by_seq_range(&self, conversation_id: &str, start_seq: i64, end_seq: i64, count: i64) -> Result<Vec<LocalChatLog>> { self.get_by_seq_range(conversation_id, start_seq, end_seq, count).await }
+    async fn get_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<Vec<LocalChatLog>> { self.get_by_seqs(conversation_id, seqs).await }
+    async fn mark_as_read_by_seqs_all(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> { self.mark_as_read_by_seqs_all(conversation_id, seqs).await }
+    async fn batch_update_seq(&self, updates: &[(String, i64)]) -> Result<()> { self.batch_update_seq(updates).await }
+    async fn update_content_type(&self, conversation_id: &str, client_msg_id: &str, content_type: i32) -> Result<()> { self.update_content_type(conversation_id, client_msg_id, content_type).await }
+    async fn update_message_content_and_type(&self, conversation_id: &str, client_msg_id: &str, content: &str, content_type: i32) -> Result<()> { self.update_message_content_and_type(conversation_id, client_msg_id, content, content_type).await }
+    async fn search_by_content_type(&self, conversation_id: &str, content_type: i32) -> Result<Vec<LocalChatLog>> { self.search_by_content_type(conversation_id, content_type).await }
+    async fn update_send_status(&self, client_msg_id: &str, status: i32) -> Result<()> { self.update_status(client_msg_id, status).await }
+    async fn update_after_send_success(&self, client_msg_id: &str, server_msg_id: &str, send_time: i64) -> Result<()> { self.update_after_send_success(client_msg_id, server_msg_id, send_time).await }
+    async fn get_peer_normal_msg_seq(&self, conversation_id: &str, user_id: &str) -> Result<i64> { self.get_peer_normal_msg_seq(conversation_id, user_id).await }
+    async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> { self.delete_by_client_msg_id(conversation_id, client_msg_id).await }
+    async fn get_unread_messages(&self, conversation_id: &str, user_id: &str) -> Result<Vec<LocalChatLog>> { self.get_unread_messages(conversation_id, user_id).await }
+    async fn mark_as_read_by_client_msg_ids(&self, conversation_id: &str, client_msg_ids: &[String], user_id: &str) -> Result<()> { self.mark_as_read_by_client_msg_ids(conversation_id, client_msg_ids, user_id).await }
+    async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64, user_id: &str) -> Result<()> { self.mark_as_read_by_max_seq(conversation_id, max_seq, user_id).await }
+    async fn search_by_keyword(&self, conversation_id: &str, keyword: &str, max_count: i64) -> Result<Vec<LocalChatLog>> { self.search_by_keyword(conversation_id, keyword, max_count).await }
+    async fn get_by_conversation_asc(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> { self.get_by_conversation_asc(conversation_id, start_time, count).await }
+    async fn mark_as_deleted(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> { self.mark_as_deleted(conversation_id, client_msg_id).await }
+    async fn delete_all(&self) -> Result<()> { self.delete_all().await }
+    async fn mark_all_as_deleted(&self) -> Result<()> { self.mark_all_as_deleted().await }
+    async fn update_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<()> { self.update_local_ex(conversation_id, client_msg_id, local_ex).await }
+    async fn get_latest(&self, conversation_id: &str, limit: i64) -> Result<Vec<LocalChatLog>> { self.get_latest(conversation_id, limit).await }
 }
 

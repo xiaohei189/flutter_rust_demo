@@ -56,10 +56,10 @@ impl MessageService {
         let user_id = self.user_id.get().await;
 
         // 获取原消息信息用于构建事件
-        let original_msg = self.stores.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await?;
+        let original_msg = self.stores.message_repo.get_by_client_msg_id(conversation_id, client_msg_id).await?;
 
         // 更新本地数据库：标记消息为已撤回
-        self.stores.message_dao
+        self.stores.message_repo
             .update_content_type(conversation_id, client_msg_id, notification_type::REVOKE)
             .await?;
 
@@ -100,7 +100,7 @@ impl MessageService {
         client_msg_id: &str,
     ) -> Result<i64> {
         for attempt in 0..5 {
-            if let Ok(Some(msg)) = self.stores.message_dao.get_by_client_msg_id(conversation_id, client_msg_id).await {
+            if let Ok(Some(msg)) = self.stores.message_repo.get_by_client_msg_id(conversation_id, client_msg_id).await {
                 if msg.seq > 0 {
                     return Ok(msg.seq);
                 }
