@@ -10,7 +10,7 @@ use crate::domain::constant::msg_status;
 use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::domain::error::Result;
 use crate::event::sender::EventSender;
-use crate::event::listener::conversation::ConversationEvent;
+use crate::event::events::conversation::ConversationEvent;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
 use crate::domain::model::local::{LocalChatLog, LocalConversation};

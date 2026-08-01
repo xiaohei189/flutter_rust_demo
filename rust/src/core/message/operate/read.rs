@@ -6,7 +6,7 @@ use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
 use crate::domain::model::local::LocalConversation;
-use crate::event::listener::conversation::ConversationEvent;
+use crate::event::events::conversation::ConversationEvent;
 use tracing::{error, info, warn};
 
 impl MessageService {

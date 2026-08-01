@@ -3,10 +3,11 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use tokio::sync::{mpsc, oneshot};
-use tracing::{debug, info, warn, Span};
+use tracing::{debug, warn, Instrument};
 
 use crate::core::message::shared::content_type::ContentTypeUtils;
 use crate::domain::error::SdkError;
+use crate::infra::logger::{encode_operation_id, extract_span_id, extract_trace_id, span_from_operation_id};
 use openim_protocol::sdkws::UserSendMsgResp;
 
 /// 单条消息的发送结果
@@ -18,6 +19,8 @@ type BoxFuture<T> = Pin<Box<dyn Future<Output = T> + Send>>;
 struct SendTask {
     /// 实际执行发送的闭包（async）
     send_fn: Box<dyn FnOnce() -> BoxFuture<SendResult> + Send>,
+    /// 提交时的 trace 上下文（encode_operation_id 编码的 trace_id:span_id 字符串）
+    operation_id: String,
     /// 将结果回传给调用方
     result_tx: oneshot::Sender<SendResult>,
 }
@@ -53,7 +56,10 @@ impl MessageSendQueue {
     async fn lane_worker(name: &'static str, mut rx: mpsc::Receiver<SendTask>) {
         debug!("send_queue lane[{}]: worker started", name);
         while let Some(task) = rx.recv().await {
-            let result = (task.send_fn)().await;
+            // 官方推荐：worker 不跨任务持有 Span 句柄，而是用提交时提取的
+            // 字符串上下文重建 span，并通过 .instrument 绑定到发送 future
+            let span = span_from_operation_id("send_queue_lane", &task.operation_id);
+            let result = (task.send_fn)().instrument(span).await;
             if task.result_tx.send(result).is_err() {
                 warn!("send_queue lane[{}]: result receiver dropped", name);
             }
@@ -69,14 +75,16 @@ impl MessageSendQueue {
     where
         F: FnOnce() -> BoxFuture<SendResult> + Send + 'static,
     {
-        let current_span = Span::current();
+        // 官方推荐：跨 task 不传 Span 句柄，只提取 trace 上下文字符串，
+        // 由 lane worker 消费时重建本地 span（避免对已关闭 span 调用 enter）
+        let trace_id = extract_trace_id();
+        let span_id = extract_span_id();
+        let operation_id = encode_operation_id(&trace_id, span_id);
         let (result_tx, result_rx) = oneshot::channel();
 
         let task = SendTask {
-            send_fn: Box::new(move || {
-                let _guard = current_span.enter();
-                send_fn()
-            }),
+            send_fn: Box::new(send_fn),
+            operation_id,
             result_tx,
         };
 

@@ -6,7 +6,7 @@ use std::time::Duration;
 #[tokio::test]
 async fn test_websocket_reconnection() {
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
-use rust_lib_flutter_rust_demo::event::listener::connection::ConnectionEvent;
+use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -94,7 +94,7 @@ async fn test_reconnection() {
 #[tokio::test]
 async fn test_connection_state_transitions() {
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
-use rust_lib_flutter_rust_demo::event::listener::connection::ConnectionEvent;
+use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)

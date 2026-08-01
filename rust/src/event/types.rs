@@ -1,15 +1,15 @@
 //! 事件类型与数据 DTO
 //!
 //! - [`SdkEvent`]：内部事件总线统一入口（包装各领域事件，SDK 内部广播/订阅用）
-//! - 领域事件枚举定义于 `event::listener/*`（连接/会话/好友/群组同时作为 Dart 流事件）
+//! - 领域事件枚举定义于 `event::events/*`（连接/会话/好友/群组同时作为 Dart 流事件）
 //! - 数据 DTO：已读回执等事件载荷
 
-use crate::event::listener::connection::ConnectionEvent;
-use crate::event::listener::conversation::ConversationEvent;
-use crate::event::listener::friend::FriendEvent;
-use crate::event::listener::group::GroupEvent;
-use crate::event::listener::message::MessageEvent;
-use crate::event::listener::user::UserEvent;
+use crate::event::events::connection::ConnectionEvent;
+use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::friend::FriendEvent;
+use crate::event::events::group::GroupEvent;
+use crate::event::events::message::MessageEvent;
+use crate::event::events::user::UserEvent;
 
 /// C2C 已读回执（对齐 Go SDK `sdkws.MessageReceipt`）
 #[derive(Clone, Debug)]
@@ -62,11 +62,11 @@ impl SdkEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::event::listener::conversation::ConversationEvent;
-    use crate::event::listener::friend::FriendEvent;
-    use crate::event::listener::group::GroupEvent;
-    use crate::event::listener::message::MessageEvent;
-    use crate::event::listener::user::UserEvent;
+use crate::event::events::conversation::ConversationEvent;
+    use crate::event::events::friend::FriendEvent;
+    use crate::event::events::group::GroupEvent;
+    use crate::event::events::message::MessageEvent;
+    use crate::event::events::user::UserEvent;
 
     #[test]
     fn test_domain_event_as_str() {

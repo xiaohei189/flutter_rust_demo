@@ -1,7 +1,7 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
-use crate::event::listener::user::UserEvent;
+use crate::event::events::user::UserEvent;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS, GET_SUBSCRIBE_USERS_STATUS};
 use serde::{Deserialize, Serialize};

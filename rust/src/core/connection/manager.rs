@@ -2,7 +2,7 @@ use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::constant::req_identifier_name;
 use crate::domain::error::{Result, SdkError};
 use crate::event::sender::EventSender;
-use crate::event::listener::connection::{ConnectionEvent, ConnectionListener};
+use crate::event::events::connection::{ConnectionEvent, ConnectionListener};
 use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
 use crate::core::connection::ws::GzipCompressor;
 use openim_protocol::sdkws::PushMessages;
@@ -22,7 +22,7 @@ use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use opentelemetry::trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, TraceId, TraceState};
 use opentelemetry::Context;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, info_span, warn};
+use tracing::{debug, error, info, info_span, warn, Instrument};
 
 type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -68,8 +68,8 @@ pub struct ConnectionManager {
     /// 推送消息批处理器（对齐 Go SDK message_batcher.go）
     message_batcher: MessageBatcher,
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
-    /// 携带 Span 以便跨 task 传递 trace context
-    push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>>>>,
+    /// 携带 operation_id（trace_id:span_id 字符串）以便跨 task 传递 trace context
+    push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>>>>,
     pub(crate) events: EventSender<ConnectionEvent>,
     pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
@@ -85,16 +85,17 @@ impl ConnectionManager {
     }
 
     pub fn new(cancel_token: CancellationToken) -> Self {
-        let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>>>> = Arc::new(std::sync::Mutex::new(None));
+        let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>>>> = Arc::new(std::sync::Mutex::new(None));
         let push_tx_clone = push_tx.clone();
         let compressor = GzipCompressor::new();
-        let message_batcher = MessageBatcher::new(move |_operation_ids, batch| {
+        let message_batcher = MessageBatcher::new(move |operation_ids, batch| {
             // 聚合后通过内部通道发送（对齐 Go SDK 直接调用，不走 EventBus）
-            // 携带当前 span context 以便跨 task 传递
+            // 官方推荐：跨 channel 只传 trace 上下文字符串（operation_id 编码 trace_id:span_id），
+            // 不传 Span 句柄，避免消费端对已关闭的 span 调用 enter 触发 tracing panic
             if !batch.msgs.is_empty() || !batch.notification_msgs.is_empty() {
                 if let Some(tx) = push_tx_clone.lock().unwrap().as_ref() {
-                    let span = tracing::Span::current();
-                    let _ = tx.send((batch, span));
+                    let operation_id = operation_ids.into_iter().next().unwrap_or_default();
+                    let _ = tx.send((batch, operation_id));
                 }
             }
         });
@@ -120,7 +121,7 @@ impl ConnectionManager {
     }
 
     /// 设置内部消息通道发送端（由 client.rs 在 login 后调用）
-    pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>) {
+    pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>) {
         *self.push_tx.lock().unwrap() = Some(tx);
     }
 
@@ -454,13 +455,16 @@ impl ConnectionManager {
                                         };
                                         info_span!("ws_binary_resp")
                                     };
-                                    let _enter = span.enter();
-                                    debug!("WebSocket received message: req_identifier={}({}), msg_incr={}, operation_id={}, err_code={}, err_msg={}, data_len={}",
-                                        resp.req_identifier, req_identifier_name(resp.req_identifier),
-                                        resp.msg_incr, resp.operation_id, resp.err_code, resp.err_msg, resp.data.len());
-
+                                    // 官方推荐：span 通过 .instrument 绑定到 future（每次 poll 自动
+                                    // enter/exit），不在异步代码里用 enter guard 跨 await 持有，
+                                    // 避免其他任务在同一线程读到 stale current span 时触发断言
                                     use crate::domain::constant::{ws_push_identifier, ws_req_identifier};
-                                    match resp.req_identifier {
+                                    let handle_resp = async {
+                                        debug!("WebSocket received message: req_identifier={}({}), msg_incr={}, operation_id={}, err_code={}, err_msg={}, data_len={}",
+                                            resp.req_identifier, req_identifier_name(resp.req_identifier),
+                                            resp.msg_incr, resp.operation_id, resp.err_code, resp.err_msg, resp.data.len());
+                                        let mut should_break = false;
+                                        match resp.req_identifier {
                                         // PushMsg (2001) — 对齐 Go case constant.PushMsg
                                         ws_push_identifier::PUSH_MSG => {
                                             match PushMessages::decode(resp.data.as_slice()) {
@@ -484,7 +488,7 @@ impl ConnectionManager {
                                             message_batcher.close().await;
                                             events.publish(ConnectionEvent::Logout);
                                             cancel.cancel();
-                                            break;
+                                            should_break = true;
                                         }
                                         // KickOnlineMsg (2002) — 对齐 Go case constant.KickOnlineMsg
                                         // 被踢一定是服务端推送，无对应 pending，无需 NotifyResp
@@ -495,7 +499,7 @@ impl ConnectionManager {
                                             message_batcher.close().await;
                                             events.publish(ConnectionEvent::KickedOffline(resp.err_msg.to_string()));
                                             cancel.cancel();
-                                            break;
+                                            should_break = true;
                                         }
                                         // GetNewestSeq / PullMsgByRange / SendMsg / SendSignalMsg
                                         // PullMsgBySeqList / GetConvMaxReadSeq / PullConvLastMessage
@@ -521,6 +525,11 @@ impl ConnectionManager {
                                             error!("binary message type not support: req_identifier={}({})",
                                                 resp.req_identifier, req_identifier_name(resp.req_identifier));
                                         }
+                                        }
+                                        should_break
+                                    };
+                                    if handle_resp.instrument(span).await {
+                                        break;
                                     }
                                 }
                                 Err(e) => {

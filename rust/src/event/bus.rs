@@ -74,8 +74,8 @@ impl EventSubscription {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::listener::conversation::ConversationEvent;
-    use crate::event::listener::message::MessageEvent;
+    use crate::event::events::conversation::ConversationEvent;
+    use crate::event::events::message::MessageEvent;
 
     #[tokio::test]
     async fn test_event_bus_publish_and_subscribe() {

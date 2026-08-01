@@ -8,8 +8,8 @@ use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::model::local::LocalChatLog;
 use crate::event::types::SdkEvent;
-use crate::event::listener::conversation::ConversationEvent;
-use crate::event::listener::message::MessageEvent;
+use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::message::MessageEvent;
 use anyhow::{Result, anyhow};
 
 // ============================================================================

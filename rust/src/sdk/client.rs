@@ -28,11 +28,11 @@ use crate::core::message::notification::handler::NotificationHandler;
 use crate::core::user::online::service::OnlineStatusService;
 use crate::core::user::service::UserService;
 use crate::event::EventBus;
-use crate::event::listener::connection::ConnectionEvent;
-use crate::event::listener::conversation::ConversationEvent;
-use crate::event::listener::friend::FriendEvent;
-use crate::event::listener::group::GroupEvent;
-use crate::event::listener::message::MessageEvent;
+use crate::event::events::connection::ConnectionEvent;
+use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::friend::FriendEvent;
+use crate::event::events::group::GroupEvent;
+use crate::event::events::message::MessageEvent;
 use crate::sdk::context::RuntimeContext;
 
 use std::sync::Arc;
@@ -89,11 +89,12 @@ impl OpenIMClient {
 use crate::sdk::config::ClientConfig;
 use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
+use crate::infra::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use prost::Message as ProstMessage;
 use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
-use tracing::{info, warn, debug};
+use tracing::{info, warn, debug, Instrument};
 impl OpenIMClient {
     /// 创建新的 SDK 实例
     pub async fn new(config: ClientConfig) -> Result<Self> {
@@ -232,8 +233,8 @@ impl OpenIMClient {
         let cancel_token = self.context.cancel_token.clone();
 
         // 内部消息通道：对齐 Go SDK 直接调用模式，WS 消息不走 EventBus
-        // 携带 trace context 以便跨 task 传递
-        let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<(PushMessages, tracing::Span)>();
+        // 携带 operation_id（trace_id:span_id 字符串）以便跨 task 传递 trace context
+        let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<(PushMessages, String)>();
         self.connection.set_push_sender(push_tx);
 
         // 对齐 Go SDK：Connected 事件直接回调同步，不走 EventBus
@@ -284,40 +285,20 @@ impl OpenIMClient {
                         }
                     }
                     push_batch = push_rx.recv() => {
-                        if let Some((batch, span)) = push_batch {
-                            let mut has_message_changes = false;
-                            let _enter = span.enter();
-
-                            for (conv_id, pull_msgs) in &batch.msgs {
-                                let messages = pull_msgs.msgs.clone();
-                                let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-
-                                if !messages.is_empty() {
-                                    match message_handler.handle_messages(conv_id, messages).await {
-                                        Ok(changed) => { if changed { has_message_changes = true; } }
-                                        Err(e) => warn!("failed to handle push messages for {}: {:?}", conv_id, e),
-                                    }
-                                    if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                        warn!("push_trigger_and_sync failed for {}: {:?}", conv_id, e);
-                                    }
-                                } else if !seqs.is_empty() {
-                                    if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
-                                        warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
-                                    }
-                                }
-                            }
-
-                            for (_conv_id, pull_msgs) in &batch.notification_msgs {
-                                notification_handler.handle_notifications(&pull_msgs.msgs).await;
-                                let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
-                                if !seqs.is_empty() {
-                                    let _ = message_syncer.push_trigger_and_sync(_conv_id, &seqs).await;
-                                }
-                            }
-
-                            if has_message_changes {
-                                message_handler.publish_total_unread_count_changed().await;
-                            }
+                        if let Some((batch, operation_id)) = push_batch {
+                            // 官方推荐：跨 channel 只传 trace 上下文字符串，消费端用
+                            // span_from_operation_id 重建 span，并通过 .instrument(span)
+                            // 绑定到 future（每次 poll 自动 enter/exit），避免 enter guard
+                            // 跨 await 持有导致其他任务读到 stale current span
+                            let span = span_from_operation_id("push_message_handler", &operation_id);
+                            handle_push_batch(
+                                message_handler.clone(),
+                                message_syncer.clone(),
+                                notification_handler.clone(),
+                                batch,
+                            )
+                            .instrument(span)
+                            .await;
                         }
                     }
                 }
@@ -487,4 +468,46 @@ impl OpenIMClient {
     }
 }
 
+/// 处理一批推送消息（消息、通知、seq 同步、未读计数刷新）
+///
+/// 由调用方通过 `.instrument(span)` 绑定 trace span：span 只在本 future 每次 poll 时
+/// enter/exit，不会跨 await 持有，符合 tracing 官方对异步代码的推荐用法。
+async fn handle_push_batch(
+    message_handler: Arc<MessageHandler>,
+    message_syncer: Arc<MessageSyncer>,
+    notification_handler: Arc<NotificationHandler>,
+    batch: PushMessages,
+) {
+    let mut has_message_changes = false;
 
+    for (conv_id, pull_msgs) in &batch.msgs {
+        let messages = pull_msgs.msgs.clone();
+        let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+
+        if !messages.is_empty() {
+            match message_handler.handle_messages(conv_id, messages).await {
+                Ok(changed) => { if changed { has_message_changes = true; } }
+                Err(e) => warn!("failed to handle push messages for {}: {:?}", conv_id, e),
+            }
+            if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                warn!("push_trigger_and_sync failed for {}: {:?}", conv_id, e);
+            }
+        } else if !seqs.is_empty() {
+            if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
+                warn!("push_trigger_and_sync (seq 0) failed for {}: {:?}", conv_id, e);
+            }
+        }
+    }
+
+    for (_conv_id, pull_msgs) in &batch.notification_msgs {
+        notification_handler.handle_notifications(&pull_msgs.msgs).await;
+        let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
+        if !seqs.is_empty() {
+            let _ = message_syncer.push_trigger_and_sync(_conv_id, &seqs).await;
+        }
+    }
+
+    if has_message_changes {
+        message_handler.publish_total_unread_count_changed().await;
+    }
+}

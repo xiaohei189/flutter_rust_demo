@@ -9,7 +9,7 @@ use crate::domain::repository::NotificationSeqRepository;
 use crate::domain::constant::ws_req_identifier;
 use crate::domain::error::{Result, SdkError};
 use crate::event::sender::EventSender;
-use crate::event::listener::conversation::{ConversationListener, ConversationEvent};
+use crate::event::events::conversation::{ConversationListener, ConversationEvent};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalNotificationSeq;
 use crate::sdk::context::Repositories;

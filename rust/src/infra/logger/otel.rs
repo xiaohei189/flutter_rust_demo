@@ -600,6 +600,15 @@ pub fn span_from_remote_trace_id(
     span
 }
 
+/// 从 operation_id（encode_operation_id 编码的 trace_id:span_id）重建 span
+///
+/// 官方推荐：跨 channel/task 只传递 trace 上下文字符串，消费端再重建 span，
+/// 不要跨任务持有 tracing::Span 句柄并对可能已关闭的 span 调用 enter。
+pub fn span_from_operation_id(name: &str, operation_id: &str) -> Span {
+    let (trace_id_str, span_id_str) = decode_operation_id(operation_id);
+    span_from_remote_trace_id(name, trace_id_str, span_id_str)
+}
+
 /// 构建 W3C traceparent header
 pub fn build_w3c_traceparent(trace_id_hex: &str, span_id_hex: &str) -> String {
     format!("00-{}-{}-01", trace_id_hex, span_id_hex)

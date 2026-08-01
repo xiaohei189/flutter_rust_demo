@@ -3,7 +3,7 @@
 use super::handler::MessageHandler;
 use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
-use crate::event::listener::conversation::ConversationEvent;
+use crate::event::events::conversation::ConversationEvent;
 use openim_protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;

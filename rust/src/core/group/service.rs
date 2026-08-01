@@ -2,7 +2,7 @@ use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::sender::EventSender;
 use crate::event::types::SdkEvent;
-use crate::event::listener::group::{GroupListener, GroupEvent};
+use crate::event::events::group::{GroupListener, GroupEvent};
 use crate::event::types::GroupReadReceipt;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::UserId;

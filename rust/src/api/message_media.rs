@@ -8,7 +8,7 @@ use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
 use crate::event::types::SdkEvent;
-use crate::event::listener::message::MessageEvent;
+use crate::event::events::message::MessageEvent;
 use crate::frb_generated::StreamSink;
 use anyhow::{Result, anyhow};
 use std::sync::Arc;

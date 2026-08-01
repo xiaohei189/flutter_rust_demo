@@ -72,7 +72,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn connection_stream(&self, sink: StreamSink<crate::event::listener::connection::ConnectionEvent>) -> Result<()> {
+    pub async fn connection_stream(&self, sink: StreamSink<crate::event::events::connection::ConnectionEvent>) -> Result<()> {
         let mut rx = self.inner.take_conn_rx().ok_or_else(|| anyhow::anyhow!("connection stream already taken"))?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -84,7 +84,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn conversation_stream(&self, sink: StreamSink<crate::event::listener::conversation::ConversationEvent>) -> Result<()> {
+    pub async fn conversation_stream(&self, sink: StreamSink<crate::event::events::conversation::ConversationEvent>) -> Result<()> {
         let mut rx = self.inner.take_conv_rx().ok_or_else(|| anyhow::anyhow!("conversation stream already taken"))?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -95,14 +95,14 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn friend_stream(&self, sink: StreamSink<crate::event::listener::friend::FriendEvent>) -> Result<()> {
+    pub async fn friend_stream(&self, sink: StreamSink<crate::event::events::friend::FriendEvent>) -> Result<()> {
         let mut rx = self.inner.take_friend_rx().ok_or_else(|| anyhow::anyhow!("friend stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn group_stream(&self, sink: StreamSink<crate::event::listener::group::GroupEvent>) -> Result<()> {
+    pub async fn group_stream(&self, sink: StreamSink<crate::event::events::group::GroupEvent>) -> Result<()> {
         let mut rx = self.inner.take_group_rx().ok_or_else(|| anyhow::anyhow!("group stream already taken"))?;
         tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
         Ok(())

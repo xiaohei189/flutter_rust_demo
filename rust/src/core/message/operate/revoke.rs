@@ -5,7 +5,7 @@ use crate::domain::ports::message::RevokeMessageReq;
 use crate::domain::constant::notification_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
-use crate::event::listener::message::MessageEvent;
+use crate::event::events::message::MessageEvent;
 use tracing::{info, warn};
 
 impl MessageService {

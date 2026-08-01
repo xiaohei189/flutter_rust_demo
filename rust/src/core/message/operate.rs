@@ -12,7 +12,7 @@ pub use crate::domain::ports::message::MessageServerApi;
 
 use crate::event::EventBus;
 use crate::event::sender::EventSender;
-use crate::event::listener::conversation::ConversationEvent;
+use crate::event::events::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::sdk::context::Repositories;
 use std::sync::Arc;

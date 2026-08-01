@@ -2,7 +2,7 @@
 
 use crate::domain::error::Result;
 use crate::event::sender::EventSender;
-use crate::event::listener::conversation::ConversationEvent;
+use crate::event::events::conversation::ConversationEvent;
 use crate::domain::model::local::LocalConversation;
 use crate::sdk::context::Repositories;
 

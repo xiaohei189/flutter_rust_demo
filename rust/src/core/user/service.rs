@@ -1,7 +1,7 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
-use crate::event::listener::user::UserEvent;
+use crate::event::events::user::UserEvent;
 use crate::domain::model::user::UserInfo;
  use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};

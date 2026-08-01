@@ -17,10 +17,10 @@ import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo
 import 'package:flutter_rust_demo/src/rust/domain/model/local.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/ffi_init.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
-import 'package:flutter_rust_demo/src/rust/event/listener/connection.dart';
-import 'package:flutter_rust_demo/src/rust/event/listener/conversation.dart';
-import 'package:flutter_rust_demo/src/rust/event/listener/friend.dart';
-import 'package:flutter_rust_demo/src/rust/event/listener/group.dart';
+import 'package:flutter_rust_demo/src/rust/event/events/connection.dart';
+import 'package:flutter_rust_demo/src/rust/event/events/conversation.dart';
+import 'package:flutter_rust_demo/src/rust/event/events/friend.dart';
+import 'package:flutter_rust_demo/src/rust/event/events/group.dart';
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
 import 'package:flutter_rust_demo/services/navigation_service.dart';

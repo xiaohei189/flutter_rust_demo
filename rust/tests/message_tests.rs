@@ -3,8 +3,8 @@ mod common;
 use common::*;
 use rust_lib_flutter_rust_demo::event::bus::EventSubscription;
 use rust_lib_flutter_rust_demo::event::types::SdkEvent;
-use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
+use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 use std::sync::Arc;
 use std::time::Duration;
 

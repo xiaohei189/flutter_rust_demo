@@ -2,7 +2,7 @@ use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::sender::EventSender;
 use crate::event::types::SdkEvent;
-use crate::event::listener::friend::{FriendListener, FriendEvent};
+use crate::event::events::friend::{FriendListener, FriendEvent};
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalFriend;

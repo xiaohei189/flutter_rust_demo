@@ -4,10 +4,10 @@ import 'package:path_provider/path_provider.dart';
 
 import '../src/rust/api/client.dart';
 import '../src/rust/api/ffi_init.dart';
-import '../src/rust/event/listener/connection.dart';
-import '../src/rust/event/listener/conversation.dart';
-import '../src/rust/event/listener/friend.dart';
-import '../src/rust/event/listener/group.dart';
+import '../src/rust/event/events/connection.dart';
+import '../src/rust/event/events/conversation.dart';
+import '../src/rust/event/events/friend.dart';
+import '../src/rust/event/events/group.dart';
 import '../src/rust/sdk/config.dart';
 import '../utils/app_logger.dart';
 

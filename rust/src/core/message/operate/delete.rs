@@ -4,7 +4,7 @@ use super::MessageService;
 use crate::domain::ports::message::DeleteMessagesReq;
 use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
-use crate::event::listener::message::MessageEvent;
+use crate::event::events::message::MessageEvent;
 use tracing::info;
 
 impl MessageService {

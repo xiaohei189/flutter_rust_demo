@@ -20,6 +20,7 @@ pub use otel::{
     encode_operation_id,
     decode_operation_id,
     span_from_remote_trace_id,
+    span_from_operation_id,
     build_w3c_traceparent, context_from_traceparent,
     init_otel_subscriber,
     set_span_events_enabled,
