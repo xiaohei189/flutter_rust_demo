@@ -11,6 +11,7 @@ use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
 use crate::domain::model::local::{LocalChatLog, LocalSendingMessage};
 use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
 use crate::domain::ports::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::domain::repository::SendingMessageRepository;
 use crate::sdk::client::types::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
 use crate::sdk::client::OpenIMClient;
 use crate::sdk::context::RuntimeContext;
@@ -154,7 +155,7 @@ async fn insert_message_before_send_impl(
     local_log.status = MessageSendStatus::Sending as i32;
 
     context.stores.message_repo.batch_insert(&[local_log]).await?;
-    context.stores.sending_message_dao.insert(&LocalSendingMessage {
+    context.stores.sending_message_repo.insert(&LocalSendingMessage {
         conversation_id: conversation_id.clone(),
         client_msg_id: msg.client_msg_id.clone(),
         ex: String::new(),
@@ -261,7 +262,7 @@ async fn do_send_message_impl(
         }
 
         // 发送成功，从 sending_messages 中移除（对齐 Go SDK api.go L167）
-        if let Err(e) = context.stores.sending_message_dao.delete(&conversation_id, &msg.client_msg_id).await {
+        if let Err(e) = context.stores.sending_message_repo.delete(&conversation_id, &msg.client_msg_id).await {
             debug!("删除sending_message失败: {}", e);
         }
 
@@ -1021,7 +1022,7 @@ impl OpenIMClient {
 
     /// 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
     pub async fn cleanup_sending_messages(&self) {
-        let sending_messages = match self.context.stores.sending_message_dao.get_all().await {
+        let sending_messages = match self.context.stores.sending_message_repo.get_all().await {
             Ok(msgs) => msgs,
             Err(e) => {
                 warn!("获取sending_messages失败: {}", e);
@@ -1044,7 +1045,7 @@ impl OpenIMClient {
                 }
             }
             // 删除 sending_message 记录
-            let _ = self.context.stores.sending_message_dao
+            let _ = self.context.stores.sending_message_repo
                 .delete(&sm.conversation_id, &sm.client_msg_id).await;
         }
 
@@ -1354,8 +1355,8 @@ mod tests {
                 user_repo: Arc::new(UserDao::new(pool.clone())),
                 group_repo: Arc::new(GroupDao::new(pool.clone())),
                 sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
-                notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
-                sending_message_dao: Arc::new(SendingMessageDao::new(pool.clone())),
+                notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+                sending_message_repo: Arc::new(SendingMessageDao::new(pool.clone())),
             }),
             infra: crate::sdk::context::Infra {
                 http_client,
@@ -1419,7 +1420,7 @@ mod tests {
         assert_eq!(db_msg.server_msg_id, "server_msg_001", "server_msg_id 应回填");
 
         // sending_messages 应被清理
-        let sending = context.stores.sending_message_dao
+        let sending = context.stores.sending_message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_success")
             .await.unwrap();
         assert!(sending.is_none(), "发送成功后 sending_message 应被删除");
@@ -1646,7 +1647,7 @@ mod tests {
         assert_eq!(db_msg.send_time, send_time, "send_time 应正确");
 
         // 验证 sending_messages 写入
-        let sending = context.stores.sending_message_dao
+        let sending = context.stores.sending_message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_insert")
             .await.unwrap();
         assert!(sending.is_some(), "sending_message 应存在");

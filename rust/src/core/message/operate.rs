@@ -84,8 +84,8 @@ mod tests {
             user_repo: Arc::new(UserDao::new(pool.clone())),
             group_repo: Arc::new(GroupDao::new(pool.clone())),
             sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
-            notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
-            sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
+            notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
         })
     }
 

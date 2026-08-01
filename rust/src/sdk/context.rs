@@ -29,9 +29,8 @@ pub struct Stores {
     pub user_repo: Arc<dyn UserRepository>,
     pub group_repo: Arc<dyn GroupRepository>,
     pub sync_version_repo: Arc<dyn SyncVersionRepository>,
-    /// 以下 DAO 暂未定义 Repository trait，保持直接使用
-    pub notification_seq_dao: Arc<NotificationSeqDao>,
-    pub sending_message_dao: Arc<SendingMessageDao>,
+    pub notification_seq_repo: Arc<dyn NotificationSeqRepository>,
+    pub sending_message_repo: Arc<dyn SendingMessageRepository>,
 }
 
 pub struct Infra {
@@ -67,8 +66,8 @@ impl RuntimeContext {
         let user_dao = Arc::new(UserDao::new(db_pool.clone()));
         let group_dao = Arc::new(GroupDao::new(db_pool.clone()));
         let sync_version_dao = Arc::new(SyncVersionDao::new(db_pool.clone()));
-        let notification_seq_dao = Arc::new(NotificationSeqDao::new(db_pool.clone()));
-        let sending_message_dao = Arc::new(SendingMessageDao::new(db_pool.clone()));
+        let notification_seq_repo = Arc::new(NotificationSeqDao::new(db_pool.clone()));
+        let sending_message_repo = Arc::new(SendingMessageDao::new(db_pool.clone()));
 
         let http_client = Arc::new(HttpApiClient::new(
             config.api_base_url.clone(),
@@ -89,8 +88,8 @@ impl RuntimeContext {
                 user_repo: user_dao,
                 group_repo: group_dao,
                 sync_version_repo: sync_version_dao,
-                notification_seq_dao,
-                sending_message_dao,
+                notification_seq_repo,
+                sending_message_repo,
             }),
             infra: Infra {
                 http_client,

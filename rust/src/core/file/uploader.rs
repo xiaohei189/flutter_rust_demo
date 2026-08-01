@@ -16,7 +16,7 @@ use tokio::io::AsyncReadExt;
 use tracing::{info, warn, error};
 
 use crate::infra::file::bitmap::Bitmap;
-use crate::infra::file::cb::{EmptyUploadCallback, UploadFileCallback};
+use crate::infra::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
 use crate::infra::file::md5::parts_hash;
 
 // ============================================================================

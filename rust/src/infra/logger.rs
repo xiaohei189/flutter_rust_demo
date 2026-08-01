@@ -11,7 +11,7 @@
 
 pub mod config;
 mod otel;
-mod macros_;
+mod macros;
 
 pub use config::LogConfig;
 pub use otel::{

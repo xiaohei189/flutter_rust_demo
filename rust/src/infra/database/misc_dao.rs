@@ -3,6 +3,8 @@
 
 use crate::domain::model::local::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
 use crate::domain::error::{Result, SdkError};
+use crate::domain::repository::{NotificationSeqRepository, SendingMessageRepository};
+use async_trait::async_trait;
 use sqlx::SqlitePool;
 
 // ============================================================================
@@ -66,6 +68,21 @@ impl NotificationSeqDao {
     }
 }
 
+#[async_trait]
+impl NotificationSeqRepository for NotificationSeqDao {
+    async fn set_notification_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        self.set_notification_seq(conversation_id, seq).await
+    }
+
+    async fn batch_insert(&self, seqs: &[LocalNotificationSeq]) -> Result<()> {
+        self.batch_insert(seqs).await
+    }
+
+    async fn get_all(&self) -> Result<Vec<LocalNotificationSeq>> {
+        self.get_all().await
+    }
+}
+
 // ============================================================================
 // 发送中消息 DAO
 // ============================================================================
@@ -125,6 +142,29 @@ impl SendingMessageDao {
         .await
         .map_err(|e| SdkError::database(format!("get sending message by client_msg_id: {}", e)))?;
         Ok(row)
+    }
+}
+
+#[async_trait]
+impl SendingMessageRepository for SendingMessageDao {
+    async fn insert(&self, msg: &LocalSendingMessage) -> Result<()> {
+        self.insert(msg).await
+    }
+
+    async fn delete(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        self.delete(conversation_id, client_msg_id).await
+    }
+
+    async fn get_all(&self) -> Result<Vec<LocalSendingMessage>> {
+        self.get_all().await
+    }
+
+    async fn get_by_client_msg_id(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+    ) -> Result<Option<LocalSendingMessage>> {
+        self.get_by_client_msg_id(conversation_id, client_msg_id).await
     }
 }
 

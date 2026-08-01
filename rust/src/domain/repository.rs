@@ -9,6 +9,8 @@ pub mod friend;
 pub mod group;
 pub mod user;
 pub mod sync_version;
+pub mod notification_seq;
+pub mod sending_message;
 
 pub use message::MessageRepository;
 pub use conversation::ConversationRepository;
@@ -16,3 +18,5 @@ pub use friend::FriendRepository;
 pub use group::GroupRepository;
 pub use user::UserRepository;
 pub use sync_version::SyncVersionRepository;
+pub use notification_seq::NotificationSeqRepository;
+pub use sending_message::SendingMessageRepository;

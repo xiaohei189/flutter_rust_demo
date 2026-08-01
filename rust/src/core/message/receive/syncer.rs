@@ -5,6 +5,7 @@
 use crate::core::connection::manager::ConnectionManager;
 use super::handler::MessageHandler;
 use crate::domain::ports::SyncServerApi;
+use crate::domain::repository::NotificationSeqRepository;
 use crate::domain::constant::ws_req_identifier;
 use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
@@ -301,7 +302,7 @@ impl MessageSyncer {
             map.insert(conv_id, local_max);
         }
 
-        match self.stores.notification_seq_dao.get_all().await {
+        match self.stores.notification_seq_repo.get_all().await {
             Ok(notification_seqs) => {
                 let count = notification_seqs.len();
                 for ns in &notification_seqs {
@@ -320,7 +321,7 @@ impl MessageSyncer {
 
     /// 设置通知会话的 seq
     pub async fn set_notification_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
-        self.stores.notification_seq_dao.set_notification_seq(conversation_id, seq).await
+        self.stores.notification_seq_repo.set_notification_seq(conversation_id, seq).await
     }
 
     pub async fn sync_all_conversations(&self, reinstalled: bool) -> Result<()> {
@@ -409,7 +410,7 @@ impl MessageSyncer {
 
         if !notification_seq_records.is_empty() {
             info!("重装模式: 持久化 {} 个通知会话的 seq", notification_seq_records.len());
-            if let Err(e) = self.stores.notification_seq_dao.batch_insert(&notification_seq_records).await {
+            if let Err(e) = self.stores.notification_seq_repo.batch_insert(&notification_seq_records).await {
                 warn!("持久化通知 seq 失败: {}", e);
             }
         }
@@ -668,8 +669,8 @@ mod tests {
             user_repo: Arc::new(UserDao::new(pool.clone())),
             group_repo: Arc::new(GroupDao::new(pool.clone())),
             sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
-            notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
-            sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
+            notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
         });
         let handler = Arc::new(MessageHandler::new(stores.clone(), UserId::new("test_user")));
         (stores, handler)
