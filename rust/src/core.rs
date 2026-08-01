@@ -4,5 +4,4 @@ pub mod conversation;
 pub mod user;
 pub mod friend;
 pub mod group;
-pub mod online;
 pub mod file;

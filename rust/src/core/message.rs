@@ -33,5 +33,5 @@ pub mod notification;
 pub use receive::{MessageHandler, MessageSyncer, MaxSeqRecorder};
 pub use send::MessageSendQueue;
 pub use operate::{MessageService, MessageServerApi};
-pub use crate::domain::ports::SyncerRemoteApi;
+pub use crate::domain::ports::SyncServerApi;
 pub use shared::content_type::ContentTypeUtils;

@@ -4,7 +4,7 @@
 
 use crate::core::connection::manager::ConnectionManager;
 use super::handler::MessageHandler;
-use crate::domain::ports::SyncerRemoteApi;
+use crate::domain::ports::SyncServerApi;
 use crate::domain::constant::ws_req_identifier;
 use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
@@ -23,9 +23,9 @@ use openim_protocol::sdkws::{
     MsgData, PullMsgs, PullMessageBySeqsResp, SeqRange, PullMessageBySeqsReq, PullOrder,
 };
 
-/// ConnectionManager 的 SyncerRemoteApi 实现
+/// ConnectionManager 的 SyncServerApi 实现
 #[async_trait]
-impl SyncerRemoteApi for ConnectionManager {
+impl SyncServerApi for ConnectionManager {
     async fn fetch_server_max_seqs(&self, user_id: &str) -> Result<HashMap<String, i64>> {
         use openim_protocol::sdkws::{GetMaxSeqReq, GetMaxSeqResp};
 
@@ -105,7 +105,7 @@ impl Default for SyncConfig {
 /// - `Semaphore` 控制最大并发拉取数
 pub struct MessageSyncer {
     /// 外部依赖
-    remote: Arc<dyn SyncerRemoteApi>,
+    remote: Arc<dyn SyncServerApi>,
     stores: Arc<Stores>,
     message_handler: Arc<MessageHandler>,
     /// 身份
@@ -122,7 +122,7 @@ pub struct MessageSyncer {
 
 impl MessageSyncer {
     pub fn new(
-        remote: Arc<dyn SyncerRemoteApi>,
+        remote: Arc<dyn SyncServerApi>,
         stores: Arc<Stores>,
         message_handler: Arc<MessageHandler>,
         user_id: UserId,
@@ -650,7 +650,7 @@ mod tests {
     }
 
     #[async_trait]
-    impl SyncerRemoteApi for MockSyncerApi {
+    impl SyncServerApi for MockSyncerApi {
         async fn fetch_server_max_seqs(&self, _user_id: &str) -> Result<HashMap<String, i64>> { Ok(self.max_seqs.clone()) }
         async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
             self.pull_count.fetch_add(1, Ordering::SeqCst);
@@ -700,7 +700,7 @@ mod tests {
         }
     }
 
-    fn make_syncer(remote: Arc<dyn SyncerRemoteApi>, stores: Arc<Stores>, handler: Arc<MessageHandler>) -> MessageSyncer {
+    fn make_syncer(remote: Arc<dyn SyncServerApi>, stores: Arc<Stores>, handler: Arc<MessageHandler>) -> MessageSyncer {
         MessageSyncer::new(remote, stores, handler, UserId::new("test_user"))
     }
 

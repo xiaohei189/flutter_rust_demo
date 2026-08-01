@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// 生产环境由 `ConnectionManager` 实现（WebSocket RPC），
 /// 测试中使用 mock 返回预设数据。
 #[async_trait]
-pub trait SyncerRemoteApi: Send + Sync {
+pub trait SyncServerApi: Send + Sync {
     /// 获取服务端所有会话的最新 maxSeq
     async fn fetch_server_max_seqs(&self, user_id: &str) -> Result<HashMap<String, i64>>;
 

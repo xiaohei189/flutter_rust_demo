@@ -106,7 +106,7 @@ rust/src/
 5. api/simple.rs 曾为 ffi_init 兼容 shim，FRB 重新生成后已删除，App 直接使用 api/ffi_init.dart
 6. core/file/ 只保留业务逻辑：uploader.rs 是核心业务，其他工具类移入 infra/file/
 7. 协议类型统一使用外部 openim-protocol crate（path = ../../protocol）；本地不再有 protocol/ 模块，WS 帧类型与压缩器在 core/connection/ws.rs
-8. 外部服务契约（Ports）集中在 domain/ports/：SyncerRemoteApi / MessageServerApi / ConversationServerApi；HTTP 适配器实现放 infra/http/（message_api.rs、conversation_api.rs），WS 适配器由 core/connection 实现
+8. 外部服务契约（Ports）集中在 domain/ports/：SyncServerApi / MessageServerApi / ConversationServerApi；HTTP 适配器实现放 infra/http/（message_api.rs、conversation_api.rs），WS 适配器由 core/connection 实现
 9. DB 模型（LocalChatLog / LocalConversation 等）集中在 domain/model/local.rs；frb_generated 直接引用该路径，无兼容 shim
 
 ### 各层职责
