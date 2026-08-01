@@ -1,7 +1,7 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
 use crate::domain::error::Result;
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::local::LocalConversation;
 use crate::sdk::context::Repositories;
@@ -13,14 +13,14 @@ pub struct ConversationService {
     /// 外部依赖
     repositories: Arc<Repositories>,
     /// 事件
-    pub(crate) events: EventPublisher<ConversationEvent>,
+    pub(crate) events: EventSender<ConversationEvent>,
 }
 
 impl ConversationService {
     pub fn new(repositories: Arc<Repositories>) -> Self {
         Self {
             repositories,
-            events: EventPublisher::new(),
+            events: EventSender::new(),
         }
     }
 

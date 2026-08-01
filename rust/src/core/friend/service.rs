@@ -1,6 +1,6 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::types::SdkEvent;
 use crate::event::listener::friend::{FriendListener, FriendEvent};
 use crate::domain::model::friend::FriendInfo;
@@ -303,7 +303,7 @@ pub struct FriendService {
     friends: Arc<RwLock<Vec<FriendInfo>>>,
     blacks: Arc<RwLock<Vec<String>>>,
     /// 事件
-    pub(crate) events: EventPublisher<FriendEvent>,
+    pub(crate) events: EventSender<FriendEvent>,
 }
 
 impl FriendService {
@@ -318,7 +318,7 @@ impl FriendService {
             user_id,
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
-            events: EventPublisher::new(),
+            events: EventSender::new(),
         }
     }
 

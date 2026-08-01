@@ -1,3 +1,9 @@
+//! 消息监听 trait。
+//!
+//! 说明：消息事件未定义独立的 `MessageEvent` 枚举——消息相关事件统一走
+//! [`SdkEvent`](crate::event::types::SdkEvent)（NewMessage / MessageRevoked 等），
+//! 待与 `*Event` 体系合并时统一。
+
 use crate::event::types::{GroupReadReceipt, MessageReceipt};
 use openim_protocol::sdkws::MsgData;
 

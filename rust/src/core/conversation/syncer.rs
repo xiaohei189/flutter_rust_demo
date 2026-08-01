@@ -1,7 +1,7 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::domain::error::{Result, SdkError};
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalConversation;
@@ -27,7 +27,7 @@ pub struct ConversationSyncer {
     /// 身份
     user_id: UserId,
     /// 事件
-    pub(crate) events: EventPublisher<ConversationEvent>,
+    pub(crate) events: EventSender<ConversationEvent>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
     connection: Option<Arc<crate::core::connection::manager::ConnectionManager>>,
     /// 增量同步互斥锁（对齐 Go SDK `conversationSyncMutex`）
@@ -44,7 +44,7 @@ impl ConversationSyncer {
             api: Arc::new(HttpConversationApi::new(http_client)),
             repositories,
             user_id,
-            events: EventPublisher::new(),
+            events: EventSender::new(),
             connection: None,
             sync_mutex: tokio::sync::Mutex::new(()),
         }
@@ -61,7 +61,7 @@ impl ConversationSyncer {
             api,
             repositories,
             user_id,
-            events: EventPublisher::new(),
+            events: EventSender::new(),
             connection: None,
             sync_mutex: tokio::sync::Mutex::new(()),
         }

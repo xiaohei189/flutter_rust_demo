@@ -11,7 +11,7 @@ pub use crate::domain::ports::message::*;
 pub use crate::domain::ports::message::MessageServerApi;
 
 use crate::event::EventBus;
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::sdk::context::Repositories;
@@ -34,7 +34,7 @@ pub struct MessageService {
     /// 内部状态
     pub(crate) event_bus: Arc<EventBus>,
     /// 事件
-    pub(crate) events: EventPublisher<ConversationEvent>,
+    pub(crate) events: EventSender<ConversationEvent>,
 }
 
 impl MessageService {
@@ -49,7 +49,7 @@ impl MessageService {
             api,
             user_id,
             event_bus,
-            events: EventPublisher::new(),
+            events: EventSender::new(),
         }
     }
 

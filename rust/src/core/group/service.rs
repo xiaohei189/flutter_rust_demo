@@ -1,6 +1,6 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::types::SdkEvent;
 use crate::event::listener::group::{GroupListener, GroupEvent};
 use crate::event::types::GroupReadReceipt;
@@ -350,7 +350,7 @@ pub struct GroupService {
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
     /// 事件
-    pub(crate) events: EventPublisher<GroupEvent>,
+    pub(crate) events: EventSender<GroupEvent>,
 }
 
 impl GroupService {
@@ -365,7 +365,7 @@ impl GroupService {
             user_id,
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
-            events: EventPublisher::new(),
+            events: EventSender::new(),
         }
     }
 

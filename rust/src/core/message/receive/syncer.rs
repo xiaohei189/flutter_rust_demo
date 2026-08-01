@@ -8,7 +8,7 @@ use crate::domain::ports::SyncServerApi;
 use crate::domain::repository::NotificationSeqRepository;
 use crate::domain::constant::ws_req_identifier;
 use crate::domain::error::{Result, SdkError};
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::listener::conversation::{ConversationListener, ConversationEvent};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalNotificationSeq;
@@ -114,7 +114,7 @@ pub struct MessageSyncer {
     /// 配置
     config: SyncConfig,
     /// 事件
-    pub(crate) events: EventPublisher<ConversationEvent>,
+    pub(crate) events: EventSender<ConversationEvent>,
     /// 内部状态
     synced_max_seqs: Arc<RwLock<HashMap<String, i64>>>,
     sync_lock: Arc<Mutex<()>>,
@@ -134,7 +134,7 @@ impl MessageSyncer {
             message_handler,
             user_id,
             config: SyncConfig::default(),
-            events: EventPublisher::new(),
+            events: EventSender::new(),
             synced_max_seqs: Arc::new(RwLock::new(HashMap::new())),
             sync_lock: Arc::new(Mutex::new(())),
             per_conv_sync_locks: Arc::new(RwLock::new(HashMap::new())),

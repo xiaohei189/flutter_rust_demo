@@ -9,7 +9,7 @@ use crate::domain::constant::content_type;
 use crate::domain::constant::msg_status;
 use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::domain::error::Result;
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
@@ -74,7 +74,7 @@ pub struct MessageHandler {
     /// 内部状态
     pub max_seq_recorder: Arc<MaxSeqRecorder>,
     /// 事件
-    pub(crate) events: EventPublisher<ConversationEvent>,
+    pub(crate) events: EventSender<ConversationEvent>,
 }
 
 impl MessageHandler {
@@ -83,7 +83,7 @@ impl MessageHandler {
             repositories,
             user_id,
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
-            events: EventPublisher::new(),
+            events: EventSender::new(),
         }
     }
 

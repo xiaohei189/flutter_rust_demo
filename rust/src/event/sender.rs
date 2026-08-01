@@ -1,4 +1,4 @@
-//! 通用事件发布器 — 替代各模块中重复的 event_tx 模式
+//! 通用事件发送器 — 替代各模块中重复的 event_tx 模式
 //!
 //! 所有需要发布事件的模块统一使用此类型，
 //! 消除 `event_tx` + `set_event_sender()` + `send()` 的 9 处重复代码。
@@ -6,27 +6,27 @@
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::UnboundedSender;
 
-/// 通用事件发布器
+/// 通用事件发送器
 ///
 /// # 设计
 ///
 /// - 内部使用 `Arc<Mutex<Option<UnboundedSender<T>>>>`
-/// - Clone 廉价（Arc 共享），多个组件可共享同一发布器
+/// - Clone 廉价（Arc 共享），多个组件可共享同一发送器
 /// - 发布时若无订阅者则静默丢弃（不 panic）
 ///
 /// # 用法
 ///
 /// ```ignore
-/// let events = EventPublisher::<ConversationEvent>::new();
+/// let events = EventSender::<ConversationEvent>::new();
 /// events.set_sender(tx);
 /// events.publish(ConversationEvent::TotalUnreadCountChanged(0));
 /// ```
-pub struct EventPublisher<T> {
+pub struct EventSender<T> {
     tx: Arc<Mutex<Option<UnboundedSender<T>>>>,
 }
 
-impl<T> EventPublisher<T> {
-    /// 创建空的发布器（无订阅者）
+impl<T> EventSender<T> {
+    /// 创建空的发送器（无订阅者）
     pub fn new() -> Self {
         Self { tx: Arc::new(Mutex::new(None)) }
     }
@@ -49,13 +49,13 @@ impl<T> EventPublisher<T> {
     }
 }
 
-impl<T> Default for EventPublisher<T> {
+impl<T> Default for EventSender<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> Clone for EventPublisher<T> {
+impl<T> Clone for EventSender<T> {
     fn clone(&self) -> Self {
         Self { tx: self.tx.clone() }
     }
@@ -67,14 +67,14 @@ mod tests {
 
     #[test]
     fn test_publish_without_subscriber_does_not_panic() {
-        let publisher = EventPublisher::<String>::new();
+        let publisher = EventSender::<String>::new();
         publisher.publish("hello".to_string());
         assert!(!publisher.has_subscriber());
     }
 
     #[test]
     fn test_publish_with_subscriber_receives_event() {
-        let publisher = EventPublisher::<String>::new();
+        let publisher = EventSender::<String>::new();
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         publisher.set_sender(tx);
 
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_clone_shares_same_channel() {
-        let publisher = EventPublisher::<i32>::new();
+        let publisher = EventSender::<i32>::new();
         let cloned = publisher.clone();
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         publisher.set_sender(tx);
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_publish_after_receiver_dropped() {
-        let publisher = EventPublisher::<String>::new();
+        let publisher = EventSender::<String>::new();
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         publisher.set_sender(tx);
         drop(rx);

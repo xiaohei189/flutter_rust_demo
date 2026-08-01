@@ -269,13 +269,13 @@ pub enum SdkEvent {
     },
     Logout,
     CustomEvent {
-        event_type: String,
+        as_str: String,
         data: String,
     },
 }
 
 impl SdkEvent {
-    pub fn event_type(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             SdkEvent::Connecting => "connecting",
             SdkEvent::Connected => "connected",
@@ -347,16 +347,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sdk_event_event_type() {
-        assert_eq!(SdkEvent::Connecting.event_type(), "connecting");
-        assert_eq!(SdkEvent::Connected.event_type(), "connected");
-        assert_eq!(SdkEvent::Disconnected { reason: "test".into() }.event_type(), "disconnected");
-        assert_eq!(SdkEvent::ConnectFailed { error: "err".into() }.event_type(), "connect_failed");
-        assert_eq!(SdkEvent::SyncStarted.event_type(), "sync_started");
-        assert_eq!(SdkEvent::SyncFinished.event_type(), "sync_finished");
-        assert_eq!(SdkEvent::TokenExpired.event_type(), "token_expired");
-        assert_eq!(SdkEvent::LoginSuccess { user_id: "u1".into() }.event_type(), "login_success");
-        assert_eq!(SdkEvent::Logout.event_type(), "logout");
+    fn test_sdk_event_as_str() {
+        assert_eq!(SdkEvent::Connecting.as_str(), "connecting");
+        assert_eq!(SdkEvent::Connected.as_str(), "connected");
+        assert_eq!(SdkEvent::Disconnected { reason: "test".into() }.as_str(), "disconnected");
+        assert_eq!(SdkEvent::ConnectFailed { error: "err".into() }.as_str(), "connect_failed");
+        assert_eq!(SdkEvent::SyncStarted.as_str(), "sync_started");
+        assert_eq!(SdkEvent::SyncFinished.as_str(), "sync_finished");
+        assert_eq!(SdkEvent::TokenExpired.as_str(), "token_expired");
+        assert_eq!(SdkEvent::LoginSuccess { user_id: "u1".into() }.as_str(), "login_success");
+        assert_eq!(SdkEvent::Logout.as_str(), "logout");
     }
 
     #[test]
@@ -379,30 +379,30 @@ mod tests {
                 ..Default::default()
             },
         };
-        assert_eq!(event.event_type(), "new_message");
+        assert_eq!(event.as_str(), "new_message");
     }
 
     // ========== 第四批：事件回调完整性测试 ==========
 
     #[test]
-    fn test_sync_progress_event_type() {
+    fn test_sync_progress_as_str() {
         let event = SdkEvent::SyncProgress {
             progress: 50,
             message: "同步中".to_string(),
         };
-        assert_eq!(event.event_type(), "sync_progress");
+        assert_eq!(event.as_str(), "sync_progress");
     }
 
     #[test]
-    fn test_sync_failed_event_type() {
+    fn test_sync_failed_as_str() {
         let event = SdkEvent::SyncFailed {
             error: "网络断开".to_string(),
         };
-        assert_eq!(event.event_type(), "sync_failed");
+        assert_eq!(event.as_str(), "sync_failed");
     }
 
     #[test]
-    fn test_group_read_receipt_event_type() {
+    fn test_group_read_receipt_as_str() {
         let event = SdkEvent::GroupReadReceipt {
             receipts: vec![GroupReadReceipt {
                 group_id: "g_123".into(),
@@ -413,7 +413,7 @@ mod tests {
                 read_time: 1700000000,
             }],
         };
-        assert_eq!(event.event_type(), "group_read_receipt");
+        assert_eq!(event.as_str(), "group_read_receipt");
     }
 
     #[test]
@@ -438,7 +438,7 @@ mod tests {
     }
 
     #[test]
-    fn test_input_status_changed_event_type() {
+    fn test_input_status_changed_as_str() {
         let event = SdkEvent::ConversationUserInputStatusChanged {
             data: InputStatusChangedData {
                 conversation_id: "si_u1_u2".into(),
@@ -446,7 +446,7 @@ mod tests {
                 platform_ids: vec![1],
             },
         };
-        assert_eq!(event.event_type(), "conversation_user_input_status_changed");
+        assert_eq!(event.as_str(), "conversation_user_input_status_changed");
     }
 
     #[test]
@@ -478,7 +478,7 @@ mod tests {
     }
 
     #[test]
-    fn test_recv_offline_new_message_event_type() {
+    fn test_recv_offline_new_message_as_str() {
         let event = SdkEvent::RecvOfflineNewMessage {
             messages: vec![MsgData {
                 server_msg_id: "srv_off".into(),
@@ -494,11 +494,11 @@ mod tests {
                 ..Default::default()
             }],
         };
-        assert_eq!(event.event_type(), "recv_offline_new_message");
+        assert_eq!(event.as_str(), "recv_offline_new_message");
     }
 
     #[test]
-    fn test_msg_edited_event_type() {
+    fn test_msg_edited_as_str() {
         let event = SdkEvent::MsgEdited {
             message: MsgData {
                 server_msg_id: "srv_edit".into(),
@@ -514,40 +514,40 @@ mod tests {
                 ..Default::default()
             },
         };
-        assert_eq!(event.event_type(), "msg_edited");
+        assert_eq!(event.as_str(), "msg_edited");
     }
 
     #[test]
-    fn test_message_extensions_added_event_type() {
+    fn test_message_extensions_added_as_str() {
         let event = SdkEvent::MessageExtensionsAdded {
             data: MessageExtensionData {
                 client_msg_id: "msg_1".into(),
                 reaction_extension_list: "[{\"type\":\"👍\"}]".into(),
             },
         };
-        assert_eq!(event.event_type(), "message_extensions_added");
+        assert_eq!(event.as_str(), "message_extensions_added");
     }
 
     #[test]
-    fn test_message_extensions_changed_event_type() {
+    fn test_message_extensions_changed_as_str() {
         let event = SdkEvent::MessageExtensionsChanged {
             data: MessageExtensionData {
                 client_msg_id: "msg_1".into(),
                 reaction_extension_list: "[{\"type\":\"❤️\",\"count\":3}]".into(),
             },
         };
-        assert_eq!(event.event_type(), "message_extensions_changed");
+        assert_eq!(event.as_str(), "message_extensions_changed");
     }
 
     #[test]
-    fn test_message_extensions_deleted_event_type() {
+    fn test_message_extensions_deleted_as_str() {
         let event = SdkEvent::MessageExtensionsDeleted {
             data: MessageExtensionData {
                 client_msg_id: "msg_1".into(),
                 reaction_extension_list: "[\"👍\"]".into(),
             },
         };
-        assert_eq!(event.event_type(), "message_extensions_deleted");
+        assert_eq!(event.as_str(), "message_extensions_deleted");
     }
 
     #[test]

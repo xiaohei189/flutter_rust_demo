@@ -1,7 +1,7 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::domain::constant::req_identifier_name;
 use crate::domain::error::{Result, SdkError};
-use crate::event::publisher::EventPublisher;
+use crate::event::sender::EventSender;
 use crate::event::listener::connection::{ConnectionEvent, ConnectionListener};
 use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
 use crate::core::connection::ws::GzipCompressor;
@@ -70,7 +70,7 @@ pub struct ConnectionManager {
     /// 内部消息通道（对齐 Go SDK 直接分发的模式，不走 EventBus）
     /// 携带 Span 以便跨 task 传递 trace context
     push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, tracing::Span)>>>>,
-    pub(crate) events: EventPublisher<ConnectionEvent>,
+    pub(crate) events: EventSender<ConnectionEvent>,
     pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
 
@@ -114,7 +114,7 @@ impl ConnectionManager {
             compressor,
             message_batcher,
             push_tx,
-            events: EventPublisher::new(),
+            events: EventSender::new(),
             on_connected_hook: Arc::new(std::sync::Mutex::new(None)),
         }
     }
