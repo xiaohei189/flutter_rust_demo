@@ -1,5 +1,5 @@
 use crate::event::types::{GroupReadReceipt, MessageReceipt};
-use crate::protocol::sdkws::MsgData;
+use openim_protocol::sdkws::MsgData;
 
 /// message 事件（对齐 Go SDK MessageListener）
 pub trait MessageListener: Send + Sync {

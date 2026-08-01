@@ -422,7 +422,7 @@ impl MsgOptions {
 
 ## Rust 实现汇总建议
 
-建议在 `rust/src/protocol/constants.rs` 或 `rust/src/domain/constant/` 下统一管理：
+建议在 `rust/src/domain/constant/` 下统一管理：
 
 1. **枚举类型**（`SessionType`, `ContentType`, `MsgFrom`, `GroupType` 等）使用 Rust enum + `from_i32()` 方法
 2. **i32 常量**（`reqIdentifier`, `MsgStatus`, `SyncFlag` 等）使用 `pub const`

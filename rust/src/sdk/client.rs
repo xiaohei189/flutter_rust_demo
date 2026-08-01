@@ -110,7 +110,7 @@ impl OpenIMClient {
 use crate::sdk::config::ClientConfig;
 use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
-use crate::protocol::sdkws::PushMessages;
+use openim_protocol::sdkws::PushMessages;
 use prost::Message as ProstMessage;
 use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;

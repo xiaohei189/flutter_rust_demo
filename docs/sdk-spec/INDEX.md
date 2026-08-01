@@ -182,7 +182,7 @@ rust/src/
 │   ├── http/               # HTTP 客户端 + 74 个路由
 │   ├── cache/              # 内存缓存
 │   └── file/               # 文件操作
-└── protocol/               # 协议常量 + WS 消息结构
+└── 协议绑定              # 外部 openim-protocol crate（WS 帧见 core/connection/ws.rs）
 ```
 
 ---

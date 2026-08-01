@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::infra::database::models::LocalConversation;
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::user::UserInfo;
-use crate::protocol::sdkws::MsgData;
+use openim_protocol::sdkws::MsgData;
 
 /// C2C 已读回执（对齐 Go SDK `sdkws.MessageReceipt`）
 #[derive(Clone, Debug)]
@@ -253,8 +253,8 @@ pub enum SdkEvent {
     },
     /// 批量推送消息（经 MessageBatcher 聚合后）
     BatchedPushMessages {
-        msgs: HashMap<String, crate::protocol::sdkws::PullMsgs>,
-        notification_msgs: HashMap<String, crate::protocol::sdkws::PullMsgs>,
+        msgs: HashMap<String, openim_protocol::sdkws::PullMsgs>,
+        notification_msgs: HashMap<String, openim_protocol::sdkws::PullMsgs>,
     },
     KickedOffline {
         reason: String,

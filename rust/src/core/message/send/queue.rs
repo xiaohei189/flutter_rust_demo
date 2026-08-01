@@ -7,7 +7,7 @@ use tracing::{debug, info, warn, Span};
 
 use crate::core::message::shared::content_type::ContentTypeUtils;
 use crate::domain::error::SdkError;
-use crate::protocol::sdkws::UserSendMsgResp;
+use openim_protocol::sdkws::UserSendMsgResp;
 
 /// 单条消息的发送结果
 pub type SendResult = std::result::Result<UserSendMsgResp, SdkError>;

@@ -73,7 +73,7 @@ impl EventSubscription {
 
 #[cfg(test)]
 mod tests {
-    use crate::protocol::sdkws::MsgData;
+    use openim_protocol::sdkws::MsgData;
     use super::*;
 
     #[tokio::test]

@@ -496,7 +496,6 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 |------|------|------|
 | syncer 方法重复 | `core/message/syncer.rs` | `batch_pull_messages` / `pull_and_handle_messages` / `sync_incremental_messages` 各有 reinstall 变体，应合并 |
 | builder.rs 空文件 | `sdk/builder.rs` | 未实现 Builder 模式 |
-| protocol/constants.rs 空文件 | `protocol/constants.rs` | 未使用 |
 | infra/file/uploader.rs 空文件 | `infra/file/uploader.rs` | 实际上传在 core/file/ |
 
 ### 8.2 缺失的数据库表

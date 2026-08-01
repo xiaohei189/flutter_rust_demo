@@ -93,8 +93,7 @@ Rust 核心业务 (rust/src/core/)  ←→  基础设施 (rust/src/infra/)
 rust/src/
 - domain/     # 领域层（最底层，无内部依赖）
 - infra/      # 基础设施（依赖 domain）
-- protocol/   # 协议层（依赖 domain）
-- event/      # 事件系统（依赖 domain + protocol）
+- event/      # 事件系统（依赖 domain + openim_protocol（外部 crate））
 - core/       # 核心业务（依赖 domain + infra + event）
 - sdk/        # SDK 门面（依赖 core）
 - api/        # FFI 桥接（最上层，依赖 sdk, 供 frb_generated 使用）
@@ -107,6 +106,7 @@ rust/src/
 4. api/bridge_client.rs 不可删除：frb_generated 自动生成代码依赖此模块作为 re-export 枢纽
 5. api/simple.rs 保留为向后兼容 shim：重命名后保留一个 pub use super::ffi_init::*; 的 shim 文件
 6. core/file/ 只保留业务逻辑：uploader.rs 是核心业务，其他工具类移入 infra/file/
+7. 协议类型统一使用外部 openim-protocol crate（path = ../../protocol）；本地不再有 protocol/ 模块，WS 帧类型与压缩器在 core/connection/ws.rs
 
 ### 各层职责
 | 层 | 职责 | 不允许 |

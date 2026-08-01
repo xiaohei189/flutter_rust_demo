@@ -70,7 +70,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 │  │  ├─ file       文件上传                          │ │
 │  │  └─ logger     tracing + OpenTelemetry          │ │
 │  ├────────────────────────────────────────────────┤ │
-│  │  protocol/     协议层                            │ │
+│  │  (openim-protocol 外部 crate 提供协议类型)      │ │
 │  │  └─ openim_protocol 重导出 + WS 类型             │ │
 │  └────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────┘
@@ -102,7 +102,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 | `rust/src/core/` | 核心业务逻辑（连接、消息、会话、好友、群组等） |
 | `rust/src/domain/` | 领域模型、事件、错误、配置 |
 | `rust/src/infra/` | 基础设施（数据库、HTTP、缓存、日志） |
-| `rust/src/protocol/` | 协议层（OpenIM protobuf） |
+| `openim-protocol` crate（`../../protocol`） | 协议层（OpenIM protobuf） |
 
 ## 数据流
 

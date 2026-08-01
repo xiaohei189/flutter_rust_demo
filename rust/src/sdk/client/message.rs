@@ -9,7 +9,7 @@ use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
 use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
 use crate::infra::database::models::{LocalChatLog, LocalSendingMessage};
-use crate::protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
+use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
 use crate::sdk::client::types::{
     DeleteMessagesReq, GetHistoryMessagesReq, GetHistoryMessagesResult, MarkMessagesAsReadReq, RevokeMessageReq,
     SearchMessagesReq,

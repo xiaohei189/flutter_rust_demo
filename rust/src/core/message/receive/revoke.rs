@@ -5,7 +5,7 @@ use crate::domain::constant::notification_type::REVOKE;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
 use crate::event::listener::conversation::ConversationEvent;
-use crate::protocol::sdkws::{MsgData, RevokeMsgTips};
+use openim_protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
 /// 撤回通知扩展结构（protobuf RevokeMsgTips 不含 revokerNickname，此结构补充）

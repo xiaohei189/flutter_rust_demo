@@ -18,7 +18,7 @@ use crate::domain::constant::notification_type;
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
 use crate::domain::model::UserId;
-use crate::protocol::sdkws::MsgData;
+use openim_protocol::sdkws::MsgData;
 use serde::Deserialize;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -357,7 +357,7 @@ impl NotificationHandler {
             tips.revoker_nickname, tips.revoker_role, tips.revoker_user_id, tips.seq, tips.conversation_id);
 
         // 委托给 MessageHandler 处理（构造 protobuf 类型兼容的结构）
-        let revoke_tips = crate::protocol::sdkws::RevokeMsgTips {
+        let revoke_tips = openim_protocol::sdkws::RevokeMsgTips {
             revoker_user_id: tips.revoker_user_id,
             client_msg_id: tips.client_msg_id,
             revoke_time: tips.revoke_time,

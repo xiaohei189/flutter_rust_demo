@@ -268,8 +268,8 @@ pub struct SendTypingResp {
     pub send_time: i64,
 }
 
-impl From<crate::protocol::sdkws::UserSendMsgResp> for SendTypingResp {
-    fn from(resp: crate::protocol::sdkws::UserSendMsgResp) -> Self {
+impl From<openim_protocol::sdkws::UserSendMsgResp> for SendTypingResp {
+    fn from(resp: openim_protocol::sdkws::UserSendMsgResp) -> Self {
         Self {
             server_msg_id: resp.server_msg_id,
             client_msg_id: resp.client_msg_id,

@@ -547,7 +547,7 @@ core/message/handler.rs::handle_notification_message()
 | 错误类型 | `domain/error/types.rs` | ✅ | `SdkError` + helper + From 转换 |
 | 常量定义 | `domain/constant/types.rs` | ✅ | 协议常量、枚举值 |
 | 事件总线 | `domain/event/bus.rs` + `types.rs` | ✅ | broadcast channel，44 种事件变体 |
-| 协议层 | `protocol/` | ✅ | 依赖 `openim-protocol` crate |
+| 协议层 | `openim-protocol` crate | ✅ | 外部 crate（`../../protocol`） |
 | HTTP 客户端 | `infra/http/client.rs` + `routes.rs` | ✅ | reqwest + 50 个路由 |
 | 依赖注入 | `sdk/context.rs` | ✅ | RuntimeContext |
 | 缓存 | `infra/cache/memory.rs` | ✅ | 内存 KV |

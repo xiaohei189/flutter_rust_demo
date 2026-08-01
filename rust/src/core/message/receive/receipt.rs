@@ -4,7 +4,7 @@ use super::handler::MessageHandler;
 use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::listener::conversation::ConversationEvent;
-use crate::protocol::sdkws::{MarkAsReadTips, MsgData};
+use openim_protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;
 
@@ -69,7 +69,7 @@ impl MessageHandler {
     }
 
     /// 处理来自 NotificationHandler 的已读回执（MsgData 格式，content_type=2200）
-    pub async fn handle_read_receipt_from_msg_data(&self, msg: &crate::protocol::sdkws::MsgData) -> Result<()> {
+    pub async fn handle_read_receipt_from_msg_data(&self, msg: &openim_protocol::sdkws::MsgData) -> Result<()> {
         let content_str = std::str::from_utf8(&msg.content)
             .map_err(|e| SdkError::invalid_argument(format!("content 不是有效 UTF-8: {}", e)))?;
         let outer: serde_json::Value = serde_json::from_str(content_str)
@@ -195,7 +195,7 @@ mod tests {
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::database::models::{LocalChatLog, LocalConversation};
     use crate::infra::database::pool::create_pool_memory;
-    use crate::protocol::sdkws::MarkAsReadTips;
+    use openim_protocol::sdkws::MarkAsReadTips;
     use crate::sdk::context::Stores;
     use prost::Message as ProstMessage;
     use std::sync::Arc;

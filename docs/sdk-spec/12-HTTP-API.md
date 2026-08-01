@@ -17,14 +17,14 @@ Go SDK 中所有 HTTP API 路由定义在 `pkg/api/api.go` 中，使用泛型 `n
 
 | Go Protocol 包 | Rust 等价路径 | 说明 |
 |----------------|--------------|------|
-| `auth.*` | `protocol::auth::*` | 认证相关 |
-| `user.*` | `protocol::user::*` | 用户相关 |
-| `relation.*` | `protocol::relation::*` | 好友/关系相关 |
-| `group.*` | `protocol::group::*` | 群组相关 |
-| `conversation.*` | `protocol::conversation::*` | 会话相关 |
-| `msg.*` | `protocol::msg::*` | 消息相关 |
-| `third.*` | `protocol::third::*` | 第三方服务 |
-| `jssdk.*` | `protocol::jssdk::*` | JS SDK 专用 |
+| `auth.*` | `openim_protocol::auth::*` | 认证相关 |
+| `user.*` | `openim_protocol::user::*` | 用户相关 |
+| `relation.*` | `openim_protocol::relation::*` | 好友/关系相关 |
+| `group.*` | `openim_protocol::group::*` | 群组相关 |
+| `conversation.*` | `openim_protocol::conversation::*` | 会话相关 |
+| `msg.*` | `openim_protocol::msg::*` | 消息相关 |
+| `third.*` | `openim_protocol::third::*` | 第三方服务 |
+| `jssdk.*` | `openim_protocol::jssdk::*` | JS SDK 专用 |
 
 ---
 

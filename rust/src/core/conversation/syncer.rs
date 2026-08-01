@@ -265,7 +265,7 @@ impl ConversationSyncer {
 
         let user_id = self.user_id.get().await;
         use crate::domain::constant::ws_req_identifier;
-        use crate::protocol::msg::{
+        use openim_protocol::msg::{
             GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp,
         };
 

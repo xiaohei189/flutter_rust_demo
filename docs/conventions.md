@@ -160,7 +160,7 @@ pub mod sdk;      // SDK 入口
 pub mod core;     // 业务逻辑
 pub mod domain;   // 领域模型
 pub mod infra;    // 基础设施
-pub mod protocol; // 协议层
+// 协议类型来自外部 openim-protocol crate，无本地 protocol 模块
 ```
 
 ### 命名

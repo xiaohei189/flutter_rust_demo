@@ -14,12 +14,39 @@ use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
-use crate::protocol::sdkws::MsgData;
+use openim_protocol::sdkws::MsgData;
 use crate::sdk::context::Stores;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn, trace};
 use rand::Rng;
+impl From<(&str, &MsgData)> for LocalChatLog {
+    fn from((conv_id, msg): (&str, &MsgData)) -> Self {
+        Self {
+            conversation_id: conv_id.to_string(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: String::from_utf8_lossy(&msg.content).to_string(),
+            is_read: 0,
+            status: msg_status::SEND_SUCCESS as i32,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
+    }
+}
 
 /// 消息处理器 — 接收消息的分类入库与事件分发中心
 ///

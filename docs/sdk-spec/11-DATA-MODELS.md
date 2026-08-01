@@ -625,7 +625,7 @@ func LocalConversationToServer(info *model_struct.LocalConversation) *pbConversa
 ```
 
 **Rust 实现要点**:
-- 服务端类型: `protocol::conversation::Conversation`（来自 proto 生成）
+- 服务端类型: `openim_protocol::conversation::Conversation`（来自 proto 生成）
 - 本地类型: `LocalConversation`
 - `ShowName`、`FaceURL`、`LatestMsg`、`UnreadCount` 等为本地计算字段，不在转换中
 

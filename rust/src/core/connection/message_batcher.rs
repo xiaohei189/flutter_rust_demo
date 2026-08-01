@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, mpsc};
-use crate::protocol::sdkws::{PullMsgs, PushMessages};
+use openim_protocol::sdkws::{PullMsgs, PushMessages};
 
 // 对齐 Go SDK message_batcher.go 常量
 const MAX_BATCH_MESSAGES: usize = 400;
@@ -300,7 +300,7 @@ fn is_empty(batch: &PushMessages) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::sdkws::MsgData;
+    use openim_protocol::sdkws::MsgData;
 
     #[test]
     fn test_compute_delay_low_load() {

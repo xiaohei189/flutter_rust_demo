@@ -1,3 +1,4 @@
+pub mod ws;
 pub mod manager;
 pub mod message_batcher;
 pub mod websocket;
