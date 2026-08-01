@@ -5,6 +5,7 @@ use crate::domain::constant::notification_type::REVOKE;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
 use crate::event::listener::conversation::ConversationEvent;
+use crate::event::listener::message::MessageEvent;
 use openim_protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
@@ -149,7 +150,7 @@ impl MessageHandler {
         }
 
         // 3. 构建 MessageRevoked 结构
-        let _revoked_event = SdkEvent::MessageRevoked {
+        let _revoked_event = SdkEvent::Message(MessageEvent::Revoked {
             conversation_id: tips.conversation_id.clone(),
             seq: tips.seq,
             client_msg_id: revoked_msg.client_msg_id.clone(),
@@ -162,7 +163,7 @@ impl MessageHandler {
             source_message_sender_nickname: revoked_msg.sender_nick_name.clone(),
             session_type: tips.sesstion_type,
             is_admin_revoke: tips.is_admin_revoke,
-        };
+        });
 
         // 4. 更新 DB：替换消息内容为 RevokeNotification
         let notification_content = serde_json::json!({

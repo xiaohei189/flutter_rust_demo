@@ -102,9 +102,9 @@ impl MessageService {
     async fn unread_change_trigger(&self, conversation_id: &str, latest_msg_is_read: bool) {
         // L163-166: latestMsgIsRead 时触发 UpdateLatestMessageReadState
         if latest_msg_is_read {
-            self.event_bus.publish(SdkEvent::UpdateLatestMessageReadState {
+            self.event_bus.publish(SdkEvent::Conversation(ConversationEvent::UpdateLatestMessageReadState {
                 conversation_id: conversation_id.to_string(),
-            });
+            }));
         }
 
         // L167-168: ConChange

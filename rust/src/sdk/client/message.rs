@@ -5,6 +5,8 @@ use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::Result;
 use crate::domain::error::SdkError;
 use crate::event::types::SdkEvent;
+use crate::event::listener::conversation::ConversationEvent;
+use crate::event::listener::message::MessageEvent;
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
 use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
@@ -168,9 +170,7 @@ async fn insert_message_before_send_impl(
 
     // 会话乐观更新（对齐 Go SDK api.go L322-324）
     if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
-        context.event_bus.publish(SdkEvent::ConversationChanged {
-            conversations: vec![conv],
-        });
+        context.event_bus.publish(SdkEvent::Conversation(ConversationEvent::Changed(vec![conv])));
     }
 
     Ok(())
@@ -246,10 +246,10 @@ async fn do_send_message_impl(
                     }
                 }
                 context.repositories.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
-                context.event_bus.publish(SdkEvent::MessageSendFailed {
+                context.event_bus.publish(SdkEvent::Message(MessageEvent::SendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
                     error: format!("{}", e),
-                });
+                }));
             }
             return Err(SdkError::message_send(format!("send message via ws failed: {}", e)));
         }
@@ -1462,7 +1462,7 @@ mod tests {
         ).await;
         assert!(event.is_ok(), "应收到事件");
         match event.unwrap() {
-            Some(SdkEvent::MessageSendFailed { client_msg_id, .. }) => {
+            Some(SdkEvent::Message(MessageEvent::SendFailed { client_msg_id, .. })) => {
                 assert_eq!(client_msg_id, "client_msg_fail");
             }
             other => panic!("期望 MessageSendFailed 事件, 实际: {:?}", other),

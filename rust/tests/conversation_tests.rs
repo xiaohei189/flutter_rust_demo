@@ -24,6 +24,8 @@ async fn test_conversation_list_sync() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -45,7 +47,7 @@ async fn test_conversation_list_sync() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     break;
                 }
             }
@@ -77,6 +79,8 @@ async fn test_get_single_conversation() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -96,7 +100,7 @@ async fn test_get_single_conversation() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     break;
                 }
             }
@@ -133,6 +137,8 @@ async fn test_conversation_unread_count() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -162,7 +168,7 @@ async fn test_conversation_unread_count() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 3 { break; }
                 }
@@ -196,6 +202,8 @@ async fn test_conversation_mark_read() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -226,7 +234,7 @@ async fn test_conversation_mark_read() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 2 { break; }
                 }
@@ -253,7 +261,7 @@ async fn test_conversation_mark_read() {
         tokio::select! {
             _ = &mut timeout2 => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::ConversationChanged { conversations }) = event {
+                if let Some(SdkEvent::Conversation(ConversationEvent::Changed(conversations))) = event {
                     for conv in &conversations {
                         if conv.conversation_id == conv_id {
                             assert_eq!(conv.unread_count, 0, "事件中未读应为 0");
@@ -287,7 +295,7 @@ async fn test_conversation_mark_read() {
         tokio::select! {
             _ = &mut timeout3 => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 4 { break; }
                 }
@@ -331,6 +339,8 @@ async fn test_conversation_pinned() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -351,7 +361,7 @@ async fn test_conversation_pinned() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -390,6 +400,8 @@ async fn test_conversation_private() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -409,7 +421,7 @@ async fn test_conversation_private() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -442,6 +454,8 @@ async fn test_conversation_draft() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -461,7 +475,7 @@ async fn test_conversation_draft() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -514,6 +528,8 @@ async fn test_conversation_delete() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -533,7 +549,7 @@ async fn test_conversation_delete() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -570,6 +586,8 @@ async fn test_set_conversation() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -589,7 +607,7 @@ async fn test_set_conversation() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -681,6 +699,8 @@ async fn test_conversation_lifecycle() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -702,7 +722,7 @@ async fn test_conversation_lifecycle() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -761,6 +781,8 @@ async fn test_unread_count_persistence() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -781,7 +803,7 @@ async fn test_unread_count_persistence() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -835,6 +857,8 @@ async fn test_unread_count_after_message() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -859,7 +883,7 @@ async fn test_unread_count_after_message() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 2 { break; }
                 }
@@ -910,6 +934,8 @@ async fn test_update_conversation_unread_count() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -929,7 +955,7 @@ async fn test_update_conversation_unread_count() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -972,6 +998,8 @@ async fn test_conversation_list_split() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     println!("[Phase 1] 创建 5 个随机账号...");
     let mut sender_accounts = Vec::new();
@@ -1012,7 +1040,7 @@ async fn test_conversation_list_split() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 5 { break; }
                 }
@@ -1096,6 +1124,8 @@ async fn test_multiple_conversations() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方，发送 2 条消息...");
     let sender = create_random_account("MultiSender").await;
@@ -1123,7 +1153,7 @@ async fn test_multiple_conversations() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event {
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 2 { break; }
                 }
@@ -1184,6 +1214,8 @@ async fn test_search_conversations() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
     let sender = create_random_account("SearchSender").await;
@@ -1208,7 +1240,7 @@ async fn test_search_conversations() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1271,6 +1303,8 @@ async fn test_hide_conversation() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
     let sender = create_random_account("HideSender").await;
@@ -1295,7 +1329,7 @@ async fn test_hide_conversation() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1347,7 +1381,7 @@ async fn test_hide_conversation() {
         tokio::select! {
             _ = &mut timeout2 => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1383,6 +1417,8 @@ async fn test_conversation_full_persistence() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
 
     // Phase 1: A 发消息给 B
     println!("\n========== Phase 1: A 发消息给 B ==========");
@@ -1405,7 +1441,7 @@ async fn test_conversation_full_persistence() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1486,6 +1522,8 @@ async fn test_concurrent_conversation_ops() {
         .try_init();
 
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::listener::message::MessageEvent;
     use std::sync::Arc;
 
     // Phase 1: A 发消息给 B
@@ -1509,7 +1547,7 @@ async fn test_concurrent_conversation_ops() {
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::NewMessage { .. }) = event { break; }
+                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }

@@ -1,6 +1,7 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
+use crate::event::listener::user::UserEvent;
 use crate::domain::model::user::UserInfo;
  use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};
@@ -150,9 +151,9 @@ impl UserService {
         };
 
         if let Some(updated_user) = updated_user {
-            self.event_bus.publish(SdkEvent::UserInfoUpdated {
+            self.event_bus.publish(SdkEvent::User(UserEvent::UserInfoUpdated {
                 user: updated_user,
-            });
+            }));
         }
 
         info!("用户信息已更新到服务器");

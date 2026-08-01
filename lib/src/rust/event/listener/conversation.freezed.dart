@@ -33,6 +33,8 @@ mixin _$ConversationEvent {
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
@@ -50,6 +52,7 @@ mixin _$ConversationEvent {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
@@ -67,6 +70,7 @@ mixin _$ConversationEvent {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -84,6 +88,10 @@ mixin _$ConversationEvent {
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
@@ -98,6 +106,8 @@ mixin _$ConversationEvent {
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
@@ -112,6 +122,8 @@ mixin _$ConversationEvent {
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
 }
@@ -234,6 +246,8 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return changed(field0);
   }
@@ -255,6 +269,7 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return changed?.call(field0);
   }
@@ -276,6 +291,7 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (changed != null) {
@@ -300,6 +316,10 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return changed(this);
   }
@@ -318,6 +338,8 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return changed?.call(this);
   }
@@ -336,6 +358,8 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (changed != null) {
@@ -456,6 +480,8 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return deleted(field0);
   }
@@ -477,6 +503,7 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return deleted?.call(field0);
   }
@@ -498,6 +525,7 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (deleted != null) {
@@ -522,6 +550,10 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return deleted(this);
   }
@@ -540,6 +572,8 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return deleted?.call(this);
   }
@@ -558,6 +592,8 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (deleted != null) {
@@ -677,6 +713,8 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return new_(field0);
   }
@@ -698,6 +736,7 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return new_?.call(field0);
   }
@@ -719,6 +758,7 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (new_ != null) {
@@ -743,6 +783,10 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return new_(this);
   }
@@ -761,6 +805,8 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return new_?.call(this);
   }
@@ -779,6 +825,8 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (new_ != null) {
@@ -897,6 +945,8 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return totalUnreadCountChanged(field0);
   }
@@ -918,6 +968,7 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return totalUnreadCountChanged?.call(field0);
   }
@@ -939,6 +990,7 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (totalUnreadCountChanged != null) {
@@ -963,6 +1015,10 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return totalUnreadCountChanged(this);
   }
@@ -981,6 +1037,8 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return totalUnreadCountChanged?.call(this);
   }
@@ -999,6 +1057,8 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (totalUnreadCountChanged != null) {
@@ -1088,6 +1148,8 @@ class _$ConversationEvent_SyncStartedImpl
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return syncStarted();
   }
@@ -1109,6 +1171,7 @@ class _$ConversationEvent_SyncStartedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return syncStarted?.call();
   }
@@ -1130,6 +1193,7 @@ class _$ConversationEvent_SyncStartedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncStarted != null) {
@@ -1154,6 +1218,10 @@ class _$ConversationEvent_SyncStartedImpl
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return syncStarted(this);
   }
@@ -1172,6 +1240,8 @@ class _$ConversationEvent_SyncStartedImpl
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return syncStarted?.call(this);
   }
@@ -1190,6 +1260,8 @@ class _$ConversationEvent_SyncStartedImpl
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncStarted != null) {
@@ -1268,6 +1340,8 @@ class _$ConversationEvent_SyncFinishedImpl
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return syncFinished();
   }
@@ -1289,6 +1363,7 @@ class _$ConversationEvent_SyncFinishedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return syncFinished?.call();
   }
@@ -1310,6 +1385,7 @@ class _$ConversationEvent_SyncFinishedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncFinished != null) {
@@ -1334,6 +1410,10 @@ class _$ConversationEvent_SyncFinishedImpl
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return syncFinished(this);
   }
@@ -1352,6 +1432,8 @@ class _$ConversationEvent_SyncFinishedImpl
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return syncFinished?.call(this);
   }
@@ -1370,6 +1452,8 @@ class _$ConversationEvent_SyncFinishedImpl
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncFinished != null) {
@@ -1478,6 +1562,8 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return syncFailed(field0);
   }
@@ -1499,6 +1585,7 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return syncFailed?.call(field0);
   }
@@ -1520,6 +1607,7 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncFailed != null) {
@@ -1544,6 +1632,10 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return syncFailed(this);
   }
@@ -1562,6 +1654,8 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return syncFailed?.call(this);
   }
@@ -1580,6 +1674,8 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncFailed != null) {
@@ -1710,6 +1806,8 @@ class _$ConversationEvent_SyncProgressImpl
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return syncProgress(progress, message);
   }
@@ -1731,6 +1829,7 @@ class _$ConversationEvent_SyncProgressImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return syncProgress?.call(progress, message);
   }
@@ -1752,6 +1851,7 @@ class _$ConversationEvent_SyncProgressImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncProgress != null) {
@@ -1776,6 +1876,10 @@ class _$ConversationEvent_SyncProgressImpl
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return syncProgress(this);
   }
@@ -1794,6 +1898,8 @@ class _$ConversationEvent_SyncProgressImpl
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return syncProgress?.call(this);
   }
@@ -1812,6 +1918,8 @@ class _$ConversationEvent_SyncProgressImpl
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (syncProgress != null) {
@@ -1965,6 +2073,8 @@ class _$ConversationEvent_UserInputStatusChangedImpl
       Int32List platformIds,
     )
     userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
   }) {
     return userInputStatusChanged(conversationId, userId, platformIds);
   }
@@ -1986,6 +2096,7 @@ class _$ConversationEvent_UserInputStatusChangedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
     return userInputStatusChanged?.call(conversationId, userId, platformIds);
   }
@@ -2007,6 +2118,7 @@ class _$ConversationEvent_UserInputStatusChangedImpl
       Int32List platformIds,
     )?
     userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (userInputStatusChanged != null) {
@@ -2031,6 +2143,10 @@ class _$ConversationEvent_UserInputStatusChangedImpl
     syncProgress,
     required TResult Function(ConversationEvent_UserInputStatusChanged value)
     userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
   }) {
     return userInputStatusChanged(this);
   }
@@ -2049,6 +2165,8 @@ class _$ConversationEvent_UserInputStatusChangedImpl
     TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult? Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
   }) {
     return userInputStatusChanged?.call(this);
   }
@@ -2067,6 +2185,8 @@ class _$ConversationEvent_UserInputStatusChangedImpl
     TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
     TResult Function(ConversationEvent_UserInputStatusChanged value)?
     userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
     required TResult orElse(),
   }) {
     if (userInputStatusChanged != null) {
@@ -2094,6 +2214,247 @@ abstract class ConversationEvent_UserInputStatusChanged
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ConversationEvent_UserInputStatusChangedImplCopyWith<
     _$ConversationEvent_UserInputStatusChangedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<
+  $Res
+> {
+  factory _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith(
+    _$ConversationEvent_UpdateLatestMessageReadStateImpl value,
+    $Res Function(_$ConversationEvent_UpdateLatestMessageReadStateImpl) then,
+  ) = __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String conversationId});
+}
+
+/// @nodoc
+class __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl<$Res>
+    extends
+        _$ConversationEventCopyWithImpl<
+          $Res,
+          _$ConversationEvent_UpdateLatestMessageReadStateImpl
+        >
+    implements
+        _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<$Res> {
+  __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl(
+    _$ConversationEvent_UpdateLatestMessageReadStateImpl _value,
+    $Res Function(_$ConversationEvent_UpdateLatestMessageReadStateImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? conversationId = null}) {
+    return _then(
+      _$ConversationEvent_UpdateLatestMessageReadStateImpl(
+        conversationId: null == conversationId
+            ? _value.conversationId
+            : conversationId // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$ConversationEvent_UpdateLatestMessageReadStateImpl
+    extends ConversationEvent_UpdateLatestMessageReadState {
+  const _$ConversationEvent_UpdateLatestMessageReadStateImpl({
+    required this.conversationId,
+  }) : super._();
+
+  @override
+  final String conversationId;
+
+  @override
+  String toString() {
+    return 'ConversationEvent.updateLatestMessageReadState(conversationId: $conversationId)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ConversationEvent_UpdateLatestMessageReadStateImpl &&
+            (identical(other.conversationId, conversationId) ||
+                other.conversationId == conversationId));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, conversationId);
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<
+    _$ConversationEvent_UpdateLatestMessageReadStateImpl
+  >
+  get copyWith =>
+      __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl<
+        _$ConversationEvent_UpdateLatestMessageReadStateImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(List<LocalConversation> field0) changed,
+    required TResult Function(List<String> field0) deleted,
+    required TResult Function(List<LocalConversation> field0) new_,
+    required TResult Function(int field0) totalUnreadCountChanged,
+    required TResult Function() syncStarted,
+    required TResult Function() syncFinished,
+    required TResult Function(String field0) syncFailed,
+    required TResult Function(int progress, String message) syncProgress,
+    required TResult Function(
+      String conversationId,
+      String userId,
+      Int32List platformIds,
+    )
+    userInputStatusChanged,
+    required TResult Function(String conversationId)
+    updateLatestMessageReadState,
+  }) {
+    return updateLatestMessageReadState(conversationId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(List<LocalConversation> field0)? changed,
+    TResult? Function(List<String> field0)? deleted,
+    TResult? Function(List<LocalConversation> field0)? new_,
+    TResult? Function(int field0)? totalUnreadCountChanged,
+    TResult? Function()? syncStarted,
+    TResult? Function()? syncFinished,
+    TResult? Function(String field0)? syncFailed,
+    TResult? Function(int progress, String message)? syncProgress,
+    TResult? Function(
+      String conversationId,
+      String userId,
+      Int32List platformIds,
+    )?
+    userInputStatusChanged,
+    TResult? Function(String conversationId)? updateLatestMessageReadState,
+  }) {
+    return updateLatestMessageReadState?.call(conversationId);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(List<LocalConversation> field0)? changed,
+    TResult Function(List<String> field0)? deleted,
+    TResult Function(List<LocalConversation> field0)? new_,
+    TResult Function(int field0)? totalUnreadCountChanged,
+    TResult Function()? syncStarted,
+    TResult Function()? syncFinished,
+    TResult Function(String field0)? syncFailed,
+    TResult Function(int progress, String message)? syncProgress,
+    TResult Function(
+      String conversationId,
+      String userId,
+      Int32List platformIds,
+    )?
+    userInputStatusChanged,
+    TResult Function(String conversationId)? updateLatestMessageReadState,
+    required TResult orElse(),
+  }) {
+    if (updateLatestMessageReadState != null) {
+      return updateLatestMessageReadState(conversationId);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ConversationEvent_Changed value) changed,
+    required TResult Function(ConversationEvent_Deleted value) deleted,
+    required TResult Function(ConversationEvent_New value) new_,
+    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
+    totalUnreadCountChanged,
+    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
+    required TResult Function(ConversationEvent_SyncFinished value)
+    syncFinished,
+    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
+    required TResult Function(ConversationEvent_SyncProgress value)
+    syncProgress,
+    required TResult Function(ConversationEvent_UserInputStatusChanged value)
+    userInputStatusChanged,
+    required TResult Function(
+      ConversationEvent_UpdateLatestMessageReadState value,
+    )
+    updateLatestMessageReadState,
+  }) {
+    return updateLatestMessageReadState(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ConversationEvent_Changed value)? changed,
+    TResult? Function(ConversationEvent_Deleted value)? deleted,
+    TResult? Function(ConversationEvent_New value)? new_,
+    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
+    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
+    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
+    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
+    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
+    userInputStatusChanged,
+    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
+  }) {
+    return updateLatestMessageReadState?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ConversationEvent_Changed value)? changed,
+    TResult Function(ConversationEvent_Deleted value)? deleted,
+    TResult Function(ConversationEvent_New value)? new_,
+    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
+    totalUnreadCountChanged,
+    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
+    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
+    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
+    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
+    TResult Function(ConversationEvent_UserInputStatusChanged value)?
+    userInputStatusChanged,
+    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
+    updateLatestMessageReadState,
+    required TResult orElse(),
+  }) {
+    if (updateLatestMessageReadState != null) {
+      return updateLatestMessageReadState(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class ConversationEvent_UpdateLatestMessageReadState
+    extends ConversationEvent {
+  const factory ConversationEvent_UpdateLatestMessageReadState({
+    required final String conversationId,
+  }) = _$ConversationEvent_UpdateLatestMessageReadStateImpl;
+  const ConversationEvent_UpdateLatestMessageReadState._() : super._();
+
+  String get conversationId;
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<
+    _$ConversationEvent_UpdateLatestMessageReadStateImpl
   >
   get copyWith => throw _privateConstructorUsedError;
 }

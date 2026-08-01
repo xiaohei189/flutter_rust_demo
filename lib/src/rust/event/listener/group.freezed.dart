@@ -26,6 +26,9 @@ mixin _$GroupEvent {
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
@@ -35,6 +38,9 @@ mixin _$GroupEvent {
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
@@ -44,6 +50,9 @@ mixin _$GroupEvent {
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -58,6 +67,12 @@ mixin _$GroupEvent {
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
@@ -67,6 +82,11 @@ mixin _$GroupEvent {
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
@@ -76,6 +96,9 @@ mixin _$GroupEvent {
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
 }
@@ -181,6 +204,9 @@ class _$GroupEvent_JoinedGroupAddedImpl extends GroupEvent_JoinedGroupAdded {
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) {
     return joinedGroupAdded(field0);
   }
@@ -194,6 +220,9 @@ class _$GroupEvent_JoinedGroupAddedImpl extends GroupEvent_JoinedGroupAdded {
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) {
     return joinedGroupAdded?.call(field0);
   }
@@ -207,6 +236,9 @@ class _$GroupEvent_JoinedGroupAddedImpl extends GroupEvent_JoinedGroupAdded {
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) {
     if (joinedGroupAdded != null) {
@@ -228,6 +260,12 @@ class _$GroupEvent_JoinedGroupAddedImpl extends GroupEvent_JoinedGroupAdded {
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) {
     return joinedGroupAdded(this);
   }
@@ -241,6 +279,11 @@ class _$GroupEvent_JoinedGroupAddedImpl extends GroupEvent_JoinedGroupAdded {
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) {
     return joinedGroupAdded?.call(this);
   }
@@ -254,6 +297,9 @@ class _$GroupEvent_JoinedGroupAddedImpl extends GroupEvent_JoinedGroupAdded {
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) {
     if (joinedGroupAdded != null) {
@@ -360,6 +406,9 @@ class _$GroupEvent_JoinedGroupDeletedImpl
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) {
     return joinedGroupDeleted(field0);
   }
@@ -373,6 +422,9 @@ class _$GroupEvent_JoinedGroupDeletedImpl
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) {
     return joinedGroupDeleted?.call(field0);
   }
@@ -386,6 +438,9 @@ class _$GroupEvent_JoinedGroupDeletedImpl
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) {
     if (joinedGroupDeleted != null) {
@@ -407,6 +462,12 @@ class _$GroupEvent_JoinedGroupDeletedImpl
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) {
     return joinedGroupDeleted(this);
   }
@@ -420,6 +481,11 @@ class _$GroupEvent_JoinedGroupDeletedImpl
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) {
     return joinedGroupDeleted?.call(this);
   }
@@ -433,6 +499,9 @@ class _$GroupEvent_JoinedGroupDeletedImpl
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) {
     if (joinedGroupDeleted != null) {
@@ -538,6 +607,9 @@ class _$GroupEvent_GroupInfoChangedImpl extends GroupEvent_GroupInfoChanged {
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) {
     return groupInfoChanged(field0);
   }
@@ -551,6 +623,9 @@ class _$GroupEvent_GroupInfoChangedImpl extends GroupEvent_GroupInfoChanged {
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) {
     return groupInfoChanged?.call(field0);
   }
@@ -564,6 +639,9 @@ class _$GroupEvent_GroupInfoChangedImpl extends GroupEvent_GroupInfoChanged {
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) {
     if (groupInfoChanged != null) {
@@ -585,6 +663,12 @@ class _$GroupEvent_GroupInfoChangedImpl extends GroupEvent_GroupInfoChanged {
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) {
     return groupInfoChanged(this);
   }
@@ -598,6 +682,11 @@ class _$GroupEvent_GroupInfoChangedImpl extends GroupEvent_GroupInfoChanged {
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) {
     return groupInfoChanged?.call(this);
   }
@@ -611,6 +700,9 @@ class _$GroupEvent_GroupInfoChangedImpl extends GroupEvent_GroupInfoChanged {
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) {
     if (groupInfoChanged != null) {
@@ -715,6 +807,9 @@ class _$GroupEvent_MemberAddedImpl extends GroupEvent_MemberAdded {
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) {
     return memberAdded(field0);
   }
@@ -728,6 +823,9 @@ class _$GroupEvent_MemberAddedImpl extends GroupEvent_MemberAdded {
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) {
     return memberAdded?.call(field0);
   }
@@ -741,6 +839,9 @@ class _$GroupEvent_MemberAddedImpl extends GroupEvent_MemberAdded {
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) {
     if (memberAdded != null) {
@@ -762,6 +863,12 @@ class _$GroupEvent_MemberAddedImpl extends GroupEvent_MemberAdded {
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) {
     return memberAdded(this);
   }
@@ -775,6 +882,11 @@ class _$GroupEvent_MemberAddedImpl extends GroupEvent_MemberAdded {
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) {
     return memberAdded?.call(this);
   }
@@ -788,6 +900,9 @@ class _$GroupEvent_MemberAddedImpl extends GroupEvent_MemberAdded {
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) {
     if (memberAdded != null) {
@@ -891,6 +1006,9 @@ class _$GroupEvent_MemberDeletedImpl extends GroupEvent_MemberDeleted {
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) {
     return memberDeleted(field0);
   }
@@ -904,6 +1022,9 @@ class _$GroupEvent_MemberDeletedImpl extends GroupEvent_MemberDeleted {
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) {
     return memberDeleted?.call(field0);
   }
@@ -917,6 +1038,9 @@ class _$GroupEvent_MemberDeletedImpl extends GroupEvent_MemberDeleted {
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) {
     if (memberDeleted != null) {
@@ -938,6 +1062,12 @@ class _$GroupEvent_MemberDeletedImpl extends GroupEvent_MemberDeleted {
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) {
     return memberDeleted(this);
   }
@@ -951,6 +1081,11 @@ class _$GroupEvent_MemberDeletedImpl extends GroupEvent_MemberDeleted {
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) {
     return memberDeleted?.call(this);
   }
@@ -964,6 +1099,9 @@ class _$GroupEvent_MemberDeletedImpl extends GroupEvent_MemberDeleted {
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) {
     if (memberDeleted != null) {
@@ -1075,6 +1213,9 @@ class _$GroupEvent_GroupReadReceiptImpl extends GroupEvent_GroupReadReceipt {
     required TResult Function(String field0) memberAdded,
     required TResult Function(String field0) memberDeleted,
     required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
   }) {
     return groupReadReceipt(field0);
   }
@@ -1088,6 +1229,9 @@ class _$GroupEvent_GroupReadReceiptImpl extends GroupEvent_GroupReadReceipt {
     TResult? Function(String field0)? memberAdded,
     TResult? Function(String field0)? memberDeleted,
     TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
   }) {
     return groupReadReceipt?.call(field0);
   }
@@ -1101,6 +1245,9 @@ class _$GroupEvent_GroupReadReceiptImpl extends GroupEvent_GroupReadReceipt {
     TResult Function(String field0)? memberAdded,
     TResult Function(String field0)? memberDeleted,
     TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
   }) {
     if (groupReadReceipt != null) {
@@ -1122,6 +1269,12 @@ class _$GroupEvent_GroupReadReceiptImpl extends GroupEvent_GroupReadReceipt {
     required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
     required TResult Function(GroupEvent_GroupReadReceipt value)
     groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
   }) {
     return groupReadReceipt(this);
   }
@@ -1135,6 +1288,11 @@ class _$GroupEvent_GroupReadReceiptImpl extends GroupEvent_GroupReadReceipt {
     TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
   }) {
     return groupReadReceipt?.call(this);
   }
@@ -1148,6 +1306,9 @@ class _$GroupEvent_GroupReadReceiptImpl extends GroupEvent_GroupReadReceipt {
     TResult Function(GroupEvent_MemberAdded value)? memberAdded,
     TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
     TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
     required TResult orElse(),
   }) {
     if (groupReadReceipt != null) {
@@ -1170,5 +1331,612 @@ abstract class GroupEvent_GroupReadReceipt extends GroupEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$GroupEvent_GroupReadReceiptImplCopyWith<_$GroupEvent_GroupReadReceiptImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$GroupEvent_ApplicationAddedImplCopyWith<$Res> {
+  factory _$$GroupEvent_ApplicationAddedImplCopyWith(
+    _$GroupEvent_ApplicationAddedImpl value,
+    $Res Function(_$GroupEvent_ApplicationAddedImpl) then,
+  ) = __$$GroupEvent_ApplicationAddedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String field0});
+}
+
+/// @nodoc
+class __$$GroupEvent_ApplicationAddedImplCopyWithImpl<$Res>
+    extends _$GroupEventCopyWithImpl<$Res, _$GroupEvent_ApplicationAddedImpl>
+    implements _$$GroupEvent_ApplicationAddedImplCopyWith<$Res> {
+  __$$GroupEvent_ApplicationAddedImplCopyWithImpl(
+    _$GroupEvent_ApplicationAddedImpl _value,
+    $Res Function(_$GroupEvent_ApplicationAddedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$GroupEvent_ApplicationAddedImpl(
+        null == field0
+            ? _value.field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$GroupEvent_ApplicationAddedImpl extends GroupEvent_ApplicationAdded {
+  const _$GroupEvent_ApplicationAddedImpl(this.field0) : super._();
+
+  @override
+  final String field0;
+
+  @override
+  String toString() {
+    return 'GroupEvent.applicationAdded(field0: $field0)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$GroupEvent_ApplicationAddedImpl &&
+            (identical(other.field0, field0) || other.field0 == field0));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$GroupEvent_ApplicationAddedImplCopyWith<_$GroupEvent_ApplicationAddedImpl>
+  get copyWith =>
+      __$$GroupEvent_ApplicationAddedImplCopyWithImpl<
+        _$GroupEvent_ApplicationAddedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(GroupInfo field0) joinedGroupAdded,
+    required TResult Function(GroupInfo field0) joinedGroupDeleted,
+    required TResult Function(GroupInfo field0) groupInfoChanged,
+    required TResult Function(String field0) memberAdded,
+    required TResult Function(String field0) memberDeleted,
+    required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
+  }) {
+    return applicationAdded(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(GroupInfo field0)? joinedGroupAdded,
+    TResult? Function(GroupInfo field0)? joinedGroupDeleted,
+    TResult? Function(GroupInfo field0)? groupInfoChanged,
+    TResult? Function(String field0)? memberAdded,
+    TResult? Function(String field0)? memberDeleted,
+    TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
+  }) {
+    return applicationAdded?.call(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(GroupInfo field0)? joinedGroupAdded,
+    TResult Function(GroupInfo field0)? joinedGroupDeleted,
+    TResult Function(GroupInfo field0)? groupInfoChanged,
+    TResult Function(String field0)? memberAdded,
+    TResult Function(String field0)? memberDeleted,
+    TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationAdded != null) {
+      return applicationAdded(field0);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(GroupEvent_JoinedGroupAdded value)
+    joinedGroupAdded,
+    required TResult Function(GroupEvent_JoinedGroupDeleted value)
+    joinedGroupDeleted,
+    required TResult Function(GroupEvent_GroupInfoChanged value)
+    groupInfoChanged,
+    required TResult Function(GroupEvent_MemberAdded value) memberAdded,
+    required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
+    required TResult Function(GroupEvent_GroupReadReceipt value)
+    groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
+  }) {
+    return applicationAdded(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(GroupEvent_JoinedGroupAdded value)? joinedGroupAdded,
+    TResult? Function(GroupEvent_JoinedGroupDeleted value)? joinedGroupDeleted,
+    TResult? Function(GroupEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
+    TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
+    TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
+  }) {
+    return applicationAdded?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(GroupEvent_JoinedGroupAdded value)? joinedGroupAdded,
+    TResult Function(GroupEvent_JoinedGroupDeleted value)? joinedGroupDeleted,
+    TResult Function(GroupEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(GroupEvent_MemberAdded value)? memberAdded,
+    TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
+    TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationAdded != null) {
+      return applicationAdded(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class GroupEvent_ApplicationAdded extends GroupEvent {
+  const factory GroupEvent_ApplicationAdded(final String field0) =
+      _$GroupEvent_ApplicationAddedImpl;
+  const GroupEvent_ApplicationAdded._() : super._();
+
+  @override
+  String get field0;
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$GroupEvent_ApplicationAddedImplCopyWith<_$GroupEvent_ApplicationAddedImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$GroupEvent_ApplicationApprovedImplCopyWith<$Res> {
+  factory _$$GroupEvent_ApplicationApprovedImplCopyWith(
+    _$GroupEvent_ApplicationApprovedImpl value,
+    $Res Function(_$GroupEvent_ApplicationApprovedImpl) then,
+  ) = __$$GroupEvent_ApplicationApprovedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String field0});
+}
+
+/// @nodoc
+class __$$GroupEvent_ApplicationApprovedImplCopyWithImpl<$Res>
+    extends _$GroupEventCopyWithImpl<$Res, _$GroupEvent_ApplicationApprovedImpl>
+    implements _$$GroupEvent_ApplicationApprovedImplCopyWith<$Res> {
+  __$$GroupEvent_ApplicationApprovedImplCopyWithImpl(
+    _$GroupEvent_ApplicationApprovedImpl _value,
+    $Res Function(_$GroupEvent_ApplicationApprovedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$GroupEvent_ApplicationApprovedImpl(
+        null == field0
+            ? _value.field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$GroupEvent_ApplicationApprovedImpl
+    extends GroupEvent_ApplicationApproved {
+  const _$GroupEvent_ApplicationApprovedImpl(this.field0) : super._();
+
+  @override
+  final String field0;
+
+  @override
+  String toString() {
+    return 'GroupEvent.applicationApproved(field0: $field0)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$GroupEvent_ApplicationApprovedImpl &&
+            (identical(other.field0, field0) || other.field0 == field0));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$GroupEvent_ApplicationApprovedImplCopyWith<
+    _$GroupEvent_ApplicationApprovedImpl
+  >
+  get copyWith =>
+      __$$GroupEvent_ApplicationApprovedImplCopyWithImpl<
+        _$GroupEvent_ApplicationApprovedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(GroupInfo field0) joinedGroupAdded,
+    required TResult Function(GroupInfo field0) joinedGroupDeleted,
+    required TResult Function(GroupInfo field0) groupInfoChanged,
+    required TResult Function(String field0) memberAdded,
+    required TResult Function(String field0) memberDeleted,
+    required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
+  }) {
+    return applicationApproved(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(GroupInfo field0)? joinedGroupAdded,
+    TResult? Function(GroupInfo field0)? joinedGroupDeleted,
+    TResult? Function(GroupInfo field0)? groupInfoChanged,
+    TResult? Function(String field0)? memberAdded,
+    TResult? Function(String field0)? memberDeleted,
+    TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
+  }) {
+    return applicationApproved?.call(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(GroupInfo field0)? joinedGroupAdded,
+    TResult Function(GroupInfo field0)? joinedGroupDeleted,
+    TResult Function(GroupInfo field0)? groupInfoChanged,
+    TResult Function(String field0)? memberAdded,
+    TResult Function(String field0)? memberDeleted,
+    TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationApproved != null) {
+      return applicationApproved(field0);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(GroupEvent_JoinedGroupAdded value)
+    joinedGroupAdded,
+    required TResult Function(GroupEvent_JoinedGroupDeleted value)
+    joinedGroupDeleted,
+    required TResult Function(GroupEvent_GroupInfoChanged value)
+    groupInfoChanged,
+    required TResult Function(GroupEvent_MemberAdded value) memberAdded,
+    required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
+    required TResult Function(GroupEvent_GroupReadReceipt value)
+    groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
+  }) {
+    return applicationApproved(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(GroupEvent_JoinedGroupAdded value)? joinedGroupAdded,
+    TResult? Function(GroupEvent_JoinedGroupDeleted value)? joinedGroupDeleted,
+    TResult? Function(GroupEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
+    TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
+    TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
+  }) {
+    return applicationApproved?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(GroupEvent_JoinedGroupAdded value)? joinedGroupAdded,
+    TResult Function(GroupEvent_JoinedGroupDeleted value)? joinedGroupDeleted,
+    TResult Function(GroupEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(GroupEvent_MemberAdded value)? memberAdded,
+    TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
+    TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationApproved != null) {
+      return applicationApproved(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class GroupEvent_ApplicationApproved extends GroupEvent {
+  const factory GroupEvent_ApplicationApproved(final String field0) =
+      _$GroupEvent_ApplicationApprovedImpl;
+  const GroupEvent_ApplicationApproved._() : super._();
+
+  @override
+  String get field0;
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$GroupEvent_ApplicationApprovedImplCopyWith<
+    _$GroupEvent_ApplicationApprovedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$GroupEvent_ApplicationRejectedImplCopyWith<$Res> {
+  factory _$$GroupEvent_ApplicationRejectedImplCopyWith(
+    _$GroupEvent_ApplicationRejectedImpl value,
+    $Res Function(_$GroupEvent_ApplicationRejectedImpl) then,
+  ) = __$$GroupEvent_ApplicationRejectedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String field0});
+}
+
+/// @nodoc
+class __$$GroupEvent_ApplicationRejectedImplCopyWithImpl<$Res>
+    extends _$GroupEventCopyWithImpl<$Res, _$GroupEvent_ApplicationRejectedImpl>
+    implements _$$GroupEvent_ApplicationRejectedImplCopyWith<$Res> {
+  __$$GroupEvent_ApplicationRejectedImplCopyWithImpl(
+    _$GroupEvent_ApplicationRejectedImpl _value,
+    $Res Function(_$GroupEvent_ApplicationRejectedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$GroupEvent_ApplicationRejectedImpl(
+        null == field0
+            ? _value.field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$GroupEvent_ApplicationRejectedImpl
+    extends GroupEvent_ApplicationRejected {
+  const _$GroupEvent_ApplicationRejectedImpl(this.field0) : super._();
+
+  @override
+  final String field0;
+
+  @override
+  String toString() {
+    return 'GroupEvent.applicationRejected(field0: $field0)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$GroupEvent_ApplicationRejectedImpl &&
+            (identical(other.field0, field0) || other.field0 == field0));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$GroupEvent_ApplicationRejectedImplCopyWith<
+    _$GroupEvent_ApplicationRejectedImpl
+  >
+  get copyWith =>
+      __$$GroupEvent_ApplicationRejectedImplCopyWithImpl<
+        _$GroupEvent_ApplicationRejectedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(GroupInfo field0) joinedGroupAdded,
+    required TResult Function(GroupInfo field0) joinedGroupDeleted,
+    required TResult Function(GroupInfo field0) groupInfoChanged,
+    required TResult Function(String field0) memberAdded,
+    required TResult Function(String field0) memberDeleted,
+    required TResult Function(List<GroupReadReceipt> field0) groupReadReceipt,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationApproved,
+    required TResult Function(String field0) applicationRejected,
+  }) {
+    return applicationRejected(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(GroupInfo field0)? joinedGroupAdded,
+    TResult? Function(GroupInfo field0)? joinedGroupDeleted,
+    TResult? Function(GroupInfo field0)? groupInfoChanged,
+    TResult? Function(String field0)? memberAdded,
+    TResult? Function(String field0)? memberDeleted,
+    TResult? Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationApproved,
+    TResult? Function(String field0)? applicationRejected,
+  }) {
+    return applicationRejected?.call(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(GroupInfo field0)? joinedGroupAdded,
+    TResult Function(GroupInfo field0)? joinedGroupDeleted,
+    TResult Function(GroupInfo field0)? groupInfoChanged,
+    TResult Function(String field0)? memberAdded,
+    TResult Function(String field0)? memberDeleted,
+    TResult Function(List<GroupReadReceipt> field0)? groupReadReceipt,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationApproved,
+    TResult Function(String field0)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationRejected != null) {
+      return applicationRejected(field0);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(GroupEvent_JoinedGroupAdded value)
+    joinedGroupAdded,
+    required TResult Function(GroupEvent_JoinedGroupDeleted value)
+    joinedGroupDeleted,
+    required TResult Function(GroupEvent_GroupInfoChanged value)
+    groupInfoChanged,
+    required TResult Function(GroupEvent_MemberAdded value) memberAdded,
+    required TResult Function(GroupEvent_MemberDeleted value) memberDeleted,
+    required TResult Function(GroupEvent_GroupReadReceipt value)
+    groupReadReceipt,
+    required TResult Function(GroupEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(GroupEvent_ApplicationApproved value)
+    applicationApproved,
+    required TResult Function(GroupEvent_ApplicationRejected value)
+    applicationRejected,
+  }) {
+    return applicationRejected(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(GroupEvent_JoinedGroupAdded value)? joinedGroupAdded,
+    TResult? Function(GroupEvent_JoinedGroupDeleted value)? joinedGroupDeleted,
+    TResult? Function(GroupEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult? Function(GroupEvent_MemberAdded value)? memberAdded,
+    TResult? Function(GroupEvent_MemberDeleted value)? memberDeleted,
+    TResult? Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult? Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(GroupEvent_ApplicationApproved value)?
+    applicationApproved,
+    TResult? Function(GroupEvent_ApplicationRejected value)?
+    applicationRejected,
+  }) {
+    return applicationRejected?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(GroupEvent_JoinedGroupAdded value)? joinedGroupAdded,
+    TResult Function(GroupEvent_JoinedGroupDeleted value)? joinedGroupDeleted,
+    TResult Function(GroupEvent_GroupInfoChanged value)? groupInfoChanged,
+    TResult Function(GroupEvent_MemberAdded value)? memberAdded,
+    TResult Function(GroupEvent_MemberDeleted value)? memberDeleted,
+    TResult Function(GroupEvent_GroupReadReceipt value)? groupReadReceipt,
+    TResult Function(GroupEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(GroupEvent_ApplicationApproved value)? applicationApproved,
+    TResult Function(GroupEvent_ApplicationRejected value)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationRejected != null) {
+      return applicationRejected(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class GroupEvent_ApplicationRejected extends GroupEvent {
+  const factory GroupEvent_ApplicationRejected(final String field0) =
+      _$GroupEvent_ApplicationRejectedImpl;
+  const GroupEvent_ApplicationRejected._() : super._();
+
+  @override
+  String get field0;
+
+  /// Create a copy of GroupEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$GroupEvent_ApplicationRejectedImplCopyWith<
+    _$GroupEvent_ApplicationRejectedImpl
+  >
   get copyWith => throw _privateConstructorUsedError;
 }

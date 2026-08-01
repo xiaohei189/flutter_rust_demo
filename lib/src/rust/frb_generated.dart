@@ -7029,6 +7029,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           userId: dco_decode_String(raw[2]),
           platformIds: dco_decode_list_prim_i_32_strict(raw[3]),
         );
+      case 9:
+        return ConversationEvent_UpdateLatestMessageReadState(
+          conversationId: dco_decode_String(raw[1]),
+        );
       default:
         throw Exception("unreachable");
     }
@@ -7222,6 +7226,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         return GroupEvent_GroupReadReceipt(
           dco_decode_list_group_read_receipt(raw[1]),
         );
+      case 6:
+        return GroupEvent_ApplicationAdded(dco_decode_String(raw[1]));
+      case 7:
+        return GroupEvent_ApplicationApproved(dco_decode_String(raw[1]));
+      case 8:
+        return GroupEvent_ApplicationRejected(dco_decode_String(raw[1]));
       default:
         throw Exception("unreachable");
     }
@@ -8436,6 +8446,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           userId: var_userId,
           platformIds: var_platformIds,
         );
+      case 9:
+        var var_conversationId = sse_decode_String(deserializer);
+        return ConversationEvent_UpdateLatestMessageReadState(
+          conversationId: var_conversationId,
+        );
       default:
         throw UnimplementedError('');
     }
@@ -8655,6 +8670,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case 5:
         var var_field0 = sse_decode_list_group_read_receipt(deserializer);
         return GroupEvent_GroupReadReceipt(var_field0);
+      case 6:
+        var var_field0 = sse_decode_String(deserializer);
+        return GroupEvent_ApplicationAdded(var_field0);
+      case 7:
+        var var_field0 = sse_decode_String(deserializer);
+        return GroupEvent_ApplicationApproved(var_field0);
+      case 8:
+        var var_field0 = sse_decode_String(deserializer);
+        return GroupEvent_ApplicationRejected(var_field0);
       default:
         throw UnimplementedError('');
     }
@@ -10342,6 +10366,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(conversationId, serializer);
         sse_encode_String(userId, serializer);
         sse_encode_list_prim_i_32_strict(platformIds, serializer);
+      case ConversationEvent_UpdateLatestMessageReadState(
+        conversationId: final conversationId,
+      ):
+        sse_encode_i_32(9, serializer);
+        sse_encode_String(conversationId, serializer);
     }
   }
 
@@ -10507,6 +10536,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case GroupEvent_GroupReadReceipt(field0: final field0):
         sse_encode_i_32(5, serializer);
         sse_encode_list_group_read_receipt(field0, serializer);
+      case GroupEvent_ApplicationAdded(field0: final field0):
+        sse_encode_i_32(6, serializer);
+        sse_encode_String(field0, serializer);
+      case GroupEvent_ApplicationApproved(field0: final field0):
+        sse_encode_i_32(7, serializer);
+        sse_encode_String(field0, serializer);
+      case GroupEvent_ApplicationRejected(field0: final field0):
+        sse_encode_i_32(8, serializer);
+        sse_encode_String(field0, serializer);
     }
   }
 

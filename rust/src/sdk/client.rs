@@ -32,6 +32,7 @@ use crate::event::listener::connection::ConnectionEvent;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::event::listener::friend::FriendEvent;
 use crate::event::listener::group::GroupEvent;
+use crate::event::listener::message::MessageEvent;
 use crate::sdk::context::RuntimeContext;
 
 use std::sync::Arc;
@@ -272,7 +273,7 @@ impl OpenIMClient {
                     }
                     event = subscription.next() => {
                         match event {
-                            Some(SdkEvent::PushNotificationMessages { msgs, .. }) => {
+                            Some(SdkEvent::Message(MessageEvent::PushNotificationMessages { msgs, .. })) => {
                                 notification_handler.handle_notifications(&msgs).await;
                             }
                             None => {

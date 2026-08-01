@@ -5620,6 +5620,10 @@ impl SseDecode for crate::event::listener::conversation::ConversationEvent {
                     platform_ids: var_platformIds,
                 };
             }
+            9 => {
+                let mut var_conversationId = <String>::sse_decode(deserializer);
+                return crate::event::listener::conversation::ConversationEvent::UpdateLatestMessageReadState { conversation_id: var_conversationId };
+            }
             _ => {
                 unimplemented!("");
             }
@@ -5861,6 +5865,18 @@ impl SseDecode for crate::event::listener::group::GroupEvent {
             5 => {
                 let mut var_field0 = <Vec<crate::event::types::GroupReadReceipt>>::sse_decode(deserializer);
                 return crate::event::listener::group::GroupEvent::GroupReadReceipt(var_field0);
+            }
+            6 => {
+                let mut var_field0 = <String>::sse_decode(deserializer);
+                return crate::event::listener::group::GroupEvent::ApplicationAdded(var_field0);
+            }
+            7 => {
+                let mut var_field0 = <String>::sse_decode(deserializer);
+                return crate::event::listener::group::GroupEvent::ApplicationApproved(var_field0);
+            }
+            8 => {
+                let mut var_field0 = <String>::sse_decode(deserializer);
+                return crate::event::listener::group::GroupEvent::ApplicationRejected(var_field0);
             }
             _ => {
                 unimplemented!("");
@@ -7362,6 +7378,7 @@ impl flutter_rust_bridge::IntoDart for crate::event::listener::conversation::Con
                 platform_ids.into_into_dart().into_dart(),
             ]
             .into_dart(),
+            crate::event::listener::conversation::ConversationEvent::UpdateLatestMessageReadState { conversation_id } => [9.into_dart(), conversation_id.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -7565,6 +7582,9 @@ impl flutter_rust_bridge::IntoDart for crate::event::listener::group::GroupEvent
             crate::event::listener::group::GroupEvent::MemberAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::listener::group::GroupEvent::MemberDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::listener::group::GroupEvent::GroupReadReceipt(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::listener::group::GroupEvent::ApplicationAdded(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::listener::group::GroupEvent::ApplicationApproved(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::listener::group::GroupEvent::ApplicationRejected(field0) => [8.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -8411,6 +8431,10 @@ impl SseEncode for crate::event::listener::conversation::ConversationEvent {
                 <String>::sse_encode(user_id, serializer);
                 <Vec<i32>>::sse_encode(platform_ids, serializer);
             }
+            crate::event::listener::conversation::ConversationEvent::UpdateLatestMessageReadState { conversation_id } => {
+                <i32>::sse_encode(9, serializer);
+                <String>::sse_encode(conversation_id, serializer);
+            }
             _ => {
                 unimplemented!("");
             }
@@ -8592,6 +8616,18 @@ impl SseEncode for crate::event::listener::group::GroupEvent {
             crate::event::listener::group::GroupEvent::GroupReadReceipt(field0) => {
                 <i32>::sse_encode(5, serializer);
                 <Vec<crate::event::types::GroupReadReceipt>>::sse_encode(field0, serializer);
+            }
+            crate::event::listener::group::GroupEvent::ApplicationAdded(field0) => {
+                <i32>::sse_encode(6, serializer);
+                <String>::sse_encode(field0, serializer);
+            }
+            crate::event::listener::group::GroupEvent::ApplicationApproved(field0) => {
+                <i32>::sse_encode(7, serializer);
+                <String>::sse_encode(field0, serializer);
+            }
+            crate::event::listener::group::GroupEvent::ApplicationRejected(field0) => {
+                <i32>::sse_encode(8, serializer);
+                <String>::sse_encode(field0, serializer);
             }
             _ => {
                 unimplemented!("");

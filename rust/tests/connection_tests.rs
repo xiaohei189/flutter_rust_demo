@@ -6,6 +6,7 @@ use std::time::Duration;
 #[tokio::test]
 async fn test_websocket_reconnection() {
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::connection::ConnectionEvent;
 
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -45,9 +46,9 @@ async fn test_websocket_reconnection() {
             _ = &mut timeout => { break; }
             event = event_sub.next() => {
                 match event {
-                    Some(SdkEvent::Connected) => { println!("  ✅ Connected"); events.push("Connected"); }
-                    Some(SdkEvent::Connecting) => { println!("  🔄 Connecting"); events.push("Connecting"); }
-                    Some(SdkEvent::Disconnected { reason }) => { println!("  ❌ Disconnected: {}", reason); events.push("Disconnected"); }
+                    Some(SdkEvent::Connection(ConnectionEvent::Connected)) => { println!("  ✅ Connected"); events.push("Connected"); }
+                    Some(SdkEvent::Connection(ConnectionEvent::Connecting)) => { println!("  🔄 Connecting"); events.push("Connecting"); }
+                    Some(SdkEvent::Connection(ConnectionEvent::Disconnected(reason))) => { println!("  ❌ Disconnected: {}", reason); events.push("Disconnected"); }
                     Some(_) => {},
                     None => break,
                 }
@@ -93,6 +94,7 @@ async fn test_reconnection() {
 #[tokio::test]
 async fn test_connection_state_transitions() {
     use rust_lib_flutter_rust_demo::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::listener::connection::ConnectionEvent;
 
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -128,9 +130,9 @@ async fn test_connection_state_transitions() {
             _ = &mut timeout => { break; }
             event = event_sub.next() => {
                 match event {
-                    Some(SdkEvent::Connected) => { println!("  ✅ Connected"); events.push("Connected"); }
-                    Some(SdkEvent::Connecting) => { println!("  🔄 Connecting"); events.push("Connecting"); }
-                    Some(SdkEvent::Disconnected { .. }) => { println!("  ❌ Disconnected"); events.push("Disconnected"); }
+                    Some(SdkEvent::Connection(ConnectionEvent::Connected)) => { println!("  ✅ Connected"); events.push("Connected"); }
+                    Some(SdkEvent::Connection(ConnectionEvent::Connecting)) => { println!("  🔄 Connecting"); events.push("Connecting"); }
+                    Some(SdkEvent::Connection(ConnectionEvent::Disconnected(_))) => { println!("  ❌ Disconnected"); events.push("Disconnected"); }
                     Some(_) => {},
                     None => break,
                 }

@@ -4,6 +4,7 @@ use super::MessageService;
 use crate::domain::ports::message::DeleteMessagesReq;
 use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
+use crate::event::listener::message::MessageEvent;
 use tracing::info;
 
 impl MessageService {
@@ -42,10 +43,10 @@ impl MessageService {
             self.repositories.message_repo.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
         }
 
-        self.event_bus.publish(SdkEvent::MessagesDeleted {
+        self.event_bus.publish(SdkEvent::Message(MessageEvent::Deleted {
             conversation_id: conversation_id.to_string(),
             client_msg_ids: client_msg_ids.to_vec(),
-        });
+        }));
 
         Ok(())
     }

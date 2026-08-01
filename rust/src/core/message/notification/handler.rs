@@ -17,6 +17,9 @@ use crate::core::user::service::UserService;
 use crate::domain::constant::notification_type;
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
+use crate::event::listener::friend::FriendEvent;
+use crate::event::listener::group::GroupEvent;
+use crate::event::listener::user::UserEvent;
 use crate::domain::model::UserId;
 use openim_protocol::sdkws::MsgData;
 use serde::Deserialize;
@@ -397,9 +400,7 @@ impl NotificationHandler {
         }
 
         self.event_bus
-            .publish(SdkEvent::FriendApplicationApproved {
-                application: application_json,
-            });
+            .publish(SdkEvent::Friend(FriendEvent::ApplicationAccepted(application_json)));
 
         Ok(())
     }
@@ -420,9 +421,7 @@ impl NotificationHandler {
         .to_string();
 
         self.event_bus
-            .publish(SdkEvent::FriendApplicationRejected {
-                application: application_json,
-            });
+            .publish(SdkEvent::Friend(FriendEvent::ApplicationRejected(application_json)));
 
         Ok(())
     }
@@ -443,9 +442,7 @@ impl NotificationHandler {
         .to_string();
 
         self.event_bus
-            .publish(SdkEvent::FriendApplicationAdded {
-                application: application_json,
-            });
+            .publish(SdkEvent::Friend(FriendEvent::ApplicationAdded(application_json)));
 
         Ok(())
     }
@@ -456,7 +453,7 @@ impl NotificationHandler {
     async fn handle_user_info_updated(&self, content: &[u8]) -> anyhow::Result<()> {
         let user_info: UserInfoJson = unmarshal_notification_elem(content)?;
 
-        self.event_bus.publish(SdkEvent::UserInfoUpdated {
+        self.event_bus.publish(SdkEvent::User(UserEvent::UserInfoUpdated {
             user: crate::domain::model::user::UserInfo {
                 user_id: user_info.user_id,
                 nickname: user_info.nickname,
@@ -467,7 +464,7 @@ impl NotificationHandler {
                 remark: user_info.ex,
                 global_recv_msg_opt: user_info.global_recv_msg_opt,
             },
-        });
+        }));
 
         Ok(())
     }
@@ -490,9 +487,7 @@ impl NotificationHandler {
         .to_string();
 
         self.event_bus
-            .publish(SdkEvent::GroupApplicationAdded {
-                application: application_json,
-            });
+            .publish(SdkEvent::Group(GroupEvent::ApplicationAdded(application_json)));
 
         Ok(())
     }
@@ -517,9 +512,7 @@ impl NotificationHandler {
         .to_string();
 
         self.event_bus
-            .publish(SdkEvent::GroupApplicationApproved {
-                application: application_json,
-            });
+            .publish(SdkEvent::Group(GroupEvent::ApplicationApproved(application_json)));
 
         Ok(())
     }
@@ -540,9 +533,7 @@ impl NotificationHandler {
         .to_string();
 
         self.event_bus
-            .publish(SdkEvent::GroupApplicationRejected {
-                application: application_json,
-            });
+            .publish(SdkEvent::Group(GroupEvent::ApplicationRejected(application_json)));
 
         Ok(())
     }

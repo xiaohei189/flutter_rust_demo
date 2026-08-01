@@ -5,6 +5,7 @@ use crate::domain::ports::message::RevokeMessageReq;
 use crate::domain::constant::notification_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
+use crate::event::listener::message::MessageEvent;
 use tracing::{info, warn};
 
 impl MessageService {
@@ -58,7 +59,7 @@ impl MessageService {
                 (0, String::new(), String::new())
             };
 
-        self.event_bus.publish(SdkEvent::MessageRevoked {
+        self.event_bus.publish(SdkEvent::Message(MessageEvent::Revoked {
             conversation_id: conversation_id.to_string(),
             seq,
             client_msg_id: client_msg_id.to_string(),
@@ -71,7 +72,7 @@ impl MessageService {
             source_message_sender_nickname,
             session_type,
             is_admin_revoke: false,
-        });
+        }));
 
         Ok(())
     }

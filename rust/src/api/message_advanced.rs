@@ -7,6 +7,9 @@ use crate::api::client::client_holder;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::model::local::LocalChatLog;
+use crate::event::types::SdkEvent;
+use crate::event::listener::conversation::ConversationEvent;
+use crate::event::listener::message::MessageEvent;
 use anyhow::{Result, anyhow};
 
 // ============================================================================
@@ -158,10 +161,10 @@ pub async fn delete_message_from_local_storage(
     let client = client_holder()?;
     client.context.repositories.message_repo.mark_as_deleted(&conversation_id, &client_msg_id).await?;
 
-    client.event_bus().publish(crate::event::types::SdkEvent::MessagesDeleted {
+    client.event_bus().publish(SdkEvent::Message(MessageEvent::Deleted {
         conversation_id,
         client_msg_ids: vec![client_msg_id],
-    });
+    }));
     Ok(())
 }
 
@@ -179,7 +182,7 @@ pub async fn delete_all_msg_from_local_and_svr() -> Result<()> {
                 .update_unread_count(&conv.conversation_id, 0).await;
         }
     }
-    client.event_bus().publish(crate::event::types::SdkEvent::TotalUnreadCountChanged { count: 0 });
+    client.event_bus().publish(SdkEvent::Conversation(ConversationEvent::TotalUnreadCountChanged(0)));
     Ok(())
 }
 
@@ -200,9 +203,7 @@ pub async fn clear_conversation_and_delete_all_msg(conversation_id: String) -> R
     // 重置会话（清空最新消息、未读数等）
     client.context.repositories.conversation_repo.update_unread_count(&conversation_id, 0).await?;
     // 发布事件
-    client.event_bus().publish(crate::event::types::SdkEvent::ConversationChanged {
-        conversations: vec![],
-    });
+    client.event_bus().publish(SdkEvent::Conversation(ConversationEvent::Changed(vec![])));
     Ok(())
 }
 
@@ -215,9 +216,7 @@ pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> 
     // 删除会话记录
     client.context.repositories.conversation_repo.delete(&conversation_id).await?;
     // 发布事件
-    client.event_bus().publish(crate::event::types::SdkEvent::ConversationDeleted {
-        conversation_ids: vec![conversation_id],
-    });
+    client.event_bus().publish(SdkEvent::Conversation(ConversationEvent::Deleted(vec![conversation_id])));
     Ok(())
 }
 

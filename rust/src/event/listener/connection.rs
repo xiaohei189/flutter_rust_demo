@@ -14,6 +14,23 @@ pub enum ConnectionEvent {
     Logout,
 }
 
+impl ConnectionEvent {
+    /// 事件类型字符串（用于日志与测试）
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ConnectionEvent::Connecting => "connecting",
+            ConnectionEvent::Connected => "connected",
+            ConnectionEvent::Disconnected(_) => "disconnected",
+            ConnectionEvent::ConnectFailed(_) => "connect_failed",
+            ConnectionEvent::KickedOffline(_) => "kicked_offline",
+            ConnectionEvent::TokenExpired => "token_expired",
+            ConnectionEvent::Reconnecting { .. } => "reconnecting",
+            ConnectionEvent::LoginSuccess(_) => "login_success",
+            ConnectionEvent::Logout => "logout",
+        }
+    }
+}
+
 /// 连接事件 trait（对齐 Go SDK ConnectionListener 接口）
 pub trait ConnectionListener: Send + Sync {
     fn on_connecting(&self) {}

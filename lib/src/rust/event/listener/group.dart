@@ -25,4 +25,10 @@ sealed class GroupEvent with _$GroupEvent {
       GroupEvent_MemberDeleted;
   const factory GroupEvent.groupReadReceipt(List<GroupReadReceipt> field0) =
       GroupEvent_GroupReadReceipt;
+  const factory GroupEvent.applicationAdded(String field0) =
+      GroupEvent_ApplicationAdded;
+  const factory GroupEvent.applicationApproved(String field0) =
+      GroupEvent_ApplicationApproved;
+  const factory GroupEvent.applicationRejected(String field0) =
+      GroupEvent_ApplicationRejected;
 }

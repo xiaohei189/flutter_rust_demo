@@ -36,4 +36,9 @@ sealed class ConversationEvent with _$ConversationEvent {
     required String userId,
     required Int32List platformIds,
   }) = ConversationEvent_UserInputStatusChanged;
+
+  /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
+  const factory ConversationEvent.updateLatestMessageReadState({
+    required String conversationId,
+  }) = ConversationEvent_UpdateLatestMessageReadState;
 }

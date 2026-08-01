@@ -73,16 +73,17 @@ impl EventSubscription {
 
 #[cfg(test)]
 mod tests {
-    use openim_protocol::sdkws::MsgData;
     use super::*;
+    use crate::event::listener::conversation::ConversationEvent;
+    use crate::event::listener::message::MessageEvent;
 
     #[tokio::test]
     async fn test_event_bus_publish_and_subscribe() {
         let bus = EventBus::new();
         let mut sub = bus.subscribe();
 
-        bus.publish(SdkEvent::Connecting);
-        bus.publish(SdkEvent::Connected);
+        bus.publish(SdkEvent::Conversation(ConversationEvent::SyncStarted));
+        bus.publish(SdkEvent::Conversation(ConversationEvent::SyncFinished));
 
         let event1 = sub.try_next();
         assert!(event1.is_some());
@@ -97,20 +98,10 @@ mod tests {
         let mut sub1 = bus.subscribe();
         let mut sub2 = bus.subscribe();
 
-        bus.publish(SdkEvent::NewMessage {
-            message: MsgData {
-                client_msg_id: "msg_1".into(),
-                send_id: "user_1".into(),
-                recv_id: "user_2".into(),
-                sender_platform_id: 1,
-                content_type: 101,
-                content: b"{\"text\":\"hello\"}".to_vec(),
-                seq: 1,
-                send_time: 1000,
-                create_time: 1000,
-                ..Default::default()
-            },
-        });
+        bus.publish(SdkEvent::Message(MessageEvent::SendFailed {
+            client_msg_id: "msg_1".into(),
+            error: "boom".into(),
+        }));
 
         let event1 = sub1.try_next();
         let event2 = sub2.try_next();
