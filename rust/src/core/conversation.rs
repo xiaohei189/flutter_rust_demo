@@ -20,12 +20,11 @@
 //! |------|-----------|------|
 //! | [`manager`] | `ConversationManager` | 本地 CRUD（置顶/免打扰/未读数/草稿） |
 //! | [`syncer`] | `ConversationSyncer` | 服务端同步（增量/全量/HashReadSeq） |
-//! | [`api`] | `ConversationServerApi` | HTTP 调用抽象 trait（便于测试 mock） |
+//! | (ports) | `ConversationServerApi` | 服务端 API 契约（位于 `domain::ports::conversation`） |
 //! | [`converter`] | - | ServerConversation -> LocalConversation 转换（`From` trait） |
 //! | [`types`] | - | 请求/响应 DTO 定义 |
 
 pub mod manager;
 pub mod syncer;
-pub mod api;
 pub mod converter;
 pub mod types;

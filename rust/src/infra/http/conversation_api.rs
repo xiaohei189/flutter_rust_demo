@@ -1,52 +1,21 @@
-//! 会话服务端 API 抽象层（对齐 message/service/api.rs 的设计模式）
+//! HTTP 适配器 — impl ConversationServerApi for HttpConversationApi
 //!
-//! 将 syncer 对 HTTP 的直接调用抽象为 trait，便于测试 mock。
+//! trait 定义在 `domain::ports::conversation`
 
-use super::types::{
-    GetAllConversationsResp, GetIncrementalConversationResp, GetFullConversationIDsResp,
+use crate::domain::error::Result;
+use crate::domain::ports::conversation::{
+    ConversationServerApi, GetAllConversationsReq, GetAllConversationsResp,
+    GetConversationsByIDsReq, GetConversationsByIDsResp, GetFullConversationIDsReq,
+    GetFullConversationIDsResp, GetIncrementalConversationReq, GetIncrementalConversationResp,
     ServerConversation,
 };
-use crate::domain::error::Result;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS,
     GET_INCREMENTAL_CONVERSATION,
 };
-
 use async_trait::async_trait;
 use std::sync::Arc;
-
-use super::types::{
-    GetAllConversationsReq, GetConversationsByIDsReq, GetConversationsByIDsResp,
-    GetFullConversationIDsReq, GetIncrementalConversationReq,
-};
-
-/// 会话服务端 API 接口（对齐 message/service/api.rs 的 MessageServerApi）
-///
-/// 生产环境由 [`HttpConversationApi`] 实现，测试中可用 mock 替代。
-#[async_trait]
-pub trait ConversationServerApi: Send + Sync {
-    /// 拉取所有会话
-    async fn pull_all(&self, user_id: String) -> Result<GetAllConversationsResp>;
-
-    /// 增量拉取会话
-    async fn pull_incremental(
-        &self,
-        user_id: String,
-        version: u64,
-        version_id: String,
-    ) -> Result<GetIncrementalConversationResp>;
-
-    /// 按 ID 列表拉取会话
-    async fn pull_conversations_by_ids(
-        &self,
-        user_id: String,
-        conversation_ids: Vec<String>,
-    ) -> Result<Vec<ServerConversation>>;
-
-    /// 拉取所有会话 ID
-    async fn pull_full_conversation_ids(&self, user_id: String) -> Result<GetFullConversationIDsResp>;
-}
 
 /// 基于 HTTP 的生产实现
 pub struct HttpConversationApi {

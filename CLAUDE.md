@@ -91,7 +91,7 @@ Rust 核心业务 (rust/src/core/)  ←→  基础设施 (rust/src/infra/)
 
 ### 分层原则
 rust/src/
-- domain/     # 领域层（最底层，无内部依赖）
+- domain/     # 领域层（最底层：模型、错误、常量、契约）
 - infra/      # 基础设施（依赖 domain）
 - event/      # 事件系统（依赖 domain + openim_protocol（外部 crate））
 - core/       # 核心业务（依赖 domain + infra + event）
@@ -107,11 +107,12 @@ rust/src/
 5. api/simple.rs 保留为向后兼容 shim：重命名后保留一个 pub use super::ffi_init::*; 的 shim 文件
 6. core/file/ 只保留业务逻辑：uploader.rs 是核心业务，其他工具类移入 infra/file/
 7. 协议类型统一使用外部 openim-protocol crate（path = ../../protocol）；本地不再有 protocol/ 模块，WS 帧类型与压缩器在 core/connection/ws.rs
+8. 外部服务契约（Ports）集中在 domain/ports/：SyncerRemoteApi / MessageServerApi / ConversationServerApi；HTTP 适配器实现放 infra/http/（message_api.rs、conversation_api.rs），WS 适配器由 core/connection 实现
 
 ### 各层职责
 | 层 | 职责 | 不允许 |
 |----|------|--------|
-| domain/ | 数据模型、错误类型、常量、Repository trait | 不依赖任何其他 crate 模块 |
+| domain/ | 数据模型、错误类型、常量、Repository trait、Ports（外部服务契约） | 不依赖 core/、sdk/、api/ |
 | infra/ | 数据库 DAO、HTTP 客户端、缓存、日志、文件工具 | 不依赖 core/、sdk/ |
 | core/ | 连接管理、消息收发、会话/好友/群组业务逻辑 | 不依赖 api/、sdk/ |
 | sdk/ | OpenIMClient 门面，聚合 core 各模块 | 不依赖 api/ |

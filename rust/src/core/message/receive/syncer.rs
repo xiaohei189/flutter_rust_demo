@@ -4,7 +4,7 @@
 
 use crate::core::connection::manager::ConnectionManager;
 use super::handler::MessageHandler;
-use crate::core::message::ports::SyncerRemoteApi;
+use crate::domain::ports::SyncerRemoteApi;
 use crate::domain::constant::ws_req_identifier;
 use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;

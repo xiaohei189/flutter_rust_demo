@@ -180,7 +180,7 @@ impl OpenIMClient {
 
         let message_service = Arc::new(MessageService::new(
             context.stores.clone(),
-            Arc::new(crate::core::message::HttpMessageApi::new(context.infra.http_client.clone())),
+            Arc::new(crate::infra::http::message_api::HttpMessageApi::new(context.infra.http_client.clone())),
             event_bus.clone(),
             context.user_id.clone(),
         ));

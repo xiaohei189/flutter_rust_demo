@@ -12,7 +12,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn, error};
 
-use super::api::{ConversationServerApi, HttpConversationApi};
+use crate::domain::ports::conversation::ConversationServerApi;
+use crate::infra::http::conversation_api::HttpConversationApi;
 
 // ========== 常量 ==========
 

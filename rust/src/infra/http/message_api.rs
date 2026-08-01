@@ -1,12 +1,15 @@
 //! HTTP 适配器 — impl MessageServerApi for HttpMessageApi
 //!
-//! 生产环境的 HTTP 实现，trait 定义在 `ports.rs`
+//! trait 定义在 `domain::ports::message`
 
-use super::req::{MarkConversationAsReadReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::core::message::ports::MessageServerApi;
 use crate::domain::error::Result;
+use crate::domain::ports::message::{
+    MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq,
+};
 use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
+use crate::infra::http::routes::{
+    DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG,
+};
 use async_trait::async_trait;
 use serde::Serialize;
 use std::sync::Arc;

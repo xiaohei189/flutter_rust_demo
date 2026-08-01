@@ -7,11 +7,9 @@ mod revoke;
 mod delete;
 mod read;
 mod search;
-pub mod http_api;
 
 pub use req::*;
-pub use http_api::HttpMessageApi;
-pub use crate::core::message::ports::MessageServerApi;
+pub use crate::domain::ports::message::MessageServerApi;
 
 use crate::event::EventBus;
 use crate::event::publisher::EventPublisher;
