@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/providers.dart';
-import '../src/rust/core/friend/manager.dart' show FriendApplyInfo;
+import '../src/rust/core/friend/service.dart' show FriendApplyInfo;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';

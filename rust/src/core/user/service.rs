@@ -63,13 +63,13 @@ pub struct UpdateUserInfoData {
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserInfoResp {}
 
-pub struct UserManager {
+pub struct UserService {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
     self_user: Arc<RwLock<Option<UserInfo>>>,
 }
 
-impl UserManager {
+impl UserService {
     pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
         Self {
             http_client,

@@ -67,14 +67,14 @@ pub mod status {
     pub const ONLINE: i32 = 1;
 }
 
-pub struct OnlineStatusManager {
+pub struct OnlineStatusService {
     http_client: Arc<HttpApiClient>,
     event_bus: Arc<EventBus>,
     subscribed_users: Arc<RwLock<HashSet<String>>>,
     status_cache: Arc<RwLock<Vec<OnlineStatus>>>,
 }
 
-impl OnlineStatusManager {
+impl OnlineStatusService {
     pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
         Self {
             http_client,

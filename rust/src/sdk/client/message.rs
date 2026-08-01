@@ -154,20 +154,20 @@ async fn insert_message_before_send_impl(
     local_log.create_time = send_time;
     local_log.status = MessageSendStatus::Sending as i32;
 
-    context.stores.message_repo.batch_insert(&[local_log]).await?;
-    context.stores.sending_message_repo.insert(&LocalSendingMessage {
+    context.repositories.message_repo.batch_insert(&[local_log]).await?;
+    context.repositories.sending_message_repo.insert(&LocalSendingMessage {
         conversation_id: conversation_id.clone(),
         client_msg_id: msg.client_msg_id.clone(),
         ex: String::new(),
     }).await?;
-    context.stores.conversation_repo.update_after_sent_message(
+    context.repositories.conversation_repo.update_after_sent_message(
         &conversation_id,
         &msg.content,
         send_time,
     ).await?;
 
     // 会话乐观更新（对齐 Go SDK api.go L322-324）
-    if let Ok(Some(conv)) = context.stores.conversation_repo.get_by_id(&conversation_id).await {
+    if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
         context.event_bus.publish(SdkEvent::ConversationChanged {
             conversations: vec![conv],
         });
@@ -232,7 +232,7 @@ async fn do_send_message_impl(
             if !online_only {
                 // 网络超时二次确认（对齐 Go SDK api.go L682-698）
                 if let SdkError::Timeout { .. } = &e {
-                    if let Ok(Some(old_msg)) = context.stores.message_repo
+                    if let Ok(Some(old_msg)) = context.repositories.message_repo
                         .get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await
                     {
                         if old_msg.status == MessageSendStatus::SendSuccess as i32 {
@@ -245,7 +245,7 @@ async fn do_send_message_impl(
                         }
                     }
                 }
-                context.stores.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
+                context.repositories.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
                 context.event_bus.publish(SdkEvent::MessageSendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
                     error: format!("{}", e),
@@ -257,12 +257,12 @@ async fn do_send_message_impl(
 
     // isOnlineOnly: 跳过本地状态更新和会话触发（对齐 Go SDK api.go L154-157）
     if !online_only {
-        if let Err(e) = context.stores.message_repo.update_after_send_success(&msg.client_msg_id, &resp.server_msg_id, resp.send_time).await {
+        if let Err(e) = context.repositories.message_repo.update_after_send_success(&msg.client_msg_id, &resp.server_msg_id, resp.send_time).await {
             error!("更新发送结果失败: {}", e);
         }
 
         // 发送成功，从 sending_messages 中移除（对齐 Go SDK api.go L167）
-        if let Err(e) = context.stores.sending_message_repo.delete(&conversation_id, &msg.client_msg_id).await {
+        if let Err(e) = context.repositories.sending_message_repo.delete(&conversation_id, &msg.client_msg_id).await {
             debug!("删除sending_message失败: {}", e);
         }
 
@@ -320,7 +320,7 @@ impl OpenIMClient {
         // isOnlineOnly 消息不入库，无需去重检查
         if !online_only {
             let conversation_id = conversation_id_for_msg(&msg);
-            if let Ok(Some(old_msg)) = self.context.stores.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
+            if let Ok(Some(old_msg)) = self.context.repositories.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
                 if old_msg.status != MessageSendStatus::SendFailed as i32 {
                     return Err(SdkError::msg_repeated("Only failed messages can be resent"));
                 }
@@ -846,13 +846,13 @@ impl OpenIMClient {
         let start_time = if start_client_msg_id.is_empty() {
             0
         } else {
-            let msg = self.context.stores.message_repo
+            let msg = self.context.repositories.message_repo
                 .get_by_client_msg_id(conversation_id, start_client_msg_id)
                 .await?;
             msg.as_ref().map(|m| m.send_time).unwrap_or(0)
         };
 
-        let messages = self.context.stores.message_repo
+        let messages = self.context.repositories.message_repo
             .get_by_conversation_asc(conversation_id, start_time, count + 1)
             .await?;
 
@@ -886,7 +886,7 @@ impl OpenIMClient {
         end_seq: i64,
         count: i32,
     ) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
-        let rows = self.context.stores.message_repo
+        let rows = self.context.repositories.message_repo
             .get_by_seq_range(conversation_id, start_seq, end_seq, count as i64)
             .await?;
         Ok(rows)
@@ -897,7 +897,7 @@ impl OpenIMClient {
         &self,
         seq: i64,
     ) -> std::result::Result<LocalChatLog, SdkError> {
-        self.context.stores.message_repo.get_by_seq(seq).await?
+        self.context.repositories.message_repo.get_by_seq(seq).await?
             .ok_or_else(|| SdkError::invalid_argument(format!("seq={} 的消息不存在", seq)))
     }
 
@@ -911,7 +911,7 @@ impl OpenIMClient {
             return Ok(Vec::new());
         }
         // 按 conversation_id 过滤
-        let all = self.context.stores.message_repo
+        let all = self.context.repositories.message_repo
             .get_by_client_msg_ids(&client_msg_ids)
             .await?;
         Ok(all.into_iter()
@@ -927,7 +927,7 @@ impl OpenIMClient {
         conversation_id: &str,
         client_msg_id: &str,
     ) -> std::result::Result<(), SdkError> {
-        self.context.stores.message_repo
+        self.context.repositories.message_repo
             .mark_as_deleted(conversation_id, client_msg_id).await?;
         debug!("本地删除消息: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
         Ok(())
@@ -943,16 +943,16 @@ impl OpenIMClient {
         // TODO: 调用服务端删除 API（delete_msg）
 
         // 删除本地消息
-        self.context.stores.message_repo.delete_by_conversation(conversation_id).await?;
+        self.context.repositories.message_repo.delete_by_conversation(conversation_id).await?;
 
         // 重置会话的最新消息和未读数
-        if let Ok(Some(mut conv)) = self.context.stores.conversation_repo.get_by_id(conversation_id).await {
+        if let Ok(Some(mut conv)) = self.context.repositories.conversation_repo.get_by_id(conversation_id).await {
             conv.latest_msg = String::new();
             conv.latest_msg_send_time = 0;
             conv.unread_count = 0;
             conv.max_seq = 0;
             conv.min_seq = 0;
-            let _ = self.context.stores.conversation_repo.upsert(&conv).await;
+            let _ = self.context.repositories.conversation_repo.upsert(&conv).await;
         }
 
         info!("清空会话消息: conversation_id={}", conversation_id);
@@ -970,7 +970,7 @@ impl OpenIMClient {
         self.clear_conversation_and_delete_all_msg(conversation_id).await?;
 
         // 删除会话
-        self.context.stores.conversation_repo.delete(conversation_id).await?;
+        self.context.repositories.conversation_repo.delete(conversation_id).await?;
         self.conversation.delete_conversation(conversation_id).await?;
 
         info!("删除会话及所有消息: conversation_id={}", conversation_id);
@@ -984,7 +984,7 @@ impl OpenIMClient {
         // TODO: 调用服务端删除 API（delete_all_msg）
 
         // 删除本地所有消息
-        self.context.stores.message_repo.delete_all().await?;
+        self.context.repositories.message_repo.delete_all().await?;
 
         info!("删除所有消息（本地+服务端）");
         Ok(())
@@ -994,7 +994,7 @@ impl OpenIMClient {
     pub async fn delete_all_msg_from_local(
         &self,
     ) -> std::result::Result<(), SdkError> {
-        self.context.stores.message_repo.mark_all_as_deleted().await?;
+        self.context.repositories.message_repo.mark_all_as_deleted().await?;
         info!("本地软删除所有消息");
         Ok(())
     }
@@ -1003,7 +1003,7 @@ impl OpenIMClient {
     pub async fn get_total_unread_msg_count(
         &self,
     ) -> std::result::Result<i64, SdkError> {
-        let convs = self.context.stores.conversation_repo.get_all().await?;
+        let convs = self.context.repositories.conversation_repo.get_all().await?;
         let total: i64 = convs.iter().map(|c| c.unread_count as i64).sum();
         Ok(total)
     }
@@ -1015,14 +1015,14 @@ impl OpenIMClient {
         client_msg_id: &str,
         local_ex: &str,
     ) -> std::result::Result<(), SdkError> {
-        self.context.stores.message_repo
+        self.context.repositories.message_repo
             .update_local_ex(conversation_id, client_msg_id, local_ex).await?;
         Ok(())
     }
 
     /// 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
     pub async fn cleanup_sending_messages(&self) {
-        let sending_messages = match self.context.stores.sending_message_repo.get_all().await {
+        let sending_messages = match self.context.repositories.sending_message_repo.get_all().await {
             Ok(msgs) => msgs,
             Err(e) => {
                 warn!("获取sending_messages失败: {}", e);
@@ -1032,12 +1032,12 @@ impl OpenIMClient {
 
         for sm in &sending_messages {
             // 查询消息当前状态
-            if let Ok(Some(msg)) = self.context.stores.message_repo
+            if let Ok(Some(msg)) = self.context.repositories.message_repo
                 .get_by_client_msg_id(&sm.conversation_id, &sm.client_msg_id).await
             {
                 if msg.status == MessageSendStatus::Sending as i32 {
                     // 状态仍为 Sending → 标记为 SendFailed
-                    if let Err(e) = self.context.stores.message_repo
+                    if let Err(e) = self.context.repositories.message_repo
                         .update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed.into()).await
                     {
                         warn!("更新sending消息状态失败: client_msg_id={}, err={}", sm.client_msg_id, e);
@@ -1045,7 +1045,7 @@ impl OpenIMClient {
                 }
             }
             // 删除 sending_message 记录
-            let _ = self.context.stores.sending_message_repo
+            let _ = self.context.repositories.sending_message_repo
                 .delete(&sm.conversation_id, &sm.client_msg_id).await;
         }
 
@@ -1092,7 +1092,7 @@ impl OpenIMClient {
         content_type: i32,
     ) -> std::result::Result<MsgStruct, SdkError> {
         // 查找原始消息以获取会话信息
-        let original = self.context.stores.message_repo
+        let original = self.context.repositories.message_repo
             .get_by_client_msg_id(conversation_id, client_msg_id)
             .await?
             .ok_or_else(|| SdkError::invalid_argument(format!("消息不存在: client_msg_id={}", client_msg_id)))?;
@@ -1348,7 +1348,7 @@ mod tests {
             cancel_token: CancellationToken::new(),
             user_id: crate::domain::model::UserId::new("test_user"),
             operation_id: "test_op".to_string(),
-            stores: Arc::new(crate::sdk::context::Stores {
+            repositories: Arc::new(crate::sdk::context::Repositories {
                 message_repo: Arc::new(MessageDao::new(pool.clone())),
                 conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
                 friend_repo: Arc::new(FriendDao::new(pool.clone())),
@@ -1413,14 +1413,14 @@ mod tests {
         assert_eq!(resp.server_msg_id, "server_msg_001");
 
         // DB 中消息状态应为 SendSuccess(2)
-        let db_msg = context.stores.message_repo
+        let db_msg = context.repositories.message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_success")
             .await.unwrap().unwrap();
         assert_eq!(db_msg.status, MessageSendStatus::SendSuccess as i32, "DB 状态应为 SendSuccess");
         assert_eq!(db_msg.server_msg_id, "server_msg_001", "server_msg_id 应回填");
 
         // sending_messages 应被清理
-        let sending = context.stores.sending_message_repo
+        let sending = context.repositories.sending_message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_success")
             .await.unwrap();
         assert!(sending.is_none(), "发送成功后 sending_message 应被删除");
@@ -1450,7 +1450,7 @@ mod tests {
         assert!(result.is_err(), "发送应失败");
 
         // DB 中消息状态应为 SendFailed(3)
-        let db_msg = context.stores.message_repo
+        let db_msg = context.repositories.message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_fail")
             .await.unwrap().unwrap();
         assert_eq!(db_msg.status, MessageSendStatus::SendFailed as i32, "DB 状态应为 SendFailed");
@@ -1486,7 +1486,7 @@ mod tests {
         local_log.status = MessageSendStatus::SendSuccess as i32;
         local_log.server_msg_id = "server_already_done".to_string();
         local_log.send_time = 999;
-        context.stores.message_repo.batch_insert(&[local_log]).await.unwrap();
+        context.repositories.message_repo.batch_insert(&[local_log]).await.unwrap();
 
         let result = do_send_message_impl(
             context.clone(),
@@ -1526,7 +1526,7 @@ mod tests {
         assert!(result.is_err(), "超时且 DB 未成功应返回 Err");
 
         // DB 状态应为 SendFailed
-        let db_msg = context.stores.message_repo
+        let db_msg = context.repositories.message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_real_timeout")
             .await.unwrap().unwrap();
         assert_eq!(db_msg.status, MessageSendStatus::SendFailed as i32);
@@ -1556,7 +1556,7 @@ mod tests {
         assert!(result.is_ok(), "online_only 发送应成功");
 
         // DB 中不应有消息记录（跳过持久化）
-        let db_msg = context.stores.message_repo
+        let db_msg = context.repositories.message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_online")
             .await.unwrap();
         assert!(db_msg.is_none(), "online_only 不应写入 DB");
@@ -1588,7 +1588,7 @@ mod tests {
         assert!(result.is_err());
 
         // DB 中不应有任何记录
-        let db_msg = context.stores.message_repo
+        let db_msg = context.repositories.message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_online_fail")
             .await.unwrap();
         assert!(db_msg.is_none(), "online_only 失败不应有 DB 记录");
@@ -1634,20 +1634,20 @@ mod tests {
             is_msg_destruct: false,
             msg_destruct_time: 0,
         };
-        context.stores.conversation_repo.upsert(&conv).await.unwrap();
+        context.repositories.conversation_repo.upsert(&conv).await.unwrap();
 
         let result = insert_message_before_send_impl(&context, &msg, send_time).await;
         assert!(result.is_ok(), "入库应成功: {:?}", result.err());
 
         // 验证 local_chat_logs 写入
-        let db_msg = context.stores.message_repo
+        let db_msg = context.repositories.message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_insert")
             .await.unwrap().unwrap();
         assert_eq!(db_msg.status, MessageSendStatus::Sending as i32, "状态应为 Sending");
         assert_eq!(db_msg.send_time, send_time, "send_time 应正确");
 
         // 验证 sending_messages 写入
-        let sending = context.stores.sending_message_repo
+        let sending = context.repositories.sending_message_repo
             .get_by_client_msg_id("si_user_a_user_b", "client_msg_insert")
             .await.unwrap();
         assert!(sending.is_some(), "sending_message 应存在");

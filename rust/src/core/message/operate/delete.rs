@@ -14,7 +14,7 @@ impl MessageService {
         // 从本地数据库查找每条消息的 seq
         let mut seqs = Vec::new();
         for client_msg_id in &req.client_msg_ids {
-            if let Ok(Some(msg)) = self.stores.message_repo.get_by_client_msg_id(&req.conversation_id, client_msg_id).await {
+            if let Ok(Some(msg)) = self.repositories.message_repo.get_by_client_msg_id(&req.conversation_id, client_msg_id).await {
                 if msg.seq > 0 {
                     seqs.push(msg.seq);
                 }
@@ -39,7 +39,7 @@ impl MessageService {
         client_msg_ids: &[String],
     ) -> Result<()> {
         for client_msg_id in client_msg_ids {
-            self.stores.message_repo.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
+            self.repositories.message_repo.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
         }
 
         self.event_bus.publish(SdkEvent::MessagesDeleted {

@@ -11,7 +11,7 @@ use tracing::info;
 impl MessageHandler {
     /// 发布 TotalUnreadCountChanged 事件（由调用方在批量处理完成后统一调用）
     pub async fn publish_total_unread_count_changed(&self) {
-        if let Ok(total) = self.stores.conversation_repo.get_total_unread_count().await {
+        if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
             self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
         }
     }
@@ -31,7 +31,7 @@ impl MessageHandler {
 
         if tips.mark_as_read_user_id != login_user_id {
             // 别人发来的已读回执：对方标记我的消息为已读
-            let conversation = self.stores.conversation_repo.get_by_id(&tips.conversation_id).await?;
+            let conversation = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await?;
             let session_type_val = conversation.as_ref()
                 .map(|c| c.conversation_type)
                 .unwrap_or(msg.session_type);
@@ -56,9 +56,9 @@ impl MessageHandler {
 
         } else {
             // 自己的已读回执（其他设备同步过来的）
-            self.stores.conversation_repo.update_unread_count(&tips.conversation_id, 0).await?;
+            self.repositories.conversation_repo.update_unread_count(&tips.conversation_id, 0).await?;
 
-            if let Ok(total) = self.stores.conversation_repo.get_total_unread_count().await {
+            if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
                 self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
             }
 
@@ -96,20 +96,20 @@ impl MessageHandler {
         let login_user_id = self.user_id.get().await;
 
         if tips_json.mark_as_read_user_id != login_user_id {
-            let conversation = self.stores.conversation_repo.get_by_id(&tips_json.conversation_id).await?;
+            let conversation = self.repositories.conversation_repo.get_by_id(&tips_json.conversation_id).await?;
             let session_type_val = conversation.as_ref()
                 .map(|c| c.conversation_type)
                 .unwrap_or(msg.session_type);
 
             if session_type_val == session_type::SINGLE_CHAT {
                 if !seqs.is_empty() {
-                    let messages = self.stores.message_repo.get_by_seqs(&tips_json.conversation_id, &seqs).await?;
+                    let messages = self.repositories.message_repo.get_by_seqs(&tips_json.conversation_id, &seqs).await?;
                     let mut updated_client_msg_ids: Vec<String> = Vec::new();
 
                     for mut m in messages {
                         if m.is_read == 0 {
                             m.is_read = 1;
-                            self.stores.message_repo.mark_as_read_by_seqs_all(
+                            self.repositories.message_repo.mark_as_read_by_seqs_all(
                                 &tips_json.conversation_id,
                                 &[m.seq],
                             ).await?;
@@ -134,8 +134,8 @@ impl MessageHandler {
 
             info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
-            self.stores.conversation_repo.update_unread_count(&tips_json.conversation_id, 0).await?;
-            if let Ok(total) = self.stores.conversation_repo.get_total_unread_count().await {
+            self.repositories.conversation_repo.update_unread_count(&tips_json.conversation_id, 0).await?;
+            if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
                 self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
             }
 
@@ -156,7 +156,7 @@ impl MessageHandler {
         if session_type_val == session_type::SINGLE_CHAT {
             // 幂等性检查：如果 has_read_seq 对应的消息已读，说明已处理过此回执
             if !seqs.is_empty() {
-                if let Ok(Some(msg)) = self.stores.message_repo.get_by_seq(has_read_seq).await {
+                if let Ok(Some(msg)) = self.repositories.message_repo.get_by_seq(has_read_seq).await {
                     if msg.is_read != 0 {
                         return Ok(());
                     }
@@ -166,7 +166,7 @@ impl MessageHandler {
             // 标记消息已读（排除自己发的）
             if !seqs.is_empty() {
                 let login_user_id = self.user_id.get().await;
-                self.stores.message_repo.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
+                self.repositories.message_repo.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
             }
 
             // 计算未读数 = max_seq - has_read_seq
@@ -177,10 +177,10 @@ impl MessageHandler {
                 0
             };
 
-            self.stores.conversation_repo.update_unread_count(conversation_id, unread_count).await?;
+            self.repositories.conversation_repo.update_unread_count(conversation_id, unread_count).await?;
 
         } else {
-            self.stores.conversation_repo.update_unread_count(conversation_id, 0).await?;
+            self.repositories.conversation_repo.update_unread_count(conversation_id, 0).await?;
         }
 
         Ok(())
@@ -196,12 +196,12 @@ mod tests {
     use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::infra::database::pool::create_pool_memory;
     use openim_protocol::sdkws::MarkAsReadTips;
-    use crate::sdk::context::Stores;
+    use crate::sdk::context::Repositories;
     use prost::Message as ProstMessage;
     use std::sync::Arc;
 
-    fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
-        Arc::new(Stores {
+    fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
+        Arc::new(Repositories {
             message_repo: Arc::new(MessageDao::new(pool.clone())),
             conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
             friend_repo: Arc::new(FriendDao::new(pool.clone())),
@@ -290,10 +290,10 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_single_chat_marks_messages_read() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("user_1"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
 
         let msgs = vec![
             make_local_msg("conv_read", "msg_1", 1, "user_2"),
@@ -317,9 +317,9 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_self_sync_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("user_1"));
+        let repositories = make_test_repositories(pool);
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
 
         conversation_dao.upsert(&make_conv("conv_self_read", 5)).await.unwrap();
 
@@ -333,9 +333,9 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_publishes_total_unread_changed() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("user_1"));
+        let repositories = make_test_repositories(pool);
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         handler.set_event_sender(tx);
@@ -356,10 +356,10 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_partial_seqs() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("user_1"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
 
         let msgs = vec![
             make_local_msg("conv_partial", "msg_1", 1, "user_2"),
@@ -384,10 +384,10 @@ mod tests {
     #[tokio::test]
     async fn test_read_receipt_group_chat_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("user_1"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
 
         let mut group_conv = make_conv("conv_group", 5);
         group_conv.conversation_type = 3;

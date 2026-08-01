@@ -14,7 +14,7 @@ use crate::event::EventBus;
 use crate::event::publisher::EventPublisher;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
-use crate::sdk::context::Stores;
+use crate::sdk::context::Repositories;
 use std::sync::Arc;
 
 /// 消息服务 — 用户主动发起的消息操作（撤回/删除/标记已读/搜索）
@@ -27,7 +27,7 @@ use std::sync::Arc;
 /// - `MessageService`：处理用户**主动发起**的操作（调用 HTTP API + 更新本地 DB）
 pub struct MessageService {
     /// 外部依赖
-    pub(crate) stores: Arc<Stores>,
+    pub(crate) repositories: Arc<Repositories>,
     pub(crate) api: Arc<dyn MessageServerApi>,
     /// 身份
     pub(crate) user_id: UserId,
@@ -39,13 +39,13 @@ pub struct MessageService {
 
 impl MessageService {
     pub fn new(
-        stores: Arc<Stores>,
+        repositories: Arc<Repositories>,
         api: Arc<dyn MessageServerApi>,
         event_bus: Arc<EventBus>,
         user_id: UserId,
     ) -> Self {
         Self {
-            stores,
+            repositories,
             api,
             user_id,
             event_bus,
@@ -76,8 +76,8 @@ mod tests {
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use std::sync::Arc;
 
-    fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
-        Arc::new(Stores {
+    fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
+        Arc::new(Repositories {
             message_repo: Arc::new(MessageDao::new(pool.clone())),
             conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
             friend_repo: Arc::new(FriendDao::new(pool.clone())),
@@ -117,15 +117,15 @@ mod tests {
         }
     }
 
-    pub(crate) fn make_service(stores: Arc<Stores>) -> MessageService {
+    pub(crate) fn make_service(repositories: Arc<Repositories>) -> MessageService {
         let event_bus = Arc::new(EventBus::new());
         let api: Arc<dyn MessageServerApi> = Arc::new(SuccessMockApi);
-        MessageService::new(stores, api, event_bus, UserId::new("user_1"))
+        MessageService::new(repositories, api, event_bus, UserId::new("user_1"))
     }
 
-    pub(crate) fn make_service_with_api(stores: Arc<Stores>, api: Arc<dyn MessageServerApi>) -> MessageService {
+    pub(crate) fn make_service_with_api(repositories: Arc<Repositories>, api: Arc<dyn MessageServerApi>) -> MessageService {
         let event_bus = Arc::new(EventBus::new());
-        MessageService::new(stores, api, event_bus, UserId::new("user_1"))
+        MessageService::new(repositories, api, event_bus, UserId::new("user_1"))
     }
 
     fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64, send_id: &str) -> LocalChatLog {
@@ -159,9 +159,9 @@ mod tests {
     #[tokio::test]
     async fn test_search_local_messages() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let service = make_service(stores);
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
         message_dao.batch_insert(&[make_local_msg("conv_s", "msg_1", 1, "user_2"), make_local_msg("conv_s", "msg_2", 2, "user_2")]).await.unwrap();
         let results = service.search_local_messages("conv_s".to_string(), "hello".to_string(), 10).await.unwrap();
         assert_eq!(results.len(), 2);
@@ -170,10 +170,10 @@ mod tests {
     #[tokio::test]
     async fn test_mark_conversation_as_read_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let service = make_service(stores);
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let service = make_service(repositories);
         message_dao.batch_insert(&[make_local_msg("conv_read", "msg_1", 1, "user_2"), make_local_msg("conv_read", "msg_2", 2, "user_2")]).await.unwrap();
         conversation_dao.upsert(&make_conv("conv_read", 2)).await.unwrap();
         service.mark_conversation_message_as_read("conv_read".to_string(), 1).await.unwrap();
@@ -184,9 +184,9 @@ mod tests {
     #[tokio::test]
     async fn test_revoke_message_success_marks_local() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let service = make_service(stores);
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
         message_dao.batch_insert(&[make_local_msg("conv_r", "msg_r1", 5, "user_1")]).await.unwrap();
         service.revoke_message(RevokeMessageReq { conversation_id: "conv_r".into(), seq: 5, user_id: "user_1".into(), client_msg_id: "msg_r1".into(), session_type: 1 }).await.unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_r", "msg_r1").await.unwrap().unwrap();
@@ -196,9 +196,9 @@ mod tests {
     #[tokio::test]
     async fn test_delete_messages_success_removes_local() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let service = make_service(stores);
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
         message_dao.batch_insert(&[make_local_msg("conv_d", "msg_d1", 1, "user_2"), make_local_msg("conv_d", "msg_d2", 2, "user_2")]).await.unwrap();
         service.delete_messages(DeleteMessagesReq { conversation_id: "conv_d".into(), client_msg_ids: vec!["msg_d1".into(), "msg_d2".into()] }).await.unwrap();
         assert!(message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().is_none());
@@ -207,9 +207,9 @@ mod tests {
     #[tokio::test]
     async fn test_mark_messages_as_read_success() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let service = make_service(stores);
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
         message_dao.batch_insert(&[make_local_msg("conv_mr", "m1", 1, "user_2"), make_local_msg("conv_mr", "m2", 2, "user_2")]).await.unwrap();
         service.mark_messages_as_read(MarkMessagesAsReadReq { conversation_id: "conv_mr".into(), user_id: "user_1".into(), session_type: 1, has_read_seq: 2, seqs: vec![1, 2] }).await.unwrap();
         let logs = message_dao.get_by_conversation("conv_mr", 0, 100).await.unwrap();

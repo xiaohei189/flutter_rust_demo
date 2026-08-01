@@ -32,7 +32,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_user_status(&self, user_ids: Vec<String>) -> Result<Vec<crate::core::user::online::manager::OnlineStatus>> {
+    pub async fn get_user_status(&self, user_ids: Vec<String>) -> Result<Vec<crate::core::user::online::service::OnlineStatus>> {
         self.inner.get_user_status(&user_ids).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }

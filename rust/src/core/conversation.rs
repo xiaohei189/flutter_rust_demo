@@ -18,12 +18,12 @@
 //!
 //! | 模块 | 核心结构体 | 职责 |
 //! |------|-----------|------|
-//! | [`manager`] | `ConversationManager` | 本地 CRUD（置顶/免打扰/未读数/草稿） |
+//! | [`service`] | `ConversationService` | 本地 CRUD（置顶/免打扰/未读数/草稿） |
 //! | [`syncer`] | `ConversationSyncer` | 服务端同步（增量/全量/HashReadSeq） |
 //! | (ports) | `ConversationServerApi` | 服务端 API 契约（位于 `domain::ports::conversation`） |
 //! | [`converter`] | - | ServerConversation -> LocalConversation 转换（`From` trait） |
 //! | [`types`] | - | 请求/响应 DTO 定义 |
 
-pub mod manager;
+pub mod service;
 pub mod syncer;
 pub mod converter;

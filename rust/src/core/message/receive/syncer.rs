@@ -12,7 +12,7 @@ use crate::event::publisher::EventPublisher;
 use crate::event::listener::conversation::{ConversationListener, ConversationEvent};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalNotificationSeq;
-use crate::sdk::context::Stores;
+use crate::sdk::context::Repositories;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -107,7 +107,7 @@ impl Default for SyncConfig {
 pub struct MessageSyncer {
     /// 外部依赖
     remote: Arc<dyn SyncServerApi>,
-    stores: Arc<Stores>,
+    repositories: Arc<Repositories>,
     message_handler: Arc<MessageHandler>,
     /// 身份
     user_id: UserId,
@@ -124,13 +124,13 @@ pub struct MessageSyncer {
 impl MessageSyncer {
     pub fn new(
         remote: Arc<dyn SyncServerApi>,
-        stores: Arc<Stores>,
+        repositories: Arc<Repositories>,
         message_handler: Arc<MessageHandler>,
         user_id: UserId,
     ) -> Self {
         Self {
             remote,
-            stores,
+            repositories,
             message_handler,
             user_id,
             config: SyncConfig::default(),
@@ -196,7 +196,7 @@ impl MessageSyncer {
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            let _ = self.stores.conversation_repo.update_max_seq(conv_id, *max_seq).await;
+            let _ = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await;
         }
 
         match self.sync_incremental_messages(&server_max_seqs).await {
@@ -223,7 +223,7 @@ impl MessageSyncer {
             return Ok(());
         }
 
-        let reinstalled = self.stores.sync_version_repo.is_reinstalled().await?;
+        let reinstalled = self.repositories.sync_version_repo.is_reinstalled().await?;
         info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
 
         self.send(ConversationEvent::SyncStarted);
@@ -295,14 +295,14 @@ impl MessageSyncer {
 
     /// 从本地 DB 加载已同步的 max_seq 到内存
     pub async fn load_synced_max_seqs(&self) -> Result<()> {
-        let conv_seqs = self.stores.conversation_repo.get_all_seq_pairs().await?;
+        let conv_seqs = self.repositories.conversation_repo.get_all_seq_pairs().await?;
         let mut map = self.synced_max_seqs.write().await;
         for (conv_id, seq) in conv_seqs {
-            let local_max = self.stores.message_repo.get_max_seq(&conv_id).await.unwrap_or(0);
+            let local_max = self.repositories.message_repo.get_max_seq(&conv_id).await.unwrap_or(0);
             map.insert(conv_id, local_max);
         }
 
-        match self.stores.notification_seq_repo.get_all().await {
+        match self.repositories.notification_seq_repo.get_all().await {
             Ok(notification_seqs) => {
                 let count = notification_seqs.len();
                 for ns in &notification_seqs {
@@ -321,7 +321,7 @@ impl MessageSyncer {
 
     /// 设置通知会话的 seq
     pub async fn set_notification_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
-        self.stores.notification_seq_repo.set_notification_seq(conversation_id, seq).await
+        self.repositories.notification_seq_repo.set_notification_seq(conversation_id, seq).await
     }
 
     pub async fn sync_all_conversations(&self, reinstalled: bool) -> Result<()> {
@@ -341,14 +341,14 @@ impl MessageSyncer {
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            let _ = self.stores.conversation_repo.update_max_seq(conv_id, *max_seq).await;
+            let _ = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await;
         }
 
         self.load_synced_max_seqs().await?;
 
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs).await?;
-            self.stores.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
+            self.repositories.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
         } else {
             self.sync_incremental_messages(&server_max_seqs).await?;
         }
@@ -361,7 +361,7 @@ impl MessageSyncer {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
         for (conversation_id, server_max_seq) in max_seq_to_sync {
-            let local_max_seq = self.stores.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
+            let local_max_seq = self.repositories.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -398,7 +398,7 @@ impl MessageSyncer {
                 continue;
             }
 
-            let local_max_seq = self.stores.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
+            let local_max_seq = self.repositories.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -410,7 +410,7 @@ impl MessageSyncer {
 
         if !notification_seq_records.is_empty() {
             info!("重装模式: 持久化 {} 个通知会话的 seq", notification_seq_records.len());
-            if let Err(e) = self.stores.notification_seq_repo.batch_insert(&notification_seq_records).await {
+            if let Err(e) = self.repositories.notification_seq_repo.batch_insert(&notification_seq_records).await {
                 warn!("持久化通知 seq 失败: {}", e);
             }
         }
@@ -612,7 +612,7 @@ impl MessageSyncer {
     fn clone_for_task(&self) -> Arc<Self> {
         Arc::new(Self {
             remote: self.remote.clone(),
-            stores: self.stores.clone(),
+            repositories: self.repositories.clone(),
             message_handler: self.message_handler.clone(),
             user_id: self.user_id.clone(),
             config: self.config.clone(),
@@ -630,7 +630,7 @@ mod tests {
     use crate::domain::model::UserId;
     use crate::infra::database::pool::create_pool_memory;
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::sdk::context::Stores;
+    use crate::sdk::context::Repositories;
     use prost::Message;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -660,9 +660,9 @@ mod tests {
         async fn is_kicked(&self) -> bool { self.kicked }
     }
 
-    async fn setup_db() -> (Arc<Stores>, Arc<MessageHandler>) {
+    async fn setup_db() -> (Arc<Repositories>, Arc<MessageHandler>) {
         let pool = create_pool_memory().await.unwrap();
-        let stores = Arc::new(Stores {
+        let repositories = Arc::new(Repositories {
             message_repo: Arc::new(MessageDao::new(pool.clone())),
             conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
             friend_repo: Arc::new(FriendDao::new(pool.clone())),
@@ -672,8 +672,8 @@ mod tests {
             notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
         });
-        let handler = Arc::new(MessageHandler::new(stores.clone(), UserId::new("test_user")));
-        (stores, handler)
+        let handler = Arc::new(MessageHandler::new(repositories.clone(), UserId::new("test_user")));
+        (repositories, handler)
     }
 
     fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64) -> crate::domain::model::local::LocalChatLog {
@@ -701,8 +701,8 @@ mod tests {
         }
     }
 
-    fn make_syncer(remote: Arc<dyn SyncServerApi>, stores: Arc<Stores>, handler: Arc<MessageHandler>) -> MessageSyncer {
-        MessageSyncer::new(remote, stores, handler, UserId::new("test_user"))
+    fn make_syncer(remote: Arc<dyn SyncServerApi>, repositories: Arc<Repositories>, handler: Arc<MessageHandler>) -> MessageSyncer {
+        MessageSyncer::new(remote, repositories, handler, UserId::new("test_user"))
     }
 
     #[test]
@@ -721,10 +721,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_pulled_messages_stores_and_updates_seq() {
-        let (stores, handler) = setup_db().await;
-        let message_dao = stores.message_repo.clone();
+        let (repositories, handler) = setup_db().await;
+        let message_dao = repositories.message_repo.clone();
         let remote = Arc::new(MockSyncerApi::new());
-        let syncer = make_syncer(remote, stores, handler);
+        let syncer = make_syncer(remote, repositories, handler);
         let mut msgs_map = HashMap::new();
         msgs_map.insert("conv_a".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_a", 1, "hello"), make_msg_data("conv_a", 2, "world")], ..Default::default() });
         syncer.handle_pulled_messages(&msgs_map).await.unwrap();
@@ -736,13 +736,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_sync_incremental_only_pulls_gap() {
-        let (stores, handler) = setup_db().await;
-        let message_dao = stores.message_repo.clone();
+        let (repositories, handler) = setup_db().await;
+        let message_dao = repositories.message_repo.clone();
         message_dao.batch_insert(&[make_local_msg("conv_a", "a1", 1), make_local_msg("conv_a", "a2", 2), make_local_msg("conv_a", "a3", 3)]).await.unwrap();
         let mut pull_msgs = HashMap::new();
         pull_msgs.insert("conv_a".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_a", 4, "msg4"), make_msg_data("conv_a", 5, "msg5")], ..Default::default() });
         let remote = Arc::new(MockSyncerApi::new().with_pull_msgs(pull_msgs));
-        let syncer = make_syncer(remote.clone(), stores, handler);
+        let syncer = make_syncer(remote.clone(), repositories, handler);
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_a".to_string(), 5i64);
         server_seqs.insert("conv_b".to_string(), 5i64);
@@ -754,9 +754,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_push_trigger_continuous_seq_no_pull() {
-        let (stores, handler) = setup_db().await;
+        let (repositories, handler) = setup_db().await;
         let remote = Arc::new(MockSyncerApi::new());
-        let syncer = make_syncer(remote.clone(), stores, handler);
+        let syncer = make_syncer(remote.clone(), repositories, handler);
         syncer.synced_max_seqs.write().await.insert("conv_x".to_string(), 5);
         syncer.push_trigger_and_sync("conv_x", &[6, 7, 8]).await.unwrap();
         assert_eq!(remote.pull_count.load(Ordering::SeqCst), 0);
@@ -766,11 +766,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_push_trigger_gap_triggers_pull() {
-        let (stores, handler) = setup_db().await;
+        let (repositories, handler) = setup_db().await;
         let mut pull_msgs = HashMap::new();
         pull_msgs.insert("conv_y".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_y", 6, "gap6"), make_msg_data("conv_y", 7, "gap7")], ..Default::default() });
         let remote = Arc::new(MockSyncerApi::new().with_pull_msgs(pull_msgs));
-        let syncer = make_syncer(remote.clone(), stores, handler);
+        let syncer = make_syncer(remote.clone(), repositories, handler);
         syncer.synced_max_seqs.write().await.insert("conv_y".to_string(), 5);
         syncer.push_trigger_and_sync("conv_y", &[8, 9, 10]).await.unwrap();
         assert_eq!(remote.pull_count.load(Ordering::SeqCst), 1);
@@ -780,14 +780,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_sync_on_login_full_flow() {
-        let (stores, handler) = setup_db().await;
-        let message_dao = stores.message_repo.clone();
+        let (repositories, handler) = setup_db().await;
+        let message_dao = repositories.message_repo.clone();
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_login".to_string(), 2i64);
         let mut pull_msgs = HashMap::new();
         pull_msgs.insert("conv_login".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_login", 1, "m1"), make_msg_data("conv_login", 2, "m2")], ..Default::default() });
         let remote = Arc::new(MockSyncerApi::new().with_max_seqs(server_seqs).with_pull_msgs(pull_msgs));
-        let syncer = make_syncer(remote, stores, handler);
+        let syncer = make_syncer(remote, repositories, handler);
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         syncer.set_event_sender(tx);
         syncer.sync_on_login().await.unwrap();
@@ -801,12 +801,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_connection_kicked() {
-        let (stores, handler) = setup_db().await;
+        let (repositories, handler) = setup_db().await;
         let remote = Arc::new(MockSyncerApi::new().with_kicked(false));
-        let syncer = make_syncer(remote, stores.clone(), handler.clone());
+        let syncer = make_syncer(remote, repositories.clone(), handler.clone());
         assert!(!syncer.is_connection_kicked().await);
         let remote2 = Arc::new(MockSyncerApi::new().with_kicked(true));
-        let syncer2 = make_syncer(remote2, stores, handler);
+        let syncer2 = make_syncer(remote2, repositories, handler);
         assert!(syncer2.is_connection_kicked().await);
     }
 }

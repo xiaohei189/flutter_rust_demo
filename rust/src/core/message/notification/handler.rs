@@ -10,10 +10,10 @@
 //! 再解析内层 detail 到目标类型。
 
 use crate::core::conversation::syncer::ConversationSyncer;
-use crate::core::friend::manager::FriendManager;
-use crate::core::group::manager::GroupManager;
+use crate::core::friend::service::FriendService;
+use crate::core::group::service::GroupService;
 use crate::core::message::MessageHandler;
-use crate::core::user::manager::UserManager;
+use crate::core::user::service::UserService;
 use crate::domain::constant::notification_type;
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
@@ -202,9 +202,9 @@ struct GroupApplicationRejectedTipsJson {
 // ============================================================
 
 pub struct NotificationHandler {
-    friend_manager: Arc<FriendManager>,
-    group_manager: Arc<GroupManager>,
-    user_manager: Arc<UserManager>,
+    friend_manager: Arc<FriendService>,
+    group_manager: Arc<GroupService>,
+    user_manager: Arc<UserService>,
     conversation_syncer: Arc<ConversationSyncer>,
     message_handler: Arc<MessageHandler>,
     event_bus: Arc<EventBus>,
@@ -213,9 +213,9 @@ pub struct NotificationHandler {
 
 impl NotificationHandler {
     pub fn new(
-        friend_manager: Arc<FriendManager>,
-        group_manager: Arc<GroupManager>,
-        user_manager: Arc<UserManager>,
+        friend_manager: Arc<FriendService>,
+        group_manager: Arc<GroupService>,
+        user_manager: Arc<UserService>,
         conversation_syncer: Arc<ConversationSyncer>,
         message_handler: Arc<MessageHandler>,
         event_bus: Arc<EventBus>,

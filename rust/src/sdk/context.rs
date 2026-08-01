@@ -22,7 +22,7 @@ pub fn gen_operation_id(prefix: &str) -> String {
 }
 
 /// 所有 Repository 的聚合（按领域分组，生命周期由 RuntimeContext 管理）
-pub struct Stores {
+pub struct Repositories {
     pub message_repo: Arc<dyn MessageRepository>,
     pub conversation_repo: Arc<dyn ConversationRepository>,
     pub friend_repo: Arc<dyn FriendRepository>,
@@ -44,7 +44,7 @@ pub struct RuntimeContext {
     pub cancel_token: CancellationToken,
     pub user_id: UserId,
     pub operation_id: String,
-    pub stores: Arc<Stores>,
+    pub repositories: Arc<Repositories>,
     pub infra: Infra,
 }
 
@@ -81,7 +81,7 @@ impl RuntimeContext {
             cancel_token,
             user_id: UserId::new(""),
             operation_id,
-            stores: Arc::new(Stores {
+            repositories: Arc::new(Repositories {
                 message_repo: message_dao,
                 conversation_repo: conversation_dao,
                 friend_repo: friend_dao,

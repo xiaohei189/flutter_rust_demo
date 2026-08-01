@@ -15,18 +15,18 @@ pub use self::online_status::*;
 pub use self::user::*;
 
 use crate::core::connection::manager::ConnectionManager;
-use crate::core::conversation::manager::ConversationManager;
+use crate::core::conversation::service::ConversationService;
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::file::uploader::FileUploader;
-use crate::core::friend::manager::FriendManager;
-use crate::core::group::manager::GroupManager;
+use crate::core::friend::service::FriendService;
+use crate::core::group::service::GroupService;
 use crate::core::message::MessageHandler;
 use crate::core::message::MessageSendQueue;
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
 use crate::core::message::notification::handler::NotificationHandler;
-use crate::core::user::online::manager::OnlineStatusManager;
-use crate::core::user::manager::UserManager;
+use crate::core::user::online::service::OnlineStatusService;
+use crate::core::user::service::UserService;
 use crate::event::EventBus;
 use crate::event::listener::connection::ConnectionEvent;
 use crate::event::listener::conversation::ConversationEvent;
@@ -43,15 +43,15 @@ use std::sync::Arc;
 pub struct OpenIMClient {
     pub(crate) context: Arc<RuntimeContext>,
     pub(crate) connection: Arc<ConnectionManager>,
-    pub(crate) user: Arc<UserManager>,
-    pub(crate) friend: Arc<FriendManager>,
-    pub(crate) group: Arc<GroupManager>,
-    pub(crate) conversation: Arc<ConversationManager>,
+    pub(crate) user: Arc<UserService>,
+    pub(crate) friend: Arc<FriendService>,
+    pub(crate) group: Arc<GroupService>,
+    pub(crate) conversation: Arc<ConversationService>,
     pub(crate) message_syncer: Arc<MessageSyncer>,
     pub(crate) message_handler: Arc<MessageHandler>,
     pub(crate) notification_handler: Arc<NotificationHandler>,
     pub(crate) conversation_syncer: Arc<ConversationSyncer>,
-    pub(crate) online_status: Arc<OnlineStatusManager>,
+    pub(crate) online_status: Arc<OnlineStatusService>,
     pub(crate) file_uploader: Arc<FileUploader>,
     pub(crate) message_service: Arc<MessageService>,
     pub(crate) event_bus: Arc<EventBus>,
@@ -112,24 +112,24 @@ impl OpenIMClient {
             cancel_token.clone(),
         ));
 
-        let user = Arc::new(UserManager::new(
+        let user = Arc::new(UserService::new(
             context.infra.http_client.clone(),
             event_bus.clone(),
         ));
-        let friend = Arc::new(FriendManager::new(
+        let friend = Arc::new(FriendService::new(
             context.infra.http_client.clone(),
-            context.stores.clone(),
+            context.repositories.clone(),
             context.user_id.clone(),
         ));
-        let group = Arc::new(GroupManager::new(
+        let group = Arc::new(GroupService::new(
             context.infra.http_client.clone(),
-            context.stores.clone(),
+            context.repositories.clone(),
             context.user_id.clone(),
         ));
-        let conversation = Arc::new(ConversationManager::new(
-            context.stores.clone(),
+        let conversation = Arc::new(ConversationService::new(
+            context.repositories.clone(),
         ));
-        let online_status = Arc::new(OnlineStatusManager::new(
+        let online_status = Arc::new(OnlineStatusService::new(
             context.infra.http_client.clone(),
             event_bus.clone(),
         ));
@@ -139,25 +139,25 @@ impl OpenIMClient {
         ));
 
         let message_handler = Arc::new(MessageHandler::new(
-            context.stores.clone(),
+            context.repositories.clone(),
             context.user_id.clone(),
         ));
 
         let message_syncer = Arc::new(MessageSyncer::new(
             connection.clone(),
-            context.stores.clone(),
+            context.repositories.clone(),
             message_handler.clone(),
             context.user_id.clone(),
         ));
 
         let conversation_syncer = Arc::new(ConversationSyncer::new(
             context.infra.http_client.clone(),
-            context.stores.clone(),
+            context.repositories.clone(),
             context.user_id.clone(),
         ));
 
         let message_service = Arc::new(MessageService::new(
-            context.stores.clone(),
+            context.repositories.clone(),
             Arc::new(crate::infra::http::message_api::HttpMessageApi::new(context.infra.http_client.clone())),
             event_bus.clone(),
             context.user_id.clone(),

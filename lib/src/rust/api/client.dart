@@ -4,9 +4,9 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../core/connection/manager.dart';
-import '../core/friend/manager.dart';
-import '../core/group/manager.dart';
-import '../core/user/online/manager.dart';
+import '../core/friend/service.dart';
+import '../core/group/service.dart';
+import '../core/user/online/service.dart';
 import '../domain/constant/enums.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';

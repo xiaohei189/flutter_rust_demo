@@ -15,7 +15,7 @@ use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
 use crate::domain::model::local::{LocalChatLog, LocalConversation};
 use openim_protocol::sdkws::MsgData;
-use crate::sdk::context::Stores;
+use crate::sdk::context::Repositories;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn, trace};
@@ -68,7 +68,7 @@ impl From<(&str, &MsgData)> for LocalChatLog {
 /// - [`revoke`](super::revoke) — 撤回通知处理（更新本地消息 + 引用消息处理）
 pub struct MessageHandler {
     /// 外部依赖（聚合）
-    pub(crate) stores: Arc<Stores>,
+    pub(crate) repositories: Arc<Repositories>,
     /// 身份
     pub(crate) user_id: UserId,
     /// 内部状态
@@ -78,9 +78,9 @@ pub struct MessageHandler {
 }
 
 impl MessageHandler {
-    pub fn new(stores: Arc<Stores>, user_id: UserId) -> Self {
+    pub fn new(repositories: Arc<Repositories>, user_id: UserId) -> Self {
         Self {
-            stores,
+            repositories,
             user_id,
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
             events: EventPublisher::new(),
@@ -101,7 +101,7 @@ impl MessageHandler {
     }
 
     pub fn message_dao(&self) -> Arc<dyn crate::domain::repository::message::MessageRepository> {
-        self.stores.message_repo.clone()
+        self.repositories.message_repo.clone()
     }
 
     /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
@@ -251,7 +251,7 @@ impl MessageHandler {
         let client_msg_ids: Vec<String> = normal_messages.iter().map(|m| m.client_msg_id.clone()).collect();
 
         // 批量查库去重
-        let existing_logs = self.stores.message_repo.get_by_client_msg_ids(&client_msg_ids).await.unwrap_or_default();
+        let existing_logs = self.repositories.message_repo.get_by_client_msg_ids(&client_msg_ids).await.unwrap_or_default();
         let mut existing_map: HashMap<String, LocalChatLog> = HashMap::new();
         for log in existing_logs {
             existing_map.insert(log.client_msg_id.clone(), log);
@@ -323,7 +323,7 @@ impl MessageHandler {
         // 批量更新 seq
         if !batch_update_list.is_empty() {
             debug!("[MsgHandler] 更新 seq: {} 条", batch_update_list.len());
-            self.stores.message_repo.batch_update_seq(&batch_update_list).await?;
+            self.repositories.message_repo.batch_update_seq(&batch_update_list).await?;
         }
 
         // 批量插入消息
@@ -332,7 +332,7 @@ impl MessageHandler {
                 trace!("[MsgHandler]   插入: conv={}, client_msg_id={}, seq={}",
                       log.conversation_id, log.client_msg_id, log.seq);
             }
-            self.stores.message_repo.batch_insert(&insert_list).await?;
+            self.repositories.message_repo.batch_insert(&insert_list).await?;
         }
 
         let mut seen_convs = std::collections::HashSet::new();
@@ -344,7 +344,7 @@ impl MessageHandler {
             let content_str = String::from_utf8_lossy(&msg.content);
 
             if seen_convs.insert(conv_id.to_string()) {
-                let existing = self.stores.conversation_repo.get_by_id(conv_id).await?;
+                let existing = self.repositories.conversation_repo.get_by_id(conv_id).await?;
                 if existing.is_none() {
                     let show_name = if msg.session_type == 1 {
                         msg.sender_nickname.clone()
@@ -378,18 +378,18 @@ impl MessageHandler {
                         is_msg_destruct: false,
                         msg_destruct_time: 0,
                     };
-                    self.stores.conversation_repo.upsert(&conv).await?;
+                    self.repositories.conversation_repo.upsert(&conv).await?;
                     debug!("[MsgHandler] 创建新会话: {}", conv_id);
                 }
             }
 
             if is_conversation_update && !is_online_only {
-                self.stores.conversation_repo
+                self.repositories.conversation_repo
                     .update_latest_msg(conv_id, &content_str, msg.send_time)
                     .await?;
                 
                 if !is_self {
-                    self.stores.conversation_repo
+                    self.repositories.conversation_repo
                         .increase_unread_count(conv_id, msg.seq)
                         .await?;
                 }
@@ -415,7 +415,7 @@ impl MessageHandler {
 
         // 对齐 Go SDK：所有消息处理完成后统一发布会话变更
         for conv_id in &seen_convs {
-            if let Ok(Some(conv)) = self.stores.conversation_repo.get_by_id(&conv_id).await {
+            if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&conv_id).await {
                 self.send(ConversationEvent::Changed(vec![conv.clone()]));
             }
         }
@@ -431,9 +431,9 @@ mod tests {
     use crate::infra::database::pool::create_pool_memory;
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 
-    /// 创建测试用 Stores
-    fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
-        Arc::new(Stores {
+    /// 创建测试用 Repositories
+    fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
+        Arc::new(Repositories {
             message_repo: Arc::new(MessageDao::new(pool.clone())),
             conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
             friend_repo: Arc::new(FriendDao::new(pool.clone())),
@@ -510,7 +510,7 @@ mod tests {
     fn test_exception_seq_gap() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
 
         let mut msg = make_local_log("", 5, msg_status::HAS_DELETED);
         handler.handle_exception_messages(None, &mut msg);
@@ -522,7 +522,7 @@ mod tests {
     fn test_exception_deleted() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
 
         let mut msg = make_local_log("msg_123", 5, msg_status::HAS_DELETED);
         handler.handle_exception_messages(None, &mut msg);
@@ -534,7 +534,7 @@ mod tests {
     fn test_exception_seq_dup() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
 
         let existing = make_local_log("existing_msg", 10, msg_status::SEND_SUCCESS);
         let mut msg = make_local_log("new_msg", 10, msg_status::SEND_SUCCESS);
@@ -547,7 +547,7 @@ mod tests {
     fn test_exception_client_dup() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
 
         let existing = make_local_log("msg_dup", 5, msg_status::SEND_SUCCESS);
         let mut msg = make_local_log("msg_dup", 8, msg_status::SEND_SUCCESS);
@@ -560,7 +560,7 @@ mod tests {
     fn test_exception_no_match_does_nothing() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
 
         let mut msg = make_local_log("msg_ok", 5, msg_status::SEND_SUCCESS);
         let original_id = msg.client_msg_id.clone();
@@ -631,7 +631,7 @@ mod tests {
     #[tokio::test]
     async fn test_handle_messages() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
 
         let msgs = vec![
             make_msg("msg_1", "conv_1", 1),
@@ -643,9 +643,9 @@ mod tests {
     #[tokio::test]
     async fn test_dedup_via_insert_ignore() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool.clone());
-        let message_dao = stores.message_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new(""));
+        let repositories = make_test_repositories(pool.clone());
+        let message_dao = repositories.message_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new(""));
 
         let msgs = vec![make_msg("msg_1", "conv_1", 1)];
         handler.handle_messages("conv_1", msgs.clone()).await.unwrap();
@@ -661,10 +661,10 @@ mod tests {
     #[tokio::test]
     async fn test_tip_message_not_stored() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new(""));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new(""));
 
         let mut conv = make_conv("conv_tip");
         conv.unread_count = 5;
@@ -686,11 +686,11 @@ mod tests {
     #[tokio::test]
     async fn test_typing_message_not_stored_and_no_event() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
         let event_bus = Arc::new(EventBus::new());
         let mut sub = event_bus.subscribe();
-        let handler = MessageHandler::new(stores, UserId::new(""));
+        let handler = MessageHandler::new(repositories, UserId::new(""));
 
         let msgs = vec![msg_with_ct("typing_1", "conv_typing", 1, content_type::TYPING)];
         handler.handle_messages("conv_typing", msgs).await.unwrap();
@@ -704,10 +704,10 @@ mod tests {
     #[tokio::test]
     async fn test_normal_message_increments_unread() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new(""));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new(""));
 
         let msgs1 = vec![msg_with_ct("msg_1", "conv_normal", 1, content_type::TEXT)];
         handler.handle_messages("conv_normal", msgs1).await.unwrap();
@@ -729,9 +729,9 @@ mod tests {
     #[tokio::test]
     async fn test_latest_msg_updated_correctly() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new(""));
+        let repositories = make_test_repositories(pool);
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new(""));
 
         let msg1_content = r#"{"text":"hello"}"#;
         let msgs1 = vec![{
@@ -765,9 +765,9 @@ mod tests {
     #[tokio::test]
     async fn test_latest_msg_updated_for_other_user_message() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("self_user"));
+        let repositories = make_test_repositories(pool);
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("self_user"));
 
         let msg_content = r#"{"text":"message from other"}"#;
         let msgs = vec![{
@@ -788,10 +788,10 @@ mod tests {
     #[tokio::test]
     async fn test_no_trigger_conv_stored_but_no_conv_update() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new(""));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new(""));
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         handler.set_event_sender(tx);
@@ -829,9 +829,9 @@ mod tests {
     #[tokio::test]
     async fn test_self_message_seq_backfill() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("user_1"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
 
         let local_msg = LocalChatLog {
             conversation_id: "conv_seq".to_string(),
@@ -873,9 +873,9 @@ mod tests {
     #[tokio::test]
     async fn test_duplicate_in_batch_second_dropped_by_db() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("other_user"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("other_user"));
 
         let msgs = vec![
             make_msg("dup_msg", "conv_dup", 1),
@@ -891,9 +891,9 @@ mod tests {
     #[tokio::test]
     async fn test_online_only_message_not_stored() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("self_user"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("self_user"));
 
         let msgs = vec![{
             let mut m = msg_with_ct("online_1", "conv_online", 1, content_type::TEXT);
@@ -910,7 +910,7 @@ mod tests {
     #[tokio::test]
     async fn test_typing_event_publishes_user_input_status() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new("self_user"));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new("self_user"));
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         handler.set_event_sender(tx);
@@ -939,7 +939,7 @@ mod tests {
     #[tokio::test]
     async fn test_self_typing_ignored() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageHandler::new(make_test_stores(pool), UserId::new("self_user"));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new("self_user"));
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         handler.set_event_sender(tx);
@@ -960,10 +960,10 @@ mod tests {
     #[tokio::test]
     async fn test_group_chat_message_creates_group_conversation() {
         let pool = create_pool_memory().await.unwrap();
-        let stores = make_test_stores(pool);
-        let message_dao = stores.message_repo.clone();
-        let conversation_dao = stores.conversation_repo.clone();
-        let handler = MessageHandler::new(stores, UserId::new("self_user"));
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageHandler::new(repositories, UserId::new("self_user"));
 
         let msgs = vec![{
             let mut m = msg_with_ct("grp_msg_1", "sg_group_1", 1, content_type::TEXT);

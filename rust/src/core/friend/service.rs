@@ -14,7 +14,7 @@ use crate::infra::http::routes::{
     GET_SELF_FRIEND_APPLY_LIST, GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION,
     REMOVE_BLACK, RESPOND_FRIEND_APPLY, UPDATE_FRIENDS,
 };
-use crate::sdk::context::Stores;
+use crate::sdk::context::Repositories;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -293,10 +293,10 @@ pub struct UpdateFriendsReq {
     pub ex: Option<String>,
 }
 
-pub struct FriendManager {
+pub struct FriendService {
     /// 外部依赖
     http_client: Arc<HttpApiClient>,
-    stores: Arc<Stores>,
+    repositories: Arc<Repositories>,
     /// 身份
     user_id: UserId,
     /// 内部状态
@@ -306,15 +306,15 @@ pub struct FriendManager {
     pub(crate) events: EventPublisher<FriendEvent>,
 }
 
-impl FriendManager {
+impl FriendService {
     pub fn new(
         http_client: Arc<HttpApiClient>,
-        stores: Arc<Stores>,
+        repositories: Arc<Repositories>,
         user_id: UserId,
     ) -> Self {
         Self {
             http_client,
-            stores,
+            repositories,
             user_id,
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
@@ -341,14 +341,14 @@ impl FriendManager {
 
     pub async fn set_user_id(&self, user_id: String) {
         self.user_id.set(user_id.clone()).await;
-        debug!("FriendManager user_id 已更新为: {}", user_id);
+        debug!("FriendService user_id 已更新为: {}", user_id);
     }
 
     /// 从本地数据库加载好友列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据
     pub async fn load_friends_from_db(&self) {
         let user_id = self.user_id.get().await;
-        match self.stores.friend_repo.get_all(&user_id).await {
+        match self.repositories.friend_repo.get_all(&user_id).await {
             Ok(local_friends) => {
                 let friends: Vec<FriendInfo> = local_friends.iter().map(local_to_friend_info).collect();
                 let count = friends.len();
@@ -398,7 +398,7 @@ impl FriendManager {
 
         // 持久化到数据库
         let local_friends: Vec<LocalFriend> = friends.iter().map(|f| friend_info_to_local(f, &user_id)).collect();
-        if let Err(e) = self.stores.friend_repo.batch_upsert(&local_friends).await {
+        if let Err(e) = self.repositories.friend_repo.batch_upsert(&local_friends).await {
             warn!("全量同步好友到数据库失败: {}", e);
         }
 
@@ -423,7 +423,7 @@ impl FriendManager {
         let table_name = "local_friends";
 
         // 1. 获取本地版本
-        let (version_id, version) = match self.stores.sync_version_repo.get_version_sync(table_name, &user_id).await? {
+        let (version_id, version) = match self.repositories.sync_version_repo.get_version_sync(table_name, &user_id).await? {
             Some((vid, v)) => (vid, v),
             None => (String::new(), 0),
         };
@@ -456,7 +456,7 @@ impl FriendManager {
         // 4a. 删除
         if !resp.delete.is_empty() {
             info!("增量同步: 删除 {} 个好友", resp.delete.len());
-            if let Err(e) = self.stores.friend_repo.batch_delete(&user_id, &resp.delete).await {
+            if let Err(e) = self.repositories.friend_repo.batch_delete(&user_id, &resp.delete).await {
                 warn!("增量删除好友数据库操作失败: {}", e);
             }
             // 更新内存
@@ -468,7 +468,7 @@ impl FriendManager {
         for s in &resp.insert {
             let friend_info = server_to_friend(s.clone());
             let local = friend_info_to_local(&friend_info, &user_id);
-            if let Err(e) = self.stores.friend_repo.upsert(&local).await {
+            if let Err(e) = self.repositories.friend_repo.upsert(&local).await {
                 warn!("增量插入好友数据库操作失败: {}", e);
             }
             self.friends.write().await.push(friend_info);
@@ -478,7 +478,7 @@ impl FriendManager {
         for s in &resp.update {
             let friend_info = server_to_friend(s.clone());
             let local = friend_info_to_local(&friend_info, &user_id);
-            if let Err(e) = self.stores.friend_repo.upsert(&local).await {
+            if let Err(e) = self.repositories.friend_repo.upsert(&local).await {
                 warn!("增量更新好友数据库操作失败: {}", e);
             }
             // 更新内存中的对应好友
@@ -494,14 +494,14 @@ impl FriendManager {
         // 4d. 如果排序版本变化，从数据库刷新内存列表
         if resp.sort_version > 0 {
             info!("好友排序版本变化 (sortVersion={}), 刷新内存列表", resp.sort_version);
-            if let Ok(local_friends) = self.stores.friend_repo.get_all(&user_id).await {
+            if let Ok(local_friends) = self.repositories.friend_repo.get_all(&user_id).await {
                 let friends: Vec<FriendInfo> = local_friends.iter().map(local_to_friend_info).collect();
                 *self.friends.write().await = friends;
             }
         }
 
         // 5. 更新版本号
-        if let Err(e) = self.stores.sync_version_repo.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
+        if let Err(e) = self.repositories.sync_version_repo.set_version_sync(table_name, &user_id, &resp.version_id, resp.version).await {
             warn!("更新好友同步版本失败: {}", e);
         }
 
@@ -523,7 +523,7 @@ impl FriendManager {
     /// keyword: 搜索关键词，匹配 nickname / user_id / remark
     pub async fn search_friends(&self, keyword: String) -> Result<Vec<SearchFriendItem>> {
         let user_id = self.user_id.get().await;
-        let local_friends = self.stores.friend_repo.search_friends(&user_id, &keyword).await?;
+        let local_friends = self.repositories.friend_repo.search_friends(&user_id, &keyword).await?;
 
         // 获取黑名单用于标记 relationship
         let blacks = self.blacks.read().await;
@@ -562,7 +562,7 @@ impl FriendManager {
         let mut missing_ids: Vec<String> = Vec::new();
 
         for uid in &friend_user_ids {
-            match self.stores.friend_repo.get_by_id(&user_id, uid).await {
+            match self.repositories.friend_repo.get_by_id(&user_id, uid).await {
                 Ok(Some(f)) => {
                     local_map.insert(uid.clone(), f);
                 }
@@ -593,7 +593,7 @@ impl FriendManager {
                 .collect::<Vec<_>>();
 
             for (_uid, (_info, local)) in &server_friends {
-                if let Err(e) = self.stores.friend_repo.upsert(local).await {
+                if let Err(e) = self.repositories.friend_repo.upsert(local).await {
                     warn!("缓存指定好友到 DB 失败 ({}): {}", _uid, e);
                 }
                 local_map.insert(_uid.clone(), (*local).clone());
@@ -640,7 +640,7 @@ impl FriendManager {
         let user_id = self.user_id.get().await;
 
         // 从本地 DB 获取全部好友（DAO 已按 is_pinned DESC, create_time DESC 排序）
-        let all_local = self.stores.friend_repo.get_all(&user_id).await?;
+        let all_local = self.repositories.friend_repo.get_all(&user_id).await?;
 
         // 可选过滤黑名单
         let filtered: Vec<&LocalFriend> = if filter_black {
