@@ -6,7 +6,7 @@ use crate::event::listener::group::{GroupListener, GroupEvent};
 use crate::event::types::GroupReadReceipt;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::UserId;
-use crate::infra::database::models::LocalGroup;
+use crate::domain::model::local::LocalGroup;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,

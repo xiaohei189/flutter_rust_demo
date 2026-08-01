@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/message_service_notifier.dart';
-import '../src/rust/infra/database/models.dart' show LocalConversation;
+import '../src/rust/domain/model/local.dart' show LocalConversation;
 import 'message_service_provider.dart';
 
 /// 会话列表状态

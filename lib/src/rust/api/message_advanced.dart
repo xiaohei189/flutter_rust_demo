@@ -3,11 +3,11 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../domain/constant.dart';
+import '../domain/constant/enums.dart';
+import '../domain/model/local.dart';
 import '../domain/model/message.dart';
 import '../domain/model/msg_struct.dart';
 import '../frb_generated.dart';
-import '../infra/database/models.dart';
 import '../sdk/client/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 

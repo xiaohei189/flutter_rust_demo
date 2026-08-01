@@ -1,8 +1,8 @@
 //! 会话模型转换器 - ServerConversation -> LocalConversation（对齐 Go SDK `ServerConversationToLocal`）
 
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 
-use super::types::ServerConversation;
+use crate::domain::ports::conversation::ServerConversation;
 
 /// 服务端模型 -> 本地持久化模型（对齐 Go SDK `ServerConversationToLocal`）
 ///

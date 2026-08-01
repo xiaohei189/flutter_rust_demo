@@ -1,4 +1,4 @@
-use super::models::{LocalGroup, LocalGroupMember};
+use crate::domain::model::local::{LocalGroup, LocalGroupMember};
 use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;
 

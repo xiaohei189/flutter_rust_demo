@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-flutter_rust_bridge = { version = "=2.11.1", optional = true }
+flutter_rust_bridge = { version = "=2.12.0", optional = true }
 openim-protocol = { path = "../../protocol" }
 tokio = { version = "1.48", features = ["full","tracing"] }
 tokio-util = { version = "0.7" }

@@ -4,7 +4,7 @@ use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use crate::sdk::context::Stores;
 
 use std::collections::HashMap;
@@ -298,7 +298,7 @@ impl ConversationSyncer {
 
         // 获取所有本地会话
         let local_conversations = self.stores.conversation_repo.get_all().await.unwrap_or_default();
-        let mut local_map: HashMap<String, crate::infra::database::models::LocalConversation> =
+        let mut local_map: HashMap<String, crate::domain::model::local::LocalConversation> =
             HashMap::new();
         for conv in local_conversations {
             local_map.insert(conv.conversation_id.clone(), conv);

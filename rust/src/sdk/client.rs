@@ -33,34 +33,12 @@ use crate::event::listener::conversation::ConversationEvent;
 use crate::event::listener::friend::FriendEvent;
 use crate::event::listener::group::GroupEvent;
 use crate::sdk::context::RuntimeContext;
-use serde::{Deserialize, Serialize};
+
 use std::sync::Arc;
 
 // ============================================================================
 // SDK API 类型定义
 // ============================================================================
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FriendApplyInfo {
-    pub user_id: String,
-    pub nickname: String,
-    pub face_url: String,
-    pub create_time: i64,
-    pub req_msg: Option<String>,
-    pub handle_result: i32,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GroupApplyInfo {
-    pub group_id: String,
-    pub user_id: String,
-    pub nickname: String,
-    pub face_url: String,
-    pub reason: String,
-    pub handle_result: i32,
-}
 
 pub struct OpenIMClient {
     pub(crate) context: Arc<RuntimeContext>,

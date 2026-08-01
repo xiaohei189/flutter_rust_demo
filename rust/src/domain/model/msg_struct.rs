@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::infra::database::models::LocalChatLog;
+use crate::domain::model::local::LocalChatLog;
 use openim_protocol::sdkws::MsgData;
 
 /// 生成消息 ID（对齐 Go SDK utils.GetMsgID）

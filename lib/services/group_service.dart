@@ -1,6 +1,6 @@
-import '../src/rust/api/bridge_client.dart' as fb;
+import '../src/rust/api/client.dart' as fb;
 import '../src/rust/domain/model/group.dart' show GroupInfo, GroupMember;
-import '../src/rust/sdk/client.dart' show GroupApplyInfo;
+import '../src/rust/core/group/manager.dart' show GroupApplyInfo;
 import '../utils/app_logger.dart';
 
 /// 群组服务 - 封装群组相关 FFI 调用

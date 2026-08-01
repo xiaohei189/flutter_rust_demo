@@ -10,27 +10,28 @@ import 'api/message_advanced.dart';
 import 'api/message_media.dart';
 import 'core/connection/manager.dart';
 import 'core/friend/manager.dart';
-import 'core/online/manager.dart';
+import 'core/group/manager.dart';
+import 'core/user/online/manager.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'domain/constant.dart';
+import 'domain/constant/enums.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
+import 'domain/model/local.dart';
 import 'domain/model/message.dart';
 import 'domain/model/msg_struct.dart';
 import 'domain/model/user.dart';
+import 'domain/ports/message.dart';
+import 'event/listener/connection.dart';
+import 'event/listener/conversation.dart';
+import 'event/listener/friend.dart';
+import 'event/listener/group.dart';
 import 'event/types.dart';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
-import 'infra/database/models.dart';
 import 'infra/logger/config.dart';
-import 'listener/connection.dart';
-import 'listener/conversation.dart';
-import 'listener/friend.dart';
-import 'listener/group.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-import 'sdk/client.dart';
 import 'sdk/client/types.dart';
 import 'sdk/config.dart';
 
@@ -7096,15 +7097,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   FriendApplyInfo dco_decode_friend_apply_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return FriendApplyInfo(
       userId: dco_decode_String(arr[0]),
       nickname: dco_decode_String(arr[1]),
       faceUrl: dco_decode_String(arr[2]),
-      createTime: dco_decode_i_64(arr[3]),
-      reqMsg: dco_decode_opt_String(arr[4]),
-      handleResult: dco_decode_i_32(arr[5]),
+      gender: dco_decode_i_32(arr[3]),
+      createTime: dco_decode_i_64(arr[4]),
+      addSource: dco_decode_i_32(arr[5]),
+      ex: dco_decode_String(arr[6]),
+      reqMsg: dco_decode_opt_String(arr[7]),
+      handleResult: dco_decode_i_32(arr[8]),
+      handleMsg: dco_decode_opt_String(arr[9]),
     );
   }
 
@@ -7180,8 +7185,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   GroupApplyInfo dco_decode_group_apply_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return GroupApplyInfo(
       groupId: dco_decode_String(arr[0]),
       userId: dco_decode_String(arr[1]),
@@ -7189,6 +7194,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       faceUrl: dco_decode_String(arr[3]),
       reason: dco_decode_String(arr[4]),
       handleResult: dco_decode_i_32(arr[5]),
+      ex: dco_decode_opt_String(arr[6]),
     );
   }
 
@@ -7506,13 +7512,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MarkMessagesAsReadReq dco_decode_mark_messages_as_read_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return MarkMessagesAsReadReq(
       conversationId: dco_decode_String(arr[0]),
-      sessionType: dco_decode_i_32(arr[1]),
-      hasReadSeq: dco_decode_i_64(arr[2]),
-      seqs: dco_decode_list_prim_i_64_strict(arr[3]),
+      userId: dco_decode_String(arr[1]),
+      sessionType: dco_decode_i_32(arr[2]),
+      hasReadSeq: dco_decode_i_64(arr[3]),
+      seqs: dco_decode_list_prim_i_64_strict(arr[4]),
     );
   }
 
@@ -7825,13 +7832,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   RevokeMessageReq dco_decode_revoke_message_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return RevokeMessageReq(
       conversationId: dco_decode_String(arr[0]),
       seq: dco_decode_i_64(arr[1]),
-      clientMsgId: dco_decode_String(arr[2]),
-      sessionType: dco_decode_i_32(arr[3]),
+      userId: dco_decode_String(arr[2]),
+      clientMsgId: dco_decode_String(arr[3]),
+      sessionType: dco_decode_i_32(arr[4]),
     );
   }
 
@@ -8498,16 +8506,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_userId = sse_decode_String(deserializer);
     var var_nickname = sse_decode_String(deserializer);
     var var_faceUrl = sse_decode_String(deserializer);
+    var var_gender = sse_decode_i_32(deserializer);
     var var_createTime = sse_decode_i_64(deserializer);
+    var var_addSource = sse_decode_i_32(deserializer);
+    var var_ex = sse_decode_String(deserializer);
     var var_reqMsg = sse_decode_opt_String(deserializer);
     var var_handleResult = sse_decode_i_32(deserializer);
+    var var_handleMsg = sse_decode_opt_String(deserializer);
     return FriendApplyInfo(
       userId: var_userId,
       nickname: var_nickname,
       faceUrl: var_faceUrl,
+      gender: var_gender,
       createTime: var_createTime,
+      addSource: var_addSource,
+      ex: var_ex,
       reqMsg: var_reqMsg,
       handleResult: var_handleResult,
+      handleMsg: var_handleMsg,
     );
   }
 
@@ -8603,6 +8619,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_faceUrl = sse_decode_String(deserializer);
     var var_reason = sse_decode_String(deserializer);
     var var_handleResult = sse_decode_i_32(deserializer);
+    var var_ex = sse_decode_opt_String(deserializer);
     return GroupApplyInfo(
       groupId: var_groupId,
       userId: var_userId,
@@ -8610,6 +8627,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       faceUrl: var_faceUrl,
       reason: var_reason,
       handleResult: var_handleResult,
+      ex: var_ex,
     );
   }
 
@@ -9112,11 +9130,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_conversationId = sse_decode_String(deserializer);
+    var var_userId = sse_decode_String(deserializer);
     var var_sessionType = sse_decode_i_32(deserializer);
     var var_hasReadSeq = sse_decode_i_64(deserializer);
     var var_seqs = sse_decode_list_prim_i_64_strict(deserializer);
     return MarkMessagesAsReadReq(
       conversationId: var_conversationId,
+      userId: var_userId,
       sessionType: var_sessionType,
       hasReadSeq: var_hasReadSeq,
       seqs: var_seqs,
@@ -9618,11 +9638,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_conversationId = sse_decode_String(deserializer);
     var var_seq = sse_decode_i_64(deserializer);
+    var var_userId = sse_decode_String(deserializer);
     var var_clientMsgId = sse_decode_String(deserializer);
     var var_sessionType = sse_decode_i_32(deserializer);
     return RevokeMessageReq(
       conversationId: var_conversationId,
       seq: var_seq,
+      userId: var_userId,
       clientMsgId: var_clientMsgId,
       sessionType: var_sessionType,
     );
@@ -10374,9 +10396,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.userId, serializer);
     sse_encode_String(self.nickname, serializer);
     sse_encode_String(self.faceUrl, serializer);
+    sse_encode_i_32(self.gender, serializer);
     sse_encode_i_64(self.createTime, serializer);
+    sse_encode_i_32(self.addSource, serializer);
+    sse_encode_String(self.ex, serializer);
     sse_encode_opt_String(self.reqMsg, serializer);
     sse_encode_i_32(self.handleResult, serializer);
+    sse_encode_opt_String(self.handleMsg, serializer);
   }
 
   @protected
@@ -10456,6 +10482,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.faceUrl, serializer);
     sse_encode_String(self.reason, serializer);
     sse_encode_i_32(self.handleResult, serializer);
+    sse_encode_opt_String(self.ex, serializer);
   }
 
   @protected
@@ -10850,6 +10877,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.conversationId, serializer);
+    sse_encode_String(self.userId, serializer);
     sse_encode_i_32(self.sessionType, serializer);
     sse_encode_i_64(self.hasReadSeq, serializer);
     sse_encode_list_prim_i_64_strict(self.seqs, serializer);
@@ -11264,6 +11292,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.conversationId, serializer);
     sse_encode_i_64(self.seq, serializer);
+    sse_encode_String(self.userId, serializer);
     sse_encode_String(self.clientMsgId, serializer);
     sse_encode_i_32(self.sessionType, serializer);
   }

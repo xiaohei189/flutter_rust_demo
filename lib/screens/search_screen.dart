@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/message_service_provider.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
-import '../src/rust/infra/database/models.dart' show LocalConversation;
+import '../src/rust/domain/model/local.dart' show LocalConversation;
 import '../widgets/chat_list_item.dart';
 
 /// 搜索分类

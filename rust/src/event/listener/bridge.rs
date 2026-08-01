@@ -30,7 +30,7 @@ impl_adapter!(ConnAdapter, ConnectionEvent, super::connection::ConnectionListene
 );
 
 impl_adapter!(ConvAdapter, ConversationEvent, super::conversation::ConversationListener,
-    on_changed(c: &[crate::infra::database::models::LocalConversation]) => ConversationEvent::Changed(c.to_vec()),
+    on_changed(c: &[crate::domain::model::local::LocalConversation]) => ConversationEvent::Changed(c.to_vec()),
     on_deleted(ids: &[String]) => ConversationEvent::Deleted(ids.to_vec()),
     on_total_unread_count_changed(count: i64) => ConversationEvent::TotalUnreadCountChanged(count),
     on_sync_started() => ConversationEvent::SyncStarted,

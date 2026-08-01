@@ -2,7 +2,7 @@
 
 use super::MessageService;
 use crate::domain::error::Result;
-use crate::infra::database::models::LocalChatLog;
+use crate::domain::model::local::LocalChatLog;
 use tracing::info;
 
 impl MessageService {

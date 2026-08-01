@@ -2,7 +2,8 @@ use crate::domain::constant::GroupType;
 use crate::domain::error::Result;
 use crate::domain::error::SdkError;
 use crate::domain::model::group::{GroupInfo, GroupMember};
-use crate::sdk::client::{GroupApplyInfo, OpenIMClient};
+use crate::core::group::manager::GroupApplyInfo;
+use crate::sdk::client::OpenIMClient;
 
 impl OpenIMClient {
     #[tracing::instrument(skip_all)]
@@ -97,42 +98,21 @@ impl OpenIMClient {
     #[tracing::instrument(skip_all)]
     pub async fn get_group_application_list(&self) -> std::result::Result<Vec<GroupApplyInfo>, SdkError> {
         let resp = self.group.get_group_application_list().await?;
-        Ok(resp.group_requests.unwrap_or_default().into_iter().map(|a| GroupApplyInfo {
-            group_id: a.group_id,
-            user_id: a.user_id,
-            nickname: a.nickname,
-            face_url: a.face_url,
-            reason: a.reason,
-            handle_result: a.handle_result,
-        }).collect())
+        Ok(resp.group_requests.unwrap_or_default())
     }
 
     /// 获取管理员收到的群组申请列表
     #[tracing::instrument(skip_all)]
     pub async fn get_group_application_list_as_recipient(&self) -> std::result::Result<Vec<GroupApplyInfo>, SdkError> {
         let resp = self.group.get_group_application_list_as_recipient().await?;
-        Ok(resp.group_requests.unwrap_or_default().into_iter().map(|a| GroupApplyInfo {
-            group_id: a.group_id,
-            user_id: a.user_id,
-            nickname: a.nickname,
-            face_url: a.face_url,
-            reason: a.reason,
-            handle_result: a.handle_result,
-        }).collect())
+        Ok(resp.group_requests.unwrap_or_default())
     }
 
     /// 获取自己发出的群组申请列表
     #[tracing::instrument(skip_all)]
     pub async fn get_group_application_list_as_applicant(&self) -> std::result::Result<Vec<GroupApplyInfo>, SdkError> {
         let resp = self.group.get_group_application_list_as_applicant().await?;
-        Ok(resp.group_requests.unwrap_or_default().into_iter().map(|a| GroupApplyInfo {
-            group_id: a.group_id,
-            user_id: a.user_id,
-            nickname: a.nickname,
-            face_url: a.face_url,
-            reason: a.reason,
-            handle_result: a.handle_result,
-        }).collect())
+        Ok(resp.group_requests.unwrap_or_default())
     }
 
     /// 获取未处理的群组申请数量

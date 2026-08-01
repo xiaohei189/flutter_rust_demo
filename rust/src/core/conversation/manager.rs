@@ -3,7 +3,7 @@
 use crate::domain::error::Result;
 use crate::event::publisher::EventPublisher;
 use crate::event::listener::conversation::ConversationEvent;
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use crate::sdk::context::Stores;
 
 use std::sync::Arc;

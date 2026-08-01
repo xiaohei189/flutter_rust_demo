@@ -5,7 +5,7 @@ use crate::event::types::SdkEvent;
 use crate::event::listener::friend::{FriendListener, FriendEvent};
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::UserId;
-use crate::infra::database::models::LocalFriend;
+use crate::domain::model::local::LocalFriend;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND,

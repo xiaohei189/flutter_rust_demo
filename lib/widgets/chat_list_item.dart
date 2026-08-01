@@ -6,10 +6,9 @@ import 'package:intl/intl.dart';
 
 import '../models/user.dart';
 import '../router/app_router.dart';
-import '../src/rust/api/bridge_client.dart';
 import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
-import '../src/rust/infra/database/models.dart' show LocalConversation;
+import '../src/rust/domain/model/local.dart' show LocalConversation;
 import 'user_avatar.dart';
 
 /// 从 map 中取 key（支持 camelCase / snake_case）

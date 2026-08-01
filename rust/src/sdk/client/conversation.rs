@@ -1,7 +1,7 @@
 use crate::domain::constant::SessionType;
 use crate::domain::error::Result;
 use crate::domain::error::SdkError;
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use crate::sdk::client::OpenIMClient;
 
 impl OpenIMClient {

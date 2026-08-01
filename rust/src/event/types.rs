@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::user::UserInfo;
 use openim_protocol::sdkws::MsgData;

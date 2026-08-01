@@ -8,12 +8,10 @@ use crate::event::types::SdkEvent;
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
 use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
-use crate::infra::database::models::{LocalChatLog, LocalSendingMessage};
+use crate::domain::model::local::{LocalChatLog, LocalSendingMessage};
 use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
-use crate::sdk::client::types::{
-    DeleteMessagesReq, GetHistoryMessagesReq, GetHistoryMessagesResult, MarkMessagesAsReadReq, RevokeMessageReq,
-    SearchMessagesReq,
-};
+use crate::domain::ports::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::sdk::client::types::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
 use crate::sdk::client::OpenIMClient;
 use crate::sdk::context::RuntimeContext;
 use async_trait::async_trait;
@@ -754,30 +752,17 @@ impl OpenIMClient {
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, seq = %req.seq))]
     pub async fn revoke_message(&self, req: RevokeMessageReq) -> Result<()> {
-        self.message_service.revoke_message(
-            req.conversation_id,
-            req.seq,
-            req.client_msg_id,
-            req.session_type,
-        ).await
+        self.message_service.revoke_message(req).await
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id))]
     pub async fn delete_messages(&self, req: DeleteMessagesReq) -> Result<()> {
-        self.message_service.delete_messages(
-            req.conversation_id,
-            req.client_msg_ids,
-        ).await
+        self.message_service.delete_messages(req).await
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id))]
     pub async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()> {
-        self.message_service.mark_messages_as_read(
-            req.conversation_id,
-            req.session_type,
-            req.has_read_seq,
-            req.seqs,
-        ).await
+        self.message_service.mark_messages_as_read(req).await
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, keyword = %req.keyword))]
@@ -1622,7 +1607,7 @@ mod tests {
         let send_time = 1700000000000i64;
 
         // 先创建会话（update_after_sent_message 需要已存在的会话）
-        let conv = crate::infra::database::models::LocalConversation {
+        let conv = crate::domain::model::local::LocalConversation {
             conversation_id: "si_user_a_user_b".to_string(),
             conversation_type: 1,
             user_id: "user_a".to_string(),

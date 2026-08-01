@@ -24,6 +24,61 @@ class CheckFriendResult {
           result == other.result;
 }
 
+class FriendApplyInfo {
+  final String userId;
+  final String nickname;
+  final String faceUrl;
+  final int gender;
+  final PlatformInt64 createTime;
+  final int addSource;
+  final String ex;
+  final String? reqMsg;
+  final int handleResult;
+  final String? handleMsg;
+
+  const FriendApplyInfo({
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.gender,
+    required this.createTime,
+    required this.addSource,
+    required this.ex,
+    this.reqMsg,
+    required this.handleResult,
+    this.handleMsg,
+  });
+
+  @override
+  int get hashCode =>
+      userId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      gender.hashCode ^
+      createTime.hashCode ^
+      addSource.hashCode ^
+      ex.hashCode ^
+      reqMsg.hashCode ^
+      handleResult.hashCode ^
+      handleMsg.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FriendApplyInfo &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          gender == other.gender &&
+          createTime == other.createTime &&
+          addSource == other.addSource &&
+          ex == other.ex &&
+          reqMsg == other.reqMsg &&
+          handleResult == other.handleResult &&
+          handleMsg == other.handleMsg;
+}
+
 class SearchFriendItem {
   final String friendUserId;
   final String nickname;

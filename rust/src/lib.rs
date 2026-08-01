@@ -5,7 +5,6 @@ pub mod domain;     // 0 依赖
 pub mod infra;      // 依赖 domain
 pub mod event;      // 依赖 domain + openim_protocol（外部 crate）
 pub mod core;       // 依赖 domain + infra + event
-pub mod listener;   // 依赖 core + event
 pub mod sdk;        // 依赖 core
 pub mod api;        // 依赖 sdk（最上层，供 frb_generated 使用）
 

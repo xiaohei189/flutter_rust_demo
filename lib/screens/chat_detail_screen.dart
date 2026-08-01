@@ -10,7 +10,8 @@ import '../models/message.dart' show MessageType;
 import '../providers/providers.dart';
 import '../providers/message_service_provider.dart';
 import '../services/message_service_notifier.dart';
-import '../src/rust/api/bridge_client.dart' as fb;
+import '../src/rust/api/client.dart' as fb;
+import '../src/rust/api/message_advanced.dart' show sendTyping;
 import '../src/rust/domain/model/message.dart' show MessageInfo;
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
@@ -18,7 +19,7 @@ import '../utils/app_logger.dart';
 import '../extensions/conversation_extensions.dart';
 import '../models/user.dart';
 import '../src/rust/domain/constant/enums.dart' show SessionType;
-import '../src/rust/infra/database/models.dart' show LocalConversation;
+import '../src/rust/domain/model/local.dart' show LocalConversation;
 import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
 import '../widgets/message_list.dart';
 import '../widgets/message_action_menu.dart';
@@ -458,7 +459,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     }
     if (sourceId.isEmpty) return;
     final sessionType = conversation.sessionType;
-    fb.sendTyping(sourceId: sourceId, sessionType: sessionType, focus: focus);
+    sendTyping(sourceId: sourceId, sessionType: sessionType, focus: focus);
   }
 
   // ---- 图片/文件/位置发送 ----

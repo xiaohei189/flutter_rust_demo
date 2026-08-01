@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
-import 'package:flutter_rust_demo/src/rust/api/simple.dart'
+import 'package:flutter_rust_demo/src/rust/api/ffi_init.dart'
     show setLogDirectory;
 
 import 'router/app_router.dart';

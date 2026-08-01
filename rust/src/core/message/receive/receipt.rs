@@ -193,7 +193,7 @@ mod tests {
     use crate::domain::constant::notification_type::HAS_READ_RECEIPT;
     use crate::domain::model::UserId;
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::infra::database::models::{LocalChatLog, LocalConversation};
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::infra::database::pool::create_pool_memory;
     use openim_protocol::sdkws::MarkAsReadTips;
     use crate::sdk::context::Stores;

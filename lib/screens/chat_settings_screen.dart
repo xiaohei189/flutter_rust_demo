@@ -6,9 +6,10 @@ import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../services/services.dart';
-import '../src/rust/api/bridge_client.dart' as fb;
+import '../src/rust/api/client.dart' as fb;
+import '../src/rust/api/message_advanced.dart' show clearConversationAndDeleteAllMsg;
 import '../src/rust/domain/model/group.dart' show GroupMember;
-import '../src/rust/infra/database/models.dart' show LocalConversation;
+import '../src/rust/domain/model/local.dart' show LocalConversation;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
@@ -700,7 +701,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     }
 
     try {
-      await fb.clearConversationAndDeleteAllMsg(
+      await clearConversationAndDeleteAllMsg(
         conversationId: widget.conversationId,
       );
       if (mounted) {

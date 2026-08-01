@@ -30,31 +30,6 @@ pub struct GetHistoryMessagesResult {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RevokeMessageReq {
-    pub conversation_id: String,
-    pub seq: i64,
-    pub client_msg_id: String,
-    pub session_type: i32,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DeleteMessagesReq {
-    pub conversation_id: String,
-    pub client_msg_ids: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MarkMessagesAsReadReq {
-    pub conversation_id: String,
-    pub session_type: i32,
-    pub has_read_seq: i64,
-    pub seqs: Vec<i64>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct SearchMessagesReq {
     pub conversation_id: String,
     pub keyword: String,

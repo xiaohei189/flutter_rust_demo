@@ -5,19 +5,22 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
 import 'package:flutter_rust_demo/models/message_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/api/bridge_client.dart' as fb;
+import 'package:flutter_rust_demo/src/rust/api/client.dart' as fb;
+import 'package:flutter_rust_demo/src/rust/api/message.dart' show sendLocationMessage, sendFaceMessage, sendCardMessage, sendQuoteMessage;
+import 'package:flutter_rust_demo/src/rust/api/message_advanced.dart' show forwardMessageByClientId, deleteMessage, markAllConversationMessageAsRead;
+import 'package:flutter_rust_demo/src/rust/domain/ports/message.dart' show RevokeMessageReq;
 import 'package:flutter_rust_demo/src/rust/domain/model/msg_struct.dart' show MsgStruct;
-import 'package:flutter_rust_demo/src/rust/domain/config.dart';
+import 'package:flutter_rust_demo/src/rust/sdk/config.dart';
 import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
 import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
-import 'package:flutter_rust_demo/src/rust/infra/database/models.dart' show LocalConversation;
-import 'package:flutter_rust_demo/src/rust/api/simple.dart' show initLogger;
+import 'package:flutter_rust_demo/src/rust/domain/model/local.dart' show LocalConversation;
+import 'package:flutter_rust_demo/src/rust/api/ffi_init.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
-import 'package:flutter_rust_demo/src/rust/domain/listener/connection.dart';
-import 'package:flutter_rust_demo/src/rust/domain/listener/conversation.dart';
-import 'package:flutter_rust_demo/src/rust/domain/listener/friend.dart';
-import 'package:flutter_rust_demo/src/rust/domain/listener/group.dart';
+import 'package:flutter_rust_demo/src/rust/event/listener/connection.dart';
+import 'package:flutter_rust_demo/src/rust/event/listener/conversation.dart';
+import 'package:flutter_rust_demo/src/rust/event/listener/friend.dart';
+import 'package:flutter_rust_demo/src/rust/event/listener/group.dart';
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
 import 'package:flutter_rust_demo/services/navigation_service.dart';
@@ -328,7 +331,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await fb.forwardMessageByClientId(
+    await forwardMessageByClientId(
       clientMsgId: clientMsgId,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -406,7 +409,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    return fb.sendLocationMessage(
+    return sendLocationMessage(
       description: description,
       latitude: latitude,
       longitude: longitude,
@@ -423,7 +426,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    return fb.sendFaceMessage(
+    return sendFaceMessage(
       index: index,
       data: data,
       sourceId: sourceId,
@@ -441,7 +444,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required SessionType sessionType,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    return fb.sendCardMessage(
+    return sendCardMessage(
       userId: userId,
       nickname: nickname,
       faceUrl: faceUrl,
@@ -462,7 +465,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required int quoteSendTime,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    return fb.sendQuoteMessage(
+    return sendQuoteMessage(
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -484,6 +487,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     await _client!.revokeMessage(
       req: RevokeMessageReq(
         conversationId: conversationId,
+        userId: state.currentUserId,
         seq: seq,
         clientMsgId: clientMsgId,
         sessionType: sessionType,
@@ -497,7 +501,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     required String clientMsgId,
   }) async {
     if (_client == null) throw StateError('客户端未初始化');
-    await fb.deleteMessage(
+    await deleteMessage(
       conversationId: conversationId,
       clientMsgId: clientMsgId,
     );
@@ -957,7 +961,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   Future<void> markAllConversationsAsRead() async {
     if (_client == null) return;
     try {
-      await fb.markAllConversationMessageAsRead();
+      await markAllConversationMessageAsRead();
       _loadConversations();
     } catch (e) {
       appLog.e('[MessageService] 标记全部已读失败: $e');

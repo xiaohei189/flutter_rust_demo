@@ -2,13 +2,12 @@
 //!
 //! 处理用户主动发起的消息操作（撤回/删除/标记已读/搜索）
 
-pub mod req;
 mod revoke;
 mod delete;
 mod read;
 mod search;
 
-pub use req::*;
+pub use crate::domain::ports::message::*;
 pub use crate::domain::ports::message::MessageServerApi;
 
 use crate::event::EventBus;
@@ -73,7 +72,7 @@ mod tests {
     use super::*;
     use crate::domain::model::UserId;
     use crate::infra::database::pool::create_pool_memory;
-    use crate::infra::database::models::{LocalChatLog, LocalConversation};
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use std::sync::Arc;
 
@@ -189,7 +188,7 @@ mod tests {
         let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_r", "msg_r1", 5, "user_1")]).await.unwrap();
-        service.revoke_message("conv_r".into(), 5, "msg_r1".into(), 1).await.unwrap();
+        service.revoke_message(RevokeMessageReq { conversation_id: "conv_r".into(), seq: 5, user_id: "user_1".into(), client_msg_id: "msg_r1".into(), session_type: 1 }).await.unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_r", "msg_r1").await.unwrap().unwrap();
         assert_eq!(msg.content_type, crate::domain::constant::notification_type::REVOKE);
     }
@@ -201,7 +200,7 @@ mod tests {
         let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_d", "msg_d1", 1, "user_2"), make_local_msg("conv_d", "msg_d2", 2, "user_2")]).await.unwrap();
-        service.delete_messages("conv_d".into(), vec!["msg_d1".into(), "msg_d2".into()]).await.unwrap();
+        service.delete_messages(DeleteMessagesReq { conversation_id: "conv_d".into(), client_msg_ids: vec!["msg_d1".into(), "msg_d2".into()] }).await.unwrap();
         assert!(message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().is_none());
     }
 
@@ -212,7 +211,7 @@ mod tests {
         let message_dao = stores.message_repo.clone();
         let service = make_service(stores);
         message_dao.batch_insert(&[make_local_msg("conv_mr", "m1", 1, "user_2"), make_local_msg("conv_mr", "m2", 2, "user_2")]).await.unwrap();
-        service.mark_messages_as_read("conv_mr".into(), 1, 2, vec![1, 2]).await.unwrap();
+        service.mark_messages_as_read(MarkMessagesAsReadReq { conversation_id: "conv_mr".into(), user_id: "user_1".into(), session_type: 1, has_read_seq: 2, seqs: vec![1, 2] }).await.unwrap();
         let logs = message_dao.get_by_conversation("conv_mr", 0, 100).await.unwrap();
         assert!(logs.iter().all(|m| m.is_read == 1));
     }

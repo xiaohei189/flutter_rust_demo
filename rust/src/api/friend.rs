@@ -1,7 +1,7 @@
 //! 好友相关 FFI 桥接
 
 use crate::api::client::OpenIMBridgeClient;
-use crate::sdk::client::FriendApplyInfo;
+use crate::core::friend::manager::FriendApplyInfo;
 use anyhow::{Result, anyhow};
 
 impl OpenIMBridgeClient {

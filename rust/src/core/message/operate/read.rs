@@ -1,11 +1,11 @@
 //! 标记已读逻辑（单会话/批量/按 seq）
 
 use super::MessageService;
-use super::req::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
+use crate::domain::ports::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
 use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use crate::event::listener::conversation::ConversationEvent;
 use tracing::{error, info, warn};
 
@@ -134,31 +134,18 @@ impl MessageService {
     }
 
     /// 标记消息已读（按 seq 列表，对齐 Go SDK `markMsgAsRead2Server`）
-    pub async fn mark_messages_as_read(
-        &self,
-        conversation_id: String,
-        session_type: i32,
-        has_read_seq: i64,
-        seqs: Vec<i64>,
-    ) -> Result<()> {
-        let user_id = self.user_id.get().await;
-        
-        let req = MarkMessagesAsReadReq {
-            conversation_id: conversation_id.clone(),
-            user_id: user_id.clone(),
-            session_type,
-            has_read_seq,
-            seqs: seqs.clone(),
-        };
+    pub async fn mark_messages_as_read(&self, mut req: MarkMessagesAsReadReq) -> Result<()> {
+        // 外部传入的 user_id 可能为空，统一以当前登录用户覆盖（值一致）
+        req.user_id = self.user_id.get().await;
 
         self.api.mark_messages_as_read_on_server(&req).await?;
 
         // 更新本地数据库：标记消息为已读（排除自己发的）
-        if !seqs.is_empty() {
-            self.stores.message_repo.mark_as_read_by_seqs(&conversation_id, &seqs, &user_id).await?;
+        if !req.seqs.is_empty() {
+            self.stores.message_repo.mark_as_read_by_seqs(&req.conversation_id, &req.seqs, &req.user_id).await?;
         }
 
-        info!("消息已标记为已读: conversation_id={}, seq_count={}", conversation_id, seqs.len());
+        info!("消息已标记为已读: conversation_id={}, seq_count={}", req.conversation_id, req.seqs.len());
         Ok(())
     }
 

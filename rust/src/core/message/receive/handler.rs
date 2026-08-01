@@ -13,7 +13,7 @@ use crate::event::publisher::EventPublisher;
 use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
-use crate::infra::database::models::{LocalChatLog, LocalConversation};
+use crate::domain::model::local::{LocalChatLog, LocalConversation};
 use openim_protocol::sdkws::MsgData;
 use crate::sdk::context::Stores;
 use std::collections::HashMap;

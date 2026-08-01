@@ -1,4 +1,4 @@
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

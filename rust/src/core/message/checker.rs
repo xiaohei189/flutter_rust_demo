@@ -16,7 +16,7 @@
 use crate::domain::constant::{msg_status, pull_msg_num, ws_req_identifier};
 use crate::domain::error::{Result, SdkError};
 use crate::infra::database::{ConversationDao, MessageDao};
-use crate::infra::database::models::LocalChatLog;
+use crate::domain::model::local::LocalChatLog;
 use crate::core::connection::manager::ConnectionManager;
 use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp, ConversationSeqs};
 use openim_protocol::sdkws::PullOrder;

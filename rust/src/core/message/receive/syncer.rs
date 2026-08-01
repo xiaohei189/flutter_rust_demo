@@ -10,7 +10,7 @@ use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
 use crate::event::listener::conversation::{ConversationListener, ConversationEvent};
 use crate::domain::model::UserId;
-use crate::infra::database::models::LocalNotificationSeq;
+use crate::domain::model::local::LocalNotificationSeq;
 use crate::sdk::context::Stores;
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -675,8 +675,8 @@ mod tests {
         (stores, handler)
     }
 
-    fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64) -> crate::infra::database::models::LocalChatLog {
-        crate::infra::database::models::LocalChatLog {
+    fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64) -> crate::domain::model::local::LocalChatLog {
+        crate::domain::model::local::LocalChatLog {
             conversation_id: conv_id.to_string(), client_msg_id: client_msg_id.to_string(),
             server_msg_id: format!("srv_{}", client_msg_id), send_id: "u1".to_string(),
             recv_id: "u2".to_string(), sender_platform_id: 1, sender_nick_name: "N".to_string(),

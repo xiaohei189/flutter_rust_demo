@@ -2,20 +2,20 @@
 
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
-use crate::infra::database::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use anyhow::{Result, anyhow};
 
 impl OpenIMBridgeClient {
     // ========== 会话操作 ==========
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_conversations(&self) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+    pub async fn get_conversations(&self) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_conversations().await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_conversation(&self, conversation_id: String) -> Result<Option<crate::infra::database::models::LocalConversation>> {
+    pub async fn get_conversation(&self, conversation_id: String) -> Result<Option<crate::domain::model::local::LocalConversation>> {
         self.inner.get_conversation(&conversation_id).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
@@ -51,7 +51,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_pinned_conversations(&self) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+    pub async fn get_pinned_conversations(&self) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_pinned_conversations().await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
@@ -68,7 +68,7 @@ impl OpenIMBridgeClient {
         &self,
         offset: i64,
         count: i64,
-    ) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+    ) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_conversation_list_split(offset, count).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -77,7 +77,7 @@ impl OpenIMBridgeClient {
     pub async fn get_multiple_conversations(
         &self,
         conversation_ids: Vec<String>,
-    ) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+    ) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_multiple_conversations(conversation_ids).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -86,7 +86,7 @@ impl OpenIMBridgeClient {
     pub async fn search_conversations(
         &self,
         keyword: String,
-    ) -> Result<Vec<crate::infra::database::models::LocalConversation>> {
+    ) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.search_conversations(&keyword).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 

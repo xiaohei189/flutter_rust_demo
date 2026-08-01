@@ -1,5 +1,5 @@
 import '../src/rust/domain/constant/enums.dart' show SessionType;
-import '../src/rust/infra/database/models.dart' show LocalConversation;
+import '../src/rust/domain/model/local.dart' show LocalConversation;
 
 extension LocalConversationX on LocalConversation {
   SessionType get sessionType {

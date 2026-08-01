@@ -27,4 +27,3 @@
 pub mod manager;
 pub mod syncer;
 pub mod converter;
-pub mod types;

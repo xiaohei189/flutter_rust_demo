@@ -1,7 +1,7 @@
 //! 消息撤回逻辑
 
 use super::MessageService;
-use super::req::RevokeMessageReq;
+use crate::domain::ports::message::RevokeMessageReq;
 use crate::domain::constant::notification_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
@@ -11,37 +11,23 @@ impl MessageService {
     /// 撤回消息（对齐 Go SDK revoke.go waitForMessageSyncSeq + revokeOneMessage）
     ///
     /// 如果 seq 为 0，从本地数据库查找；若仍未同步，等待并重试（最多 5 次，每次 2 秒）。
-    pub async fn revoke_message(
-        &self,
-        conversation_id: String,
-        seq: i64,
-        client_msg_id: String,
-        session_type: i32,
-    ) -> Result<()> {
-        let user_id = self.user_id.get().await;
+    pub async fn revoke_message(&self, mut req: RevokeMessageReq) -> Result<()> {
+        // 外部传入的 user_id 可能为空，统一以当前登录用户覆盖（值一致）
+        req.user_id = self.user_id.get().await;
 
         // 如果 seq 为 0，从本地数据库查找（对齐 Go SDK waitForMessageSyncSeq）
-        let final_seq = if seq == 0 {
-            self.wait_for_message_sync_seq(&conversation_id, &client_msg_id).await?
-        } else {
-            seq
-        };
-
-        let req = RevokeMessageReq {
-            conversation_id: conversation_id.clone(),
-            seq: final_seq,
-            user_id: user_id.clone(),
-            client_msg_id: client_msg_id.clone(),
-            session_type,
-        };
+        if req.seq == 0 {
+            req.seq = self.wait_for_message_sync_seq(&req.conversation_id, &req.client_msg_id).await?;
+        }
+        let final_seq = req.seq;
 
         // 通知服务端（失败则整体失败，本地不变更）
         self.api.revoke_on_server(&req).await?;
 
         // 服务端成功后更新本地
-        self.apply_local_revoke(&conversation_id, &client_msg_id, final_seq, session_type).await?;
+        self.apply_local_revoke(&req.conversation_id, &req.client_msg_id, final_seq, req.session_type).await?;
 
-        info!("消息已撤回: conversation_id={}, seq={}", conversation_id, final_seq);
+        info!("消息已撤回: conversation_id={}, seq={}", req.conversation_id, final_seq);
         Ok(())
     }
 

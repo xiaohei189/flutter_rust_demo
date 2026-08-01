@@ -1,4 +1,4 @@
-use super::models::LocalFriend;
+use crate::domain::model::local::LocalFriend;
 use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;
 

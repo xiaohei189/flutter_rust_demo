@@ -1,4 +1,4 @@
-use super::models::LocalConversation;
+use crate::domain::model::local::LocalConversation;
 use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;
 

@@ -7,27 +7,6 @@ import '../../domain/model/message.dart';
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-class DeleteMessagesReq {
-  final String conversationId;
-  final List<String> clientMsgIds;
-
-  const DeleteMessagesReq({
-    required this.conversationId,
-    required this.clientMsgIds,
-  });
-
-  @override
-  int get hashCode => conversationId.hashCode ^ clientMsgIds.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DeleteMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          clientMsgIds == other.clientMsgIds;
-}
-
 class GetHistoryMessagesReq {
   final String conversationId;
   final String startClientMsgId;
@@ -69,68 +48,6 @@ class GetHistoryMessagesResult {
           runtimeType == other.runtimeType &&
           messages == other.messages &&
           isEnd == other.isEnd;
-}
-
-class MarkMessagesAsReadReq {
-  final String conversationId;
-  final int sessionType;
-  final PlatformInt64 hasReadSeq;
-  final Int64List seqs;
-
-  const MarkMessagesAsReadReq({
-    required this.conversationId,
-    required this.sessionType,
-    required this.hasReadSeq,
-    required this.seqs,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      sessionType.hashCode ^
-      hasReadSeq.hashCode ^
-      seqs.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MarkMessagesAsReadReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          sessionType == other.sessionType &&
-          hasReadSeq == other.hasReadSeq &&
-          seqs == other.seqs;
-}
-
-class RevokeMessageReq {
-  final String conversationId;
-  final PlatformInt64 seq;
-  final String clientMsgId;
-  final int sessionType;
-
-  const RevokeMessageReq({
-    required this.conversationId,
-    required this.seq,
-    required this.clientMsgId,
-    required this.sessionType,
-  });
-
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      seq.hashCode ^
-      clientMsgId.hashCode ^
-      sessionType.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is RevokeMessageReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          seq == other.seq &&
-          clientMsgId == other.clientMsgId &&
-          sessionType == other.sessionType;
 }
 
 class SearchMessagesReq {

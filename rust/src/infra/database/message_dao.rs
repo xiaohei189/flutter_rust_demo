@@ -1,4 +1,4 @@
-use super::models::LocalChatLog;
+use crate::domain::model::local::LocalChatLog;
 use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;

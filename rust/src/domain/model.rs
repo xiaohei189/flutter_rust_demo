@@ -1,8 +1,8 @@
 pub mod user;
+pub mod local;
 pub mod user_id;
 pub mod friend;
 pub mod group;
-pub mod conversation;
 pub mod message;
 pub mod msg_struct;
 

@@ -1,6 +1,6 @@
 use crate::domain::error::{Result, SdkError};
 use crate::infra::database::misc_dao::UploadDao;
-use crate::infra::database::models::LocalUpload;
+use crate::domain::model::local::LocalUpload;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::{
     routes::{AUTH_SIGN, COMPLETE_FORM_DATA, COMPLETE_MULTIPART_UPLOAD, INITIATE_FORM_DATA, INITIATE_MULTIPART_UPLOAD, PART_LIMIT},

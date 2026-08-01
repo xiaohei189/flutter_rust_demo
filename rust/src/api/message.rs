@@ -8,10 +8,10 @@ use crate::api::client::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
-use crate::sdk::client::types::{
-    DeleteMessagesReq, GetHistoryMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
-    SearchMessagesReq,
+use crate::domain::ports::message::{
+    DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
 };
+use crate::sdk::client::types::{GetHistoryMessagesReq, SearchMessagesReq};
 use anyhow::{Result, anyhow};
 
 impl OpenIMBridgeClient {
@@ -69,7 +69,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn search_local_messages(&self, req: SearchMessagesReq) -> Result<Vec<crate::infra::database::models::LocalChatLog>> {
+    pub async fn search_local_messages(&self, req: SearchMessagesReq) -> Result<Vec<crate::domain::model::local::LocalChatLog>> {
         self.inner.search_local_messages(req).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }

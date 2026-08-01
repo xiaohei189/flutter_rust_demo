@@ -1,7 +1,7 @@
 // misc DAO — 轻量数据访问对象聚合
 // 包含: 通知序列(notification_seq)、发送中消息(sending_message)、上传记录(upload)
 
-use super::models::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
+use crate::domain::model::local::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
 use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;
 

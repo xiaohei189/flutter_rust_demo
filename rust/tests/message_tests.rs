@@ -536,10 +536,11 @@ async fn test_message_flow() {
     println!("B 收到待撤回消息 ✓");
 
     // A 撤回
-    use rust_lib_flutter_rust_demo::sdk::client::types::RevokeMessageReq;
+    use rust_lib_flutter_rust_demo::domain::ports::message::RevokeMessageReq;
     let revoke_result = a_sdk.revoke_message(RevokeMessageReq {
         conversation_id: conv_id.clone(),
         seq: 0,
+        user_id: user_a.user_id.clone(),
         client_msg_id: revoke_client_id.clone(),
         session_type: 1,
     }).await;
@@ -578,7 +579,7 @@ async fn test_message_flow() {
     println!("B 收到待删除消息 ✓");
 
     // A 删除
-    use rust_lib_flutter_rust_demo::sdk::client::types::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::domain::ports::message::DeleteMessagesReq;
     let delete_result = a_sdk.delete_messages(DeleteMessagesReq {
         conversation_id: conv_id.clone(),
         client_msg_ids: vec![del_client_id.clone()],
@@ -1294,7 +1295,8 @@ async fn test_mark_specific_messages_as_read() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::types::{GetHistoryMessagesReq, MarkMessagesAsReadReq};
+    use rust_lib_flutter_rust_demo::domain::ports::message::MarkMessagesAsReadReq;
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1370,6 +1372,7 @@ async fn test_mark_specific_messages_as_read() {
 
     let mark_result = receiver_sdk.mark_messages_as_read(MarkMessagesAsReadReq {
         conversation_id: conv_id.clone(),
+        user_id: receiver.user_id.clone(),
         session_type: st,
         has_read_seq: first_3_seqs.last().copied().unwrap_or(0),
         seqs: first_3_seqs.clone(),
@@ -1437,7 +1440,8 @@ async fn test_delete_message_local_only() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::types::{GetHistoryMessagesReq, DeleteMessagesReq};
+    use rust_lib_flutter_rust_demo::domain::ports::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1569,7 +1573,8 @@ async fn test_clear_conversation_and_delete_all_msg() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::types::{GetHistoryMessagesReq, DeleteMessagesReq};
+    use rust_lib_flutter_rust_demo::domain::ports::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1701,7 +1706,8 @@ async fn test_delete_conversation_and_delete_all_msg() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::types::{GetHistoryMessagesReq, DeleteMessagesReq};
+    use rust_lib_flutter_rust_demo::domain::ports::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -2038,7 +2044,7 @@ async fn test_total_unread_count() {
 ///   Phase 7: 再次查询 → 验证第 1 条 local_ex 已更新为 "archived"
 #[tokio::test]
 async fn test_message_local_ex() {
-    use rust_lib_flutter_rust_demo::infra::database::models::LocalChatLog;
+    use rust_lib_flutter_rust_demo::domain::model::local::LocalChatLog;
     use rust_lib_flutter_rust_demo::sdk::client::types::SearchMessagesReq;
 
     // Setup

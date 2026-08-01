@@ -3,47 +3,8 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../frb_generated.dart';
+import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-class FriendApplyInfo {
-  final String userId;
-  final String nickname;
-  final String faceUrl;
-  final PlatformInt64 createTime;
-  final String? reqMsg;
-  final int handleResult;
-
-  const FriendApplyInfo({
-    required this.userId,
-    required this.nickname,
-    required this.faceUrl,
-    required this.createTime,
-    this.reqMsg,
-    required this.handleResult,
-  });
-
-  @override
-  int get hashCode =>
-      userId.hashCode ^
-      nickname.hashCode ^
-      faceUrl.hashCode ^
-      createTime.hashCode ^
-      reqMsg.hashCode ^
-      handleResult.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is FriendApplyInfo &&
-          runtimeType == other.runtimeType &&
-          userId == other.userId &&
-          nickname == other.nickname &&
-          faceUrl == other.faceUrl &&
-          createTime == other.createTime &&
-          reqMsg == other.reqMsg &&
-          handleResult == other.handleResult;
-}
 
 class GroupApplyInfo {
   final String groupId;
@@ -52,6 +13,7 @@ class GroupApplyInfo {
   final String faceUrl;
   final String reason;
   final int handleResult;
+  final String? ex;
 
   const GroupApplyInfo({
     required this.groupId,
@@ -60,6 +22,7 @@ class GroupApplyInfo {
     required this.faceUrl,
     required this.reason,
     required this.handleResult,
+    this.ex,
   });
 
   @override
@@ -69,7 +32,8 @@ class GroupApplyInfo {
       nickname.hashCode ^
       faceUrl.hashCode ^
       reason.hashCode ^
-      handleResult.hashCode;
+      handleResult.hashCode ^
+      ex.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -81,5 +45,6 @@ class GroupApplyInfo {
           nickname == other.nickname &&
           faceUrl == other.faceUrl &&
           reason == other.reason &&
-          handleResult == other.handleResult;
+          handleResult == other.handleResult &&
+          ex == other.ex;
 }

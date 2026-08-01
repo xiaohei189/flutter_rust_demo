@@ -1,5 +1,5 @@
 use crate::domain::error::Result;
-use crate::infra::database::models::LocalUser;
+use crate::domain::model::local::LocalUser;
 use async_trait::async_trait;
 
 #[async_trait]

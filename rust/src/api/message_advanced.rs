@@ -6,7 +6,7 @@
 use crate::api::client::client_holder;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
-use crate::infra::database::models::LocalChatLog;
+use crate::domain::model::local::LocalChatLog;
 use anyhow::{Result, anyhow};
 
 // ============================================================================
@@ -143,10 +143,10 @@ pub async fn delete_message(
 ) -> Result<()> {
     let client = client_holder()?;
     // 委托给 message_service（已包含服务端 + 本地删除 + 事件发布）
-    client.message_service.delete_messages(
+    client.message_service.delete_messages(crate::domain::ports::message::DeleteMessagesReq {
         conversation_id,
-        vec![client_msg_id],
-    ).await.map_err(|e| anyhow::anyhow!("{}", e))
+        client_msg_ids: vec![client_msg_id],
+    }).await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）

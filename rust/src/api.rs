@@ -1,4 +1,3 @@
-pub mod bridge_client;
 pub mod client;
 pub mod conversation;
 pub mod message;
@@ -7,5 +6,4 @@ pub mod message_media;
 pub mod friend;
 pub mod group;
 pub mod user;
-pub mod simple;
 pub mod ffi_init;

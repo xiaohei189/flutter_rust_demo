@@ -1,3 +1,7 @@
+//! 本地持久化模型（Local*，对齐 Go SDK `pkg/db/model_struct/data_model_struct.go`）
+//!
+//! 数据库行模型，由 sqlx `FromRow` 映射；被 DAO 与 Repository trait 共同使用。
+//! 原位于 `infra/database/models.rs`，收归 domain 后与领域模型同层。
 use crate::domain::constant::{MessageSendStatus, SessionType};
 use sqlx::FromRow;
 
