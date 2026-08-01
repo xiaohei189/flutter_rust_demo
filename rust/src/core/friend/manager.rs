@@ -1,8 +1,8 @@
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::publisher::EventPublisher;
 use crate::event::types::SdkEvent;
-use crate::listener::friend::{FriendListener, FriendEvent};
+use crate::event::listener::friend::{FriendListener, FriendEvent};
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::UserId;
 use crate::infra::database::models::LocalFriend;

@@ -1,8 +1,8 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
-use crate::listener::conversation::ConversationEvent;
+use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::infra::database::models::LocalConversation;
 use crate::sdk::context::Stores;
@@ -264,7 +264,7 @@ impl ConversationSyncer {
         };
 
         let user_id = self.user_id.get().await;
-        use crate::domain::constant::types::ws_req_identifier;
+        use crate::domain::constant::ws_req_identifier;
         use crate::protocol::msg::{
             GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp,
         };
@@ -430,12 +430,12 @@ mod tests {
 
     fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
         Arc::new(Stores {
-            message_dao: Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
-            user_dao: Arc::new(UserDao::new(pool.clone())),
-            group_dao: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         })

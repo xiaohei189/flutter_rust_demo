@@ -5,12 +5,12 @@
 use super::max_seq_recorder::MaxSeqRecorder;
 use super::revoke::parse_revoke_tips_from_json;
 use crate::core::message::shared::content_type::ContentTypeUtils;
-use crate::domain::constant::types::content_type;
-use crate::domain::constant::types::msg_status;
-use crate::domain::constant::types::notification_type::{HAS_READ_RECEIPT, REVOKE};
-use crate::domain::error::types::Result;
+use crate::domain::constant::content_type;
+use crate::domain::constant::msg_status;
+use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
+use crate::domain::error::Result;
 use crate::event::publisher::EventPublisher;
-use crate::listener::conversation::ConversationEvent;
+use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
 use crate::infra::database::models::{LocalChatLog, LocalConversation};
@@ -646,7 +646,7 @@ mod tests {
         conv.max_seq = 5;
         conversation_dao.upsert(&conv).await.unwrap();
 
-        let msgs = vec![msg_with_ct("tip_1", "conv_tip", 6, crate::domain::constant::types::notification_type::FRIEND_APPLICATION)];
+        let msgs = vec![msg_with_ct("tip_1", "conv_tip", 6, crate::domain::constant::notification_type::FRIEND_APPLICATION)];
         handler.handle_messages("conv_tip", msgs).await.unwrap();
         let chat_logs = message_dao.get_by_conversation("conv_tip", 0, 100).await.unwrap();
         assert_eq!(chat_logs.len(), 0, "tip message should not be stored");

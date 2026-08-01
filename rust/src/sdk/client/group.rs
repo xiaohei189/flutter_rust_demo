@@ -1,6 +1,6 @@
-use crate::domain::constant::enums::GroupType;
-use crate::domain::error::types::Result;
-use crate::domain::error::types::SdkError;
+use crate::domain::constant::GroupType;
+use crate::domain::error::Result;
+use crate::domain::error::SdkError;
 use crate::domain::model::group::{GroupInfo, GroupMember};
 use crate::sdk::client::{GroupApplyInfo, OpenIMClient};
 

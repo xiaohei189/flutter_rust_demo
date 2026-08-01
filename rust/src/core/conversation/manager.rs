@@ -1,8 +1,8 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::event::publisher::EventPublisher;
-use crate::listener::conversation::ConversationEvent;
+use crate::event::listener::conversation::ConversationEvent;
 use crate::infra::database::models::LocalConversation;
 use crate::sdk::context::Stores;
 

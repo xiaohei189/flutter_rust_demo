@@ -87,6 +87,38 @@ Rust 核心业务 (rust/src/core/)  ←→  基础设施 (rust/src/infra/)
 | Rust 领域 | `rust/src/domain/` | `model/message.rs` |
 | Rust 基础设施 | `rust/src/infra/` | `database/message_dao.rs` |
 
+## Rust 目录组织约定
+
+### 分层原则
+rust/src/
+- domain/     # 领域层（最底层，无内部依赖）
+- infra/      # 基础设施（依赖 domain）
+- protocol/   # 协议层（依赖 domain）
+- event/      # 事件系统（依赖 domain + protocol）
+- core/       # 核心业务（依赖 domain + infra + event）
+- sdk/        # SDK 门面（依赖 core）
+- api/        # FFI 桥接（最上层，依赖 sdk, 供 frb_generated 使用）
+- listener/   # 监听器适配器（与 event/ 配合）
+
+### 目录规则
+1. 单文件优先：模块只有 1-2 个文件时用单文件，超过 4-5 个才建目录
+2. 工具归 infra：工具类代码（bitmap, md5, progress_reader, cb 等）放在 infra/，不放在 core/
+3. domain/constant/ 和 domain/error/ 保持目录：因为 frb_generated 自动生成代码依赖 domain::constant::enums:: 和 domain::error::types:: 路径，不可扁平化。通过 mod.rs 中的 pub use enums::*; pub use types::*; 提供新旧路径兼容
+4. api/bridge_client.rs 不可删除：frb_generated 自动生成代码依赖此模块作为 re-export 枢纽
+5. api/simple.rs 保留为向后兼容 shim：重命名后保留一个 pub use super::ffi_init::*; 的 shim 文件
+6. core/file/ 只保留业务逻辑：uploader.rs 是核心业务，其他工具类移入 infra/file/
+
+### 各层职责
+| 层 | 职责 | 不允许 |
+|----|------|--------|
+| domain/ | 数据模型、错误类型、常量、Repository trait | 不依赖任何其他 crate 模块 |
+| infra/ | 数据库 DAO、HTTP 客户端、缓存、日志、文件工具 | 不依赖 core/、sdk/ |
+| core/ | 连接管理、消息收发、会话/好友/群组业务逻辑 | 不依赖 api/、sdk/ |
+| sdk/ | OpenIMClient 门面，聚合 core 各模块 | 不依赖 api/ |
+| api/ | FFI 桥接，#[flutter_rust_bridge::frb] 注解 | 不依赖 core/ 内部细节 |
+
+
+
 ## IM 协议要点
 
 - **WebSocket** (10001)：实时推送、RPC

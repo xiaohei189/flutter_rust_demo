@@ -205,7 +205,7 @@ async fn test_user_state_friend_management() {
 
     println!("用户1: {}, 用户2: {}", cert1.user_id, cert2.user_id);
 
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir()
@@ -244,7 +244,7 @@ async fn test_friend_application_flow() {
     println!("=== 好友申请/接受/拒绝完整流程测试 ===\n");
 
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
 
     let phone1 = generate_virtual_phone("fapp1");
     let phone2 = generate_virtual_phone("fapp2");

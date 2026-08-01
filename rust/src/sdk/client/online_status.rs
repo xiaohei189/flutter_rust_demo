@@ -1,5 +1,5 @@
-use crate::core::online::manager::OnlineStatus;
-use crate::domain::error::types::Result;
+use crate::core::user::online::manager::OnlineStatus;
+use crate::domain::error::Result;
 use crate::sdk::client::OpenIMClient;
 
 impl OpenIMClient {

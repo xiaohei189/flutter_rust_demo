@@ -1,5 +1,5 @@
 use super::models::LocalConversation;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;
 
 pub struct ConversationDao {
@@ -199,6 +199,37 @@ impl ConversationDao {
             .await
             .map_err(|e| SdkError::database(format!("delete conversation: {}", e)))?;
         Ok(())
+    }
+
+
+    /// 批量删除会话
+    pub async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> {
+        if conversation_ids.is_empty() {
+            return Ok(());
+        }
+        let placeholders = conversation_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "DELETE FROM local_conversations WHERE conversation_id IN ({})",
+            placeholders
+        );
+        let mut query = sqlx::query(&sql);
+        for id in conversation_ids {
+            query = query.bind(id);
+        }
+        query
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("batch delete conversations: {}", e)))?;
+        Ok(())
+    }
+
+    /// 获取所有会话 ID
+    pub async fn get_all_ids(&self) -> Result<Vec<String>> {
+        let rows: Vec<(String,)> = sqlx::query_as("SELECT conversation_id FROM local_conversations")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("get all conversation ids: {}", e)))?;
+        Ok(rows.into_iter().map(|(id,)| id).collect())
     }
 
     pub async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
@@ -625,13 +656,13 @@ impl ConversationRepository for ConversationDao {
     async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()> { self.update_unread_count(conversation_id, count).await }
     async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()> { self.update_after_new_message(conversation_id, latest_msg, send_time, seq).await }
     async fn delete(&self, conversation_id: &str) -> Result<()> { self.delete(conversation_id).await }
-    async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> { self.batch_delete(conversation_ids).await }
-    async fn get_all_ids(&self) -> Result<Vec<String>> { self.get_all_ids().await }
-    async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { self.update_draft(conversation_id, draft_text, draft_time).await }
-    async fn reset_unread_count(&self, conversation_id: &str) -> Result<()> { self.reset_unread_count(conversation_id).await }
-    async fn toggle_pin(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { self.toggle_pin(conversation_id, is_pinned).await }
+    async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> { ConversationDao::batch_delete(self, conversation_ids).await }
+    async fn get_all_ids(&self) -> Result<Vec<String>> { ConversationDao::get_all_ids(self).await }
+    async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { ConversationDao::set_draft(self, conversation_id, draft_text, draft_time).await }
+    async fn reset_unread_count(&self, conversation_id: &str) -> Result<()> { ConversationDao::update_unread_count(self, conversation_id, 0).await }
+    async fn toggle_pin(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { ConversationDao::set_pinned(self, conversation_id, is_pinned).await }
     async fn get_total_unread_count(&self) -> Result<i32> { self.get_total_unread_count().await.map(|v| v as i32) }
-    async fn get_total_count(&self) -> Result<i32> { self.get_total_count().await }
+    async fn get_total_count(&self) -> Result<i32> { ConversationDao::count(self).await.map(|v| v as i32) }
     async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { self.set_pinned(conversation_id, is_pinned).await }
     async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> { self.set_private_chat(conversation_id, is_private).await }
     async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { self.set_draft(conversation_id, draft_text, draft_time).await }

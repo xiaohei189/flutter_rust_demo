@@ -1,5 +1,5 @@
-use crate::domain::constant::enums::{MessageSendStatus, SessionType};
-use crate::domain::constant::types::msg_status;
+use crate::domain::constant::{MessageSendStatus, SessionType};
+use crate::domain::constant::msg_status;
 use crate::protocol::sdkws::MsgData;
 use sqlx::FromRow;
 

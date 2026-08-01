@@ -14,7 +14,7 @@ use crate::core::friend::manager::FriendManager;
 use crate::core::group::manager::GroupManager;
 use crate::core::message::MessageHandler;
 use crate::core::user::manager::UserManager;
-use crate::domain::constant::types::notification_type;
+use crate::domain::constant::notification_type;
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
 use crate::domain::model::UserId;

@@ -1,4 +1,4 @@
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

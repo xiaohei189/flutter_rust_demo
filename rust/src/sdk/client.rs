@@ -24,14 +24,14 @@ use crate::core::message::MessageHandler;
 use crate::core::message::MessageSendQueue;
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
-use crate::core::notification::handler::NotificationHandler;
-use crate::core::online::manager::OnlineStatusManager;
+use crate::core::message::notification::handler::NotificationHandler;
+use crate::core::user::online::manager::OnlineStatusManager;
 use crate::core::user::manager::UserManager;
 use crate::event::EventBus;
-use crate::listener::connection::ConnectionEvent;
-use crate::listener::conversation::ConversationEvent;
-use crate::listener::friend::FriendEvent;
-use crate::listener::group::GroupEvent;
+use crate::event::listener::connection::ConnectionEvent;
+use crate::event::listener::conversation::ConversationEvent;
+use crate::event::listener::friend::FriendEvent;
+use crate::event::listener::group::GroupEvent;
 use crate::sdk::context::RuntimeContext;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -108,7 +108,7 @@ impl OpenIMClient {
 
 
 use crate::sdk::config::ClientConfig;
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
 use crate::protocol::sdkws::PushMessages;
 use prost::Message as ProstMessage;

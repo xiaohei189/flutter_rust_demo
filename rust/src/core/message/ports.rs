@@ -10,7 +10,7 @@
 //! | [`SyncerRemoteApi`] | `ConnectionManager` | `receive/syncer.rs` |
 //! | [`MessageServerApi`] | `HttpMessageApi` | `operate/http_api.rs` |
 
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};
 use std::collections::HashMap;

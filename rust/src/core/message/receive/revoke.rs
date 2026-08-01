@@ -1,10 +1,10 @@
 //! 撤回通知处理（impl MessageHandler）
 
 use super::handler::MessageHandler;
-use crate::domain::constant::types::notification_type::REVOKE;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::constant::notification_type::REVOKE;
+use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
-use crate::listener::conversation::ConversationEvent;
+use crate::event::listener::conversation::ConversationEvent;
 use crate::protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
@@ -87,14 +87,14 @@ impl MessageHandler {
         let mut revoker_role = 0i32;
         let fallback = tips.revoker_user_id.clone();
 
-        if tips.is_admin_revoke || tips.sesstion_type == crate::domain::constant::types::session_type::SINGLE_CHAT {
+        if tips.is_admin_revoke || tips.sesstion_type == crate::domain::constant::session_type::SINGLE_CHAT {
             if let Ok(Some(user)) = self.stores.user_repo.get_by_id(&tips.revoker_user_id).await {
                 if !user.name.is_empty() {
                     return (user.name, 0);
                 }
             }
-        } else if tips.sesstion_type == crate::domain::constant::types::session_type::WRITE_GROUP_CHAT
-            || tips.sesstion_type == crate::domain::constant::types::session_type::READ_GROUP_CHAT {
+        } else if tips.sesstion_type == crate::domain::constant::session_type::WRITE_GROUP_CHAT
+            || tips.sesstion_type == crate::domain::constant::session_type::READ_GROUP_CHAT {
             if let Ok(Some(conv)) = self.stores.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.stores.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -137,8 +137,8 @@ impl MessageHandler {
             revoker_nickname = revoked_msg.sender_nick_name.clone();
         }
         info!("[REVOKE-DEBUG] 最终昵称: '{}', user_id: '{}'", revoker_nickname, tips.revoker_user_id);
-        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::types::session_type::WRITE_GROUP_CHAT
-            || tips.sesstion_type == crate::domain::constant::types::session_type::READ_GROUP_CHAT {
+        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::session_type::WRITE_GROUP_CHAT
+            || tips.sesstion_type == crate::domain::constant::session_type::READ_GROUP_CHAT {
             if let Ok(Some(conv)) = self.stores.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.stores.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -397,7 +397,7 @@ mod tests {
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::database::models::{LocalChatLog, LocalConversation};
     use crate::infra::database::pool::create_pool_memory;
-    use crate::domain::constant::types::notification_type::REVOKE as REVOKE_CT;
+    use crate::domain::constant::notification_type::REVOKE as REVOKE_CT;
     use crate::sdk::context::Stores;
     use std::sync::Arc;
 
@@ -405,12 +405,12 @@ mod tests {
         Arc::new(Stores {
             message_repo: Arc::new(MessageDao::new(pool.clone())),
             conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
             user_repo: Arc::new(UserDao::new(pool.clone())),
             group_repo: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
-            sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
+            sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         })
     }
 

@@ -1,6 +1,6 @@
-use crate::domain::constant::enums::SessionType;
-use crate::domain::error::types::Result;
-use crate::domain::error::types::SdkError;
+use crate::domain::constant::SessionType;
+use crate::domain::error::Result;
+use crate::domain::error::SdkError;
 use crate::infra::database::models::LocalConversation;
 use crate::sdk::client::OpenIMClient;
 

@@ -1,4 +1,4 @@
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 
 #[async_trait]

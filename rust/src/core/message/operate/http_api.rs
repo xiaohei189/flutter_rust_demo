@@ -4,7 +4,7 @@
 
 use super::req::{MarkConversationAsReadReq, MarkMessagesAsReadReq, RevokeMessageReq};
 use crate::core::message::ports::MessageServerApi;
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
 use async_trait::async_trait;

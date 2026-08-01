@@ -1,4 +1,4 @@
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::domain::model::user::UserInfo;
 use crate::sdk::client::OpenIMClient;
 

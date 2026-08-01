@@ -23,7 +23,7 @@ async fn test_conversation_list_sync() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -76,7 +76,7 @@ async fn test_get_single_conversation() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -132,7 +132,7 @@ async fn test_conversation_unread_count() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -195,7 +195,7 @@ async fn test_conversation_mark_read() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -330,7 +330,7 @@ async fn test_conversation_pinned() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -389,7 +389,7 @@ async fn test_conversation_private() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -441,7 +441,7 @@ async fn test_conversation_draft() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -513,7 +513,7 @@ async fn test_conversation_delete() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -569,7 +569,7 @@ async fn test_set_conversation() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -614,8 +614,8 @@ async fn test_set_conversation() {
     match conv {
         Some(c) => {
             assert_eq!(c.recv_msg_opt, 1, "recv_msg_opt 应为 1");
-            assert!(c.is_pinned != 0, "is_pinned 应为 true");
-            assert!(c.is_private_chat != 0, "is_private_chat 应为 true");
+            assert!(c.is_pinned, "is_pinned 应为 true");
+            assert!(c.is_private_chat, "is_private_chat 应为 true");
             assert_eq!(c.ex, "test_key=test_value", "ex 字段不匹配");
         }
         None => panic!("未找到会话"),
@@ -680,7 +680,7 @@ async fn test_conversation_lifecycle() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -760,7 +760,7 @@ async fn test_unread_count_persistence() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -834,7 +834,7 @@ async fn test_unread_count_after_message() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -909,7 +909,7 @@ async fn test_update_conversation_unread_count() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -971,7 +971,7 @@ async fn test_conversation_list_split() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     println!("[Phase 1] 创建 5 个随机账号...");
     let mut sender_accounts = Vec::new();
@@ -1095,7 +1095,7 @@ async fn test_multiple_conversations() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     println!("[Phase 1] 创建发送方，发送 2 条消息...");
     let sender = create_random_account("MultiSender").await;
@@ -1183,7 +1183,7 @@ async fn test_search_conversations() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
     let sender = create_random_account("SearchSender").await;
@@ -1270,7 +1270,7 @@ async fn test_hide_conversation() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
     let sender = create_random_account("HideSender").await;
@@ -1382,7 +1382,7 @@ async fn test_conversation_full_persistence() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     // Phase 1: A 发消息给 B
     println!("\n========== Phase 1: A 发消息给 B ==========");
@@ -1429,9 +1429,9 @@ async fn test_conversation_full_persistence() {
     println!("\n========== Phase 3: 验证设置生效 ==========");
 
     let conv = receiver_sdk.get_conversation(&conv_id).await.unwrap().unwrap();
-    assert!(conv.is_pinned != 0, "is_pinned 应为 true");
+    assert!(conv.is_pinned, "is_pinned 应为 true");
     assert!(!conv.draft_text.is_empty(), "draft_text 应非空");
-    assert!(conv.is_private_chat != 0, "is_private_chat 应为 true");
+    assert!(conv.is_private_chat, "is_private_chat 应为 true");
     assert_eq!(conv.ex, "persist_key=persist_value", "ex 字段不匹配");
     println!("  Phase 3 通过: 所有属性生效");
 
@@ -1449,9 +1449,9 @@ async fn test_conversation_full_persistence() {
     assert!(conv_after.is_some(), "重新登录后会话应存在");
     let conv_after = conv_after.unwrap();
 
-    assert!(conv_after.is_pinned != 0, "重新登录后 is_pinned 应保持 true");
+    assert!(conv_after.is_pinned, "重新登录后 is_pinned 应保持 true");
     assert!(!conv_after.draft_text.is_empty(), "重新登录后 draft_text 应保持非空");
-    assert!(conv_after.is_private_chat != 0, "重新登录后 is_private_chat 应保持 true");
+    assert!(conv_after.is_private_chat, "重新登录后 is_private_chat 应保持 true");
     assert_eq!(conv_after.ex, "persist_key=persist_value",
         "重新登录后 ex 字段应保持: 实际={}", conv_after.ex);
     println!("  Phase 5 通过: 所有属性持久化成功");
@@ -1485,7 +1485,7 @@ async fn test_concurrent_conversation_ops() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
     use std::sync::Arc;
 
     // Phase 1: A 发消息给 B
@@ -1559,9 +1559,9 @@ async fn test_concurrent_conversation_ops() {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     let conv = sdk.get_conversation(&conv_id).await.unwrap().unwrap();
-    assert!(conv.is_pinned != 0, "is_pinned 应为 true");
+    assert!(conv.is_pinned, "is_pinned 应为 true");
     assert!(!conv.draft_text.is_empty(), "draft_text 应非空");
-    assert!(conv.is_private_chat != 0, "is_private_chat 应为 true");
+    assert!(conv.is_private_chat, "is_private_chat 应为 true");
     assert_eq!(conv.ex, "concurrent_ex", "ex 字段不匹配");
     println!("  Phase 3 通过: 所有属性正确");
 

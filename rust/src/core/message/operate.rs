@@ -15,7 +15,7 @@ pub use crate::core::message::ports::MessageServerApi;
 
 use crate::event::EventBus;
 use crate::event::publisher::EventPublisher;
-use crate::listener::conversation::ConversationEvent;
+use crate::event::listener::conversation::ConversationEvent;
 use crate::domain::model::UserId;
 use crate::sdk::context::Stores;
 use std::sync::Arc;
@@ -81,12 +81,12 @@ mod tests {
 
     fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
         Arc::new(Stores {
-            message_dao: Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
-            user_dao: Arc::new(UserDao::new(pool.clone())),
-            group_dao: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         })
@@ -96,27 +96,27 @@ mod tests {
 
     #[async_trait::async_trait]
     impl MessageServerApi for SuccessMockApi {
-        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::domain::error::types::Result<()> { Ok(()) }
-        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::domain::error::types::Result<()> { Ok(()) }
-        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::domain::error::types::Result<()> { Ok(()) }
-        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::domain::error::types::Result<()> { Ok(()) }
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::domain::error::Result<()> { Ok(()) }
+        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::domain::error::Result<()> { Ok(()) }
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::domain::error::Result<()> { Ok(()) }
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::domain::error::Result<()> { Ok(()) }
     }
 
     pub(crate) struct FailMockApi;
 
     #[async_trait::async_trait]
     impl MessageServerApi for FailMockApi {
-        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::domain::error::types::Result<()> {
-            Err(crate::domain::error::types::SdkError::api(1001, "server error"))
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::domain::error::types::Result<()> {
-            Err(crate::domain::error::types::SdkError::api(1001, "server error"))
+        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::domain::error::types::Result<()> {
-            Err(crate::domain::error::types::SdkError::api(1001, "server error"))
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::domain::error::types::Result<()> {
-            Err(crate::domain::error::types::SdkError::api(1001, "server error"))
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
     }
 
@@ -193,7 +193,7 @@ mod tests {
         message_dao.batch_insert(&[make_local_msg("conv_r", "msg_r1", 5, "user_1")]).await.unwrap();
         service.revoke_message("conv_r".into(), 5, "msg_r1".into(), 1).await.unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_r", "msg_r1").await.unwrap().unwrap();
-        assert_eq!(msg.content_type, crate::domain::constant::types::notification_type::REVOKE);
+        assert_eq!(msg.content_type, crate::domain::constant::notification_type::REVOKE);
     }
 
     #[tokio::test]

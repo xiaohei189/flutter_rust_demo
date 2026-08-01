@@ -1,9 +1,9 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::file::uploader::{FileUploader, ProgressCallback};
 use crate::core::message::ContentTypeUtils;
-use crate::domain::constant::enums::MessageSendStatus;
-use crate::domain::error::types::Result;
-use crate::domain::error::types::SdkError;
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::Result;
+use crate::domain::error::SdkError;
 use crate::event::types::SdkEvent;
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
@@ -836,7 +836,7 @@ impl OpenIMClient {
         info!("[Typing] 请求: source_id={}, session_type={}, focus={}",
             source_id, session_type, focus);
         let resp: UserSendMsgResp = self.connection.send_rpc(
-            crate::domain::constant::types::ws_req_identifier::SEND_MSG,
+            crate::domain::constant::ws_req_identifier::SEND_MSG,
             &msg_data,
         ).await?;
 
@@ -1363,12 +1363,12 @@ mod tests {
             user_id: crate::domain::model::UserId::new("test_user"),
             operation_id: "test_op".to_string(),
             stores: Arc::new(crate::sdk::context::Stores {
-                message_dao: Arc::new(MessageDao::new(pool.clone())),
-                conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-                friend_dao: Arc::new(FriendDao::new(pool.clone())),
-                user_dao: Arc::new(UserDao::new(pool.clone())),
-                group_dao: Arc::new(GroupDao::new(pool.clone())),
-                sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+                message_repo: Arc::new(MessageDao::new(pool.clone())),
+                conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+                friend_repo: Arc::new(FriendDao::new(pool.clone())),
+                user_repo: Arc::new(UserDao::new(pool.clone())),
+                group_repo: Arc::new(GroupDao::new(pool.clone())),
+                sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
                 notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
                 sending_message_dao: Arc::new(SendingMessageDao::new(pool.clone())),
             }),

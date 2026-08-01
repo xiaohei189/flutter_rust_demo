@@ -1,8 +1,8 @@
 use crate::core::connection::message_batcher::MessageBatcher;
-use crate::domain::constant::types::req_identifier_name;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::constant::req_identifier_name;
+use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
-use crate::listener::connection::{ConnectionEvent, ConnectionListener};
+use crate::event::listener::connection::{ConnectionEvent, ConnectionListener};
 use crate::infra::logger::{decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id};
 use crate::protocol::compressor::GzipCompressor;
 use crate::protocol::sdkws::PushMessages;
@@ -459,7 +459,7 @@ impl ConnectionManager {
                                         resp.req_identifier, req_identifier_name(resp.req_identifier),
                                         resp.msg_incr, resp.operation_id, resp.err_code, resp.err_msg, resp.data.len());
 
-                                    use crate::domain::constant::types::{ws_push_identifier, ws_req_identifier};
+                                    use crate::domain::constant::{ws_push_identifier, ws_req_identifier};
                                     match resp.req_identifier {
                                         // PushMsg (2001) — 对齐 Go case constant.PushMsg
                                         ws_push_identifier::PUSH_MSG => {

@@ -1,6 +1,6 @@
 use crate::core::friend::manager::SearchFriendItem;
-use crate::domain::error::types::Result;
-use crate::domain::error::types::SdkError;
+use crate::domain::error::Result;
+use crate::domain::error::SdkError;
 use crate::domain::model::friend::FriendInfo;
 use crate::sdk::client::{FriendApplyInfo, OpenIMClient};
 

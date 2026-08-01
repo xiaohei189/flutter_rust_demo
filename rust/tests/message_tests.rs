@@ -1,8 +1,8 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::domain::event::bus::EventSubscription;
-use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+use rust_lib_flutter_rust_demo::event::bus::EventSubscription;
+use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -461,7 +461,7 @@ async fn test_message_flow() {
     // A 发文本
     let r = a_sdk.send_text_message("实时文本消息", target, st).await;
     assert!(r.is_ok(), "A 发送实时文本失败: {:?}", r.err());
-    let ev = wait_for_event(&mut b_events, |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("实时文本")), 10).await;
+    let ev = wait_for_event(&mut b_events, |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("实时文本")), 10).await;
     assert!(ev.is_some(), "B 未收到实时文本消息");
     println!("B 收到实时文本消息 ✓");
 
@@ -491,7 +491,7 @@ async fn test_message_flow() {
 
     let mut received_seqs = Vec::new();
     for _ in 0..5 {
-        let ev = wait_for_event(&mut b_events, |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("连续消息")), 10).await;
+        let ev = wait_for_event(&mut b_events, |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("连续消息")), 10).await;
         if let Some(SdkEvent::NewMessage { message }) = ev {
             received_seqs.push(message.seq);
         }
@@ -620,7 +620,7 @@ async fn test_message_flow() {
 
     let ev = wait_for_event(
         &mut a_events,
-        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("B 回复")),
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("B 回复")),
         10,
     ).await;
     assert!(ev.is_some(), "A 未收到 B 的消息");
@@ -638,7 +638,7 @@ async fn test_message_flow() {
 
     let ev = wait_for_event(
         &mut a_events,
-        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("转发原始消息A")),
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("转发原始消息A")),
         10,
     ).await;
     assert!(ev.is_some(), "A 未收到 B 转发的消息");
@@ -1540,7 +1540,7 @@ async fn test_delete_message_local_only() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("LOCAL_DEL_NEW")),
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("LOCAL_DEL_NEW")),
         10,
     ).await;
     assert!(ev.is_some(), "B 未收到新消息");
@@ -1672,7 +1672,7 @@ async fn test_clear_conversation_and_delete_all_msg() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("CLEAR_DEL_NEW")),
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("CLEAR_DEL_NEW")),
         10,
     ).await;
     assert!(ev.is_some(), "B 未收到新消息");
@@ -2339,9 +2339,9 @@ async fn test_online_only_message() {
             _ = &mut timeout => break,
             event = b_events.next() => {
                 if let Some(SdkEvent::NewMessage { message }) = event {
-                    if message.content.contains("ONLINE_ONLY_MSG_") {
+                    if String::from_utf8_lossy(&message.content).contains("ONLINE_ONLY_MSG_") {
                         received_online_only.push(message.client_msg_id.clone());
-                        println!("  B 收到 online_only 消息: content={}", message.content);
+                        println!("  B 收到 online_only 消息: content={:?}", message.content);
                     }
                 }
             }
@@ -2396,7 +2396,7 @@ async fn test_online_only_message() {
     // 等待 B 收到普通消息
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("普通混合消息")),
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("普通混合消息")),
         10,
     ).await;
     assert!(ev.is_some(), "B 未收到普通混合消息");
@@ -2660,7 +2660,7 @@ async fn test_concurrent_send_stress() {
             }
             event = b_events.next() => {
                 if let Some(SdkEvent::NewMessage { message }) = event {
-                    if message.content.contains("STRESS_SEQ_") {
+                    if String::from_utf8_lossy(&message.content).contains("STRESS_SEQ_") {
                         received_seqs.push(message.seq);
                         received_count += 1;
                         if received_count % 5 == 0 || received_count == 20 {
@@ -2802,8 +2802,8 @@ async fn test_concurrent_send_stress() {
             _ = &mut timeout => break,
             event = b_events.next() => {
                 if let Some(SdkEvent::NewMessage { message }) = event {
-                    if message.content.contains("并发文本消息")
-                        || message.content.contains("并发自定义")
+                    if String::from_utf8_lossy(&message.content).contains("并发文本消息")
+                        || String::from_utf8_lossy(&message.content).contains("并发自定义")
                         || message.content_type == 109
                     {
                         mixed_received += 1;
@@ -3425,7 +3425,7 @@ async fn test_delete_all_msg_local_only() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, SdkEvent::NewMessage { message } if message.content.contains("DELLOCAL_NEW")),
+        |ev| matches!(ev, SdkEvent::NewMessage { message } if String::from_utf8_lossy(&message.content).contains("DELLOCAL_NEW")),
         10,
     ).await;
     assert!(ev.is_some(), "B 未收到新消息");

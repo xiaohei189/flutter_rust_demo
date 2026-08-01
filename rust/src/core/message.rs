@@ -28,6 +28,7 @@ pub mod send;
 pub mod operate;
 pub mod shared;
 pub mod checker;
+pub mod notification;
 
 // Facade re-exports: 外部引用路径兼容
 pub use receive::{MessageHandler, MessageSyncer, MaxSeqRecorder};

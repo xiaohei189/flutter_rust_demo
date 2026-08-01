@@ -1,7 +1,7 @@
 //! 本地消息搜索
 
 use super::MessageService;
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::infra::database::models::LocalChatLog;
 use tracing::info;
 

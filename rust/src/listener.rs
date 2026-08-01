@@ -1,9 +1,10 @@
-//! 模块化 Listener（对齐 Go SDK trait 接口 + setXxxListener 模式）
+//! 向后兼容层 — 实现已移入 event::listener
+//! frb_generated 自动生成代码依赖此路径，不可删除
 
-pub mod connection;
-pub mod conversation;
-pub mod friend;
-pub mod group;
-pub mod message;
-pub mod user;
-pub mod bridge;
+pub use crate::event::listener::connection as connection;
+pub use crate::event::listener::conversation as conversation;
+pub use crate::event::listener::friend as friend;
+pub use crate::event::listener::group as group;
+pub use crate::event::listener::message as message;
+pub use crate::event::listener::user as user;
+pub use crate::event::listener::bridge as bridge;

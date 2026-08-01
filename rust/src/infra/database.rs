@@ -1,25 +1,19 @@
-pub mod black_dao;
 pub mod conversation_dao;
 pub mod friend_dao;
 pub mod group_dao;
 pub mod message_dao;
+pub mod misc_dao;
 pub mod models;
-pub mod notification_seq_dao;
 pub mod pool;
-pub mod sending_message_dao;
 pub mod sync_version_dao;
-pub mod upload_dao;
 pub mod user_dao;
 
-pub use black_dao::BlackDao;
 pub use conversation_dao::ConversationDao;
 pub use friend_dao::FriendDao;
 pub use group_dao::GroupDao;
 pub use message_dao::MessageDao;
+pub use misc_dao::{NotificationSeqDao, SendingMessageDao, UploadDao};
 pub use models::*;
-pub use notification_seq_dao::NotificationSeqDao;
 pub use pool::{create_pool, create_pool_memory};
-pub use sending_message_dao::SendingMessageDao;
 pub use sync_version_dao::SyncVersionDao;
-pub use upload_dao::UploadDao;
-pub use user_dao::UserDao;
+pub use user_dao::{BlackDao, UserDao};

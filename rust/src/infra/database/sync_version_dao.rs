@@ -1,5 +1,5 @@
-use crate::domain::error::types::SdkError;
-use crate::domain::error::types::Result;
+use crate::domain::error::SdkError;
+use crate::domain::error::Result;
 use sqlx::{Pool, Sqlite};
 use tracing::info;
 

@@ -1,5 +1,5 @@
-use crate::domain::error::types::{Result, SdkError};
-use crate::infra::database::upload_dao::UploadDao;
+use crate::domain::error::{Result, SdkError};
+use crate::infra::database::misc_dao::UploadDao;
 use crate::infra::database::models::LocalUpload;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::{
@@ -15,9 +15,9 @@ use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tracing::{info, warn, error};
 
-use super::bitmap::Bitmap;
-use super::cb::{EmptyUploadCallback, UploadFileCallback};
-use super::md5::parts_hash;
+use crate::infra::file::bitmap::Bitmap;
+use crate::infra::file::cb::{EmptyUploadCallback, UploadFileCallback};
+use crate::infra::file::md5::parts_hash;
 
 // ============================================================================
 // 类型定义
@@ -1173,6 +1173,7 @@ fn mime_from_bytes(data: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::infra::file::bitmap::Bitmap;
 
     #[test]
     fn test_detect_content_type() {
@@ -1215,3 +1216,5 @@ mod tests {
         assert!(!bm2.get(1));
     }
 }
+
+

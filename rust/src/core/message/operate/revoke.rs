@@ -2,8 +2,8 @@
 
 use super::MessageService;
 use super::req::RevokeMessageReq;
-use crate::domain::constant::types::notification_type;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::constant::notification_type;
+use crate::domain::error::{Result, SdkError};
 use crate::event::types::SdkEvent;
 use tracing::{info, warn};
 

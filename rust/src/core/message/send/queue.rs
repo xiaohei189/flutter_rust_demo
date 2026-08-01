@@ -6,7 +6,7 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, info, warn, Span};
 
 use crate::core::message::shared::content_type::ContentTypeUtils;
-use crate::domain::error::types::SdkError;
+use crate::domain::error::SdkError;
 use crate::protocol::sdkws::UserSendMsgResp;
 
 /// 单条消息的发送结果

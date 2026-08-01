@@ -31,7 +31,7 @@ async fn test_login_invalid_token() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     println!("=== 无效 token 登录测试 ===\n");

@@ -1,4 +1,4 @@
-use crate::domain::constant::enums::{ContentType, SessionType};
+use crate::domain::constant::{ContentType, SessionType};
 use crate::domain::model::message::MessageInfo;
 use serde::{Deserialize, Serialize};
 

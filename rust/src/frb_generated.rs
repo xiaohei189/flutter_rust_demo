@@ -26,7 +26,7 @@
 
 // Section: imports
 
-use crate::api::bridge_client::*;
+use crate::api::client::*;
 use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
 use flutter_rust_bridge::{Handler, IntoIntoDart};
@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1259629489;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 113204100;
 
 // Section: executor
 
@@ -43,7 +43,7 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
-fn wire__crate__api__bridge_client__OpenImBridgeClient_accept_friend_application_impl(
+fn wire__crate__api__client__OpenImBridgeClient_accept_friend_application_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -74,7 +74,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_accept_friend_application
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::accept_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::accept_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -83,7 +83,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_accept_friend_application
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_accept_group_application_impl(
+fn wire__crate__api__client__OpenImBridgeClient_accept_group_application_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -115,7 +115,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_accept_group_application_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::accept_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::accept_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -124,7 +124,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_accept_group_application_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_add_black_impl(
+fn wire__crate__api__client__OpenImBridgeClient_add_black_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -154,7 +154,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_add_black_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::add_black(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::add_black(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -163,7 +163,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_add_black_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_add_friend_impl(
+fn wire__crate__api__client__OpenImBridgeClient_add_friend_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -194,7 +194,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_add_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::add_friend(&*api_that_guard, api_user_id, api_req_msg).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::add_friend(&*api_that_guard, api_user_id, api_req_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -203,7 +203,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_add_friend_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_check_friend_impl(
+fn wire__crate__api__client__OpenImBridgeClient_check_friend_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -233,7 +233,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_check_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::check_friend(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::check_friend(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -242,7 +242,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_check_friend_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_check_group_member_full_sync_impl(
+fn wire__crate__api__client__OpenImBridgeClient_check_group_member_full_sync_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -272,7 +272,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_check_group_member_full_s
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::check_group_member_full_sync(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::check_group_member_full_sync(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -281,7 +281,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_check_group_member_full_s
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_check_local_group_full_sync_impl(
+fn wire__crate__api__client__OpenImBridgeClient_check_local_group_full_sync_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -310,7 +310,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_check_local_group_full_sy
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::check_local_group_full_sync(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::check_local_group_full_sync(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -319,7 +319,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_check_local_group_full_sy
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_clear_conversation_draft_impl(
+fn wire__crate__api__client__OpenImBridgeClient_clear_conversation_draft_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -349,7 +349,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_clear_conversation_draft_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::clear_conversation_draft(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::clear_conversation_draft(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -358,7 +358,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_clear_conversation_draft_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_connection_stream_impl(
+fn wire__crate__api__client__OpenImBridgeClient_connection_stream_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -388,7 +388,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_connection_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::connection_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::connection_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -397,7 +397,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_connection_stream_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(
+fn wire__crate__api__client__OpenImBridgeClient_conversation_stream_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -427,7 +427,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::conversation_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::conversation_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -436,7 +436,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_create_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_create_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -468,7 +468,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_create_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::create_group(&*api_that_guard, api_group_name, api_group_type, api_member_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::create_group(&*api_that_guard, api_group_name, api_group_type, api_member_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -477,7 +477,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_create_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_conversation_impl(
+fn wire__crate__api__client__OpenImBridgeClient_delete_conversation_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -507,7 +507,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::delete_conversation(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::delete_conversation(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -516,7 +516,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_conversation_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_friend_impl(
+fn wire__crate__api__client__OpenImBridgeClient_delete_friend_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -546,7 +546,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::delete_friend(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::delete_friend(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -555,7 +555,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_friend_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_messages_impl(
+fn wire__crate__api__client__OpenImBridgeClient_delete_messages_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -585,7 +585,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_messages_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::delete_messages(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::delete_messages(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -594,7 +594,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_delete_messages_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_disconnect_impl(
+fn wire__crate__api__client__OpenImBridgeClient_disconnect_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -623,7 +623,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_disconnect_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::disconnect(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::disconnect(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -632,7 +632,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_disconnect_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_dismiss_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_dismiss_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -662,7 +662,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_dismiss_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::dismiss_group(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::dismiss_group(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -671,7 +671,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_dismiss_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_friend_stream_impl(
+fn wire__crate__api__client__OpenImBridgeClient_friend_stream_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -701,7 +701,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_friend_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::friend_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::friend_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -710,7 +710,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_friend_stream_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_black_list_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_black_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -739,7 +739,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_black_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_black_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_black_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -748,7 +748,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_black_list_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_connection_state_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_connection_state_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -777,7 +777,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_connection_state_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_connection_state(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_connection_state(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -786,7 +786,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_connection_state_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_conversation_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -816,7 +816,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_conversation(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_conversation(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -825,7 +825,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_id_by_session_type_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_conversation_id_by_session_type_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -842,7 +842,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_id_by_se
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>((move || {
@@ -855,14 +855,14 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_id_by_se
                         }
                     }
                     let api_that_guard = api_that_guard.unwrap();
-                    let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_conversation_id_by_session_type(&*api_that_guard, api_source_id, api_session_type)?;
+                    let output_ok = crate::api::client::OpenIMBridgeClient::get_conversation_id_by_session_type(&*api_that_guard, api_source_id, api_session_type)?;
                     Ok(output_ok)
                 })())
             }
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_list_split_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_conversation_list_split_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -893,7 +893,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_list_spl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_conversation_list_split(&*api_that_guard, api_offset, api_count).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_conversation_list_split(&*api_that_guard, api_offset, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -902,7 +902,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_list_spl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversations_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_conversations_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -931,7 +931,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversations_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_conversations(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_conversations(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -940,7 +940,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_conversations_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_application_unhandled_count_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_friend_application_unhandled_count_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -969,7 +969,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_application_un
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_friend_application_unhandled_count(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_friend_application_unhandled_count(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -978,7 +978,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_application_un
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_friend_apply_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1007,7 +1007,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_imp
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_friend_apply_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_friend_apply_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1016,7 +1016,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_imp
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_as_applicant_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_friend_apply_list_as_applicant_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1045,7 +1045,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_as_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_friend_apply_list_as_applicant(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_friend_apply_list_as_applicant(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1054,7 +1054,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_as_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_id_list_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_friend_id_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1083,7 +1083,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_id_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_friend_id_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_friend_id_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1092,7 +1092,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_id_list_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_friend_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1121,7 +1121,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_friend_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_friend_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1130,7 +1130,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_page_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_friend_list_page_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1162,7 +1162,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_page_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_friend_list_page(&*api_that_guard, api_offset, api_count, api_filter_black).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_friend_list_page(&*api_that_guard, api_offset, api_count, api_filter_black).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1171,7 +1171,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_page_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_list_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_application_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1200,7 +1200,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_lis
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_application_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_application_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1209,7 +1209,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_lis
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_list_as_applicant_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_application_list_as_applicant_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1238,7 +1238,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_lis
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_application_list_as_applicant(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_application_list_as_applicant(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1247,7 +1247,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_lis
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_list_as_recipient_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_application_list_as_recipient_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1276,7 +1276,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_lis
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_application_list_as_recipient(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_application_list_as_recipient(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1285,7 +1285,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_lis
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_unhandled_count_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_application_unhandled_count_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1314,7 +1314,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_unh
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_application_unhandled_count(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_application_unhandled_count(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1323,7 +1323,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_unh
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_list_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1352,7 +1352,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1361,7 +1361,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_list_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_list_by_join_time_filter_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_member_list_by_join_time_filter_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1396,7 +1396,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_list_by_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_member_list_by_join_time_filter(
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_member_list_by_join_time_filter(
                             &*api_that_guard,
                             api_group_id,
                             api_offset,
@@ -1414,7 +1414,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_list_by_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_owner_and_admin_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_member_owner_and_admin_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1444,7 +1444,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_owner_an
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_member_owner_and_admin(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_member_owner_and_admin(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1453,7 +1453,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_owner_an
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_members_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1483,7 +1483,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_members(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_members(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1492,7 +1492,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_group_members_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1523,7 +1523,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_info_im
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_group_members_info(&*api_that_guard, api_group_id, api_user_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_group_members_info(&*api_that_guard, api_group_id, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1532,7 +1532,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_info_im
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_groups_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_groups_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1562,7 +1562,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_groups_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_groups_info(&*api_that_guard, api_group_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_groups_info(&*api_that_guard, api_group_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1571,7 +1571,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_groups_info_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_history_messages_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_history_messages_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1601,7 +1601,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_history_messages_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_history_messages(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_history_messages(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1610,7 +1610,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_history_messages_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_joined_group_list_page_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_joined_group_list_page_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1641,7 +1641,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_joined_group_list_pag
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_joined_group_list_page(&*api_that_guard, api_offset, api_count).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_joined_group_list_page(&*api_that_guard, api_offset, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1650,7 +1650,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_joined_group_list_pag
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_multiple_conversations_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_multiple_conversations_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1680,7 +1680,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_multiple_conversation
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_multiple_conversations(&*api_that_guard, api_conversation_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_multiple_conversations(&*api_that_guard, api_conversation_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1689,7 +1689,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_multiple_conversation
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_pinned_conversations_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_pinned_conversations_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1718,7 +1718,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_pinned_conversations_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_pinned_conversations(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_pinned_conversations(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1727,7 +1727,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_pinned_conversations_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_self_user_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_self_user_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1756,7 +1756,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_self_user_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_self_user_info(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_self_user_info(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1765,7 +1765,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_self_user_info_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_specified_friends_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_specified_friends_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1796,7 +1796,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_specified_friends_inf
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_specified_friends_info(&*api_that_guard, api_friend_user_ids, api_filter_black).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_specified_friends_info(&*api_that_guard, api_friend_user_ids, api_filter_black).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1805,7 +1805,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_specified_friends_inf
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_user_status_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_user_status_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1835,7 +1835,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_user_status_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_user_status(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_user_status(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1844,7 +1844,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_user_status_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_users_in_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_users_in_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1875,7 +1875,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_users_in_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_users_in_group(&*api_that_guard, api_group_id, api_user_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_users_in_group(&*api_that_guard, api_group_id, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1884,7 +1884,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_users_in_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_get_users_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_get_users_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1914,7 +1914,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_users_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::get_users_info(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::get_users_info(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1923,7 +1923,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_get_users_info_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_group_stream_impl(
+fn wire__crate__api__client__OpenImBridgeClient_group_stream_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1953,7 +1953,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_group_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::group_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::group_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1962,7 +1962,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_group_stream_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_hide_conversation_impl(
+fn wire__crate__api__client__OpenImBridgeClient_hide_conversation_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1992,7 +1992,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_hide_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::hide_conversation(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::hide_conversation(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2001,7 +2001,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_hide_conversation_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_invite_group_members_impl(
+fn wire__crate__api__client__OpenImBridgeClient_invite_group_members_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2032,7 +2032,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_invite_group_members_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::invite_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::invite_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2041,7 +2041,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_invite_group_members_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_is_connected_impl(
+fn wire__crate__api__client__OpenImBridgeClient_is_connected_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2070,7 +2070,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_connected_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::is_connected(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::is_connected(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2079,7 +2079,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_connected_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_is_friend_impl(
+fn wire__crate__api__client__OpenImBridgeClient_is_friend_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2109,7 +2109,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = Result::<_, ()>::Ok(crate::api::bridge_client::OpenIMBridgeClient::is_friend(&*api_that_guard, api_user_id).await)?;
+                        let output_ok = Result::<_, ()>::Ok(crate::api::client::OpenIMBridgeClient::is_friend(&*api_that_guard, api_user_id).await)?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2118,7 +2118,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_friend_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_is_in_blacklist_impl(
+fn wire__crate__api__client__OpenImBridgeClient_is_in_blacklist_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2148,7 +2148,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_in_blacklist_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::is_in_blacklist(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::is_in_blacklist(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2157,7 +2157,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_in_blacklist_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_is_in_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_is_in_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2187,7 +2187,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_in_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::is_in_group(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::is_in_group(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2196,7 +2196,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_is_in_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_join_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_join_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2227,7 +2227,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_join_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::join_group(&*api_that_guard, api_group_id, api_req_msg).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::join_group(&*api_that_guard, api_group_id, api_req_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2236,7 +2236,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_join_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(
+fn wire__crate__api__client__OpenImBridgeClient_kick_group_members_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2267,7 +2267,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::kick_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::kick_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2276,7 +2276,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_logout_impl(
+fn wire__crate__api__client__OpenImBridgeClient_logout_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2305,7 +2305,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_logout_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::logout(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::logout(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2314,7 +2314,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_logout_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message_as_read_impl(
+fn wire__crate__api__client__OpenImBridgeClient_mark_conversation_message_as_read_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2331,7 +2331,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_conversation_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -2345,7 +2345,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mark_conversation_message_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::mark_conversation_message_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2354,7 +2354,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_impl(
+fn wire__crate__api__client__OpenImBridgeClient_mark_messages_as_read_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2384,7 +2384,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_imp
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mark_messages_as_read(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::mark_messages_as_read(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2393,7 +2393,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_imp
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_mute_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2424,7 +2424,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mute_group(&*api_that_guard, api_group_id, api_is_mute).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::mute_group(&*api_that_guard, api_group_id, api_is_mute).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2433,7 +2433,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_member_impl(
+fn wire__crate__api__client__OpenImBridgeClient_mute_group_member_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2465,7 +2465,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_member_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::mute_group_member(&*api_that_guard, api_group_id, api_user_id, api_muted_seconds).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::mute_group_member(&*api_that_guard, api_group_id, api_user_id, api_muted_seconds).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2474,7 +2474,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_member_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
+fn wire__crate__api__client__OpenImBridgeClient_new_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2494,7 +2494,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::new(api_config).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::new(api_config).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2503,7 +2503,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_quit_group_impl(
+fn wire__crate__api__client__OpenImBridgeClient_quit_group_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2533,7 +2533,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_quit_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::quit_group(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::quit_group(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2542,7 +2542,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_quit_group_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_refuse_friend_application_impl(
+fn wire__crate__api__client__OpenImBridgeClient_refuse_friend_application_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2573,7 +2573,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_refuse_friend_application
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::refuse_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::refuse_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2582,7 +2582,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_refuse_friend_application
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_refuse_group_application_impl(
+fn wire__crate__api__client__OpenImBridgeClient_refuse_group_application_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2614,7 +2614,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_refuse_group_application_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::refuse_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::refuse_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2623,7 +2623,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_refuse_group_application_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_remove_black_impl(
+fn wire__crate__api__client__OpenImBridgeClient_remove_black_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2653,7 +2653,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_remove_black_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::remove_black(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::remove_black(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2662,7 +2662,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_remove_black_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_revoke_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_revoke_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2692,7 +2692,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_revoke_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::revoke_message(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::revoke_message(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2701,7 +2701,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_revoke_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_search_conversations_impl(
+fn wire__crate__api__client__OpenImBridgeClient_search_conversations_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2731,7 +2731,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_conversations_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::search_conversations(&*api_that_guard, api_keyword).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::search_conversations(&*api_that_guard, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2740,7 +2740,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_conversations_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_search_friends_impl(
+fn wire__crate__api__client__OpenImBridgeClient_search_friends_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2770,7 +2770,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_friends_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::search_friends(&*api_that_guard, api_keyword).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::search_friends(&*api_that_guard, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2779,7 +2779,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_friends_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_search_group_members_impl(
+fn wire__crate__api__client__OpenImBridgeClient_search_group_members_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2810,7 +2810,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_group_members_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::search_group_members(&*api_that_guard, api_group_id, api_keyword).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::search_group_members(&*api_that_guard, api_group_id, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2819,7 +2819,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_group_members_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_search_groups_impl(
+fn wire__crate__api__client__OpenImBridgeClient_search_groups_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2849,7 +2849,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_groups_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::search_groups(&*api_that_guard, api_keyword).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::search_groups(&*api_that_guard, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2858,7 +2858,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_groups_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_search_local_messages_impl(
+fn wire__crate__api__client__OpenImBridgeClient_search_local_messages_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2888,7 +2888,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_local_messages_imp
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::search_local_messages(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::search_local_messages(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2897,7 +2897,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_search_local_messages_imp
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_advanced_text_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_advanced_text_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2916,7 +2916,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_advanced_text_messag
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_entities = <Vec<crate::domain::model::msg_struct::MessageEntity>>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -2930,7 +2930,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_advanced_text_messag
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_advanced_text_message(&*api_that_guard, api_text, api_entities, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_advanced_text_message(&*api_that_guard, api_text, api_entities, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2939,7 +2939,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_advanced_text_messag
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_at_text_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_at_text_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -2958,7 +2958,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_at_text_message_impl
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_at_user_ids = <Vec<String>>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -2972,7 +2972,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_at_text_message_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_at_text_message(&*api_that_guard, api_text, api_at_user_ids, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_at_text_message(&*api_that_guard, api_text, api_at_user_ids, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2981,7 +2981,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_at_text_message_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_custom_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_custom_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3001,7 +3001,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_custom_message_impl(
             let api_desc = <String>::sse_decode(&mut deserializer);
             let api_extension = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3015,8 +3015,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_custom_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok =
-                            crate::api::bridge_client::OpenIMBridgeClient::send_custom_message(&*api_that_guard, api_data, api_desc, api_extension, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_custom_message(&*api_that_guard, api_data, api_desc, api_extension, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3025,7 +3024,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_custom_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_file_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3043,7 +3042,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_impl(
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3057,7 +3056,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_file_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_file_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3066,7 +3065,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_with_progress_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_file_message_with_progress_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3084,7 +3083,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_with_pr
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_sink = <StreamSink<i32, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -3099,8 +3098,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_with_pr
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok =
-                            crate::api::bridge_client::OpenIMBridgeClient::send_file_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_file_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3109,7 +3107,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_with_pr
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_image_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3127,7 +3125,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3141,7 +3139,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_image_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_image_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3150,7 +3148,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_with_progress_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_image_message_with_progress_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3168,7 +3166,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_with_p
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_sink = <StreamSink<i32, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -3183,8 +3181,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_with_p
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok =
-                            crate::api::bridge_client::OpenIMBridgeClient::send_image_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_image_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3193,7 +3190,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_with_p
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_markdown_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3211,7 +3208,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_imp
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3225,7 +3222,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_imp
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_markdown_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_markdown_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3234,7 +3231,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_imp
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_sound_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3252,7 +3249,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_impl(
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_duration = <i64>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -3267,7 +3264,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_sound_message(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_sound_message(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3276,7 +3273,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_with_progress_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_sound_message_with_progress_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3294,7 +3291,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_with_p
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_file_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_duration = <i64>::sse_decode(&mut deserializer);
             let api_sink = <StreamSink<i32, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
@@ -3311,8 +3308,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_with_p
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::api::bridge_client::OpenIMBridgeClient::send_sound_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration, api_sink)
-                                .await?;
+                            crate::api::client::OpenIMBridgeClient::send_sound_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3321,7 +3317,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_with_p
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_text_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3339,7 +3335,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3353,7 +3349,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3362,7 +3358,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_video_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3381,7 +3377,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_impl(
             let api_video_path = <String>::sse_decode(&mut deserializer);
             let api_snapshot_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_duration = <i64>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
@@ -3397,8 +3393,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::api::bridge_client::OpenIMBridgeClient::send_video_message(&*api_that_guard, api_video_path, api_snapshot_path, api_source_id, api_session_type, api_duration)
-                                .await?;
+                            crate::api::client::OpenIMBridgeClient::send_video_message(&*api_that_guard, api_video_path, api_snapshot_path, api_source_id, api_session_type, api_duration).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3407,7 +3402,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_with_progress_impl(
+fn wire__crate__api__client__OpenImBridgeClient_send_video_message_with_progress_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3426,7 +3421,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_with_p
             let api_video_path = <String>::sse_decode(&mut deserializer);
             let api_snapshot_path = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_duration = <i64>::sse_decode(&mut deserializer);
             let api_sink = <StreamSink<i32, flutter_rust_bridge::for_generated::SseCodec>>::sse_decode(&mut deserializer);
             deserializer.end();
@@ -3442,7 +3437,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_with_p
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::send_video_message_with_progress(
+                        let output_ok = crate::api::client::OpenIMBridgeClient::send_video_message_with_progress(
                             &*api_that_guard,
                             api_video_path,
                             api_snapshot_path,
@@ -3460,7 +3455,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_with_p
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_conversation_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3495,7 +3490,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::set_conversation(
+                        let output_ok = crate::api::client::OpenIMBridgeClient::set_conversation(
                             &*api_that_guard,
                             api_conversation_id,
                             api_recv_msg_opt,
@@ -3513,7 +3508,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_draft_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_conversation_draft_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3544,7 +3539,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_draft_im
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::set_conversation_draft(&*api_that_guard, api_conversation_id, api_draft_text).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::set_conversation_draft(&*api_that_guard, api_conversation_id, api_draft_text).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3553,7 +3548,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_draft_im
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_pinned_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_conversation_pinned_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3584,7 +3579,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_pinned_i
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::set_conversation_pinned(&*api_that_guard, api_conversation_id, api_is_pinned).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::set_conversation_pinned(&*api_that_guard, api_conversation_id, api_is_pinned).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3593,7 +3588,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_pinned_i
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_private_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_conversation_private_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3624,7 +3619,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_private_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::set_conversation_private(&*api_that_guard, api_conversation_id, api_is_private).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::set_conversation_private(&*api_that_guard, api_conversation_id, api_is_private).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3633,7 +3628,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_private_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_global_msg_recv_opt_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_global_msg_recv_opt_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3663,7 +3658,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_global_msg_recv_opt_i
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::set_global_msg_recv_opt(&*api_that_guard, api_global_recv_opt).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::set_global_msg_recv_opt(&*api_that_guard, api_global_recv_opt).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3672,7 +3667,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_global_msg_recv_opt_i
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_group_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_group_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3704,7 +3699,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_group_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3713,7 +3708,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_group_info_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_set_group_member_info_impl(
+fn wire__crate__api__client__OpenImBridgeClient_set_group_member_info_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3749,8 +3744,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_group_member_info_imp
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::api::bridge_client::OpenIMBridgeClient::set_group_member_info(&*api_that_guard, api_group_id, api_user_id, api_nickname, api_face_url, api_role_level, api_ex)
-                                .await?;
+                            crate::api::client::OpenIMBridgeClient::set_group_member_info(&*api_that_guard, api_group_id, api_user_id, api_nickname, api_face_url, api_role_level, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3759,7 +3753,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_set_group_member_info_imp
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_impl(
+fn wire__crate__api__client__OpenImBridgeClient_sync_friends_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3788,7 +3782,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::sync_friends(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::sync_friends(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3797,7 +3791,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_incremental_impl(
+fn wire__crate__api__client__OpenImBridgeClient_sync_friends_incremental_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3826,7 +3820,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_incremental_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::sync_friends_incremental(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::sync_friends_incremental(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3835,7 +3829,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_incremental_
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_groups_incremental_impl(
+fn wire__crate__api__client__OpenImBridgeClient_sync_groups_incremental_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3864,7 +3858,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_groups_incremental_i
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::sync_groups_incremental(&*api_that_guard).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::sync_groups_incremental(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3873,7 +3867,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_sync_groups_incremental_i
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_transfer_group_owner_impl(
+fn wire__crate__api__client__OpenImBridgeClient_transfer_group_owner_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3904,7 +3898,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_transfer_group_owner_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::transfer_group_owner(&*api_that_guard, api_group_id, api_new_owner_user_id).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::transfer_group_owner(&*api_that_guard, api_group_id, api_new_owner_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3913,7 +3907,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_transfer_group_owner_impl
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_update_conversation_unread_count_impl(
+fn wire__crate__api__client__OpenImBridgeClient_update_conversation_unread_count_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3944,7 +3938,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_update_conversation_unrea
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::update_conversation_unread_count(&*api_that_guard, api_conversation_id, api_unread_count).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::update_conversation_unread_count(&*api_that_guard, api_conversation_id, api_unread_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3953,7 +3947,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_update_conversation_unrea
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_update_friends_impl(
+fn wire__crate__api__client__OpenImBridgeClient_update_friends_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -3986,7 +3980,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_update_friends_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::update_friends(&*api_that_guard, api_friend_user_ids, api_is_pinned, api_remark, api_ex).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::update_friends(&*api_that_guard, api_friend_user_ids, api_is_pinned, api_remark, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3995,7 +3989,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_update_friends_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__OpenImBridgeClient_update_user_profile_impl(
+fn wire__crate__api__client__OpenImBridgeClient_update_user_profile_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4027,7 +4021,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_update_user_profile_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::bridge_client::OpenIMBridgeClient::update_user_profile(&*api_that_guard, api_nickname, api_face_url, api_ex).await?;
+                        let output_ok = crate::api::client::OpenIMBridgeClient::update_user_profile(&*api_that_guard, api_nickname, api_face_url, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4036,7 +4030,7 @@ fn wire__crate__api__bridge_client__OpenImBridgeClient_update_user_profile_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__clear_conversation_and_delete_all_msg_impl(
+fn wire__crate__api__message_advanced__clear_conversation_and_delete_all_msg_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4056,7 +4050,7 @@ fn wire__crate__api__bridge_client__clear_conversation_and_delete_all_msg_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::clear_conversation_and_delete_all_msg(api_conversation_id).await?;
+                        let output_ok = crate::api::message_advanced::clear_conversation_and_delete_all_msg(api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4065,7 +4059,7 @@ fn wire__crate__api__bridge_client__clear_conversation_and_delete_all_msg_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__delete_all_msg_from_local_impl(
+fn wire__crate__api__message_advanced__delete_all_msg_from_local_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4084,7 +4078,7 @@ fn wire__crate__api__bridge_client__delete_all_msg_from_local_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::delete_all_msg_from_local().await?;
+                        let output_ok = crate::api::message_advanced::delete_all_msg_from_local().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4093,7 +4087,7 @@ fn wire__crate__api__bridge_client__delete_all_msg_from_local_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__delete_all_msg_from_local_and_svr_impl(
+fn wire__crate__api__message_advanced__delete_all_msg_from_local_and_svr_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4112,7 +4106,7 @@ fn wire__crate__api__bridge_client__delete_all_msg_from_local_and_svr_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::delete_all_msg_from_local_and_svr().await?;
+                        let output_ok = crate::api::message_advanced::delete_all_msg_from_local_and_svr().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4121,7 +4115,7 @@ fn wire__crate__api__bridge_client__delete_all_msg_from_local_and_svr_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__delete_conversation_and_delete_all_msg_impl(
+fn wire__crate__api__message_advanced__delete_conversation_and_delete_all_msg_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4141,7 +4135,7 @@ fn wire__crate__api__bridge_client__delete_conversation_and_delete_all_msg_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::delete_conversation_and_delete_all_msg(api_conversation_id).await?;
+                        let output_ok = crate::api::message_advanced::delete_conversation_and_delete_all_msg(api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4150,7 +4144,7 @@ fn wire__crate__api__bridge_client__delete_conversation_and_delete_all_msg_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__delete_message_impl(
+fn wire__crate__api__message_advanced__delete_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4171,7 +4165,7 @@ fn wire__crate__api__bridge_client__delete_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::delete_message(api_conversation_id, api_client_msg_id).await?;
+                        let output_ok = crate::api::message_advanced::delete_message(api_conversation_id, api_client_msg_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4180,7 +4174,7 @@ fn wire__crate__api__bridge_client__delete_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__delete_message_from_local_storage_impl(
+fn wire__crate__api__message_advanced__delete_message_from_local_storage_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4201,7 +4195,7 @@ fn wire__crate__api__bridge_client__delete_message_from_local_storage_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::delete_message_from_local_storage(api_conversation_id, api_client_msg_id).await?;
+                        let output_ok = crate::api::message_advanced::delete_message_from_local_storage(api_conversation_id, api_client_msg_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4210,7 +4204,7 @@ fn wire__crate__api__bridge_client__delete_message_from_local_storage_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__edit_message_impl(
+fn wire__crate__api__message_advanced__edit_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4233,7 +4227,7 @@ fn wire__crate__api__bridge_client__edit_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::edit_message(api_conversation_id, api_client_msg_id, api_content, api_content_type).await?;
+                        let output_ok = crate::api::message_advanced::edit_message(api_conversation_id, api_client_msg_id, api_content, api_content_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4242,7 +4236,7 @@ fn wire__crate__api__bridge_client__edit_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__find_message_list_impl(
+fn wire__crate__api__message_advanced__find_message_list_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4263,7 +4257,7 @@ fn wire__crate__api__bridge_client__find_message_list_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::find_message_list(api_conversation_id, api_client_msg_ids).await?;
+                        let output_ok = crate::api::message_advanced::find_message_list(api_conversation_id, api_client_msg_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4272,7 +4266,7 @@ fn wire__crate__api__bridge_client__find_message_list_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__forward_message_impl(
+fn wire__crate__api__message_advanced__forward_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4289,12 +4283,12 @@ fn wire__crate__api__bridge_client__forward_message_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_msg_struct = <crate::domain::model::msg_struct::MsgStruct>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::forward_message(api_msg_struct, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message_advanced::forward_message(api_msg_struct, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4303,7 +4297,7 @@ fn wire__crate__api__bridge_client__forward_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__forward_message_by_client_id_impl(
+fn wire__crate__api__message_advanced__forward_message_by_client_id_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4320,12 +4314,12 @@ fn wire__crate__api__bridge_client__forward_message_by_client_id_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_client_msg_id = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::forward_message_by_client_id(api_client_msg_id, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message_advanced::forward_message_by_client_id(api_client_msg_id, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4334,7 +4328,7 @@ fn wire__crate__api__bridge_client__forward_message_by_client_id_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__get_advanced_history_message_list_by_seq_impl(
+fn wire__crate__api__message_advanced__get_advanced_history_message_list_by_seq_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4357,7 +4351,7 @@ fn wire__crate__api__bridge_client__get_advanced_history_message_list_by_seq_imp
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_advanced_history_message_list_by_seq(api_conversation_id, api_start_seq, api_end_seq, api_count).await?;
+                        let output_ok = crate::api::message_advanced::get_advanced_history_message_list_by_seq(api_conversation_id, api_start_seq, api_end_seq, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4366,7 +4360,7 @@ fn wire__crate__api__bridge_client__get_advanced_history_message_list_by_seq_imp
         },
     )
 }
-fn wire__crate__api__bridge_client__get_history_message_by_seq_impl(
+fn wire__crate__api__message_advanced__get_history_message_by_seq_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4386,7 +4380,7 @@ fn wire__crate__api__bridge_client__get_history_message_by_seq_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_history_message_by_seq(api_seq).await?;
+                        let output_ok = crate::api::message_advanced::get_history_message_by_seq(api_seq).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4395,7 +4389,7 @@ fn wire__crate__api__bridge_client__get_history_message_by_seq_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__get_history_messages_reverse_impl(
+fn wire__crate__api__message_advanced__get_history_messages_reverse_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4417,7 +4411,7 @@ fn wire__crate__api__bridge_client__get_history_messages_reverse_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_history_messages_reverse(api_conversation_id, api_start_client_msg_id, api_count).await?;
+                        let output_ok = crate::api::message_advanced::get_history_messages_reverse(api_conversation_id, api_start_client_msg_id, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4426,7 +4420,7 @@ fn wire__crate__api__bridge_client__get_history_messages_reverse_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__get_login_user_id_impl(
+fn wire__crate__api__client__get_login_user_id_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4445,7 +4439,7 @@ fn wire__crate__api__bridge_client__get_login_user_id_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_login_user_id().await?;
+                        let output_ok = crate::api::client::get_login_user_id().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4454,7 +4448,7 @@ fn wire__crate__api__bridge_client__get_login_user_id_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__get_sdk_version_impl(
+fn wire__crate__api__client__get_sdk_version_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4473,7 +4467,7 @@ fn wire__crate__api__bridge_client__get_sdk_version_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_sdk_version().await?;
+                        let output_ok = crate::api::client::get_sdk_version().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4482,7 +4476,7 @@ fn wire__crate__api__bridge_client__get_sdk_version_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__get_server_time_impl(
+fn wire__crate__api__message_advanced__get_server_time_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4501,7 +4495,7 @@ fn wire__crate__api__bridge_client__get_server_time_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_server_time().await?;
+                        let output_ok = crate::api::message_advanced::get_server_time().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4510,7 +4504,7 @@ fn wire__crate__api__bridge_client__get_server_time_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__get_total_unread_msg_count_impl(
+fn wire__crate__api__message_advanced__get_total_unread_msg_count_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4529,7 +4523,7 @@ fn wire__crate__api__bridge_client__get_total_unread_msg_count_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::get_total_unread_msg_count().await?;
+                        let output_ok = crate::api::message_advanced::get_total_unread_msg_count().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4538,7 +4532,7 @@ fn wire__crate__api__bridge_client__get_total_unread_msg_count_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__incr_sync_conversations_impl(
+fn wire__crate__api__message_advanced__incr_sync_conversations_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4557,7 +4551,7 @@ fn wire__crate__api__bridge_client__incr_sync_conversations_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::incr_sync_conversations().await?;
+                        let output_ok = crate::api::message_advanced::incr_sync_conversations().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4566,7 +4560,7 @@ fn wire__crate__api__bridge_client__incr_sync_conversations_impl(
         },
     )
 }
-fn wire__crate__api__simple__init_logger_impl(
+fn wire__crate__api__ffi_init__init_logger_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4586,7 +4580,7 @@ fn wire__crate__api__simple__init_logger_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::simple::init_logger(api_log_level).await?;
+                        let output_ok = crate::api::ffi_init::init_logger(api_log_level).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4595,7 +4589,7 @@ fn wire__crate__api__simple__init_logger_impl(
         },
     )
 }
-fn wire__crate__api__simple__init_logger_v2_impl(
+fn wire__crate__api__ffi_init__init_logger_v2_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4615,7 +4609,7 @@ fn wire__crate__api__simple__init_logger_v2_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::simple::init_logger_v2(api_config).await?;
+                        let output_ok = crate::api::ffi_init::init_logger_v2(api_config).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4624,7 +4618,7 @@ fn wire__crate__api__simple__init_logger_v2_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(
+fn wire__crate__api__message_advanced__insert_group_message_to_local_storage_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4647,7 +4641,7 @@ fn wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::insert_group_message_to_local_storage(api_group_id, api_content, api_content_type, api_send_id).await?;
+                        let output_ok = crate::api::message_advanced::insert_group_message_to_local_storage(api_group_id, api_content, api_content_type, api_send_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4656,7 +4650,7 @@ fn wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__mark_all_conversation_message_as_read_impl(
+fn wire__crate__api__message_advanced__mark_all_conversation_message_as_read_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4675,7 +4669,7 @@ fn wire__crate__api__bridge_client__mark_all_conversation_message_as_read_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::mark_all_conversation_message_as_read().await?;
+                        let output_ok = crate::api::message_advanced::mark_all_conversation_message_as_read().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4684,7 +4678,7 @@ fn wire__crate__api__bridge_client__mark_all_conversation_message_as_read_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__network_status_changed_impl(
+fn wire__crate__api__client__network_status_changed_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4703,7 +4697,7 @@ fn wire__crate__api__bridge_client__network_status_changed_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::network_status_changed().await?;
+                        let output_ok = crate::api::client::network_status_changed().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4712,7 +4706,7 @@ fn wire__crate__api__bridge_client__network_status_changed_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_advanced_quote_message_impl(
+fn wire__crate__api__message__send_advanced_quote_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4729,7 +4723,7 @@ fn wire__crate__api__bridge_client__send_advanced_quote_message_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_quote_text = <String>::sse_decode(&mut deserializer);
             let api_quote_client_msg_id = <String>::sse_decode(&mut deserializer);
             let api_quote_send_id = <String>::sse_decode(&mut deserializer);
@@ -4739,7 +4733,7 @@ fn wire__crate__api__bridge_client__send_advanced_quote_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_advanced_quote_message(
+                        let output_ok = crate::api::message::send_advanced_quote_message(
                             api_text,
                             api_source_id,
                             api_session_type,
@@ -4758,7 +4752,7 @@ fn wire__crate__api__bridge_client__send_advanced_quote_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_at_text_message_with_quote_impl(
+fn wire__crate__api__message__send_at_text_message_with_quote_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4777,12 +4771,12 @@ fn wire__crate__api__bridge_client__send_at_text_message_with_quote_impl(
             let api_at_user_list = <Vec<String>>::sse_decode(&mut deserializer);
             let api_at_users_info = <Vec<crate::domain::model::msg_struct::AtInfo>>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_at_text_message_with_quote(api_text, api_at_user_list, api_at_users_info, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message::send_at_text_message_with_quote(api_text, api_at_user_list, api_at_users_info, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4791,7 +4785,7 @@ fn wire__crate__api__bridge_client__send_at_text_message_with_quote_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_card_message_impl(
+fn wire__crate__api__message__send_card_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4811,12 +4805,12 @@ fn wire__crate__api__bridge_client__send_card_message_impl(
             let api_face_url = <String>::sse_decode(&mut deserializer);
             let api_ex = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_card_message(api_user_id, api_nickname, api_face_url, api_ex, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message::send_card_message(api_user_id, api_nickname, api_face_url, api_ex, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4825,7 +4819,7 @@ fn wire__crate__api__bridge_client__send_card_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_face_message_impl(
+fn wire__crate__api__message__send_face_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4843,12 +4837,12 @@ fn wire__crate__api__bridge_client__send_face_message_impl(
             let api_index = <i32>::sse_decode(&mut deserializer);
             let api_data = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_face_message(api_index, api_data, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message::send_face_message(api_index, api_data, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4857,7 +4851,7 @@ fn wire__crate__api__bridge_client__send_face_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_file_message_from_url_impl(
+fn wire__crate__api__message_media__send_file_message_from_url_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4876,12 +4870,12 @@ fn wire__crate__api__bridge_client__send_file_message_from_url_impl(
             let api_file_name = <String>::sse_decode(&mut deserializer);
             let api_file_size = <i64>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_file_message_from_url(api_source_url, api_file_name, api_file_size, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message_media::send_file_message_from_url(api_source_url, api_file_name, api_file_size, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4890,7 +4884,7 @@ fn wire__crate__api__bridge_client__send_file_message_from_url_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_image_message_from_url_impl(
+fn wire__crate__api__message_media__send_image_message_from_url_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4907,12 +4901,12 @@ fn wire__crate__api__bridge_client__send_image_message_from_url_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_source_url = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_image_message_from_url(api_source_url, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message_media::send_image_message_from_url(api_source_url, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4921,7 +4915,7 @@ fn wire__crate__api__bridge_client__send_image_message_from_url_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_location_message_impl(
+fn wire__crate__api__message__send_location_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4940,12 +4934,12 @@ fn wire__crate__api__bridge_client__send_location_message_impl(
             let api_longitude = <f64>::sse_decode(&mut deserializer);
             let api_latitude = <f64>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_location_message(api_description, api_longitude, api_latitude, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message::send_location_message(api_description, api_longitude, api_latitude, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4954,7 +4948,7 @@ fn wire__crate__api__bridge_client__send_location_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_merger_message_impl(
+fn wire__crate__api__message__send_merger_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -4972,12 +4966,12 @@ fn wire__crate__api__bridge_client__send_merger_message_impl(
             let api_title = <String>::sse_decode(&mut deserializer);
             let api_summary_list = <Vec<String>>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_merger_message(api_title, api_summary_list, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message::send_merger_message(api_title, api_summary_list, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4986,7 +4980,7 @@ fn wire__crate__api__bridge_client__send_merger_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_quote_message_impl(
+fn wire__crate__api__message__send_quote_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5003,7 +4997,7 @@ fn wire__crate__api__bridge_client__send_quote_message_impl(
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_text = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_quote_text = <String>::sse_decode(&mut deserializer);
             let api_quote_client_msg_id = <String>::sse_decode(&mut deserializer);
             let api_quote_send_id = <String>::sse_decode(&mut deserializer);
@@ -5012,7 +5006,7 @@ fn wire__crate__api__bridge_client__send_quote_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_quote_message(
+                        let output_ok = crate::api::message::send_quote_message(
                             api_text,
                             api_source_id,
                             api_session_type,
@@ -5030,7 +5024,7 @@ fn wire__crate__api__bridge_client__send_quote_message_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_sound_message_from_url_impl(
+fn wire__crate__api__message_media__send_sound_message_from_url_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5048,12 +5042,12 @@ fn wire__crate__api__bridge_client__send_sound_message_from_url_impl(
             let api_source_url = <String>::sse_decode(&mut deserializer);
             let api_duration = <i64>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_sound_message_from_url(api_source_url, api_duration, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message_media::send_sound_message_from_url(api_source_url, api_duration, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5062,7 +5056,7 @@ fn wire__crate__api__bridge_client__send_sound_message_from_url_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_typing_impl(
+fn wire__crate__api__message_advanced__send_typing_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5078,13 +5072,13 @@ fn wire__crate__api__bridge_client__send_typing_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             let api_focus = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_typing(api_source_id, api_session_type, api_focus).await?;
+                        let output_ok = crate::api::message_advanced::send_typing(api_source_id, api_session_type, api_focus).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5093,7 +5087,7 @@ fn wire__crate__api__bridge_client__send_typing_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__send_video_message_from_url_impl(
+fn wire__crate__api__message_media__send_video_message_from_url_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5112,12 +5106,12 @@ fn wire__crate__api__bridge_client__send_video_message_from_url_impl(
             let api_duration = <i64>::sse_decode(&mut deserializer);
             let api_snapshot_url = <String>::sse_decode(&mut deserializer);
             let api_source_id = <String>::sse_decode(&mut deserializer);
-            let api_session_type = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            let api_session_type = <crate::domain::constant::SessionType>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::send_video_message_from_url(api_source_url, api_duration, api_snapshot_url, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::message_media::send_video_message_from_url(api_source_url, api_duration, api_snapshot_url, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5126,7 +5120,7 @@ fn wire__crate__api__bridge_client__send_video_message_from_url_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__set_app_background_status_impl(
+fn wire__crate__api__client__set_app_background_status_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5146,7 +5140,7 @@ fn wire__crate__api__bridge_client__set_app_background_status_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::set_app_background_status(api_is_background).await?;
+                        let output_ok = crate::api::client::set_app_background_status(api_is_background).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5155,7 +5149,7 @@ fn wire__crate__api__bridge_client__set_app_background_status_impl(
         },
     )
 }
-fn wire__crate__api__simple__set_log_directory_impl(
+fn wire__crate__api__ffi_init__set_log_directory_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5175,7 +5169,7 @@ fn wire__crate__api__simple__set_log_directory_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::api::simple::set_log_directory(api_path);
+                        crate::api::ffi_init::set_log_directory(api_path);
                     })?;
                     Ok(output_ok)
                 })())
@@ -5183,7 +5177,7 @@ fn wire__crate__api__simple__set_log_directory_impl(
         },
     )
 }
-fn wire__crate__api__simple__set_log_span_events_impl(
+fn wire__crate__api__ffi_init__set_log_span_events_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5203,7 +5197,7 @@ fn wire__crate__api__simple__set_log_span_events_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::api::simple::set_log_span_events(api_enabled);
+                        crate::api::ffi_init::set_log_span_events(api_enabled);
                     })?;
                     Ok(output_ok)
                 })())
@@ -5211,7 +5205,7 @@ fn wire__crate__api__simple__set_log_span_events_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__set_message_local_ex_impl(
+fn wire__crate__api__message_advanced__set_message_local_ex_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5233,7 +5227,7 @@ fn wire__crate__api__bridge_client__set_message_local_ex_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::set_message_local_ex(api_conversation_id, api_client_msg_id, api_local_ex).await?;
+                        let output_ok = crate::api::message_advanced::set_message_local_ex(api_conversation_id, api_client_msg_id, api_local_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5242,7 +5236,7 @@ fn wire__crate__api__bridge_client__set_message_local_ex_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__un_init_sdk_impl(
+fn wire__crate__api__client__un_init_sdk_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5261,7 +5255,7 @@ fn wire__crate__api__bridge_client__un_init_sdk_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::un_init_sdk().await?;
+                        let output_ok = crate::api::client::un_init_sdk().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5270,7 +5264,7 @@ fn wire__crate__api__bridge_client__un_init_sdk_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__upload_file_impl(
+fn wire__crate__api__message_media__upload_file_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5291,7 +5285,7 @@ fn wire__crate__api__bridge_client__upload_file_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::upload_file(api_file_path, api_file_name).await?;
+                        let output_ok = crate::api::message_media::upload_file(api_file_path, api_file_name).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5300,7 +5294,7 @@ fn wire__crate__api__bridge_client__upload_file_impl(
         },
     )
 }
-fn wire__crate__api__bridge_client__upload_file_with_progress_impl(
+fn wire__crate__api__message_media__upload_file_with_progress_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -5322,7 +5316,7 @@ fn wire__crate__api__bridge_client__upload_file_with_progress_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::api::bridge_client::upload_file_with_progress(api_file_path, api_file_name, api_sink).await?;
+                        let output_ok = crate::api::message_media::upload_file_with_progress(api_file_path, api_file_name, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6867,13 +6861,13 @@ impl SseDecode for crate::sdk::client::types::SearchMessagesReq {
     }
 }
 
-impl SseDecode for crate::api::bridge_client::SendTypingResp {
+impl SseDecode for crate::api::message_advanced::SendTypingResp {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_serverMsgId = <String>::sse_decode(deserializer);
         let mut var_clientMsgId = <String>::sse_decode(deserializer);
         let mut var_sendTime = <i64>::sse_decode(deserializer);
-        return crate::api::bridge_client::SendTypingResp {
+        return crate::api::message_advanced::SendTypingResp {
             server_msg_id: var_serverMsgId,
             client_msg_id: var_clientMsgId,
             send_time: var_sendTime,
@@ -6881,15 +6875,15 @@ impl SseDecode for crate::api::bridge_client::SendTypingResp {
     }
 }
 
-impl SseDecode for crate::domain::constant::enums::SessionType {
+impl SseDecode for crate::domain::constant::SessionType {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <i32>::sse_decode(deserializer);
         return match inner {
-            0 => crate::domain::constant::enums::SessionType::SingleChat,
-            1 => crate::domain::constant::enums::SessionType::WriteGroupChat,
-            2 => crate::domain::constant::enums::SessionType::ReadGroupChat,
-            3 => crate::domain::constant::enums::SessionType::NotificationChat,
+            0 => crate::domain::constant::SessionType::SingleChat,
+            1 => crate::domain::constant::SessionType::WriteGroupChat,
+            2 => crate::domain::constant::SessionType::ReadGroupChat,
+            3 => crate::domain::constant::SessionType::NotificationChat,
             _ => unreachable!("Invalid variant for SessionType: {}", inner),
         };
     }
@@ -7016,148 +7010,148 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__bridge_client__OpenImBridgeClient_accept_friend_application_impl(port, ptr, rust_vec_len, data_len),
-        2 => wire__crate__api__bridge_client__OpenImBridgeClient_accept_group_application_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__bridge_client__OpenImBridgeClient_add_black_impl(port, ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__bridge_client__OpenImBridgeClient_add_friend_impl(port, ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__bridge_client__OpenImBridgeClient_check_friend_impl(port, ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__bridge_client__OpenImBridgeClient_check_group_member_full_sync_impl(port, ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__bridge_client__OpenImBridgeClient_check_local_group_full_sync_impl(port, ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__bridge_client__OpenImBridgeClient_clear_conversation_draft_impl(port, ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__bridge_client__OpenImBridgeClient_connection_stream_impl(port, ptr, rust_vec_len, data_len),
-        10 => wire__crate__api__bridge_client__OpenImBridgeClient_conversation_stream_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__bridge_client__OpenImBridgeClient_create_group_impl(port, ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__bridge_client__OpenImBridgeClient_delete_conversation_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__bridge_client__OpenImBridgeClient_delete_friend_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__bridge_client__OpenImBridgeClient_delete_messages_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__bridge_client__OpenImBridgeClient_disconnect_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__bridge_client__OpenImBridgeClient_dismiss_group_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__bridge_client__OpenImBridgeClient_friend_stream_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__bridge_client__OpenImBridgeClient_get_black_list_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__bridge_client__OpenImBridgeClient_get_connection_state_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_id_by_session_type_impl(port, ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__bridge_client__OpenImBridgeClient_get_conversation_list_split_impl(port, ptr, rust_vec_len, data_len),
-        23 => wire__crate__api__bridge_client__OpenImBridgeClient_get_conversations_impl(port, ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_application_unhandled_count_impl(port, ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_apply_list_as_applicant_impl(port, ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_id_list_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_impl(port, ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__bridge_client__OpenImBridgeClient_get_friend_list_page_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_list_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_list_as_applicant_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_list_as_recipient_impl(port, ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_application_unhandled_count_impl(port, ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_list_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_list_by_join_time_filter_impl(port, ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_member_owner_and_admin_impl(port, ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__bridge_client__OpenImBridgeClient_get_group_members_info_impl(port, ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__bridge_client__OpenImBridgeClient_get_groups_info_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__bridge_client__OpenImBridgeClient_get_history_messages_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__bridge_client__OpenImBridgeClient_get_joined_group_list_page_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__bridge_client__OpenImBridgeClient_get_multiple_conversations_impl(port, ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__bridge_client__OpenImBridgeClient_get_pinned_conversations_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__bridge_client__OpenImBridgeClient_get_self_user_info_impl(port, ptr, rust_vec_len, data_len),
-        45 => wire__crate__api__bridge_client__OpenImBridgeClient_get_specified_friends_info_impl(port, ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__bridge_client__OpenImBridgeClient_get_user_status_impl(port, ptr, rust_vec_len, data_len),
-        47 => wire__crate__api__bridge_client__OpenImBridgeClient_get_users_in_group_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__bridge_client__OpenImBridgeClient_get_users_info_impl(port, ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__bridge_client__OpenImBridgeClient_group_stream_impl(port, ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__bridge_client__OpenImBridgeClient_hide_conversation_impl(port, ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__bridge_client__OpenImBridgeClient_invite_group_members_impl(port, ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__bridge_client__OpenImBridgeClient_is_connected_impl(port, ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__bridge_client__OpenImBridgeClient_is_friend_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__bridge_client__OpenImBridgeClient_is_in_blacklist_impl(port, ptr, rust_vec_len, data_len),
-        55 => wire__crate__api__bridge_client__OpenImBridgeClient_is_in_group_impl(port, ptr, rust_vec_len, data_len),
-        56 => wire__crate__api__bridge_client__OpenImBridgeClient_join_group_impl(port, ptr, rust_vec_len, data_len),
-        57 => wire__crate__api__bridge_client__OpenImBridgeClient_kick_group_members_impl(port, ptr, rust_vec_len, data_len),
-        58 => wire__crate__api__bridge_client__OpenImBridgeClient_logout_impl(port, ptr, rust_vec_len, data_len),
-        59 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
-        60 => wire__crate__api__bridge_client__OpenImBridgeClient_mark_messages_as_read_impl(port, ptr, rust_vec_len, data_len),
-        61 => wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_impl(port, ptr, rust_vec_len, data_len),
-        62 => wire__crate__api__bridge_client__OpenImBridgeClient_mute_group_member_impl(port, ptr, rust_vec_len, data_len),
-        63 => wire__crate__api__bridge_client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
-        64 => wire__crate__api__bridge_client__OpenImBridgeClient_quit_group_impl(port, ptr, rust_vec_len, data_len),
-        65 => wire__crate__api__bridge_client__OpenImBridgeClient_refuse_friend_application_impl(port, ptr, rust_vec_len, data_len),
-        66 => wire__crate__api__bridge_client__OpenImBridgeClient_refuse_group_application_impl(port, ptr, rust_vec_len, data_len),
-        67 => wire__crate__api__bridge_client__OpenImBridgeClient_remove_black_impl(port, ptr, rust_vec_len, data_len),
-        68 => wire__crate__api__bridge_client__OpenImBridgeClient_revoke_message_impl(port, ptr, rust_vec_len, data_len),
-        69 => wire__crate__api__bridge_client__OpenImBridgeClient_search_conversations_impl(port, ptr, rust_vec_len, data_len),
-        70 => wire__crate__api__bridge_client__OpenImBridgeClient_search_friends_impl(port, ptr, rust_vec_len, data_len),
-        71 => wire__crate__api__bridge_client__OpenImBridgeClient_search_group_members_impl(port, ptr, rust_vec_len, data_len),
-        72 => wire__crate__api__bridge_client__OpenImBridgeClient_search_groups_impl(port, ptr, rust_vec_len, data_len),
-        73 => wire__crate__api__bridge_client__OpenImBridgeClient_search_local_messages_impl(port, ptr, rust_vec_len, data_len),
-        74 => wire__crate__api__bridge_client__OpenImBridgeClient_send_advanced_text_message_impl(port, ptr, rust_vec_len, data_len),
-        75 => wire__crate__api__bridge_client__OpenImBridgeClient_send_at_text_message_impl(port, ptr, rust_vec_len, data_len),
-        76 => wire__crate__api__bridge_client__OpenImBridgeClient_send_custom_message_impl(port, ptr, rust_vec_len, data_len),
-        77 => wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_impl(port, ptr, rust_vec_len, data_len),
-        78 => wire__crate__api__bridge_client__OpenImBridgeClient_send_file_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
-        79 => wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_impl(port, ptr, rust_vec_len, data_len),
-        80 => wire__crate__api__bridge_client__OpenImBridgeClient_send_image_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
-        81 => wire__crate__api__bridge_client__OpenImBridgeClient_send_markdown_message_impl(port, ptr, rust_vec_len, data_len),
-        82 => wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_impl(port, ptr, rust_vec_len, data_len),
-        83 => wire__crate__api__bridge_client__OpenImBridgeClient_send_sound_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
-        84 => wire__crate__api__bridge_client__OpenImBridgeClient_send_text_message_impl(port, ptr, rust_vec_len, data_len),
-        85 => wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_impl(port, ptr, rust_vec_len, data_len),
-        86 => wire__crate__api__bridge_client__OpenImBridgeClient_send_video_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
-        87 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_impl(port, ptr, rust_vec_len, data_len),
-        88 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_draft_impl(port, ptr, rust_vec_len, data_len),
-        89 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_pinned_impl(port, ptr, rust_vec_len, data_len),
-        90 => wire__crate__api__bridge_client__OpenImBridgeClient_set_conversation_private_impl(port, ptr, rust_vec_len, data_len),
-        91 => wire__crate__api__bridge_client__OpenImBridgeClient_set_global_msg_recv_opt_impl(port, ptr, rust_vec_len, data_len),
-        92 => wire__crate__api__bridge_client__OpenImBridgeClient_set_group_info_impl(port, ptr, rust_vec_len, data_len),
-        93 => wire__crate__api__bridge_client__OpenImBridgeClient_set_group_member_info_impl(port, ptr, rust_vec_len, data_len),
-        94 => wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_impl(port, ptr, rust_vec_len, data_len),
-        95 => wire__crate__api__bridge_client__OpenImBridgeClient_sync_friends_incremental_impl(port, ptr, rust_vec_len, data_len),
-        96 => wire__crate__api__bridge_client__OpenImBridgeClient_sync_groups_incremental_impl(port, ptr, rust_vec_len, data_len),
-        97 => wire__crate__api__bridge_client__OpenImBridgeClient_transfer_group_owner_impl(port, ptr, rust_vec_len, data_len),
-        98 => wire__crate__api__bridge_client__OpenImBridgeClient_update_conversation_unread_count_impl(port, ptr, rust_vec_len, data_len),
-        99 => wire__crate__api__bridge_client__OpenImBridgeClient_update_friends_impl(port, ptr, rust_vec_len, data_len),
-        100 => wire__crate__api__bridge_client__OpenImBridgeClient_update_user_profile_impl(port, ptr, rust_vec_len, data_len),
-        101 => wire__crate__api__bridge_client__clear_conversation_and_delete_all_msg_impl(port, ptr, rust_vec_len, data_len),
-        102 => wire__crate__api__bridge_client__delete_all_msg_from_local_impl(port, ptr, rust_vec_len, data_len),
-        103 => wire__crate__api__bridge_client__delete_all_msg_from_local_and_svr_impl(port, ptr, rust_vec_len, data_len),
-        104 => wire__crate__api__bridge_client__delete_conversation_and_delete_all_msg_impl(port, ptr, rust_vec_len, data_len),
-        105 => wire__crate__api__bridge_client__delete_message_impl(port, ptr, rust_vec_len, data_len),
-        106 => wire__crate__api__bridge_client__delete_message_from_local_storage_impl(port, ptr, rust_vec_len, data_len),
-        107 => wire__crate__api__bridge_client__edit_message_impl(port, ptr, rust_vec_len, data_len),
-        108 => wire__crate__api__bridge_client__find_message_list_impl(port, ptr, rust_vec_len, data_len),
-        109 => wire__crate__api__bridge_client__forward_message_impl(port, ptr, rust_vec_len, data_len),
-        110 => wire__crate__api__bridge_client__forward_message_by_client_id_impl(port, ptr, rust_vec_len, data_len),
-        111 => wire__crate__api__bridge_client__get_advanced_history_message_list_by_seq_impl(port, ptr, rust_vec_len, data_len),
-        112 => wire__crate__api__bridge_client__get_history_message_by_seq_impl(port, ptr, rust_vec_len, data_len),
-        113 => wire__crate__api__bridge_client__get_history_messages_reverse_impl(port, ptr, rust_vec_len, data_len),
-        114 => wire__crate__api__bridge_client__get_login_user_id_impl(port, ptr, rust_vec_len, data_len),
-        115 => wire__crate__api__bridge_client__get_sdk_version_impl(port, ptr, rust_vec_len, data_len),
-        116 => wire__crate__api__bridge_client__get_server_time_impl(port, ptr, rust_vec_len, data_len),
-        117 => wire__crate__api__bridge_client__get_total_unread_msg_count_impl(port, ptr, rust_vec_len, data_len),
-        118 => wire__crate__api__bridge_client__incr_sync_conversations_impl(port, ptr, rust_vec_len, data_len),
-        119 => wire__crate__api__simple__init_logger_impl(port, ptr, rust_vec_len, data_len),
-        120 => wire__crate__api__simple__init_logger_v2_impl(port, ptr, rust_vec_len, data_len),
-        121 => wire__crate__api__bridge_client__insert_group_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
-        122 => wire__crate__api__bridge_client__mark_all_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
-        123 => wire__crate__api__bridge_client__network_status_changed_impl(port, ptr, rust_vec_len, data_len),
-        124 => wire__crate__api__bridge_client__send_advanced_quote_message_impl(port, ptr, rust_vec_len, data_len),
-        125 => wire__crate__api__bridge_client__send_at_text_message_with_quote_impl(port, ptr, rust_vec_len, data_len),
-        126 => wire__crate__api__bridge_client__send_card_message_impl(port, ptr, rust_vec_len, data_len),
-        127 => wire__crate__api__bridge_client__send_face_message_impl(port, ptr, rust_vec_len, data_len),
-        128 => wire__crate__api__bridge_client__send_file_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        129 => wire__crate__api__bridge_client__send_image_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        130 => wire__crate__api__bridge_client__send_location_message_impl(port, ptr, rust_vec_len, data_len),
-        131 => wire__crate__api__bridge_client__send_merger_message_impl(port, ptr, rust_vec_len, data_len),
-        132 => wire__crate__api__bridge_client__send_quote_message_impl(port, ptr, rust_vec_len, data_len),
-        133 => wire__crate__api__bridge_client__send_sound_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        134 => wire__crate__api__bridge_client__send_typing_impl(port, ptr, rust_vec_len, data_len),
-        135 => wire__crate__api__bridge_client__send_video_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        136 => wire__crate__api__bridge_client__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
-        137 => wire__crate__api__simple__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
-        138 => wire__crate__api__simple__set_log_span_events_impl(port, ptr, rust_vec_len, data_len),
-        139 => wire__crate__api__bridge_client__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
-        140 => wire__crate__api__bridge_client__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
-        141 => wire__crate__api__bridge_client__upload_file_impl(port, ptr, rust_vec_len, data_len),
-        142 => wire__crate__api__bridge_client__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        1 => wire__crate__api__client__OpenImBridgeClient_accept_friend_application_impl(port, ptr, rust_vec_len, data_len),
+        2 => wire__crate__api__client__OpenImBridgeClient_accept_group_application_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__client__OpenImBridgeClient_add_black_impl(port, ptr, rust_vec_len, data_len),
+        4 => wire__crate__api__client__OpenImBridgeClient_add_friend_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__client__OpenImBridgeClient_check_friend_impl(port, ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__client__OpenImBridgeClient_check_group_member_full_sync_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__client__OpenImBridgeClient_check_local_group_full_sync_impl(port, ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__client__OpenImBridgeClient_clear_conversation_draft_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__client__OpenImBridgeClient_connection_stream_impl(port, ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__client__OpenImBridgeClient_conversation_stream_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__client__OpenImBridgeClient_create_group_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__client__OpenImBridgeClient_delete_conversation_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__client__OpenImBridgeClient_delete_friend_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__client__OpenImBridgeClient_delete_messages_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__client__OpenImBridgeClient_disconnect_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__client__OpenImBridgeClient_dismiss_group_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__client__OpenImBridgeClient_friend_stream_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__client__OpenImBridgeClient_get_black_list_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__client__OpenImBridgeClient_get_connection_state_impl(port, ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__client__OpenImBridgeClient_get_conversation_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__client__OpenImBridgeClient_get_conversation_id_by_session_type_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__client__OpenImBridgeClient_get_conversation_list_split_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__client__OpenImBridgeClient_get_conversations_impl(port, ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__client__OpenImBridgeClient_get_friend_application_unhandled_count_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__client__OpenImBridgeClient_get_friend_apply_list_impl(port, ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__client__OpenImBridgeClient_get_friend_apply_list_as_applicant_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__client__OpenImBridgeClient_get_friend_id_list_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__client__OpenImBridgeClient_get_friend_list_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__client__OpenImBridgeClient_get_friend_list_page_impl(port, ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__client__OpenImBridgeClient_get_group_application_list_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__client__OpenImBridgeClient_get_group_application_list_as_applicant_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__client__OpenImBridgeClient_get_group_application_list_as_recipient_impl(port, ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__client__OpenImBridgeClient_get_group_application_unhandled_count_impl(port, ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__client__OpenImBridgeClient_get_group_list_impl(port, ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__client__OpenImBridgeClient_get_group_member_list_by_join_time_filter_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__client__OpenImBridgeClient_get_group_member_owner_and_admin_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__client__OpenImBridgeClient_get_group_members_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__client__OpenImBridgeClient_get_group_members_info_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__client__OpenImBridgeClient_get_groups_info_impl(port, ptr, rust_vec_len, data_len),
+        40 => wire__crate__api__client__OpenImBridgeClient_get_history_messages_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__client__OpenImBridgeClient_get_joined_group_list_page_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__client__OpenImBridgeClient_get_multiple_conversations_impl(port, ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__client__OpenImBridgeClient_get_pinned_conversations_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__client__OpenImBridgeClient_get_self_user_info_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__client__OpenImBridgeClient_get_specified_friends_info_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__client__OpenImBridgeClient_get_user_status_impl(port, ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__client__OpenImBridgeClient_get_users_in_group_impl(port, ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__client__OpenImBridgeClient_get_users_info_impl(port, ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__client__OpenImBridgeClient_group_stream_impl(port, ptr, rust_vec_len, data_len),
+        50 => wire__crate__api__client__OpenImBridgeClient_hide_conversation_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__client__OpenImBridgeClient_invite_group_members_impl(port, ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__client__OpenImBridgeClient_is_connected_impl(port, ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__client__OpenImBridgeClient_is_friend_impl(port, ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__client__OpenImBridgeClient_is_in_blacklist_impl(port, ptr, rust_vec_len, data_len),
+        55 => wire__crate__api__client__OpenImBridgeClient_is_in_group_impl(port, ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__client__OpenImBridgeClient_join_group_impl(port, ptr, rust_vec_len, data_len),
+        57 => wire__crate__api__client__OpenImBridgeClient_kick_group_members_impl(port, ptr, rust_vec_len, data_len),
+        58 => wire__crate__api__client__OpenImBridgeClient_logout_impl(port, ptr, rust_vec_len, data_len),
+        59 => wire__crate__api__client__OpenImBridgeClient_mark_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
+        60 => wire__crate__api__client__OpenImBridgeClient_mark_messages_as_read_impl(port, ptr, rust_vec_len, data_len),
+        61 => wire__crate__api__client__OpenImBridgeClient_mute_group_impl(port, ptr, rust_vec_len, data_len),
+        62 => wire__crate__api__client__OpenImBridgeClient_mute_group_member_impl(port, ptr, rust_vec_len, data_len),
+        63 => wire__crate__api__client__OpenImBridgeClient_new_impl(port, ptr, rust_vec_len, data_len),
+        64 => wire__crate__api__client__OpenImBridgeClient_quit_group_impl(port, ptr, rust_vec_len, data_len),
+        65 => wire__crate__api__client__OpenImBridgeClient_refuse_friend_application_impl(port, ptr, rust_vec_len, data_len),
+        66 => wire__crate__api__client__OpenImBridgeClient_refuse_group_application_impl(port, ptr, rust_vec_len, data_len),
+        67 => wire__crate__api__client__OpenImBridgeClient_remove_black_impl(port, ptr, rust_vec_len, data_len),
+        68 => wire__crate__api__client__OpenImBridgeClient_revoke_message_impl(port, ptr, rust_vec_len, data_len),
+        69 => wire__crate__api__client__OpenImBridgeClient_search_conversations_impl(port, ptr, rust_vec_len, data_len),
+        70 => wire__crate__api__client__OpenImBridgeClient_search_friends_impl(port, ptr, rust_vec_len, data_len),
+        71 => wire__crate__api__client__OpenImBridgeClient_search_group_members_impl(port, ptr, rust_vec_len, data_len),
+        72 => wire__crate__api__client__OpenImBridgeClient_search_groups_impl(port, ptr, rust_vec_len, data_len),
+        73 => wire__crate__api__client__OpenImBridgeClient_search_local_messages_impl(port, ptr, rust_vec_len, data_len),
+        74 => wire__crate__api__client__OpenImBridgeClient_send_advanced_text_message_impl(port, ptr, rust_vec_len, data_len),
+        75 => wire__crate__api__client__OpenImBridgeClient_send_at_text_message_impl(port, ptr, rust_vec_len, data_len),
+        76 => wire__crate__api__client__OpenImBridgeClient_send_custom_message_impl(port, ptr, rust_vec_len, data_len),
+        77 => wire__crate__api__client__OpenImBridgeClient_send_file_message_impl(port, ptr, rust_vec_len, data_len),
+        78 => wire__crate__api__client__OpenImBridgeClient_send_file_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        79 => wire__crate__api__client__OpenImBridgeClient_send_image_message_impl(port, ptr, rust_vec_len, data_len),
+        80 => wire__crate__api__client__OpenImBridgeClient_send_image_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        81 => wire__crate__api__client__OpenImBridgeClient_send_markdown_message_impl(port, ptr, rust_vec_len, data_len),
+        82 => wire__crate__api__client__OpenImBridgeClient_send_sound_message_impl(port, ptr, rust_vec_len, data_len),
+        83 => wire__crate__api__client__OpenImBridgeClient_send_sound_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        84 => wire__crate__api__client__OpenImBridgeClient_send_text_message_impl(port, ptr, rust_vec_len, data_len),
+        85 => wire__crate__api__client__OpenImBridgeClient_send_video_message_impl(port, ptr, rust_vec_len, data_len),
+        86 => wire__crate__api__client__OpenImBridgeClient_send_video_message_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        87 => wire__crate__api__client__OpenImBridgeClient_set_conversation_impl(port, ptr, rust_vec_len, data_len),
+        88 => wire__crate__api__client__OpenImBridgeClient_set_conversation_draft_impl(port, ptr, rust_vec_len, data_len),
+        89 => wire__crate__api__client__OpenImBridgeClient_set_conversation_pinned_impl(port, ptr, rust_vec_len, data_len),
+        90 => wire__crate__api__client__OpenImBridgeClient_set_conversation_private_impl(port, ptr, rust_vec_len, data_len),
+        91 => wire__crate__api__client__OpenImBridgeClient_set_global_msg_recv_opt_impl(port, ptr, rust_vec_len, data_len),
+        92 => wire__crate__api__client__OpenImBridgeClient_set_group_info_impl(port, ptr, rust_vec_len, data_len),
+        93 => wire__crate__api__client__OpenImBridgeClient_set_group_member_info_impl(port, ptr, rust_vec_len, data_len),
+        94 => wire__crate__api__client__OpenImBridgeClient_sync_friends_impl(port, ptr, rust_vec_len, data_len),
+        95 => wire__crate__api__client__OpenImBridgeClient_sync_friends_incremental_impl(port, ptr, rust_vec_len, data_len),
+        96 => wire__crate__api__client__OpenImBridgeClient_sync_groups_incremental_impl(port, ptr, rust_vec_len, data_len),
+        97 => wire__crate__api__client__OpenImBridgeClient_transfer_group_owner_impl(port, ptr, rust_vec_len, data_len),
+        98 => wire__crate__api__client__OpenImBridgeClient_update_conversation_unread_count_impl(port, ptr, rust_vec_len, data_len),
+        99 => wire__crate__api__client__OpenImBridgeClient_update_friends_impl(port, ptr, rust_vec_len, data_len),
+        100 => wire__crate__api__client__OpenImBridgeClient_update_user_profile_impl(port, ptr, rust_vec_len, data_len),
+        101 => wire__crate__api__message_advanced__clear_conversation_and_delete_all_msg_impl(port, ptr, rust_vec_len, data_len),
+        102 => wire__crate__api__message_advanced__delete_all_msg_from_local_impl(port, ptr, rust_vec_len, data_len),
+        103 => wire__crate__api__message_advanced__delete_all_msg_from_local_and_svr_impl(port, ptr, rust_vec_len, data_len),
+        104 => wire__crate__api__message_advanced__delete_conversation_and_delete_all_msg_impl(port, ptr, rust_vec_len, data_len),
+        105 => wire__crate__api__message_advanced__delete_message_impl(port, ptr, rust_vec_len, data_len),
+        106 => wire__crate__api__message_advanced__delete_message_from_local_storage_impl(port, ptr, rust_vec_len, data_len),
+        107 => wire__crate__api__message_advanced__edit_message_impl(port, ptr, rust_vec_len, data_len),
+        108 => wire__crate__api__message_advanced__find_message_list_impl(port, ptr, rust_vec_len, data_len),
+        109 => wire__crate__api__message_advanced__forward_message_impl(port, ptr, rust_vec_len, data_len),
+        110 => wire__crate__api__message_advanced__forward_message_by_client_id_impl(port, ptr, rust_vec_len, data_len),
+        111 => wire__crate__api__message_advanced__get_advanced_history_message_list_by_seq_impl(port, ptr, rust_vec_len, data_len),
+        112 => wire__crate__api__message_advanced__get_history_message_by_seq_impl(port, ptr, rust_vec_len, data_len),
+        113 => wire__crate__api__message_advanced__get_history_messages_reverse_impl(port, ptr, rust_vec_len, data_len),
+        114 => wire__crate__api__client__get_login_user_id_impl(port, ptr, rust_vec_len, data_len),
+        115 => wire__crate__api__client__get_sdk_version_impl(port, ptr, rust_vec_len, data_len),
+        116 => wire__crate__api__message_advanced__get_server_time_impl(port, ptr, rust_vec_len, data_len),
+        117 => wire__crate__api__message_advanced__get_total_unread_msg_count_impl(port, ptr, rust_vec_len, data_len),
+        118 => wire__crate__api__message_advanced__incr_sync_conversations_impl(port, ptr, rust_vec_len, data_len),
+        119 => wire__crate__api__ffi_init__init_logger_impl(port, ptr, rust_vec_len, data_len),
+        120 => wire__crate__api__ffi_init__init_logger_v2_impl(port, ptr, rust_vec_len, data_len),
+        121 => wire__crate__api__message_advanced__insert_group_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
+        122 => wire__crate__api__message_advanced__mark_all_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
+        123 => wire__crate__api__client__network_status_changed_impl(port, ptr, rust_vec_len, data_len),
+        124 => wire__crate__api__message__send_advanced_quote_message_impl(port, ptr, rust_vec_len, data_len),
+        125 => wire__crate__api__message__send_at_text_message_with_quote_impl(port, ptr, rust_vec_len, data_len),
+        126 => wire__crate__api__message__send_card_message_impl(port, ptr, rust_vec_len, data_len),
+        127 => wire__crate__api__message__send_face_message_impl(port, ptr, rust_vec_len, data_len),
+        128 => wire__crate__api__message_media__send_file_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        129 => wire__crate__api__message_media__send_image_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        130 => wire__crate__api__message__send_location_message_impl(port, ptr, rust_vec_len, data_len),
+        131 => wire__crate__api__message__send_merger_message_impl(port, ptr, rust_vec_len, data_len),
+        132 => wire__crate__api__message__send_quote_message_impl(port, ptr, rust_vec_len, data_len),
+        133 => wire__crate__api__message_media__send_sound_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        134 => wire__crate__api__message_advanced__send_typing_impl(port, ptr, rust_vec_len, data_len),
+        135 => wire__crate__api__message_media__send_video_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        136 => wire__crate__api__client__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
+        137 => wire__crate__api__ffi_init__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
+        138 => wire__crate__api__ffi_init__set_log_span_events_impl(port, ptr, rust_vec_len, data_len),
+        139 => wire__crate__api__message_advanced__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
+        140 => wire__crate__api__client__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
+        141 => wire__crate__api__message_media__upload_file_impl(port, ptr, rust_vec_len, data_len),
+        142 => wire__crate__api__message_media__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -8033,7 +8027,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::types::SearchMessages
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::bridge_client::SendTypingResp {
+impl flutter_rust_bridge::IntoDart for crate::api::message_advanced::SendTypingResp {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.server_msg_id.into_into_dart().into_dart(),
@@ -8043,14 +8037,14 @@ impl flutter_rust_bridge::IntoDart for crate::api::bridge_client::SendTypingResp
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::bridge_client::SendTypingResp {}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::bridge_client::SendTypingResp> for crate::api::bridge_client::SendTypingResp {
-    fn into_into_dart(self) -> crate::api::bridge_client::SendTypingResp {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::message_advanced::SendTypingResp {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::message_advanced::SendTypingResp> for crate::api::message_advanced::SendTypingResp {
+    fn into_into_dart(self) -> crate::api::message_advanced::SendTypingResp {
         self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::constant::enums::SessionType {
+impl flutter_rust_bridge::IntoDart for crate::domain::constant::SessionType {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
             Self::SingleChat => 0.into_dart(),
@@ -8061,9 +8055,9 @@ impl flutter_rust_bridge::IntoDart for crate::domain::constant::enums::SessionTy
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::constant::enums::SessionType {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::constant::enums::SessionType> for crate::domain::constant::enums::SessionType {
-    fn into_into_dart(self) -> crate::domain::constant::enums::SessionType {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::constant::SessionType {}
+impl flutter_rust_bridge::IntoIntoDart<crate::domain::constant::SessionType> for crate::domain::constant::SessionType {
+    fn into_into_dart(self) -> crate::domain::constant::SessionType {
         self
     }
 }
@@ -9301,7 +9295,7 @@ impl SseEncode for crate::sdk::client::types::SearchMessagesReq {
     }
 }
 
-impl SseEncode for crate::api::bridge_client::SendTypingResp {
+impl SseEncode for crate::api::message_advanced::SendTypingResp {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.server_msg_id, serializer);
@@ -9310,15 +9304,15 @@ impl SseEncode for crate::api::bridge_client::SendTypingResp {
     }
 }
 
-impl SseEncode for crate::domain::constant::enums::SessionType {
+impl SseEncode for crate::domain::constant::SessionType {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(
             match self {
-                crate::domain::constant::enums::SessionType::SingleChat => 0,
-                crate::domain::constant::enums::SessionType::WriteGroupChat => 1,
-                crate::domain::constant::enums::SessionType::ReadGroupChat => 2,
-                crate::domain::constant::enums::SessionType::NotificationChat => 3,
+                crate::domain::constant::SessionType::SingleChat => 0,
+                crate::domain::constant::SessionType::WriteGroupChat => 1,
+                crate::domain::constant::SessionType::ReadGroupChat => 2,
+                crate::domain::constant::SessionType::NotificationChat => 3,
                 _ => {
                     unimplemented!("");
                 }
@@ -9414,7 +9408,7 @@ mod io {
     // Section: imports
 
     use super::*;
-    use crate::api::bridge_client::*;
+    use crate::api::client::*;
     use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
     use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
     use flutter_rust_bridge::{Handler, IntoIntoDart};
@@ -9445,7 +9439,7 @@ mod web {
     // Section: imports
 
     use super::*;
-    use crate::api::bridge_client::*;
+    use crate::api::client::*;
     use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
     use flutter_rust_bridge::for_generated::wasm_bindgen;
     use flutter_rust_bridge::for_generated::wasm_bindgen::prelude::*;
@@ -9468,4 +9462,3 @@ mod web {
 }
 #[cfg(target_family = "wasm")]
 pub use web::*;
-

@@ -13,8 +13,8 @@
 //! 待消息翻页加载功能完善后由 `MessageSyncer` 或 SDK 层调用。
 #![allow(dead_code)]
 
-use crate::domain::constant::types::{msg_status, pull_msg_num, ws_req_identifier};
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::constant::{msg_status, pull_msg_num, ws_req_identifier};
+use crate::domain::error::{Result, SdkError};
 use crate::infra::database::{ConversationDao, MessageDao};
 use crate::infra::database::models::LocalChatLog;
 use crate::core::connection::manager::ConnectionManager;

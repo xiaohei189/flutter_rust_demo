@@ -1,4 +1,4 @@
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::infra::database::models::{LocalGroup, LocalGroupMember};
 use async_trait::async_trait;
 

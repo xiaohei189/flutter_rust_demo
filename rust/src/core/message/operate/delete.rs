@@ -1,7 +1,7 @@
 //! 消息删除逻辑
 
 use super::MessageService;
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
 use tracing::info;
 

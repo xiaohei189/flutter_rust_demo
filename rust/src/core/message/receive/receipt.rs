@@ -1,9 +1,9 @@
 //! 已读回执处理（impl MessageHandler）
 
 use super::handler::MessageHandler;
-use crate::domain::constant::types::session_type;
-use crate::domain::error::types::{Result, SdkError};
-use crate::listener::conversation::ConversationEvent;
+use crate::domain::constant::session_type;
+use crate::domain::error::{Result, SdkError};
+use crate::event::listener::conversation::ConversationEvent;
 use crate::protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;
@@ -190,7 +190,7 @@ impl MessageHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::constant::types::notification_type::HAS_READ_RECEIPT;
+    use crate::domain::constant::notification_type::HAS_READ_RECEIPT;
     use crate::domain::model::UserId;
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::database::models::{LocalChatLog, LocalConversation};
@@ -202,12 +202,12 @@ mod tests {
 
     fn make_test_stores(pool: sqlx::SqlitePool) -> Arc<Stores> {
         Arc::new(Stores {
-            message_dao: Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
-            user_dao: Arc::new(UserDao::new(pool.clone())),
-            group_dao: Arc::new(GroupDao::new(pool.clone())),
-            sync_version_dao: Arc::new(SyncVersionDao::new(pool.clone())),
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
         })
@@ -348,9 +348,7 @@ mod tests {
         let event = rx.try_recv();
         assert!(event.is_ok(), "should publish TotalUnreadCountChanged");
         match event.unwrap() {
-            ConversationEvent::TotalUnreadCountChanged(v) if v == total as i64 => {
-                assert_eq!(total, 0);
-            }
+            ConversationEvent::TotalUnreadCountChanged(0) => {}
             other => panic!("expected TotalUnreadCountChanged, got {:?}", other),
         }
     }

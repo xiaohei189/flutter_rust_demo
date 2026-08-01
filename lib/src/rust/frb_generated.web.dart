@@ -6,31 +6,34 @@
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
-import 'api/bridge_client.dart';
-import 'api/simple.dart';
+import 'api/client.dart';
+import 'api/ffi_init.dart';
+import 'api/message.dart';
+import 'api/message_advanced.dart';
+import 'api/message_media.dart';
 import 'core/connection/manager.dart';
 import 'core/friend/manager.dart';
 import 'core/online/manager.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'domain/config.dart';
-import 'domain/constant/enums.dart';
-import 'domain/event/types.dart';
-import 'domain/listener/connection.dart';
-import 'domain/listener/conversation.dart';
-import 'domain/listener/friend.dart';
-import 'domain/listener/group.dart';
+import 'domain/constant.dart';
 import 'domain/model/friend.dart';
 import 'domain/model/group.dart';
 import 'domain/model/message.dart';
 import 'domain/model/msg_struct.dart';
 import 'domain/model/user.dart';
+import 'event/types.dart';
 import 'frb_generated.dart';
 import 'infra/database/models.dart';
 import 'infra/logger/config.dart';
+import 'listener/connection.dart';
+import 'listener/conversation.dart';
+import 'listener/friend.dart';
+import 'listener/group.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 import 'sdk/client.dart';
 import 'sdk/client/types.dart';
+import 'sdk/config.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({

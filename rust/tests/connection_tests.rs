@@ -5,7 +5,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_websocket_reconnection() {
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -18,7 +18,7 @@ async fn test_websocket_reconnection() {
     let cert = register_user(&phone, "ReconnectUser").await.expect("注册失败");
     println!("用户: {}", cert.user_id);
 
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("reconn_{}", cert.user_id)).to_string_lossy().to_string();
@@ -92,7 +92,7 @@ async fn test_reconnection() {
 
 #[tokio::test]
 async fn test_connection_state_transitions() {
-    use rust_lib_flutter_rust_demo::domain::event::types::SdkEvent;
+    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 
     let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -104,7 +104,7 @@ async fn test_connection_state_transitions() {
     let phone = generate_virtual_phone("cst");
     let cert = register_user(&phone, "CSTUser").await.expect("注册失败");
 
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("cst_{}", cert.user_id)).to_string_lossy().to_string();

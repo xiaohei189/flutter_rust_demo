@@ -1,6 +1,6 @@
 use super::models::LocalChatLog;
-use crate::domain::constant::enums::MessageSendStatus;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::{Result, SdkError};
 use sqlx::SqlitePool;
 use tracing::debug;
 
@@ -168,6 +168,69 @@ impl MessageDao {
             .await
             .map_err(|e| SdkError::database(format!("delete by conversation: {}", e)))?;
 
+        Ok(())
+    }
+
+
+    /// 按 seq 列表删除消息（对齐 Go SDK DeleteMessageBySeqs）
+    pub async fn delete_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> {
+        if seqs.is_empty() {
+            return Ok(());
+        }
+        let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "DELETE FROM local_chat_logs WHERE conversation_id = ? AND seq IN ({})",
+            placeholders
+        );
+        let mut query = sqlx::query(&sql).bind(conversation_id);
+        for seq in seqs {
+            query = query.bind(seq);
+        }
+        query
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete by seqs: {}", e)))?;
+        Ok(())
+    }
+
+    /// 按内容关键字搜索消息
+    pub async fn search_by_content(&self, conversation_id: &str, keyword: &str) -> Result<Vec<LocalChatLog>> {
+        let pattern = format!("%{}%", keyword);
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND content LIKE ? ORDER BY send_time DESC",
+        )
+        .bind(conversation_id)
+        .bind(&pattern)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("search messages by content: {}", e)))?;
+        Ok(rows)
+    }
+
+    /// 更新消息为已发送（含 seq）
+    pub async fn update_to_sent(&self, client_msg_id: &str, server_msg_id: &str, seq: i64, send_time: i64) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_chat_logs SET server_msg_id = ?, seq = ?, send_time = ?, status = ? WHERE client_msg_id = ?",
+        )
+        .bind(server_msg_id)
+        .bind(seq)
+        .bind(send_time)
+        .bind(MessageSendStatus::SendSuccess as i32)
+        .bind(client_msg_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("update to sent: {}", e)))?;
+        Ok(())
+    }
+
+    /// 更新消息状态（原始 i32 语义）
+    pub async fn update_status(&self, client_msg_id: &str, status: i32) -> Result<()> {
+        sqlx::query("UPDATE local_chat_logs SET status = ? WHERE client_msg_id = ?")
+            .bind(status)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update status: {}", e)))?;
         Ok(())
     }
 
@@ -679,11 +742,11 @@ impl MessageRepository for MessageDao {
     async fn get_by_client_msg_ids(&self, client_msg_ids: &[String]) -> Result<Vec<LocalChatLog>> { self.get_by_client_msg_ids(client_msg_ids).await }
     async fn mark_as_read_by_seqs(&self, conversation_id: &str, seqs: &[i64], user_id: &str) -> Result<()> { self.mark_as_read_by_seqs(conversation_id, seqs, user_id).await }
     async fn delete_by_conversation(&self, conversation_id: &str) -> Result<()> { self.delete_by_conversation(conversation_id).await }
-    async fn delete_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> { self.delete_by_seqs(conversation_id, seqs).await }
-    async fn search_by_content(&self, conversation_id: &str, keyword: &str) -> Result<Vec<LocalChatLog>> { self.search_by_content(conversation_id, keyword).await }
-    async fn update_status(&self, client_msg_id: &str, status: i32) -> Result<()> { self.update_status(client_msg_id, status).await }
-    async fn update_to_sent(&self, client_msg_id: &str, server_msg_id: &str, seq: i64, send_time: i64) -> Result<()> { self.update_to_sent(client_msg_id, server_msg_id, seq, send_time).await }
-    async fn get_seqs_in_range(&self, conversation_id: &str, min_seq: i64, max_seq: i64) -> Result<Vec<i64>> { self.get_seqs_in_range(conversation_id, min_seq, max_seq).await }
+    async fn delete_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> { MessageDao::delete_by_seqs(self, conversation_id, seqs).await }
+    async fn search_by_content(&self, conversation_id: &str, keyword: &str) -> Result<Vec<LocalChatLog>> { MessageDao::search_by_content(self, conversation_id, keyword).await }
+    async fn update_status(&self, client_msg_id: &str, status: i32) -> Result<()> { MessageDao::update_status(self, client_msg_id, status).await }
+    async fn update_to_sent(&self, client_msg_id: &str, server_msg_id: &str, seq: i64, send_time: i64) -> Result<()> { MessageDao::update_to_sent(self, client_msg_id, server_msg_id, seq, send_time).await }
+    async fn get_seqs_in_range(&self, conversation_id: &str, min_seq: i64, max_seq: i64) -> Result<Vec<i64>> { MessageDao::get_existing_seqs_in_range(self, conversation_id, min_seq, max_seq).await }
     async fn get_by_seq_range(&self, conversation_id: &str, start_seq: i64, end_seq: i64, count: i64) -> Result<Vec<LocalChatLog>> { self.get_by_seq_range(conversation_id, start_seq, end_seq, count).await }
     async fn get_by_seqs(&self, conversation_id: &str, seqs: &[i64]) -> Result<Vec<LocalChatLog>> { self.get_by_seqs(conversation_id, seqs).await }
     async fn mark_as_read_by_seqs_all(&self, conversation_id: &str, seqs: &[i64]) -> Result<()> { self.mark_as_read_by_seqs_all(conversation_id, seqs).await }
@@ -691,7 +754,7 @@ impl MessageRepository for MessageDao {
     async fn update_content_type(&self, conversation_id: &str, client_msg_id: &str, content_type: i32) -> Result<()> { self.update_content_type(conversation_id, client_msg_id, content_type).await }
     async fn update_message_content_and_type(&self, conversation_id: &str, client_msg_id: &str, content: &str, content_type: i32) -> Result<()> { self.update_message_content_and_type(conversation_id, client_msg_id, content, content_type).await }
     async fn search_by_content_type(&self, conversation_id: &str, content_type: i32) -> Result<Vec<LocalChatLog>> { self.search_by_content_type(conversation_id, content_type).await }
-    async fn update_send_status(&self, client_msg_id: &str, status: i32) -> Result<()> { self.update_status(client_msg_id, status).await }
+    async fn update_send_status(&self, client_msg_id: &str, status: i32) -> Result<()> { MessageDao::update_status(self, client_msg_id, status).await }
     async fn update_after_send_success(&self, client_msg_id: &str, server_msg_id: &str, send_time: i64) -> Result<()> { self.update_after_send_success(client_msg_id, server_msg_id, send_time).await }
     async fn get_peer_normal_msg_seq(&self, conversation_id: &str, user_id: &str) -> Result<i64> { self.get_peer_normal_msg_seq(conversation_id, user_id).await }
     async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> { self.delete_by_client_msg_id(conversation_id, client_msg_id).await }

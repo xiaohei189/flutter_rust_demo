@@ -1,5 +1,5 @@
 use crate::sdk::config::ClientConfig;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::EventBus;
 use crate::domain::model::UserId;
 use crate::domain::repository::*;

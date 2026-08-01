@@ -93,7 +93,7 @@ async fn test_user_state_via_sdk() {
     }
 
     println!("3. 创建 SDK...");
-    use rust_lib_flutter_rust_demo::domain::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
     use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("openim_sdk_{}", user_id)).to_string_lossy().to_string();

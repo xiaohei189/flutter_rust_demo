@@ -6,7 +6,7 @@ use super::types::{
     GetAllConversationsResp, GetIncrementalConversationResp, GetFullConversationIDsResp,
     ServerConversation,
 };
-use crate::domain::error::types::Result;
+use crate::domain::error::Result;
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{
     GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS,

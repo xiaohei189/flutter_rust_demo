@@ -1,4 +1,4 @@
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::bus::EventBus;
 use crate::event::types::SdkEvent;
 use crate::domain::model::user::UserInfo;

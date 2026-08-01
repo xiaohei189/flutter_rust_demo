@@ -5,10 +5,10 @@
 use crate::core::connection::manager::ConnectionManager;
 use super::handler::MessageHandler;
 use crate::core::message::ports::SyncerRemoteApi;
-use crate::domain::constant::types::ws_req_identifier;
-use crate::domain::error::types::{Result, SdkError};
+use crate::domain::constant::ws_req_identifier;
+use crate::domain::error::{Result, SdkError};
 use crate::event::publisher::EventPublisher;
-use crate::listener::conversation::{ConversationListener, ConversationEvent};
+use crate::event::listener::conversation::{ConversationListener, ConversationEvent};
 use crate::domain::model::UserId;
 use crate::infra::database::models::LocalNotificationSeq;
 use crate::sdk::context::Stores;
@@ -662,11 +662,11 @@ mod tests {
     async fn setup_db() -> (Arc<Stores>, Arc<MessageHandler>) {
         let pool = create_pool_memory().await.unwrap();
         let stores = Arc::new(Stores {
-            message_dao: Arc::new(MessageDao::new(pool.clone())),
-            conversation_dao: Arc::new(ConversationDao::new(pool.clone())),
-            friend_dao: Arc::new(FriendDao::new(pool.clone())),
-            user_dao: Arc::new(UserDao::new(pool.clone())),
-            group_dao: Arc::new(GroupDao::new(pool.clone())),
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
             sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
             notification_seq_dao: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_dao: Arc::new(SendingMessageDao::new(pool)),
