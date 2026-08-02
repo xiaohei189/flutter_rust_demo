@@ -32,474 +32,81 @@ use serde_json::{json, Value};
 ///
 /// 生产环境由 ConnectionManager 实现；测试中由 MockTransport 替代
 #[async_trait]
-pub trait MessageSendTransport: Send + Sync {
-    /// 发送消息 RPC（对应 req_identifier=1003）
-    async fn send_msg_rpc(&self, msg_data: &MsgData) -> std::result::Result<UserSendMsgResp, SdkError>;
-}
-
-/// ConnectionManager 实现 MessageSendTransport
-#[async_trait]
-impl MessageSendTransport for ConnectionManager {
-    async fn send_msg_rpc(&self, msg_data: &MsgData) -> std::result::Result<UserSendMsgResp, SdkError> {
-        self.send_rpc::<MsgData, UserSendMsgResp>(1003, msg_data).await
-    }
-}
-
-// ============================================================================
-// 独立函数：消息发送核心逻辑
-// ============================================================================
-
-/// 计算消息的 conversation_id
-fn conversation_id_for_msg(msg: &MsgStruct) -> String {
-    if msg.session_type == 1 {
-        let mut ids = vec![msg.send_id.clone(), msg.recv_id.clone()];
-        ids.sort();
-        format!("si_{}_{}", ids[0], ids[1])
-    } else if msg.session_type == 3 {
-        // ReadGroupChat: sg_{group_id}
-        format!("sg_{}", msg.group_id)
-    } else {
-        // WriteGroupChat(2) or fallback: g_{group_id}
-        format!("g_{}", msg.group_id)
-    }
-}
-
-/// 获取 content_type 的中文描述
-fn content_type_name(ct: i32) -> &'static str {
-    ContentTypeUtils::display_name_zh(ct)
-}
-
-/// 处理媒体内容上传（独立函数版本）
-async fn process_media_content_impl(
-    file_uploader: &FileUploader,
-    msg: &MsgStruct,
-) -> std::result::Result<String, SdkError> {
-    if !ContentTypeUtils::is_media(msg.content_type) {
-        return Ok(msg.content.clone());
-    }
-
-    let mut value: Value = match serde_json::from_str(&msg.content) {
-        Ok(v) => v,
-        Err(_) => return Ok(msg.content.clone()),
-    };
-
-    // 如果是图片消息且没有 sourcePath 但有 sourceUrl，说明已上传过
-    let source_path = match value.get("sourcePath").and_then(|v| v.as_str()) {
-        Some(p) if !p.is_empty() => p.to_string(),
-        _ => return Ok(msg.content.clone()),
-    };
-
-    let path = Path::new(&source_path);
-    if !path.exists() {
-        info!("sourcePath 文件不存在，跳过上传: {}", source_path);
-        return Ok(msg.content.clone());
-    }
-
-    let file_name = path.file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("unknown")
-        .to_string();
-
-    info!("开始上传媒体文件: content_type={}, path={}", msg.content_type, source_path);
-
-    let upload_result = file_uploader.upload_file(&source_path, &file_name, None).await?;
-    let url = upload_result.url;
-
-    // 临时文件清理（对齐 Go SDK 上传后删除本地临时文件）
-    if let Err(e) = std::fs::remove_file(&source_path) {
-        debug!("删除临时文件失败: path={}, err={}", source_path, e);
-    }
-
-    info!("媒体文件上传成功: url={}", url);
-
-    if msg.content_type == 102 {
-        // 图片消息：设置 SourcePicture + BigPicture + SnapshotPicture（对齐 Go SDK api.go L356-374）
-        let source_picture = json!({ "url": url });
-        value["sourcePicture"] = source_picture.clone();
-        value["bigPicture"] = source_picture;
-
-        // 生成快照URL：追加 ?type=image&width=640&height=640
-        let snapshot_url = if url.contains('?') {
-            format!("{}&type=image&width=640&height=640", url)
-        } else {
-            format!("{}?type=image&width=640&height=640", url)
-        };
-        value["snapshotPicture"] = json!({
-            "width": 640,
-            "height": 640,
-            "url": snapshot_url,
-        });
-    } else {
-        value["sourceUrl"] = json!(url);
-    }
-
-    value.as_object_mut()
-        .and_then(|map| map.remove("sourcePath"));
-
-    let new_content = serde_json::to_string(&value)
-        .unwrap_or_else(|_| msg.content.clone());
-
-    Ok(new_content)
-}
-
-/// 发送前插入消息到 DB（独立函数版本）
-async fn insert_message_before_send_impl(
-    context: &RuntimeContext,
-    msg: &MsgStruct,
-    send_time: i64,
-) -> Result<()> {
-    let conversation_id = conversation_id_for_msg(msg);
-
-    let mut local_log = LocalChatLog::from(msg);
-    local_log.conversation_id = conversation_id.clone();
-    local_log.send_time = send_time;
-    local_log.create_time = send_time;
-    local_log.status = MessageSendStatus::Sending as i32;
-
-    context.repositories.message_repo.batch_insert(&[local_log]).await?;
-    context.repositories.sending_message_repo.insert(&LocalSendingMessage {
-        conversation_id: conversation_id.clone(),
-        client_msg_id: msg.client_msg_id.clone(),
-        ex: String::new(),
-    }).await?;
-    context.repositories.conversation_repo.update_after_sent_message(
-        &conversation_id,
-        &msg.content,
-        send_time,
-    ).await?;
-
-    // 会话乐观更新（对齐 Go SDK api.go L322-324）
-    if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
-        ConversationListenerExt::emit(&*context.listeners, ConversationEvent::Changed(vec![conv]));
-    }
-
-    Ok(())
-}
-
-/// 执行消息发送的核心逻辑（独立函数版本，供队列调用）
-#[tracing::instrument(skip_all)]
-async fn do_send_message_impl(
-    context: Arc<RuntimeContext>,
-    transport: Arc<dyn MessageSendTransport>,
-    file_uploader: Arc<FileUploader>,
-    msg: MsgStruct,
-    offline_push_info: Option<OfflinePushInfo>,
-    online_only: bool,
-) -> std::result::Result<UserSendMsgResp, SdkError> {
-    let start = std::time::Instant::now();
-    let conversation_id = conversation_id_for_msg(&msg);
-    info!("[SendMsg] 开始: conv={}, content_type={}({}), online_only={}",
-        conversation_id, msg.content_type, content_type_name(msg.content_type), online_only);
-
-    let send_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0);
-
-    let content = process_media_content_impl(&file_uploader, &msg).await?;
-
-    // isOnlineOnly: 跳过本地持久化（对齐 Go SDK api.go L154-157, L657-664）
-    if !online_only {
-        insert_message_before_send_impl(&context, &msg, send_time).await?;
-        debug!("[SendMsg] 本地写入完成: client_msg_id={}", msg.client_msg_id);
-    }
-
-    let mut msg_data = MsgData::from(&msg);
-    msg_data.content = content.into_bytes();
-    msg_data.send_time = send_time;
-    msg_data.create_time = send_time;
-    msg_data.offline_push_info = offline_push_info;
-
-    // isOnlineOnly: 设置 options 全部为 false（对齐 Go SDK api.go L657-664）
-    if online_only {
-        msg_data.options.insert("isOnlineOnly".to_string(), true);
-        msg_data.options.insert("history".to_string(), false);
-        msg_data.options.insert("persistent".to_string(), false);
-        msg_data.options.insert("senderSync".to_string(), false);
-        msg_data.options.insert("conversationUpdate".to_string(), false);
-        msg_data.options.insert("senderConversationUpdate".to_string(), false);
-        msg_data.options.insert("unreadCount".to_string(), false);
-        msg_data.options.insert("offlinePush".to_string(), false);
-    }
-
-    let resp: UserSendMsgResp = match transport.send_msg_rpc(&msg_data).await {
-        Ok(r) => {
-            info!("[SendMsg] 完成: client_msg_id={}, server_msg_id={}, elapsed={}ms",
-                r.client_msg_id, r.server_msg_id, start.elapsed().as_millis());
-            r
-        }
-        Err(e) => {
-            if !online_only {
-                // 网络超时二次确认（对齐 Go SDK api.go L682-698）
-                if let SdkError::Timeout { .. } = &e {
-                    if let Ok(Some(old_msg)) = context.repositories.message_repo
-                        .get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await
-                    {
-                        if old_msg.status == MessageSendStatus::SendSuccess as i32 {
-                            info!("消息超时但DB已标记成功: client_msg_id={}", msg.client_msg_id);
-                            return Ok(UserSendMsgResp {
-                                server_msg_id: old_msg.server_msg_id,
-                                client_msg_id: old_msg.client_msg_id,
-                                send_time: old_msg.send_time,
-                            });
-                        }
-                    }
-                }
-                context.repositories.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
-                MessageListenerExt::emit(&*context.listeners, MessageEvent::SendFailed {
-                    client_msg_id: msg.client_msg_id.clone(),
-                    error: format!("{}", e),
-                });
-
-            }
-            return Err(SdkError::message_send(format!("send message via ws failed: {}", e)));
-        }
-    };
-
-    // isOnlineOnly: 跳过本地状态更新和会话触发（对齐 Go SDK api.go L154-157）
-    if !online_only {
-        if let Err(e) = context.repositories.message_repo.update_after_send_success(&msg.client_msg_id, &resp.server_msg_id, resp.send_time).await {
-            error!("更新发送结果失败: {}", e);
-        }
-
-        // 发送成功，从 sending_messages 中移除（对齐 Go SDK api.go L167）
-        if let Err(e) = context.repositories.sending_message_repo.delete(&conversation_id, &msg.client_msg_id).await {
-            debug!("删除sending_message失败: {}", e);
-        }
-
-        // 对齐 Go SDK：消息发送结果仅通过返回值（Message）传递，不发布事件
-    }
-
-    Ok(resp)
-}
-
-
-#[async_trait]
 impl MessageApi for OpenIMClient {
     #[tracing::instrument(skip_all)]
-    async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError> {
-        self.send_msg_inner(msg, source_id, offline_push_info, false).await
+    async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_msg(msg, source_id, offline_push_info).await
     }
 
     /// 发送仅在线消息（isOnlineOnly）：不持久化、不同步、不更新会话
     /// 对齐 Go SDK SendMessage 的 isOnlineOnly=true 分支
     #[tracing::instrument(skip_all, fields(source_id = %source_id))]
-    async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError> {
-        self.send_msg_inner(msg, source_id, None, true).await
+    async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_msg_online_only(msg, source_id).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_text_message(text);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_markdown_message(text);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_advanced_text_message(text, entities);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let upload_result = self.file_uploader.upload_image(file_path, None).await
-            .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
-        let source = crate::domain::model::msg_struct::PictureBaseInfo {
-            width: 0, height: 0, picture_type: String::new(),
-            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
-        };
-        let mut msg = MsgStruct::create_image_message(
-            file_path, source,
-            crate::domain::model::msg_struct::PictureBaseInfo::default(),
-            crate::domain::model::msg_struct::PictureBaseInfo::default(),
-        );
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_image_message(file_path, source_id, session_type).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_image_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
-        let upload_result = self.file_uploader.upload_image(file_path, Some(progress.clone())).await
-            .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
-        let source = crate::domain::model::msg_struct::PictureBaseInfo {
-            width: 0, height: 0, picture_type: String::new(),
-            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
-        };
-        let mut msg = MsgStruct::create_image_message(
-            file_path, source,
-            crate::domain::model::msg_struct::PictureBaseInfo::default(),
-            crate::domain::model::msg_struct::PictureBaseInfo::default(),
-        );
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_image_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_image_message_with_progress(file_path, source_id, session_type, progress).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file(file_path, &file_name, None).await
-            .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
-        let file_elem = crate::domain::model::msg_struct::FileElem {
-            file_path: file_path.to_string(),
-            uuid: upload_result.file_id.clone(),
-            source_url: upload_result.url,
-            file_name,
-            file_size: upload_result.size as i64,
-            file_type: upload_result.content_type,
-        };
-        let mut msg = MsgStruct::create_file_message(file_elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_file_message(file_path, source_id, session_type).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_file_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
-        let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress.clone())).await
-            .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
-        let file_elem = crate::domain::model::msg_struct::FileElem {
-            file_path: file_path.to_string(),
-            uuid: upload_result.file_id.clone(),
-            source_url: upload_result.url,
-            file_name,
-            file_size: upload_result.size as i64,
-            file_type: upload_result.content_type,
-        };
-        let mut msg = MsgStruct::create_file_message(file_elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_file_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_file_message_with_progress(file_path, source_id, session_type, progress).await
     }
 
     /// 发送语音消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_sound_message(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgStruct, SdkError> {
-        let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("audio")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file(file_path, &file_name, None).await
-            .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
-        let sound_elem = crate::domain::model::msg_struct::SoundElem {
-            uuid: upload_result.file_id.clone(),
-            sound_path: file_path.to_string(),
-            source_url: upload_result.url,
-            data_size: upload_result.size as i64,
-            duration,
-            sound_type: upload_result.content_type,
-        };
-        let mut msg = MsgStruct::create_sound_message(sound_elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_sound_message(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_sound_message(file_path, source_id, session_type, duration).await
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_sound_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
-        let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("audio")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress.clone())).await
-            .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
-        let sound_elem = crate::domain::model::msg_struct::SoundElem {
-            uuid: upload_result.file_id.clone(),
-            sound_path: file_path.to_string(),
-            source_url: upload_result.url,
-            data_size: upload_result.size as i64,
-            duration,
-            sound_type: upload_result.content_type,
-        };
-        let mut msg = MsgStruct::create_sound_message(sound_elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_sound_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_sound_message_with_progress(file_path, source_id, session_type, duration, progress).await
     }
 
     /// 发送视频消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_video_message(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgStruct, SdkError> {
-        // 上传视频文件
-        let v_path = std::path::Path::new(video_path);
-        let v_name = v_path.file_name().and_then(|n| n.to_str()).unwrap_or("video").to_string();
-        let v_upload = self.file_uploader.upload_file(video_path, &v_name, None).await
-            .map_err(|e| SdkError::message_send(format!("upload video failed: {}", e)))?;
-
-        // 上传封面图
-        let s_path = std::path::Path::new(snapshot_path);
-        let s_name = s_path.file_name().and_then(|n| n.to_str()).unwrap_or("snapshot").to_string();
-        let s_upload = self.file_uploader.upload_file(snapshot_path, &s_name, None).await
-            .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
-
-        let video_elem = crate::domain::model::msg_struct::VideoElem {
-            video_path: video_path.to_string(),
-            video_uuid: v_upload.file_id.clone(),
-            video_url: v_upload.url,
-            video_type: v_upload.content_type,
-            video_size: v_upload.size as i64,
-            duration,
-            snapshot_path: snapshot_path.to_string(),
-            snapshot_uuid: s_upload.file_id,
-            snapshot_size: s_upload.size as i64,
-            snapshot_url: s_upload.url,
-            snapshot_width: 0,
-            snapshot_height: 0,
-            snapshot_type: String::new(),
-        };
-        let mut msg = MsgStruct::create_video_message(video_elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_video_message(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_video_message(video_path, snapshot_path, source_id, session_type, duration).await
     }
 
     /// 发送视频消息（带上传进度回调，进度跟踪主视频文件）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_video_message_with_progress(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
-        // 上传视频文件（带进度回调）
-        let v_path = std::path::Path::new(video_path);
-        let v_name = v_path.file_name().and_then(|n| n.to_str()).unwrap_or("video").to_string();
-        let v_upload = self.file_uploader.upload_file_with_progress(video_path, &v_name, None, Some(progress.clone())).await
-            .map_err(|e| SdkError::message_send(format!("upload video failed: {}", e)))?;
-
-        // 上传封面图（无进度回调）
-        let s_path = std::path::Path::new(snapshot_path);
-        let s_name = s_path.file_name().and_then(|n| n.to_str()).unwrap_or("snapshot").to_string();
-        let s_upload = self.file_uploader.upload_file(snapshot_path, &s_name, None).await
-            .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
-
-        let video_elem = crate::domain::model::msg_struct::VideoElem {
-            video_path: video_path.to_string(),
-            video_uuid: v_upload.file_id.clone(),
-            video_url: v_upload.url,
-            video_type: v_upload.content_type,
-            video_size: v_upload.size as i64,
-            duration,
-            snapshot_path: snapshot_path.to_string(),
-            snapshot_uuid: s_upload.file_id,
-            snapshot_size: s_upload.size as i64,
-            snapshot_url: s_upload.url,
-            snapshot_width: 0,
-            snapshot_height: 0,
-            snapshot_type: String::new(),
-        };
-        let mut msg = MsgStruct::create_video_message(video_elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_video_message_with_progress(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_video_message_with_progress(video_path, snapshot_path, source_id, session_type, duration, progress).await
     }
 
     /// 发送 @ 消息
@@ -513,7 +120,7 @@ impl MessageApi for OpenIMClient {
         }).collect();
         let mut msg = MsgStruct::create_at_text_message(text, at_user_ids, at_users_info, None);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 发送自定义消息
@@ -521,7 +128,7 @@ impl MessageApi for OpenIMClient {
     async fn send_custom_message(&self, data: &str, desc: &str, extension: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_custom_message(data, desc, extension);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 发送引用消息（对齐 Go SDK `CreateQuoteMessage` + `SendMessage`）
@@ -529,7 +136,7 @@ impl MessageApi for OpenIMClient {
     async fn send_quote_message(&self, text: &str, quote: crate::domain::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_quote_message(text, Box::new(quote));
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
@@ -537,7 +144,7 @@ impl MessageApi for OpenIMClient {
     async fn send_merger_message(&self, title: &str, summary_list: Vec<String>, context_list: Vec<MsgStruct>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_merger_message(context_list, title, summary_list);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 发送名片消息（对齐 Go SDK `CreateCardMessage` + `SendMessage`）
@@ -551,7 +158,7 @@ impl MessageApi for OpenIMClient {
         };
         let mut msg = MsgStruct::create_card_message(elem);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 发送位置消息（对齐 Go SDK `CreateLocationMessage` + `SendMessage`）
@@ -559,7 +166,7 @@ impl MessageApi for OpenIMClient {
     async fn send_location_message(&self, description: &str, longitude: f64, latitude: f64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_location_message(description, longitude, latitude);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 发送表情消息（对齐 Go SDK `CreateFaceMessage` + `SendMessage`）
@@ -567,67 +174,38 @@ impl MessageApi for OpenIMClient {
     async fn send_face_message(&self, index: i32, data: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_face_message(index, data);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 转发消息（对齐 Go SDK `ForwardMessage`）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     async fn forward_message(&self, mut msg_struct: MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         msg_struct.session_type = session_type;
-        self.send_msg(msg_struct, source_id, None).await
+        self.sender.send_msg(msg_struct, source_id, None).await
     }
 
     /// 从 URL 创建图片消息（对齐 Go SDK `CreateImageMessage(sourcePath="")`）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_image_message_from_url(&self, source_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let picture = crate::domain::model::msg_struct::PictureBaseInfo {
-            url: source_url.to_string(),
-            ..Default::default()
-        };
-        let mut msg = MsgStruct::create_image_message("", picture.clone(), picture.clone(), picture);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_image_message_from_url(&self, source_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_image_message_from_url(source_url, source_id, session_type).await
     }
 
     /// 从 URL 创建语音消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_sound_message_from_url(&self, source_url: &str, duration: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let elem = crate::domain::model::msg_struct::SoundElem {
-            source_url: source_url.to_string(),
-            duration,
-            ..Default::default()
-        };
-        let mut msg = MsgStruct::create_sound_message(elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_sound_message_from_url(&self, source_url: &str, duration: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_sound_message_from_url(source_url, duration, source_id, session_type).await
     }
 
     /// 从 URL 创建视频消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_video_message_from_url(&self, source_url: &str, duration: i64, snapshot_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let elem = crate::domain::model::msg_struct::VideoElem {
-            video_url: source_url.to_string(),
-            duration,
-            snapshot_url: snapshot_url.to_string(),
-            ..Default::default()
-        };
-        let mut msg = MsgStruct::create_video_message(elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_video_message_from_url(&self, source_url: &str, duration: i64, snapshot_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_video_message_from_url(source_url, duration, snapshot_url, source_id, session_type).await
     }
 
     /// 从 URL 创建文件消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_file_message_from_url(&self, source_url: &str, file_name: &str, file_size: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let elem = crate::domain::model::msg_struct::FileElem {
-            source_url: source_url.to_string(),
-            file_name: file_name.to_string(),
-            file_size,
-            ..Default::default()
-        };
-        let mut msg = MsgStruct::create_file_message(elem);
-        msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+    async fn send_file_message_from_url(&self, source_url: &str, file_name: &str, file_size: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.send_file_message_from_url(source_url, file_name, file_size, source_id, session_type).await
     }
 
     /// 发送分段 @ 消息（对齐 Go SDK `CreateAtTextMessage` 带 quote_msg）
@@ -635,7 +213,7 @@ impl MessageApi for OpenIMClient {
     async fn send_at_text_message_with_quote(&self, text: &str, at_user_list: Vec<String>, at_users_info: Vec<crate::domain::model::msg_struct::AtInfo>, quote_msg: Option<Box<MsgStruct>>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_at_text_message(text, at_user_list, at_users_info, quote_msg);
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, count = %req.count))]
@@ -672,55 +250,8 @@ impl MessageApi for OpenIMClient {
     /// Typing 消息不入库、不更新会话、不计未读、不触发离线推送。
     /// 通过 WS RPC 直接发送，设置 options 全部为 false。
     #[tracing::instrument(skip_all)]
-    async fn send_typing(&self, source_id: &str, session_type: i32, focus: bool) -> std::result::Result<UserSendMsgResp, SdkError> {
-        let send_id = self.context.user_id.get().await;
-        let platform_id = self.context.config.platform_id;
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
-
-        let msg_tips = if focus { "yes" } else { "no" };
-        let mut msg = MsgStruct::create_typing_message(msg_tips);
-        msg.send_id = send_id;
-        msg.sender_platform_id = platform_id;
-        msg.client_msg_id = crate::domain::model::msg_struct::get_msg_id(&msg.send_id);
-        msg.create_time = now;
-        msg.send_time = now;
-        msg.session_type = session_type;
-
-        if session_type == 1 {
-            msg.recv_id = source_id.to_string();
-        } else {
-            msg.group_id = source_id.to_string();
-        }
-
-        // 注入发送者信息
-        if let Ok(user_info) = self.user.get_self_user_info().await {
-            msg.sender_nickname = user_info.nickname;
-            msg.sender_face_url = user_info.face_url;
-        }
-
-        let mut msg_data = MsgData::from(&msg);
-        // 设置 options：全部关闭（对齐 Go SDK entering.go）
-        let mut options = std::collections::HashMap::new();
-        options.insert("history".to_string(), false);
-        options.insert("persistent".to_string(), false);
-        options.insert("senderSync".to_string(), false);
-        options.insert("conversationUpdate".to_string(), false);
-        options.insert("senderConversationUpdate".to_string(), false);
-        options.insert("unreadCount".to_string(), false);
-        options.insert("offlinePush".to_string(), false);
-        msg_data.options = options;
-
-        // 直接通过 WS RPC 发送，不走 send_msg（不入库、不更新会话）
-        info!("[Typing] 请求: source_id={}, session_type={}, focus={}",
-            source_id, session_type, focus);
-        let resp: UserSendMsgResp = self.connection.send_rpc(
-            crate::domain::constant::ws_req_identifier::SEND_MSG,
-            &msg_data,
-        ).await?;
-
-        info!("[Typing] 响应: client_msg_id={}, server_msg_id={}, send_time={}",
-            resp.client_msg_id, resp.server_msg_id, resp.send_time);
-        Ok(resp)
+    async fn send_typing(&self, source_id: &str, session_type: i32, focus: bool) -> std::result::Result<UserSendMsgResp, SdkError>  {
+        self.sender.send_typing(source_id, session_type, focus).await
     }
 
     // ========== 第一批测试所需的查询/删除方法 ==========
@@ -851,7 +382,7 @@ impl MessageApi for OpenIMClient {
             message_entities,
         );
         msg.session_type = session_type;
-        self.send_msg(msg, source_id, None).await
+        self.sender.send_msg(msg, source_id, None).await
     }
 
     /// 编辑消息（对齐 Go SDK 消息修改功能）
@@ -869,59 +400,8 @@ impl MessageApi for OpenIMClient {
         client_msg_id: &str,
         content: &str,
         content_type: i32,
-    ) -> std::result::Result<MsgStruct, SdkError> {
-        // 查找原始消息以获取会话信息
-        let original = self.context.repositories.message_repo
-            .get_by_client_msg_id(conversation_id, client_msg_id)
-            .await?
-            .ok_or_else(|| SdkError::invalid_argument(format!("消息不存在: client_msg_id={}", client_msg_id)))?;
-
-        // 构造编辑后的消息结构
-        let mut msg = MsgStruct::new();
-        msg.content_type = content_type;
-        msg.content = content.to_string();
-        msg.msg_from = crate::domain::model::msg_struct::MSG_FROM_USER;
-
-        // 从 content 恢复 typed elem
-        match content_type {
-            101 => {
-                if let Ok(elem) = serde_json::from_str::<crate::domain::model::msg_struct::TextElem>(content) {
-                    msg.text_elem = Some(elem);
-                }
-            }
-            117 => {
-                if let Ok(elem) = serde_json::from_str::<crate::domain::model::msg_struct::AdvancedTextElem>(content) {
-                    msg.advanced_text_elem = Some(elem);
-                }
-            }
-            118 => {
-                if let Ok(elem) = serde_json::from_str::<crate::domain::model::msg_struct::MarkdownTextElem>(content) {
-                    msg.markdown_text_elem = Some(elem);
-                }
-            }
-            _ => {}
-        }
-
-        // 设置会话类型
-        msg.session_type = if conversation_id.starts_with("si_") {
-            1 // SINGLE_CHAT
-        } else {
-            2 // WRITE_GROUP_CHAT
-        };
-
-        // source_id: 单聊用 recv_id，群聊用 group_id
-        let source_id = if msg.session_type == 1 {
-            if original.recv_id == self.context.user_id.get().await {
-                original.send_id.clone()
-            } else {
-                original.recv_id.clone()
-            }
-        } else {
-            original.group_id.clone()
-        };
-
-        // 发送消息（服务端通过 MsgDataToModifyByMQ 广播修改通知给其他设备）
-        self.send_msg(msg, &source_id, None).await
+    ) -> std::result::Result<MsgStruct, SdkError>  {
+        self.sender.edit_message(conversation_id, client_msg_id, content, content_type).await
     }
 
     fn take_message_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<MessageEvent>, SdkError> {
@@ -935,14 +415,12 @@ impl MessageApi for OpenIMClient {
         self.message_service.insert_group_message_to_local_storage(group_id, content, content_type, send_id).await
     }
 
-    async fn upload_file(&self, file_path: &str, file_name: &str) -> std::result::Result<String, SdkError> {
-        let result = self.file_uploader.upload_file(file_path, file_name, None).await?;
-        Ok(result.url)
+    async fn upload_file(&self, file_path: &str, file_name: &str) -> std::result::Result<String, SdkError>  {
+        self.sender.upload_file(file_path, file_name).await
     }
 
-    async fn upload_file_with_progress(&self, file_path: &str, file_name: &str, progress: &Arc<dyn Fn(u8) + Send + Sync>) -> std::result::Result<String, SdkError> {
-        let result = self.file_uploader.upload_file_with_progress(file_path, file_name, None, Some(progress.clone())).await?;
-        Ok(result.url)
+    async fn upload_file_with_progress(&self, file_path: &str, file_name: &str, progress: &Arc<dyn Fn(u8) + Send + Sync>) -> std::result::Result<String, SdkError>  {
+        self.sender.upload_file_with_progress(file_path, file_name, progress).await
     }}
 
 // ============================================================================
@@ -950,92 +428,13 @@ impl MessageApi for OpenIMClient {
 // ============================================================================
 
 
-impl OpenIMClient {
-    async fn send_msg_inner(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>, online_only: bool) -> std::result::Result<MsgStruct, SdkError> {
-        let send_id = self.context.user_id.get().await;
-        let platform_id = self.context.config.platform_id;
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as i64;
 
-        msg.send_id = send_id;
-        msg.sender_platform_id = platform_id;
-        msg.client_msg_id = get_msg_id(&msg.send_id);
-        msg.create_time = now;
-        msg.send_time = now;
-        msg.status = MSG_STATUS_SENDING;
-        msg.is_read = false;
-
-        // 发送者昵称/头像注入（对齐 Go SDK initBasicInfo api.go L985-1003）
-        if let Ok(user_info) = self.user.get_self_user_info().await {
-            msg.sender_nickname = user_info.nickname;
-            msg.sender_face_url = user_info.face_url;
-        }
-
-        // WriteGroupChatType(2) 已被服务端废弃，自动映射为 ReadGroupChatType(3)
-        // 对齐 Go SDK: WriteGroupChatType 注释 "Not enabled temporarily"
-        if msg.session_type == 2 {
-            msg.session_type = 3;
-        }
-
-        if msg.session_type == 1 {
-            msg.recv_id = source_id.to_string();
-        } else {
-            msg.group_id = source_id.to_string();
-        }
-
-        // 发送前去重（对齐 Go SDK api.go L293-321）
-        // isOnlineOnly 消息不入库，无需去重检查
-        if !online_only {
-            let conversation_id = conversation_id_for_msg(&msg);
-            if let Ok(Some(old_msg)) = self.context.repositories.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
-                if old_msg.status != MessageSendStatus::SendFailed as i32 {
-                    return Err(SdkError::msg_repeated("Only failed messages can be resent"));
-                }
-                // 失败重试：允许继续发送
-            }
-        }
-
-        // 通过双 Lane 发送队列提交消息
-        let context = self.context.clone();
-        let connection = self.connection.clone();
-        let file_uploader = self.file_uploader.clone();
-        let msg_clone = msg.clone();
-
-        let resp = self.send_queue.submit(msg.content_type, move || {
-            Box::pin(async move {
-                do_send_message_impl(context, connection, file_uploader, msg_clone, offline_push_info, online_only).await
-            })
-        }).await?;
-
-        // 回填服务端返回字段（对齐 Go SDK api.go sendMsg L730-732）
-        msg.server_msg_id = resp.server_msg_id;
-        msg.send_time = resp.send_time;
-        msg.status = 2; // MsgStatusSendSuccess
-
-        // 输入：完整构造的发送消息
-        if let Ok(json) = serde_json::to_string(&msg) {
-            tracing::info!("[SEND] 发送消息: {}", json);
-        }
-
-        // 输出：服务端返回
-        let resp_json = serde_json::json!({
-            "client_msg_id": msg.client_msg_id,
-            "server_msg_id": msg.server_msg_id,
-            "send_time": msg.send_time,
-            "status": msg.status,
-            "send_id": msg.send_id,
-            "recv_id": msg.recv_id,
-            "group_id": msg.group_id,
-            "session_type": msg.session_type,
-            "content_type": msg.content_type,
-        });
-        tracing::info!("[SEND] 发送结果: {}", resp_json);
-
-        Ok(msg)
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::message::send::sender::{
+        conversation_id_for_msg, content_type_name, do_send_message_impl, insert_message_before_send_impl, MessageSendTransport,
+    };
     use crate::domain::model::msg_struct::MsgStruct;
 
     // ========================================================================

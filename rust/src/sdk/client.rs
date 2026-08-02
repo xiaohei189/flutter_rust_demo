@@ -17,11 +17,11 @@ use async_trait::async_trait;
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::conversation::service::ConversationService;
 use crate::core::conversation::syncer::ConversationSyncer;
-use crate::core::file::uploader::FileUploader;
+use crate::core::message::send::MessageSender;
 use crate::core::friend::service::FriendService;
 use crate::core::group::service::GroupService;
 use crate::core::message::MessageHandler;
-use crate::core::message::MessageSendQueue;
+
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
 use crate::core::message::notification::handler::NotificationHandler;
@@ -56,10 +56,10 @@ pub struct OpenIMClient {
     pub(crate) notification_handler: Arc<NotificationHandler>,
     pub(crate) conversation_syncer: Arc<ConversationSyncer>,
     pub(crate) online_status: Arc<OnlineStatusService>,
-    pub(crate) file_uploader: Arc<FileUploader>,
+    pub(crate) sender: Arc<MessageSender>,
     pub(crate) message_service: Arc<MessageService>,
     
-    pub(crate) send_queue: Arc<MessageSendQueue>,
+
     /// 事件中枢（Listener 实现 → Dart StreamSink 数据源）
     pub(crate) listeners: Arc<EventHub>,
 }
@@ -147,7 +147,7 @@ impl ConnectionApi for OpenIMClient {
         info!("[SDK] 开始登录，user_id={}", user_id);
 
         self.context.set_user_id(user_id.to_string());
-        self.file_uploader.set_login_user_id(user_id.to_string());
+        self.sender.set_login_user_id(user_id.to_string());
 
         debug!("[SDK] 用户上下文已设置");
 

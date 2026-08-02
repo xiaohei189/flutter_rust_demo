@@ -7,6 +7,7 @@ use crate::core::file::uploader::FileUploader;
 use crate::core::friend::service::FriendService;
 use crate::core::group::service::GroupService;
 use crate::core::message::MessageHandler;
+use crate::core::message::send::MessageSender;
 use crate::core::message::MessageSendQueue;
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
@@ -58,11 +59,12 @@ impl OpenIMClientBuilder {
             listeners.clone(), listeners.clone(), listeners.clone(), context.user_id.clone(),
         ));
         let send_queue = MessageSendQueue::new();
+        let sender = Arc::new(MessageSender::new(context.clone(), connection.clone(), file_uploader.clone(), send_queue.clone(), user.clone()));
         debug!("OpenIM SDK init done (via Builder)");
         Ok(OpenIMClient {
             context, connection, user, friend, group, conversation,
             message_syncer, message_handler, notification_handler, conversation_syncer,
-            online_status, file_uploader, message_service, listeners, send_queue,
+            online_status, message_service, listeners, sender,
         })
     }
 }
