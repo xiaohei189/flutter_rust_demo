@@ -9,7 +9,6 @@ import 'api/global.dart';
 import 'api/message.dart';
 import 'api/message_advanced.dart';
 import 'api/message_media.dart';
-import 'core/connection/manager.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'domain/constant/enums.dart';
@@ -23,6 +22,7 @@ import 'domain/ports/friend.dart';
 import 'domain/ports/group.dart';
 import 'domain/ports/message.dart';
 import 'domain/ports/online.dart';
+import 'domain/sdk_api.dart';
 import 'event/events/connection.dart';
 import 'event/events/conversation.dart';
 import 'event/events/friend.dart';
@@ -33,7 +33,6 @@ import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'infra/logger/config.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-import 'sdk/client/types.dart';
 import 'sdk/config.dart';
 
 /// Main entrypoint of the Rust API

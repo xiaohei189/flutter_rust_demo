@@ -1,5 +1,6 @@
 //! 群组相关 FFI 桥接
 
+use crate::domain::sdk_api::SdkApi;
 use crate::api::global::client_holder;
 use crate::domain::ports::group::GroupApplyInfo;
 use crate::api::client::OpenIMBridgeClient;

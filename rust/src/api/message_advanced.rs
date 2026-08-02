@@ -3,11 +3,12 @@
 //! 转发、seq 查询、Typing、编辑、删除系列、本地存储管理等
 //! 所有操作委托给 OpenIMClient
 
+use crate::domain::ports::message::DeleteMessagesReq;
+use crate::domain::sdk_api::SdkApi;
 use crate::api::global::client_holder;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::model::local::LocalChatLog;
-use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use anyhow::{Result, anyhow};
 
 // ============================================================================
@@ -35,10 +36,7 @@ pub async fn forward_message_by_client_id(
 ) -> Result<MsgStruct> {
     let client = client_holder()?;
     let log = client
-        .context
-        .repositories
-        .message_repo
-        .get_by_client_msg_id("", &client_msg_id)
+        .get_message_by_client_msg_id(&client_msg_id)
         .await?
         .ok_or_else(|| anyhow!("消息不存在: {}", client_msg_id))?;
     let msg_struct = MsgStruct::from(&log);
@@ -56,8 +54,7 @@ pub async fn forward_message_by_client_id(
 #[flutter_rust_bridge::frb]
 pub async fn get_history_message_by_seq(seq: i64) -> Result<LocalChatLog> {
     let client = client_holder()?;
-    let msg = client.context.repositories.message_repo.get_by_seq(seq).await?
-        .ok_or_else(|| anyhow!("seq={} 的消息不存在", seq))?;
+    let msg = client.get_history_message_by_seq(seq).await?;
     Ok(msg)
 }
 
@@ -70,12 +67,7 @@ pub async fn get_advanced_history_message_list_by_seq(
     count: i32,
 ) -> Result<Vec<LocalChatLog>> {
     let client = client_holder()?;
-    let msgs = client.context.repositories.message_repo
-        .get_by_conversation(&conversation_id, 0, 10000).await?
-        .into_iter()
-        .filter(|m| m.seq >= start_seq && m.seq <= end_seq)
-        .take(count as usize)
-        .collect();
+    let msgs = client.get_advanced_history_message_list_by_seq(&conversation_id, start_seq, end_seq, count).await?;
     Ok(msgs)
 }
 
@@ -87,35 +79,17 @@ pub async fn get_history_messages_reverse(
     conversation_id: String,
     start_client_msg_id: String,
     count: i64,
-) -> Result<crate::sdk::client::types::GetHistoryMessagesResult> {
+) -> Result<crate::domain::sdk_api::GetHistoryMessagesResult> {
     let client = client_holder()?;
 
     let start_time = if start_client_msg_id.is_empty() {
         0
     } else {
-        let msg = client.context.repositories.message_repo
-            .get_by_client_msg_id(&conversation_id, &start_client_msg_id)
-            .await?;
+        let msg = client.get_message_by_client_msg_id(&start_client_msg_id).await?;
         msg.as_ref().map(|m| m.send_time).unwrap_or(0)
     };
 
-    let messages = client.context.repositories.message_repo
-        .get_by_conversation_asc(&conversation_id, start_time, count)
-        .await?;
-
-    let is_end = messages.len() < count as usize;
-
-    let msg_info_list: Vec<crate::domain::model::message::MessageInfo> = messages.into_iter()
-        .map(|m| {
-            let msg_struct = MsgStruct::from(&m);
-            crate::domain::model::message::MessageInfo::from(openim_protocol::sdkws::MsgData::from(&msg_struct))
-        })
-        .collect();
-
-    Ok(crate::sdk::client::types::GetHistoryMessagesResult {
-        messages: msg_info_list,
-        is_end,
-    })
+    Ok(client.get_history_messages_reverse(&conversation_id, &start_client_msg_id, count).await?)
 }
 
 /// 按 clientMsgID 列表查找消息（对齐 Go SDK `FindMessageList`）
@@ -125,9 +99,8 @@ pub async fn find_message_list(
     client_msg_ids: Vec<String>,
 ) -> Result<Vec<LocalChatLog>> {
     let client = client_holder()?;
-    let msgs = client.context.repositories.message_repo.get_by_client_msg_ids(&client_msg_ids).await?;
-    // 只返回属于指定会话的消息
-    Ok(msgs.into_iter().filter(|m| m.conversation_id == conversation_id).collect())
+    let msgs = client.find_message_list(&conversation_id, client_msg_ids).await?;
+    Ok(msgs)
 }
 
 // ============================================================================
@@ -144,7 +117,7 @@ pub async fn delete_message(
 ) -> Result<()> {
     let client = client_holder()?;
     // 委托给 message_service（已包含服务端 + 本地删除 + 事件发布）
-    client.message_service.delete_messages(crate::domain::ports::message::DeleteMessagesReq {
+    client.delete_messages(DeleteMessagesReq {
         conversation_id,
         client_msg_ids: vec![client_msg_id],
     }).await.map_err(|e| anyhow::anyhow!("{}", e))
@@ -157,7 +130,7 @@ pub async fn delete_message_from_local_storage(
     client_msg_id: String,
 ) -> Result<()> {
     let client = client_holder()?;
-    client.context.repositories.message_repo.mark_as_deleted(&conversation_id, &client_msg_id).await?;
+    client.delete_message_from_local_storage(&conversation_id, &client_msg_id).await?;
     Ok(())
 }
 
@@ -165,17 +138,7 @@ pub async fn delete_message_from_local_storage(
 #[flutter_rust_bridge::frb]
 pub async fn delete_all_msg_from_local_and_svr() -> Result<()> {
     let client = client_holder()?;
-    // 本地硬删除
-    client.context.repositories.message_repo.delete_all().await?;
-    // 清空所有会话的未读数
-    let conversations = client.context.repositories.conversation_repo.get_all().await?;
-    for conv in &conversations {
-        if conv.unread_count > 0 {
-            let _ = client.context.repositories.conversation_repo
-                .update_unread_count(&conv.conversation_id, 0).await;
-        }
-    }
-    client.context.listeners.emit(ConversationEvent::TotalUnreadCountChanged(0));
+    client.delete_all_msg_from_local_and_svr().await?;
     Ok(())
 }
 
@@ -183,7 +146,7 @@ pub async fn delete_all_msg_from_local_and_svr() -> Result<()> {
 #[flutter_rust_bridge::frb]
 pub async fn delete_all_msg_from_local() -> Result<()> {
     let client = client_holder()?;
-    client.context.repositories.message_repo.mark_all_as_deleted().await?;
+    client.delete_all_msg_from_local().await?;
     Ok(())
 }
 
@@ -191,11 +154,7 @@ pub async fn delete_all_msg_from_local() -> Result<()> {
 #[flutter_rust_bridge::frb]
 pub async fn clear_conversation_and_delete_all_msg(conversation_id: String) -> Result<()> {
     let client = client_holder()?;
-    // 删除该会话的所有消息
-    client.context.repositories.message_repo.delete_by_conversation(&conversation_id).await?;
-    // 重置会话（清空最新消息、未读数等）
-    client.context.repositories.conversation_repo.update_unread_count(&conversation_id, 0).await?;
-    client.context.listeners.emit(ConversationEvent::Changed(vec![]));
+    client.clear_conversation_and_delete_all_msg(&conversation_id).await?;
     Ok(())
 }
 
@@ -203,11 +162,7 @@ pub async fn clear_conversation_and_delete_all_msg(conversation_id: String) -> R
 #[flutter_rust_bridge::frb]
 pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> Result<()> {
     let client = client_holder()?;
-    // 删除该会话的所有消息
-    client.context.repositories.message_repo.delete_by_conversation(&conversation_id).await?;
-    // 删除会话记录
-    client.context.repositories.conversation_repo.delete(&conversation_id).await?;
-    client.context.listeners.emit(ConversationEvent::Deleted(vec![conversation_id]));
+    client.delete_conversation_and_delete_all_msg(&conversation_id).await?;
     Ok(())
 }
 
@@ -231,8 +186,7 @@ pub async fn get_server_time() -> Result<i64> {
 #[flutter_rust_bridge::frb]
 pub async fn get_total_unread_msg_count() -> Result<i64> {
     let client = client_holder()?;
-    let count = client.context.repositories.conversation_repo.get_total_unread_count().await?;
-    Ok(count as i64)
+    Ok(client.get_total_unread_msg_count().await?)
 }
 
 /// 标记所有会话已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
@@ -329,7 +283,7 @@ pub async fn set_message_local_ex(
     local_ex: String,
 ) -> Result<()> {
     let client = client_holder()?;
-    client.context.repositories.message_repo.update_local_ex(&conversation_id, &client_msg_id, &local_ex).await?;
+    client.set_message_local_ex(&conversation_id, &client_msg_id, &local_ex).await?;
     Ok(())
 }
 
@@ -344,38 +298,6 @@ pub async fn insert_group_message_to_local_storage(
     send_id: String,
 ) -> Result<LocalChatLog> {
     let client = client_holder()?;
-    let conversation_id = format!("g_{}", group_id);
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as i64;
-
-    let client_msg_id = crate::domain::model::msg_struct::get_msg_id(&send_id);
-
-    let local_log = LocalChatLog {
-        conversation_id: conversation_id.clone(),
-        client_msg_id: client_msg_id.clone(),
-        server_msg_id: String::new(),
-        send_id,
-        recv_id: group_id,
-        sender_platform_id: 0,
-        sender_nick_name: String::new(),
-        sender_face_url: String::new(),
-        session_type: 2, // group
-        msg_from: 100,
-        content_type,
-        content,
-        is_read: 1,
-        status: 2, // SendSuccess
-        seq: 0,
-        send_time: now,
-        create_time: now,
-        attached_info: String::new(),
-        ex: String::new(),
-        local_ex: String::new(),
-        group_id: String::new(),
-    };
-
-    client.context.repositories.message_repo.batch_insert(&[local_log.clone()]).await?;
+    let local_log = client.insert_group_message_to_local_storage(&group_id, &content, content_type, &send_id).await?;
     Ok(local_log)
 }

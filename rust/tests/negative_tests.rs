@@ -2,6 +2,7 @@
 mod common;
 
 use common::*;
+use rust_lib_flutter_rust_demo::domain::sdk_api::*;
 use std::time::Duration;
 
 #[tokio::test]

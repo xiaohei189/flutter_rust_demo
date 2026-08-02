@@ -3,19 +3,20 @@
 //! 从 api/client.rs 拆出，职责：不属于特定客户端的全局函数
 //! 包括：App 前后台切换、网络状态通知、SDK 版本查询等
 
+use crate::domain::sdk_api::SdkApi;
 use crate::frb_generated::StreamSink;
 use crate::sdk::client::OpenIMClient;
 use anyhow::Result;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
-static CLIENT_HOLDER: OnceLock<Arc<OpenIMClient>> = OnceLock::new();
+static CLIENT_HOLDER: OnceLock<Arc<dyn SdkApi>> = OnceLock::new();
 
-pub(crate) fn client_holder() -> Result<&'static Arc<OpenIMClient>> {
+pub(crate) fn client_holder() -> Result<&'static Arc<dyn SdkApi>> {
     CLIENT_HOLDER.get().ok_or_else(|| anyhow::anyhow!("SDK 客户端未初始化，请先调用 new"))
 }
 
-pub(crate) fn set_client(client: Arc<OpenIMClient>) {
+pub(crate) fn set_client(client: Arc<dyn SdkApi>) {
     let _ = CLIENT_HOLDER.set(client);
 }
 

@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use rust_lib_flutter_rust_demo::domain::sdk_api::*;
 use std::time::Duration;
 
 fn make_conversation_id(uid1: &str, uid2: &str) -> String {
@@ -896,7 +897,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     // 验证 B 的消息已读状态
     let history = user2_sdk.get_history_messages(
-        rust_lib_flutter_rust_demo::sdk::client::types::GetHistoryMessagesReq {
+        rust_lib_flutter_rust_demo::domain::sdk_api::GetHistoryMessagesReq {
             conversation_id: conv_id,
             start_client_msg_id: String::new(),
             count: 10,

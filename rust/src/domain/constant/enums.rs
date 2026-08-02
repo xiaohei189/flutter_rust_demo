@@ -177,3 +177,13 @@ impl sqlx::Type<sqlx::Sqlite> for MessageSendStatus {
         <i32 as sqlx::Type<sqlx::Sqlite>>::type_info()
     }
 }
+
+/// 连接状态（SDK 对外可见的连接生命周期状态）
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum ConnectionState {
+    Disconnected,
+    Connecting,
+    Connected,
+    Reconnecting,
+    Kicked,
+}

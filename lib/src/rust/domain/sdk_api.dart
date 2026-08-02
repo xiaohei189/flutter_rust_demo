@@ -3,10 +3,11 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../../domain/model/message.dart';
-import '../../frb_generated.dart';
+import '../frb_generated.dart';
+import 'model/message.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 历史消息分页查询参数
 class GetHistoryMessagesReq {
   final String conversationId;
   final String startClientMsgId;
@@ -32,6 +33,7 @@ class GetHistoryMessagesReq {
           count == other.count;
 }
 
+/// 历史消息分页结果
 class GetHistoryMessagesResult {
   final List<MessageInfo> messages;
   final bool isEnd;
@@ -50,6 +52,7 @@ class GetHistoryMessagesResult {
           isEnd == other.isEnd;
 }
 
+/// 本地消息搜索参数
 class SearchMessagesReq {
   final String conversationId;
   final String keyword;

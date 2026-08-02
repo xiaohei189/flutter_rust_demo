@@ -12,7 +12,7 @@ import 'package:flutter_rust_demo/src/rust/domain/ports/message.dart' show Revok
 import 'package:flutter_rust_demo/src/rust/domain/model/msg_struct.dart' show MsgStruct;
 import 'package:flutter_rust_demo/src/rust/sdk/config.dart';
 import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
-import 'package:flutter_rust_demo/src/rust/sdk/client/types.dart';
+import 'package:flutter_rust_demo/src/rust/domain/sdk_api.dart';
 import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
 import 'package:flutter_rust_demo/src/rust/domain/model/local.dart' show LocalConversation;
 import 'package:flutter_rust_demo/src/rust/api/ffi_init.dart' show initLogger;

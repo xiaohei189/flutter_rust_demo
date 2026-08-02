@@ -4,6 +4,7 @@
 //! 媒体消息见 `message_media`，Go SDK 补齐 API 见 `message_advanced`
 //! 所有操作委托给 OpenIMClient
 
+use crate::domain::sdk_api::SdkApi;
 use crate::api::global::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
@@ -11,7 +12,7 @@ use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::ports::message::{
     DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq,
 };
-use crate::sdk::client::types::{GetHistoryMessagesReq, SearchMessagesReq};
+use crate::domain::sdk_api::{GetHistoryMessagesReq, SearchMessagesReq};
 use anyhow::{Result, anyhow};
 
 impl OpenIMBridgeClient {
@@ -39,7 +40,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<crate::sdk::client::types::GetHistoryMessagesResult> {
+    pub async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> Result<crate::domain::sdk_api::GetHistoryMessagesResult> {
         self.inner.get_history_messages(req).await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }

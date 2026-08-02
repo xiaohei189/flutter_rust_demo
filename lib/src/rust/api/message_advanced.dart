@@ -7,8 +7,8 @@ import '../domain/constant/enums.dart';
 import '../domain/model/local.dart';
 import '../domain/model/message.dart';
 import '../domain/model/msg_struct.dart';
+import '../domain/sdk_api.dart';
 import '../frb_generated.dart';
-import '../sdk/client/types.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`, `from`

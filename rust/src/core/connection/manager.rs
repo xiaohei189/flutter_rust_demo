@@ -34,14 +34,7 @@ pub const RECONNECT_BASE_DELAY: Duration = Duration::from_secs(1);
 pub const RECONNECT_MAX_DELAY: Duration = Duration::from_secs(60);
 pub const MAX_RECONNECT_ATTEMPTS: u32 = 300;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum ConnectionState {
-    Disconnected,
-    Connecting,
-    Connected,
-    Reconnecting,
-    Kicked,
-}
+pub use crate::domain::constant::ConnectionState;
 
 pub(crate) struct PendingRequest {
     pub(crate) tx: oneshot::Sender<OpenIMResp>,

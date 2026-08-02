@@ -1,5 +1,6 @@
 //! 好友相关 FFI 桥接
 
+use crate::domain::sdk_api::SdkApi;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::ports::friend::FriendApplyInfo;
 use anyhow::{Result, anyhow};

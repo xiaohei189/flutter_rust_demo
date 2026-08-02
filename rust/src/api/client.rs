@@ -6,6 +6,7 @@ pub use crate::api::global::{
 };
 
 use crate::api::global::set_client;
+use crate::domain::sdk_api::{ConnectionApi, SdkApi};
 use crate::frb_generated::StreamSink;
 use crate::sdk::client::OpenIMClient;
 use crate::sdk::config::ClientConfig;
@@ -14,7 +15,7 @@ use std::sync::Arc;
 
 #[flutter_rust_bridge::frb(opaque)]
 pub struct OpenIMBridgeClient {
-    pub(crate) inner: Arc<OpenIMClient>,
+    pub(crate) inner: Arc<dyn SdkApi>,
 }
 
 impl OpenIMBridgeClient {
@@ -39,7 +40,7 @@ impl OpenIMBridgeClient {
 
         tracing::info!("[Bridge] login successful");
 
-        let inner = Arc::new(client);
+        let inner: Arc<dyn SdkApi> = Arc::new(client);
         set_client(inner.clone());
 
         Ok(Self { inner })

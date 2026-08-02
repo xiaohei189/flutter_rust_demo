@@ -3,6 +3,7 @@
 //! 图片/文件/语音/视频消息发送（含上传进度回调、URL 直发）及文件上传
 //! 所有操作委托给 OpenIMClient
 
+use crate::domain::sdk_api::SdkApi;
 use crate::api::global::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
@@ -147,8 +148,8 @@ impl OpenIMBridgeClient {
 #[flutter_rust_bridge::frb]
 pub async fn upload_file(file_path: String, file_name: String) -> Result<String> {
     let client = client_holder()?;
-    let result = client.file_uploader.upload_file(&file_path, &file_name, None).await?;
-    Ok(result.url)
+    let url = client.upload_file(&file_path, &file_name).await?;
+    Ok(url)
 }
 
 #[flutter_rust_bridge::frb]
@@ -161,10 +162,8 @@ pub async fn upload_file_with_progress(
     let progress: crate::core::file::uploader::ProgressCallback = Arc::new(move |pct: u8| {
         let _ = sink.add(pct as i32);
     });
-    let result = client.file_uploader.upload_file_with_progress(
-        &file_path, &file_name, None, Some(progress),
-    ).await?;
-    Ok(result.url)
+    let url = client.upload_file_with_progress(&file_path, &file_name, &progress).await?;
+    Ok(url)
 }
 
 // ============================================================================
