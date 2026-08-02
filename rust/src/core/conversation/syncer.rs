@@ -1,8 +1,7 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::domain::error::{Result, SdkError};
-use crate::event::sender::EventSender;
-use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalConversation;
 use crate::sdk::context::Repositories;
@@ -26,8 +25,8 @@ pub struct ConversationSyncer {
     repositories: Arc<Repositories>,
     /// 身份
     user_id: UserId,
-    /// 事件
-    pub(crate) events: EventSender<ConversationEvent>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn ConversationListener>,
     /// WebSocket 连接管理器（用于 sync_conversation_hash_read_seqs 的 RPC 调用）
     connection: Option<Arc<crate::core::connection::manager::ConnectionManager>>,
     /// 增量同步互斥锁（对齐 Go SDK `conversationSyncMutex`）
@@ -39,12 +38,13 @@ impl ConversationSyncer {
         http_client: Arc<crate::infra::http::client::HttpApiClient>,
         repositories: Arc<Repositories>,
         user_id: UserId,
+        listener: Arc<dyn ConversationListener>,
     ) -> Self {
         Self {
             api: Arc::new(HttpConversationApi::new(http_client)),
             repositories,
             user_id,
-            events: EventSender::new(),
+            listener,
             connection: None,
             sync_mutex: tokio::sync::Mutex::new(()),
         }
@@ -56,24 +56,20 @@ impl ConversationSyncer {
         api: Arc<dyn ConversationServerApi>,
         repositories: Arc<Repositories>,
         user_id: UserId,
+        listener: Arc<dyn ConversationListener>,
     ) -> Self {
         Self {
             api,
             repositories,
             user_id,
-            events: EventSender::new(),
+            listener,
             connection: None,
             sync_mutex: tokio::sync::Mutex::new(()),
         }
     }
 
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: ConversationEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
 
     /// 设置 WebSocket 连接管理器（用于 Hash Read Seq 同步）
@@ -455,11 +451,13 @@ mod tests {
             http_client,
             repositories,
             UserId::new("test_user"),
+            crate::event::test_util::noop_conversation_listener(),
         );
 
         assert_eq!(syncer.get_sync_version().await, 0);
         assert_eq!(syncer.get_sync_version_id().await, "");
     }
 }
+
 
 

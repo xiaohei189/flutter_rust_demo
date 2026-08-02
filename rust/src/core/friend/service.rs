@@ -1,8 +1,5 @@
 use crate::domain::error::{Result, SdkError};
-use crate::event::bus::EventBus;
-use crate::event::sender::EventSender;
-use crate::event::types::SdkEvent;
-use crate::event::events::friend::{FriendListener, FriendEvent};
+use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalFriend;
@@ -302,8 +299,8 @@ pub struct FriendService {
     /// 内部状态
     friends: Arc<RwLock<Vec<FriendInfo>>>,
     blacks: Arc<RwLock<Vec<String>>>,
-    /// 事件
-    pub(crate) events: EventSender<FriendEvent>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn FriendListener>,
 }
 
 impl FriendService {
@@ -311,6 +308,7 @@ impl FriendService {
         http_client: Arc<HttpApiClient>,
         repositories: Arc<Repositories>,
         user_id: UserId,
+        listener: Arc<dyn FriendListener>,
     ) -> Self {
         Self {
             http_client,
@@ -318,26 +316,13 @@ impl FriendService {
             user_id,
             friends: Arc::new(RwLock::new(Vec::new())),
             blacks: Arc::new(RwLock::new(Vec::new())),
-            events: EventSender::new(),
+            listener,
         }
     }
 
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<FriendEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: FriendEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
-
-    fn notify_friend(&self, f: impl FnOnce(&dyn FriendListener)) {
-    }
-
-    fn on_added(&self, fs: &[FriendInfo]) { self.notify_friend(|l| l.on_added(fs)); }
-    fn on_deleted(&self, id: &str) { self.notify_friend(|l| l.on_deleted(id)); }
-    fn on_black_added(&self, id: &str) { self.notify_friend(|l| l.on_black_added(id)); }
-    fn on_black_deleted(&self, id: &str) { self.notify_friend(|l| l.on_black_deleted(id)); }
 
     pub async fn set_user_id(&self, user_id: String) {
         self.user_id.set(user_id.clone()).await;
@@ -985,5 +970,6 @@ mod tests {
         assert!(json.contains("user_789"));
     }
 }
+
 
 

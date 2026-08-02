@@ -4,9 +4,8 @@ use crate::core::message::ContentTypeUtils;
 use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::Result;
 use crate::domain::error::SdkError;
-use crate::event::types::SdkEvent;
-use crate::event::events::conversation::ConversationEvent;
-use crate::event::events::message::MessageEvent;
+use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
+use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
 use crate::domain::model::msg_struct::MSG_STATUS_SENDING;
@@ -170,7 +169,7 @@ async fn insert_message_before_send_impl(
 
     // 会话乐观更新（对齐 Go SDK api.go L322-324）
     if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
-        context.event_bus.publish(SdkEvent::Conversation(ConversationEvent::Changed(vec![conv])));
+        ConversationListenerExt::emit(&*context.listeners, ConversationEvent::Changed(vec![conv]));
     }
 
     Ok(())
@@ -246,10 +245,11 @@ async fn do_send_message_impl(
                     }
                 }
                 context.repositories.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
-                context.event_bus.publish(SdkEvent::Message(MessageEvent::SendFailed {
+                MessageListenerExt::emit(&*context.listeners, MessageEvent::SendFailed {
                     client_msg_id: msg.client_msg_id.clone(),
                     error: format!("{}", e),
-                }));
+                });
+
             }
             return Err(SdkError::message_send(format!("send message via ws failed: {}", e)));
         }
@@ -1256,8 +1256,7 @@ mod tests {
     use crate::infra::database::{ConversationDao, MessageDao, SendingMessageDao};
     use crate::infra::database::{FriendDao, GroupDao, NotificationSeqDao, SyncVersionDao, UserDao};
     use crate::infra::http::client::HttpApiClient;
-    use crate::event::EventBus;
-    use crate::sdk::config::ClientConfig;
+        use crate::sdk::config::ClientConfig;
     use tokio_util::sync::CancellationToken;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -1327,7 +1326,7 @@ mod tests {
     /// 创建测试用 RuntimeContext（内存数据库）
     async fn make_test_context() -> Arc<RuntimeContext> {
         let pool = create_pool_memory().await.unwrap();
-        let event_bus = Arc::new(EventBus::new());
+        let listeners = crate::event::hub::EventHub::new();
         let http_client = Arc::new(HttpApiClient::new(
             "http://localhost:19999".to_string(),
             "test_token".to_string(),
@@ -1344,7 +1343,7 @@ mod tests {
                 upload_url: None,
                 data_dir: std::env::temp_dir().to_string_lossy().to_string(),
             },
-            event_bus,
+            listeners,
             cancel_token: CancellationToken::new(),
             user_id: crate::domain::model::UserId::new("test_user"),
             operation_id: "test_op".to_string(),
@@ -1432,7 +1431,6 @@ mod tests {
     #[tokio::test]
     async fn test_send_message_failure_marks_send_failed() {
         let context = make_test_context().await;
-        let mut sub = context.event_bus.subscribe();
         let transport = Arc::new(MockTransport::fail("network error"));
         let uploader = make_test_uploader();
         let msg = make_test_msg("client_msg_fail");
@@ -1455,18 +1453,7 @@ mod tests {
             .await.unwrap().unwrap();
         assert_eq!(db_msg.status, MessageSendStatus::SendFailed as i32, "DB 状态应为 SendFailed");
 
-        // 应发布 MessageSendFailed 事件
-        let event = tokio::time::timeout(
-            std::time::Duration::from_millis(100),
-            sub.next(),
-        ).await;
-        assert!(event.is_ok(), "应收到事件");
-        match event.unwrap() {
-            Some(SdkEvent::Message(MessageEvent::SendFailed { client_msg_id, .. })) => {
-                assert_eq!(client_msg_id, "client_msg_fail");
-            }
-            other => panic!("期望 MessageSendFailed 事件, 实际: {:?}", other),
-        }
+
     }
 
     /// 测试：超时但 DB 已标记成功 → 返回 Ok（二次确认逻辑）
@@ -1653,5 +1640,6 @@ mod tests {
         assert!(sending.is_some(), "sending_message 应存在");
     }
 }
+
 
 

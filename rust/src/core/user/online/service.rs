@@ -1,7 +1,5 @@
 use crate::domain::error::{Result, SdkError};
-use crate::event::bus::EventBus;
-use crate::event::types::SdkEvent;
-use crate::event::events::user::UserEvent;
+use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS, GET_SUBSCRIBE_USERS_STATUS};
 use serde::{Deserialize, Serialize};
@@ -70,16 +68,16 @@ pub mod status {
 
 pub struct OnlineStatusService {
     http_client: Arc<HttpApiClient>,
-    event_bus: Arc<EventBus>,
+    listener: Arc<dyn UserListener>,
     subscribed_users: Arc<RwLock<HashSet<String>>>,
     status_cache: Arc<RwLock<Vec<OnlineStatus>>>,
 }
 
 impl OnlineStatusService {
-    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
+    pub fn new(http_client: Arc<HttpApiClient>, listener: Arc<dyn UserListener>) -> Self {
         Self {
             http_client,
-            event_bus,
+            listener,
             subscribed_users: Arc::new(RwLock::new(HashSet::new())),
             status_cache: Arc::new(RwLock::new(Vec::new())),
         }
@@ -140,11 +138,11 @@ impl OnlineStatusService {
         self.update_cache(&statuses).await;
 
         for status in &statuses {
-            self.event_bus.publish(SdkEvent::User(UserEvent::UserStatusChanged {
+            self.listener.emit(UserEvent::UserStatusChanged {
                 user_id: status.user_id.clone(),
                 status: status.status,
                 platform_ids: status.platform_ids.clone(),
-            }));
+            });
         }
 
         info!("已订阅用户在线状态, count={}", user_ids.len());
@@ -273,4 +271,5 @@ mod tests {
         assert_eq!(status::ONLINE, 1);
     }
 }
+
 

@@ -1,4 +1,4 @@
-use crate::event::types::GroupReadReceipt;
+use crate::event::events::message::GroupReadReceipt;
 use crate::domain::model::group::GroupInfo;
 use serde::{Deserialize, Serialize};
 
@@ -46,3 +46,22 @@ pub trait GroupListener: Send + Sync {
 }
 
 
+
+
+/// 事件 → 回调 的统一分发（Service 通过它把领域事件交给 Listener）
+pub trait GroupListenerExt: GroupListener {
+    fn emit(&self, event: GroupEvent) {
+        match event {
+            GroupEvent::JoinedGroupAdded(group) => self.on_joined_group_added(&group),
+            GroupEvent::JoinedGroupDeleted(group) => self.on_joined_group_deleted(&group),
+            GroupEvent::GroupInfoChanged(group) => self.on_group_info_changed(&group),
+            GroupEvent::MemberAdded(group_id) => self.on_member_added(&group_id),
+            GroupEvent::MemberDeleted(group_id) => self.on_member_deleted(&group_id),
+            GroupEvent::GroupReadReceipt(receipts) => self.on_group_read_receipt(&receipts),
+            GroupEvent::ApplicationAdded(group_id) => self.on_application_added(&group_id),
+            GroupEvent::ApplicationApproved(group_id) => self.on_application_approved(&group_id),
+            GroupEvent::ApplicationRejected(group_id) => self.on_application_rejected(&group_id),
+        }
+    }
+}
+impl<T: GroupListener + ?Sized> GroupListenerExt for T {}

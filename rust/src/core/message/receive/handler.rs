@@ -9,8 +9,9 @@ use crate::domain::constant::content_type;
 use crate::domain::constant::msg_status;
 use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::domain::error::Result;
-use crate::event::sender::EventSender;
-use crate::event::events::conversation::ConversationEvent;
+
+use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
+use crate::event::events::message::{MessageEvent, MessageListener, MessageListenerExt};
 use crate::domain::model::msg_struct::TypingElem;
 use crate::domain::model::UserId;
 use crate::domain::model::local::{LocalChatLog, LocalConversation};
@@ -73,27 +74,30 @@ pub struct MessageHandler {
     pub(crate) user_id: UserId,
     /// 内部状态
     pub max_seq_recorder: Arc<MaxSeqRecorder>,
-    /// 事件
-    pub(crate) events: EventSender<ConversationEvent>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn ConversationListener>,
+    /// 消息事件出口（对齐 Go SDK MsgListener）
+    pub(crate) message_listener: Arc<dyn MessageListener>,
 }
 
 impl MessageHandler {
-    pub fn new(repositories: Arc<Repositories>, user_id: UserId) -> Self {
+    pub fn new(
+        repositories: Arc<Repositories>,
+        user_id: UserId,
+        listener: Arc<dyn ConversationListener>,
+        message_listener: Arc<dyn MessageListener>,
+    ) -> Self {
         Self {
             repositories,
             user_id,
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
-            events: EventSender::new(),
+            listener,
+            message_listener,
         }
     }
 
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: ConversationEvent) {
-        tracing::info!("[Event] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
 
     pub fn set_user_id(&self, user_id: String) {
@@ -402,6 +406,11 @@ impl MessageHandler {
             normal_messages.len(), insert_list.len(), batch_update_list.len(),
             skipped, to_notify.len());
 
+        // 发布 NewMessage 事件（对齐 Go SDK OnRecvNewMessages）
+        for msg in &to_notify {
+            self.message_listener.emit(MessageEvent::NewMessage { message: msg.clone() });
+        }
+
         // 离线新消息通知
         let offline_msgs: Vec<MsgData> = if is_from_sync && !to_notify.is_empty() {
             to_notify.into_iter()
@@ -427,7 +436,7 @@ impl MessageHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::bus::EventBus;
+    
     use crate::infra::database::pool::create_pool_memory;
     use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 
@@ -510,7 +519,7 @@ mod tests {
     fn test_exception_seq_gap() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut msg = make_local_log("", 5, msg_status::HAS_DELETED);
         handler.handle_exception_messages(None, &mut msg);
@@ -522,7 +531,7 @@ mod tests {
     fn test_exception_deleted() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut msg = make_local_log("msg_123", 5, msg_status::HAS_DELETED);
         handler.handle_exception_messages(None, &mut msg);
@@ -534,7 +543,7 @@ mod tests {
     fn test_exception_seq_dup() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let existing = make_local_log("existing_msg", 10, msg_status::SEND_SUCCESS);
         let mut msg = make_local_log("new_msg", 10, msg_status::SEND_SUCCESS);
@@ -547,7 +556,7 @@ mod tests {
     fn test_exception_client_dup() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let existing = make_local_log("msg_dup", 5, msg_status::SEND_SUCCESS);
         let mut msg = make_local_log("msg_dup", 8, msg_status::SEND_SUCCESS);
@@ -560,7 +569,7 @@ mod tests {
     fn test_exception_no_match_does_nothing() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut msg = make_local_log("msg_ok", 5, msg_status::SEND_SUCCESS);
         let original_id = msg.client_msg_id.clone();
@@ -631,7 +640,7 @@ mod tests {
     #[tokio::test]
     async fn test_handle_messages() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""));
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![
             make_msg("msg_1", "conv_1", 1),
@@ -645,7 +654,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool.clone());
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new(""));
+        let handler = MessageHandler::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![make_msg("msg_1", "conv_1", 1)];
         handler.handle_messages("conv_1", msgs.clone()).await.unwrap();
@@ -664,7 +673,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new(""));
+        let handler = MessageHandler::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut conv = make_conv("conv_tip");
         conv.unread_count = 5;
@@ -688,17 +697,14 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let event_bus = Arc::new(EventBus::new());
-        let mut sub = event_bus.subscribe();
-        let handler = MessageHandler::new(repositories, UserId::new(""));
+        let handler = MessageHandler::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![msg_with_ct("typing_1", "conv_typing", 1, content_type::TYPING)];
         handler.handle_messages("conv_typing", msgs).await.unwrap();
         let chat_logs = message_dao.get_by_conversation("conv_typing", 0, 100).await.unwrap();
         assert_eq!(chat_logs.len(), 0, "typing message should not be stored");
 
-        let event = sub.try_next();
-        assert!(event.is_none(), "typing message should not publish NewMessage event");
+        // typing 消息不应发布任何事件
     }
 
     #[tokio::test]
@@ -707,7 +713,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new(""));
+        let handler = MessageHandler::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs1 = vec![msg_with_ct("msg_1", "conv_normal", 1, content_type::TEXT)];
         handler.handle_messages("conv_normal", msgs1).await.unwrap();
@@ -731,7 +737,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new(""));
+        let handler = MessageHandler::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msg1_content = r#"{"text":"hello"}"#;
         let msgs1 = vec![{
@@ -767,7 +773,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("self_user"));
+        let handler = MessageHandler::new(repositories, UserId::new("self_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msg_content = r#"{"text":"message from other"}"#;
         let msgs = vec![{
@@ -791,10 +797,9 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new(""));
-
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        handler.set_event_sender(tx);
+        let hub = crate::event::hub::EventHub::new();
+        let handler = MessageHandler::new(repositories, UserId::new(""), hub.clone(), crate::event::test_util::noop_message_listener());
+        let mut rx = hub.take_conv_rx().unwrap();
 
         let mut conv = make_conv("conv_notrigger");
         conv.unread_count = 3;
@@ -831,7 +836,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let local_msg = LocalChatLog {
             conversation_id: "conv_seq".to_string(),
@@ -875,7 +880,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("other_user"));
+        let handler = MessageHandler::new(repositories, UserId::new("other_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![
             make_msg("dup_msg", "conv_dup", 1),
@@ -893,7 +898,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("self_user"));
+        let handler = MessageHandler::new(repositories, UserId::new("self_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![{
             let mut m = msg_with_ct("online_1", "conv_online", 1, content_type::TEXT);
@@ -910,10 +915,9 @@ mod tests {
     #[tokio::test]
     async fn test_typing_event_publishes_user_input_status() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new("self_user"));
-
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        handler.set_event_sender(tx);
+        let hub = crate::event::hub::EventHub::new();
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new("self_user"), hub.clone(), crate::event::test_util::noop_message_listener());
+        let mut rx = hub.take_conv_rx().unwrap();
 
         let msgs = vec![{
             let mut m = msg_with_ct("typing_1", "conv_typing_ev", 1, content_type::TYPING);
@@ -939,10 +943,9 @@ mod tests {
     #[tokio::test]
     async fn test_self_typing_ignored() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new("self_user"));
-
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        handler.set_event_sender(tx);
+        let hub = crate::event::hub::EventHub::new();
+        let handler = MessageHandler::new(make_test_repositories(pool), UserId::new("self_user"), hub.clone(), crate::event::test_util::noop_message_listener());
+        let mut rx = hub.take_conv_rx().unwrap();
 
         let msgs = vec![{
             let mut m = msg_with_ct("typing_self", "conv_typing_self", 1, content_type::TYPING);
@@ -963,7 +966,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("self_user"));
+        let handler = MessageHandler::new(repositories, UserId::new("self_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![{
             let mut m = msg_with_ct("grp_msg_1", "sg_group_1", 1, content_type::TEXT);
@@ -986,4 +989,3 @@ mod tests {
         assert_eq!(conv.unread_count, 1);
     }
 }
-

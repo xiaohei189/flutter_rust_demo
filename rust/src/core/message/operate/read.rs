@@ -4,7 +4,7 @@ use super::MessageService;
 use crate::domain::ports::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
 use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
-use crate::event::types::SdkEvent;
+use crate::event::events::conversation::ConversationListenerExt;
 use crate::domain::model::local::LocalConversation;
 use crate::event::events::conversation::ConversationEvent;
 use tracing::{error, info, warn};
@@ -102,9 +102,9 @@ impl MessageService {
     async fn unread_change_trigger(&self, conversation_id: &str, latest_msg_is_read: bool) {
         // L163-166: latestMsgIsRead 时触发 UpdateLatestMessageReadState
         if latest_msg_is_read {
-            self.event_bus.publish(SdkEvent::Conversation(ConversationEvent::UpdateLatestMessageReadState {
+            self.listener.emit(ConversationEvent::UpdateLatestMessageReadState {
                 conversation_id: conversation_id.to_string(),
-            }));
+            });
         }
 
         // L167-168: ConChange

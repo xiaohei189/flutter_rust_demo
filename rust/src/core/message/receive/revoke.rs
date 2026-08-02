@@ -3,9 +3,8 @@
 use super::handler::MessageHandler;
 use crate::domain::constant::notification_type::REVOKE;
 use crate::domain::error::{Result, SdkError};
-use crate::event::types::SdkEvent;
 use crate::event::events::conversation::ConversationEvent;
-use crate::event::events::message::MessageEvent;
+use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use openim_protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
@@ -149,8 +148,8 @@ impl MessageHandler {
             }
         }
 
-        // 3. 构建 MessageRevoked 结构
-        let _revoked_event = SdkEvent::Message(MessageEvent::Revoked {
+        // 3. 构建并发布 MessageRevoked 事件
+        let revoked_event = MessageEvent::Revoked {
             conversation_id: tips.conversation_id.clone(),
             seq: tips.seq,
             client_msg_id: revoked_msg.client_msg_id.clone(),
@@ -163,7 +162,8 @@ impl MessageHandler {
             source_message_sender_nickname: revoked_msg.sender_nick_name.clone(),
             session_type: tips.sesstion_type,
             is_admin_revoke: tips.is_admin_revoke,
-        });
+        };
+        self.message_listener.emit(revoked_event);
 
         // 4. 更新 DB：替换消息内容为 RevokeNotification
         let notification_content = serde_json::json!({
@@ -469,7 +469,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_repo = repositories.message_repo.clone();
         let conversation_repo = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         message_repo.batch_insert(&[make_local_msg("conv_revoke", "msg_target", 5, "user_1")]).await.unwrap();
         let conv = LocalConversation {
@@ -502,7 +502,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_repo = repositories.message_repo.clone();
         let conversation_repo = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"));
+        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut quote_msg = make_local_msg("conv_quote", "quote_msg", 6, "user_2");
         quote_msg.content_type = 104;
@@ -543,4 +543,5 @@ mod tests {
         assert_eq!(quote.content_type, REVOKE_CT, "quote message should also be revoked");
     }
 }
+
 

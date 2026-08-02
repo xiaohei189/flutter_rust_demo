@@ -1,7 +1,5 @@
 use crate::domain::error::{Result, SdkError};
-use crate::event::bus::EventBus;
-use crate::event::types::SdkEvent;
-use crate::event::events::user::UserEvent;
+use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::domain::model::user::UserInfo;
  use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};
@@ -66,15 +64,15 @@ pub struct UpdateUserInfoResp {}
 
 pub struct UserService {
     http_client: Arc<HttpApiClient>,
-    event_bus: Arc<EventBus>,
+    listener: Arc<dyn UserListener>,
     self_user: Arc<RwLock<Option<UserInfo>>>,
 }
 
 impl UserService {
-    pub fn new(http_client: Arc<HttpApiClient>, event_bus: Arc<EventBus>) -> Self {
+    pub fn new(http_client: Arc<HttpApiClient>, listener: Arc<dyn UserListener>) -> Self {
         Self {
             http_client,
-            event_bus,
+            listener,
             self_user: Arc::new(RwLock::new(None)),
         }
     }
@@ -151,9 +149,9 @@ impl UserService {
         };
 
         if let Some(updated_user) = updated_user {
-            self.event_bus.publish(SdkEvent::User(UserEvent::UserInfoUpdated {
+            self.listener.emit(UserEvent::UserInfoUpdated {
                 user: updated_user,
-            }));
+            });
         }
 
         info!("用户信息已更新到服务器");
@@ -263,4 +261,5 @@ mod tests {
         assert!(json.contains("New Name"));
     }
 }
+
 

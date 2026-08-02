@@ -7,8 +7,7 @@ use crate::api::global::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
-use crate::event::types::SdkEvent;
-use crate::event::events::message::MessageEvent;
+
 use crate::frb_generated::StreamSink;
 use anyhow::{Result, anyhow};
 use std::sync::Arc;
@@ -159,15 +158,8 @@ pub async fn upload_file_with_progress(
     sink: StreamSink<i32>,
 ) -> Result<String> {
     let client = client_holder()?;
-    let event_bus = client.event_bus();
     let progress: crate::core::file::uploader::ProgressCallback = Arc::new(move |pct: u8| {
         let _ = sink.add(pct as i32);
-        event_bus.publish(SdkEvent::Message(MessageEvent::UploadProgress {
-            client_msg_id: String::new(),
-            progress: pct,
-            total_size: 0,
-            uploaded_size: 0,
-        }));
     });
     let result = client.file_uploader.upload_file_with_progress(
         &file_path, &file_name, None, Some(progress),

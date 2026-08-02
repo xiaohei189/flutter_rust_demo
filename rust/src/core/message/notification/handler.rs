@@ -15,11 +15,9 @@ use crate::core::group::service::GroupService;
 use crate::core::message::MessageHandler;
 use crate::core::user::service::UserService;
 use crate::domain::constant::notification_type;
-use crate::event::bus::EventBus;
-use crate::event::types::SdkEvent;
-use crate::event::events::friend::FriendEvent;
-use crate::event::events::group::GroupEvent;
-use crate::event::events::user::UserEvent;
+use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
+use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
+use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::domain::model::UserId;
 use openim_protocol::sdkws::MsgData;
 use serde::Deserialize;
@@ -210,7 +208,9 @@ pub struct NotificationHandler {
     user_manager: Arc<UserService>,
     conversation_syncer: Arc<ConversationSyncer>,
     message_handler: Arc<MessageHandler>,
-    event_bus: Arc<EventBus>,
+    friend_listener: Arc<dyn FriendListener>,
+    group_listener: Arc<dyn GroupListener>,
+    user_listener: Arc<dyn UserListener>,
     user_id: UserId,
 }
 
@@ -221,7 +221,9 @@ impl NotificationHandler {
         user_manager: Arc<UserService>,
         conversation_syncer: Arc<ConversationSyncer>,
         message_handler: Arc<MessageHandler>,
-        event_bus: Arc<EventBus>,
+        friend_listener: Arc<dyn FriendListener>,
+        group_listener: Arc<dyn GroupListener>,
+        user_listener: Arc<dyn UserListener>,
     ) -> Self {
         Self {
             friend_manager,
@@ -229,7 +231,9 @@ impl NotificationHandler {
             user_manager,
             conversation_syncer,
             message_handler,
-            event_bus,
+            friend_listener,
+            group_listener,
+            user_listener,
             user_id: UserId::new(""),
         }
     }
@@ -399,8 +403,8 @@ impl NotificationHandler {
             warn!("[NOTIFY] 接受好友申请后增量同步好友列表失败: {}", e);
         }
 
-        self.event_bus
-            .publish(SdkEvent::Friend(FriendEvent::ApplicationAccepted(application_json)));
+        self.friend_listener
+            .emit(FriendEvent::ApplicationAccepted(application_json));
 
         Ok(())
     }
@@ -420,8 +424,8 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.event_bus
-            .publish(SdkEvent::Friend(FriendEvent::ApplicationRejected(application_json)));
+        self.friend_listener
+            .emit(FriendEvent::ApplicationRejected(application_json));
 
         Ok(())
     }
@@ -441,8 +445,8 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.event_bus
-            .publish(SdkEvent::Friend(FriendEvent::ApplicationAdded(application_json)));
+        self.friend_listener
+            .emit(FriendEvent::ApplicationAdded(application_json));
 
         Ok(())
     }
@@ -453,7 +457,7 @@ impl NotificationHandler {
     async fn handle_user_info_updated(&self, content: &[u8]) -> anyhow::Result<()> {
         let user_info: UserInfoJson = unmarshal_notification_elem(content)?;
 
-        self.event_bus.publish(SdkEvent::User(UserEvent::UserInfoUpdated {
+        self.user_listener.emit(UserEvent::UserInfoUpdated {
             user: crate::domain::model::user::UserInfo {
                 user_id: user_info.user_id,
                 nickname: user_info.nickname,
@@ -464,7 +468,7 @@ impl NotificationHandler {
                 remark: user_info.ex,
                 global_recv_msg_opt: user_info.global_recv_msg_opt,
             },
-        }));
+        });
 
         Ok(())
     }
@@ -486,8 +490,8 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.event_bus
-            .publish(SdkEvent::Group(GroupEvent::ApplicationAdded(application_json)));
+        self.group_listener
+            .emit(GroupEvent::ApplicationAdded(application_json));
 
         Ok(())
     }
@@ -511,8 +515,8 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.event_bus
-            .publish(SdkEvent::Group(GroupEvent::ApplicationApproved(application_json)));
+        self.group_listener
+            .emit(GroupEvent::ApplicationApproved(application_json));
 
         Ok(())
     }
@@ -532,10 +536,11 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.event_bus
-            .publish(SdkEvent::Group(GroupEvent::ApplicationRejected(application_json)));
+        self.group_listener
+            .emit(GroupEvent::ApplicationRejected(application_json));
 
         Ok(())
     }
 }
+
 

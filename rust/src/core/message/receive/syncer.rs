@@ -8,8 +8,7 @@ use crate::domain::ports::SyncServerApi;
 use crate::domain::repository::NotificationSeqRepository;
 use crate::domain::constant::ws_req_identifier;
 use crate::domain::error::{Result, SdkError};
-use crate::event::sender::EventSender;
-use crate::event::events::conversation::{ConversationListener, ConversationEvent};
+use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalNotificationSeq;
 use crate::sdk::context::Repositories;
@@ -113,8 +112,8 @@ pub struct MessageSyncer {
     user_id: UserId,
     /// 配置
     config: SyncConfig,
-    /// 事件
-    pub(crate) events: EventSender<ConversationEvent>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn ConversationListener>,
     /// 内部状态
     synced_max_seqs: Arc<RwLock<HashMap<String, i64>>>,
     sync_lock: Arc<Mutex<()>>,
@@ -127,6 +126,7 @@ impl MessageSyncer {
         repositories: Arc<Repositories>,
         message_handler: Arc<MessageHandler>,
         user_id: UserId,
+        listener: Arc<dyn ConversationListener>,
     ) -> Self {
         Self {
             remote,
@@ -134,29 +134,16 @@ impl MessageSyncer {
             message_handler,
             user_id,
             config: SyncConfig::default(),
-            events: EventSender::new(),
+            listener,
             synced_max_seqs: Arc::new(RwLock::new(HashMap::new())),
             sync_lock: Arc::new(Mutex::new(())),
             per_conv_sync_locks: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: ConversationEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
-
-    fn notify_conv(&self, f: impl FnOnce(&dyn ConversationListener)) {
-    }
-
-    fn on_sync_started(&self) { self.notify_conv(|l| l.on_sync_started()); }
-    fn on_sync_finished(&self) { self.notify_conv(|l| l.on_sync_finished()); }
-    fn on_sync_failed(&self, e: &str) { self.notify_conv(|l| l.on_sync_failed(e)); }
-    fn on_sync_progress(&self, p: i32, m: &str) { self.notify_conv(|l| l.on_sync_progress(p, m)); }
 
     /// 从服务端获取所有会话的最新 maxSeq
     pub async fn get_server_max_seqs(&self) -> Result<HashMap<String, i64>> {
@@ -544,7 +531,7 @@ impl MessageSyncer {
         let total_convs = seq_map.len() as u8;
         for (idx, (conv_id, (_, end_seq))) in seq_map.iter().enumerate() {
             let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
-            self.on_sync_progress(progress as i32, & format!("同步完成 {}: seq={}", conv_id, end_seq));
+            self.send(ConversationEvent::SyncProgress { progress: progress as i32, message: format!("同步完成 {}: seq={}", conv_id, end_seq) });
         }
 
         Ok(())
@@ -582,7 +569,7 @@ impl MessageSyncer {
         let total_convs = seq_map.len() as u8;
         for (idx, (conv_id, (_, _))) in seq_map.iter().enumerate() {
             let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
-            self.on_sync_progress(progress as i32, & format!("重装同步完成 {}: 共 {} 条消息", conv_id, total));
+            self.send(ConversationEvent::SyncProgress { progress: progress as i32, message: format!("重装同步完成 {}: 共 {} 条消息", conv_id, total) });
         }
 
         Ok(())
@@ -616,7 +603,7 @@ impl MessageSyncer {
             message_handler: self.message_handler.clone(),
             user_id: self.user_id.clone(),
             config: self.config.clone(),
-            events: self.events.clone(),
+            listener: self.listener.clone(),
             synced_max_seqs: self.synced_max_seqs.clone(),
             sync_lock: self.sync_lock.clone(),
             per_conv_sync_locks: self.per_conv_sync_locks.clone(),
@@ -672,7 +659,7 @@ mod tests {
             notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
         });
-        let handler = Arc::new(MessageHandler::new(repositories.clone(), UserId::new("test_user")));
+        let handler = Arc::new(MessageHandler::new(repositories.clone(), UserId::new("test_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener()));
         (repositories, handler)
     }
 
@@ -702,7 +689,7 @@ mod tests {
     }
 
     fn make_syncer(remote: Arc<dyn SyncServerApi>, repositories: Arc<Repositories>, handler: Arc<MessageHandler>) -> MessageSyncer {
-        MessageSyncer::new(remote, repositories, handler, UserId::new("test_user"))
+        MessageSyncer::new(remote, repositories, handler, UserId::new("test_user"), crate::event::test_util::noop_conversation_listener())
     }
 
     #[test]
@@ -724,7 +711,7 @@ mod tests {
         let (repositories, handler) = setup_db().await;
         let message_dao = repositories.message_repo.clone();
         let remote = Arc::new(MockSyncerApi::new());
-        let syncer = make_syncer(remote, repositories, handler);
+        let mut syncer = make_syncer(remote, repositories, handler);
         let mut msgs_map = HashMap::new();
         msgs_map.insert("conv_a".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_a", 1, "hello"), make_msg_data("conv_a", 2, "world")], ..Default::default() });
         syncer.handle_pulled_messages(&msgs_map).await.unwrap();
@@ -787,9 +774,10 @@ mod tests {
         let mut pull_msgs = HashMap::new();
         pull_msgs.insert("conv_login".to_string(), PullMsgs { msgs: vec![make_msg_data("conv_login", 1, "m1"), make_msg_data("conv_login", 2, "m2")], ..Default::default() });
         let remote = Arc::new(MockSyncerApi::new().with_max_seqs(server_seqs).with_pull_msgs(pull_msgs));
-        let syncer = make_syncer(remote, repositories, handler);
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-        syncer.set_event_sender(tx);
+        let hub = crate::event::hub::EventHub::new();
+        let mut syncer = make_syncer(remote, repositories, handler);
+        syncer.listener = hub.clone();
+        let mut rx = hub.take_conv_rx().unwrap();
         syncer.sync_on_login().await.unwrap();
         let msg1 = message_dao.get_by_client_msg_id("conv_login", "msg_conv_login_1").await.unwrap();
         assert!(msg1.is_some());
@@ -810,4 +798,5 @@ mod tests {
         assert!(syncer2.is_connection_kicked().await);
     }
 }
+
 

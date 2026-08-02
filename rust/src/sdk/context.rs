@@ -1,8 +1,8 @@
 //! 运行时上下文 — 聚合基础设施与仓储，管理 SDK 生命周期
 
+use crate::event::hub::EventHub;
 use crate::sdk::config::ClientConfig;
 use crate::domain::error::{Result, SdkError};
-use crate::event::EventBus;
 use crate::domain::model::UserId;
 use crate::domain::repository::*;
 use crate::infra::database::pool::create_pool;
@@ -87,7 +87,7 @@ pub struct Infra {
 /// 运行时上下文 — SDK 所有组件的共享状态
 pub struct RuntimeContext {
     pub config: ClientConfig,
-    pub event_bus: Arc<EventBus>,
+    pub listeners: Arc<EventHub>,
     pub cancel_token: CancellationToken,
     pub user_id: UserId,
     pub operation_id: String,
@@ -99,7 +99,7 @@ impl RuntimeContext {
     /// 创建运行时上下文
     pub async fn new(
         config: ClientConfig,
-        event_bus: Arc<EventBus>,
+        listeners: Arc<EventHub>,
         cancel_token: CancellationToken,
     ) -> Result<Self> {
         let infra = Infra::new(&config).await?;
@@ -108,7 +108,7 @@ impl RuntimeContext {
 
         Ok(Self {
             config,
-            event_bus,
+            listeners,
             cancel_token,
             user_id: UserId::new(""),
             operation_id,
@@ -157,12 +157,13 @@ mod tests {
             upload_url: Some("http://localhost:10003".to_string()),
             data_dir: data_dir.clone(),
         };
-        let event_bus = Arc::new(EventBus::new());
+        let listeners = EventHub::new();
         let cancel_token = CancellationToken::new();
 
-        let context = RuntimeContext::new(config, event_bus, cancel_token).await;
+        let context = RuntimeContext::new(config, listeners, cancel_token).await;
         assert!(context.is_ok());
 
         let _ = std::fs::remove_dir_all(&data_dir);
     }
 }
+

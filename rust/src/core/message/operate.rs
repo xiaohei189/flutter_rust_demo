@@ -8,9 +8,8 @@ mod read;
 mod search;
 
 use crate::domain::ports::message::MessageServerApi;
-use crate::event::EventBus;
-use crate::event::sender::EventSender;
-use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
+use crate::event::events::message::{MessageListener, MessageListenerExt};
 use crate::domain::model::UserId;
 use crate::sdk::context::Repositories;
 use std::sync::Arc;
@@ -20,33 +19,29 @@ pub struct MessageService {
     pub(crate) repositories: Arc<Repositories>,
     pub(crate) api: Arc<dyn MessageServerApi>,
     pub(crate) user_id: UserId,
-    pub(crate) event_bus: Arc<EventBus>,
-    pub(crate) events: EventSender<ConversationEvent>,
+    pub(crate) listener: Arc<dyn ConversationListener>,
+    pub(crate) message_listener: Arc<dyn MessageListener>,
 }
 
 impl MessageService {
     pub fn new(
         repositories: Arc<Repositories>,
         api: Arc<dyn MessageServerApi>,
-        event_bus: Arc<EventBus>,
+        listener: Arc<dyn ConversationListener>,
+        message_listener: Arc<dyn MessageListener>,
         user_id: UserId,
     ) -> Self {
         Self {
             repositories,
             api,
             user_id,
-            event_bus,
-            events: EventSender::new(),
+            listener,
+            message_listener,
         }
     }
 
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: ConversationEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
 
     pub fn set_user_id(&self, user_id: String) {
@@ -112,17 +107,15 @@ mod tests {
     }
 
     pub(crate) fn make_service(repositories: Arc<Repositories>) -> MessageService {
-        let event_bus = Arc::new(EventBus::new());
         let api: Arc<dyn MessageServerApi> = Arc::new(SuccessMockApi);
-        MessageService::new(repositories, api, event_bus, UserId::new("user_1"))
+        MessageService::new(repositories, api, crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener(), UserId::new("user_1"))
     }
 
     pub(crate) fn make_service_with_api(
         repositories: Arc<Repositories>,
         api: Arc<dyn MessageServerApi>,
     ) -> MessageService {
-        let event_bus = Arc::new(EventBus::new());
-        MessageService::new(repositories, api, event_bus, UserId::new("user_1"))
+        MessageService::new(repositories, api, crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener(), UserId::new("user_1"))
     }
 
     fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64, send_id: &str) -> LocalChatLog {
@@ -269,3 +262,4 @@ mod tests {
         assert!(logs.iter().all(|m| m.is_read == 1));
     }
 }
+

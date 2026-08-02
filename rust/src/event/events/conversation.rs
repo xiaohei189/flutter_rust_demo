@@ -47,3 +47,22 @@ pub trait ConversationListener: Send + Sync {
     fn on_user_input_status_changed(&self, _conversation_id: &str, _user_id: &str, _platform_ids: &[i32]) {}
     fn on_update_latest_message_read_state(&self, _conversation_id: &str) {}
 }
+
+/// 事件 → 回调 的统一分发（Service 通过它把领域事件交给 Listener）
+pub trait ConversationListenerExt: ConversationListener {
+    fn emit(&self, event: ConversationEvent) {
+        match event {
+            ConversationEvent::Changed(convs) => self.on_changed(&convs),
+            ConversationEvent::Deleted(ids) => self.on_deleted(&ids),
+            ConversationEvent::New(convs) => self.on_new(&convs),
+            ConversationEvent::TotalUnreadCountChanged(count) => self.on_total_unread_count_changed(count),
+            ConversationEvent::SyncStarted => self.on_sync_started(),
+            ConversationEvent::SyncFinished => self.on_sync_finished(),
+            ConversationEvent::SyncFailed(error) => self.on_sync_failed(&error),
+            ConversationEvent::SyncProgress { progress, message } => self.on_sync_progress(progress, &message),
+            ConversationEvent::UserInputStatusChanged { conversation_id, user_id, platform_ids } => self.on_user_input_status_changed(&conversation_id, &user_id, &platform_ids),
+            ConversationEvent::UpdateLatestMessageReadState { conversation_id } => self.on_update_latest_message_read_state(&conversation_id),
+        }
+    }
+}
+impl<T: ConversationListener + ?Sized> ConversationListenerExt for T {}

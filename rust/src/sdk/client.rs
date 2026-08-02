@@ -29,12 +29,14 @@ use crate::core::message::notification::handler::NotificationHandler;
 use crate::core::user::online::service::OnlineStatusService;
 use crate::core::user::service::UserService;
 use crate::domain::error::{Result, SdkError};
-use crate::event::EventBus;
 use crate::event::events::connection::ConnectionEvent;
+use crate::event::events::message::MessageEvent;
+use crate::event::events::user::UserEvent;
+use crate::event::hub::EventHub;
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::friend::FriendEvent;
 use crate::event::events::group::GroupEvent;
-use crate::event::events::message::MessageEvent;
+
 use crate::sdk::context::RuntimeContext;
 
 use std::sync::Arc;
@@ -57,13 +59,10 @@ pub struct OpenIMClient {
     pub(crate) online_status: Arc<OnlineStatusService>,
     pub(crate) file_uploader: Arc<FileUploader>,
     pub(crate) message_service: Arc<MessageService>,
-    pub(crate) event_bus: Arc<EventBus>,
+    
     pub(crate) send_queue: Arc<MessageSendQueue>,
-    // Pre-created event receivers (capture events from login time)
-    pub(crate) conn_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>>>>,
-    pub(crate) conv_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>>>>,
-    pub(crate) friend_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>>>>,
-    pub(crate) group_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>>>>,
+    /// 事件中枢（Listener 实现 → Dart StreamSink 数据源）
+    pub(crate) listeners: Arc<EventHub>,
 }
 
 impl OpenIMClient {
@@ -72,41 +71,41 @@ impl OpenIMClient {
         OpenIMClientBuilder::new(config).build().await
     }
 
-    pub fn set_connection_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
-        self.connection.set_event_sender(tx);
-    }
-
     /// 获取连接事件接收器（只能调用一次，重复调用返回错误）
     pub fn take_conn_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>, SdkError> {
-        self.conn_rx.lock().map_err(|e| SdkError::unknown(format!("conn_rx mutex poisoned: {}", e)))?
-            .take().ok_or_else(|| SdkError::unknown("connection receiver already taken"))
+        self.listeners.take_conn_rx().ok_or_else(|| SdkError::unknown("connection receiver already taken"))
     }
 
     /// 获取会话事件接收器（只能调用一次，重复调用返回错误）
     pub fn take_conv_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>, SdkError> {
-        self.conv_rx.lock().map_err(|e| SdkError::unknown(format!("conv_rx mutex poisoned: {}", e)))?
-            .take().ok_or_else(|| SdkError::unknown("conversation receiver already taken"))
+        self.listeners.take_conv_rx().ok_or_else(|| SdkError::unknown("conversation receiver already taken"))
     }
 
     /// 获取好友事件接收器（只能调用一次，重复调用返回错误）
     pub fn take_friend_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>, SdkError> {
-        self.friend_rx.lock().map_err(|e| SdkError::unknown(format!("friend_rx mutex poisoned: {}", e)))?
-            .take().ok_or_else(|| SdkError::unknown("friend receiver already taken"))
+        self.listeners.take_friend_rx().ok_or_else(|| SdkError::unknown("friend receiver already taken"))
     }
 
     /// 获取群组事件接收器（只能调用一次，重复调用返回错误）
     pub fn take_group_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>, SdkError> {
-        self.group_rx.lock().map_err(|e| SdkError::unknown(format!("group_rx mutex poisoned: {}", e)))?
-            .take().ok_or_else(|| SdkError::unknown("group receiver already taken"))
+        self.listeners.take_group_rx().ok_or_else(|| SdkError::unknown("group receiver already taken"))
+    }
+
+    /// 获取消息事件接收器（只能调用一次，重复调用返回错误）
+    pub fn take_message_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<MessageEvent>, SdkError> {
+        self.listeners.take_message_rx().ok_or_else(|| SdkError::unknown("message receiver already taken"))
+    }
+
+    /// 获取用户事件接收器（只能调用一次，重复调用返回错误）
+    pub fn take_user_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<UserEvent>, SdkError> {
+        self.listeners.take_user_rx().ok_or_else(|| SdkError::unknown("user receiver already taken"))
     }
 }
 
 use crate::sdk::config::ClientConfig;
-use crate::event::types::SdkEvent;
 use crate::infra::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use prost::Message as ProstMessage;
-use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::{info, warn, debug, Instrument};
 
@@ -121,8 +120,7 @@ impl OpenIMClient {
 
     /// 启动推送消息处理器 + 重连消息同步监听
     fn spawn_push_message_handler(&self) {
-        let event_bus = self.event_bus.clone();
-        let message_handler = self.message_handler.clone();
+                let message_handler = self.message_handler.clone();
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();
         let conversation_syncer = self.conversation_syncer.clone();
@@ -157,26 +155,14 @@ impl OpenIMClient {
         }));
 
         tokio::spawn(async move {
-            let mut subscription = event_bus.subscribe();
-            debug!("push_message_handler: started");
+                        debug!("push_message_handler: started");
             loop {
                 tokio::select! {
                     _ = cancel_token.cancelled() => {
                         info!("push_message_handler: cancelled");
                         break;
                     }
-                    event = subscription.next() => {
-                        match event {
-                            Some(SdkEvent::Message(MessageEvent::PushNotificationMessages { msgs, .. })) => {
-                                notification_handler.handle_notifications(&msgs).await;
-                            }
-                            None => {
-                                info!("push_message_handler: event stream closed");
-                                break;
-                            }
-                            _ => {}
-                        }
-                    }
+
                     push_batch = push_rx.recv() => {
                         if let Some((batch, operation_id)) = push_batch {
                             let span = span_from_operation_id("push_message_handler", &operation_id);
@@ -297,9 +283,7 @@ impl OpenIMClient {
         Ok(())
     }
 
-    pub fn event_bus(&self) -> Arc<EventBus> {
-        self.event_bus.clone()
-    }
+    
 
     pub fn login_user_id(&self) -> String {
         self.context.get_user_id()
@@ -364,3 +348,6 @@ async fn handle_push_batch(
         message_handler.publish_total_unread_count_changed().await;
     }
 }
+
+
+

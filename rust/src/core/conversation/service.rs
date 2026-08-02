@@ -1,8 +1,7 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
 use crate::domain::error::Result;
-use crate::event::sender::EventSender;
-use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::local::LocalConversation;
 use crate::sdk::context::Repositories;
 
@@ -12,25 +11,17 @@ use tracing::{debug, info};
 pub struct ConversationService {
     /// 外部依赖
     repositories: Arc<Repositories>,
-    /// 事件
-    pub(crate) events: EventSender<ConversationEvent>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn ConversationListener>,
 }
 
 impl ConversationService {
-    pub fn new(repositories: Arc<Repositories>) -> Self {
-        Self {
-            repositories,
-            events: EventSender::new(),
-        }
-    }
-
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConversationEvent>) {
-        self.events.set_sender(tx);
+    pub fn new(repositories: Arc<Repositories>, listener: Arc<dyn ConversationListener>) -> Self {
+        Self { repositories, listener }
     }
 
     pub(crate) fn send(&self, e: ConversationEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
 
     pub fn dao(&self) -> Arc<dyn crate::domain::repository::conversation::ConversationRepository> {
@@ -178,14 +169,14 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_creation() {
         let pool = create_pool_memory().await.unwrap();
-        let manager = ConversationService::new(make_test_repositories(pool));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         assert_eq!(manager.count().await.unwrap(), 0);
     }
 
     #[tokio::test]
     async fn test_conversation_manager_upsert() {
         let pool = create_pool_memory().await.unwrap();
-        let manager = ConversationService::new(make_test_repositories(pool));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
         assert_eq!(manager.count().await.unwrap(), 1);
@@ -197,7 +188,7 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_delete() {
         let pool = create_pool_memory().await.unwrap();
-        let manager = ConversationService::new(make_test_repositories(pool));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
         assert_eq!(manager.count().await.unwrap(), 1);
@@ -208,7 +199,7 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_set_pinned() {
         let pool = create_pool_memory().await.unwrap();
-        let manager = ConversationService::new(make_test_repositories(pool));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
         manager.set_pinned("conv_1", true).await.unwrap();
@@ -223,7 +214,7 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_update_unread_count() {
         let pool = create_pool_memory().await.unwrap();
-        let manager = ConversationService::new(make_test_repositories(pool));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
         manager.update_unread_count("conv_1", 5).await.unwrap();
@@ -234,7 +225,7 @@ mod tests {
     #[tokio::test]
     async fn test_conversation_manager_set_draft() {
         let pool = create_pool_memory().await.unwrap();
-        let manager = ConversationService::new(make_test_repositories(pool));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         let conv = create_test_conversation("conv_1");
         manager.upsert_conversation(conv).await.unwrap();
         manager.set_draft("conv_1", "test draft").await.unwrap();
@@ -245,3 +236,4 @@ mod tests {
         assert_eq!(conv.draft_text, "");
     }
 }
+

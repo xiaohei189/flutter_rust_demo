@@ -11,8 +11,7 @@ use crate::core::connection::message_batcher::MessageBatcher;
 use crate::core::connection::ws::GzipCompressor;
 use crate::core::connection::ws::OpenIMResp;
 use crate::domain::error::{Result, SdkError};
-use crate::event::sender::EventSender;
-use crate::event::events::connection::ConnectionEvent;
+use crate::event::events::connection::{ConnectionEvent, ConnectionListener, ConnectionListenerExt};
 use futures_util::SinkExt;
 use futures_util::stream::SplitSink;
 use openim_protocol::sdkws::PushMessages;
@@ -64,21 +63,16 @@ pub struct ConnectionManager {
     pub(crate) compressor: GzipCompressor,
     pub(crate) message_batcher: MessageBatcher,
     pub(crate) push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>>>>,
-    pub(crate) events: EventSender<ConnectionEvent>,
+    pub(crate) listener: Arc<dyn ConnectionListener>,
     pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
 
 impl ConnectionManager {
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: ConnectionEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
 
-    pub fn new(cancel_token: CancellationToken) -> Self {
+    pub fn new(cancel_token: CancellationToken, listener: Arc<dyn ConnectionListener>) -> Self {
         let push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>>>> = Arc::new(std::sync::Mutex::new(None));
         let push_tx_clone = push_tx.clone();
         let compressor = GzipCompressor::new();
@@ -106,7 +100,7 @@ impl ConnectionManager {
             compressor,
             message_batcher,
             push_tx,
-            events: EventSender::new(),
+            listener,
             on_connected_hook: Arc::new(std::sync::Mutex::new(None)),
         }
     }
@@ -226,7 +220,7 @@ impl ConnectionManager {
             compressor: GzipCompressor::new(),
             message_batcher: MessageBatcher::new(|_, _| {}),
             push_tx: self.push_tx.clone(),
-            events: self.events.clone(),
+            listener: self.listener.clone(),
             on_connected_hook: self.on_connected_hook.clone(),
         }
     }
@@ -293,14 +287,14 @@ mod tests {
     #[tokio::test]
     async fn test_connection_manager_creation() {
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new(cancel_token);
+        let manager = ConnectionManager::new(cancel_token, crate::event::test_util::noop_connection_listener());
         assert_eq!(manager.get_state().await, ConnectionState::Disconnected);
     }
 
     #[tokio::test]
     async fn test_connection_state_transitions() {
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new(cancel_token);
+        let manager = ConnectionManager::new(cancel_token, crate::event::test_util::noop_connection_listener());
         manager.set_state(ConnectionState::Connecting).await;
         assert_eq!(manager.get_state().await, ConnectionState::Connecting);
         manager.set_state(ConnectionState::Connected).await;
@@ -312,7 +306,7 @@ mod tests {
     #[tokio::test]
     async fn test_is_connected() {
         let cancel_token = CancellationToken::new();
-        let manager = ConnectionManager::new(cancel_token);
+        let manager = ConnectionManager::new(cancel_token, crate::event::test_util::noop_connection_listener());
         assert!(!manager.is_connected().await);
         manager.set_state(ConnectionState::Connected).await;
         assert!(manager.is_connected().await);
@@ -323,7 +317,7 @@ mod tests {
     #[tokio::test]
     async fn test_clone_shallow_copies_all_fields() {
         let cancel_token = CancellationToken::new();
-        let original = ConnectionManager::new(cancel_token.clone());
+        let original = ConnectionManager::new(cancel_token.clone(), crate::event::test_util::noop_connection_listener());
         let cloned = original.clone_shallow();
         assert!(!cloned.cancel_token.is_cancelled());
         assert_eq!(original.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
@@ -335,5 +329,6 @@ mod tests {
         assert!(Arc::ptr_eq(&original.push_tx, &cloned.push_tx));
         assert!(Arc::ptr_eq(&original.on_connected_hook, &cloned.on_connected_hook));
     }
+
 
 

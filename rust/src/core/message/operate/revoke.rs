@@ -4,8 +4,7 @@ use super::MessageService;
 use crate::domain::ports::message::RevokeMessageReq;
 use crate::domain::constant::notification_type;
 use crate::domain::error::{Result, SdkError};
-use crate::event::types::SdkEvent;
-use crate::event::events::message::MessageEvent;
+
 use tracing::{info, warn};
 
 impl MessageService {
@@ -40,39 +39,10 @@ impl MessageService {
         seq: i64,
         session_type: i32,
     ) -> Result<()> {
-        let user_id = self.user_id.get().await;
-
-        // 获取原消息信息用于构建事件
-        let original_msg = self.repositories.message_repo.get_by_client_msg_id(conversation_id, client_msg_id).await?;
-
         // 更新本地数据库：标记消息为已撤回
         self.repositories.message_repo
             .update_content_type(conversation_id, client_msg_id, notification_type::REVOKE)
             .await?;
-
-        // 构建完整的 MessageRevoked 事件
-        let revoke_time = chrono::Utc::now().timestamp_millis();
-        let (source_message_send_time, source_message_send_id, source_message_sender_nickname) =
-            if let Some(msg) = original_msg {
-                (msg.send_time, msg.send_id.clone(), msg.sender_nick_name.clone())
-            } else {
-                (0, String::new(), String::new())
-            };
-
-        self.event_bus.publish(SdkEvent::Message(MessageEvent::Revoked {
-            conversation_id: conversation_id.to_string(),
-            seq,
-            client_msg_id: client_msg_id.to_string(),
-            revoker_id: user_id,
-            revoker_role: 0,
-            revoker_nickname: String::new(),
-            revoke_time,
-            source_message_send_time,
-            source_message_send_id,
-            source_message_sender_nickname,
-            session_type,
-            is_admin_revoke: false,
-        }));
 
         Ok(())
     }
@@ -105,4 +75,5 @@ impl MessageService {
         )))
     }
 }
+
 

@@ -23,7 +23,6 @@ async fn test_conversation_list_sync() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -35,7 +34,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     // A 发消息触发会话创建
     let _ = sender_sdk.send_text_message("会话同步测试", &user2.user_id, 1).await;
@@ -47,7 +46,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     break;
                 }
             }
@@ -78,7 +77,6 @@ async fn test_get_single_conversation() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -90,7 +88,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("单会话查询测试", &user2.user_id, 1).await;
 
@@ -100,7 +98,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     break;
                 }
             }
@@ -136,7 +134,6 @@ async fn test_conversation_unread_count() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -148,7 +145,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1_sdk = create_sdk(&user1, &user1_im_token).await;
     let user2_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut user2_events = user2_sdk.event_bus().subscribe();
+    let mut user2_events = subscribe_all(&user2_sdk);
 
     // 发送 3 条消息
     for i in 1..=3 {
@@ -168,7 +165,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 3 { break; }
                 }
@@ -201,7 +198,6 @@ async fn test_conversation_mark_read() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -213,7 +209,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1_sdk = create_sdk(&user1, &user1_im_token).await;
     let user2_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut user2_events = user2_sdk.event_bus().subscribe();
+    let mut user2_events = subscribe_all(&user2_sdk);
 
     // ===== 阶段一：正常路径（消息在本地） =====
     println!("=== 阶段一：正常路径 ===");
@@ -234,7 +230,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 2 { break; }
                 }
@@ -261,7 +257,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout2 => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::Conversation(ConversationEvent::Changed(conversations))) = event {
+                if let Some(TestEvent::Conversation(ConversationEvent::Changed(conversations))) = event {
                     for conv in &conversations {
                         if conv.conversation_id == conv_id {
                             assert_eq!(conv.unread_count, 0, "事件中未读应为 0");
@@ -295,7 +291,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout3 => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 4 { break; }
                 }
@@ -338,7 +334,6 @@ async fn test_conversation_pinned() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -350,7 +345,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     // 先发消息创建会话
     let _ = sender_sdk.send_text_message("置顶测试", &user2.user_id, 1).await;
@@ -361,7 +356,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -399,7 +394,6 @@ async fn test_conversation_private() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -411,7 +405,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("免打扰测试", &user2.user_id, 1).await;
 
@@ -421,7 +415,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -453,7 +447,6 @@ async fn test_conversation_draft() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -465,7 +458,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("草稿测试", &user2.user_id, 1).await;
 
@@ -475,7 +468,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -527,7 +520,6 @@ async fn test_conversation_delete() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -539,7 +531,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("删除测试", &user2.user_id, 1).await;
 
@@ -549,7 +541,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -585,7 +577,6 @@ async fn test_set_conversation() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -597,7 +588,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("通用设置测试", &user2.user_id, 1).await;
 
@@ -607,7 +598,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -698,7 +689,6 @@ async fn test_conversation_lifecycle() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -710,7 +700,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1_sdk = create_sdk(&user1, &user1_im_token).await;
     let user2_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut user2_events = user2_sdk.event_bus().subscribe();
+    let mut user2_events = subscribe_all(&user2_sdk);
 
     // Step 1: A 发消息给 B
     println!("[1/6] A 发消息给 B...");
@@ -722,7 +712,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -780,7 +770,6 @@ async fn test_unread_count_persistence() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -792,7 +781,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     // 发消息创建会话
     let _ = sender_sdk.send_text_message("持久化测试", &user2.user_id, 1).await;
@@ -803,7 +792,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -856,7 +845,6 @@ async fn test_unread_count_after_message() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -868,7 +856,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1_sdk = create_sdk(&user1, &user1_im_token).await;
     let user2_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut user2_events = user2_sdk.event_bus().subscribe();
+    let mut user2_events = subscribe_all(&user2_sdk);
 
     // A 发 2 条消息
     let _ = user1_sdk.send_text_message("消息1", &user2.user_id, 1).await;
@@ -883,7 +871,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = user2_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 2 { break; }
                 }
@@ -933,7 +921,6 @@ async fn test_update_conversation_unread_count() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -945,7 +932,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("未读数更新测试", &user2.user_id, 1).await;
 
@@ -955,7 +942,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -997,7 +984,6 @@ async fn test_conversation_list_split() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -1022,7 +1008,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     }
 
     println!("[Phase 2] 发送 5 条消息创建 5 个会话...");
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
     for (i, sdk) in sender_sdks.iter().enumerate() {
         let _ = sdk.send_text_message(
             &format!("分页测试消息 {}", i),
@@ -1040,7 +1026,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 5 { break; }
                 }
@@ -1123,7 +1109,6 @@ async fn test_multiple_conversations() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -1136,7 +1121,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&sender, &sender_token).await;
     let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
 
@@ -1153,7 +1138,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event {
                     msg_count += 1;
                     if msg_count >= 2 { break; }
                 }
@@ -1213,7 +1198,6 @@ async fn test_search_conversations() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -1226,7 +1210,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&sender, &sender_token).await;
     let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
 
@@ -1240,7 +1224,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1302,7 +1286,6 @@ async fn test_hide_conversation() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -1315,7 +1298,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&sender, &sender_token).await;
     let receiver_sdk = create_sdk(&receiver, &receiver_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     ensure_friends(&sender_sdk, &sender.user_id, &receiver_sdk, &receiver.user_id).await;
 
@@ -1329,7 +1312,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1381,7 +1364,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout2 => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1416,7 +1399,6 @@ async fn test_conversation_full_persistence() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
@@ -1431,7 +1413,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("持久化测试消息", &user2.user_id, 1).await;
 
@@ -1441,7 +1423,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }
@@ -1521,7 +1503,6 @@ async fn test_concurrent_conversation_ops() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     use std::sync::Arc;
@@ -1537,7 +1518,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sender_sdk = create_sdk(&user1, &user1_im_token).await;
     let receiver_sdk = create_sdk(&user2, &user2_im_token).await;
-    let mut receiver_events = receiver_sdk.event_bus().subscribe();
+    let mut receiver_events = subscribe_all(&receiver_sdk);
 
     let _ = sender_sdk.send_text_message("并发测试消息", &user2.user_id, 1).await;
 
@@ -1547,7 +1528,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
         tokio::select! {
             _ = &mut timeout => { break; }
             event = receiver_events.next() => {
-                if let Some(SdkEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { .. })) = event { break; }
             }
         }
     }

@@ -599,3 +599,65 @@ pub mod mock {
         ).await;
     }
 }
+
+// ============================================================================
+// 事件订阅适配器
+// ============================================================================
+// 旧版 SDK 通过 `event_bus().subscribe()` 获取统一的 SdkEvent 流；
+// 重构后事件经 Listener → EventHub 分发到各领域通道。此处把各通道合并为一个
+// `TestEvents` 流，保持集成测试的等待语义不变。
+
+use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
+use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::event::events::friend::FriendEvent;
+use rust_lib_flutter_rust_demo::event::events::group::GroupEvent;
+use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+use rust_lib_flutter_rust_demo::event::events::user::UserEvent;
+use tokio::sync::mpsc::UnboundedReceiver;
+
+/// 合并后的测试事件（等价于旧 `SdkEvent`）
+#[derive(Debug)]
+pub enum TestEvent {
+    Connection(ConnectionEvent),
+    Conversation(ConversationEvent),
+    Friend(FriendEvent),
+    Group(GroupEvent),
+    User(UserEvent),
+    Message(MessageEvent),
+}
+
+/// 合并后的测试事件流（订阅 EventHub 全部领域通道）
+pub struct TestEvents {
+    conn: UnboundedReceiver<ConnectionEvent>,
+    conv: UnboundedReceiver<ConversationEvent>,
+    friend: UnboundedReceiver<FriendEvent>,
+    group: UnboundedReceiver<GroupEvent>,
+    user: UnboundedReceiver<UserEvent>,
+    message: UnboundedReceiver<MessageEvent>,
+}
+
+/// 订阅 SDK 的全部事件通道（等价于旧 `sdk.event_bus().subscribe()`）
+pub fn subscribe_all(sdk: &OpenIMClient) -> TestEvents {
+    TestEvents {
+        conn: sdk.take_conn_rx().expect("conn rx"),
+        conv: sdk.take_conv_rx().expect("conv rx"),
+        friend: sdk.take_friend_rx().expect("friend rx"),
+        group: sdk.take_group_rx().expect("group rx"),
+        user: sdk.take_user_rx().expect("user rx"),
+        message: sdk.take_message_rx().expect("message rx"),
+    }
+}
+
+impl TestEvents {
+    /// 等待下一个任意领域事件
+    pub async fn next(&mut self) -> Option<TestEvent> {
+        tokio::select! {
+            e = self.conn.recv() => e.map(TestEvent::Connection),
+            e = self.conv.recv() => e.map(TestEvent::Conversation),
+            e = self.friend.recv() => e.map(TestEvent::Friend),
+            e = self.group.recv() => e.map(TestEvent::Group),
+            e = self.user.recv() => e.map(TestEvent::User),
+            e = self.message.recv() => e.map(TestEvent::Message),
+        }
+    }
+}

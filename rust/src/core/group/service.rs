@@ -1,9 +1,6 @@
 use crate::domain::error::{Result, SdkError};
-use crate::event::bus::EventBus;
-use crate::event::sender::EventSender;
-use crate::event::types::SdkEvent;
-use crate::event::events::group::{GroupListener, GroupEvent};
-use crate::event::types::GroupReadReceipt;
+use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
+
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalGroup;
@@ -349,8 +346,8 @@ pub struct GroupService {
     /// 内部状态
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
-    /// 事件
-    pub(crate) events: EventSender<GroupEvent>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn GroupListener>,
 }
 
 impl GroupService {
@@ -358,6 +355,7 @@ impl GroupService {
         http_client: Arc<HttpApiClient>,
         repositories: Arc<Repositories>,
         user_id: UserId,
+        listener: Arc<dyn GroupListener>,
     ) -> Self {
         Self {
             http_client,
@@ -365,25 +363,13 @@ impl GroupService {
             user_id,
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
-            events: EventSender::new(),
+            listener,
         }
     }
 
-    pub fn set_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<GroupEvent>) {
-        self.events.set_sender(tx);
-    }
-
     pub(crate) fn send(&self, e: GroupEvent) {
-        tracing::info!("[SEND] {:?}, has_subscriber={}", &e, self.events.has_subscriber());
-        self.events.publish(e);
+        self.listener.emit(e);
     }
-
-    fn notify_group(&self, f: impl FnOnce(&dyn GroupListener)) {
-    }
-
-    fn on_joined_group_added(&self, g: &GroupInfo) { self.notify_group(|l| l.on_joined_group_added(g)); }
-    fn on_group_info_changed(&self, g: &GroupInfo) { self.notify_group(|l| l.on_group_info_changed(g)); }
-    fn on_group_read_receipt(&self, r: &[GroupReadReceipt]) { self.notify_group(|l| l.on_group_read_receipt(r)); }
 
     pub async fn set_user_id(&self, user_id: String) {
         self.user_id.set(user_id.clone()).await;
@@ -1252,5 +1238,6 @@ mod tests {
         assert!(json.contains("violation"));
     }
 }
+
 
 

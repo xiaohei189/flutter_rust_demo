@@ -5,6 +5,7 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::connection::ws::OpenIMResp;
 use crate::domain::constant::{req_identifier_name, ws_push_identifier, ws_req_identifier};
+use crate::event::events::connection::ConnectionListenerExt;
 use crate::infra::logger::decode_operation_id;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
@@ -27,7 +28,7 @@ impl ConnectionManager {
         let compressor = self.compressor.clone();
         let message_batcher = self.message_batcher.clone();
         let is_manual_disconnect = self.is_manual_disconnect.clone();
-        let events = self.events.clone();
+        let listener = self.listener.clone();
 
         tokio::spawn(async move {
             let mut read = read;
@@ -97,7 +98,7 @@ impl ConnectionManager {
                                                     }
                                                     *is_manual_disconnect.write().await = true;
                                                     message_batcher.close().await;
-                                                    events.publish(crate::event::events::connection::ConnectionEvent::Logout);
+                                                    listener.emit(crate::event::events::connection::ConnectionEvent::Logout);
                                                     cancel.cancel();
                                                     should_break = true;
                                                 }
@@ -106,7 +107,7 @@ impl ConnectionManager {
                                                     *is_manual_disconnect.write().await = true;
                                                     *state.write().await = crate::core::connection::manager::ConnectionState::Kicked;
                                                     message_batcher.close().await;
-                                                    events.publish(crate::event::events::connection::ConnectionEvent::KickedOffline(resp.err_msg.to_string()));
+                                                    listener.emit(crate::event::events::connection::ConnectionEvent::KickedOffline(resp.err_msg.to_string()));
                                                     cancel.cancel();
                                                     should_break = true;
                                                 }

@@ -5,7 +5,6 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_websocket_reconnection() {
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
     let _ = tracing_subscriber::fmt()
@@ -30,7 +29,7 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
         Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir),
     )).await.unwrap();
 
-    let mut event_sub = sdk.event_bus().subscribe();
+    let mut event_sub = subscribe_all(&sdk);
 
     sdk.connect(WS_URL, &cert.im_token, &cert.user_id).await.unwrap();
     println!("  ✅ 初始连接成功");
@@ -46,9 +45,9 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
             _ = &mut timeout => { break; }
             event = event_sub.next() => {
                 match event {
-                    Some(SdkEvent::Connection(ConnectionEvent::Connected)) => { println!("  ✅ Connected"); events.push("Connected"); }
-                    Some(SdkEvent::Connection(ConnectionEvent::Connecting)) => { println!("  🔄 Connecting"); events.push("Connecting"); }
-                    Some(SdkEvent::Connection(ConnectionEvent::Disconnected(reason))) => { println!("  ❌ Disconnected: {}", reason); events.push("Disconnected"); }
+                    Some(TestEvent::Connection(ConnectionEvent::Connected)) => { println!("  ✅ Connected"); events.push("Connected"); }
+                    Some(TestEvent::Connection(ConnectionEvent::Connecting)) => { println!("  🔄 Connecting"); events.push("Connecting"); }
+                    Some(TestEvent::Connection(ConnectionEvent::Disconnected(reason))) => { println!("  ❌ Disconnected: {}", reason); events.push("Disconnected"); }
                     Some(_) => {},
                     None => break,
                 }
@@ -93,7 +92,6 @@ async fn test_reconnection() {
 
 #[tokio::test]
 async fn test_connection_state_transitions() {
-    use rust_lib_flutter_rust_demo::event::types::SdkEvent;
 use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
     let _ = tracing_subscriber::fmt()
@@ -118,7 +116,7 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
     )).await.unwrap();
 
     let mut events = Vec::new();
-    let mut event_sub = sdk.event_bus().subscribe();
+    let mut event_sub = subscribe_all(&sdk);
 
     println!("连接...");
     sdk.connect(WS_URL, &cert.im_token, &cert.user_id).await.unwrap();
@@ -130,9 +128,9 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
             _ = &mut timeout => { break; }
             event = event_sub.next() => {
                 match event {
-                    Some(SdkEvent::Connection(ConnectionEvent::Connected)) => { println!("  ✅ Connected"); events.push("Connected"); }
-                    Some(SdkEvent::Connection(ConnectionEvent::Connecting)) => { println!("  🔄 Connecting"); events.push("Connecting"); }
-                    Some(SdkEvent::Connection(ConnectionEvent::Disconnected(_))) => { println!("  ❌ Disconnected"); events.push("Disconnected"); }
+                    Some(TestEvent::Connection(ConnectionEvent::Connected)) => { println!("  ✅ Connected"); events.push("Connected"); }
+                    Some(TestEvent::Connection(ConnectionEvent::Connecting)) => { println!("  🔄 Connecting"); events.push("Connecting"); }
+                    Some(TestEvent::Connection(ConnectionEvent::Disconnected(_))) => { println!("  ❌ Disconnected"); events.push("Disconnected"); }
                     Some(_) => {},
                     None => break,
                 }
