@@ -2,6 +2,8 @@
 
 > OpenIM Rust SDK 的系统全景、分层架构、核心数据流、模块映射与实施状态。
 
+> [!NOTE] 事件体系已重构：旧的 `SdkEvent` 枚举 / `EventBus` 广播已废弃，当前以 **Listener trait → EventHub → 领域通道** 为准（见 [16-LISTENERS.md](./16-LISTENERS.md)）。本文档中的事件相关图示为历史版本，遇到冲突以 16-LISTENERS.md 和源码为准。
+
 ---
 
 ## 1. 系统全景

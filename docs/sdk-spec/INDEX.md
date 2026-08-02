@@ -25,8 +25,8 @@
 | 12 | [12-HTTP-API.md](./12-HTTP-API.md) | **HTTP API** | 74 个 API 路由完整列表、请求/响应类型 |
 | 13 | [13-SYNCER-FRAMEWORK.md](./13-SYNCER-FRAMEWORK.md) | **同步器框架** | 泛型 Syncer、VersionSynchronizer、6 个同步器实例 |
 | 14 | [14-SDK-LIFECYCLE.md](./14-SDK-LIFECYCLE.md) | **SDK 生命周期** | InitSDK、Login(6步)、Logout、Token 管理、前后台切换 |
-| 15 | [15-FFI-BRIDGE.md](./15-FFI-BRIDGE.md) | **FFI 桥接** | Go SDK 114 个 API 对照、55 个 FFI 函数清单、SdkEvent 映射 |
-| 16 | [16-LISTENERS.md](./16-LISTENERS.md) | **监听器体系** | 12 个监听器接口(60+回调)、50 种 SdkEvent、触发时机表 |
+| 15 | [15-FFI-BRIDGE.md](./15-FFI-BRIDGE.md) | **FFI 桥接** | Go SDK 114 个 API 对照、55 个 FFI 函数清单、Listener → Dart stream 桥接 |
+| 16 | [16-LISTENERS.md](./16-LISTENERS.md) | **监听器体系** | 6 个 Listener trait（44 个回调）、Go SDK 映射、触发时机与实现状态 |
 
 ---
 
@@ -123,7 +123,7 @@
 
 | Phase | 名称 | 状态 | 说明 |
 |-------|------|------|------|
-| Phase 1 | 基础设施层 | ✅ 已完成 | 错误类型、常量、事件总线、协议层、HTTP 客户端、依赖注入、缓存 |
+| Phase 1 | 基础设施层 | ✅ 已完成 | 错误类型、常量、事件体系、协议层、HTTP 客户端、依赖注入、缓存 |
 | Phase 2 | 核心模块实体化 | ✅ 已完成 | 连接管理、消息收发、会话/好友/群组/用户/在线状态、文件上传 |
 | Phase 3 | 集成测试 | ✅ 已完成 | 4 个 Task（3.1-3.4），消息转发除外 |
 | Phase 4 | FFI 桥接层 | ✅ 已完成 | 重构为集成模式，55 个 FFI 函数 |
@@ -136,7 +136,7 @@
 | HTTP Route | 74 | 50 | **68%** |
 | Core Manager | 64 | 25 | **39%** |
 | FFI Bridge | 114 (Go SDK) | 55 | **48%** |
-| 事件发布 | 50 种定义 | ~30 种实际发布 | **60%** |
+| Listener 回调 | 44 个方法定义 | 34 个实际触发 | **77%** |
 
 ### Phase 5 任务状态
 
@@ -194,7 +194,7 @@ rust/src/
 | 权威参考 | Go SDK (`openim-sdk-core`) | 00-OVERVIEW.md §8 |
 | 协议绑定 | `openim-protocol` crate | 10-CONSTANTS.md |
 | 数据库 | SQLite + `sqlx` | 11-DATA-MODELS.md |
-| 事件总线 | `tokio::broadcast`，50 种事件 | 16-LISTENERS.md |
+| 事件系统 | Listener trait 单一出口 + EventHub（mpsc 领域通道） | 16-LISTENERS.md |
 | FFI 框架 | `flutter_rust_bridge` v2.11.1 | 15-FFI-BRIDGE.md |
 | 异步运行时 | `tokio` | 01-CONNECTION.md |
 | 连接管理 | WebSocket (JSON 信封 + protobuf) | 01-CONNECTION.md |
@@ -219,6 +219,6 @@ rust/src/
 
 <div align="center">
 
-**文档版本：v2.0 | 最后更新：2026-06-03 | 共 17 个文档，约 12,000 行**
+**文档版本：v2.0 | 最后更新：2026-06-03 | 共 18 个文档，约 12,000 行**
 
 </div>

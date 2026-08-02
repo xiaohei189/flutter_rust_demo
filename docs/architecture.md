@@ -135,11 +135,8 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 ### 事件系统
 
 ```
-Rust 内部:
-  Core Manager → EventBus (tokio::broadcast, 1024容量) → SdkEvent 订阅者
-
-Rust → Dart:
-  Core Manager → mpsc::UnboundedSender → Listener Adapter → StreamSink → Dart Stream
+事件流向:
+  Core Service → Listener trait（唯一出口）→ EventHub → 领域事件通道 → StreamSink → Dart Stream
 ```
 
 ## 状态管理
@@ -181,8 +178,8 @@ Rust → Dart:
 
 ### 连接流程
 
-1. `OpenIMClient::new()` 创建所有 Manager、EventBus、Cache、CancelToken
-2. 创建 4 个事件通道（connection, conversation, friend, group）—— 在登录前创建，防止事件丢失
+1. `OpenIMClient::new()` 创建所有 Manager、EventHub（含 6 个领域事件通道）、Cache、CancelToken
+2. EventHub 在登录前创建，事件从登录起即被缓存，防止丢失
 3. `connect()` 建立 WebSocket 连接到 `ws://host:10001`
 4. 发送 protobuf 登录请求，启动心跳（30s 间隔，60s pong 超时）
 5. 连接成功后：`sync_friends()`, `sync_groups_incremental()`, `incr_sync_conversations()`

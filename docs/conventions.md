@@ -261,13 +261,17 @@ sdk_error!("连接断开"; "error" => %e);
 
 标签格式：`[模块名] 描述`（如 `[Bridge]`, `[DB]`, `[SEND]`）
 
-### 事件总线
+### 事件系统（Listener 回调）
+
+事件统一经 Listener trait 对外分发，SDK 内置实现为 `EventHub`（见 docs/sdk-spec/16-LISTENERS.md）：
 
 ```rust
-let bus = EventBus::new();
-bus.publish(SdkEvent::Connected);
-let mut sub = bus.subscribe();
-let event = sub.next().await;
+// Service 侧：构造时注入 Listener，发布事件
+self.listener.emit(ConnectionEvent::Connected);
+
+// SDK 侧：EventHub 实现 Listener，把回调转发到领域通道
+let hub = EventHub::new();
+let mut rx = hub.take_conn_rx().unwrap(); // Dart stream 数据源
 ```
 
 ## 跨语言规范

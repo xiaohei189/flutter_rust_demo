@@ -50,7 +50,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 │  user/ online/ notification/ file/                    │
 ├───────────────────────────────────────────────────────┤
 │  Domain (domain/)                                     │
-│  model(6) + event(40+ SdkEvent) + error + constant   │
+│  model(6) + event(6 Listener trait + EventHub) + error + constant │
 ├───────────────────────────────────────────────────────┤
 │  Infrastructure (infra/)                              │
 │  database(10 DAO) + http(50+ routes) + cache         │
@@ -63,10 +63,10 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 
 | 源 → 目标 | 方式 |
 |-----------|------|
-| connection → message | EventBus 推送 `PushMessages` |
+| connection → message | 直接方法调用（push_rx → handler） |
 | message/syncer → message/handler | 直接方法调用 |
 | message/handler → conversation/manager | 直接调用（更新会话） |
-| friend/group/user → EventBus | 发布领域事件 |
+| 各 core 模块 → Listener trait | 回调发布领域事件 → EventHub → 领域通道 |
 | 所有 core 模块 → infra/ | 通过 `RuntimeContext` 获取 |
 
 ---
@@ -111,7 +111,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | RPC 请求/响应匹配 | `long_conn_mgr.go` | `manager.rs` | ✅ |
 | 消息推送接收 | `long_conn_mgr.go` | `manager.rs` | ✅ |
 | 踢下线 + Token 过期处理 | `long_conn_mgr.go` | `manager.rs` | ✅ |
-| 连接状态事件 | ✅ | `SdkEvent::Connected/Disconnected` | ✅ |
+| 连接状态事件 | ✅ | `ConnectionListener` 回调 | ✅ |
 | **MessageBatcher 推送聚合** | `message_batcher.go` | `message_batcher.rs` | ✅ P2 |
 | **压缩/编码** | `compressor.go` + `encoder.go` | `compressor.rs` (gzip) + JSON (serde_json, 服务端暂用 JSON) | ✅ P2 |
 
@@ -160,7 +160,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 1501-1510 | 群组通知 | `group/manager.rs` | GroupCreated, GroupInfoChanged, GroupMemberAdded/Deleted, GroupDismissed, GroupOwnerTransferred, GroupApplicationAdded/Approved/Rejected |
 | 1000-1099 | 会话通知 | `conversation/manager.rs` | ConversationChanged |
 
-> 406 行完整实现，覆盖好友/用户/群组三大类通知，含 Protobuf 解码和 EventBus 事件发布。
+> 406 行完整实现，覆盖好友/用户/群组三大类通知，含 Protobuf 解码和 Listener 回调发布。
 
 ### 4.5 好友模块 `core/friend/` — 95%
 
@@ -259,7 +259,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
   ├─ seq 连续 → 直接触发 doMsgNew
   └─ seq gap  → 补拉 [syncedMaxSeq+1, gapSeq] → 再触发 doMsgNew
 
-doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 → EventBus → Flutter UI
+doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 → Listener(EventHub) → Flutter UI
 ```
 
 ### 5.3 去重机制
@@ -302,7 +302,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | `GetLoginUserID` | `get_login_user_id()` | ✅ |
 | `SetAppBackgroundStatus` | `set_app_background_status()` | ✅ |
 | `NetworkStatusChanged` | `network_status_changed()` | ✅ |
-| `SetConnListener` | EventBus 替代 | — |
+| `SetConnListener` | `connection_stream()`（ConnectionListener → EventHub → StreamSink） | ✅ |
 
 #### 好友（16 个）
 
@@ -445,7 +445,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | 5.1 | 消息发送本地持久化 | ✅ 完成 | sending_messages 表 |
 | 5.2 | 好友申请流程实现 | ✅ 完成 | Core + SDK + FFI 全链路 |
 | 5.3 | 群组申请流程实现 | ✅ 完成 | Core + SDK + FFI 全链路 |
-| 5.4 | 事件总线补齐 | ✅ 完成 | 40+ 种 SdkEvent |
+| 5.4 | 事件系统重构（Listener 收敛） | ✅ 完成 | EventBus/SdkEvent → 6 个 Listener trait + EventHub |
 
 > **P0 全部完成。**
 
