@@ -8,6 +8,13 @@
 pub mod sync;
 pub mod message;
 pub mod conversation;
+pub mod friend;
+pub mod group;
+pub mod online;
+pub mod types;
+pub mod user;
+
+pub use types::Pagination;
 
 pub use sync::SyncServerApi;
 pub use message::{

@@ -5,13 +5,11 @@
 
 import 'api/client.dart';
 import 'api/ffi_init.dart';
+import 'api/global.dart';
 import 'api/message.dart';
 import 'api/message_advanced.dart';
 import 'api/message_media.dart';
 import 'core/connection/manager.dart';
-import 'core/friend/service.dart';
-import 'core/group/service.dart';
-import 'core/user/online/service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'domain/constant/enums.dart';
@@ -21,12 +19,15 @@ import 'domain/model/local.dart';
 import 'domain/model/message.dart';
 import 'domain/model/msg_struct.dart';
 import 'domain/model/user.dart';
+import 'domain/ports/friend.dart';
+import 'domain/ports/group.dart';
 import 'domain/ports/message.dart';
+import 'domain/ports/online.dart';
 import 'event/events/connection.dart';
 import 'event/events/conversation.dart';
 import 'event/events/friend.dart';
 import 'event/events/group.dart';
-import 'event/types.dart';
+import 'event/events/message.dart';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
@@ -88,7 +89,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 113204100;
+  int get rustContentHash => -882106082;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -746,9 +747,9 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 count,
   });
 
-  Future<String> crateApiClientGetLoginUserId();
+  Future<String> crateApiGlobalGetLoginUserId();
 
-  Future<String> crateApiClientGetSdkVersion();
+  Future<String> crateApiGlobalGetSdkVersion();
 
   Future<PlatformInt64> crateApiMessageAdvancedGetServerTime();
 
@@ -769,7 +770,7 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiMessageAdvancedMarkAllConversationMessageAsRead();
 
-  Future<void> crateApiClientNetworkStatusChanged();
+  Future<void> crateApiGlobalNetworkStatusChanged();
 
   Future<MsgStruct> crateApiMessageSendAdvancedQuoteMessage({
     required String text,
@@ -866,7 +867,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<void> crateApiClientSetAppBackgroundStatus({
+  Future<void> crateApiGlobalSetAppBackgroundStatus({
     required bool isBackground,
   });
 
@@ -880,7 +881,7 @@ abstract class RustLibApi extends BaseApi {
     required String localEx,
   });
 
-  Future<void> crateApiClientUnInitSdk();
+  Future<void> crateApiGlobalUnInitSdk();
 
   Future<String> crateApiMessageMediaUploadFile({
     required String filePath,
@@ -5536,7 +5537,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<String> crateApiClientGetLoginUserId() {
+  Future<String> crateApiGlobalGetLoginUserId() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5552,18 +5553,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientGetLoginUserIdConstMeta,
+        constMeta: kCrateApiGlobalGetLoginUserIdConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientGetLoginUserIdConstMeta =>
+  TaskConstMeta get kCrateApiGlobalGetLoginUserIdConstMeta =>
       const TaskConstMeta(debugName: "get_login_user_id", argNames: []);
 
   @override
-  Future<String> crateApiClientGetSdkVersion() {
+  Future<String> crateApiGlobalGetSdkVersion() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5579,14 +5580,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientGetSdkVersionConstMeta,
+        constMeta: kCrateApiGlobalGetSdkVersionConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientGetSdkVersionConstMeta =>
+  TaskConstMeta get kCrateApiGlobalGetSdkVersionConstMeta =>
       const TaskConstMeta(debugName: "get_sdk_version", argNames: []);
 
   @override
@@ -5803,7 +5804,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiClientNetworkStatusChanged() {
+  Future<void> crateApiGlobalNetworkStatusChanged() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5819,14 +5820,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientNetworkStatusChangedConstMeta,
+        constMeta: kCrateApiGlobalNetworkStatusChangedConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientNetworkStatusChangedConstMeta =>
+  TaskConstMeta get kCrateApiGlobalNetworkStatusChangedConstMeta =>
       const TaskConstMeta(debugName: "network_status_changed", argNames: []);
 
   @override
@@ -6385,7 +6386,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiClientSetAppBackgroundStatus({
+  Future<void> crateApiGlobalSetAppBackgroundStatus({
     required bool isBackground,
   }) {
     return handler.executeNormal(
@@ -6404,14 +6405,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientSetAppBackgroundStatusConstMeta,
+        constMeta: kCrateApiGlobalSetAppBackgroundStatusConstMeta,
         argValues: [isBackground],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientSetAppBackgroundStatusConstMeta =>
+  TaskConstMeta get kCrateApiGlobalSetAppBackgroundStatusConstMeta =>
       const TaskConstMeta(
         debugName: "set_app_background_status",
         argNames: ["isBackground"],
@@ -6514,7 +6515,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiClientUnInitSdk() {
+  Future<void> crateApiGlobalUnInitSdk() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -6530,14 +6531,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientUnInitSdkConstMeta,
+        constMeta: kCrateApiGlobalUnInitSdkConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientUnInitSdkConstMeta =>
+  TaskConstMeta get kCrateApiGlobalUnInitSdkConstMeta =>
       const TaskConstMeta(debugName: "un_init_sdk", argNames: []);
 
   @override

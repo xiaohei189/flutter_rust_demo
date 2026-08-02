@@ -1,4 +1,4 @@
-use crate::core::user::online::service::OnlineStatus;
+use crate::domain::ports::online::OnlineStatus;
 use crate::domain::error::Result;
 use crate::sdk::client::OpenIMClient;
 

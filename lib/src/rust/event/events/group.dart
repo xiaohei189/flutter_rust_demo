@@ -5,7 +5,7 @@
 
 import '../../domain/model/group.dart';
 import '../../frb_generated.dart';
-import '../types.dart';
+import 'message.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'group.freezed.dart';

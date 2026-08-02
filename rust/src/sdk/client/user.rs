@@ -21,7 +21,7 @@ impl OpenIMClient {
         face_url: Option<&str>,
         ex: Option<&str>,
     ) -> Result<()> {
-        let updates = crate::core::user::service::UpdateUserFields {
+        let updates = crate::domain::ports::user::UpdateUserFields {
             nickname: nickname.map(|s| s.to_string()),
             face_url: face_url.map(|s| s.to_string()),
             gender: None,

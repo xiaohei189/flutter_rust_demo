@@ -3,64 +3,17 @@ use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::domain::model::user::UserInfo;
  use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};
+use crate::domain::ports::user::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GetUsersInfoReq {
-    #[serde(rename = "userIDs")]
-    pub user_id_list: Vec<String>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ServerUserInfo {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    pub nickname: String,
-    #[serde(rename = "faceURL")]
-    pub face_url: String,
-    #[serde(default)]
-    pub gender: i32,
-    #[serde(default)]
-    pub telephone: String,
-    #[serde(default)]
-    pub email: String,
-    #[serde(default)]
-    pub ex: String,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetUsersInfoResp {
-    #[serde(rename = "usersInfo")]
-    pub users_info: Vec<ServerUserInfo>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UpdateUserInfoReq {
-    #[serde(rename = "userInfo")]
-    pub user_info: UpdateUserInfoData,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UpdateUserInfoData {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nickname: Option<String>,
-    #[serde(rename = "faceURL", skip_serializing_if = "Option::is_none")]
-    pub face_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub gender: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ex: Option<String>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct UpdateUserInfoResp {}
 
 pub struct UserService {
     http_client: Arc<HttpApiClient>,
@@ -201,13 +154,6 @@ fn server_to_domain(s: ServerUserInfo) -> UserInfo {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct UpdateUserFields {
-    pub nickname: Option<String>,
-    pub face_url: Option<String>,
-    pub gender: Option<i32>,
-    pub email: Option<String>,
-}
 
 #[cfg(test)]
 mod tests {

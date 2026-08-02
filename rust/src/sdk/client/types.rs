@@ -1,17 +1,5 @@
-use crate::domain::constant::{ContentType, SessionType};
 use crate::domain::model::message::MessageInfo;
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SendMessageReq {
-    pub recv_id: String,
-    pub group_id: String,
-    pub session_type: SessionType,
-    pub content_type: ContentType,
-    pub content: String,
-    pub client_msg_id: Option<String>,
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

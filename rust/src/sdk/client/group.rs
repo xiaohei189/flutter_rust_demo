@@ -2,7 +2,7 @@ use crate::domain::constant::GroupType;
 use crate::domain::error::Result;
 use crate::domain::error::SdkError;
 use crate::domain::model::group::{GroupInfo, GroupMember};
-use crate::core::group::service::GroupApplyInfo;
+use crate::domain::ports::group::GroupApplyInfo;
 use crate::sdk::client::OpenIMClient;
 
 impl OpenIMClient {
@@ -172,7 +172,7 @@ impl OpenIMClient {
         role_level: Option<i32>,
         ex: Option<&str>,
     ) -> Result<()> {
-        self.group.set_group_member_info(crate::core::group::service::SetGroupMemberFields {
+        self.group.set_group_member_info(crate::domain::ports::group::SetGroupMemberFields {
             group_id: group_id.to_string(),
             user_id: user_id.to_string(),
             nickname: nickname.map(|s| s.to_string()),

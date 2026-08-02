@@ -4,9 +4,6 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../core/connection/manager.dart';
-import '../core/friend/service.dart';
-import '../core/group/service.dart';
-import '../core/user/online/service.dart';
 import '../domain/constant/enums.dart';
 import '../domain/model/friend.dart';
 import '../domain/model/group.dart';
@@ -14,43 +11,19 @@ import '../domain/model/local.dart';
 import '../domain/model/message.dart';
 import '../domain/model/msg_struct.dart';
 import '../domain/model/user.dart';
+import '../domain/ports/friend.dart';
+import '../domain/ports/group.dart';
 import '../domain/ports/message.dart';
+import '../domain/ports/online.dart';
 import '../event/events/connection.dart';
 import '../event/events/conversation.dart';
 import '../event/events/friend.dart';
 import '../event/events/group.dart';
-import '../event/types.dart';
+import '../event/events/message.dart';
 import '../frb_generated.dart';
 import '../sdk/client/types.dart';
 import '../sdk/config.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-// These functions are ignored because they are not marked as `pub`: `client_holder`
-
-/// 设置 App 前后台状态（对齐 Go SDK `SetAppBackgroundStatus`）
-///
-/// 后台时降低心跳频率，前台时触发增量同步
-Future<void> setAppBackgroundStatus({required bool isBackground}) => RustLib
-    .instance
-    .api
-    .crateApiClientSetAppBackgroundStatus(isBackground: isBackground);
-
-/// 网络状态变化通知（对齐 Go SDK `NetworkStatusChanged`）
-///
-/// 网络切换时（WiFi↔4G）触发重连
-Future<void> networkStatusChanged() =>
-    RustLib.instance.api.crateApiClientNetworkStatusChanged();
-
-/// 获取当前登录用户 ID（对齐 Go SDK `GetLoginUserID`）
-Future<String> getLoginUserId() =>
-    RustLib.instance.api.crateApiClientGetLoginUserId();
-
-/// 获取 SDK 版本号（对齐 Go SDK `GetSdkVersion`）
-Future<String> getSdkVersion() =>
-    RustLib.instance.api.crateApiClientGetSdkVersion();
-
-/// 反初始化 SDK（对齐 Go SDK `UnInitSDK`）
-Future<void> unInitSdk() => RustLib.instance.api.crateApiClientUnInitSdk();
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
 abstract class OpenImBridgeClient implements RustOpaqueInterface {

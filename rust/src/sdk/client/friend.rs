@@ -1,8 +1,8 @@
-use crate::core::friend::service::SearchFriendItem;
+use crate::domain::ports::friend::SearchFriendItem;
 use crate::domain::error::Result;
 use crate::domain::error::SdkError;
 use crate::domain::model::friend::FriendInfo;
-use crate::core::friend::service::FriendApplyInfo;
+use crate::domain::ports::friend::FriendApplyInfo;
 use crate::sdk::client::OpenIMClient;
 
 impl OpenIMClient {
@@ -38,7 +38,7 @@ impl OpenIMClient {
 
     /// 批量检查好友关系状态
     #[tracing::instrument(skip_all)]
-    pub async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::core::friend::service::CheckFriendResult>, SdkError> {
+    pub async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::domain::ports::friend::CheckFriendResult>, SdkError> {
         self.friend.check_friend(user_ids).await.map_err(SdkError::from)
     }
 

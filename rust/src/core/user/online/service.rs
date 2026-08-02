@@ -2,64 +2,20 @@ use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::{GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS, GET_SUBSCRIBE_USERS_STATUS};
+use crate::domain::ports::online::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GetUserStatusReq {
-    #[serde(rename = "userIDs")]
-    pub user_ids: Vec<String>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UserStatusItem {
-    #[serde(rename = "userID")]
-    pub user_id: String,
-    #[serde(rename = "status")]
-    pub status: i32,
-    #[serde(rename = "platformIDs")]
-    pub platform_ids: Vec<i32>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetUserStatusResp {
-    #[serde(rename = "usersStatus", default)]
-    pub users_status: Vec<UserStatusItem>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SubscribeUsersStatusReq {
-    #[serde(rename = "userIDs")]
-    pub user_ids: Vec<String>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct SubscribeUsersStatusResp {
-    #[serde(rename = "usersStatus", default)]
-    pub users_status: Vec<UserStatusItem>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct UnsubscribeUsersStatusReq {
-    #[serde(rename = "userIDs")]
-    pub user_ids: Vec<String>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct GetSubscribeUsersStatusResp {
-    #[serde(rename = "usersStatus", default)]
-    pub users_status: Vec<UserStatusItem>,
-}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OnlineStatus {
-    pub user_id: String,
-    pub status: i32,
-    pub platform_ids: Vec<i32>,
-}
 
 pub mod status {
     pub const OFFLINE: i32 = 0;

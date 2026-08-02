@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/providers.dart';
 import '../services/friend_service.dart';
-import '../src/rust/core/friend/service.dart' show SearchFriendItem;
+import '../src/rust/domain/ports/friend.dart' show SearchFriendItem;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';
