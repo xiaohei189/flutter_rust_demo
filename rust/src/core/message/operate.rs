@@ -44,9 +44,7 @@ impl MessageService {
         self.listener.emit(e);
     }
 
-    pub fn set_user_id(&self, user_id: String) {
-        self.user_id.set_blocking(user_id);
-    }
+
 }
 
 #[cfg(test)]

@@ -147,12 +147,6 @@ impl ConnectionApi for OpenIMClient {
         info!("[SDK] 开始登录，user_id={}", user_id);
 
         self.context.set_user_id(user_id.to_string());
-        self.friend.set_user_id(user_id.to_string()).await;
-        self.group.set_user_id(user_id.to_string()).await;
-        self.notification_handler.set_user_id(user_id.to_string());
-        self.message_handler.set_user_id(user_id.to_string());
-        self.message_service.set_user_id(user_id.to_string());
-        self.conversation_syncer.set_user_id(user_id.to_string()).await;
         self.file_uploader.set_login_user_id(user_id.to_string());
 
         debug!("[SDK] 用户上下文已设置");

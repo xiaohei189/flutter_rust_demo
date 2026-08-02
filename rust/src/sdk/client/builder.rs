@@ -55,7 +55,7 @@ impl OpenIMClientBuilder {
         let notification_handler = Arc::new(NotificationHandler::new(
             friend.clone(), group.clone(), user.clone(),
             conversation_syncer.clone(), message_handler.clone(),
-            listeners.clone(), listeners.clone(), listeners.clone(),
+            listeners.clone(), listeners.clone(), listeners.clone(), context.user_id.clone(),
         ));
         let send_queue = MessageSendQueue::new();
         debug!("OpenIM SDK init done (via Builder)");

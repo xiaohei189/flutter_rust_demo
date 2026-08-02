@@ -72,9 +72,6 @@ impl MessageHandler {
         self.listener.emit(e);
     }
 
-    pub fn set_user_id(&self, user_id: String) {
-        self.user_id.set_blocking(user_id);
-    }
 
     /// 按 clientMsgID 查询单条本地消息
     pub async fn get_message_by_client_msg_id(

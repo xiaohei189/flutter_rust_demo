@@ -224,6 +224,7 @@ impl NotificationHandler {
         friend_listener: Arc<dyn FriendListener>,
         group_listener: Arc<dyn GroupListener>,
         user_listener: Arc<dyn UserListener>,
+        user_id: UserId,
     ) -> Self {
         Self {
             friend_manager,
@@ -234,13 +235,10 @@ impl NotificationHandler {
             friend_listener,
             group_listener,
             user_listener,
-            user_id: UserId::new(""),
+            user_id,
         }
     }
 
-    pub fn set_user_id(&self, user_id: String) {
-        self.user_id.set_blocking(user_id);
-    }
 
     /// 处理通知消息列表（对齐 Go SDK Work() 方法的 CmdNotification 路由）
     pub async fn handle_notifications(&self, msgs: &[MsgData]) {

@@ -83,10 +83,6 @@ impl FriendService {
         self.listener.emit(e);
     }
 
-    pub async fn set_user_id(&self, user_id: String) {
-        self.user_id.set(user_id.clone()).await;
-        debug!("FriendService user_id 已更新为: {}", user_id);
-    }
 
     /// 从本地数据库加载好友列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据

@@ -77,9 +77,6 @@ impl ConversationSyncer {
         self.connection = Some(connection);
     }
 
-    pub async fn set_user_id(&self, user_id: String) {
-        self.user_id.set(user_id).await;
-    }
 
     // ========================================================================
     // 增量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
