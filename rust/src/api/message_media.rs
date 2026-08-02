@@ -3,7 +3,7 @@
 //! 图片/文件/语音/视频消息发送（含上传进度回调、URL 直发）及文件上传
 //! 所有操作委托给 OpenIMClient
 
-use crate::api::client::client_holder;
+use crate::api::global::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;

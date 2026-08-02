@@ -3,7 +3,7 @@
 //! 转发、seq 查询、Typing、编辑、删除系列、本地存储管理等
 //! 所有操作委托给 OpenIMClient
 
-use crate::api::client::client_holder;
+use crate::api::global::client_holder;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;
 use crate::domain::model::local::LocalChatLog;

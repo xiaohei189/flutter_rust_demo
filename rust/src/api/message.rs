@@ -4,7 +4,7 @@
 //! 媒体消息见 `message_media`，Go SDK 补齐 API 见 `message_advanced`
 //! 所有操作委托给 OpenIMClient
 
-use crate::api::client::client_holder;
+use crate::api::global::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::constant::SessionType;
 use crate::domain::model::msg_struct::MsgStruct;

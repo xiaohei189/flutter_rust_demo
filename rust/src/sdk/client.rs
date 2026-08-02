@@ -1,12 +1,13 @@
+mod builder;
 mod message;
 mod conversation;
 mod friend;
 mod group;
-
 mod online_status;
 pub mod types;
 mod user;
 
+pub use self::builder::OpenIMClientBuilder;
 pub use self::message::*;
 pub use self::conversation::*;
 pub use self::friend::*;
@@ -27,6 +28,7 @@ use crate::core::message::MessageSyncer;
 use crate::core::message::notification::handler::NotificationHandler;
 use crate::core::user::online::service::OnlineStatusService;
 use crate::core::user::service::UserService;
+use crate::domain::error::{Result, SdkError};
 use crate::event::EventBus;
 use crate::event::events::connection::ConnectionEvent;
 use crate::event::events::conversation::ConversationEvent;
@@ -56,7 +58,7 @@ pub struct OpenIMClient {
     pub(crate) file_uploader: Arc<FileUploader>,
     pub(crate) message_service: Arc<MessageService>,
     pub(crate) event_bus: Arc<EventBus>,
-        pub(crate) send_queue: Arc<MessageSendQueue>,
+    pub(crate) send_queue: Arc<MessageSendQueue>,
     // Pre-created event receivers (capture events from login time)
     pub(crate) conn_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>>>>,
     pub(crate) conv_rx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>>>>,
@@ -65,29 +67,41 @@ pub struct OpenIMClient {
 }
 
 impl OpenIMClient {
+    /// 创建新的 SDK 实例（委托给 OpenIMClientBuilder）
+    pub async fn new(config: crate::sdk::config::ClientConfig) -> Result<Self> {
+        OpenIMClientBuilder::new(config).build().await
+    }
+
     pub fn set_connection_event_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<ConnectionEvent>) {
         self.connection.set_event_sender(tx);
     }
-    pub fn take_conn_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>> {
-        self.conn_rx.lock().unwrap().take()
+
+    /// 获取连接事件接收器（只能调用一次，重复调用返回错误）
+    pub fn take_conn_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>, SdkError> {
+        self.conn_rx.lock().map_err(|e| SdkError::unknown(format!("conn_rx mutex poisoned: {}", e)))?
+            .take().ok_or_else(|| SdkError::unknown("connection receiver already taken"))
     }
-    pub fn take_conv_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>> {
-        self.conv_rx.lock().unwrap().take()
+
+    /// 获取会话事件接收器（只能调用一次，重复调用返回错误）
+    pub fn take_conv_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>, SdkError> {
+        self.conv_rx.lock().map_err(|e| SdkError::unknown(format!("conv_rx mutex poisoned: {}", e)))?
+            .take().ok_or_else(|| SdkError::unknown("conversation receiver already taken"))
     }
-    pub fn take_friend_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>> {
-        self.friend_rx.lock().unwrap().take()
+
+    /// 获取好友事件接收器（只能调用一次，重复调用返回错误）
+    pub fn take_friend_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>, SdkError> {
+        self.friend_rx.lock().map_err(|e| SdkError::unknown(format!("friend_rx mutex poisoned: {}", e)))?
+            .take().ok_or_else(|| SdkError::unknown("friend receiver already taken"))
     }
-    pub fn take_group_rx(&self) -> Option<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>> {
-        self.group_rx.lock().unwrap().take()
+
+    /// 获取群组事件接收器（只能调用一次，重复调用返回错误）
+    pub fn take_group_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>, SdkError> {
+        self.group_rx.lock().map_err(|e| SdkError::unknown(format!("group_rx mutex poisoned: {}", e)))?
+            .take().ok_or_else(|| SdkError::unknown("group receiver already taken"))
     }
 }
 
-
-
-
-
 use crate::sdk::config::ClientConfig;
-use crate::domain::error::Result;
 use crate::event::types::SdkEvent;
 use crate::infra::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
@@ -95,126 +109,8 @@ use prost::Message as ProstMessage;
 use tokio_stream::StreamExt;
 use tokio_util::sync::CancellationToken;
 use tracing::{info, warn, debug, Instrument};
+
 impl OpenIMClient {
-    /// 创建新的 SDK 实例
-    pub async fn new(config: ClientConfig) -> Result<Self> {
-        let event_bus = Arc::new(EventBus::new());
-                let cancel_token = CancellationToken::new();
-
-        let context = Arc::new(
-            RuntimeContext::new(
-                config.clone(),
-                event_bus.clone(),
-                cancel_token.clone(),
-            )
-            .await?,
-        );
-
-        let connection = Arc::new(ConnectionManager::new(
-            cancel_token.clone(),
-        ));
-
-        let user = Arc::new(UserService::new(
-            context.infra.http_client.clone(),
-            event_bus.clone(),
-        ));
-        let friend = Arc::new(FriendService::new(
-            context.infra.http_client.clone(),
-            context.repositories.clone(),
-            context.user_id.clone(),
-        ));
-        let group = Arc::new(GroupService::new(
-            context.infra.http_client.clone(),
-            context.repositories.clone(),
-            context.user_id.clone(),
-        ));
-        let conversation = Arc::new(ConversationService::new(
-            context.repositories.clone(),
-        ));
-        let online_status = Arc::new(OnlineStatusService::new(
-            context.infra.http_client.clone(),
-            event_bus.clone(),
-        ));
-
-        let file_uploader = Arc::new(FileUploader::new(
-            context.infra.http_client.clone(),
-        ));
-
-        let message_handler = Arc::new(MessageHandler::new(
-            context.repositories.clone(),
-            context.user_id.clone(),
-        ));
-
-        let message_syncer = Arc::new(MessageSyncer::new(
-            connection.clone(),
-            context.repositories.clone(),
-            message_handler.clone(),
-            context.user_id.clone(),
-        ));
-
-        let conversation_syncer = Arc::new(ConversationSyncer::new(
-            context.infra.http_client.clone(),
-            context.repositories.clone(),
-            context.user_id.clone(),
-        ));
-
-        let message_service = Arc::new(MessageService::new(
-            context.repositories.clone(),
-            Arc::new(crate::infra::http::message_api::HttpMessageApi::new(context.infra.http_client.clone())),
-            event_bus.clone(),
-            context.user_id.clone(),
-        ));
-
-        let notification_handler = Arc::new(NotificationHandler::new(
-            friend.clone(),
-            group.clone(),
-            user.clone(),
-            conversation_syncer.clone(),
-            message_handler.clone(),
-            event_bus.clone(),
-        ));
-
-        let send_queue = MessageSendQueue::new();
-
-        // 创建 4 个事件通道，在 login 之前设置 sender，login 期间的事件不会丢失
-        let (conn_tx, conn_rx) = tokio::sync::mpsc::unbounded_channel::<ConnectionEvent>();
-        connection.set_event_sender(conn_tx);
-        let (conv_tx, conv_rx) = tokio::sync::mpsc::unbounded_channel::<ConversationEvent>();
-        message_handler.set_event_sender(conv_tx.clone());
-        message_service.set_event_sender(conv_tx.clone());
-        message_syncer.set_event_sender(conv_tx.clone());
-        conversation_syncer.set_event_sender(conv_tx.clone());
-        conversation.set_event_sender(conv_tx);
-        let (friend_tx, friend_rx) = tokio::sync::mpsc::unbounded_channel::<FriendEvent>();
-        friend.set_event_sender(friend_tx);
-        let (group_tx, group_rx) = tokio::sync::mpsc::unbounded_channel::<GroupEvent>();
-        group.set_event_sender(group_tx);
-
-        debug!("OpenIM SDK 初始化完成");
-
-        Ok(Self {
-            context,
-            connection,
-            user,
-            friend,
-            group,
-            conversation,
-            message_syncer,
-            message_handler,
-            notification_handler,
-            conversation_syncer,
-            online_status,
-            file_uploader,
-            message_service,
-            event_bus,
-                        send_queue,
-            conn_rx: Arc::new(std::sync::Mutex::new(Some(conn_rx))),
-            conv_rx: Arc::new(std::sync::Mutex::new(Some(conv_rx))),
-            friend_rx: Arc::new(std::sync::Mutex::new(Some(friend_rx))),
-            group_rx: Arc::new(std::sync::Mutex::new(Some(group_rx))),
-        })
-    }
-
     /// 连接到服务器
     #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id))]
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
@@ -232,13 +128,10 @@ impl OpenIMClient {
         let conversation_syncer = self.conversation_syncer.clone();
         let cancel_token = self.context.cancel_token.clone();
 
-        // 内部消息通道：对齐 Go SDK 直接调用模式，WS 消息不走 EventBus
-        // 携带 operation_id（trace_id:span_id 字符串）以便跨 task 传递 trace context
         let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<(PushMessages, String)>();
         self.connection.set_push_sender(push_tx);
 
-        // 对齐 Go SDK：Connected 事件直接回调同步，不走 EventBus
-        *self.connection.on_connected_hook.lock().unwrap() = Some(Box::new({
+        *self.connection.on_connected_hook.lock().expect("on_connected_hook mutex poisoned") = Some(Box::new({
             let mh = message_handler.clone();
             let ms = message_syncer.clone();
             let cs = conversation_syncer.clone();
@@ -286,10 +179,6 @@ impl OpenIMClient {
                     }
                     push_batch = push_rx.recv() => {
                         if let Some((batch, operation_id)) = push_batch {
-                            // 官方推荐：跨 channel 只传 trace 上下文字符串，消费端用
-                            // span_from_operation_id 重建 span，并通过 .instrument(span)
-                            // 绑定到 future（每次 poll 自动 enter/exit），避免 enter guard
-                            // 跨 await 持有导致其他任务读到 stale current span
                             let span = span_from_operation_id("push_message_handler", &operation_id);
                             handle_push_batch(
                                 message_handler.clone(),
@@ -317,7 +206,7 @@ impl OpenIMClient {
     #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id))]
     pub async fn login(&self, user_id: &str, token: &str) -> Result<()> {
         info!("[SDK] 开始登录，user_id={}", user_id);
-        
+
         self.context.set_user_id(user_id.to_string());
         self.friend.set_user_id(user_id.to_string()).await;
         self.group.set_user_id(user_id.to_string()).await;
@@ -329,7 +218,6 @@ impl OpenIMClient {
 
         debug!("[SDK] 用户上下文已设置");
 
-        // 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
         self.cleanup_sending_messages().await;
 
         if let Some(ws_url) = &self.context.config.ws_url {
@@ -341,8 +229,6 @@ impl OpenIMClient {
             warn!("[SDK] ws_url 未配置，跳过 WebSocket 连接");
         }
 
-        // 好友、群组同步在后台执行
-        // 会话和消息同步已移到 Connected 事件处理器（先会话后消息，对齐 Go SDK）
         let friend = self.friend.clone();
         let group = self.group.clone();
         tokio::spawn(async move {
@@ -355,7 +241,6 @@ impl OpenIMClient {
             } else {
                 debug!("[SDK] 好友同步完成");
             }
-
             debug!("[SDK] 后台开始群组同步");
             if let Err(e) = group.sync_groups_incremental().await {
                 warn!("[SDK] 登录后群组增量同步失败，回退全量同步: {}", e);
@@ -367,7 +252,6 @@ impl OpenIMClient {
             }
         });
 
-        // 初始化 self_user 缓存：拉取当前用户信息并写入内存，后续 update_self_user_info 依赖此缓存
         let uid = user_id.to_string();
         match self.user.get_users_info(vec![uid.clone()]).await {
             Ok(users) => {
@@ -375,33 +259,21 @@ impl OpenIMClient {
                     self.user.set_self_user_info(user).await;
                     debug!("[SDK] self_user 缓存已初始化");
                 } else {
-                    // 服务器未返回用户信息，至少设置 user_id 确保后续操作不报"用户未登录"
                     let minimal = crate::domain::model::user::UserInfo {
-                        user_id: uid.clone(),
-                        nickname: uid.clone(),
-                        face_url: String::new(),
-                        gender: 0,
-                        telephone: String::new(),
-                        email: String::new(),
-                        remark: String::new(),
-                        global_recv_msg_opt: 0,
+                        user_id: uid.clone(), nickname: uid.clone(),
+                        face_url: String::new(), gender: 0, telephone: String::new(),
+                        email: String::new(), remark: String::new(), global_recv_msg_opt: 0,
                     };
                     self.user.set_self_user_info(minimal).await;
                     debug!("[SDK] self_user 使用最小信息初始化");
                 }
             }
             Err(e) => {
-                // 网络失败时用最小信息兜底
                 warn!("[SDK] 获取 self_user 失败，使用最小信息兜底: {}", e);
                 let minimal = crate::domain::model::user::UserInfo {
-                    user_id: uid.clone(),
-                    nickname: uid.clone(),
-                    face_url: String::new(),
-                    gender: 0,
-                    telephone: String::new(),
-                    email: String::new(),
-                    remark: String::new(),
-                    global_recv_msg_opt: 0,
+                    user_id: uid.clone(), nickname: uid.clone(),
+                    face_url: String::new(), gender: 0, telephone: String::new(),
+                    email: String::new(), remark: String::new(), global_recv_msg_opt: 0,
                 };
                 self.user.set_self_user_info(minimal).await;
             }
@@ -420,58 +292,39 @@ impl OpenIMClient {
         self.group.clear().await;
         self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
-
         self.connection.send(ConnectionEvent::Logout);
         info!("用户登出成功");
         Ok(())
     }
 
-    /// 获取事件总线（内部使用）
-    #[tracing::instrument(level = "info", skip(self))]
     pub fn event_bus(&self) -> Arc<EventBus> {
         self.event_bus.clone()
     }
 
-    /// 获取当前登录用户 ID
-    #[tracing::instrument(level = "info", skip(self))]
     pub fn login_user_id(&self) -> String {
         self.context.get_user_id()
     }
 
-    /// 同步所有会话的 Hash Read Seq（用于前台唤醒）
-    #[tracing::instrument(level = "info", skip(self))]
     pub async fn sync_all_conversation_hash_read_seqs(&self) -> Result<()> {
         self.conversation_syncer
-            .sync_conversation_hash_read_seqs(&self.message_handler.max_seq_recorder)
-            .await
+            .sync_conversation_hash_read_seqs(&self.message_handler.max_seq_recorder).await
     }
 
-    /// 增量同步会话列表（对齐 Go SDK `IncrSyncConversations`）
-    ///
-    /// 版本号持久化到数据库，重连后无需全量同步。
-    /// 收到会话变更通知时调用。
-    #[tracing::instrument(level = "info", skip(self))]
     pub async fn incr_sync_conversations(&self) -> Result<()> {
         self.conversation_syncer.sync_incremental_with_lock().await?;
         Ok(())
     }
 
-    /// 获取连接状态
-    #[tracing::instrument(level = "info", skip(self))]
     pub async fn get_connection_state(&self) -> crate::core::connection::manager::ConnectionState {
         self.connection.get_state().await
     }
 
-    /// 是否已连接
     pub async fn is_connected(&self) -> bool {
         self.connection.is_connected().await
     }
 }
 
-/// 处理一批推送消息（消息、通知、seq 同步、未读计数刷新）
-///
-/// 由调用方通过 `.instrument(span)` 绑定 trace span：span 只在本 future 每次 poll 时
-/// enter/exit，不会跨 await 持有，符合 tracing 官方对异步代码的推荐用法。
+/// 处理一批推送消息
 async fn handle_push_batch(
     message_handler: Arc<MessageHandler>,
     message_syncer: Arc<MessageSyncer>,

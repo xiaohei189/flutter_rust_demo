@@ -523,3 +523,79 @@ pub fn create_test_snapshot_file(dir: &std::path::Path) -> std::path::PathBuf {
     std::fs::write(&path, &png_bytes).expect("创建测试截图文件失败");
     path
 }
+
+// ============================================================================
+// Mock 服务器 — 用于离线集成测试
+// ============================================================================
+
+/// 使用 wiremock 创建本地 mock HTTP 服务器，测试不依赖外部服务
+#[cfg(test)]
+pub mod mock {
+    use wiremock::MockServer;
+    use wiremock::matchers::{method, path};
+    use wiremock::ResponseTemplate;
+
+    /// 创建一个本地 mock 服务器，并注册所有基础 API 端点
+    pub async fn start_mock_server() -> MockServer {
+        let server = MockServer::start().await;
+        register_default_handlers(&server).await;
+        server
+    }
+
+    /// 注册默认的 API 端点处理
+    async fn register_default_handlers(server: &MockServer) {
+        // 注册成功响应
+        server.register(
+            wiremock::Mock::given(method("POST"))
+                .and(path("/account/register"))
+                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0,
+                    "errMsg": "",
+                    "data": {
+                        "userID": "mock_user_001",
+                        "imToken": "mock_im_token",
+                        "chatToken": "mock_chat_token"
+                    }
+                })))
+        ).await;
+
+        server.register(
+            wiremock::Mock::given(method("POST"))
+                .and(path("/account/login"))
+                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0,
+                    "errMsg": "",
+                    "data": {
+                        "userID": "mock_user_001",
+                        "imToken": "mock_im_token",
+                        "chatToken": "mock_chat_token"
+                    }
+                })))
+        ).await;
+
+        // 通用的成功响应（用于其他所有 API 端点）
+        server.register(
+            wiremock::Mock::given(method("POST"))
+                .and(path("/msg/revoke_msg"))
+                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0, "errMsg": ""
+                })))
+        ).await;
+
+        server.register(
+            wiremock::Mock::given(method("POST"))
+                .and(path("/msg/delete_msgs"))
+                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0, "errMsg": ""
+                })))
+        ).await;
+
+        server.register(
+            wiremock::Mock::given(method("POST"))
+                .and(path("/msg/mark_msgs_as_read"))
+                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0, "errMsg": ""
+                })))
+        ).await;
+    }
+}

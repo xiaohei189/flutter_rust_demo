@@ -33,19 +33,19 @@ impl<T> EventSender<T> {
 
     /// 设置事件发送通道（由 SDK 初始化时调用）
     pub fn set_sender(&self, tx: UnboundedSender<T>) {
-        *self.tx.lock().unwrap() = Some(tx);
+        *self.tx.lock().expect("EventSender mutex poisoned") = Some(tx);
     }
 
     /// 发布事件（无订阅者时静默丢弃）
     pub fn publish(&self, event: T) {
-        if let Some(tx) = &*self.tx.lock().unwrap() {
+        if let Some(tx) = &*self.tx.lock().expect("EventSender mutex poisoned") {
             let _ = tx.send(event);
         }
     }
 
     /// 是否有订阅者
     pub fn has_subscriber(&self) -> bool {
-        self.tx.lock().unwrap().is_some()
+        self.tx.lock().expect("EventSender mutex poisoned").is_some()
     }
 }
 

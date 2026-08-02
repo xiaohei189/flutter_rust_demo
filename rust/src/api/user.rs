@@ -1,6 +1,6 @@
 //! 用户相关 FFI 桥接
 
-use crate::api::client::client_holder;
+use crate::api::global::client_holder;
 use crate::api::client::OpenIMBridgeClient;
 use crate::domain::model::user::UserInfo;
 use anyhow::{Result, anyhow};

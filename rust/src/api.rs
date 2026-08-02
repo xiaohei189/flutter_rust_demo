@@ -1,4 +1,5 @@
 pub mod client;
+pub mod global;
 pub mod conversation;
 pub mod message;
 pub mod message_advanced;
