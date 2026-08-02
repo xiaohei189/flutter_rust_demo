@@ -21,33 +21,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn, trace};
 use rand::Rng;
-impl From<(&str, &MsgData)> for LocalChatLog {
-    fn from((conv_id, msg): (&str, &MsgData)) -> Self {
-        Self {
-            conversation_id: conv_id.to_string(),
-            client_msg_id: msg.client_msg_id.clone(),
-            server_msg_id: msg.server_msg_id.clone(),
-            send_id: msg.send_id.clone(),
-            recv_id: msg.recv_id.clone(),
-            sender_platform_id: msg.sender_platform_id,
-            sender_nick_name: msg.sender_nickname.clone(),
-            sender_face_url: msg.sender_face_url.clone(),
-            session_type: msg.session_type,
-            msg_from: msg.msg_from,
-            content_type: msg.content_type,
-            content: String::from_utf8_lossy(&msg.content).to_string(),
-            is_read: 0,
-            status: msg_status::SEND_SUCCESS as i32,
-            seq: msg.seq,
-            send_time: msg.send_time,
-            create_time: msg.create_time,
-            attached_info: String::new(),
-            ex: String::new(),
-            local_ex: String::new(),
-            group_id: msg.group_id.clone(),
-        }
-    }
-}
 
 /// 消息处理器 — 接收消息的分类入库与事件分发中心
 ///
@@ -277,7 +250,7 @@ impl MessageHandler {
 
         for msg in &normal_messages {
             if processed_ids.contains(&msg.client_msg_id) {
-                let mut local_msg: LocalChatLog = LocalChatLog::from((conv_id, msg));
+                let mut local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
                 self.handle_exception_messages(None, &mut local_msg);
                 insert_list.push(local_msg);
                 continue;
@@ -297,8 +270,7 @@ impl MessageHandler {
                     }
                 } else {
                     if is_store {
-                        let mut local_msg: LocalChatLog = LocalChatLog::from((conv_id, msg));
-                        local_msg.status = msg_status::SEND_SUCCESS as i32;
+                        let local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
                         insert_list.push(local_msg);
                     }
                 }
@@ -308,8 +280,7 @@ impl MessageHandler {
                     if is_online_only || !is_store {
                         to_notify.push(msg.clone());
                     } else {
-                        let mut local_msg: LocalChatLog = LocalChatLog::from((conv_id, msg));
-                        local_msg.status = msg_status::SEND_SUCCESS as i32;
+                        let local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
                         let msg_seq = local_msg.seq;
                         insert_list.push(local_msg);
                         to_notify.push(msg.clone());

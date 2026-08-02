@@ -2,7 +2,8 @@
 //!
 //! 数据库行模型，由 sqlx `FromRow` 映射；被 DAO 与 Repository trait 共同使用。
 //! 原位于 `infra/database/models.rs`，收归 domain 后与领域模型同层。
-use crate::domain::constant::{MessageSendStatus, SessionType};
+use crate::domain::constant::{msg_status, session_type, MessageSendStatus, SessionType};
+use openim_protocol::sdkws::MsgData;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
@@ -33,6 +34,47 @@ pub struct LocalChatLog {
 impl LocalChatLog {
     pub fn send_status(&self) -> MessageSendStatus {
         MessageSendStatus::from_i32(self.status)
+    }
+
+    /// 协议消息 → 本地消息（对齐 Go SDK `MsgDataToLocalChatLog`）
+    pub fn from_msg_data(conv_id: &str, msg: &MsgData) -> Self {
+        // 群聊消息：RecvID 使用 GroupID（对齐 Go SDK）
+        let recv_id = if msg.session_type == session_type::WRITE_GROUP_CHAT
+            || msg.session_type == session_type::READ_GROUP_CHAT
+        {
+            msg.group_id.clone()
+        } else {
+            msg.recv_id.clone()
+        };
+        // status >= HAS_DELETED 保持原值，否则置为发送成功（对齐 Go SDK）
+        let status = if msg.status >= msg_status::HAS_DELETED {
+            msg.status
+        } else {
+            msg_status::SEND_SUCCESS
+        };
+        Self {
+            conversation_id: conv_id.to_string(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id,
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: String::from_utf8_lossy(&msg.content).to_string(),
+            is_read: 0,
+            status,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: msg.group_id.clone(),
+        }
     }
 }
 
@@ -174,4 +216,44 @@ pub struct LocalUpload {
     pub upload_info: String,
     pub expire_time: i64,
     pub create_time: i64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_msg(session_type: i32, status: i32) -> MsgData {
+        MsgData {
+            client_msg_id: "c1".into(),
+            server_msg_id: "s1".into(),
+            send_id: "u1".into(),
+            recv_id: "u2".into(),
+            group_id: "g1".into(),
+            session_type,
+            status,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn from_msg_data_group_chat_uses_group_id_as_recv_id() {
+        let log = LocalChatLog::from_msg_data("conv", &make_msg(session_type::WRITE_GROUP_CHAT, 0));
+        assert_eq!(log.recv_id, "g1");
+        let log = LocalChatLog::from_msg_data("conv", &make_msg(session_type::READ_GROUP_CHAT, 0));
+        assert_eq!(log.recv_id, "g1");
+    }
+
+    #[test]
+    fn from_msg_data_single_chat_keeps_recv_id() {
+        let log = LocalChatLog::from_msg_data("conv", &make_msg(session_type::SINGLE_CHAT, 0));
+        assert_eq!(log.recv_id, "u2");
+    }
+
+    #[test]
+    fn from_msg_data_status_preserved_when_deleted() {
+        let log = LocalChatLog::from_msg_data("conv", &make_msg(session_type::SINGLE_CHAT, msg_status::HAS_DELETED));
+        assert_eq!(log.status, msg_status::HAS_DELETED);
+        let log = LocalChatLog::from_msg_data("conv", &make_msg(session_type::SINGLE_CHAT, 0));
+        assert_eq!(log.status, msg_status::SEND_SUCCESS);
+    }
 }
