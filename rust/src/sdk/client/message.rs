@@ -639,37 +639,8 @@ impl MessageApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, count = %req.count))]
-    async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
-
-        let start_time = if req.start_client_msg_id.is_empty() {
-            0
-        } else {
-            let msg = self.message_handler
-                .get_message_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id)
-                .await?;
-            let st = msg.as_ref().map(|m| m.send_time).unwrap_or(0);
-            info!("通过 client_msg_id 查询到 send_time={}", st);
-            st
-        };
-
-        let messages = self.message_handler
-            .get_messages_by_conversation(&req.conversation_id, start_time, req.count)
-            .await?;
-
-        let is_end = messages.len() < req.count as usize;
-
-        let msg_info_list: Vec<MessageInfo> = messages.into_iter()
-            .rev()
-            .map(|m| {
-                let msg_struct = MsgStruct::from(&m);
-                MessageInfo::from(MsgData::from(&msg_struct))
-            })
-            .collect();
-
-        Ok(GetHistoryMessagesResult {
-            messages: msg_info_list,
-            is_end,
-        })
+    async fn get_history_messages(&self, req: GetHistoryMessagesReq) -> std::result::Result<GetHistoryMessagesResult, SdkError>  {
+        self.message_service.get_history_messages(&req).await
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, seq = %req.seq))]
@@ -763,40 +734,8 @@ impl MessageApi for OpenIMClient {
         conversation_id: &str,
         start_client_msg_id: &str,
         count: i64,
-    ) -> std::result::Result<GetHistoryMessagesResult, SdkError> {
-        let start_time = if start_client_msg_id.is_empty() {
-            0
-        } else {
-            let msg = self.context.repositories.message_repo
-                .get_by_client_msg_id(conversation_id, start_client_msg_id)
-                .await?;
-            msg.as_ref().map(|m| m.send_time).unwrap_or(0)
-        };
-
-        let messages = self.context.repositories.message_repo
-            .get_by_conversation_asc(conversation_id, start_time, count + 1)
-            .await?;
-
-        // 倒序排列
-        let mut messages: Vec<LocalChatLog> = messages.into_iter().rev().collect();
-
-        let is_end = messages.len() <= count as usize;
-        if !is_end {
-            messages.truncate(count as usize);
-        }
-
-        let msg_info_list: Vec<MessageInfo> = messages.into_iter()
-            .map(|m| {
-                let msg_struct = MsgStruct::from(&m);
-                MessageInfo::from(MsgData::from(&msg_struct))
-            })
-            .collect();
-
-        let result = GetHistoryMessagesResult {
-            messages: msg_info_list,
-            is_end,
-        };
-        Ok(result)
+    ) -> std::result::Result<GetHistoryMessagesResult, SdkError>  {
+        self.message_service.get_history_messages_reverse(conversation_id, start_client_msg_id, count).await
     }
 
     /// 按 seq 范围获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageList` 中的 seq 范围查询）
@@ -806,20 +745,16 @@ impl MessageApi for OpenIMClient {
         start_seq: i64,
         end_seq: i64,
         count: i32,
-    ) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
-        let rows = self.context.repositories.message_repo
-            .get_by_seq_range(conversation_id, start_seq, end_seq, count as i64)
-            .await?;
-        Ok(rows)
+    ) -> std::result::Result<Vec<LocalChatLog>, SdkError>  {
+        self.message_service.get_advanced_history_message_list_by_seq(conversation_id, start_seq, end_seq, count).await
     }
 
     /// 按 seq 获取单条消息（对齐 Go SDK `GetMessageBySeq`）
     async fn get_history_message_by_seq(
         &self,
         seq: i64,
-    ) -> std::result::Result<LocalChatLog, SdkError> {
-        self.context.repositories.message_repo.get_by_seq(seq).await?
-            .ok_or_else(|| SdkError::invalid_argument(format!("seq={} 的消息不存在", seq)))
+    ) -> std::result::Result<LocalChatLog, SdkError>  {
+        self.message_service.get_history_message_by_seq(seq).await
     }
 
     /// 按 clientMsgId 列表批量查找消息（对齐 Go SDK `FindMessageList`）
@@ -827,17 +762,8 @@ impl MessageApi for OpenIMClient {
         &self,
         conversation_id: &str,
         client_msg_ids: Vec<String>,
-    ) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
-        if client_msg_ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        // 按 conversation_id 过滤
-        let all = self.context.repositories.message_repo
-            .get_by_client_msg_ids(&client_msg_ids)
-            .await?;
-        Ok(all.into_iter()
-            .filter(|m| m.conversation_id == conversation_id)
-            .collect())
+    ) -> std::result::Result<Vec<LocalChatLog>, SdkError>  {
+        self.message_service.find_message_list(conversation_id, client_msg_ids).await
     }
 
     /// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
@@ -847,15 +773,8 @@ impl MessageApi for OpenIMClient {
         &self,
         conversation_id: &str,
         client_msg_id: &str,
-    ) -> std::result::Result<(), SdkError> {
-        self.context.repositories.message_repo
-            .mark_as_deleted(conversation_id, client_msg_id).await?;
-        MessageListenerExt::emit(&*self.context.listeners, MessageEvent::Deleted {
-            conversation_id: conversation_id.to_string(),
-            client_msg_ids: vec![client_msg_id.to_string()],
-        });
-        debug!("本地删除消息: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
-        Ok(())
+    ) -> std::result::Result<(), SdkError>  {
+        self.message_service.delete_message_from_local_storage(conversation_id, client_msg_id).await
     }
 
     /// 清空会话并删除所有消息（对齐 Go SDK `ClearConversationAndDeleteAllMsg`）
@@ -864,25 +783,8 @@ impl MessageApi for OpenIMClient {
     async fn clear_conversation_and_delete_all_msg(
         &self,
         conversation_id: &str,
-    ) -> std::result::Result<(), SdkError> {
-        // TODO: 调用服务端删除 API（delete_msg）
-
-        // 删除本地消息
-        self.context.repositories.message_repo.delete_by_conversation(conversation_id).await?;
-
-        // 重置会话的最新消息和未读数
-        if let Ok(Some(mut conv)) = self.context.repositories.conversation_repo.get_by_id(conversation_id).await {
-            conv.latest_msg = String::new();
-            conv.latest_msg_send_time = 0;
-            conv.unread_count = 0;
-            conv.max_seq = 0;
-            conv.min_seq = 0;
-            let _ = self.context.repositories.conversation_repo.upsert(&conv).await;
-        }
-        ConversationListenerExt::emit(&*self.context.listeners, ConversationEvent::Changed(vec![]));
-
-        info!("清空会话消息: conversation_id={}", conversation_id);
-        Ok(())
+    ) -> std::result::Result<(), SdkError>  {
+        self.message_service.clear_conversation_and_delete_all_msg(conversation_id).await
     }
 
     /// 删除会话并删除所有消息（对齐 Go SDK `DeleteConversationAndDeleteAllMsg`）
@@ -891,57 +793,29 @@ impl MessageApi for OpenIMClient {
     async fn delete_conversation_and_delete_all_msg(
         &self,
         conversation_id: &str,
-    ) -> std::result::Result<(), SdkError> {
-        // 先清空消息
-        self.clear_conversation_and_delete_all_msg(conversation_id).await?;
-
-        // 删除会话
-        self.context.repositories.conversation_repo.delete(conversation_id).await?;
-        self.conversation.delete_conversation(conversation_id).await?;
-        ConversationListenerExt::emit(&*self.context.listeners, ConversationEvent::Deleted(vec![conversation_id.to_string()]));
-
-        info!("删除会话及所有消息: conversation_id={}", conversation_id);
-        Ok(())
+    ) -> std::result::Result<(), SdkError>  {
+        self.message_service.delete_conversation_and_delete_all_msg(conversation_id).await
     }
 
     /// 删除所有消息（本地+服务端）（对齐 Go SDK `DeleteAllMsgFromLocalAndSvr`）
     async fn delete_all_msg_from_local_and_svr(
         &self,
-    ) -> std::result::Result<(), SdkError> {
-        // TODO: 调用服务端删除 API（delete_all_msg）
-
-        // 删除本地所有消息
-        self.context.repositories.message_repo.delete_all().await?;
-        // 清空所有会话的未读数
-        let conversations = self.context.repositories.conversation_repo.get_all().await?;
-        for conv in &conversations {
-            if conv.unread_count > 0 {
-                let _ = self.context.repositories.conversation_repo
-                    .update_unread_count(&conv.conversation_id, 0).await;
-            }
-        }
-        ConversationListenerExt::emit(&*self.context.listeners, ConversationEvent::TotalUnreadCountChanged(0));
-
-        info!("删除所有消息（本地+服务端）");
-        Ok(())
+    ) -> std::result::Result<(), SdkError>  {
+        self.message_service.delete_all_msg_from_local_and_svr().await
     }
 
     /// 仅从本地删除所有消息（对齐 Go SDK `DeleteAllMsgFromLocal`）
     async fn delete_all_msg_from_local(
         &self,
-    ) -> std::result::Result<(), SdkError> {
-        self.context.repositories.message_repo.mark_all_as_deleted().await?;
-        info!("本地软删除所有消息");
-        Ok(())
+    ) -> std::result::Result<(), SdkError>  {
+        self.message_service.delete_all_msg_from_local().await
     }
 
     /// 获取所有会话的总未读消息数（对齐 Go SDK `GetTotalUnreadMsgCount`）
     async fn get_total_unread_msg_count(
         &self,
-    ) -> std::result::Result<i64, SdkError> {
-        let convs = self.context.repositories.conversation_repo.get_all().await?;
-        let total: i64 = convs.iter().map(|c| c.unread_count as i64).sum();
-        Ok(total)
+    ) -> std::result::Result<i64, SdkError>  {
+        self.message_service.get_total_unread_msg_count().await
     }
 
     /// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
@@ -950,44 +824,13 @@ impl MessageApi for OpenIMClient {
         conversation_id: &str,
         client_msg_id: &str,
         local_ex: &str,
-    ) -> std::result::Result<(), SdkError> {
-        self.context.repositories.message_repo
-            .update_local_ex(conversation_id, client_msg_id, local_ex).await?;
-        Ok(())
+    ) -> std::result::Result<(), SdkError>  {
+        self.message_service.set_message_local_ex(conversation_id, client_msg_id, local_ex).await
     }
 
     /// 登录时清理发送中的消息（对齐 Go SDK userRelated.go L332-375）
-    async fn cleanup_sending_messages(&self) {
-        let sending_messages = match self.context.repositories.sending_message_repo.get_all().await {
-            Ok(msgs) => msgs,
-            Err(e) => {
-                warn!("获取sending_messages失败: {}", e);
-                return;
-            }
-        };
-
-        for sm in &sending_messages {
-            // 查询消息当前状态
-            if let Ok(Some(msg)) = self.context.repositories.message_repo
-                .get_by_client_msg_id(&sm.conversation_id, &sm.client_msg_id).await
-            {
-                if msg.status == MessageSendStatus::Sending as i32 {
-                    // 状态仍为 Sending → 标记为 SendFailed
-                    if let Err(e) = self.context.repositories.message_repo
-                        .update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed.into()).await
-                    {
-                        warn!("更新sending消息状态失败: client_msg_id={}, err={}", sm.client_msg_id, e);
-                    }
-                }
-            }
-            // 删除 sending_message 记录
-            let _ = self.context.repositories.sending_message_repo
-                .delete(&sm.conversation_id, &sm.client_msg_id).await;
-        }
-
-        if !sending_messages.is_empty() {
-            info!("登录时清理了 {} 条sending消息", sending_messages.len());
-        }
+    async fn cleanup_sending_messages(&self)  {
+        self.message_service.cleanup_sending_messages().await
     }
 
     /// 发送高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage` + `SendMessage`）
@@ -1084,39 +927,12 @@ impl MessageApi for OpenIMClient {
     fn take_message_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<MessageEvent>, SdkError> {
         self.listeners.take_message_rx().ok_or_else(|| SdkError::unknown("message receiver already taken"))
     }
-    async fn get_message_by_client_msg_id(&self, client_msg_id: &str) -> std::result::Result<Option<LocalChatLog>, SdkError> {
-        self.context.repositories.message_repo.get_by_client_msg_id("", client_msg_id).await
+    async fn get_message_by_client_msg_id(&self, client_msg_id: &str) -> std::result::Result<Option<LocalChatLog>, SdkError>  {
+        self.message_service.get_message_by_client_msg_id(client_msg_id).await
     }
 
-    async fn insert_group_message_to_local_storage(&self, group_id: &str, content: &str, content_type: i32, send_id: &str) -> std::result::Result<LocalChatLog, SdkError> {
-        let conversation_id = format!("g_{}", group_id);
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
-        let client_msg_id = crate::domain::model::msg_struct::get_msg_id(send_id);
-        let local_log = LocalChatLog {
-            conversation_id: conversation_id.clone(),
-            client_msg_id: client_msg_id.clone(),
-            server_msg_id: String::new(),
-            send_id: send_id.to_string(),
-            recv_id: group_id.to_string(),
-            sender_platform_id: 0,
-            sender_nick_name: String::new(),
-            sender_face_url: String::new(),
-            session_type: 2,
-            msg_from: 100,
-            content_type,
-            content: content.to_string(),
-            is_read: 1,
-            status: 2,
-            seq: 0,
-            send_time: now,
-            create_time: now,
-            attached_info: String::new(),
-            ex: String::new(),
-            local_ex: String::new(),
-            group_id: String::new(),
-        };
-        self.context.repositories.message_repo.batch_insert(&[local_log.clone()]).await?;
-        Ok(local_log)
+    async fn insert_group_message_to_local_storage(&self, group_id: &str, content: &str, content_type: i32, send_id: &str) -> std::result::Result<LocalChatLog, SdkError>  {
+        self.message_service.insert_group_message_to_local_storage(group_id, content, content_type, send_id).await
     }
 
     async fn upload_file(&self, file_path: &str, file_name: &str) -> std::result::Result<String, SdkError> {

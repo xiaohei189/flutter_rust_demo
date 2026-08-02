@@ -6,6 +6,7 @@ mod revoke;
 mod delete;
 mod read;
 mod search;
+mod query;
 
 use crate::domain::ports::message::MessageServerApi;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};

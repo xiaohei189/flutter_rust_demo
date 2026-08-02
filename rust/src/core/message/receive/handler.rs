@@ -73,24 +73,6 @@ impl MessageHandler {
     }
 
 
-    /// 按 clientMsgID 查询单条本地消息
-    pub async fn get_message_by_client_msg_id(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-    ) -> Result<Option<LocalChatLog>> {
-        self.repositories.message_repo.get_by_client_msg_id(conversation_id, client_msg_id).await
-    }
-
-    /// 按时间倒序分页获取会话消息
-    pub async fn get_messages_by_conversation(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>> {
-        self.repositories.message_repo.get_by_conversation(conversation_id, start_time, count).await
-    }
 
     /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
     ///
