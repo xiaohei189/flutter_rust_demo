@@ -3,6 +3,8 @@
 //! 对齐 Go SDK `internal/relation/relation.go` 的 HTTP 契约。
 //! 当前由 `core::friend::service` 消费；如需端口化，可收敛为 `FriendServerApi` trait。
 
+use crate::domain::error::Result;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::ports::types::Pagination;
@@ -260,4 +262,24 @@ pub struct UpdateFriendsReq {
     pub remark: Option<String>,
     #[serde(rename = "ex", skip_serializing_if = "Option::is_none")]
     pub ex: Option<String>,
+}
+
+/// 好友域服务端 API（入向契约：SDK → OpenIM 服务端）
+#[async_trait]
+pub trait FriendServerApi: Send + Sync {
+    async fn get_friend_list(&self, req: &GetFriendListReq) -> Result<GetFriendListResp>;
+    async fn get_incremental_friends(&self, req: &GetIncrementalFriendsReq) -> Result<GetIncrementalFriendsResp>;
+    async fn get_designated_friends(&self, req: &GetDesignatedFriendsReq) -> Result<GetDesignatedFriendsResp>;
+    async fn update_friends(&self, req: &UpdateFriendsReq) -> Result<()>;
+    async fn add_friend(&self, req: &AddFriendReq) -> Result<()>;
+    async fn delete_friend(&self, req: &DeleteFriendReq) -> Result<()>;
+    async fn check_friend(&self, user_ids: &[String]) -> Result<Vec<CheckFriendResult>>;
+    async fn get_black_list(&self) -> Result<GetBlackListResp>;
+    async fn add_black(&self, req: &AddBlackReq) -> Result<()>;
+    async fn remove_black(&self, req: &RemoveBlackReq) -> Result<()>;
+    async fn get_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp>;
+    async fn get_self_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp>;
+    async fn get_self_unhandled_apply_count(&self, user_id: &str) -> Result<i32>;
+    async fn accept_friend_application(&self, req: &AcceptFriendApplicationReq) -> Result<()>;
+    async fn refuse_friend_application(&self, req: &RefuseFriendApplicationReq) -> Result<()>;
 }

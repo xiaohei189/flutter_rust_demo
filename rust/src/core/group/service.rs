@@ -4,17 +4,8 @@ use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::UserId;
 use crate::domain::model::local::LocalGroup;
-use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{
-    CREATE_GROUP, GET_GROUPS_INFO, GET_GROUP_INFO, SET_GROUP_INFO, JOIN_GROUP, QUIT_GROUP,
-    DISMISS_GROUP, GET_FULL_JOIN_GROUP_IDS, GET_GROUP_MEMBER_LIST, GET_GROUP_MEMBERS_INFO,
-    GET_INCREMENTAL_JOIN_GROUP, GET_JOINED_GROUP_LIST, INVITE_USER_TO_GROUP,
-    SET_GROUP_MEMBER_INFO, KICK_GROUP_MEMBER,
-    GET_GROUP_APPLICATION_LIST, GET_RECV_GROUP_APPLICATION_LIST, GET_SEND_GROUP_APPLICATION_LIST,
-    GET_GROUP_APPLICATION_UNHANDLED_COUNT,
-    ACCEPT_GROUP_APPLICATION, REFUSE_GROUP_APPLICATION,
-    TRANSFER_GROUP_OWNER, MUTE_GROUP, CANCEL_MUTE_GROUP, MUTE_GROUP_MEMBER, CANCEL_MUTE_GROUP_MEMBER,
-};
+use crate::domain::ports::GroupServerApi;
+
 use crate::domain::ports::Pagination;
 use crate::domain::ports::group::*;
 use crate::sdk::context::Repositories;
@@ -57,7 +48,7 @@ use tracing::{debug, info, warn};
 
 pub struct GroupService {
     /// 外部依赖
-    http_client: Arc<HttpApiClient>,
+    api: Arc<dyn GroupServerApi>,
     repositories: Arc<Repositories>,
     /// 身份
     user_id: UserId,
@@ -70,13 +61,13 @@ pub struct GroupService {
 
 impl GroupService {
     pub fn new(
-        http_client: Arc<HttpApiClient>,
+        api: Arc<dyn GroupServerApi>,
         repositories: Arc<Repositories>,
         user_id: UserId,
         listener: Arc<dyn GroupListener>,
     ) -> Self {
         Self {
-            http_client,
+            api,
             repositories,
             user_id,
             groups: Arc::new(RwLock::new(Vec::new())),
@@ -125,7 +116,7 @@ impl GroupService {
             },
         };
 
-        let resp: GetJoinedGroupListResp = self.http_client.post(GET_JOINED_GROUP_LIST, &req).await?;
+        let resp = self.api.get_joined_group_list(&req).await?;
 
         let groups: Vec<GroupInfo> = resp
             .groups
@@ -175,7 +166,7 @@ impl GroupService {
             version,
         };
 
-        let resp: GetIncrementalJoinGroupResp = match self.http_client.post(GET_INCREMENTAL_JOIN_GROUP, &req).await {
+        let resp: GetIncrementalJoinGroupResp = match self.api.get_incremental_join_group(&req).await {
             Ok(r) => r,
             Err(e) => {
                 warn!("增量同步群组请求失败, 回退全量同步: {}", e);
@@ -251,7 +242,7 @@ impl GroupService {
             group_ids: group_ids.clone(),
         };
 
-        let resp: GetGroupsInfoResp = self.http_client.post(GET_GROUPS_INFO, &req).await?;
+        let resp = self.api.get_groups_info(&req).await?;
 
         let groups: Vec<GroupInfo> = resp
             .groups_info
@@ -286,7 +277,7 @@ impl GroupService {
             owner_user_id,
         };
 
-        let resp: CreateGroupResp = self.http_client.post(CREATE_GROUP, &req).await?;
+        let resp = self.api.create_group(&req).await?;
 
         let group = server_to_group_info(resp.group);
         self.groups.write().await.push(group.clone());
@@ -304,7 +295,7 @@ impl GroupService {
             ex: None,
         };
 
-        let _resp: serde_json::Value = self.http_client.post(JOIN_GROUP, &req).await?;
+        self.api.join_group(&req).await?;
 
         info!("已申请加入群组: {}", group_id);
         Ok(())
@@ -315,7 +306,7 @@ impl GroupService {
             group_id: group_id.clone(),
         };
 
-        let _resp: serde_json::Value = self.http_client.post(QUIT_GROUP, &req).await?;
+        self.api.quit_group(&req).await?;
 
         self.groups.write().await.retain(|g| g.group_id != group_id);
         self.members.write().await.retain(|m| m.group_id != group_id);
@@ -329,7 +320,7 @@ impl GroupService {
             group_id: group_id.clone(),
         };
 
-        let _resp: serde_json::Value = self.http_client.post(DISMISS_GROUP, &req).await?;
+        self.api.dismiss_group(&req).await?;
 
         self.groups.write().await.retain(|g| g.group_id != group_id);
         self.members.write().await.retain(|m| m.group_id != group_id);
@@ -349,7 +340,7 @@ impl GroupService {
             ex: updates.ex,
         };
 
-        let _resp: serde_json::Value = self.http_client.post(SET_GROUP_INFO, &req).await?;
+        self.api.set_group_info(&req).await?;
 
         if let Some(group) = self
             .groups
@@ -396,7 +387,7 @@ impl GroupService {
             keyword: String::new(),
         };
 
-        let resp: GetGroupMemberListResp = self.http_client.post(GET_GROUP_MEMBER_LIST, &req).await?;
+        let resp = self.api.get_group_member_list(&req).await?;
 
         let members: Vec<GroupMember> = resp
             .members
@@ -418,7 +409,7 @@ impl GroupService {
             user_ids,
         };
 
-        let resp: GetGroupMembersInfoResp = self.http_client.post(GET_GROUP_MEMBERS_INFO, &req).await?;
+        let resp = self.api.get_group_members_info(&req).await?;
 
         let members: Vec<GroupMember> = resp
             .members_info
@@ -441,7 +432,7 @@ impl GroupService {
             reason,
         };
 
-        let _resp: serde_json::Value = self.http_client.post(KICK_GROUP_MEMBER, &req).await?;
+        self.api.kick_group_member(&req).await?;
 
         self.members
             .write()
@@ -464,7 +455,7 @@ impl GroupService {
             reason,
         };
 
-        let _resp: serde_json::Value = self.http_client.post(INVITE_USER_TO_GROUP, &req).await?;
+        self.api.invite_user_to_group(&req).await?;
 
         info!("已邀请用户加入群组: group={}", group_id);
         Ok(())
@@ -480,7 +471,7 @@ impl GroupService {
             ex: updates.ex,
         };
 
-        let _resp: serde_json::Value = self.http_client.post(SET_GROUP_MEMBER_INFO, &req).await?;
+        self.api.set_group_member_info(&req).await?;
 
         info!("群成员信息已更新: group={}, user={}", updates.group_id, updates.user_id);
         Ok(())
@@ -495,7 +486,7 @@ impl GroupService {
                 show_number: 1000,
             },
         };
-        let resp: GetGroupApplicationListResp = self.http_client.post(GET_GROUP_APPLICATION_LIST, &req).await?;
+        let resp = self.api.get_group_application_list(&req).await?;
         Ok(resp)
     }
 
@@ -509,7 +500,7 @@ impl GroupService {
                 show_number: 1000,
             },
         };
-        let resp: GetGroupApplicationListResp = self.http_client.post(GET_RECV_GROUP_APPLICATION_LIST, &req).await?;
+        let resp = self.api.get_recv_group_application_list(&req).await?;
         Ok(resp)
     }
 
@@ -523,24 +514,14 @@ impl GroupService {
                 show_number: 1000,
             },
         };
-        let resp: GetGroupApplicationListResp = self.http_client.post(GET_SEND_GROUP_APPLICATION_LIST, &req).await?;
+        let resp = self.api.get_send_group_application_list(&req).await?;
         Ok(resp)
     }
 
     /// 获取未处理的群组申请数量（对齐 Go SDK GetGroupApplicationUnhandledCount）
     pub async fn get_group_application_unhandled_count(&self) -> Result<i32> {
-        #[derive(Serialize)]
-        struct UnhandledCountReq {
-            user_id: String,
-        }
         let user_id = self.user_id.get().await;
-        let req = UnhandledCountReq { user_id };
-        #[derive(Deserialize, Default)]
-        struct UnhandledCountResp {
-            count: i32,
-        }
-        let resp: UnhandledCountResp = self.http_client.post(GET_GROUP_APPLICATION_UNHANDLED_COUNT, &req).await?;
-        Ok(resp.count)
+        self.api.get_group_application_unhandled_count(&user_id).await
     }
 
     pub async fn accept_group_application(&self, group_id: String, user_id: String, handle_msg: Option<String>) -> Result<()> {
@@ -549,7 +530,7 @@ impl GroupService {
             from_user_id: user_id.clone(),
             handle_msg,
         };
-        let _resp: serde_json::Value = self.http_client.post(ACCEPT_GROUP_APPLICATION, &req).await?;
+        self.api.accept_group_application(&req).await?;
 
         // 对齐 Go SDK: 接受群组申请后同步群组列表
         if let Err(e) = self.sync_groups().await {
@@ -566,18 +547,14 @@ impl GroupService {
             from_user_id: user_id.clone(),
             handle_msg,
         };
-        let _resp: serde_json::Value = self.http_client.post(REFUSE_GROUP_APPLICATION, &req).await?;
+        self.api.refuse_group_application(&req).await?;
         info!("群组申请已拒绝: group={}, user={}", group_id, user_id);
         Ok(())
     }
 
     /// 转让群主
     pub async fn transfer_group_owner(&self, group_id: String, new_owner_user_id: String) -> Result<()> {
-        let req = serde_json::json!({
-            "groupID": group_id,
-            "newOwnerUserID": new_owner_user_id,
-        });
-        let _resp: serde_json::Value = self.http_client.post(TRANSFER_GROUP_OWNER, &req).await?;
+        self.api.transfer_group_owner(&group_id, &new_owner_user_id).await?;
         if let Err(e) = self.sync_groups().await {
             tracing::warn!("转让群主后同步群组列表失败: {}", e);
         }
@@ -587,25 +564,14 @@ impl GroupService {
 
     /// 全局禁言/解除禁言群组
     pub async fn mute_group(&self, group_id: String, is_mute: bool) -> Result<()> {
-        let req = serde_json::json!({
-            "groupID": group_id,
-            "isMute": is_mute,
-        });
-        let route = if is_mute { MUTE_GROUP } else { CANCEL_MUTE_GROUP };
-        let _resp: serde_json::Value = self.http_client.post(route, &req).await?;
+        self.api.mute_group(&group_id, is_mute).await?;
         info!("群组禁言状态已更新: group={}, is_mute={}", group_id, is_mute);
         Ok(())
     }
 
     /// 禁言/解除禁言群成员
     pub async fn mute_group_member(&self, group_id: String, user_id: String, muted_seconds: i64) -> Result<()> {
-        let req = serde_json::json!({
-            "groupID": group_id,
-            "userID": user_id,
-            "mutedSeconds": muted_seconds,
-        });
-        let route = if muted_seconds > 0 { MUTE_GROUP_MEMBER } else { CANCEL_MUTE_GROUP_MEMBER };
-        let _resp: serde_json::Value = self.http_client.post(route, &req).await?;
+        self.api.mute_group_member(&group_id, &user_id, muted_seconds).await?;
         info!("群成员禁言状态已更新: group={}, user={}, seconds={}", group_id, user_id, muted_seconds);
         Ok(())
     }
@@ -627,7 +593,7 @@ impl GroupService {
             },
         };
 
-        let resp: GetJoinedGroupListResp = self.http_client.post(GET_JOINED_GROUP_LIST, &req).await?;
+        let resp = self.api.get_joined_group_list(&req).await?;
 
         let groups: Vec<GroupInfo> = resp
             .groups

@@ -3,6 +3,8 @@
 //! 对齐 Go SDK HTTP 契约。
 //! 当前由 core::user\::service 消费；如需端口化，可收敛为 $(UserService.Replace('Service',''))ServerApi trait。
 
+use crate::domain::error::Result;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -65,4 +67,13 @@ pub struct UpdateUserFields {
     pub face_url: Option<String>,
     pub gender: Option<i32>,
     pub email: Option<String>,
+}
+
+
+/// 用户域服务端 API（入向契约：SDK → OpenIM 服务端）
+#[async_trait]
+pub trait UserServerApi: Send + Sync {
+    async fn get_users_info(&self, req: &GetUsersInfoReq) -> Result<GetUsersInfoResp>;
+    async fn update_user_info(&self, req: &UpdateUserInfoReq) -> Result<UpdateUserInfoResp>;
+    async fn set_global_msg_recv_opt(&self, user_id: &str, global_recv_opt: i32) -> Result<()>;
 }

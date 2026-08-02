@@ -1,7 +1,7 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
-use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS, GET_SUBSCRIBE_USERS_STATUS};
+use crate::domain::ports::OnlineStatusServerApi;
+
 use crate::domain::ports::online::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -23,16 +23,16 @@ pub mod status {
 }
 
 pub struct OnlineStatusService {
-    http_client: Arc<HttpApiClient>,
+    api: Arc<dyn OnlineStatusServerApi>,
     listener: Arc<dyn UserListener>,
     subscribed_users: Arc<RwLock<HashSet<String>>>,
     status_cache: Arc<RwLock<Vec<OnlineStatus>>>,
 }
 
 impl OnlineStatusService {
-    pub fn new(http_client: Arc<HttpApiClient>, listener: Arc<dyn UserListener>) -> Self {
+    pub fn new(api: Arc<dyn OnlineStatusServerApi>, listener: Arc<dyn UserListener>) -> Self {
         Self {
-            http_client,
+            api,
             listener,
             subscribed_users: Arc::new(RwLock::new(HashSet::new())),
             status_cache: Arc::new(RwLock::new(Vec::new())),
@@ -48,7 +48,7 @@ impl OnlineStatusService {
             user_ids: user_ids.clone(),
         };
 
-        let resp: GetUserStatusResp = self.http_client.post(GET_USER_STATUS, &req).await?;
+        let resp = self.api.get_user_status(&req).await?;
 
         let statuses: Vec<OnlineStatus> = resp
             .users_status
@@ -72,7 +72,7 @@ impl OnlineStatusService {
             user_ids: user_ids.clone(),
         };
 
-        let resp: SubscribeUsersStatusResp = self.http_client.post(SUBSCRIBE_USERS_STATUS, &req).await?;
+        let resp = self.api.subscribe_users_status(&req).await?;
 
         let statuses: Vec<OnlineStatus> = resp
             .users_status
@@ -114,7 +114,7 @@ impl OnlineStatusService {
             user_ids: user_ids.clone(),
         };
 
-        let _resp: serde_json::Value = self.http_client.post(UNSUBSCRIBE_USERS_STATUS, &req).await?;
+        self.api.unsubscribe_users_status(&req).await?;
 
         {
             let mut subscribed = self.subscribed_users.write().await;
@@ -130,7 +130,7 @@ impl OnlineStatusService {
     }
 
     pub async fn get_subscribe_users_status(&self) -> Result<Vec<OnlineStatus>> {
-        let resp: GetSubscribeUsersStatusResp = self.http_client.post(GET_SUBSCRIBE_USERS_STATUS, &()).await?;
+        let resp = self.api.get_subscribe_users_status().await?;
 
         let statuses: Vec<OnlineStatus> = resp
             .users_status

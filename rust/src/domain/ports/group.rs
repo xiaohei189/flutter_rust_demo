@@ -3,6 +3,8 @@
 //! 对齐 Go SDK `internal/group/group.go` 的 HTTP 契约。
 //! 当前由 `core::group::service` 消费；如需端口化，可收敛为 `GroupServerApi` trait。
 
+use crate::domain::error::Result;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::ports::types::Pagination;
@@ -320,4 +322,31 @@ pub struct SetGroupMemberFields {
     pub face_url: Option<String>,
     pub role_level: Option<i32>,
     pub ex: Option<String>,
+}
+
+/// 群组域服务端 API（入向契约：SDK → OpenIM 服务端）
+#[async_trait]
+pub trait GroupServerApi: Send + Sync {
+    async fn get_joined_group_list(&self, req: &GetJoinedGroupListReq) -> Result<GetJoinedGroupListResp>;
+    async fn get_incremental_join_group(&self, req: &GetIncrementalJoinGroupReq) -> Result<GetIncrementalJoinGroupResp>;
+    async fn get_groups_info(&self, req: &GetGroupsInfoReq) -> Result<GetGroupsInfoResp>;
+    async fn create_group(&self, req: &CreateGroupReq) -> Result<CreateGroupResp>;
+    async fn join_group(&self, req: &JoinGroupReq) -> Result<()>;
+    async fn quit_group(&self, req: &QuitGroupReq) -> Result<()>;
+    async fn dismiss_group(&self, req: &DismissGroupReq) -> Result<()>;
+    async fn set_group_info(&self, req: &SetGroupInfoReq) -> Result<()>;
+    async fn get_group_member_list(&self, req: &GetGroupMemberListReq) -> Result<GetGroupMemberListResp>;
+    async fn get_group_members_info(&self, req: &GetGroupMembersInfoReq) -> Result<GetGroupMembersInfoResp>;
+    async fn kick_group_member(&self, req: &KickGroupMemberReq) -> Result<()>;
+    async fn invite_user_to_group(&self, req: &InviteUserToGroupReq) -> Result<()>;
+    async fn set_group_member_info(&self, req: &SetGroupMemberInfoReq) -> Result<()>;
+    async fn get_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp>;
+    async fn get_recv_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp>;
+    async fn get_send_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp>;
+    async fn get_group_application_unhandled_count(&self, user_id: &str) -> Result<i32>;
+    async fn accept_group_application(&self, req: &AcceptGroupApplicationReq) -> Result<()>;
+    async fn refuse_group_application(&self, req: &RefuseGroupApplicationReq) -> Result<()>;
+    async fn transfer_group_owner(&self, group_id: &str, new_owner_user_id: &str) -> Result<()>;
+    async fn mute_group(&self, group_id: &str, is_mute: bool) -> Result<()>;
+    async fn mute_group_member(&self, group_id: &str, user_id: &str, muted_seconds: i64) -> Result<()>;
 }

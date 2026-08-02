@@ -21,6 +21,10 @@ pub use message::{
     DeleteMessagesReq, MarkAllConversationAsReadReq, MarkConversationAsReadReq,
     MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq,
 };
+pub use friend::FriendServerApi;
+pub use group::GroupServerApi;
+pub use online::OnlineStatusServerApi;
+pub use user::UserServerApi;
 pub use conversation::{
     ConversationServerApi, GetAllConversationsReq, GetAllConversationsResp,
     GetConversationsByIDsReq, GetConversationsByIDsResp, GetFullConversationIDsReq,

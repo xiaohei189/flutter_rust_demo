@@ -1,8 +1,8 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::domain::model::user::UserInfo;
- use crate::infra::http::client::HttpApiClient;
-use crate::infra::http::routes::{GET_USERS_INFO, UPDATE_USER_INFO, SET_GLOBAL_MSG_RECV_OPT};
+ use crate::domain::ports::UserServerApi;
+
 use crate::domain::ports::user::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -16,15 +16,15 @@ use tracing::{debug, info};
 
 
 pub struct UserService {
-    http_client: Arc<HttpApiClient>,
+    api: Arc<dyn UserServerApi>,
     listener: Arc<dyn UserListener>,
     self_user: Arc<RwLock<Option<UserInfo>>>,
 }
 
 impl UserService {
-    pub fn new(http_client: Arc<HttpApiClient>, listener: Arc<dyn UserListener>) -> Self {
+    pub fn new(api: Arc<dyn UserServerApi>, listener: Arc<dyn UserListener>) -> Self {
         Self {
-            http_client,
+            api,
             listener,
             self_user: Arc::new(RwLock::new(None)),
         }
@@ -35,7 +35,7 @@ impl UserService {
             user_id_list: user_ids.clone(),
         };
 
-        let resp: GetUsersInfoResp = self.http_client.post(GET_USERS_INFO, &req).await?;
+        let resp = self.api.get_users_info(&req).await?;
 
         let users = resp
             .users_info
@@ -78,7 +78,7 @@ impl UserService {
             },
         };
 
-        let _resp: UpdateUserInfoResp = self.http_client.post(UPDATE_USER_INFO, &req).await?;
+        let _resp = self.api.update_user_info(&req).await?;
 
         let updated_user = {
             let mut guard = self.self_user.write().await;
@@ -114,11 +114,7 @@ impl UserService {
     /// 设置全局消息接收选项
     pub async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()> {
         let user_id = self.get_user_id().await?;
-        let req = serde_json::json!({
-            "userID": user_id,
-            "globalRecvMsgOpt": global_recv_opt,
-        });
-        let _: serde_json::Value = self.http_client.post(SET_GLOBAL_MSG_RECV_OPT, &req).await?;
+        self.api.set_global_msg_recv_opt(&user_id, global_recv_opt).await?;
         info!("全局消息接收选项已更新: opt={}", global_recv_opt);
         Ok(())
     }

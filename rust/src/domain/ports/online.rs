@@ -3,6 +3,8 @@
 //! 对齐 Go SDK HTTP 契约。
 //! 当前由 core::online\::service 消费；如需端口化，可收敛为 $(OnlineStatusService.Replace('Service',''))ServerApi trait。
 
+use crate::domain::error::Result;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -56,4 +58,14 @@ pub struct OnlineStatus {
     pub user_id: String,
     pub status: i32,
     pub platform_ids: Vec<i32>,
+}
+
+
+/// 在线状态域服务端 API（入向契约：SDK → OpenIM 服务端）
+#[async_trait]
+pub trait OnlineStatusServerApi: Send + Sync {
+    async fn get_user_status(&self, req: &GetUserStatusReq) -> Result<GetUserStatusResp>;
+    async fn subscribe_users_status(&self, req: &SubscribeUsersStatusReq) -> Result<SubscribeUsersStatusResp>;
+    async fn unsubscribe_users_status(&self, req: &UnsubscribeUsersStatusReq) -> Result<()>;
+    async fn get_subscribe_users_status(&self) -> Result<GetSubscribeUsersStatusResp>;
 }
