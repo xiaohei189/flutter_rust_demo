@@ -20,7 +20,7 @@ use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::message::send::MessageSender;
 use crate::core::friend::service::FriendService;
 use crate::core::group::service::GroupService;
-use crate::core::message::MessageHandler;
+use crate::core::message::MessageProcessor;
 
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
@@ -52,7 +52,7 @@ pub struct OpenIMClient {
     pub(crate) group: Arc<GroupService>,
     pub(crate) conversation: Arc<ConversationService>,
     pub(crate) message_syncer: Arc<MessageSyncer>,
-    pub(crate) message_handler: Arc<MessageHandler>,
+    pub(crate) message_processor: Arc<MessageProcessor>,
     pub(crate) notification_handler: Arc<NotificationHandler>,
     pub(crate) conversation_syncer: Arc<ConversationSyncer>,
     pub(crate) online_status: Arc<OnlineStatusService>,
@@ -73,7 +73,7 @@ use tracing::{info, warn, debug, Instrument};
 
 /// 处理一批推送消息
 async fn handle_push_batch(
-    message_handler: Arc<MessageHandler>,
+    message_processor: Arc<MessageProcessor>,
     message_syncer: Arc<MessageSyncer>,
     notification_handler: Arc<NotificationHandler>,
     batch: PushMessages,
@@ -85,7 +85,7 @@ async fn handle_push_batch(
         let seqs: Vec<i64> = pull_msgs.msgs.iter().map(|m| m.seq).filter(|&s| s > 0).collect();
 
         if !messages.is_empty() {
-            match message_handler.handle_messages(conv_id, messages).await {
+            match message_processor.handle_messages(conv_id, messages).await {
                 Ok(changed) => { if changed { has_message_changes = true; } }
                 Err(e) => warn!("failed to handle push messages for {}: {:?}", conv_id, e),
             }
@@ -108,7 +108,7 @@ async fn handle_push_batch(
     }
 
     if has_message_changes {
-        message_handler.publish_total_unread_count_changed().await;
+        message_processor.publish_total_unread_count_changed().await;
     }
 }
 
@@ -247,7 +247,7 @@ impl ConnectionApi for OpenIMClient {
 impl OpenIMClient {
     /// 启动推送消息处理器 + 重连消息同步监听
     fn spawn_push_message_handler(&self) {
-                let message_handler = self.message_handler.clone();
+                let message_processor = self.message_processor.clone();
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();
         let conversation_syncer = self.conversation_syncer.clone();
@@ -257,7 +257,7 @@ impl OpenIMClient {
         self.connection.set_push_sender(push_tx);
 
         *self.connection.on_connected_hook.lock().expect("on_connected_hook mutex poisoned") = Some(Box::new({
-            let mh = message_handler.clone();
+            let mh = message_processor.clone();
             let ms = message_syncer.clone();
             let cs = conversation_syncer.clone();
             let ct = cancel_token.clone();
@@ -294,7 +294,7 @@ impl OpenIMClient {
                         if let Some((batch, operation_id)) = push_batch {
                             let span = span_from_operation_id("push_message_handler", &operation_id);
                             handle_push_batch(
-                                message_handler.clone(),
+                                message_processor.clone(),
                                 message_syncer.clone(),
                                 notification_handler.clone(),
                                 batch,

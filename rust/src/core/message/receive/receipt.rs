@@ -1,6 +1,6 @@
-//! 已读回执处理（impl MessageHandler）
+//! 已读回执处理（impl MessageProcessor）
 
-use super::handler::MessageHandler;
+use super::processor::MessageProcessor;
 use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
@@ -9,7 +9,7 @@ use openim_protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;
 
-impl MessageHandler {
+impl MessageProcessor {
     /// 发布 TotalUnreadCountChanged 事件（由调用方在批量处理完成后统一调用）
     pub async fn publish_total_unread_count_changed(&self) {
         if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
@@ -314,7 +314,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![
             make_local_msg("conv_read", "msg_1", 1, "user_2"),
@@ -340,7 +340,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         conversation_dao.upsert(&make_conv("conv_self_read", 5)).await.unwrap();
 
@@ -357,7 +357,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
         let hub = crate::event::hub::EventHub::new();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), hub.clone(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), hub.clone(), crate::event::test_util::noop_message_listener());
         let mut rx = hub.take_conv_rx().unwrap();
 
         conversation_dao.upsert(&make_conv("conv_ev", 3)).await.unwrap();
@@ -379,7 +379,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let msgs = vec![
             make_local_msg("conv_partial", "msg_1", 1, "user_2"),
@@ -407,7 +407,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut group_conv = make_conv("conv_group", 5);
         group_conv.conversation_type = 3;

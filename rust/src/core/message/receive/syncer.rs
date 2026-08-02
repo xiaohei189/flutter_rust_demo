@@ -3,7 +3,7 @@
 //! 对齐 Go SDK `internal/conversation_msg/msg_sync.go`
 
 use crate::core::connection::manager::ConnectionManager;
-use super::handler::MessageHandler;
+use super::processor::MessageProcessor;
 use crate::domain::ports::SyncServerApi;
 use crate::domain::repository::NotificationSeqRepository;
 use crate::domain::constant::ws_req_identifier;
@@ -96,7 +96,7 @@ impl Default for SyncConfig {
 /// 1. 收到推送通知（或登录/重连）后触发同步
 /// 2. 比较本地 max_seq 与服务端 max_seq，计算差量
 /// 3. 通过 WebSocket RPC 分批拉取缺失消息（并发控制）
-/// 4. 将拉取结果交给 `MessageHandler` 分类入库 + 触发事件
+/// 4. 将拉取结果交给 `MessageProcessor` 分类入库 + 触发事件
 ///
 /// # 并发安全
 ///
@@ -107,7 +107,7 @@ pub struct MessageSyncer {
     /// 外部依赖
     remote: Arc<dyn SyncServerApi>,
     repositories: Arc<Repositories>,
-    message_handler: Arc<MessageHandler>,
+    message_processor: Arc<MessageProcessor>,
     /// 身份
     user_id: UserId,
     /// 配置
@@ -124,14 +124,14 @@ impl MessageSyncer {
     pub fn new(
         remote: Arc<dyn SyncServerApi>,
         repositories: Arc<Repositories>,
-        message_handler: Arc<MessageHandler>,
+        message_processor: Arc<MessageProcessor>,
         user_id: UserId,
         listener: Arc<dyn ConversationListener>,
     ) -> Self {
         Self {
             remote,
             repositories,
-            message_handler,
+            message_processor,
             user_id,
             config: SyncConfig::default(),
             listener,
@@ -590,7 +590,7 @@ impl MessageSyncer {
             }
 
             let messages = pull_msgs.msgs.clone();
-            self.message_handler.handle_sync_messages(conv_id, messages).await?;
+            self.message_processor.handle_sync_messages(conv_id, messages).await?;
         }
 
         Ok(())
@@ -600,7 +600,7 @@ impl MessageSyncer {
         Arc::new(Self {
             remote: self.remote.clone(),
             repositories: self.repositories.clone(),
-            message_handler: self.message_handler.clone(),
+            message_processor: self.message_processor.clone(),
             user_id: self.user_id.clone(),
             config: self.config.clone(),
             listener: self.listener.clone(),
@@ -647,7 +647,7 @@ mod tests {
         async fn is_kicked(&self) -> bool { self.kicked }
     }
 
-    async fn setup_db() -> (Arc<Repositories>, Arc<MessageHandler>) {
+    async fn setup_db() -> (Arc<Repositories>, Arc<MessageProcessor>) {
         let pool = create_pool_memory().await.unwrap();
         let repositories = Arc::new(Repositories {
             message_repo: Arc::new(MessageDao::new(pool.clone())),
@@ -659,7 +659,7 @@ mod tests {
             notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
             sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
         });
-        let handler = Arc::new(MessageHandler::new(repositories.clone(), UserId::new("test_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener()));
+        let handler = Arc::new(MessageProcessor::new(repositories.clone(), UserId::new("test_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener()));
         (repositories, handler)
     }
 
@@ -688,7 +688,7 @@ mod tests {
         }
     }
 
-    fn make_syncer(remote: Arc<dyn SyncServerApi>, repositories: Arc<Repositories>, handler: Arc<MessageHandler>) -> MessageSyncer {
+    fn make_syncer(remote: Arc<dyn SyncServerApi>, repositories: Arc<Repositories>, handler: Arc<MessageProcessor>) -> MessageSyncer {
         MessageSyncer::new(remote, repositories, handler, UserId::new("test_user"), crate::event::test_util::noop_conversation_listener())
     }
 

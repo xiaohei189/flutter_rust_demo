@@ -1,6 +1,6 @@
-//! 撤回通知处理（impl MessageHandler）
+//! 撤回通知处理（impl MessageProcessor）
 
-use super::handler::MessageHandler;
+use super::processor::MessageProcessor;
 use crate::domain::constant::notification_type::REVOKE;
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
@@ -71,7 +71,7 @@ pub(crate) fn parse_revoke_tips_from_json(content: &str) -> anyhow::Result<Revok
     })
 }
 
-impl MessageHandler {
+impl MessageProcessor {
     /// 从通知 JSON 中提取 revokerNickname（服务端下发的真实昵称）
     pub(crate) fn extract_nickname_from_notification(content: &str) -> Option<String> {
         if content.is_empty() { return None; }
@@ -363,7 +363,7 @@ mod tests {
     fn test_extract_nickname_valid() {
         let inner = serde_json::json!({"revokerNickname": "Bob"});
         let outer = serde_json::json!({"detail": inner.to_string()});
-        let result = MessageHandler::extract_nickname_from_notification(&outer.to_string());
+        let result = MessageProcessor::extract_nickname_from_notification(&outer.to_string());
         assert_eq!(result, Some("Bob".to_string()));
     }
 
@@ -371,7 +371,7 @@ mod tests {
     fn test_extract_nickname_empty() {
         let inner = serde_json::json!({"revokerNickname": ""});
         let outer = serde_json::json!({"detail": inner.to_string()});
-        let result = MessageHandler::extract_nickname_from_notification(&outer.to_string());
+        let result = MessageProcessor::extract_nickname_from_notification(&outer.to_string());
         assert_eq!(result, None);
     }
 
@@ -379,15 +379,15 @@ mod tests {
     fn test_extract_nickname_missing_field() {
         let inner = serde_json::json!({"other": "value"});
         let outer = serde_json::json!({"detail": inner.to_string()});
-        let result = MessageHandler::extract_nickname_from_notification(&outer.to_string());
+        let result = MessageProcessor::extract_nickname_from_notification(&outer.to_string());
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_extract_nickname_invalid_json() {
-        assert_eq!(MessageHandler::extract_nickname_from_notification(""), None);
-        assert_eq!(MessageHandler::extract_nickname_from_notification("not json"), None);
-        assert_eq!(MessageHandler::extract_nickname_from_notification("{\"detail\": 123}"), None);
+        assert_eq!(MessageProcessor::extract_nickname_from_notification(""), None);
+        assert_eq!(MessageProcessor::extract_nickname_from_notification("not json"), None);
+        assert_eq!(MessageProcessor::extract_nickname_from_notification("{\"detail\": 123}"), None);
     }
 
     // ========================================================================
@@ -469,7 +469,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_repo = repositories.message_repo.clone();
         let conversation_repo = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         message_repo.batch_insert(&[make_local_msg("conv_revoke", "msg_target", 5, "user_1")]).await.unwrap();
         let conv = LocalConversation {
@@ -502,7 +502,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_repo = repositories.message_repo.clone();
         let conversation_repo = repositories.conversation_repo.clone();
-        let handler = MessageHandler::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
 
         let mut quote_msg = make_local_msg("conv_quote", "quote_msg", 6, "user_2");
         quote_msg.content_type = 104;

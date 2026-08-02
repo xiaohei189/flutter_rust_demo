@@ -4,11 +4,11 @@
 
 mod syncer;
 mod max_seq_recorder;
-pub(crate) mod handler;
+pub(crate) mod processor;
 mod receipt;
 pub(crate) mod revoke;
 
 pub use syncer::{MessageSyncer, is_notification};
 pub use max_seq_recorder::MaxSeqRecorder;
-pub use handler::MessageHandler;
+pub use processor::MessageProcessor;
 pub(crate) use revoke::{RevokeTipsWithNickname, parse_revoke_tips_from_json};

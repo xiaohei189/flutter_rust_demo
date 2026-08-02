@@ -6,7 +6,7 @@ use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::file::uploader::FileUploader;
 use crate::core::friend::service::FriendService;
 use crate::core::group::service::GroupService;
-use crate::core::message::MessageHandler;
+use crate::core::message::MessageProcessor;
 use crate::core::message::send::MessageSender;
 use crate::core::message::MessageSendQueue;
 use crate::core::message::MessageService;
@@ -49,13 +49,13 @@ impl OpenIMClientBuilder {
         let conversation = Arc::new(ConversationService::new(context.repositories.clone(), listeners.clone()));
         let online_status = Arc::new(OnlineStatusService::new(Arc::new(HttpOnlineStatusApi::new(context.infra.http_client.clone())), listeners.clone()));
         let file_uploader = Arc::new(FileUploader::new(context.infra.http_client.clone()));
-        let message_handler = Arc::new(MessageHandler::new(context.repositories.clone(), context.user_id.clone(), listeners.clone(), listeners.clone()));
-        let message_syncer = Arc::new(MessageSyncer::new(connection.clone(), context.repositories.clone(), message_handler.clone(), context.user_id.clone(), listeners.clone()));
+        let message_processor = Arc::new(MessageProcessor::new(context.repositories.clone(), context.user_id.clone(), listeners.clone(), listeners.clone()));
+        let message_syncer = Arc::new(MessageSyncer::new(connection.clone(), context.repositories.clone(), message_processor.clone(), context.user_id.clone(), listeners.clone()));
         let conversation_syncer = Arc::new(ConversationSyncer::new(context.infra.http_client.clone(), context.repositories.clone(), context.user_id.clone(), listeners.clone()));
         let message_service = Arc::new(MessageService::new(context.repositories.clone(), Arc::new(HttpMessageApi::new(context.infra.http_client.clone())), listeners.clone(), listeners.clone(), context.user_id.clone()));
         let notification_handler = Arc::new(NotificationHandler::new(
             friend.clone(), group.clone(), user.clone(),
-            conversation_syncer.clone(), message_handler.clone(),
+            conversation_syncer.clone(), message_processor.clone(),
             listeners.clone(), listeners.clone(), listeners.clone(), context.user_id.clone(),
         ));
         let send_queue = MessageSendQueue::new();
@@ -63,7 +63,7 @@ impl OpenIMClientBuilder {
         debug!("OpenIM SDK init done (via Builder)");
         Ok(OpenIMClient {
             context, connection, user, friend, group, conversation,
-            message_syncer, message_handler, notification_handler, conversation_syncer,
+            message_syncer, message_processor, notification_handler, conversation_syncer,
             online_status, message_service, listeners, sender,
         })
     }

@@ -619,7 +619,7 @@ mod tests {
         let saved1 = dao.get_by_id("conv_e2e").await.unwrap().unwrap();
         assert!(saved1.latest_msg.is_empty(), "initial latest_msg should be empty");
 
-        // 2. 模拟收到消息，更新 latest_msg（就像 MessageHandler 做的）
+        // 2. 模拟收到消息，更新 latest_msg（就像 MessageProcessor 做的）
         dao.update_after_new_message("conv_e2e", r#"{"text":"hello world"}"#, 2000, 5)
             .await
             .unwrap();

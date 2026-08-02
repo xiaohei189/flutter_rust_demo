@@ -166,7 +166,7 @@ impl ConversationApi for OpenIMClient {
 
     async fn sync_all_conversation_hash_read_seqs(&self) -> Result<()> {
         self.conversation_syncer
-            .sync_conversation_hash_read_seqs(&self.message_handler.max_seq_recorder).await
+            .sync_conversation_hash_read_seqs(&self.message_processor.max_seq_recorder).await
     }
 
     async fn incr_sync_conversations(&self) -> Result<()> {

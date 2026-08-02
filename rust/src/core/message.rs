@@ -16,7 +16,7 @@ pub mod checker;
 pub mod notification;
 
 // Facade re-exports: 外部引用路径兼容
-pub use receive::{MessageHandler, MessageSyncer, MaxSeqRecorder};
+pub use receive::{MessageProcessor, MessageSyncer, MaxSeqRecorder};
 pub use send::MessageSendQueue;
 pub use operate::MessageService;
 pub use crate::domain::ports::message::MessageServerApi;

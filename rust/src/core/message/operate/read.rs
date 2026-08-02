@@ -113,7 +113,7 @@ impl MessageService {
             self.send(ConversationEvent::Changed(vec![conv]));
         }
 
-        // 总未读数由 handler.rs 统一发布，这里只发 ConversationChanged
+        // 总未读数由 processor.rs 统一发布，这里只发 ConversationChanged
     }
 
     /// 调用服务端 `markConversationAsRead` API（对齐 Go SDK `server_api.go` L17-22）
@@ -169,7 +169,7 @@ impl MessageService {
             }
         }
 
-        // 总未读数由 handler.rs 统一发布
+        // 总未读数由 processor.rs 统一发布
         info!("已标记所有会话消息已读");
         Ok(())
     }

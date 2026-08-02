@@ -12,7 +12,7 @@
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::friend::service::FriendService;
 use crate::core::group::service::GroupService;
-use crate::core::message::MessageHandler;
+use crate::core::message::MessageProcessor;
 use crate::core::user::service::UserService;
 use crate::domain::constant::notification_type;
 use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
@@ -207,7 +207,7 @@ pub struct NotificationHandler {
     group_manager: Arc<GroupService>,
     user_manager: Arc<UserService>,
     conversation_syncer: Arc<ConversationSyncer>,
-    message_handler: Arc<MessageHandler>,
+    message_processor: Arc<MessageProcessor>,
     friend_listener: Arc<dyn FriendListener>,
     group_listener: Arc<dyn GroupListener>,
     user_listener: Arc<dyn UserListener>,
@@ -220,7 +220,7 @@ impl NotificationHandler {
         group_manager: Arc<GroupService>,
         user_manager: Arc<UserService>,
         conversation_syncer: Arc<ConversationSyncer>,
-        message_handler: Arc<MessageHandler>,
+        message_processor: Arc<MessageProcessor>,
         friend_listener: Arc<dyn FriendListener>,
         group_listener: Arc<dyn GroupListener>,
         user_listener: Arc<dyn UserListener>,
@@ -231,7 +231,7 @@ impl NotificationHandler {
             group_manager,
             user_manager,
             conversation_syncer,
-            message_handler,
+            message_processor,
             friend_listener,
             group_listener,
             user_listener,
@@ -341,7 +341,7 @@ impl NotificationHandler {
 
             // ========== 已读回执通知 (2200) ==========
             notification_type::HAS_READ_RECEIPT => {
-                self.message_handler.handle_read_receipt_from_msg_data(msg).await?;
+                self.message_processor.handle_read_receipt_from_msg_data(msg).await?;
             }
 
             _ => {
@@ -361,7 +361,7 @@ impl NotificationHandler {
         info!("[REVOKE-DEBUG-PARSED] 解析结果: revoker_nickname='{}', revoker_role={}, user_id='{}', seq={}, conv='{}'",
             tips.revoker_nickname, tips.revoker_role, tips.revoker_user_id, tips.seq, tips.conversation_id);
 
-        // 委托给 MessageHandler 处理（构造 protobuf 类型兼容的结构）
+        // 委托给 MessageProcessor 处理（构造 protobuf 类型兼容的结构）
         let revoke_tips = openim_protocol::sdkws::RevokeMsgTips {
             revoker_user_id: tips.revoker_user_id,
             client_msg_id: tips.client_msg_id,
@@ -372,7 +372,7 @@ impl NotificationHandler {
             is_admin_revoke: tips.is_admin_revoke,
         };
 
-        if let Err(e) = self.message_handler.handle_revoke_notification(&revoke_tips, &tips.revoker_nickname, tips.revoker_role).await {
+        if let Err(e) = self.message_processor.handle_revoke_notification(&revoke_tips, &tips.revoker_nickname, tips.revoker_role).await {
             warn!("[NOTIFY] 处理撤回通知失败: {}", e);
             return Err(anyhow::anyhow!("处理撤回通知失败: {}", e));
         }
