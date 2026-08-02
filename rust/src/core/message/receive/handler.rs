@@ -20,7 +20,6 @@ use crate::sdk::context::Repositories;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn, trace};
-use rand::Rng;
 
 /// 消息处理器 — 接收消息的分类入库与事件分发中心
 ///
@@ -77,8 +76,23 @@ impl MessageHandler {
         self.user_id.set_blocking(user_id);
     }
 
-    pub fn message_dao(&self) -> Arc<dyn crate::domain::repository::message::MessageRepository> {
-        self.repositories.message_repo.clone()
+    /// 按 clientMsgID 查询单条本地消息
+    pub async fn get_message_by_client_msg_id(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+    ) -> Result<Option<LocalChatLog>> {
+        self.repositories.message_repo.get_by_client_msg_id(conversation_id, client_msg_id).await
+    }
+
+    /// 按时间倒序分页获取会话消息
+    pub async fn get_messages_by_conversation(
+        &self,
+        conversation_id: &str,
+        start_time: i64,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        self.repositories.message_repo.get_by_conversation(conversation_id, start_time, count).await
     }
 
     /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
@@ -111,7 +125,7 @@ impl MessageHandler {
             _ => return,
         };
 
-        let random_suffix = Self::generate_random_id(8);
+        let random_suffix = crate::domain::util::generate_random_id(8);
         let new_client_msg_id = if client_msg_id.is_empty() {
             format!("{}_{}", prefix, random_suffix)
         } else {
@@ -127,20 +141,6 @@ impl MessageHandler {
         message.client_msg_id = new_client_msg_id;
     }
 
-    /// 生成随机字符串（用于异常消息 ID 后缀）
-    fn generate_random_id(len: usize) -> String {
-        let mut rng = rand::thread_rng();
-        (0..len)
-            .map(|_| {
-                let idx = rng.gen_range(0..36);
-                if idx < 10 {
-                    (b'0' + idx) as char
-                } else {
-                    (b'a' + idx - 10) as char
-                }
-            })
-            .collect()
-    }
 
     /// 处理消息列表，返回 true 表示有非 typing 的状态变更
     #[tracing::instrument(skip_all, fields(msg_count = %messages.len()))]
@@ -425,36 +425,6 @@ mod tests {
         })
     }
 
-    // ========================================================================
-    // generate_random_id 测试
-    // ========================================================================
-
-    #[test]
-    fn test_generate_random_id_length() {
-        assert_eq!(MessageHandler::generate_random_id(8).len(), 8);
-        assert_eq!(MessageHandler::generate_random_id(1).len(), 1);
-        assert_eq!(MessageHandler::generate_random_id(32).len(), 32);
-        assert_eq!(MessageHandler::generate_random_id(0).len(), 0);
-    }
-
-    #[test]
-    fn test_generate_random_id_charset() {
-        let id = MessageHandler::generate_random_id(100);
-        for c in id.chars() {
-            assert!(
-                c.is_ascii_digit() || (c.is_ascii_lowercase() && c <= 'z'),
-                "unexpected char: {}",
-                c
-            );
-        }
-    }
-
-    #[test]
-    fn test_generate_random_id_uniqueness() {
-        let ids: Vec<String> = (0..100).map(|_| MessageHandler::generate_random_id(16)).collect();
-        let unique: std::collections::HashSet<&String> = ids.iter().collect();
-        assert_eq!(unique.len(), 100);
-    }
 
     // ========================================================================
     // handle_exception_messages 测试

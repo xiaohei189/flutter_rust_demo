@@ -644,16 +644,16 @@ impl MessageApi for OpenIMClient {
         let start_time = if req.start_client_msg_id.is_empty() {
             0
         } else {
-            let msg = self.message_handler.message_dao()
-                .get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id)
+            let msg = self.message_handler
+                .get_message_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id)
                 .await?;
             let st = msg.as_ref().map(|m| m.send_time).unwrap_or(0);
             info!("通过 client_msg_id 查询到 send_time={}", st);
             st
         };
 
-        let messages = self.message_handler.message_dao()
-            .get_by_conversation(&req.conversation_id, start_time, req.count)
+        let messages = self.message_handler
+            .get_messages_by_conversation(&req.conversation_id, start_time, req.count)
             .await?;
 
         let is_end = messages.len() < req.count as usize;

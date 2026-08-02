@@ -40,8 +40,7 @@ impl ConversationApi for OpenIMClient {
 
     #[tracing::instrument(skip_all)]
     async fn get_conversations(&self) -> std::result::Result<Vec<LocalConversation>, SdkError> {
-        let dao = self.conversation.dao();
-        let conversations = dao.get_all().await?;
+        let conversations = self.conversation.get_all().await?;
 
         tracing::info!("[SDK] DB: loaded={}", conversations.len());
 
@@ -50,8 +49,7 @@ impl ConversationApi for OpenIMClient {
 
     #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     async fn get_conversation(&self, conversation_id: &str) -> std::result::Result<Option<LocalConversation>, SdkError> {
-        let dao = self.conversation.dao();
-        dao.get_by_id(conversation_id).await
+        self.conversation.get_conversation(conversation_id).await
     }
 
     #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id, unread_count = %unread_count))]
@@ -80,7 +78,7 @@ impl ConversationApi for OpenIMClient {
     }
 
     async fn get_pinned_conversations(&self) -> std::result::Result<Vec<LocalConversation>, SdkError> {
-        self.conversation.dao().get_pinned().await
+        self.conversation.get_pinned_conversations().await
     }
 
     async fn clear_conversation_draft(&self, conversation_id: &str) -> Result<()> {
@@ -106,7 +104,7 @@ impl ConversationApi for OpenIMClient {
         offset: i64,
         count: i64,
     ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
-        self.conversation.dao().get_split(offset, count).await
+        self.conversation.get_split(offset, count).await
     }
 
     /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
@@ -114,7 +112,7 @@ impl ConversationApi for OpenIMClient {
         &self,
         conversation_ids: Vec<String>,
     ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
-        self.conversation.dao().get_multiple(&conversation_ids).await
+        self.conversation.get_multiple(&conversation_ids).await
     }
 
     /// 搜索会话（对齐 Go SDK `SearchConversation`）
@@ -127,7 +125,7 @@ impl ConversationApi for OpenIMClient {
         if keyword.is_empty() {
             return Err(SdkError::invalid_argument("搜索关键词不能为空"));
         }
-        self.conversation.dao().search(keyword).await
+        self.conversation.search(keyword).await
     }
 
     /// 隐藏会话（对齐 Go SDK `HideConversation`）
@@ -138,7 +136,7 @@ impl ConversationApi for OpenIMClient {
         &self,
         conversation_id: &str,
     ) -> std::result::Result<(), SdkError> {
-        self.conversation.dao().reset(conversation_id).await
+        self.conversation.reset(conversation_id).await
     }
 
     /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
@@ -155,30 +153,9 @@ impl ConversationApi for OpenIMClient {
         group_at_type: Option<i32>,
         ex: Option<&str>,
     ) -> Result<()> {
-        let dao = self.conversation.dao();
-        let existing = dao.get_by_id(conversation_id).await?;
-        let mut conv = existing.unwrap_or_else(|| LocalConversation {
-            conversation_id: conversation_id.to_string(),
-            ..Default::default()
-        });
-
-        if let Some(opt) = recv_msg_opt {
-            conv.recv_msg_opt = opt;
-        }
-        if let Some(pinned) = is_pinned {
-            conv.is_pinned = pinned;
-        }
-        if let Some(private) = is_private_chat {
-            conv.is_private_chat = private;
-        }
-        if let Some(at_type) = group_at_type {
-            conv.group_at_type = at_type;
-        }
-        if let Some(ex_val) = ex {
-            conv.ex = ex_val.to_string();
-        }
-
-        dao.upsert(&conv).await
+        self.conversation
+            .set_conversation(conversation_id, recv_msg_opt, is_pinned, is_private_chat, group_at_type, ex)
+            .await
     }
 
 

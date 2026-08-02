@@ -24,9 +24,7 @@ impl ConversationService {
         self.listener.emit(e);
     }
 
-    pub fn dao(&self) -> Arc<dyn crate::domain::repository::conversation::ConversationRepository> {
-        self.repositories.conversation_repo.clone()
-}
+
 
     pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
         let mut local_convs = self.repositories.conversation_repo.get_all().await?;
@@ -109,6 +107,64 @@ impl ConversationService {
 
     pub async fn count(&self) -> Result<i32> {
         self.repositories.conversation_repo.count().await
+    }
+
+    /// 获取全部会话（纯读，不含 latest_msg 回填）
+    pub async fn get_all(&self) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.get_all().await
+    }
+
+    /// 分页获取会话（置顶优先、按时间倒序）
+    pub async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.get_split(offset, count).await
+    }
+
+    /// 按 ID 列表批量获取会话
+    pub async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.get_multiple(conversation_ids).await
+    }
+
+    /// 搜索会话（按 show_name 模糊匹配）
+    pub async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.search(keyword).await
+    }
+
+    /// 重置会话（未读数/最新消息/草稿等），使其不出现在会话列表中（隐藏）
+    pub async fn reset(&self, conversation_id: &str) -> Result<()> {
+        self.repositories.conversation_repo.reset(conversation_id).await
+    }
+
+    /// 通用会话信息设置：按 conversation_id 查找已有会话，更新非空字段后 upsert
+    pub async fn set_conversation(
+        &self,
+        conversation_id: &str,
+        recv_msg_opt: Option<i32>,
+        is_pinned: Option<bool>,
+        is_private_chat: Option<bool>,
+        group_at_type: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()> {
+        let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
+        let mut conv = existing.unwrap_or_else(|| LocalConversation {
+            conversation_id: conversation_id.to_string(),
+            ..Default::default()
+        });
+        if let Some(opt) = recv_msg_opt {
+            conv.recv_msg_opt = opt;
+        }
+        if let Some(pinned) = is_pinned {
+            conv.is_pinned = pinned;
+        }
+        if let Some(private) = is_private_chat {
+            conv.is_private_chat = private;
+        }
+        if let Some(at_type) = group_at_type {
+            conv.group_at_type = at_type;
+        }
+        if let Some(ex_val) = ex {
+            conv.ex = ex_val.to_string();
+        }
+        self.repositories.conversation_repo.upsert(&conv).await
     }
 
     pub async fn clear_all(&self) -> Result<()> {
