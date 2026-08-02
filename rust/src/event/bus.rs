@@ -1,3 +1,23 @@
+//! # EventBus — 全局事件总线（广播模式）
+//!
+//! ## 使用场景
+//!
+//! 用于 "一对多" 广播：一个事件需要被多个独立订阅者接收。
+//! 典型场景：SdkEvent 分发给多个 listener（消息、推送、日志）。
+//!
+//! | 特性 | EventBus | EventSender |
+//! |------|----------|-------------|
+//! | 模式 | 广播 (broadcast) | 点对点 (mpsc) |
+//! | 订阅者 | 多个 | 单一 |
+//! | 背压 | 滞后丢弃 | 无界 |
+//! | 事件丢失 | 可能（接收端慢时） | 不会（除非 channel 关闭） |
+//!
+//! ## 选择指南
+//!
+//! - 需要多个模块同时收到同一事件 → `EventBus`
+//! - 需要确保事件不丢失 → `EventSender`
+//! - 登录前的事件缓冲 → `EventSender`（通过 unbounded channel 预创建接收器）
+
 use super::types::SdkEvent;
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
@@ -116,3 +136,4 @@ mod tests {
         assert_eq!(bus.subscriber_count(), 0);
     }
 }
+

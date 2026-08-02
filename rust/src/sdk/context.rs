@@ -1,10 +1,15 @@
+//! 运行时上下文 — 聚合基础设施与仓储，管理 SDK 生命周期
+
 use crate::sdk::config::ClientConfig;
 use crate::domain::error::{Result, SdkError};
 use crate::event::EventBus;
 use crate::domain::model::UserId;
 use crate::domain::repository::*;
 use crate::infra::database::pool::create_pool;
-use crate::infra::database::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+use crate::infra::database::{
+    ConversationDao, FriendDao, GroupDao, MessageDao,
+    NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao,
+};
 use crate::infra::http::client::HttpApiClient;
 use sqlx::SqlitePool;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -21,7 +26,47 @@ pub fn gen_operation_id(prefix: &str) -> String {
     format!("{}_{}", prefix, OP_ID_COUNTER.fetch_add(1, Ordering::SeqCst))
 }
 
-/// 所有 Repository 的聚合（按领域分组，生命周期由 RuntimeContext 管理）
+// ============================================================================
+// Infra — 基础设施层（数据库连接池、HTTP 客户端）
+// ============================================================================
+
+impl Infra {
+    /// 创建基础设施：数据库连接池 + HTTP 客户端
+    pub async fn new(config: &ClientConfig) -> Result<Self> {
+        std::fs::create_dir_all(&config.data_dir)
+            .map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
+        let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
+        let db_pool = create_pool(&db_url).await?;
+        let http_client = Arc::new(HttpApiClient::new(
+            config.api_base_url.clone(),
+            config.token.clone(),
+            "sdk_init".to_string(),
+        ));
+        Ok(Self { http_client, db_pool })
+    }
+}
+
+// ============================================================================
+// Repositories — 仓储聚合（封装 DAO 创建）
+// ============================================================================
+
+impl Repositories {
+    /// 使用数据库连接池创建所有仓储实例
+    pub fn new(pool: &SqlitePool) -> Arc<Self> {
+        Arc::new(Self {
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_repo: Arc::new(SendingMessageDao::new(pool.clone())),
+        })
+    }
+}
+
+/// 所有 Repository 的聚合
 pub struct Repositories {
     pub message_repo: Arc<dyn MessageRepository>,
     pub conversation_repo: Arc<dyn ConversationRepository>,
@@ -33,11 +78,13 @@ pub struct Repositories {
     pub sending_message_repo: Arc<dyn SendingMessageRepository>,
 }
 
+/// 基础设施（数据库连接池、HTTP 客户端）
 pub struct Infra {
     pub http_client: Arc<HttpApiClient>,
     pub db_pool: SqlitePool,
 }
 
+/// 运行时上下文 — SDK 所有组件的共享状态
 pub struct RuntimeContext {
     pub config: ClientConfig,
     pub event_bus: Arc<EventBus>,
@@ -49,31 +96,15 @@ pub struct RuntimeContext {
 }
 
 impl RuntimeContext {
+    /// 创建运行时上下文
     pub async fn new(
         config: ClientConfig,
         event_bus: Arc<EventBus>,
         cancel_token: CancellationToken,
     ) -> Result<Self> {
+        let infra = Infra::new(&config).await?;
+        let repositories = Repositories::new(&infra.db_pool);
         let operation_id = format!("op_{}", chrono::Utc::now().timestamp_millis());
-
-        std::fs::create_dir_all(&config.data_dir)
-            .map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
-        let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
-        let db_pool = create_pool(&db_url).await?;
-        let message_dao = Arc::new(MessageDao::new(db_pool.clone()));
-        let conversation_dao = Arc::new(ConversationDao::new(db_pool.clone()));
-        let friend_dao = Arc::new(FriendDao::new(db_pool.clone()));
-        let user_dao = Arc::new(UserDao::new(db_pool.clone()));
-        let group_dao = Arc::new(GroupDao::new(db_pool.clone()));
-        let sync_version_dao = Arc::new(SyncVersionDao::new(db_pool.clone()));
-        let notification_seq_repo = Arc::new(NotificationSeqDao::new(db_pool.clone()));
-        let sending_message_repo = Arc::new(SendingMessageDao::new(db_pool.clone()));
-
-        let http_client = Arc::new(HttpApiClient::new(
-            config.api_base_url.clone(),
-            config.token.clone(),
-            "sdk_init".to_string(),
-        ));
 
         Ok(Self {
             config,
@@ -81,20 +112,8 @@ impl RuntimeContext {
             cancel_token,
             user_id: UserId::new(""),
             operation_id,
-            repositories: Arc::new(Repositories {
-                message_repo: message_dao,
-                conversation_repo: conversation_dao,
-                friend_repo: friend_dao,
-                user_repo: user_dao,
-                group_repo: group_dao,
-                sync_version_repo: sync_version_dao,
-                notification_seq_repo,
-                sending_message_repo,
-            }),
-            infra: Infra {
-                http_client,
-                db_pool,
-            },
+            repositories,
+            infra,
         })
     }
 
@@ -147,4 +166,3 @@ mod tests {
         let _ = std::fs::remove_dir_all(&data_dir);
     }
 }
-
