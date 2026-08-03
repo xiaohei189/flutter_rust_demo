@@ -6,4 +6,5 @@ pub mod group;
 pub mod message;
 pub mod msg_struct;
 
+pub mod revoke;
 pub use user_id::UserId;

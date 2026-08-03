@@ -425,7 +425,7 @@ fn first_conversation_id(messages: &[LocalChatLog]) -> String {
 ///
 /// - is_desc=true：按 send_time 降序，相同 send_time 按 seq 降序
 /// - is_desc=false：按 send_time 升序，相同 send_time 按 seq 升序
-pub fn merge_sorted_arrays(
+fn merge_sorted_arrays(
     a: &[LocalChatLog],
     b: &[LocalChatLog],
     n: usize,
@@ -698,4 +698,5 @@ mod tests {
         assert_eq!(first_conversation_id(&msgs), "conv_1");
     }
 }
+
 

@@ -3,8 +3,8 @@
 //! 对齐 Go SDK `internal/conversation_msg/handler.go`
 
 use super::max_seq_recorder::MaxSeqRecorder;
-use super::revoke::parse_revoke_tips_from_json;
-use crate::core::message::content_type::ContentTypeUtils;
+use crate::domain::model::revoke::parse_revoke_tips_from_json;
+use crate::domain::constant::content_type_utils::ContentTypeUtils;
 use crate::domain::constant::content_type;
 use crate::domain::constant::msg_status;
 use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};

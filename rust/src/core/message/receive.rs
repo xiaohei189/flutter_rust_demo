@@ -12,5 +12,5 @@ pub(crate) mod revoke;
 pub use syncer::{MessageSyncer, is_notification};
 pub use max_seq_recorder::MaxSeqRecorder;
 pub use processor::MessageProcessor;
-pub(crate) use revoke::{RevokeTipsWithNickname, parse_revoke_tips_from_json};
+pub(crate) use crate::domain::model::revoke::{RevokeTipsWithNickname, parse_revoke_tips_from_json};
 

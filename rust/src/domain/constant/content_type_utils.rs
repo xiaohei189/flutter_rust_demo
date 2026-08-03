@@ -1,4 +1,4 @@
-use crate::domain::constant::content_type;
+use crate::domain::constant::types::content_type;
 
 /// 消息内容类型统一工具 — 项目中唯一的 content_type 分类/命名中心
 ///
@@ -241,3 +241,4 @@ mod tests {
         assert!(!ContentTypeUtils::should_update_conversation(1203));
     }
 }
+

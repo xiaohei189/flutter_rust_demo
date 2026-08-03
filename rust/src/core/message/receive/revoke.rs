@@ -3,73 +3,11 @@
 use super::processor::MessageProcessor;
 use crate::domain::constant::notification_type::REVOKE;
 use crate::domain::error::{Result, SdkError};
+use crate::domain::model::revoke::{RevokeTipsWithNickname, parse_revoke_tips_from_json};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use openim_protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
-
-/// 撤回通知扩展结构（protobuf RevokeMsgTips 不含 revokerNickname，此结构补充）
-pub struct RevokeTipsWithNickname {
-    pub tips: RevokeMsgTips,
-    pub revoker_nickname: String,
-    pub revoker_role: i32,
-}
-
-/// 从 JSON 内容解析 RevokeMsgTips（对齐 Go SDK UnmarshalNotificationElem）
-pub(crate) fn parse_revoke_tips_from_json(content: &str) -> anyhow::Result<RevokeTipsWithNickname> {
-    let content_str = content;
-
-    // 解析外层 NotificationElem
-    #[derive(serde::Deserialize)]
-    struct Outer {
-        #[serde(default)]
-        detail: String,
-    }
-    let outer: Outer = serde_json::from_str(content_str)
-        .map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
-
-    // 解析内层 RevokeMsgTips JSON
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Inner {
-        #[serde(rename = "revokerUserID", default)]
-        revoker_user_id: String,
-        #[serde(rename = "clientMsgID", default)]
-        client_msg_id: String,
-        #[serde(default)]
-        revoke_time: i64,
-        #[serde(rename = "sesstionType", default)]
-        sesstion_type: i32,
-        #[serde(default)]
-        seq: i64,
-        #[serde(rename = "conversationID", default)]
-        conversation_id: String,
-        #[serde(rename = "isAdminRevoke", default)]
-        is_admin_revoke: bool,
-        #[serde(rename = "revokerNickname", default)]
-        revoker_nickname: String,
-        #[serde(rename = "revokerRole", default)]
-        revoker_role: i32,
-    }
-    let inner: Inner = serde_json::from_str(&outer.detail)
-        .map_err(|e| anyhow::anyhow!("解析内层 RevokeMsgTips 失败: {}", e))?;
-
-    info!("[REVOKE-DEBUG-PARSE] parsed revoker_nickname='{}', revoker_role={}, user_id='{}'",
-        inner.revoker_nickname, inner.revoker_role, inner.revoker_user_id);
-    Ok(RevokeTipsWithNickname {
-        tips: RevokeMsgTips {
-            revoker_user_id: inner.revoker_user_id,
-            client_msg_id: inner.client_msg_id,
-            revoke_time: inner.revoke_time,
-            sesstion_type: inner.sesstion_type,
-            seq: inner.seq,
-            conversation_id: inner.conversation_id,
-            is_admin_revoke: inner.is_admin_revoke,
-        },
-        revoker_nickname: inner.revoker_nickname,
-        revoker_role: inner.revoker_role,
-    })
-}
 
 impl MessageProcessor {
     /// 从通知 JSON 中提取 revokerNickname（服务端下发的真实昵称）
@@ -543,5 +481,3 @@ mod tests {
         assert_eq!(quote.content_type, REVOKE_CT, "quote message should also be revoked");
     }
 }
-
-
