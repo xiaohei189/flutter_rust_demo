@@ -6,7 +6,10 @@ use crate::core::connection::manager::ConnectionManager;
 use super::processor::MessageProcessor;
 use crate::domain::ports::SyncServerApi;
 use crate::domain::repository::NotificationSeqRepository;
-use crate::domain::constant::{sync_flag, ws_req_identifier};
+use crate::domain::constant::{sync_flag, ws_req_identifier, msg_status};
+use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+use crate::core::message::receive::checker::MessageChecker;
+use crate::domain::repository::{ConversationRepository, MessageRepository};
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::UserId;
@@ -59,6 +62,10 @@ impl SyncServerApi for ConnectionManager {
 
     async fn pull_messages_by_seqs(&self, req: &PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
         self.send_rpc(1002, req).await
+    }
+
+    async fn pull_messages_by_seq_list(&self, req: &GetSeqMessageReq) -> Result<GetSeqMessageResp> {
+        self.send_rpc(ws_req_identifier::PULL_MSG_BY_SEQ_LIST, req).await
     }
 
     async fn is_kicked(&self) -> bool {
@@ -118,6 +125,8 @@ pub struct MessageSyncer {
     synced_max_seqs: Arc<RwLock<HashMap<String, i64>>>,
     sync_lock: Arc<Mutex<()>>,
     per_conv_sync_locks: Arc<RwLock<HashMap<String, Arc<tokio::sync::Mutex<()>>>>>,
+    /// 消息连续性检查器
+    checker: Arc<MessageChecker>,
 }
 
 impl MessageSyncer {
@@ -128,6 +137,12 @@ impl MessageSyncer {
         user_id: UserId,
         listener: Arc<dyn ConversationListener>,
     ) -> Self {
+        let checker = Arc::new(MessageChecker::new(
+            remote.clone(),
+            repositories.message_repo.clone(),
+            repositories.conversation_repo.clone(),
+            user_id.get_blocking(),
+        ));
         Self {
             remote,
             repositories,
@@ -135,6 +150,7 @@ impl MessageSyncer {
             user_id,
             config: SyncConfig::default(),
             listener,
+            checker,
             synced_max_seqs: Arc::new(RwLock::new(HashMap::new())),
             sync_lock: Arc::new(Mutex::new(())),
             per_conv_sync_locks: Arc::new(RwLock::new(HashMap::new())),
@@ -526,6 +542,38 @@ impl MessageSyncer {
             resp.msgs.len(),
             resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
 
+        // 第 1 层：块内连续性检查
+        for (_conv_id, pull_msgs) in &resp.msgs {
+            let mut logs: Vec<_> = pull_msgs.msgs.iter().map(|m| {
+                crate::domain::model::local::LocalChatLog {
+                    conversation_id: _conv_id.clone(),
+                    client_msg_id: m.client_msg_id.clone(),
+                    server_msg_id: m.server_msg_id.clone(),
+                    send_id: m.send_id.clone(),
+                    recv_id: m.recv_id.clone(),
+                    sender_platform_id: m.sender_platform_id,
+                    sender_nick_name: m.sender_nickname.clone(),
+                    sender_face_url: m.sender_face_url.clone(),
+                    session_type: m.session_type,
+                    msg_from: m.msg_from,
+                    content_type: m.content_type,
+                    content: String::from_utf8_lossy(&m.content).to_string(),
+                    is_read: 0,
+                    status: msg_status::SEND_SUCCESS as i32,
+                    seq: m.seq,
+                    send_time: m.send_time,
+                    create_time: m.create_time,
+                    attached_info: String::new(),
+                    ex: String::new(),
+                    local_ex: String::new(),
+                    group_id: m.group_id.clone(),
+                }
+            }).collect();
+            if let Err(e) = self.checker.validate_and_fill_internal_gaps(&mut logs, false).await {
+                warn!("[MsgSync] 块内连续性检查失败: conv={}, err={}", _conv_id, e);
+            }
+        }
+
         self.handle_pulled_messages(&resp.msgs).await?;
 
         let total_convs = seq_map.len() as u8;
@@ -563,6 +611,38 @@ impl MessageSyncer {
         info!("[MsgSync] pull_and_handle_messages_reinstall: {} conversations, msgs_count={}",
             resp.msgs.len(),
             resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
+
+        // 第 1 层：块内连续性检查
+        for (_conv_id, pull_msgs) in &resp.msgs {
+            let mut logs: Vec<_> = pull_msgs.msgs.iter().map(|m| {
+                crate::domain::model::local::LocalChatLog {
+                    conversation_id: _conv_id.clone(),
+                    client_msg_id: m.client_msg_id.clone(),
+                    server_msg_id: m.server_msg_id.clone(),
+                    send_id: m.send_id.clone(),
+                    recv_id: m.recv_id.clone(),
+                    sender_platform_id: m.sender_platform_id,
+                    sender_nick_name: m.sender_nickname.clone(),
+                    sender_face_url: m.sender_face_url.clone(),
+                    session_type: m.session_type,
+                    msg_from: m.msg_from,
+                    content_type: m.content_type,
+                    content: String::from_utf8_lossy(&m.content).to_string(),
+                    is_read: 0,
+                    status: msg_status::SEND_SUCCESS as i32,
+                    seq: m.seq,
+                    send_time: m.send_time,
+                    create_time: m.create_time,
+                    attached_info: String::new(),
+                    ex: String::new(),
+                    local_ex: String::new(),
+                    group_id: m.group_id.clone(),
+                }
+            }).collect();
+            if let Err(e) = self.checker.validate_and_fill_internal_gaps(&mut logs, false).await {
+                warn!("[MsgSync] 块内连续性检查失败: conv={}, err={}", _conv_id, e);
+            }
+        }
 
         self.handle_pulled_messages(&resp.msgs).await?;
 
@@ -604,6 +684,7 @@ impl MessageSyncer {
             user_id: self.user_id.clone(),
             config: self.config.clone(),
             listener: self.listener.clone(),
+            checker: self.checker.clone(),
             synced_max_seqs: self.synced_max_seqs.clone(),
             sync_lock: self.sync_lock.clone(),
             per_conv_sync_locks: self.per_conv_sync_locks.clone(),
@@ -645,6 +726,9 @@ mod tests {
             Ok(PullMessageBySeqsResp { msgs: self.pull_msgs.clone(), ..Default::default() })
         }
         async fn is_kicked(&self) -> bool { self.kicked }
+        async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> Result<GetSeqMessageResp> {
+            Ok(GetSeqMessageResp { msgs: HashMap::new(), notification_msgs: HashMap::new() })
+        }
     }
 
     async fn setup_db() -> (Arc<Repositories>, Arc<MessageProcessor>) {
