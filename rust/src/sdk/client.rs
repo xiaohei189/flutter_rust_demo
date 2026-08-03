@@ -24,7 +24,7 @@ use crate::core::message::MessageProcessor;
 
 use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
-use crate::core::message::notification::handler::NotificationHandler;
+use crate::core::message::notification::NotificationHandler;
 use crate::core::user::online::service::OnlineStatusService;
 use crate::core::user::service::UserService;
 use crate::domain::error::{Result, SdkError};

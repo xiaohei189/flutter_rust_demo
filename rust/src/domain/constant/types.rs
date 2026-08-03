@@ -332,3 +332,13 @@ mod tests {
         assert_eq!(msg_sync_status::FAILED, 1004);
     }
 }
+
+/// 同步标志（对齐 Go SDK syncFlag）
+pub mod sync_flag {
+    /// 未同步
+    pub const NO_SYNC: i32 = 0;
+    /// 同步开始
+    pub const SYNC_START: i32 = 1;
+    /// 同步完成
+    pub const SYNC_END: i32 = 2;
+}

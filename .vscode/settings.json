@@ -1,4 +1,7 @@
 {
+    // 关闭 rust-analyzer 的 test cfg：#[cfg(test)] 测试代码不进分析图，
+    // “查找引用/调用”不再混入测试方法。改测试时把 test 加回即可。
+    "rust-analyzer.cargo.cfgs": [],
     // 启用 Flutter 日志颜色输出
     "dart.flutterRunLogFile": null,
     // 确保终端支持颜色

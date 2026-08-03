@@ -1,7 +1,7 @@
 use crate::domain::error::SdkError;
 use crate::domain::error::Result;
 use sqlx::{Pool, Sqlite};
-use tracing::info;
+use tracing::{info, warn};
 
 pub struct SyncVersionDao {
     pool: Pool<Sqlite>,
@@ -90,6 +90,30 @@ impl SyncVersionDao {
         Ok(())
     }
 
+    /// 获取同步标志
+    pub async fn get_sync_flag(&self) -> Result<i32> {
+        let row = sqlx::query_scalar::<_, i64>(
+            "SELECT sync_flag FROM local_app_sdk_version LIMIT 1",
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("get sync_flag: {}", e)))?;
+        Ok(row.unwrap_or(0) as i32)
+    }
+
+    /// 设置同步标志
+    pub async fn set_sync_flag(&self, flag: i32) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_app_sdk_version SET sync_flag = ?1",
+        )
+        .bind(flag as i64)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("set sync_flag: {}", e)))?;
+        info!("sync_flag set to {}", flag);
+        Ok(())
+    }
+
     /// 标记重装同步完成（设置 installed=1）
     pub async fn mark_reinstall_complete(&self, version: &str) -> Result<()> {
         sqlx::query(
@@ -143,5 +167,9 @@ impl SyncVersionRepository for SyncVersionDao {
     async fn get_version_sync(&self, table_name: &str, entity_id: &str) -> Result<Option<(String, u64)>> { self.get_version_sync(table_name, entity_id).await }
     async fn set_version_sync(&self, table_name: &str, entity_id: &str, version_id: &str, version: u64) -> Result<()> { self.set_version_sync(table_name, entity_id, version_id, version).await }
     async fn delete_version_sync(&self, table_name: &str, entity_id: &str) -> Result<()> { self.delete_version_sync(table_name, entity_id).await }
+    async fn get_sync_flag(&self) -> Result<i32> { self.get_sync_flag().await }
+    async fn set_sync_flag(&self, flag: i32) -> Result<()> { self.set_sync_flag(flag).await }
     async fn mark_reinstall_complete(&self, version: &str) -> Result<()> { self.mark_reinstall_complete(version).await }
 }
+
+

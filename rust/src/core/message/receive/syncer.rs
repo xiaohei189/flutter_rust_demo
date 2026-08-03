@@ -6,7 +6,7 @@ use crate::core::connection::manager::ConnectionManager;
 use super::processor::MessageProcessor;
 use crate::domain::ports::SyncServerApi;
 use crate::domain::repository::NotificationSeqRepository;
-use crate::domain::constant::ws_req_identifier;
+use crate::domain::constant::{sync_flag, ws_req_identifier};
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::UserId;
@@ -798,5 +798,6 @@ mod tests {
         assert!(syncer2.is_connection_kicked().await);
     }
 }
+
 
 
