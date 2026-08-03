@@ -289,7 +289,7 @@ impl MessageSyncer {
         if begin <= max_seq {
             let mut seq_map = HashMap::new();
             seq_map.insert(conv_id.to_string(), (begin, max_seq));
-            self.batch_pull_messages(&seq_map).await?;
+            self.batch_pull_messages(&seq_map, false).await?;
         }
 
         self.synced_max_seqs.write().await.insert(conv_id.to_string(), max_seq);
@@ -352,6 +352,7 @@ impl MessageSyncer {
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs).await?;
             self.repositories.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
+        let _ = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await;
         } else {
             self.sync_incremental_messages(&server_max_seqs).await?;
         }
@@ -380,7 +381,7 @@ impl MessageSyncer {
         }
 
         info!("需要同步 {} 个会话的消息", need_sync_seq_map.len());
-        self.batch_pull_messages(&need_sync_seq_map).await
+        self.batch_pull_messages(&need_sync_seq_map, false).await
     }
 
     /// 重装模式同步：跳过通知会话，只同步普通消息
@@ -425,10 +426,10 @@ impl MessageSyncer {
         let total = need_sync_seq_map.values().map(|(_, end)| end).sum::<i64>();
         info!("重装模式，同步全部 {} 条消息", total);
 
-        self.batch_pull_messages_reinstall(&need_sync_seq_map, total).await
+        self.batch_pull_messages(&need_sync_seq_map, true).await
     }
 
-    async fn batch_pull_messages(&self, seq_map: &HashMap<String, (i64, i64)>) -> Result<()> {
+    async fn batch_pull_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool) -> Result<()> {
         let semaphore = Arc::new(Semaphore::new(self.config.max_concurrent_pulls));
         let mut tasks = Vec::new();
 
@@ -458,7 +459,7 @@ impl MessageSyncer {
             let syncer_clone = self.clone_for_task();
             tasks.push(tokio::spawn(async move {
                 let _permit = permit;
-                syncer_clone.pull_and_handle_messages(&batch).await
+                syncer_clone.pull_and_handle_messages(&batch, reinstall).await
             }));
         }
 
@@ -501,7 +502,7 @@ impl MessageSyncer {
             let total_clone = total;
             tasks.push(tokio::spawn(async move {
                 let _permit = permit;
-                syncer_clone.pull_and_handle_messages_reinstall(&batch, total_clone).await
+                syncer_clone.pull_and_handle_messages(&batch, true).await
             }));
         }
 
@@ -514,7 +515,7 @@ impl MessageSyncer {
     }
 
     #[tracing::instrument(skip_all, fields(conv_count = %seq_map.len()))]
-    async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>) -> Result<()> {
+    async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool) -> Result<()> {
         let req = PullMessageBySeqsReq {
             user_id: self.user_id.get().await,
             seq_ranges: seq_map
@@ -579,7 +580,12 @@ impl MessageSyncer {
         let total_convs = seq_map.len() as u8;
         for (idx, (conv_id, (_, end_seq))) in seq_map.iter().enumerate() {
             let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
-            self.send(ConversationEvent::SyncProgress { progress: progress as i32, message: format!("同步完成 {}: seq={}", conv_id, end_seq) });
+                        let msg = if reinstall {
+                format!("重装同步完成 {}: seq={}", conv_id, end_seq)
+            } else {
+                format!("同步完成 {}: seq={}", conv_id, end_seq)
+            };
+            self.send(ConversationEvent::SyncProgress { progress: progress as i32, message: msg });
         }
 
         Ok(())
@@ -882,6 +888,9 @@ mod tests {
         assert!(syncer2.is_connection_kicked().await);
     }
 }
+
+
+
 
 
 

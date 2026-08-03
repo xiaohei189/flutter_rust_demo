@@ -29,6 +29,8 @@ use std::sync::Arc;
 pub trait UserApi : Send + Sync {
     fn take_user_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<UserEvent>, SdkError>;
     async fn get_user_status(&self, user_ids: &[String]) -> Result<Vec<OnlineStatus>>;
+    async fn subscribe_users_status(&self, user_ids: Vec<String>) -> Result<Vec<OnlineStatus>>;
+    async fn unsubscribe_users_status(&self, user_ids: Vec<String>) -> Result<()>;
     async fn get_users_info(&self, user_ids: &[String]) -> Result<Vec<UserInfo>>;
     async fn get_self_user_info(&self) -> Result<UserInfo>;
     async fn update_user_profile(&self, nickname: Option<&str>, face_url: Option<&str>, ex: Option<&str>,) -> Result<()>;

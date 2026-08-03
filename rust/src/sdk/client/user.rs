@@ -47,6 +47,14 @@ impl UserApi for OpenIMClient {
         self.online_status.get_user_status(user_ids.to_vec()).await
     }
 
+    async fn subscribe_users_status(&self, user_ids: Vec<String>) -> Result<Vec<OnlineStatus>> {
+        self.online_status.subscribe_users_status(user_ids).await
+    }
+
+    async fn unsubscribe_users_status(&self, user_ids: Vec<String>) -> Result<()> {
+        self.online_status.unsubscribe_users_status(user_ids).await
+    }
+
     /// 获取用户事件接收器（只能调用一次，重复调用返回错误）
     fn take_user_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<UserEvent>, SdkError> {
         self.listeners.take_user_rx().ok_or_else(|| SdkError::unknown("user receiver already taken"))
