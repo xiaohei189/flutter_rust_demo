@@ -1,4 +1,4 @@
-use crate::domain::model::friend::FriendInfo;
+use crate::model::friend::FriendInfo;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

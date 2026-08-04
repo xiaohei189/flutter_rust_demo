@@ -3,36 +3,36 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'api/client.dart';
-import 'api/ffi_init.dart';
-import 'api/global.dart';
-import 'api/message.dart';
-import 'api/message_advanced.dart';
-import 'api/message_media.dart';
+import 'client.dart';
+import 'client/config.dart';
+import 'constant/enums.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
-import 'domain/constant/enums.dart';
-import 'domain/model/friend.dart';
-import 'domain/model/group.dart';
-import 'domain/model/local.dart';
-import 'domain/model/message.dart';
-import 'domain/model/msg_struct.dart';
-import 'domain/model/user.dart';
-import 'domain/ports/friend.dart';
-import 'domain/ports/group.dart';
-import 'domain/ports/message.dart';
-import 'domain/ports/online.dart';
-import 'domain/sdk_api.dart';
 import 'event/events/connection.dart';
 import 'event/events/conversation.dart';
 import 'event/events/friend.dart';
 import 'event/events/group.dart';
 import 'event/events/message.dart';
+import 'ffi/client.dart';
+import 'ffi/ffi_init.dart';
+import 'ffi/global.dart';
+import 'ffi/message.dart';
+import 'ffi/message_advanced.dart';
+import 'ffi/message_media.dart';
 import 'frb_generated.dart';
-import 'infra/logger/config.dart';
+import 'http/friend.dart';
+import 'http/group.dart';
+import 'http/message.dart';
+import 'http/online.dart';
+import 'logger/config.dart';
+import 'model/friend.dart';
+import 'model/group.dart';
+import 'model/local.dart';
+import 'model/message.dart';
+import 'model/msg_struct.dart';
+import 'model/user.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
-import 'sdk/config.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({

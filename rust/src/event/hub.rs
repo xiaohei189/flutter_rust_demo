@@ -4,10 +4,10 @@
 //! EventHub 将这些回调转发到各领域 mpsc 通道，作为 Dart StreamSink 的数据源。
 //! 未来外部 SDK 接入时，同样只需实现对应的 Listener trait。
 
-use crate::domain::model::friend::FriendInfo;
-use crate::domain::model::group::GroupInfo;
-use crate::domain::model::local::LocalConversation;
-use crate::domain::model::user::UserInfo;
+use crate::model::friend::FriendInfo;
+use crate::model::group::GroupInfo;
+use crate::model::local::LocalConversation;
+use crate::model::user::UserInfo;
 use crate::event::events::connection::{ConnectionEvent, ConnectionListener};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener};
 use crate::event::events::friend::{FriendEvent, FriendListener};

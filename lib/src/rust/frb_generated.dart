@@ -3,37 +3,37 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'api/client.dart';
-import 'api/ffi_init.dart';
-import 'api/global.dart';
-import 'api/message.dart';
-import 'api/message_advanced.dart';
-import 'api/message_media.dart';
+import 'client.dart';
+import 'client/config.dart';
+import 'constant/enums.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'domain/constant/enums.dart';
-import 'domain/model/friend.dart';
-import 'domain/model/group.dart';
-import 'domain/model/local.dart';
-import 'domain/model/message.dart';
-import 'domain/model/msg_struct.dart';
-import 'domain/model/user.dart';
-import 'domain/ports/friend.dart';
-import 'domain/ports/group.dart';
-import 'domain/ports/message.dart';
-import 'domain/ports/online.dart';
-import 'domain/sdk_api.dart';
 import 'event/events/connection.dart';
 import 'event/events/conversation.dart';
 import 'event/events/friend.dart';
 import 'event/events/group.dart';
 import 'event/events/message.dart';
+import 'ffi/client.dart';
+import 'ffi/ffi_init.dart';
+import 'ffi/global.dart';
+import 'ffi/message.dart';
+import 'ffi/message_advanced.dart';
+import 'ffi/message_media.dart';
 import 'frb_generated.dart';
 import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
-import 'infra/logger/config.dart';
+import 'http/friend.dart';
+import 'http/group.dart';
+import 'http/message.dart';
+import 'http/online.dart';
+import 'logger/config.dart';
+import 'model/friend.dart';
+import 'model/group.dart';
+import 'model/local.dart';
+import 'model/message.dart';
+import 'model/msg_struct.dart';
+import 'model/user.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-import 'sdk/config.dart';
 
 /// Main entrypoint of the Rust API
 class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
@@ -88,7 +88,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -882106082;
+  int get rustContentHash => 1669582742;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -100,148 +100,152 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<void> crateApiClientOpenImBridgeClientAcceptFriendApplication({
+  Future<void> crateFfiClientOpenImBridgeClientAcceptFriendApplication({
     required OpenImBridgeClient that,
     required String userId,
     String? handleMsg,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientAcceptGroupApplication({
+  Future<void> crateFfiClientOpenImBridgeClientAcceptGroupApplication({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
     String? handleMsg,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientAddBlack({
+  Future<void> crateFfiClientOpenImBridgeClientAddBlack({
     required OpenImBridgeClient that,
     required String userId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientAddFriend({
+  Future<void> crateFfiClientOpenImBridgeClientAddFriend({
     required OpenImBridgeClient that,
     required String userId,
     required String reqMsg,
   });
 
-  Future<List<CheckFriendResult>> crateApiClientOpenImBridgeClientCheckFriend({
+  Future<List<CheckFriendResult>> crateFfiClientOpenImBridgeClientCheckFriend({
     required OpenImBridgeClient that,
     required List<String> userIds,
   });
 
-  Future<bool> crateApiClientOpenImBridgeClientCheckGroupMemberFullSync({
+  Future<bool> crateFfiClientOpenImBridgeClientCheckGroupMemberFullSync({
     required OpenImBridgeClient that,
     required String groupId,
   });
 
-  Future<bool> crateApiClientOpenImBridgeClientCheckLocalGroupFullSync({
+  Future<bool> crateFfiClientOpenImBridgeClientCheckLocalGroupFullSync({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientClearConversationDraft({
+  Future<void> crateFfiClientOpenImBridgeClientClearConversationDraft({
     required OpenImBridgeClient that,
     required String conversationId,
   });
 
-  Stream<ConnectionEvent> crateApiClientOpenImBridgeClientConnectionStream({
+  Stream<ConnectionEvent> crateFfiClientOpenImBridgeClientConnectionStream({
     required OpenImBridgeClient that,
   });
 
-  Stream<ConversationEvent> crateApiClientOpenImBridgeClientConversationStream({
+  Stream<ConversationEvent> crateFfiClientOpenImBridgeClientConversationStream({
     required OpenImBridgeClient that,
   });
 
-  Future<GroupInfo> crateApiClientOpenImBridgeClientCreateGroup({
+  Future<GroupInfo> crateFfiClientOpenImBridgeClientCreateGroup({
     required OpenImBridgeClient that,
     required String groupName,
     required int groupType,
     required List<String> memberIds,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientDeleteConversation({
+  Future<void> crateFfiClientOpenImBridgeClientDeleteConversation({
     required OpenImBridgeClient that,
     required String conversationId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientDeleteFriend({
+  Future<void> crateFfiClientOpenImBridgeClientDeleteFriend({
     required OpenImBridgeClient that,
     required String userId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientDeleteMessages({
+  Future<void> crateFfiClientOpenImBridgeClientDeleteMessages({
     required OpenImBridgeClient that,
     required DeleteMessagesReq req,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientDisconnect({
+  Future<void> crateFfiClientOpenImBridgeClientDisconnect({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientDismissGroup({
+  Future<void> crateFfiClientOpenImBridgeClientDismissGroup({
     required OpenImBridgeClient that,
     required String groupId,
   });
 
-  Stream<FriendEvent> crateApiClientOpenImBridgeClientFriendStream({
+  Stream<FriendEvent> crateFfiClientOpenImBridgeClientFriendStream({
     required OpenImBridgeClient that,
   });
 
-  Future<List<String>> crateApiClientOpenImBridgeClientGetBlackList({
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetBlackList({
     required OpenImBridgeClient that,
   });
 
-  Future<ConnectionState> crateApiClientOpenImBridgeClientGetConnectionState({
+  Future<ConnectionState> crateFfiClientOpenImBridgeClientGetConnectionState({
     required OpenImBridgeClient that,
   });
 
-  Future<LocalConversation?> crateApiClientOpenImBridgeClientGetConversation({
+  Future<LocalConversation?> crateFfiClientOpenImBridgeClientGetConversation({
     required OpenImBridgeClient that,
     required String conversationId,
   });
 
   Future<String>
-  crateApiClientOpenImBridgeClientGetConversationIdBySessionType({
+  crateFfiClientOpenImBridgeClientGetConversationIdBySessionType({
     required OpenImBridgeClient that,
     required String sourceId,
     required SessionType sessionType,
   });
 
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetConversationIds({
+    required OpenImBridgeClient that,
+  });
+
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetConversationListSplit({
+  crateFfiClientOpenImBridgeClientGetConversationListSplit({
     required OpenImBridgeClient that,
     required PlatformInt64 offset,
     required PlatformInt64 count,
   });
 
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetConversations({
+  crateFfiClientOpenImBridgeClientGetConversations({
     required OpenImBridgeClient that,
   });
 
   Future<int>
-  crateApiClientOpenImBridgeClientGetFriendApplicationUnhandledCount({
+  crateFfiClientOpenImBridgeClientGetFriendApplicationUnhandledCount({
     required OpenImBridgeClient that,
   });
 
   Future<List<FriendApplyInfo>>
-  crateApiClientOpenImBridgeClientGetFriendApplyList({
+  crateFfiClientOpenImBridgeClientGetFriendApplyList({
     required OpenImBridgeClient that,
   });
 
   Future<List<FriendApplyInfo>>
-  crateApiClientOpenImBridgeClientGetFriendApplyListAsApplicant({
+  crateFfiClientOpenImBridgeClientGetFriendApplyListAsApplicant({
     required OpenImBridgeClient that,
   });
 
-  Future<List<String>> crateApiClientOpenImBridgeClientGetFriendIdList({
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetFriendIdList({
     required OpenImBridgeClient that,
   });
 
-  Future<List<FriendInfo>> crateApiClientOpenImBridgeClientGetFriendList({
+  Future<List<FriendInfo>> crateFfiClientOpenImBridgeClientGetFriendList({
     required OpenImBridgeClient that,
   });
 
-  Future<List<FriendInfo>> crateApiClientOpenImBridgeClientGetFriendListPage({
+  Future<List<FriendInfo>> crateFfiClientOpenImBridgeClientGetFriendListPage({
     required OpenImBridgeClient that,
     required int offset,
     required int count,
@@ -249,31 +253,31 @@ abstract class RustLibApi extends BaseApi {
   });
 
   Future<List<GroupApplyInfo>>
-  crateApiClientOpenImBridgeClientGetGroupApplicationList({
+  crateFfiClientOpenImBridgeClientGetGroupApplicationList({
     required OpenImBridgeClient that,
   });
 
   Future<List<GroupApplyInfo>>
-  crateApiClientOpenImBridgeClientGetGroupApplicationListAsApplicant({
+  crateFfiClientOpenImBridgeClientGetGroupApplicationListAsApplicant({
     required OpenImBridgeClient that,
   });
 
   Future<List<GroupApplyInfo>>
-  crateApiClientOpenImBridgeClientGetGroupApplicationListAsRecipient({
+  crateFfiClientOpenImBridgeClientGetGroupApplicationListAsRecipient({
     required OpenImBridgeClient that,
   });
 
   Future<int>
-  crateApiClientOpenImBridgeClientGetGroupApplicationUnhandledCount({
+  crateFfiClientOpenImBridgeClientGetGroupApplicationUnhandledCount({
     required OpenImBridgeClient that,
   });
 
-  Future<List<GroupInfo>> crateApiClientOpenImBridgeClientGetGroupList({
+  Future<List<GroupInfo>> crateFfiClientOpenImBridgeClientGetGroupList({
     required OpenImBridgeClient that,
   });
 
   Future<List<GroupMember>>
-  crateApiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilter({
+  crateFfiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilter({
     required OpenImBridgeClient that,
     required String groupId,
     required int offset,
@@ -284,214 +288,214 @@ abstract class RustLibApi extends BaseApi {
   });
 
   Future<List<GroupMember>>
-  crateApiClientOpenImBridgeClientGetGroupMemberOwnerAndAdmin({
+  crateFfiClientOpenImBridgeClientGetGroupMemberOwnerAndAdmin({
     required OpenImBridgeClient that,
     required String groupId,
   });
 
-  Future<List<GroupMember>> crateApiClientOpenImBridgeClientGetGroupMembers({
+  Future<List<GroupMember>> crateFfiClientOpenImBridgeClientGetGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
   });
 
   Future<List<GroupMember>>
-  crateApiClientOpenImBridgeClientGetGroupMembersInfo({
+  crateFfiClientOpenImBridgeClientGetGroupMembersInfo({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> userIds,
   });
 
-  Future<List<GroupInfo>> crateApiClientOpenImBridgeClientGetGroupsInfo({
+  Future<List<GroupInfo>> crateFfiClientOpenImBridgeClientGetGroupsInfo({
     required OpenImBridgeClient that,
     required List<String> groupIds,
   });
 
   Future<GetHistoryMessagesResult>
-  crateApiClientOpenImBridgeClientGetHistoryMessages({
+  crateFfiClientOpenImBridgeClientGetHistoryMessages({
     required OpenImBridgeClient that,
     required GetHistoryMessagesReq req,
   });
 
   Future<List<GroupInfo>>
-  crateApiClientOpenImBridgeClientGetJoinedGroupListPage({
+  crateFfiClientOpenImBridgeClientGetJoinedGroupListPage({
     required OpenImBridgeClient that,
     required int offset,
     required int count,
   });
 
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetMultipleConversations({
+  crateFfiClientOpenImBridgeClientGetMultipleConversations({
     required OpenImBridgeClient that,
     required List<String> conversationIds,
   });
 
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetPinnedConversations({
+  crateFfiClientOpenImBridgeClientGetPinnedConversations({
     required OpenImBridgeClient that,
   });
 
-  Future<UserInfo> crateApiClientOpenImBridgeClientGetSelfUserInfo({
+  Future<UserInfo> crateFfiClientOpenImBridgeClientGetSelfUserInfo({
     required OpenImBridgeClient that,
   });
 
   Future<List<FriendInfo>>
-  crateApiClientOpenImBridgeClientGetSpecifiedFriendsInfo({
+  crateFfiClientOpenImBridgeClientGetSpecifiedFriendsInfo({
     required OpenImBridgeClient that,
     required List<String> friendUserIds,
     required bool filterBlack,
   });
 
-  Future<List<OnlineStatus>> crateApiClientOpenImBridgeClientGetUserStatus({
+  Future<List<OnlineStatus>> crateFfiClientOpenImBridgeClientGetUserStatus({
     required OpenImBridgeClient that,
     required List<String> userIds,
   });
 
-  Future<List<String>> crateApiClientOpenImBridgeClientGetUsersInGroup({
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetUsersInGroup({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> userIds,
   });
 
-  Future<List<UserInfo>> crateApiClientOpenImBridgeClientGetUsersInfo({
+  Future<List<UserInfo>> crateFfiClientOpenImBridgeClientGetUsersInfo({
     required OpenImBridgeClient that,
     required List<String> userIds,
   });
 
-  Stream<GroupEvent> crateApiClientOpenImBridgeClientGroupStream({
+  Stream<GroupEvent> crateFfiClientOpenImBridgeClientGroupStream({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientHideConversation({
+  Future<void> crateFfiClientOpenImBridgeClientHideConversation({
     required OpenImBridgeClient that,
     required String conversationId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientInviteGroupMembers({
+  Future<void> crateFfiClientOpenImBridgeClientInviteGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> memberIds,
   });
 
-  Future<bool> crateApiClientOpenImBridgeClientIsConnected({
+  Future<bool> crateFfiClientOpenImBridgeClientIsConnected({
     required OpenImBridgeClient that,
   });
 
-  Future<bool> crateApiClientOpenImBridgeClientIsFriend({
-    required OpenImBridgeClient that,
-    required String userId,
-  });
-
-  Future<bool> crateApiClientOpenImBridgeClientIsInBlacklist({
+  Future<bool> crateFfiClientOpenImBridgeClientIsFriend({
     required OpenImBridgeClient that,
     required String userId,
   });
 
-  Future<bool> crateApiClientOpenImBridgeClientIsInGroup({
+  Future<bool> crateFfiClientOpenImBridgeClientIsInBlacklist({
+    required OpenImBridgeClient that,
+    required String userId,
+  });
+
+  Future<bool> crateFfiClientOpenImBridgeClientIsInGroup({
     required OpenImBridgeClient that,
     required String groupId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientJoinGroup({
+  Future<void> crateFfiClientOpenImBridgeClientJoinGroup({
     required OpenImBridgeClient that,
     required String groupId,
     required String reqMsg,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientKickGroupMembers({
+  Future<void> crateFfiClientOpenImBridgeClientKickGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> memberIds,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientLogout({
+  Future<void> crateFfiClientOpenImBridgeClientLogout({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientMarkConversationMessageAsRead({
+  Future<void> crateFfiClientOpenImBridgeClientMarkConversationMessageAsRead({
     required OpenImBridgeClient that,
     required String conversationId,
     required SessionType sessionType,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientMarkMessagesAsRead({
+  Future<void> crateFfiClientOpenImBridgeClientMarkMessagesAsRead({
     required OpenImBridgeClient that,
     required MarkMessagesAsReadReq req,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientMuteGroup({
+  Future<void> crateFfiClientOpenImBridgeClientMuteGroup({
     required OpenImBridgeClient that,
     required String groupId,
     required bool isMute,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientMuteGroupMember({
+  Future<void> crateFfiClientOpenImBridgeClientMuteGroupMember({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
     required PlatformInt64 mutedSeconds,
   });
 
-  Future<OpenImBridgeClient> crateApiClientOpenImBridgeClientNew({
+  Future<OpenImBridgeClient> crateFfiClientOpenImBridgeClientNew({
     required ClientConfig config,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientQuitGroup({
+  Future<void> crateFfiClientOpenImBridgeClientQuitGroup({
     required OpenImBridgeClient that,
     required String groupId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientRefuseFriendApplication({
+  Future<void> crateFfiClientOpenImBridgeClientRefuseFriendApplication({
     required OpenImBridgeClient that,
     required String userId,
     String? handleMsg,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientRefuseGroupApplication({
+  Future<void> crateFfiClientOpenImBridgeClientRefuseGroupApplication({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
     String? handleMsg,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientRemoveBlack({
+  Future<void> crateFfiClientOpenImBridgeClientRemoveBlack({
     required OpenImBridgeClient that,
     required String userId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientRevokeMessage({
+  Future<void> crateFfiClientOpenImBridgeClientRevokeMessage({
     required OpenImBridgeClient that,
     required RevokeMessageReq req,
   });
 
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientSearchConversations({
+  crateFfiClientOpenImBridgeClientSearchConversations({
     required OpenImBridgeClient that,
     required String keyword,
   });
 
-  Future<List<SearchFriendItem>> crateApiClientOpenImBridgeClientSearchFriends({
+  Future<List<SearchFriendItem>> crateFfiClientOpenImBridgeClientSearchFriends({
     required OpenImBridgeClient that,
     required String keyword,
   });
 
-  Future<List<GroupMember>> crateApiClientOpenImBridgeClientSearchGroupMembers({
+  Future<List<GroupMember>> crateFfiClientOpenImBridgeClientSearchGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
     required String keyword,
   });
 
-  Future<List<GroupInfo>> crateApiClientOpenImBridgeClientSearchGroups({
+  Future<List<GroupInfo>> crateFfiClientOpenImBridgeClientSearchGroups({
     required OpenImBridgeClient that,
     required String keyword,
   });
 
   Future<List<LocalChatLog>>
-  crateApiClientOpenImBridgeClientSearchLocalMessages({
+  crateFfiClientOpenImBridgeClientSearchLocalMessages({
     required OpenImBridgeClient that,
     required SearchMessagesReq req,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendAdvancedTextMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendAdvancedTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required List<MessageEntity> entities,
@@ -499,7 +503,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendAtTextMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendAtTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required List<String> atUserIds,
@@ -507,7 +511,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendCustomMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendCustomMessage({
     required OpenImBridgeClient that,
     required String data,
     required String desc,
@@ -516,42 +520,42 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendFileMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendFileMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Stream<int> crateApiClientOpenImBridgeClientSendFileMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendFileMessageWithProgress({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendImageMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendImageMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Stream<int> crateApiClientOpenImBridgeClientSendImageMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendImageMessageWithProgress({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendMarkdownMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendMarkdownMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendSoundMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendSoundMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -559,7 +563,7 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 duration,
   });
 
-  Stream<int> crateApiClientOpenImBridgeClientSendSoundMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendSoundMessageWithProgress({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -567,14 +571,14 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 duration,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendTextMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendVideoMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendVideoMessage({
     required OpenImBridgeClient that,
     required String videoPath,
     required String snapshotPath,
@@ -583,7 +587,7 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 duration,
   });
 
-  Stream<int> crateApiClientOpenImBridgeClientSendVideoMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendVideoMessageWithProgress({
     required OpenImBridgeClient that,
     required String videoPath,
     required String snapshotPath,
@@ -592,7 +596,7 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 duration,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetConversation({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversation({
     required OpenImBridgeClient that,
     required String conversationId,
     int? recvMsgOpt,
@@ -602,37 +606,37 @@ abstract class RustLibApi extends BaseApi {
     String? ex,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetConversationDraft({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversationDraft({
     required OpenImBridgeClient that,
     required String conversationId,
     required String draftText,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetConversationPinned({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversationPinned({
     required OpenImBridgeClient that,
     required String conversationId,
     required bool isPinned,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetConversationPrivate({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversationPrivate({
     required OpenImBridgeClient that,
     required String conversationId,
     required bool isPrivate,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetGlobalMsgRecvOpt({
+  Future<void> crateFfiClientOpenImBridgeClientSetGlobalMsgRecvOpt({
     required OpenImBridgeClient that,
     required int globalRecvOpt,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetGroupInfo({
+  Future<void> crateFfiClientOpenImBridgeClientSetGroupInfo({
     required OpenImBridgeClient that,
     required String groupId,
     String? groupName,
     String? faceUrl,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSetGroupMemberInfo({
+  Future<void> crateFfiClientOpenImBridgeClientSetGroupMemberInfo({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
@@ -642,31 +646,31 @@ abstract class RustLibApi extends BaseApi {
     String? ex,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSyncFriends({
+  Future<void> crateFfiClientOpenImBridgeClientSyncFriends({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSyncFriendsIncremental({
+  Future<void> crateFfiClientOpenImBridgeClientSyncFriendsIncremental({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientSyncGroupsIncremental({
+  Future<void> crateFfiClientOpenImBridgeClientSyncGroupsIncremental({
     required OpenImBridgeClient that,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientTransferGroupOwner({
+  Future<void> crateFfiClientOpenImBridgeClientTransferGroupOwner({
     required OpenImBridgeClient that,
     required String groupId,
     required String newOwnerUserId,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientUpdateConversationUnreadCount({
+  Future<void> crateFfiClientOpenImBridgeClientUpdateConversationUnreadCount({
     required OpenImBridgeClient that,
     required String conversationId,
     required PlatformInt64 unreadCount,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientUpdateFriends({
+  Future<void> crateFfiClientOpenImBridgeClientUpdateFriends({
     required OpenImBridgeClient that,
     required List<String> friendUserIds,
     bool? isPinned,
@@ -674,104 +678,104 @@ abstract class RustLibApi extends BaseApi {
     String? ex,
   });
 
-  Future<void> crateApiClientOpenImBridgeClientUpdateUserProfile({
+  Future<void> crateFfiClientOpenImBridgeClientUpdateUserProfile({
     required OpenImBridgeClient that,
     String? nickname,
     String? faceUrl,
     String? ex,
   });
 
-  Future<void> crateApiMessageAdvancedClearConversationAndDeleteAllMsg({
+  Future<void> crateFfiMessageAdvancedClearConversationAndDeleteAllMsg({
     required String conversationId,
   });
 
-  Future<void> crateApiMessageAdvancedDeleteAllMsgFromLocal();
+  Future<void> crateFfiMessageAdvancedDeleteAllMsgFromLocal();
 
-  Future<void> crateApiMessageAdvancedDeleteAllMsgFromLocalAndSvr();
+  Future<void> crateFfiMessageAdvancedDeleteAllMsgFromLocalAndSvr();
 
-  Future<void> crateApiMessageAdvancedDeleteConversationAndDeleteAllMsg({
+  Future<void> crateFfiMessageAdvancedDeleteConversationAndDeleteAllMsg({
     required String conversationId,
   });
 
-  Future<void> crateApiMessageAdvancedDeleteMessage({
-    required String conversationId,
-    required String clientMsgId,
-  });
-
-  Future<void> crateApiMessageAdvancedDeleteMessageFromLocalStorage({
+  Future<void> crateFfiMessageAdvancedDeleteMessage({
     required String conversationId,
     required String clientMsgId,
   });
 
-  Future<MsgStruct> crateApiMessageAdvancedEditMessage({
+  Future<void> crateFfiMessageAdvancedDeleteMessageFromLocalStorage({
+    required String conversationId,
+    required String clientMsgId,
+  });
+
+  Future<MsgStruct> crateFfiMessageAdvancedEditMessage({
     required String conversationId,
     required String clientMsgId,
     required String content,
     required int contentType,
   });
 
-  Future<List<LocalChatLog>> crateApiMessageAdvancedFindMessageList({
+  Future<List<LocalChatLog>> crateFfiMessageAdvancedFindMessageList({
     required String conversationId,
     required List<String> clientMsgIds,
   });
 
-  Future<MsgStruct> crateApiMessageAdvancedForwardMessage({
+  Future<MsgStruct> crateFfiMessageAdvancedForwardMessage({
     required MsgStruct msgStruct,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageAdvancedForwardMessageByClientId({
+  Future<MsgStruct> crateFfiMessageAdvancedForwardMessageByClientId({
     required String clientMsgId,
     required String sourceId,
     required SessionType sessionType,
   });
 
   Future<List<LocalChatLog>>
-  crateApiMessageAdvancedGetAdvancedHistoryMessageListBySeq({
+  crateFfiMessageAdvancedGetAdvancedHistoryMessageListBySeq({
     required String conversationId,
     required PlatformInt64 startSeq,
     required PlatformInt64 endSeq,
     required int count,
   });
 
-  Future<LocalChatLog> crateApiMessageAdvancedGetHistoryMessageBySeq({
+  Future<LocalChatLog> crateFfiMessageAdvancedGetHistoryMessageBySeq({
     required PlatformInt64 seq,
   });
 
   Future<GetHistoryMessagesResult>
-  crateApiMessageAdvancedGetHistoryMessagesReverse({
+  crateFfiMessageAdvancedGetHistoryMessagesReverse({
     required String conversationId,
     required String startClientMsgId,
     required PlatformInt64 count,
   });
 
-  Future<String> crateApiGlobalGetLoginUserId();
+  Future<String> crateFfiGlobalGetLoginUserId();
 
-  Future<String> crateApiGlobalGetSdkVersion();
+  Future<String> crateFfiGlobalGetSdkVersion();
 
-  Future<PlatformInt64> crateApiMessageAdvancedGetServerTime();
+  Future<PlatformInt64> crateFfiMessageAdvancedGetServerTime();
 
-  Future<PlatformInt64> crateApiMessageAdvancedGetTotalUnreadMsgCount();
+  Future<PlatformInt64> crateFfiMessageAdvancedGetTotalUnreadMsgCount();
 
-  Future<void> crateApiMessageAdvancedIncrSyncConversations();
+  Future<void> crateFfiMessageAdvancedIncrSyncConversations();
 
-  Future<void> crateApiFfiInitInitLogger({required String logLevel});
+  Future<void> crateFfiFfiInitInitLogger({required String logLevel});
 
-  Future<void> crateApiFfiInitInitLoggerV2({required LogConfig config});
+  Future<void> crateFfiFfiInitInitLoggerV2({required LogConfig config});
 
-  Future<LocalChatLog> crateApiMessageAdvancedInsertGroupMessageToLocalStorage({
+  Future<LocalChatLog> crateFfiMessageAdvancedInsertGroupMessageToLocalStorage({
     required String groupId,
     required String content,
     required int contentType,
     required String sendId,
   });
 
-  Future<void> crateApiMessageAdvancedMarkAllConversationMessageAsRead();
+  Future<void> crateFfiMessageAdvancedMarkAllConversationMessageAsRead();
 
-  Future<void> crateApiGlobalNetworkStatusChanged();
+  Future<void> crateFfiGlobalNetworkStatusChanged();
 
-  Future<MsgStruct> crateApiMessageSendAdvancedQuoteMessage({
+  Future<MsgStruct> crateFfiMessageSendAdvancedQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -782,7 +786,7 @@ abstract class RustLibApi extends BaseApi {
     required List<MessageEntity> messageEntities,
   });
 
-  Future<MsgStruct> crateApiMessageSendAtTextMessageWithQuote({
+  Future<MsgStruct> crateFfiMessageSendAtTextMessageWithQuote({
     required String text,
     required List<String> atUserList,
     required List<AtInfo> atUsersInfo,
@@ -790,7 +794,7 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageSendCardMessage({
+  Future<MsgStruct> crateFfiMessageSendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -799,14 +803,14 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageSendFaceMessage({
+  Future<MsgStruct> crateFfiMessageSendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageMediaSendFileMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendFileMessageFromUrl({
     required String sourceUrl,
     required String fileName,
     required PlatformInt64 fileSize,
@@ -814,13 +818,13 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageMediaSendImageMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageSendLocationMessage({
+  Future<MsgStruct> crateFfiMessageSendLocationMessage({
     required String description,
     required double longitude,
     required double latitude,
@@ -828,14 +832,14 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageSendMergerMessage({
+  Future<MsgStruct> crateFfiMessageSendMergerMessage({
     required String title,
     required List<String> summaryList,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> crateApiMessageSendQuoteMessage({
+  Future<MsgStruct> crateFfiMessageSendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -845,20 +849,20 @@ abstract class RustLibApi extends BaseApi {
     required PlatformInt64 quoteSendTime,
   });
 
-  Future<MsgStruct> crateApiMessageMediaSendSoundMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendSoundMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<SendTypingResp> crateApiMessageAdvancedSendTyping({
+  Future<SendTypingResp> crateFfiMessageAdvancedSendTyping({
     required String sourceId,
     required SessionType sessionType,
     required bool focus,
   });
 
-  Future<MsgStruct> crateApiMessageMediaSendVideoMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendVideoMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String snapshotUrl,
@@ -866,28 +870,28 @@ abstract class RustLibApi extends BaseApi {
     required SessionType sessionType,
   });
 
-  Future<void> crateApiGlobalSetAppBackgroundStatus({
+  Future<void> crateFfiGlobalSetAppBackgroundStatus({
     required bool isBackground,
   });
 
-  Future<void> crateApiFfiInitSetLogDirectory({required String path});
+  Future<void> crateFfiFfiInitSetLogDirectory({required String path});
 
-  Future<void> crateApiFfiInitSetLogSpanEvents({required bool enabled});
+  Future<void> crateFfiFfiInitSetLogSpanEvents({required bool enabled});
 
-  Future<void> crateApiMessageAdvancedSetMessageLocalEx({
+  Future<void> crateFfiMessageAdvancedSetMessageLocalEx({
     required String conversationId,
     required String clientMsgId,
     required String localEx,
   });
 
-  Future<void> crateApiGlobalUnInitSdk();
+  Future<void> crateFfiGlobalUnInitSdk();
 
-  Future<String> crateApiMessageMediaUploadFile({
+  Future<String> crateFfiMessageMediaUploadFile({
     required String filePath,
     required String fileName,
   });
 
-  Stream<int> crateApiMessageMediaUploadFileWithProgress({
+  Stream<int> crateFfiMessageMediaUploadFileWithProgress({
     required String filePath,
     required String fileName,
   });
@@ -911,7 +915,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientAcceptFriendApplication({
+  Future<void> crateFfiClientOpenImBridgeClientAcceptFriendApplication({
     required OpenImBridgeClient that,
     required String userId,
     String? handleMsg,
@@ -938,7 +942,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientAcceptFriendApplicationConstMeta,
+            kCrateFfiClientOpenImBridgeClientAcceptFriendApplicationConstMeta,
         argValues: [that, userId, handleMsg],
         apiImpl: this,
       ),
@@ -946,14 +950,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientAcceptFriendApplicationConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientAcceptFriendApplicationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_accept_friend_application",
         argNames: ["that", "userId", "handleMsg"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientAcceptGroupApplication({
+  Future<void> crateFfiClientOpenImBridgeClientAcceptGroupApplication({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
@@ -982,7 +986,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientAcceptGroupApplicationConstMeta,
+            kCrateFfiClientOpenImBridgeClientAcceptGroupApplicationConstMeta,
         argValues: [that, groupId, userId, handleMsg],
         apiImpl: this,
       ),
@@ -990,14 +994,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientAcceptGroupApplicationConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientAcceptGroupApplicationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_accept_group_application",
         argNames: ["that", "groupId", "userId", "handleMsg"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientAddBlack({
+  Future<void> crateFfiClientOpenImBridgeClientAddBlack({
     required OpenImBridgeClient that,
     required String userId,
   }) {
@@ -1021,21 +1025,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientAddBlackConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientAddBlackConstMeta,
         argValues: [that, userId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientAddBlackConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientAddBlackConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_add_black",
         argNames: ["that", "userId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientAddFriend({
+  Future<void> crateFfiClientOpenImBridgeClientAddFriend({
     required OpenImBridgeClient that,
     required String userId,
     required String reqMsg,
@@ -1061,21 +1065,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientAddFriendConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientAddFriendConstMeta,
         argValues: [that, userId, reqMsg],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientAddFriendConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientAddFriendConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_add_friend",
         argNames: ["that", "userId", "reqMsg"],
       );
 
   @override
-  Future<List<CheckFriendResult>> crateApiClientOpenImBridgeClientCheckFriend({
+  Future<List<CheckFriendResult>> crateFfiClientOpenImBridgeClientCheckFriend({
     required OpenImBridgeClient that,
     required List<String> userIds,
   }) {
@@ -1099,21 +1103,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_check_friend_result,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientCheckFriendConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientCheckFriendConstMeta,
         argValues: [that, userIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientCheckFriendConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientCheckFriendConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_check_friend",
         argNames: ["that", "userIds"],
       );
 
   @override
-  Future<bool> crateApiClientOpenImBridgeClientCheckGroupMemberFullSync({
+  Future<bool> crateFfiClientOpenImBridgeClientCheckGroupMemberFullSync({
     required OpenImBridgeClient that,
     required String groupId,
   }) {
@@ -1138,7 +1142,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientCheckGroupMemberFullSyncConstMeta,
+            kCrateFfiClientOpenImBridgeClientCheckGroupMemberFullSyncConstMeta,
         argValues: [that, groupId],
         apiImpl: this,
       ),
@@ -1146,14 +1150,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientCheckGroupMemberFullSyncConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientCheckGroupMemberFullSyncConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_check_group_member_full_sync",
         argNames: ["that", "groupId"],
       );
 
   @override
-  Future<bool> crateApiClientOpenImBridgeClientCheckLocalGroupFullSync({
+  Future<bool> crateFfiClientOpenImBridgeClientCheckLocalGroupFullSync({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1176,7 +1180,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientCheckLocalGroupFullSyncConstMeta,
+            kCrateFfiClientOpenImBridgeClientCheckLocalGroupFullSyncConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -1184,14 +1188,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientCheckLocalGroupFullSyncConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientCheckLocalGroupFullSyncConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_check_local_group_full_sync",
         argNames: ["that"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientClearConversationDraft({
+  Future<void> crateFfiClientOpenImBridgeClientClearConversationDraft({
     required OpenImBridgeClient that,
     required String conversationId,
   }) {
@@ -1216,7 +1220,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientClearConversationDraftConstMeta,
+            kCrateFfiClientOpenImBridgeClientClearConversationDraftConstMeta,
         argValues: [that, conversationId],
         apiImpl: this,
       ),
@@ -1224,14 +1228,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientClearConversationDraftConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientClearConversationDraftConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_clear_conversation_draft",
         argNames: ["that", "conversationId"],
       );
 
   @override
-  Stream<ConnectionEvent> crateApiClientOpenImBridgeClientConnectionStream({
+  Stream<ConnectionEvent> crateFfiClientOpenImBridgeClientConnectionStream({
     required OpenImBridgeClient that,
   }) {
     final sink = RustStreamSink<ConnectionEvent>();
@@ -1256,7 +1260,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeSuccessData: sse_decode_unit,
             decodeErrorData: sse_decode_AnyhowException,
           ),
-          constMeta: kCrateApiClientOpenImBridgeClientConnectionStreamConstMeta,
+          constMeta: kCrateFfiClientOpenImBridgeClientConnectionStreamConstMeta,
           argValues: [that, sink],
           apiImpl: this,
         ),
@@ -1266,14 +1270,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientConnectionStreamConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientConnectionStreamConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_connection_stream",
         argNames: ["that", "sink"],
       );
 
   @override
-  Stream<ConversationEvent> crateApiClientOpenImBridgeClientConversationStream({
+  Stream<ConversationEvent> crateFfiClientOpenImBridgeClientConversationStream({
     required OpenImBridgeClient that,
   }) {
     final sink = RustStreamSink<ConversationEvent>();
@@ -1299,7 +1303,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
-              kCrateApiClientOpenImBridgeClientConversationStreamConstMeta,
+              kCrateFfiClientOpenImBridgeClientConversationStreamConstMeta,
           argValues: [that, sink],
           apiImpl: this,
         ),
@@ -1309,14 +1313,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientConversationStreamConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientConversationStreamConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_conversation_stream",
         argNames: ["that", "sink"],
       );
 
   @override
-  Future<GroupInfo> crateApiClientOpenImBridgeClientCreateGroup({
+  Future<GroupInfo> crateFfiClientOpenImBridgeClientCreateGroup({
     required OpenImBridgeClient that,
     required String groupName,
     required int groupType,
@@ -1344,21 +1348,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_group_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientCreateGroupConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientCreateGroupConstMeta,
         argValues: [that, groupName, groupType, memberIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientCreateGroupConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientCreateGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_create_group",
         argNames: ["that", "groupName", "groupType", "memberIds"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientDeleteConversation({
+  Future<void> crateFfiClientOpenImBridgeClientDeleteConversation({
     required OpenImBridgeClient that,
     required String conversationId,
   }) {
@@ -1382,7 +1386,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientDeleteConversationConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientDeleteConversationConstMeta,
         argValues: [that, conversationId],
         apiImpl: this,
       ),
@@ -1390,14 +1394,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientDeleteConversationConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientDeleteConversationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_delete_conversation",
         argNames: ["that", "conversationId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientDeleteFriend({
+  Future<void> crateFfiClientOpenImBridgeClientDeleteFriend({
     required OpenImBridgeClient that,
     required String userId,
   }) {
@@ -1421,21 +1425,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientDeleteFriendConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientDeleteFriendConstMeta,
         argValues: [that, userId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientDeleteFriendConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientDeleteFriendConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_delete_friend",
         argNames: ["that", "userId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientDeleteMessages({
+  Future<void> crateFfiClientOpenImBridgeClientDeleteMessages({
     required OpenImBridgeClient that,
     required DeleteMessagesReq req,
   }) {
@@ -1459,21 +1463,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientDeleteMessagesConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientDeleteMessagesConstMeta,
         argValues: [that, req],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientDeleteMessagesConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientDeleteMessagesConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_delete_messages",
         argNames: ["that", "req"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientDisconnect({
+  Future<void> crateFfiClientOpenImBridgeClientDisconnect({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1495,21 +1499,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientDisconnectConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientDisconnectConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientDisconnectConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientDisconnectConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_disconnect",
         argNames: ["that"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientDismissGroup({
+  Future<void> crateFfiClientOpenImBridgeClientDismissGroup({
     required OpenImBridgeClient that,
     required String groupId,
   }) {
@@ -1533,21 +1537,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientDismissGroupConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientDismissGroupConstMeta,
         argValues: [that, groupId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientDismissGroupConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientDismissGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_dismiss_group",
         argNames: ["that", "groupId"],
       );
 
   @override
-  Stream<FriendEvent> crateApiClientOpenImBridgeClientFriendStream({
+  Stream<FriendEvent> crateFfiClientOpenImBridgeClientFriendStream({
     required OpenImBridgeClient that,
   }) {
     final sink = RustStreamSink<FriendEvent>();
@@ -1572,7 +1576,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeSuccessData: sse_decode_unit,
             decodeErrorData: sse_decode_AnyhowException,
           ),
-          constMeta: kCrateApiClientOpenImBridgeClientFriendStreamConstMeta,
+          constMeta: kCrateFfiClientOpenImBridgeClientFriendStreamConstMeta,
           argValues: [that, sink],
           apiImpl: this,
         ),
@@ -1581,14 +1585,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return sink.stream;
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientFriendStreamConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientFriendStreamConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_friend_stream",
         argNames: ["that", "sink"],
       );
 
   @override
-  Future<List<String>> crateApiClientOpenImBridgeClientGetBlackList({
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetBlackList({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1610,21 +1614,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetBlackListConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetBlackListConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetBlackListConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetBlackListConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_black_list",
         argNames: ["that"],
       );
 
   @override
-  Future<ConnectionState> crateApiClientOpenImBridgeClientGetConnectionState({
+  Future<ConnectionState> crateFfiClientOpenImBridgeClientGetConnectionState({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1646,7 +1650,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_connection_state,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetConnectionStateConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetConnectionStateConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -1654,14 +1658,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetConnectionStateConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetConnectionStateConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_connection_state",
         argNames: ["that"],
       );
 
   @override
-  Future<LocalConversation?> crateApiClientOpenImBridgeClientGetConversation({
+  Future<LocalConversation?> crateFfiClientOpenImBridgeClientGetConversation({
     required OpenImBridgeClient that,
     required String conversationId,
   }) {
@@ -1685,14 +1689,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_opt_box_autoadd_local_conversation,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetConversationConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetConversationConstMeta,
         argValues: [that, conversationId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetConversationConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetConversationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_conversation",
         argNames: ["that", "conversationId"],
@@ -1700,7 +1704,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<String>
-  crateApiClientOpenImBridgeClientGetConversationIdBySessionType({
+  crateFfiClientOpenImBridgeClientGetConversationIdBySessionType({
     required OpenImBridgeClient that,
     required String sourceId,
     required SessionType sessionType,
@@ -1727,7 +1731,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetConversationIdBySessionTypeConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetConversationIdBySessionTypeConstMeta,
         argValues: [that, sourceId, sessionType],
         apiImpl: this,
       ),
@@ -1735,15 +1739,52 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetConversationIdBySessionTypeConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetConversationIdBySessionTypeConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_conversation_id_by_session_type",
         argNames: ["that", "sourceId", "sessionType"],
       );
 
   @override
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetConversationIds({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 22,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientGetConversationIdsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientGetConversationIdsConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_conversation_ids",
+        argNames: ["that"],
+      );
+
+  @override
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetConversationListSplit({
+  crateFfiClientOpenImBridgeClientGetConversationListSplit({
     required OpenImBridgeClient that,
     required PlatformInt64 offset,
     required PlatformInt64 count,
@@ -1761,45 +1802,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_local_conversation,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientGetConversationListSplitConstMeta,
-        argValues: [that, offset, count],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetConversationListSplitConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_conversation_list_split",
-        argNames: ["that", "offset", "count"],
-      );
-
-  @override
-  Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetConversations({
-    required OpenImBridgeClient that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
             funcId: 23,
             port: port_,
           );
@@ -1808,23 +1810,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_local_conversation,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetConversationsConstMeta,
-        argValues: [that],
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientGetConversationListSplitConstMeta,
+        argValues: [that, offset, count],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetConversationsConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetConversationListSplitConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_conversations",
-        argNames: ["that"],
+        debugName: "OpenImBridgeClient_get_conversation_list_split",
+        argNames: ["that", "offset", "count"],
       );
 
   @override
-  Future<int>
-  crateApiClientOpenImBridgeClientGetFriendApplicationUnhandledCount({
+  Future<List<LocalConversation>>
+  crateFfiClientOpenImBridgeClientGetConversations({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1843,11 +1846,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_i_32,
+          decodeSuccessData: sse_decode_list_local_conversation,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientGetFriendApplicationUnhandledCountConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetConversationsConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -1855,15 +1857,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetFriendApplicationUnhandledCountConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetConversationsConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_friend_application_unhandled_count",
+        debugName: "OpenImBridgeClient_get_conversations",
         argNames: ["that"],
       );
 
   @override
-  Future<List<FriendApplyInfo>>
-  crateApiClientOpenImBridgeClientGetFriendApplyList({
+  Future<int>
+  crateFfiClientOpenImBridgeClientGetFriendApplicationUnhandledCount({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1882,10 +1884,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_friend_apply_info,
+          decodeSuccessData: sse_decode_i_32,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetFriendApplyListConstMeta,
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientGetFriendApplicationUnhandledCountConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -1893,15 +1896,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetFriendApplyListConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetFriendApplicationUnhandledCountConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_friend_apply_list",
+        debugName: "OpenImBridgeClient_get_friend_application_unhandled_count",
         argNames: ["that"],
       );
 
   @override
   Future<List<FriendApplyInfo>>
-  crateApiClientOpenImBridgeClientGetFriendApplyListAsApplicant({
+  crateFfiClientOpenImBridgeClientGetFriendApplyList({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1923,8 +1926,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_friend_apply_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientGetFriendApplyListAsApplicantConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetFriendApplyListConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -1932,14 +1934,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetFriendApplyListAsApplicantConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetFriendApplyListConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_friend_apply_list_as_applicant",
+        debugName: "OpenImBridgeClient_get_friend_apply_list",
         argNames: ["that"],
       );
 
   @override
-  Future<List<String>> crateApiClientOpenImBridgeClientGetFriendIdList({
+  Future<List<FriendApplyInfo>>
+  crateFfiClientOpenImBridgeClientGetFriendApplyListAsApplicant({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1958,24 +1961,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_String,
+          decodeSuccessData: sse_decode_list_friend_apply_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetFriendIdListConstMeta,
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientGetFriendApplyListAsApplicantConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetFriendIdListConstMeta =>
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientGetFriendApplyListAsApplicantConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_friend_id_list",
+        debugName: "OpenImBridgeClient_get_friend_apply_list_as_applicant",
         argNames: ["that"],
       );
 
   @override
-  Future<List<FriendInfo>> crateApiClientOpenImBridgeClientGetFriendList({
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetFriendIdList({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -1994,24 +1999,60 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_friend_info,
+          decodeSuccessData: sse_decode_list_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetFriendListConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetFriendIdListConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetFriendListConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetFriendIdListConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_friend_id_list",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<List<FriendInfo>> crateFfiClientOpenImBridgeClientGetFriendList({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 29,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_friend_info,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientGetFriendListConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetFriendListConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_friend_list",
         argNames: ["that"],
       );
 
   @override
-  Future<List<FriendInfo>> crateApiClientOpenImBridgeClientGetFriendListPage({
+  Future<List<FriendInfo>> crateFfiClientOpenImBridgeClientGetFriendListPage({
     required OpenImBridgeClient that,
     required int offset,
     required int count,
@@ -2031,7 +2072,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 30,
             port: port_,
           );
         },
@@ -2039,7 +2080,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_friend_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetFriendListPageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetFriendListPageConstMeta,
         argValues: [that, offset, count, filterBlack],
         apiImpl: this,
       ),
@@ -2047,7 +2088,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetFriendListPageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetFriendListPageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_friend_list_page",
         argNames: ["that", "offset", "count", "filterBlack"],
@@ -2055,46 +2096,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<GroupApplyInfo>>
-  crateApiClientOpenImBridgeClientGetGroupApplicationList({
-    required OpenImBridgeClient that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 30,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_group_apply_info,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupApplicationListConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupApplicationListConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_group_application_list",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<List<GroupApplyInfo>>
-  crateApiClientOpenImBridgeClientGetGroupApplicationListAsApplicant({
+  crateFfiClientOpenImBridgeClientGetGroupApplicationList({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -2117,7 +2119,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupApplicationListAsApplicantConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetGroupApplicationListConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -2125,15 +2127,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupApplicationListAsApplicantConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetGroupApplicationListConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_group_application_list_as_applicant",
+        debugName: "OpenImBridgeClient_get_group_application_list",
         argNames: ["that"],
       );
 
   @override
   Future<List<GroupApplyInfo>>
-  crateApiClientOpenImBridgeClientGetGroupApplicationListAsRecipient({
+  crateFfiClientOpenImBridgeClientGetGroupApplicationListAsApplicant({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -2156,7 +2158,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupApplicationListAsRecipientConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetGroupApplicationListAsApplicantConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -2164,15 +2166,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupApplicationListAsRecipientConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetGroupApplicationListAsApplicantConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_group_application_list_as_recipient",
+        debugName: "OpenImBridgeClient_get_group_application_list_as_applicant",
         argNames: ["that"],
       );
 
   @override
-  Future<int>
-  crateApiClientOpenImBridgeClientGetGroupApplicationUnhandledCount({
+  Future<List<GroupApplyInfo>>
+  crateFfiClientOpenImBridgeClientGetGroupApplicationListAsRecipient({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -2191,11 +2193,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_i_32,
+          decodeSuccessData: sse_decode_list_group_apply_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupApplicationUnhandledCountConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetGroupApplicationListAsRecipientConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -2203,14 +2205,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupApplicationUnhandledCountConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetGroupApplicationListAsRecipientConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_group_application_unhandled_count",
+        debugName: "OpenImBridgeClient_get_group_application_list_as_recipient",
         argNames: ["that"],
       );
 
   @override
-  Future<List<GroupInfo>> crateApiClientOpenImBridgeClientGetGroupList({
+  Future<int>
+  crateFfiClientOpenImBridgeClientGetGroupApplicationUnhandledCount({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -2229,17 +2232,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_group_info,
+          decodeSuccessData: sse_decode_i_32,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetGroupListConstMeta,
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientGetGroupApplicationUnhandledCountConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetGroupListConstMeta =>
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientGetGroupApplicationUnhandledCountConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_group_application_unhandled_count",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<List<GroupInfo>> crateFfiClientOpenImBridgeClientGetGroupList({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 35,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_group_info,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientGetGroupListConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetGroupListConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_group_list",
         argNames: ["that"],
@@ -2247,7 +2288,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<GroupMember>>
-  crateApiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilter({
+  crateFfiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilter({
     required OpenImBridgeClient that,
     required String groupId,
     required int offset,
@@ -2273,7 +2314,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 36,
             port: port_,
           );
         },
@@ -2282,7 +2323,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilterConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilterConstMeta,
         argValues: [
           that,
           groupId,
@@ -2298,7 +2339,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilterConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilterConstMeta =>
       const TaskConstMeta(
         debugName:
             "OpenImBridgeClient_get_group_member_list_by_join_time_filter",
@@ -2315,47 +2356,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<GroupMember>>
-  crateApiClientOpenImBridgeClientGetGroupMemberOwnerAndAdmin({
-    required OpenImBridgeClient that,
-    required String groupId,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          sse_encode_String(groupId, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 36,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_group_member,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupMemberOwnerAndAdminConstMeta,
-        argValues: [that, groupId],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupMemberOwnerAndAdminConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_group_member_owner_and_admin",
-        argNames: ["that", "groupId"],
-      );
-
-  @override
-  Future<List<GroupMember>> crateApiClientOpenImBridgeClientGetGroupMembers({
+  crateFfiClientOpenImBridgeClientGetGroupMemberOwnerAndAdmin({
     required OpenImBridgeClient that,
     required String groupId,
   }) {
@@ -2379,14 +2380,54 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_group_member,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetGroupMembersConstMeta,
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientGetGroupMemberOwnerAndAdminConstMeta,
         argValues: [that, groupId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetGroupMembersConstMeta =>
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientGetGroupMemberOwnerAndAdminConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_group_member_owner_and_admin",
+        argNames: ["that", "groupId"],
+      );
+
+  @override
+  Future<List<GroupMember>> crateFfiClientOpenImBridgeClientGetGroupMembers({
+    required OpenImBridgeClient that,
+    required String groupId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_String(groupId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 38,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_group_member,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientGetGroupMembersConstMeta,
+        argValues: [that, groupId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetGroupMembersConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_group_members",
         argNames: ["that", "groupId"],
@@ -2394,7 +2435,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<GroupMember>>
-  crateApiClientOpenImBridgeClientGetGroupMembersInfo({
+  crateFfiClientOpenImBridgeClientGetGroupMembersInfo({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> userIds,
@@ -2412,7 +2453,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 38,
+            funcId: 39,
             port: port_,
           );
         },
@@ -2421,7 +2462,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetGroupMembersInfoConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetGroupMembersInfoConstMeta,
         argValues: [that, groupId, userIds],
         apiImpl: this,
       ),
@@ -2429,14 +2470,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetGroupMembersInfoConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetGroupMembersInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_group_members_info",
         argNames: ["that", "groupId", "userIds"],
       );
 
   @override
-  Future<List<GroupInfo>> crateApiClientOpenImBridgeClientGetGroupsInfo({
+  Future<List<GroupInfo>> crateFfiClientOpenImBridgeClientGetGroupsInfo({
     required OpenImBridgeClient that,
     required List<String> groupIds,
   }) {
@@ -2452,7 +2493,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 39,
+            funcId: 40,
             port: port_,
           );
         },
@@ -2460,14 +2501,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_group_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetGroupsInfoConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetGroupsInfoConstMeta,
         argValues: [that, groupIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetGroupsInfoConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetGroupsInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_groups_info",
         argNames: ["that", "groupIds"],
@@ -2475,7 +2516,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<GetHistoryMessagesResult>
-  crateApiClientOpenImBridgeClientGetHistoryMessages({
+  crateFfiClientOpenImBridgeClientGetHistoryMessages({
     required OpenImBridgeClient that,
     required GetHistoryMessagesReq req,
   }) {
@@ -2491,7 +2532,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 40,
+            funcId: 41,
             port: port_,
           );
         },
@@ -2499,7 +2540,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_get_history_messages_result,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetHistoryMessagesConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetHistoryMessagesConstMeta,
         argValues: [that, req],
         apiImpl: this,
       ),
@@ -2507,7 +2548,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetHistoryMessagesConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetHistoryMessagesConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_history_messages",
         argNames: ["that", "req"],
@@ -2515,7 +2556,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<GroupInfo>>
-  crateApiClientOpenImBridgeClientGetJoinedGroupListPage({
+  crateFfiClientOpenImBridgeClientGetJoinedGroupListPage({
     required OpenImBridgeClient that,
     required int offset,
     required int count,
@@ -2533,7 +2574,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 41,
+            funcId: 42,
             port: port_,
           );
         },
@@ -2542,7 +2583,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetJoinedGroupListPageConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetJoinedGroupListPageConstMeta,
         argValues: [that, offset, count],
         apiImpl: this,
       ),
@@ -2550,7 +2591,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetJoinedGroupListPageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetJoinedGroupListPageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_joined_group_list_page",
         argNames: ["that", "offset", "count"],
@@ -2558,7 +2599,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetMultipleConversations({
+  crateFfiClientOpenImBridgeClientGetMultipleConversations({
     required OpenImBridgeClient that,
     required List<String> conversationIds,
   }) {
@@ -2574,45 +2615,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 42,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_local_conversation,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientGetMultipleConversationsConstMeta,
-        argValues: [that, conversationIds],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetMultipleConversationsConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_multiple_conversations",
-        argNames: ["that", "conversationIds"],
-      );
-
-  @override
-  Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientGetPinnedConversations({
-    required OpenImBridgeClient that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
             funcId: 43,
             port: port_,
           );
@@ -2622,22 +2624,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetPinnedConversationsConstMeta,
-        argValues: [that],
+            kCrateFfiClientOpenImBridgeClientGetMultipleConversationsConstMeta,
+        argValues: [that, conversationIds],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetPinnedConversationsConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetMultipleConversationsConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_get_pinned_conversations",
-        argNames: ["that"],
+        debugName: "OpenImBridgeClient_get_multiple_conversations",
+        argNames: ["that", "conversationIds"],
       );
 
   @override
-  Future<UserInfo> crateApiClientOpenImBridgeClientGetSelfUserInfo({
+  Future<List<LocalConversation>>
+  crateFfiClientOpenImBridgeClientGetPinnedConversations({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -2656,17 +2659,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_user_info,
+          decodeSuccessData: sse_decode_list_local_conversation,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetSelfUserInfoConstMeta,
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientGetPinnedConversationsConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetSelfUserInfoConstMeta =>
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientGetPinnedConversationsConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_get_pinned_conversations",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<UserInfo> crateFfiClientOpenImBridgeClientGetSelfUserInfo({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 45,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_user_info,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientGetSelfUserInfoConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetSelfUserInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_self_user_info",
         argNames: ["that"],
@@ -2674,7 +2715,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<FriendInfo>>
-  crateApiClientOpenImBridgeClientGetSpecifiedFriendsInfo({
+  crateFfiClientOpenImBridgeClientGetSpecifiedFriendsInfo({
     required OpenImBridgeClient that,
     required List<String> friendUserIds,
     required bool filterBlack,
@@ -2692,7 +2733,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 45,
+            funcId: 46,
             port: port_,
           );
         },
@@ -2701,7 +2742,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientGetSpecifiedFriendsInfoConstMeta,
+            kCrateFfiClientOpenImBridgeClientGetSpecifiedFriendsInfoConstMeta,
         argValues: [that, friendUserIds, filterBlack],
         apiImpl: this,
       ),
@@ -2709,14 +2750,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientGetSpecifiedFriendsInfoConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientGetSpecifiedFriendsInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_specified_friends_info",
         argNames: ["that", "friendUserIds", "filterBlack"],
       );
 
   @override
-  Future<List<OnlineStatus>> crateApiClientOpenImBridgeClientGetUserStatus({
+  Future<List<OnlineStatus>> crateFfiClientOpenImBridgeClientGetUserStatus({
     required OpenImBridgeClient that,
     required List<String> userIds,
   }) {
@@ -2732,7 +2773,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 46,
+            funcId: 47,
             port: port_,
           );
         },
@@ -2740,21 +2781,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_online_status,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetUserStatusConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetUserStatusConstMeta,
         argValues: [that, userIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetUserStatusConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetUserStatusConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_user_status",
         argNames: ["that", "userIds"],
       );
 
   @override
-  Future<List<String>> crateApiClientOpenImBridgeClientGetUsersInGroup({
+  Future<List<String>> crateFfiClientOpenImBridgeClientGetUsersInGroup({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> userIds,
@@ -2772,7 +2813,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 47,
+            funcId: 48,
             port: port_,
           );
         },
@@ -2780,21 +2821,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetUsersInGroupConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetUsersInGroupConstMeta,
         argValues: [that, groupId, userIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetUsersInGroupConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetUsersInGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_users_in_group",
         argNames: ["that", "groupId", "userIds"],
       );
 
   @override
-  Future<List<UserInfo>> crateApiClientOpenImBridgeClientGetUsersInfo({
+  Future<List<UserInfo>> crateFfiClientOpenImBridgeClientGetUsersInfo({
     required OpenImBridgeClient that,
     required List<String> userIds,
   }) {
@@ -2810,7 +2851,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 48,
+            funcId: 49,
             port: port_,
           );
         },
@@ -2818,21 +2859,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_user_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientGetUsersInfoConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientGetUsersInfoConstMeta,
         argValues: [that, userIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGetUsersInfoConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGetUsersInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_get_users_info",
         argNames: ["that", "userIds"],
       );
 
   @override
-  Stream<GroupEvent> crateApiClientOpenImBridgeClientGroupStream({
+  Stream<GroupEvent> crateFfiClientOpenImBridgeClientGroupStream({
     required OpenImBridgeClient that,
   }) {
     final sink = RustStreamSink<GroupEvent>();
@@ -2849,7 +2890,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 49,
+              funcId: 50,
               port: port_,
             );
           },
@@ -2857,7 +2898,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeSuccessData: sse_decode_unit,
             decodeErrorData: sse_decode_AnyhowException,
           ),
-          constMeta: kCrateApiClientOpenImBridgeClientGroupStreamConstMeta,
+          constMeta: kCrateFfiClientOpenImBridgeClientGroupStreamConstMeta,
           argValues: [that, sink],
           apiImpl: this,
         ),
@@ -2866,14 +2907,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return sink.stream;
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientGroupStreamConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientGroupStreamConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_group_stream",
         argNames: ["that", "sink"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientHideConversation({
+  Future<void> crateFfiClientOpenImBridgeClientHideConversation({
     required OpenImBridgeClient that,
     required String conversationId,
   }) {
@@ -2889,7 +2930,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 50,
+            funcId: 51,
             port: port_,
           );
         },
@@ -2897,7 +2938,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientHideConversationConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientHideConversationConstMeta,
         argValues: [that, conversationId],
         apiImpl: this,
       ),
@@ -2905,14 +2946,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientHideConversationConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientHideConversationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_hide_conversation",
         argNames: ["that", "conversationId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientInviteGroupMembers({
+  Future<void> crateFfiClientOpenImBridgeClientInviteGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> memberIds,
@@ -2930,7 +2971,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 51,
+            funcId: 52,
             port: port_,
           );
         },
@@ -2938,7 +2979,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientInviteGroupMembersConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientInviteGroupMembersConstMeta,
         argValues: [that, groupId, memberIds],
         apiImpl: this,
       ),
@@ -2946,14 +2987,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientInviteGroupMembersConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientInviteGroupMembersConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_invite_group_members",
         argNames: ["that", "groupId", "memberIds"],
       );
 
   @override
-  Future<bool> crateApiClientOpenImBridgeClientIsConnected({
+  Future<bool> crateFfiClientOpenImBridgeClientIsConnected({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -2964,44 +3005,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             that,
             serializer,
           );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 52,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_bool,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiClientOpenImBridgeClientIsConnectedConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientIsConnectedConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_is_connected",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<bool> crateApiClientOpenImBridgeClientIsFriend({
-    required OpenImBridgeClient that,
-    required String userId,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          sse_encode_String(userId, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -3011,23 +3014,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
-          decodeErrorData: null,
+          decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientIsFriendConstMeta,
-        argValues: [that, userId],
+        constMeta: kCrateFfiClientOpenImBridgeClientIsConnectedConstMeta,
+        argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientIsFriendConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientIsConnectedConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_is_friend",
-        argNames: ["that", "userId"],
+        debugName: "OpenImBridgeClient_is_connected",
+        argNames: ["that"],
       );
 
   @override
-  Future<bool> crateApiClientOpenImBridgeClientIsInBlacklist({
+  Future<bool> crateFfiClientOpenImBridgeClientIsFriend({
     required OpenImBridgeClient that,
     required String userId,
   }) {
@@ -3049,23 +3052,61 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
-          decodeErrorData: sse_decode_AnyhowException,
+          decodeErrorData: null,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientIsInBlacklistConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientIsFriendConstMeta,
         argValues: [that, userId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientIsInBlacklistConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientIsFriendConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_is_friend",
+        argNames: ["that", "userId"],
+      );
+
+  @override
+  Future<bool> crateFfiClientOpenImBridgeClientIsInBlacklist({
+    required OpenImBridgeClient that,
+    required String userId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_String(userId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 55,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientIsInBlacklistConstMeta,
+        argValues: [that, userId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientIsInBlacklistConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_is_in_blacklist",
         argNames: ["that", "userId"],
       );
 
   @override
-  Future<bool> crateApiClientOpenImBridgeClientIsInGroup({
+  Future<bool> crateFfiClientOpenImBridgeClientIsInGroup({
     required OpenImBridgeClient that,
     required String groupId,
   }) {
@@ -3081,7 +3122,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 55,
+            funcId: 56,
             port: port_,
           );
         },
@@ -3089,21 +3130,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_bool,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientIsInGroupConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientIsInGroupConstMeta,
         argValues: [that, groupId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientIsInGroupConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientIsInGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_is_in_group",
         argNames: ["that", "groupId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientJoinGroup({
+  Future<void> crateFfiClientOpenImBridgeClientJoinGroup({
     required OpenImBridgeClient that,
     required String groupId,
     required String reqMsg,
@@ -3121,7 +3162,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 56,
+            funcId: 57,
             port: port_,
           );
         },
@@ -3129,21 +3170,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientJoinGroupConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientJoinGroupConstMeta,
         argValues: [that, groupId, reqMsg],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientJoinGroupConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientJoinGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_join_group",
         argNames: ["that", "groupId", "reqMsg"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientKickGroupMembers({
+  Future<void> crateFfiClientOpenImBridgeClientKickGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
     required List<String> memberIds,
@@ -3161,7 +3202,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 57,
+            funcId: 58,
             port: port_,
           );
         },
@@ -3169,7 +3210,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientKickGroupMembersConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientKickGroupMembersConstMeta,
         argValues: [that, groupId, memberIds],
         apiImpl: this,
       ),
@@ -3177,14 +3218,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientKickGroupMembersConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientKickGroupMembersConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_kick_group_members",
         argNames: ["that", "groupId", "memberIds"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientLogout({
+  Future<void> crateFfiClientOpenImBridgeClientLogout({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -3198,7 +3239,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 58,
+            funcId: 59,
             port: port_,
           );
         },
@@ -3206,21 +3247,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientLogoutConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientLogoutConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientLogoutConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientLogoutConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_logout",
         argNames: ["that"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientMarkConversationMessageAsRead({
+  Future<void> crateFfiClientOpenImBridgeClientMarkConversationMessageAsRead({
     required OpenImBridgeClient that,
     required String conversationId,
     required SessionType sessionType,
@@ -3238,7 +3279,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 59,
+            funcId: 60,
             port: port_,
           );
         },
@@ -3247,7 +3288,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientMarkConversationMessageAsReadConstMeta,
+            kCrateFfiClientOpenImBridgeClientMarkConversationMessageAsReadConstMeta,
         argValues: [that, conversationId, sessionType],
         apiImpl: this,
       ),
@@ -3255,14 +3296,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientMarkConversationMessageAsReadConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientMarkConversationMessageAsReadConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_mark_conversation_message_as_read",
         argNames: ["that", "conversationId", "sessionType"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientMarkMessagesAsRead({
+  Future<void> crateFfiClientOpenImBridgeClientMarkMessagesAsRead({
     required OpenImBridgeClient that,
     required MarkMessagesAsReadReq req,
   }) {
@@ -3278,7 +3319,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 60,
+            funcId: 61,
             port: port_,
           );
         },
@@ -3286,7 +3327,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientMarkMessagesAsReadConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientMarkMessagesAsReadConstMeta,
         argValues: [that, req],
         apiImpl: this,
       ),
@@ -3294,14 +3335,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientMarkMessagesAsReadConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientMarkMessagesAsReadConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_mark_messages_as_read",
         argNames: ["that", "req"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientMuteGroup({
+  Future<void> crateFfiClientOpenImBridgeClientMuteGroup({
     required OpenImBridgeClient that,
     required String groupId,
     required bool isMute,
@@ -3319,7 +3360,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 61,
+            funcId: 62,
             port: port_,
           );
         },
@@ -3327,21 +3368,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientMuteGroupConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientMuteGroupConstMeta,
         argValues: [that, groupId, isMute],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientMuteGroupConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientMuteGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_mute_group",
         argNames: ["that", "groupId", "isMute"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientMuteGroupMember({
+  Future<void> crateFfiClientOpenImBridgeClientMuteGroupMember({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
@@ -3361,7 +3402,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 62,
+            funcId: 63,
             port: port_,
           );
         },
@@ -3369,21 +3410,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientMuteGroupMemberConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientMuteGroupMemberConstMeta,
         argValues: [that, groupId, userId, mutedSeconds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientMuteGroupMemberConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientMuteGroupMemberConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_mute_group_member",
         argNames: ["that", "groupId", "userId", "mutedSeconds"],
       );
 
   @override
-  Future<OpenImBridgeClient> crateApiClientOpenImBridgeClientNew({
+  Future<OpenImBridgeClient> crateFfiClientOpenImBridgeClientNew({
     required ClientConfig config,
   }) {
     return handler.executeNormal(
@@ -3394,7 +3435,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 63,
+            funcId: 64,
             port: port_,
           );
         },
@@ -3403,21 +3444,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
               sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientNewConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientNewConstMeta,
         argValues: [config],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientNewConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientNewConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_new",
         argNames: ["config"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientQuitGroup({
+  Future<void> crateFfiClientOpenImBridgeClientQuitGroup({
     required OpenImBridgeClient that,
     required String groupId,
   }) {
@@ -3430,46 +3471,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             serializer,
           );
           sse_encode_String(groupId, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 64,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiClientOpenImBridgeClientQuitGroupConstMeta,
-        argValues: [that, groupId],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientQuitGroupConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_quit_group",
-        argNames: ["that", "groupId"],
-      );
-
-  @override
-  Future<void> crateApiClientOpenImBridgeClientRefuseFriendApplication({
-    required OpenImBridgeClient that,
-    required String userId,
-    String? handleMsg,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          sse_encode_String(userId, serializer);
-          sse_encode_opt_String(handleMsg, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -3481,25 +3482,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientRefuseFriendApplicationConstMeta,
-        argValues: [that, userId, handleMsg],
+        constMeta: kCrateFfiClientOpenImBridgeClientQuitGroupConstMeta,
+        argValues: [that, groupId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientRefuseFriendApplicationConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientQuitGroupConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_refuse_friend_application",
-        argNames: ["that", "userId", "handleMsg"],
+        debugName: "OpenImBridgeClient_quit_group",
+        argNames: ["that", "groupId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientRefuseGroupApplication({
+  Future<void> crateFfiClientOpenImBridgeClientRefuseFriendApplication({
     required OpenImBridgeClient that,
-    required String groupId,
     required String userId,
     String? handleMsg,
   }) {
@@ -3511,7 +3509,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             that,
             serializer,
           );
-          sse_encode_String(groupId, serializer);
           sse_encode_String(userId, serializer);
           sse_encode_opt_String(handleMsg, serializer);
           pdeCallFfi(
@@ -3526,7 +3523,51 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientRefuseGroupApplicationConstMeta,
+            kCrateFfiClientOpenImBridgeClientRefuseFriendApplicationConstMeta,
+        argValues: [that, userId, handleMsg],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientRefuseFriendApplicationConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_refuse_friend_application",
+        argNames: ["that", "userId", "handleMsg"],
+      );
+
+  @override
+  Future<void> crateFfiClientOpenImBridgeClientRefuseGroupApplication({
+    required OpenImBridgeClient that,
+    required String groupId,
+    required String userId,
+    String? handleMsg,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_String(groupId, serializer);
+          sse_encode_String(userId, serializer);
+          sse_encode_opt_String(handleMsg, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 67,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientRefuseGroupApplicationConstMeta,
         argValues: [that, groupId, userId, handleMsg],
         apiImpl: this,
       ),
@@ -3534,14 +3575,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientRefuseGroupApplicationConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientRefuseGroupApplicationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_refuse_group_application",
         argNames: ["that", "groupId", "userId", "handleMsg"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientRemoveBlack({
+  Future<void> crateFfiClientOpenImBridgeClientRemoveBlack({
     required OpenImBridgeClient that,
     required String userId,
   }) {
@@ -3557,7 +3598,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 67,
+            funcId: 68,
             port: port_,
           );
         },
@@ -3565,21 +3606,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientRemoveBlackConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientRemoveBlackConstMeta,
         argValues: [that, userId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientRemoveBlackConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientRemoveBlackConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_remove_black",
         argNames: ["that", "userId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientRevokeMessage({
+  Future<void> crateFfiClientOpenImBridgeClientRevokeMessage({
     required OpenImBridgeClient that,
     required RevokeMessageReq req,
   }) {
@@ -3595,7 +3636,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 68,
+            funcId: 69,
             port: port_,
           );
         },
@@ -3603,14 +3644,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientRevokeMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientRevokeMessageConstMeta,
         argValues: [that, req],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientRevokeMessageConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientRevokeMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_revoke_message",
         argNames: ["that", "req"],
@@ -3618,47 +3659,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<LocalConversation>>
-  crateApiClientOpenImBridgeClientSearchConversations({
-    required OpenImBridgeClient that,
-    required String keyword,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          sse_encode_String(keyword, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 69,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_local_conversation,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientSearchConversationsConstMeta,
-        argValues: [that, keyword],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSearchConversationsConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_search_conversations",
-        argNames: ["that", "keyword"],
-      );
-
-  @override
-  Future<List<SearchFriendItem>> crateApiClientOpenImBridgeClientSearchFriends({
+  crateFfiClientOpenImBridgeClientSearchConversations({
     required OpenImBridgeClient that,
     required String keyword,
   }) {
@@ -3679,24 +3680,64 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_list_search_friend_item,
+          decodeSuccessData: sse_decode_list_local_conversation,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSearchFriendsConstMeta,
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientSearchConversationsConstMeta,
         argValues: [that, keyword],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSearchFriendsConstMeta =>
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientSearchConversationsConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_search_conversations",
+        argNames: ["that", "keyword"],
+      );
+
+  @override
+  Future<List<SearchFriendItem>> crateFfiClientOpenImBridgeClientSearchFriends({
+    required OpenImBridgeClient that,
+    required String keyword,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          sse_encode_String(keyword, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 71,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_search_friend_item,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiClientOpenImBridgeClientSearchFriendsConstMeta,
+        argValues: [that, keyword],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSearchFriendsConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_search_friends",
         argNames: ["that", "keyword"],
       );
 
   @override
-  Future<List<GroupMember>> crateApiClientOpenImBridgeClientSearchGroupMembers({
+  Future<List<GroupMember>> crateFfiClientOpenImBridgeClientSearchGroupMembers({
     required OpenImBridgeClient that,
     required String groupId,
     required String keyword,
@@ -3714,7 +3755,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 71,
+            funcId: 72,
             port: port_,
           );
         },
@@ -3722,7 +3763,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_group_member,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSearchGroupMembersConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSearchGroupMembersConstMeta,
         argValues: [that, groupId, keyword],
         apiImpl: this,
       ),
@@ -3730,14 +3771,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSearchGroupMembersConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSearchGroupMembersConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_search_group_members",
         argNames: ["that", "groupId", "keyword"],
       );
 
   @override
-  Future<List<GroupInfo>> crateApiClientOpenImBridgeClientSearchGroups({
+  Future<List<GroupInfo>> crateFfiClientOpenImBridgeClientSearchGroups({
     required OpenImBridgeClient that,
     required String keyword,
   }) {
@@ -3753,7 +3794,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 72,
+            funcId: 73,
             port: port_,
           );
         },
@@ -3761,14 +3802,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_group_info,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSearchGroupsConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSearchGroupsConstMeta,
         argValues: [that, keyword],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSearchGroupsConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSearchGroupsConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_search_groups",
         argNames: ["that", "keyword"],
@@ -3776,7 +3817,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<LocalChatLog>>
-  crateApiClientOpenImBridgeClientSearchLocalMessages({
+  crateFfiClientOpenImBridgeClientSearchLocalMessages({
     required OpenImBridgeClient that,
     required SearchMessagesReq req,
   }) {
@@ -3792,7 +3833,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 73,
+            funcId: 74,
             port: port_,
           );
         },
@@ -3801,7 +3842,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSearchLocalMessagesConstMeta,
+            kCrateFfiClientOpenImBridgeClientSearchLocalMessagesConstMeta,
         argValues: [that, req],
         apiImpl: this,
       ),
@@ -3809,14 +3850,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSearchLocalMessagesConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSearchLocalMessagesConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_search_local_messages",
         argNames: ["that", "req"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendAdvancedTextMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendAdvancedTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required List<MessageEntity> entities,
@@ -3838,7 +3879,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 74,
+            funcId: 75,
             port: port_,
           );
         },
@@ -3847,7 +3888,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSendAdvancedTextMessageConstMeta,
+            kCrateFfiClientOpenImBridgeClientSendAdvancedTextMessageConstMeta,
         argValues: [that, text, entities, sourceId, sessionType],
         apiImpl: this,
       ),
@@ -3855,14 +3896,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendAdvancedTextMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendAdvancedTextMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_advanced_text_message",
         argNames: ["that", "text", "entities", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendAtTextMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendAtTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required List<String> atUserIds,
@@ -3884,7 +3925,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 75,
+            funcId: 76,
             port: port_,
           );
         },
@@ -3892,7 +3933,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendAtTextMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendAtTextMessageConstMeta,
         argValues: [that, text, atUserIds, sourceId, sessionType],
         apiImpl: this,
       ),
@@ -3900,14 +3941,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendAtTextMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendAtTextMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_at_text_message",
         argNames: ["that", "text", "atUserIds", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendCustomMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendCustomMessage({
     required OpenImBridgeClient that,
     required String data,
     required String desc,
@@ -3931,7 +3972,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 76,
+            funcId: 77,
             port: port_,
           );
         },
@@ -3939,7 +3980,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendCustomMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendCustomMessageConstMeta,
         argValues: [that, data, desc, extension_, sourceId, sessionType],
         apiImpl: this,
       ),
@@ -3947,7 +3988,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendCustomMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendCustomMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_custom_message",
         argNames: [
@@ -3961,7 +4002,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendFileMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendFileMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -3981,7 +4022,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 77,
+            funcId: 78,
             port: port_,
           );
         },
@@ -3989,21 +4030,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendFileMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendFileMessageConstMeta,
         argValues: [that, filePath, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSendFileMessageConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSendFileMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_file_message",
         argNames: ["that", "filePath", "sourceId", "sessionType"],
       );
 
   @override
-  Stream<int> crateApiClientOpenImBridgeClientSendFileMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendFileMessageWithProgress({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4026,7 +4067,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 78,
+              funcId: 79,
               port: port_,
             );
           },
@@ -4035,7 +4076,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
-              kCrateApiClientOpenImBridgeClientSendFileMessageWithProgressConstMeta,
+              kCrateFfiClientOpenImBridgeClientSendFileMessageWithProgressConstMeta,
           argValues: [that, filePath, sourceId, sessionType, sink],
           apiImpl: this,
         ),
@@ -4045,14 +4086,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendFileMessageWithProgressConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendFileMessageWithProgressConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_file_message_with_progress",
         argNames: ["that", "filePath", "sourceId", "sessionType", "sink"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendImageMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendImageMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4072,7 +4113,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 79,
+            funcId: 80,
             port: port_,
           );
         },
@@ -4080,7 +4121,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendImageMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendImageMessageConstMeta,
         argValues: [that, filePath, sourceId, sessionType],
         apiImpl: this,
       ),
@@ -4088,14 +4129,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendImageMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendImageMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_image_message",
         argNames: ["that", "filePath", "sourceId", "sessionType"],
       );
 
   @override
-  Stream<int> crateApiClientOpenImBridgeClientSendImageMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendImageMessageWithProgress({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4118,7 +4159,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 80,
+              funcId: 81,
               port: port_,
             );
           },
@@ -4127,7 +4168,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
-              kCrateApiClientOpenImBridgeClientSendImageMessageWithProgressConstMeta,
+              kCrateFfiClientOpenImBridgeClientSendImageMessageWithProgressConstMeta,
           argValues: [that, filePath, sourceId, sessionType, sink],
           apiImpl: this,
         ),
@@ -4137,14 +4178,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendImageMessageWithProgressConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendImageMessageWithProgressConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_image_message_with_progress",
         argNames: ["that", "filePath", "sourceId", "sessionType", "sink"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendMarkdownMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendMarkdownMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
@@ -4164,7 +4205,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 81,
+            funcId: 82,
             port: port_,
           );
         },
@@ -4173,7 +4214,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSendMarkdownMessageConstMeta,
+            kCrateFfiClientOpenImBridgeClientSendMarkdownMessageConstMeta,
         argValues: [that, text, sourceId, sessionType],
         apiImpl: this,
       ),
@@ -4181,14 +4222,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendMarkdownMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendMarkdownMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_markdown_message",
         argNames: ["that", "text", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendSoundMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendSoundMessage({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4210,7 +4251,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 82,
+            funcId: 83,
             port: port_,
           );
         },
@@ -4218,7 +4259,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendSoundMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendSoundMessageConstMeta,
         argValues: [that, filePath, sourceId, sessionType, duration],
         apiImpl: this,
       ),
@@ -4226,14 +4267,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendSoundMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendSoundMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_sound_message",
         argNames: ["that", "filePath", "sourceId", "sessionType", "duration"],
       );
 
   @override
-  Stream<int> crateApiClientOpenImBridgeClientSendSoundMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendSoundMessageWithProgress({
     required OpenImBridgeClient that,
     required String filePath,
     required String sourceId,
@@ -4258,7 +4299,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 83,
+              funcId: 84,
               port: port_,
             );
           },
@@ -4267,7 +4308,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
-              kCrateApiClientOpenImBridgeClientSendSoundMessageWithProgressConstMeta,
+              kCrateFfiClientOpenImBridgeClientSendSoundMessageWithProgressConstMeta,
           argValues: [that, filePath, sourceId, sessionType, duration, sink],
           apiImpl: this,
         ),
@@ -4277,7 +4318,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendSoundMessageWithProgressConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendSoundMessageWithProgressConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_sound_message_with_progress",
         argNames: [
@@ -4291,7 +4332,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendTextMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendTextMessage({
     required OpenImBridgeClient that,
     required String text,
     required String sourceId,
@@ -4311,7 +4352,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 84,
+            funcId: 85,
             port: port_,
           );
         },
@@ -4319,21 +4360,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendTextMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendTextMessageConstMeta,
         argValues: [that, text, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSendTextMessageConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSendTextMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_text_message",
         argNames: ["that", "text", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiClientOpenImBridgeClientSendVideoMessage({
+  Future<MsgStruct> crateFfiClientOpenImBridgeClientSendVideoMessage({
     required OpenImBridgeClient that,
     required String videoPath,
     required String snapshotPath,
@@ -4357,7 +4398,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 85,
+            funcId: 86,
             port: port_,
           );
         },
@@ -4365,7 +4406,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSendVideoMessageConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSendVideoMessageConstMeta,
         argValues: [
           that,
           videoPath,
@@ -4380,7 +4421,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendVideoMessageConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendVideoMessageConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_video_message",
         argNames: [
@@ -4394,7 +4435,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Stream<int> crateApiClientOpenImBridgeClientSendVideoMessageWithProgress({
+  Stream<int> crateFfiClientOpenImBridgeClientSendVideoMessageWithProgress({
     required OpenImBridgeClient that,
     required String videoPath,
     required String snapshotPath,
@@ -4421,7 +4462,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 86,
+              funcId: 87,
               port: port_,
             );
           },
@@ -4430,7 +4471,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeErrorData: sse_decode_AnyhowException,
           ),
           constMeta:
-              kCrateApiClientOpenImBridgeClientSendVideoMessageWithProgressConstMeta,
+              kCrateFfiClientOpenImBridgeClientSendVideoMessageWithProgressConstMeta,
           argValues: [
             that,
             videoPath,
@@ -4448,7 +4489,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSendVideoMessageWithProgressConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSendVideoMessageWithProgressConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_send_video_message_with_progress",
         argNames: [
@@ -4463,7 +4504,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetConversation({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversation({
     required OpenImBridgeClient that,
     required String conversationId,
     int? recvMsgOpt,
@@ -4489,7 +4530,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 87,
+            funcId: 88,
             port: port_,
           );
         },
@@ -4497,7 +4538,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSetConversationConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSetConversationConstMeta,
         argValues: [
           that,
           conversationId,
@@ -4512,7 +4553,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSetConversationConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSetConversationConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_conversation",
         argNames: [
@@ -4527,7 +4568,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetConversationDraft({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversationDraft({
     required OpenImBridgeClient that,
     required String conversationId,
     required String draftText,
@@ -4545,7 +4586,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 88,
+            funcId: 89,
             port: port_,
           );
         },
@@ -4554,7 +4595,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSetConversationDraftConstMeta,
+            kCrateFfiClientOpenImBridgeClientSetConversationDraftConstMeta,
         argValues: [that, conversationId, draftText],
         apiImpl: this,
       ),
@@ -4562,14 +4603,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSetConversationDraftConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSetConversationDraftConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_conversation_draft",
         argNames: ["that", "conversationId", "draftText"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetConversationPinned({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversationPinned({
     required OpenImBridgeClient that,
     required String conversationId,
     required bool isPinned,
@@ -4587,7 +4628,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 89,
+            funcId: 90,
             port: port_,
           );
         },
@@ -4596,7 +4637,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSetConversationPinnedConstMeta,
+            kCrateFfiClientOpenImBridgeClientSetConversationPinnedConstMeta,
         argValues: [that, conversationId, isPinned],
         apiImpl: this,
       ),
@@ -4604,14 +4645,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSetConversationPinnedConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSetConversationPinnedConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_conversation_pinned",
         argNames: ["that", "conversationId", "isPinned"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetConversationPrivate({
+  Future<void> crateFfiClientOpenImBridgeClientSetConversationPrivate({
     required OpenImBridgeClient that,
     required String conversationId,
     required bool isPrivate,
@@ -4629,7 +4670,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 90,
+            funcId: 91,
             port: port_,
           );
         },
@@ -4638,7 +4679,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSetConversationPrivateConstMeta,
+            kCrateFfiClientOpenImBridgeClientSetConversationPrivateConstMeta,
         argValues: [that, conversationId, isPrivate],
         apiImpl: this,
       ),
@@ -4646,14 +4687,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSetConversationPrivateConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSetConversationPrivateConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_conversation_private",
         argNames: ["that", "conversationId", "isPrivate"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetGlobalMsgRecvOpt({
+  Future<void> crateFfiClientOpenImBridgeClientSetGlobalMsgRecvOpt({
     required OpenImBridgeClient that,
     required int globalRecvOpt,
   }) {
@@ -4669,7 +4710,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 91,
+            funcId: 92,
             port: port_,
           );
         },
@@ -4678,7 +4719,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSetGlobalMsgRecvOptConstMeta,
+            kCrateFfiClientOpenImBridgeClientSetGlobalMsgRecvOptConstMeta,
         argValues: [that, globalRecvOpt],
         apiImpl: this,
       ),
@@ -4686,14 +4727,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSetGlobalMsgRecvOptConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSetGlobalMsgRecvOptConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_global_msg_recv_opt",
         argNames: ["that", "globalRecvOpt"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetGroupInfo({
+  Future<void> crateFfiClientOpenImBridgeClientSetGroupInfo({
     required OpenImBridgeClient that,
     required String groupId,
     String? groupName,
@@ -4713,7 +4754,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 92,
+            funcId: 93,
             port: port_,
           );
         },
@@ -4721,21 +4762,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSetGroupInfoConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSetGroupInfoConstMeta,
         argValues: [that, groupId, groupName, faceUrl],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSetGroupInfoConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSetGroupInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_group_info",
         argNames: ["that", "groupId", "groupName", "faceUrl"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSetGroupMemberInfo({
+  Future<void> crateFfiClientOpenImBridgeClientSetGroupMemberInfo({
     required OpenImBridgeClient that,
     required String groupId,
     required String userId,
@@ -4761,7 +4802,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 93,
+            funcId: 94,
             port: port_,
           );
         },
@@ -4769,7 +4810,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientSetGroupMemberInfoConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSetGroupMemberInfoConstMeta,
         argValues: [that, groupId, userId, nickname, faceUrl, roleLevel, ex],
         apiImpl: this,
       ),
@@ -4777,7 +4818,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSetGroupMemberInfoConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSetGroupMemberInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_group_member_info",
         argNames: [
@@ -4792,43 +4833,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSyncFriends({
-    required OpenImBridgeClient that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
-            that,
-            serializer,
-          );
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 94,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiClientOpenImBridgeClientSyncFriendsConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientSyncFriendsConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_sync_friends",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<void> crateApiClientOpenImBridgeClientSyncFriendsIncremental({
+  Future<void> crateFfiClientOpenImBridgeClientSyncFriends({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -4850,23 +4855,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta:
-            kCrateApiClientOpenImBridgeClientSyncFriendsIncrementalConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientSyncFriendsConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSyncFriendsIncrementalConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientSyncFriendsConstMeta =>
       const TaskConstMeta(
-        debugName: "OpenImBridgeClient_sync_friends_incremental",
+        debugName: "OpenImBridgeClient_sync_friends",
         argNames: ["that"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientSyncGroupsIncremental({
+  Future<void> crateFfiClientOpenImBridgeClientSyncFriendsIncremental({
     required OpenImBridgeClient that,
   }) {
     return handler.executeNormal(
@@ -4889,7 +4892,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientSyncGroupsIncrementalConstMeta,
+            kCrateFfiClientOpenImBridgeClientSyncFriendsIncrementalConstMeta,
         argValues: [that],
         apiImpl: this,
       ),
@@ -4897,14 +4900,52 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientSyncGroupsIncrementalConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientSyncFriendsIncrementalConstMeta =>
+      const TaskConstMeta(
+        debugName: "OpenImBridgeClient_sync_friends_incremental",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<void> crateFfiClientOpenImBridgeClientSyncGroupsIncremental({
+    required OpenImBridgeClient that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 97,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta:
+            kCrateFfiClientOpenImBridgeClientSyncGroupsIncrementalConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateFfiClientOpenImBridgeClientSyncGroupsIncrementalConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_sync_groups_incremental",
         argNames: ["that"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientTransferGroupOwner({
+  Future<void> crateFfiClientOpenImBridgeClientTransferGroupOwner({
     required OpenImBridgeClient that,
     required String groupId,
     required String newOwnerUserId,
@@ -4922,7 +4963,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 97,
+            funcId: 98,
             port: port_,
           );
         },
@@ -4930,7 +4971,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientTransferGroupOwnerConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientTransferGroupOwnerConstMeta,
         argValues: [that, groupId, newOwnerUserId],
         apiImpl: this,
       ),
@@ -4938,14 +4979,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientTransferGroupOwnerConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientTransferGroupOwnerConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_transfer_group_owner",
         argNames: ["that", "groupId", "newOwnerUserId"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientUpdateConversationUnreadCount({
+  Future<void> crateFfiClientOpenImBridgeClientUpdateConversationUnreadCount({
     required OpenImBridgeClient that,
     required String conversationId,
     required PlatformInt64 unreadCount,
@@ -4963,7 +5004,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 98,
+            funcId: 99,
             port: port_,
           );
         },
@@ -4972,7 +5013,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiClientOpenImBridgeClientUpdateConversationUnreadCountConstMeta,
+            kCrateFfiClientOpenImBridgeClientUpdateConversationUnreadCountConstMeta,
         argValues: [that, conversationId, unreadCount],
         apiImpl: this,
       ),
@@ -4980,14 +5021,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientUpdateConversationUnreadCountConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientUpdateConversationUnreadCountConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_update_conversation_unread_count",
         argNames: ["that", "conversationId", "unreadCount"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientUpdateFriends({
+  Future<void> crateFfiClientOpenImBridgeClientUpdateFriends({
     required OpenImBridgeClient that,
     required List<String> friendUserIds,
     bool? isPinned,
@@ -5009,7 +5050,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 99,
+            funcId: 100,
             port: port_,
           );
         },
@@ -5017,21 +5058,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiClientOpenImBridgeClientUpdateFriendsConstMeta,
+        constMeta: kCrateFfiClientOpenImBridgeClientUpdateFriendsConstMeta,
         argValues: [that, friendUserIds, isPinned, remark, ex],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiClientOpenImBridgeClientUpdateFriendsConstMeta =>
+  TaskConstMeta get kCrateFfiClientOpenImBridgeClientUpdateFriendsConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_update_friends",
         argNames: ["that", "friendUserIds", "isPinned", "remark", "ex"],
       );
 
   @override
-  Future<void> crateApiClientOpenImBridgeClientUpdateUserProfile({
+  Future<void> crateFfiClientOpenImBridgeClientUpdateUserProfile({
     required OpenImBridgeClient that,
     String? nickname,
     String? faceUrl,
@@ -5051,40 +5092,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 100,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiClientOpenImBridgeClientUpdateUserProfileConstMeta,
-        argValues: [that, nickname, faceUrl, ex],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiClientOpenImBridgeClientUpdateUserProfileConstMeta =>
-      const TaskConstMeta(
-        debugName: "OpenImBridgeClient_update_user_profile",
-        argNames: ["that", "nickname", "faceUrl", "ex"],
-      );
-
-  @override
-  Future<void> crateApiMessageAdvancedClearConversationAndDeleteAllMsg({
-    required String conversationId,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(conversationId, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
             funcId: 101,
             port: port_,
           );
@@ -5093,27 +5100,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta:
-            kCrateApiMessageAdvancedClearConversationAndDeleteAllMsgConstMeta,
-        argValues: [conversationId],
+        constMeta: kCrateFfiClientOpenImBridgeClientUpdateUserProfileConstMeta,
+        argValues: [that, nickname, faceUrl, ex],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta
-  get kCrateApiMessageAdvancedClearConversationAndDeleteAllMsgConstMeta =>
+  get kCrateFfiClientOpenImBridgeClientUpdateUserProfileConstMeta =>
       const TaskConstMeta(
-        debugName: "clear_conversation_and_delete_all_msg",
-        argNames: ["conversationId"],
+        debugName: "OpenImBridgeClient_update_user_profile",
+        argNames: ["that", "nickname", "faceUrl", "ex"],
       );
 
   @override
-  Future<void> crateApiMessageAdvancedDeleteAllMsgFromLocal() {
+  Future<void> crateFfiMessageAdvancedClearConversationAndDeleteAllMsg({
+    required String conversationId,
+  }) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(conversationId, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -5125,18 +5134,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedDeleteAllMsgFromLocalConstMeta,
-        argValues: [],
+        constMeta:
+            kCrateFfiMessageAdvancedClearConversationAndDeleteAllMsgConstMeta,
+        argValues: [conversationId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedDeleteAllMsgFromLocalConstMeta =>
-      const TaskConstMeta(debugName: "delete_all_msg_from_local", argNames: []);
+  TaskConstMeta
+  get kCrateFfiMessageAdvancedClearConversationAndDeleteAllMsgConstMeta =>
+      const TaskConstMeta(
+        debugName: "clear_conversation_and_delete_all_msg",
+        argNames: ["conversationId"],
+      );
 
   @override
-  Future<void> crateApiMessageAdvancedDeleteAllMsgFromLocalAndSvr() {
+  Future<void> crateFfiMessageAdvancedDeleteAllMsgFromLocal() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5152,29 +5166,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedDeleteAllMsgFromLocalAndSvrConstMeta,
+        constMeta: kCrateFfiMessageAdvancedDeleteAllMsgFromLocalConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta
-  get kCrateApiMessageAdvancedDeleteAllMsgFromLocalAndSvrConstMeta =>
-      const TaskConstMeta(
-        debugName: "delete_all_msg_from_local_and_svr",
-        argNames: [],
-      );
+  TaskConstMeta get kCrateFfiMessageAdvancedDeleteAllMsgFromLocalConstMeta =>
+      const TaskConstMeta(debugName: "delete_all_msg_from_local", argNames: []);
 
   @override
-  Future<void> crateApiMessageAdvancedDeleteConversationAndDeleteAllMsg({
-    required String conversationId,
-  }) {
+  Future<void> crateFfiMessageAdvancedDeleteAllMsgFromLocalAndSvr() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(conversationId, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -5186,32 +5193,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta:
-            kCrateApiMessageAdvancedDeleteConversationAndDeleteAllMsgConstMeta,
-        argValues: [conversationId],
+        constMeta: kCrateFfiMessageAdvancedDeleteAllMsgFromLocalAndSvrConstMeta,
+        argValues: [],
         apiImpl: this,
       ),
     );
   }
 
   TaskConstMeta
-  get kCrateApiMessageAdvancedDeleteConversationAndDeleteAllMsgConstMeta =>
+  get kCrateFfiMessageAdvancedDeleteAllMsgFromLocalAndSvrConstMeta =>
       const TaskConstMeta(
-        debugName: "delete_conversation_and_delete_all_msg",
-        argNames: ["conversationId"],
+        debugName: "delete_all_msg_from_local_and_svr",
+        argNames: [],
       );
 
   @override
-  Future<void> crateApiMessageAdvancedDeleteMessage({
+  Future<void> crateFfiMessageAdvancedDeleteConversationAndDeleteAllMsg({
     required String conversationId,
-    required String clientMsgId,
   }) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(conversationId, serializer);
-          sse_encode_String(clientMsgId, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -5223,21 +5227,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedDeleteMessageConstMeta,
-        argValues: [conversationId, clientMsgId],
+        constMeta:
+            kCrateFfiMessageAdvancedDeleteConversationAndDeleteAllMsgConstMeta,
+        argValues: [conversationId],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedDeleteMessageConstMeta =>
+  TaskConstMeta
+  get kCrateFfiMessageAdvancedDeleteConversationAndDeleteAllMsgConstMeta =>
       const TaskConstMeta(
-        debugName: "delete_message",
-        argNames: ["conversationId", "clientMsgId"],
+        debugName: "delete_conversation_and_delete_all_msg",
+        argNames: ["conversationId"],
       );
 
   @override
-  Future<void> crateApiMessageAdvancedDeleteMessageFromLocalStorage({
+  Future<void> crateFfiMessageAdvancedDeleteMessage({
     required String conversationId,
     required String clientMsgId,
   }) {
@@ -5258,8 +5264,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
+        constMeta: kCrateFfiMessageAdvancedDeleteMessageConstMeta,
+        argValues: [conversationId, clientMsgId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiMessageAdvancedDeleteMessageConstMeta =>
+      const TaskConstMeta(
+        debugName: "delete_message",
+        argNames: ["conversationId", "clientMsgId"],
+      );
+
+  @override
+  Future<void> crateFfiMessageAdvancedDeleteMessageFromLocalStorage({
+    required String conversationId,
+    required String clientMsgId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(conversationId, serializer);
+          sse_encode_String(clientMsgId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 107,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
         constMeta:
-            kCrateApiMessageAdvancedDeleteMessageFromLocalStorageConstMeta,
+            kCrateFfiMessageAdvancedDeleteMessageFromLocalStorageConstMeta,
         argValues: [conversationId, clientMsgId],
         apiImpl: this,
       ),
@@ -5267,14 +5308,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiMessageAdvancedDeleteMessageFromLocalStorageConstMeta =>
+  get kCrateFfiMessageAdvancedDeleteMessageFromLocalStorageConstMeta =>
       const TaskConstMeta(
         debugName: "delete_message_from_local_storage",
         argNames: ["conversationId", "clientMsgId"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageAdvancedEditMessage({
+  Future<MsgStruct> crateFfiMessageAdvancedEditMessage({
     required String conversationId,
     required String clientMsgId,
     required String content,
@@ -5291,7 +5332,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 107,
+            funcId: 108,
             port: port_,
           );
         },
@@ -5299,21 +5340,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedEditMessageConstMeta,
+        constMeta: kCrateFfiMessageAdvancedEditMessageConstMeta,
         argValues: [conversationId, clientMsgId, content, contentType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedEditMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageAdvancedEditMessageConstMeta =>
       const TaskConstMeta(
         debugName: "edit_message",
         argNames: ["conversationId", "clientMsgId", "content", "contentType"],
       );
 
   @override
-  Future<List<LocalChatLog>> crateApiMessageAdvancedFindMessageList({
+  Future<List<LocalChatLog>> crateFfiMessageAdvancedFindMessageList({
     required String conversationId,
     required List<String> clientMsgIds,
   }) {
@@ -5326,7 +5367,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 108,
+            funcId: 109,
             port: port_,
           );
         },
@@ -5334,21 +5375,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_list_local_chat_log,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedFindMessageListConstMeta,
+        constMeta: kCrateFfiMessageAdvancedFindMessageListConstMeta,
         argValues: [conversationId, clientMsgIds],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedFindMessageListConstMeta =>
+  TaskConstMeta get kCrateFfiMessageAdvancedFindMessageListConstMeta =>
       const TaskConstMeta(
         debugName: "find_message_list",
         argNames: ["conversationId", "clientMsgIds"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageAdvancedForwardMessage({
+  Future<MsgStruct> crateFfiMessageAdvancedForwardMessage({
     required MsgStruct msgStruct,
     required String sourceId,
     required SessionType sessionType,
@@ -5363,7 +5404,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 109,
+            funcId: 110,
             port: port_,
           );
         },
@@ -5371,21 +5412,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedForwardMessageConstMeta,
+        constMeta: kCrateFfiMessageAdvancedForwardMessageConstMeta,
         argValues: [msgStruct, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedForwardMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageAdvancedForwardMessageConstMeta =>
       const TaskConstMeta(
         debugName: "forward_message",
         argNames: ["msgStruct", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageAdvancedForwardMessageByClientId({
+  Future<MsgStruct> crateFfiMessageAdvancedForwardMessageByClientId({
     required String clientMsgId,
     required String sourceId,
     required SessionType sessionType,
@@ -5400,7 +5441,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 110,
+            funcId: 111,
             port: port_,
           );
         },
@@ -5408,14 +5449,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedForwardMessageByClientIdConstMeta,
+        constMeta: kCrateFfiMessageAdvancedForwardMessageByClientIdConstMeta,
         argValues: [clientMsgId, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedForwardMessageByClientIdConstMeta =>
+  TaskConstMeta get kCrateFfiMessageAdvancedForwardMessageByClientIdConstMeta =>
       const TaskConstMeta(
         debugName: "forward_message_by_client_id",
         argNames: ["clientMsgId", "sourceId", "sessionType"],
@@ -5423,7 +5464,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<List<LocalChatLog>>
-  crateApiMessageAdvancedGetAdvancedHistoryMessageListBySeq({
+  crateFfiMessageAdvancedGetAdvancedHistoryMessageListBySeq({
     required String conversationId,
     required PlatformInt64 startSeq,
     required PlatformInt64 endSeq,
@@ -5440,7 +5481,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 111,
+            funcId: 112,
             port: port_,
           );
         },
@@ -5449,7 +5490,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiMessageAdvancedGetAdvancedHistoryMessageListBySeqConstMeta,
+            kCrateFfiMessageAdvancedGetAdvancedHistoryMessageListBySeqConstMeta,
         argValues: [conversationId, startSeq, endSeq, count],
         apiImpl: this,
       ),
@@ -5457,14 +5498,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiMessageAdvancedGetAdvancedHistoryMessageListBySeqConstMeta =>
+  get kCrateFfiMessageAdvancedGetAdvancedHistoryMessageListBySeqConstMeta =>
       const TaskConstMeta(
         debugName: "get_advanced_history_message_list_by_seq",
         argNames: ["conversationId", "startSeq", "endSeq", "count"],
       );
 
   @override
-  Future<LocalChatLog> crateApiMessageAdvancedGetHistoryMessageBySeq({
+  Future<LocalChatLog> crateFfiMessageAdvancedGetHistoryMessageBySeq({
     required PlatformInt64 seq,
   }) {
     return handler.executeNormal(
@@ -5475,7 +5516,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 112,
+            funcId: 113,
             port: port_,
           );
         },
@@ -5483,14 +5524,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_local_chat_log,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedGetHistoryMessageBySeqConstMeta,
+        constMeta: kCrateFfiMessageAdvancedGetHistoryMessageBySeqConstMeta,
         argValues: [seq],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedGetHistoryMessageBySeqConstMeta =>
+  TaskConstMeta get kCrateFfiMessageAdvancedGetHistoryMessageBySeqConstMeta =>
       const TaskConstMeta(
         debugName: "get_history_message_by_seq",
         argNames: ["seq"],
@@ -5498,7 +5539,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<GetHistoryMessagesResult>
-  crateApiMessageAdvancedGetHistoryMessagesReverse({
+  crateFfiMessageAdvancedGetHistoryMessagesReverse({
     required String conversationId,
     required String startClientMsgId,
     required PlatformInt64 count,
@@ -5513,7 +5554,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 113,
+            funcId: 114,
             port: port_,
           );
         },
@@ -5521,7 +5562,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_get_history_messages_result,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedGetHistoryMessagesReverseConstMeta,
+        constMeta: kCrateFfiMessageAdvancedGetHistoryMessagesReverseConstMeta,
         argValues: [conversationId, startClientMsgId, count],
         apiImpl: this,
       ),
@@ -5529,41 +5570,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiMessageAdvancedGetHistoryMessagesReverseConstMeta =>
+  get kCrateFfiMessageAdvancedGetHistoryMessagesReverseConstMeta =>
       const TaskConstMeta(
         debugName: "get_history_messages_reverse",
         argNames: ["conversationId", "startClientMsgId", "count"],
       );
 
   @override
-  Future<String> crateApiGlobalGetLoginUserId() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 114,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiGlobalGetLoginUserIdConstMeta,
-        argValues: [],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiGlobalGetLoginUserIdConstMeta =>
-      const TaskConstMeta(debugName: "get_login_user_id", argNames: []);
-
-  @override
-  Future<String> crateApiGlobalGetSdkVersion() {
+  Future<String> crateFfiGlobalGetLoginUserId() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5579,18 +5593,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiGlobalGetSdkVersionConstMeta,
+        constMeta: kCrateFfiGlobalGetLoginUserIdConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiGlobalGetSdkVersionConstMeta =>
-      const TaskConstMeta(debugName: "get_sdk_version", argNames: []);
+  TaskConstMeta get kCrateFfiGlobalGetLoginUserIdConstMeta =>
+      const TaskConstMeta(debugName: "get_login_user_id", argNames: []);
 
   @override
-  Future<PlatformInt64> crateApiMessageAdvancedGetServerTime() {
+  Future<String> crateFfiGlobalGetSdkVersion() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5603,21 +5617,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_i_64,
+          decodeSuccessData: sse_decode_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedGetServerTimeConstMeta,
+        constMeta: kCrateFfiGlobalGetSdkVersionConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedGetServerTimeConstMeta =>
-      const TaskConstMeta(debugName: "get_server_time", argNames: []);
+  TaskConstMeta get kCrateFfiGlobalGetSdkVersionConstMeta =>
+      const TaskConstMeta(debugName: "get_sdk_version", argNames: []);
 
   @override
-  Future<PlatformInt64> crateApiMessageAdvancedGetTotalUnreadMsgCount() {
+  Future<PlatformInt64> crateFfiMessageAdvancedGetServerTime() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5633,21 +5647,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_i_64,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedGetTotalUnreadMsgCountConstMeta,
+        constMeta: kCrateFfiMessageAdvancedGetServerTimeConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedGetTotalUnreadMsgCountConstMeta =>
-      const TaskConstMeta(
-        debugName: "get_total_unread_msg_count",
-        argNames: [],
-      );
+  TaskConstMeta get kCrateFfiMessageAdvancedGetServerTimeConstMeta =>
+      const TaskConstMeta(debugName: "get_server_time", argNames: []);
 
   @override
-  Future<void> crateApiMessageAdvancedIncrSyncConversations() {
+  Future<PlatformInt64> crateFfiMessageAdvancedGetTotalUnreadMsgCount() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5660,26 +5671,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
+          decodeSuccessData: sse_decode_i_64,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedIncrSyncConversationsConstMeta,
+        constMeta: kCrateFfiMessageAdvancedGetTotalUnreadMsgCountConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedIncrSyncConversationsConstMeta =>
-      const TaskConstMeta(debugName: "incr_sync_conversations", argNames: []);
+  TaskConstMeta get kCrateFfiMessageAdvancedGetTotalUnreadMsgCountConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_total_unread_msg_count",
+        argNames: [],
+      );
 
   @override
-  Future<void> crateApiFfiInitInitLogger({required String logLevel}) {
+  Future<void> crateFfiMessageAdvancedIncrSyncConversations() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(logLevel, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -5691,23 +5704,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiFfiInitInitLoggerConstMeta,
-        argValues: [logLevel],
+        constMeta: kCrateFfiMessageAdvancedIncrSyncConversationsConstMeta,
+        argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiFfiInitInitLoggerConstMeta =>
-      const TaskConstMeta(debugName: "init_logger", argNames: ["logLevel"]);
+  TaskConstMeta get kCrateFfiMessageAdvancedIncrSyncConversationsConstMeta =>
+      const TaskConstMeta(debugName: "incr_sync_conversations", argNames: []);
 
   @override
-  Future<void> crateApiFfiInitInitLoggerV2({required LogConfig config}) {
+  Future<void> crateFfiFfiInitInitLogger({required String logLevel}) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_box_autoadd_log_config(config, serializer);
+          sse_encode_String(logLevel, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -5719,18 +5732,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiFfiInitInitLoggerV2ConstMeta,
+        constMeta: kCrateFfiFfiInitInitLoggerConstMeta,
+        argValues: [logLevel],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiFfiInitInitLoggerConstMeta =>
+      const TaskConstMeta(debugName: "init_logger", argNames: ["logLevel"]);
+
+  @override
+  Future<void> crateFfiFfiInitInitLoggerV2({required LogConfig config}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_log_config(config, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 121,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiFfiInitInitLoggerV2ConstMeta,
         argValues: [config],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiFfiInitInitLoggerV2ConstMeta =>
+  TaskConstMeta get kCrateFfiFfiInitInitLoggerV2ConstMeta =>
       const TaskConstMeta(debugName: "init_logger_v2", argNames: ["config"]);
 
   @override
-  Future<LocalChatLog> crateApiMessageAdvancedInsertGroupMessageToLocalStorage({
+  Future<LocalChatLog> crateFfiMessageAdvancedInsertGroupMessageToLocalStorage({
     required String groupId,
     required String content,
     required int contentType,
@@ -5747,7 +5788,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 121,
+            funcId: 122,
             port: port_,
           );
         },
@@ -5756,7 +5797,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta:
-            kCrateApiMessageAdvancedInsertGroupMessageToLocalStorageConstMeta,
+            kCrateFfiMessageAdvancedInsertGroupMessageToLocalStorageConstMeta,
         argValues: [groupId, content, contentType, sendId],
         apiImpl: this,
       ),
@@ -5764,46 +5805,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   TaskConstMeta
-  get kCrateApiMessageAdvancedInsertGroupMessageToLocalStorageConstMeta =>
+  get kCrateFfiMessageAdvancedInsertGroupMessageToLocalStorageConstMeta =>
       const TaskConstMeta(
         debugName: "insert_group_message_to_local_storage",
         argNames: ["groupId", "content", "contentType", "sendId"],
       );
 
   @override
-  Future<void> crateApiMessageAdvancedMarkAllConversationMessageAsRead() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 122,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta:
-            kCrateApiMessageAdvancedMarkAllConversationMessageAsReadConstMeta,
-        argValues: [],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta
-  get kCrateApiMessageAdvancedMarkAllConversationMessageAsReadConstMeta =>
-      const TaskConstMeta(
-        debugName: "mark_all_conversation_message_as_read",
-        argNames: [],
-      );
-
-  @override
-  Future<void> crateApiGlobalNetworkStatusChanged() {
+  Future<void> crateFfiMessageAdvancedMarkAllConversationMessageAsRead() {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
@@ -5819,18 +5828,50 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiGlobalNetworkStatusChangedConstMeta,
+        constMeta:
+            kCrateFfiMessageAdvancedMarkAllConversationMessageAsReadConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiGlobalNetworkStatusChangedConstMeta =>
+  TaskConstMeta
+  get kCrateFfiMessageAdvancedMarkAllConversationMessageAsReadConstMeta =>
+      const TaskConstMeta(
+        debugName: "mark_all_conversation_message_as_read",
+        argNames: [],
+      );
+
+  @override
+  Future<void> crateFfiGlobalNetworkStatusChanged() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 124,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiGlobalNetworkStatusChangedConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiGlobalNetworkStatusChangedConstMeta =>
       const TaskConstMeta(debugName: "network_status_changed", argNames: []);
 
   @override
-  Future<MsgStruct> crateApiMessageSendAdvancedQuoteMessage({
+  Future<MsgStruct> crateFfiMessageSendAdvancedQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -5855,7 +5896,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 124,
+            funcId: 125,
             port: port_,
           );
         },
@@ -5863,7 +5904,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendAdvancedQuoteMessageConstMeta,
+        constMeta: kCrateFfiMessageSendAdvancedQuoteMessageConstMeta,
         argValues: [
           text,
           sourceId,
@@ -5879,7 +5920,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendAdvancedQuoteMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendAdvancedQuoteMessageConstMeta =>
       const TaskConstMeta(
         debugName: "send_advanced_quote_message",
         argNames: [
@@ -5895,7 +5936,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiMessageSendAtTextMessageWithQuote({
+  Future<MsgStruct> crateFfiMessageSendAtTextMessageWithQuote({
     required String text,
     required List<String> atUserList,
     required List<AtInfo> atUsersInfo,
@@ -5914,7 +5955,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 125,
+            funcId: 126,
             port: port_,
           );
         },
@@ -5922,14 +5963,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendAtTextMessageWithQuoteConstMeta,
+        constMeta: kCrateFfiMessageSendAtTextMessageWithQuoteConstMeta,
         argValues: [text, atUserList, atUsersInfo, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendAtTextMessageWithQuoteConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendAtTextMessageWithQuoteConstMeta =>
       const TaskConstMeta(
         debugName: "send_at_text_message_with_quote",
         argNames: [
@@ -5942,7 +5983,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiMessageSendCardMessage({
+  Future<MsgStruct> crateFfiMessageSendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -5963,7 +6004,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 126,
+            funcId: 127,
             port: port_,
           );
         },
@@ -5971,14 +6012,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendCardMessageConstMeta,
+        constMeta: kCrateFfiMessageSendCardMessageConstMeta,
         argValues: [userId, nickname, faceUrl, ex, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendCardMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendCardMessageConstMeta =>
       const TaskConstMeta(
         debugName: "send_card_message",
         argNames: [
@@ -5992,7 +6033,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiMessageSendFaceMessage({
+  Future<MsgStruct> crateFfiMessageSendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
@@ -6009,7 +6050,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 127,
+            funcId: 128,
             port: port_,
           );
         },
@@ -6017,21 +6058,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendFaceMessageConstMeta,
+        constMeta: kCrateFfiMessageSendFaceMessageConstMeta,
         argValues: [index, data, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendFaceMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendFaceMessageConstMeta =>
       const TaskConstMeta(
         debugName: "send_face_message",
         argNames: ["index", "data", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageMediaSendFileMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendFileMessageFromUrl({
     required String sourceUrl,
     required String fileName,
     required PlatformInt64 fileSize,
@@ -6050,7 +6091,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 128,
+            funcId: 129,
             port: port_,
           );
         },
@@ -6058,14 +6099,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageMediaSendFileMessageFromUrlConstMeta,
+        constMeta: kCrateFfiMessageMediaSendFileMessageFromUrlConstMeta,
         argValues: [sourceUrl, fileName, fileSize, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageMediaSendFileMessageFromUrlConstMeta =>
+  TaskConstMeta get kCrateFfiMessageMediaSendFileMessageFromUrlConstMeta =>
       const TaskConstMeta(
         debugName: "send_file_message_from_url",
         argNames: [
@@ -6078,7 +6119,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiMessageMediaSendImageMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
@@ -6093,7 +6134,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 129,
+            funcId: 130,
             port: port_,
           );
         },
@@ -6101,21 +6142,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageMediaSendImageMessageFromUrlConstMeta,
+        constMeta: kCrateFfiMessageMediaSendImageMessageFromUrlConstMeta,
         argValues: [sourceUrl, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageMediaSendImageMessageFromUrlConstMeta =>
+  TaskConstMeta get kCrateFfiMessageMediaSendImageMessageFromUrlConstMeta =>
       const TaskConstMeta(
         debugName: "send_image_message_from_url",
         argNames: ["sourceUrl", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageSendLocationMessage({
+  Future<MsgStruct> crateFfiMessageSendLocationMessage({
     required String description,
     required double longitude,
     required double latitude,
@@ -6134,7 +6175,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 130,
+            funcId: 131,
             port: port_,
           );
         },
@@ -6142,14 +6183,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendLocationMessageConstMeta,
+        constMeta: kCrateFfiMessageSendLocationMessageConstMeta,
         argValues: [description, longitude, latitude, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendLocationMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendLocationMessageConstMeta =>
       const TaskConstMeta(
         debugName: "send_location_message",
         argNames: [
@@ -6162,7 +6203,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiMessageSendMergerMessage({
+  Future<MsgStruct> crateFfiMessageSendMergerMessage({
     required String title,
     required List<String> summaryList,
     required String sourceId,
@@ -6179,7 +6220,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 131,
+            funcId: 132,
             port: port_,
           );
         },
@@ -6187,21 +6228,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendMergerMessageConstMeta,
+        constMeta: kCrateFfiMessageSendMergerMessageConstMeta,
         argValues: [title, summaryList, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendMergerMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendMergerMessageConstMeta =>
       const TaskConstMeta(
         debugName: "send_merger_message",
         argNames: ["title", "summaryList", "sourceId", "sessionType"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageSendQuoteMessage({
+  Future<MsgStruct> crateFfiMessageSendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -6224,7 +6265,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 132,
+            funcId: 133,
             port: port_,
           );
         },
@@ -6232,7 +6273,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageSendQuoteMessageConstMeta,
+        constMeta: kCrateFfiMessageSendQuoteMessageConstMeta,
         argValues: [
           text,
           sourceId,
@@ -6247,7 +6288,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     );
   }
 
-  TaskConstMeta get kCrateApiMessageSendQuoteMessageConstMeta =>
+  TaskConstMeta get kCrateFfiMessageSendQuoteMessageConstMeta =>
       const TaskConstMeta(
         debugName: "send_quote_message",
         argNames: [
@@ -6262,7 +6303,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<MsgStruct> crateApiMessageMediaSendSoundMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendSoundMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String sourceId,
@@ -6279,7 +6320,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 133,
+            funcId: 134,
             port: port_,
           );
         },
@@ -6287,21 +6328,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageMediaSendSoundMessageFromUrlConstMeta,
+        constMeta: kCrateFfiMessageMediaSendSoundMessageFromUrlConstMeta,
         argValues: [sourceUrl, duration, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageMediaSendSoundMessageFromUrlConstMeta =>
+  TaskConstMeta get kCrateFfiMessageMediaSendSoundMessageFromUrlConstMeta =>
       const TaskConstMeta(
         debugName: "send_sound_message_from_url",
         argNames: ["sourceUrl", "duration", "sourceId", "sessionType"],
       );
 
   @override
-  Future<SendTypingResp> crateApiMessageAdvancedSendTyping({
+  Future<SendTypingResp> crateFfiMessageAdvancedSendTyping({
     required String sourceId,
     required SessionType sessionType,
     required bool focus,
@@ -6316,7 +6357,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 134,
+            funcId: 135,
             port: port_,
           );
         },
@@ -6324,21 +6365,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_send_typing_resp,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageAdvancedSendTypingConstMeta,
+        constMeta: kCrateFfiMessageAdvancedSendTypingConstMeta,
         argValues: [sourceId, sessionType, focus],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageAdvancedSendTypingConstMeta =>
+  TaskConstMeta get kCrateFfiMessageAdvancedSendTypingConstMeta =>
       const TaskConstMeta(
         debugName: "send_typing",
         argNames: ["sourceId", "sessionType", "focus"],
       );
 
   @override
-  Future<MsgStruct> crateApiMessageMediaSendVideoMessageFromUrl({
+  Future<MsgStruct> crateFfiMessageMediaSendVideoMessageFromUrl({
     required String sourceUrl,
     required PlatformInt64 duration,
     required String snapshotUrl,
@@ -6357,7 +6398,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 135,
+            funcId: 136,
             port: port_,
           );
         },
@@ -6365,14 +6406,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_msg_struct,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageMediaSendVideoMessageFromUrlConstMeta,
+        constMeta: kCrateFfiMessageMediaSendVideoMessageFromUrlConstMeta,
         argValues: [sourceUrl, duration, snapshotUrl, sourceId, sessionType],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageMediaSendVideoMessageFromUrlConstMeta =>
+  TaskConstMeta get kCrateFfiMessageMediaSendVideoMessageFromUrlConstMeta =>
       const TaskConstMeta(
         debugName: "send_video_message_from_url",
         argNames: [
@@ -6385,7 +6426,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiGlobalSetAppBackgroundStatus({
+  Future<void> crateFfiGlobalSetAppBackgroundStatus({
     required bool isBackground,
   }) {
     return handler.executeNormal(
@@ -6396,7 +6437,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 136,
+            funcId: 137,
             port: port_,
           );
         },
@@ -6404,54 +6445,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiGlobalSetAppBackgroundStatusConstMeta,
+        constMeta: kCrateFfiGlobalSetAppBackgroundStatusConstMeta,
         argValues: [isBackground],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiGlobalSetAppBackgroundStatusConstMeta =>
+  TaskConstMeta get kCrateFfiGlobalSetAppBackgroundStatusConstMeta =>
       const TaskConstMeta(
         debugName: "set_app_background_status",
         argNames: ["isBackground"],
       );
 
   @override
-  Future<void> crateApiFfiInitSetLogDirectory({required String path}) {
+  Future<void> crateFfiFfiInitSetLogDirectory({required String path}) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(path, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 137,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateApiFfiInitSetLogDirectoryConstMeta,
-        argValues: [path],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiFfiInitSetLogDirectoryConstMeta =>
-      const TaskConstMeta(debugName: "set_log_directory", argNames: ["path"]);
-
-  @override
-  Future<void> crateApiFfiInitSetLogSpanEvents({required bool enabled}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_bool(enabled, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -6463,21 +6476,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: null,
         ),
-        constMeta: kCrateApiFfiInitSetLogSpanEventsConstMeta,
+        constMeta: kCrateFfiFfiInitSetLogDirectoryConstMeta,
+        argValues: [path],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiFfiInitSetLogDirectoryConstMeta =>
+      const TaskConstMeta(debugName: "set_log_directory", argNames: ["path"]);
+
+  @override
+  Future<void> crateFfiFfiInitSetLogSpanEvents({required bool enabled}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_bool(enabled, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 139,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateFfiFfiInitSetLogSpanEventsConstMeta,
         argValues: [enabled],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiFfiInitSetLogSpanEventsConstMeta =>
+  TaskConstMeta get kCrateFfiFfiInitSetLogSpanEventsConstMeta =>
       const TaskConstMeta(
         debugName: "set_log_span_events",
         argNames: ["enabled"],
       );
 
   @override
-  Future<void> crateApiMessageAdvancedSetMessageLocalEx({
+  Future<void> crateFfiMessageAdvancedSetMessageLocalEx({
     required String conversationId,
     required String clientMsgId,
     required String localEx,
@@ -6492,36 +6533,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 139,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-        constMeta: kCrateApiMessageAdvancedSetMessageLocalExConstMeta,
-        argValues: [conversationId, clientMsgId, localEx],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateApiMessageAdvancedSetMessageLocalExConstMeta =>
-      const TaskConstMeta(
-        debugName: "set_message_local_ex",
-        argNames: ["conversationId", "clientMsgId", "localEx"],
-      );
-
-  @override
-  Future<void> crateApiGlobalUnInitSdk() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
             funcId: 140,
             port: port_,
           );
@@ -6530,18 +6541,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_unit,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiGlobalUnInitSdkConstMeta,
+        constMeta: kCrateFfiMessageAdvancedSetMessageLocalExConstMeta,
+        argValues: [conversationId, clientMsgId, localEx],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateFfiMessageAdvancedSetMessageLocalExConstMeta =>
+      const TaskConstMeta(
+        debugName: "set_message_local_ex",
+        argNames: ["conversationId", "clientMsgId", "localEx"],
+      );
+
+  @override
+  Future<void> crateFfiGlobalUnInitSdk() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 141,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateFfiGlobalUnInitSdkConstMeta,
         argValues: [],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiGlobalUnInitSdkConstMeta =>
+  TaskConstMeta get kCrateFfiGlobalUnInitSdkConstMeta =>
       const TaskConstMeta(debugName: "un_init_sdk", argNames: []);
 
   @override
-  Future<String> crateApiMessageMediaUploadFile({
+  Future<String> crateFfiMessageMediaUploadFile({
     required String filePath,
     required String fileName,
   }) {
@@ -6554,7 +6595,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 141,
+            funcId: 142,
             port: port_,
           );
         },
@@ -6562,21 +6603,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeSuccessData: sse_decode_String,
           decodeErrorData: sse_decode_AnyhowException,
         ),
-        constMeta: kCrateApiMessageMediaUploadFileConstMeta,
+        constMeta: kCrateFfiMessageMediaUploadFileConstMeta,
         argValues: [filePath, fileName],
         apiImpl: this,
       ),
     );
   }
 
-  TaskConstMeta get kCrateApiMessageMediaUploadFileConstMeta =>
+  TaskConstMeta get kCrateFfiMessageMediaUploadFileConstMeta =>
       const TaskConstMeta(
         debugName: "upload_file",
         argNames: ["filePath", "fileName"],
       );
 
   @override
-  Stream<int> crateApiMessageMediaUploadFileWithProgress({
+  Stream<int> crateFfiMessageMediaUploadFileWithProgress({
     required String filePath,
     required String fileName,
   }) {
@@ -6592,7 +6633,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 142,
+              funcId: 143,
               port: port_,
             );
           },
@@ -6600,7 +6641,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeSuccessData: sse_decode_String,
             decodeErrorData: sse_decode_AnyhowException,
           ),
-          constMeta: kCrateApiMessageMediaUploadFileWithProgressConstMeta,
+          constMeta: kCrateFfiMessageMediaUploadFileWithProgressConstMeta,
           argValues: [filePath, fileName, sink],
           apiImpl: this,
         ),
@@ -6609,7 +6650,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return sink.stream;
   }
 
-  TaskConstMeta get kCrateApiMessageMediaUploadFileWithProgressConstMeta =>
+  TaskConstMeta get kCrateFfiMessageMediaUploadFileWithProgressConstMeta =>
       const TaskConstMeta(
         debugName: "upload_file_with_progress",
         argNames: ["filePath", "fileName", "sink"],
@@ -11476,7 +11517,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String userId,
     String? handleMsg,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientAcceptFriendApplication(
+      .crateFfiClientOpenImBridgeClientAcceptFriendApplication(
         that: this,
         userId: userId,
         handleMsg: handleMsg,
@@ -11487,7 +11528,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String userId,
     String? handleMsg,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientAcceptGroupApplication(
+      .crateFfiClientOpenImBridgeClientAcceptGroupApplication(
         that: this,
         groupId: groupId,
         userId: userId,
@@ -11495,10 +11536,10 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
       );
 
   Future<void> addBlack({required String userId}) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientAddBlack(that: this, userId: userId);
+      .crateFfiClientOpenImBridgeClientAddBlack(that: this, userId: userId);
 
   Future<void> addFriend({required String userId, required String reqMsg}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientAddFriend(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientAddFriend(
         that: this,
         userId: userId,
         reqMsg: reqMsg,
@@ -11506,7 +11547,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
 
   Future<List<CheckFriendResult>> checkFriend({
     required List<String> userIds,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientCheckFriend(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientCheckFriend(
     that: this,
     userIds: userIds,
   );
@@ -11515,33 +11556,33 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<bool> checkGroupMemberFullSync({required String groupId}) => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientCheckGroupMemberFullSync(
+      .crateFfiClientOpenImBridgeClientCheckGroupMemberFullSync(
         that: this,
         groupId: groupId,
       );
 
   /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
   Future<bool> checkLocalGroupFullSync() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientCheckLocalGroupFullSync(that: this);
+      .crateFfiClientOpenImBridgeClientCheckLocalGroupFullSync(that: this);
 
   Future<void> clearConversationDraft({required String conversationId}) =>
       RustLib.instance.api
-          .crateApiClientOpenImBridgeClientClearConversationDraft(
+          .crateFfiClientOpenImBridgeClientClearConversationDraft(
             that: this,
             conversationId: conversationId,
           );
 
   Stream<ConnectionEvent> connectionStream() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientConnectionStream(that: this);
+      .crateFfiClientOpenImBridgeClientConnectionStream(that: this);
 
   Stream<ConversationEvent> conversationStream() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientConversationStream(that: this);
+      .crateFfiClientOpenImBridgeClientConversationStream(that: this);
 
   Future<GroupInfo> createGroup({
     required String groupName,
     required int groupType,
     required List<String> memberIds,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientCreateGroup(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientCreateGroup(
     that: this,
     groupName: groupName,
     groupType: groupType,
@@ -11549,40 +11590,40 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   );
 
   Future<void> deleteConversation({required String conversationId}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientDeleteConversation(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientDeleteConversation(
         that: this,
         conversationId: conversationId,
       );
 
   Future<void> deleteFriend({required String userId}) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientDeleteFriend(that: this, userId: userId);
+      .crateFfiClientOpenImBridgeClientDeleteFriend(that: this, userId: userId);
 
   Future<void> deleteMessages({required DeleteMessagesReq req}) => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientDeleteMessages(that: this, req: req);
+      .crateFfiClientOpenImBridgeClientDeleteMessages(that: this, req: req);
 
   Future<void> disconnect() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientDisconnect(that: this);
+      .crateFfiClientOpenImBridgeClientDisconnect(that: this);
 
   Future<void> dismissGroup({required String groupId}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientDismissGroup(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientDismissGroup(
         that: this,
         groupId: groupId,
       );
 
   Stream<FriendEvent> friendStream() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientFriendStream(that: this);
+      .crateFfiClientOpenImBridgeClientFriendStream(that: this);
 
   Future<List<String>> getBlackList() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetBlackList(that: this);
+      .crateFfiClientOpenImBridgeClientGetBlackList(that: this);
 
   Future<ConnectionState> getConnectionState() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetConnectionState(that: this);
+      .crateFfiClientOpenImBridgeClientGetConnectionState(that: this);
 
   Future<LocalConversation?> getConversation({
     required String conversationId,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientGetConversation(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientGetConversation(
     that: this,
     conversationId: conversationId,
   );
@@ -11597,46 +11638,50 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetConversationIdBySessionType(
+      .crateFfiClientOpenImBridgeClientGetConversationIdBySessionType(
         that: this,
         sourceId: sourceId,
         sessionType: sessionType,
       );
+
+  /// 获取所有会话 ID（对齐 Go SDK `GetAllConversationIDs`）
+  Future<List<String>> getConversationIds() => RustLib.instance.api
+      .crateFfiClientOpenImBridgeClientGetConversationIds(that: this);
 
   /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
   Future<List<LocalConversation>> getConversationListSplit({
     required PlatformInt64 offset,
     required PlatformInt64 count,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetConversationListSplit(
+      .crateFfiClientOpenImBridgeClientGetConversationListSplit(
         that: this,
         offset: offset,
         count: count,
       );
 
   Future<List<LocalConversation>> getConversations() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetConversations(that: this);
+      .crateFfiClientOpenImBridgeClientGetConversations(that: this);
 
   Future<int> getFriendApplicationUnhandledCount() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetFriendApplicationUnhandledCount(
+      .crateFfiClientOpenImBridgeClientGetFriendApplicationUnhandledCount(
         that: this,
       );
 
   Future<List<FriendApplyInfo>> getFriendApplyList() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetFriendApplyList(that: this);
+      .crateFfiClientOpenImBridgeClientGetFriendApplyList(that: this);
 
   Future<List<FriendApplyInfo>> getFriendApplyListAsApplicant() => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientGetFriendApplyListAsApplicant(
+      .crateFfiClientOpenImBridgeClientGetFriendApplyListAsApplicant(
         that: this,
       );
 
   Future<List<String>> getFriendIdList() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetFriendIdList(that: this);
+      .crateFfiClientOpenImBridgeClientGetFriendIdList(that: this);
 
   Future<List<FriendInfo>> getFriendList() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetFriendList(that: this);
+      .crateFfiClientOpenImBridgeClientGetFriendList(that: this);
 
   /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
   ///
@@ -11646,7 +11691,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required int offset,
     required int count,
     required bool filterBlack,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientGetFriendListPage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientGetFriendListPage(
     that: this,
     offset: offset,
     count: count,
@@ -11654,29 +11699,29 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   );
 
   Future<List<GroupApplyInfo>> getGroupApplicationList() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetGroupApplicationList(that: this);
+      .crateFfiClientOpenImBridgeClientGetGroupApplicationList(that: this);
 
   Future<List<GroupApplyInfo>> getGroupApplicationListAsApplicant() => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientGetGroupApplicationListAsApplicant(
+      .crateFfiClientOpenImBridgeClientGetGroupApplicationListAsApplicant(
         that: this,
       );
 
   Future<List<GroupApplyInfo>> getGroupApplicationListAsRecipient() => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientGetGroupApplicationListAsRecipient(
+      .crateFfiClientOpenImBridgeClientGetGroupApplicationListAsRecipient(
         that: this,
       );
 
   Future<int> getGroupApplicationUnhandledCount() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetGroupApplicationUnhandledCount(
+      .crateFfiClientOpenImBridgeClientGetGroupApplicationUnhandledCount(
         that: this,
       );
 
   Future<List<GroupInfo>> getGroupList() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetGroupList(that: this);
+      .crateFfiClientOpenImBridgeClientGetGroupList(that: this);
 
   /// 按加入时间筛选群成员（对齐 Go SDK `GetGroupMemberListByJoinTimeFilter`）
   Future<List<GroupMember>> getGroupMemberListByJoinTimeFilter({
@@ -11687,7 +11732,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required PlatformInt64 joinTimeEnd,
     required List<String> filterUserIds,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilter(
+      .crateFfiClientOpenImBridgeClientGetGroupMemberListByJoinTimeFilter(
         that: this,
         groupId: groupId,
         offset: offset,
@@ -11701,13 +11746,13 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<GroupMember>> getGroupMemberOwnerAndAdmin({
     required String groupId,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetGroupMemberOwnerAndAdmin(
+      .crateFfiClientOpenImBridgeClientGetGroupMemberOwnerAndAdmin(
         that: this,
         groupId: groupId,
       );
 
   Future<List<GroupMember>> getGroupMembers({required String groupId}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientGetGroupMembers(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientGetGroupMembers(
         that: this,
         groupId: groupId,
       );
@@ -11716,21 +11761,21 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String groupId,
     required List<String> userIds,
   }) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientGetGroupMembersInfo(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientGetGroupMembersInfo(
         that: this,
         groupId: groupId,
         userIds: userIds,
       );
 
   Future<List<GroupInfo>> getGroupsInfo({required List<String> groupIds}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientGetGroupsInfo(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientGetGroupsInfo(
         that: this,
         groupIds: groupIds,
       );
 
   Future<GetHistoryMessagesResult> getHistoryMessages({
     required GetHistoryMessagesReq req,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientGetHistoryMessages(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientGetHistoryMessages(
     that: this,
     req: req,
   );
@@ -11740,7 +11785,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required int offset,
     required int count,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetJoinedGroupListPage(
+      .crateFfiClientOpenImBridgeClientGetJoinedGroupListPage(
         that: this,
         offset: offset,
         count: count,
@@ -11750,7 +11795,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<LocalConversation>> getMultipleConversations({
     required List<String> conversationIds,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetMultipleConversations(
+      .crateFfiClientOpenImBridgeClientGetMultipleConversations(
         that: this,
         conversationIds: conversationIds,
       );
@@ -11758,10 +11803,10 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<LocalConversation>> getPinnedConversations() => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientGetPinnedConversations(that: this);
+      .crateFfiClientOpenImBridgeClientGetPinnedConversations(that: this);
 
   Future<UserInfo> getSelfUserInfo() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetSelfUserInfo(that: this);
+      .crateFfiClientOpenImBridgeClientGetSelfUserInfo(that: this);
 
   /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
   ///
@@ -11771,14 +11816,14 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required List<String> friendUserIds,
     required bool filterBlack,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGetSpecifiedFriendsInfo(
+      .crateFfiClientOpenImBridgeClientGetSpecifiedFriendsInfo(
         that: this,
         friendUserIds: friendUserIds,
         filterBlack: filterBlack,
       );
 
   Future<List<OnlineStatus>> getUserStatus({required List<String> userIds}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientGetUserStatus(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientGetUserStatus(
         that: this,
         userIds: userIds,
       );
@@ -11787,24 +11832,24 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<String>> getUsersInGroup({
     required String groupId,
     required List<String> userIds,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientGetUsersInGroup(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientGetUsersInGroup(
     that: this,
     groupId: groupId,
     userIds: userIds,
   );
 
   Future<List<UserInfo>> getUsersInfo({required List<String> userIds}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientGetUsersInfo(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientGetUsersInfo(
         that: this,
         userIds: userIds,
       );
 
   Stream<GroupEvent> groupStream() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientGroupStream(that: this);
+      .crateFfiClientOpenImBridgeClientGroupStream(that: this);
 
   /// 隐藏会话（对齐 Go SDK `HideConversation`）
   Future<void> hideConversation({required String conversationId}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientHideConversation(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientHideConversation(
         that: this,
         conversationId: conversationId,
       );
@@ -11812,29 +11857,29 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<void> inviteGroupMembers({
     required String groupId,
     required List<String> memberIds,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientInviteGroupMembers(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientInviteGroupMembers(
     that: this,
     groupId: groupId,
     memberIds: memberIds,
   );
 
   Future<bool> isConnected() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientIsConnected(that: this);
+      .crateFfiClientOpenImBridgeClientIsConnected(that: this);
 
   Future<bool> isFriend({required String userId}) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientIsFriend(that: this, userId: userId);
+      .crateFfiClientOpenImBridgeClientIsFriend(that: this, userId: userId);
 
   Future<bool> isInBlacklist({required String userId}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientIsInBlacklist(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientIsInBlacklist(
         that: this,
         userId: userId,
       );
 
   Future<bool> isInGroup({required String groupId}) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientIsInGroup(that: this, groupId: groupId);
+      .crateFfiClientOpenImBridgeClientIsInGroup(that: this, groupId: groupId);
 
   Future<void> joinGroup({required String groupId, required String reqMsg}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientJoinGroup(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientJoinGroup(
         that: this,
         groupId: groupId,
         reqMsg: reqMsg,
@@ -11843,33 +11888,33 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<void> kickGroupMembers({
     required String groupId,
     required List<String> memberIds,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientKickGroupMembers(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientKickGroupMembers(
     that: this,
     groupId: groupId,
     memberIds: memberIds,
   );
 
   Future<void> logout() =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientLogout(that: this);
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientLogout(that: this);
 
   Future<void> markConversationMessageAsRead({
     required String conversationId,
     required SessionType sessionType,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientMarkConversationMessageAsRead(
+      .crateFfiClientOpenImBridgeClientMarkConversationMessageAsRead(
         that: this,
         conversationId: conversationId,
         sessionType: sessionType,
       );
 
   Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientMarkMessagesAsRead(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientMarkMessagesAsRead(
         that: this,
         req: req,
       );
 
   Future<void> muteGroup({required String groupId, required bool isMute}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientMuteGroup(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientMuteGroup(
         that: this,
         groupId: groupId,
         isMute: isMute,
@@ -11879,7 +11924,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String groupId,
     required String userId,
     required PlatformInt64 mutedSeconds,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientMuteGroupMember(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientMuteGroupMember(
     that: this,
     groupId: groupId,
     userId: userId,
@@ -11887,13 +11932,13 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   );
 
   Future<void> quitGroup({required String groupId}) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientQuitGroup(that: this, groupId: groupId);
+      .crateFfiClientOpenImBridgeClientQuitGroup(that: this, groupId: groupId);
 
   Future<void> refuseFriendApplication({
     required String userId,
     String? handleMsg,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientRefuseFriendApplication(
+      .crateFfiClientOpenImBridgeClientRefuseFriendApplication(
         that: this,
         userId: userId,
         handleMsg: handleMsg,
@@ -11904,7 +11949,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String userId,
     String? handleMsg,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientRefuseGroupApplication(
+      .crateFfiClientOpenImBridgeClientRefuseGroupApplication(
         that: this,
         groupId: groupId,
         userId: userId,
@@ -11912,18 +11957,18 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
       );
 
   Future<void> removeBlack({required String userId}) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientRemoveBlack(that: this, userId: userId);
+      .crateFfiClientOpenImBridgeClientRemoveBlack(that: this, userId: userId);
 
   Future<void> revokeMessage({required RevokeMessageReq req}) => RustLib
       .instance
       .api
-      .crateApiClientOpenImBridgeClientRevokeMessage(that: this, req: req);
+      .crateFfiClientOpenImBridgeClientRevokeMessage(that: this, req: req);
 
   /// 搜索会话（对齐 Go SDK `SearchConversation`）
   Future<List<LocalConversation>> searchConversations({
     required String keyword,
   }) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSearchConversations(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSearchConversations(
         that: this,
         keyword: keyword,
       );
@@ -11932,7 +11977,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   ///
   /// keyword: 搜索关键词，匹配 nickname / user_id / remark
   Future<List<SearchFriendItem>> searchFriends({required String keyword}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSearchFriends(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSearchFriends(
         that: this,
         keyword: keyword,
       );
@@ -11941,7 +11986,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<GroupMember>> searchGroupMembers({
     required String groupId,
     required String keyword,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSearchGroupMembers(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSearchGroupMembers(
     that: this,
     groupId: groupId,
     keyword: keyword,
@@ -11949,7 +11994,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
 
   /// 搜索群组（对齐 Go SDK `SearchGroups`）
   Future<List<GroupInfo>> searchGroups({required String keyword}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSearchGroups(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSearchGroups(
         that: this,
         keyword: keyword,
       );
@@ -11957,7 +12002,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   Future<List<LocalChatLog>> searchLocalMessages({
     required SearchMessagesReq req,
   }) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSearchLocalMessages(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSearchLocalMessages(
         that: this,
         req: req,
       );
@@ -11968,7 +12013,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSendAdvancedTextMessage(
+      .crateFfiClientOpenImBridgeClientSendAdvancedTextMessage(
         that: this,
         text: text,
         entities: entities,
@@ -11981,7 +12026,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required List<String> atUserIds,
     required String sourceId,
     required SessionType sessionType,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendAtTextMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendAtTextMessage(
     that: this,
     text: text,
     atUserIds: atUserIds,
@@ -11995,7 +12040,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String extension_,
     required String sourceId,
     required SessionType sessionType,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendCustomMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendCustomMessage(
     that: this,
     data: data,
     desc: desc,
@@ -12008,7 +12053,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendFileMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendFileMessage(
     that: this,
     filePath: filePath,
     sourceId: sourceId,
@@ -12021,7 +12066,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSendFileMessageWithProgress(
+      .crateFfiClientOpenImBridgeClientSendFileMessageWithProgress(
         that: this,
         filePath: filePath,
         sourceId: sourceId,
@@ -12032,7 +12077,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendImageMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendImageMessage(
     that: this,
     filePath: filePath,
     sourceId: sourceId,
@@ -12045,7 +12090,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSendImageMessageWithProgress(
+      .crateFfiClientOpenImBridgeClientSendImageMessageWithProgress(
         that: this,
         filePath: filePath,
         sourceId: sourceId,
@@ -12057,7 +12102,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
   }) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSendMarkdownMessage(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSendMarkdownMessage(
         that: this,
         text: text,
         sourceId: sourceId,
@@ -12069,7 +12114,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
     required PlatformInt64 duration,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendSoundMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendSoundMessage(
     that: this,
     filePath: filePath,
     sourceId: sourceId,
@@ -12084,7 +12129,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required SessionType sessionType,
     required PlatformInt64 duration,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSendSoundMessageWithProgress(
+      .crateFfiClientOpenImBridgeClientSendSoundMessageWithProgress(
         that: this,
         filePath: filePath,
         sourceId: sourceId,
@@ -12096,7 +12141,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String text,
     required String sourceId,
     required SessionType sessionType,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendTextMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendTextMessage(
     that: this,
     text: text,
     sourceId: sourceId,
@@ -12109,7 +12154,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String sourceId,
     required SessionType sessionType,
     required PlatformInt64 duration,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSendVideoMessage(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSendVideoMessage(
     that: this,
     videoPath: videoPath,
     snapshotPath: snapshotPath,
@@ -12126,7 +12171,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required SessionType sessionType,
     required PlatformInt64 duration,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSendVideoMessageWithProgress(
+      .crateFfiClientOpenImBridgeClientSendVideoMessageWithProgress(
         that: this,
         videoPath: videoPath,
         snapshotPath: snapshotPath,
@@ -12145,7 +12190,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     bool? isPrivateChat,
     int? groupAtType,
     String? ex,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSetConversation(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSetConversation(
     that: this,
     conversationId: conversationId,
     recvMsgOpt: recvMsgOpt,
@@ -12159,7 +12204,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String conversationId,
     required String draftText,
   }) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSetConversationDraft(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSetConversationDraft(
         that: this,
         conversationId: conversationId,
         draftText: draftText,
@@ -12169,7 +12214,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String conversationId,
     required bool isPinned,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSetConversationPinned(
+      .crateFfiClientOpenImBridgeClientSetConversationPinned(
         that: this,
         conversationId: conversationId,
         isPinned: isPinned,
@@ -12179,14 +12224,14 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String conversationId,
     required bool isPrivate,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSetConversationPrivate(
+      .crateFfiClientOpenImBridgeClientSetConversationPrivate(
         that: this,
         conversationId: conversationId,
         isPrivate: isPrivate,
       );
 
   Future<void> setGlobalMsgRecvOpt({required int globalRecvOpt}) =>
-      RustLib.instance.api.crateApiClientOpenImBridgeClientSetGlobalMsgRecvOpt(
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientSetGlobalMsgRecvOpt(
         that: this,
         globalRecvOpt: globalRecvOpt,
       );
@@ -12195,7 +12240,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String groupId,
     String? groupName,
     String? faceUrl,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSetGroupInfo(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSetGroupInfo(
     that: this,
     groupId: groupId,
     groupName: groupName,
@@ -12210,7 +12255,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     String? faceUrl,
     int? roleLevel,
     String? ex,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientSetGroupMemberInfo(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSetGroupMemberInfo(
     that: this,
     groupId: groupId,
     userId: userId,
@@ -12221,20 +12266,20 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
   );
 
   Future<void> syncFriends() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSyncFriends(that: this);
+      .crateFfiClientOpenImBridgeClientSyncFriends(that: this);
 
   /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
   Future<void> syncFriendsIncremental() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSyncFriendsIncremental(that: this);
+      .crateFfiClientOpenImBridgeClientSyncFriendsIncremental(that: this);
 
   /// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup）
   Future<void> syncGroupsIncremental() => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientSyncGroupsIncremental(that: this);
+      .crateFfiClientOpenImBridgeClientSyncGroupsIncremental(that: this);
 
   Future<void> transferGroupOwner({
     required String groupId,
     required String newOwnerUserId,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientTransferGroupOwner(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientTransferGroupOwner(
     that: this,
     groupId: groupId,
     newOwnerUserId: newOwnerUserId,
@@ -12244,7 +12289,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String conversationId,
     required PlatformInt64 unreadCount,
   }) => RustLib.instance.api
-      .crateApiClientOpenImBridgeClientUpdateConversationUnreadCount(
+      .crateFfiClientOpenImBridgeClientUpdateConversationUnreadCount(
         that: this,
         conversationId: conversationId,
         unreadCount: unreadCount,
@@ -12259,7 +12304,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     bool? isPinned,
     String? remark,
     String? ex,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientUpdateFriends(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientUpdateFriends(
     that: this,
     friendUserIds: friendUserIds,
     isPinned: isPinned,
@@ -12271,7 +12316,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     String? nickname,
     String? faceUrl,
     String? ex,
-  }) => RustLib.instance.api.crateApiClientOpenImBridgeClientUpdateUserProfile(
+  }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientUpdateUserProfile(
     that: this,
     nickname: nickname,
     faceUrl: faceUrl,
