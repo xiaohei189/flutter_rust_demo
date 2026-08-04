@@ -29,11 +29,6 @@ impl<T: ConnectionApi + ConversationApi + FriendApi + GroupApi + MessageApi + Us
 pub mod core;
 pub use core::OpenIMClient;
 // SDK 客户端实现（由 OpenIMClient 实现各特征）
-pub mod impl_conversation;
-pub mod impl_friend;
-pub mod impl_group;
-pub mod impl_message;
-pub mod impl_user;
 // SDK 对外契约类型
 /// 历史消息分页查询参数
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
