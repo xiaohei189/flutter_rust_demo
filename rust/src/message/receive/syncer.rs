@@ -199,7 +199,9 @@ impl MessageSyncer {
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            let _ = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await;
+            if let Err(e) = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await {
+                warn!("update_max_seq 失败 conv={}: {}", conv_id, e);
+            }
         }
 
         match self.sync_incremental_messages(&server_max_seqs).await {
@@ -344,7 +346,9 @@ impl MessageSyncer {
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            let _ = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await;
+            if let Err(e) = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await {
+                warn!("update_max_seq 失败 conv={}: {}", conv_id, e);
+            }
         }
 
         self.load_synced_max_seqs().await?;
@@ -352,7 +356,9 @@ impl MessageSyncer {
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs).await?;
             self.repositories.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
-        let _ = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await;
+        if let Err(e) = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await {
+            warn!("设置 SYNC_END 标志失败: {}", e);
+        }
         } else {
             self.sync_incremental_messages(&server_max_seqs).await?;
         }
@@ -471,50 +477,6 @@ impl MessageSyncer {
         Ok(())
     }
 
-    async fn batch_pull_messages_reinstall(&self, seq_map: &HashMap<String, (i64, i64)>, total: i64) -> Result<()> {
-        let semaphore = Arc::new(Semaphore::new(self.config.max_concurrent_pulls));
-        let mut tasks = Vec::new();
-
-        let batch_size = 50;
-        let mut batches: Vec<HashMap<String, (i64, i64)>> = Vec::new();
-        let mut current_batch = HashMap::new();
-        let mut msg_count = 0i64;
-
-        for (conv_id, (begin, end)) in seq_map {
-            let range_size = end - begin + 1;
-            if msg_count + range_size > batch_size && !current_batch.is_empty() {
-                batches.push(current_batch);
-                current_batch = HashMap::new();
-                msg_count = 0;
-            }
-            current_batch.insert(conv_id.clone(), (*begin, *end));
-            msg_count += range_size;
-        }
-        if !current_batch.is_empty() {
-            batches.push(current_batch);
-        }
-
-        for batch in batches {
-            let permit = semaphore.clone().acquire_owned().await
-                .map_err(|e| SdkError::database(format!("acquire semaphore failed: {}", e)))?;
-
-            let syncer_clone = self.clone_for_task();
-            let total_clone = total;
-            tasks.push(tokio::spawn(async move {
-                let _permit = permit;
-                syncer_clone.pull_and_handle_messages(&batch, true).await
-            }));
-        }
-
-        for task in tasks {
-            task.await
-                .map_err(|e| SdkError::unknown(format!("task join failed: {}", e)))??;
-        }
-
-        Ok(())
-    }
-
-    #[tracing::instrument(skip_all, fields(conv_count = %seq_map.len()))]
     async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool) -> Result<()> {
         let req = PullMessageBySeqsReq {
             user_id: self.user_id.get().await,
@@ -586,76 +548,6 @@ impl MessageSyncer {
                 format!("同步完成 {}: seq={}", conv_id, end_seq)
             };
             self.send(ConversationEvent::SyncProgress { progress: progress as i32, message: msg });
-        }
-
-        Ok(())
-    }
-
-    async fn pull_and_handle_messages_reinstall(&self, seq_map: &HashMap<String, (i64, i64)>, total: i64) -> Result<()> {
-        let req = PullMessageBySeqsReq {
-            user_id: self.user_id.get().await,
-            seq_ranges: seq_map
-                .iter()
-                .map(|(conv_id, (begin, end))| SeqRange {
-                    conversation_id: conv_id.clone(),
-                    begin: *begin,
-                    end: *end,
-                    num: self.config.pull_msg_num,
-                })
-                .collect(),
-            order: 0,
-        };
-
-        info!("[MsgSync] pull_and_handle_messages_reinstall 请求: user_id={}, conv_count={}, total={}",
-            req.user_id, req.seq_ranges.len(), total);
-
-        let resp: PullMessageBySeqsResp = self.remote
-            .pull_messages_by_seqs(&req)
-            .await
-            .map_err(|e| SdkError::network(format!("pull messages failed: {}", e)))?;
-
-        info!("[MsgSync] pull_and_handle_messages_reinstall: {} conversations, msgs_count={}",
-            resp.msgs.len(),
-            resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
-
-        // 第 1 层：块内连续性检查
-        for (_conv_id, pull_msgs) in &resp.msgs {
-            let mut logs: Vec<_> = pull_msgs.msgs.iter().map(|m| {
-                crate::model::local::LocalChatLog {
-                    conversation_id: _conv_id.clone(),
-                    client_msg_id: m.client_msg_id.clone(),
-                    server_msg_id: m.server_msg_id.clone(),
-                    send_id: m.send_id.clone(),
-                    recv_id: m.recv_id.clone(),
-                    sender_platform_id: m.sender_platform_id,
-                    sender_nick_name: m.sender_nickname.clone(),
-                    sender_face_url: m.sender_face_url.clone(),
-                    session_type: m.session_type,
-                    msg_from: m.msg_from,
-                    content_type: m.content_type,
-                    content: String::from_utf8_lossy(&m.content).to_string(),
-                    is_read: 0,
-                    status: msg_status::SEND_SUCCESS as i32,
-                    seq: m.seq,
-                    send_time: m.send_time,
-                    create_time: m.create_time,
-                    attached_info: String::new(),
-                    ex: String::new(),
-                    local_ex: String::new(),
-                    group_id: m.group_id.clone(),
-                }
-            }).collect();
-            if let Err(e) = self.checker.validate_and_fill_internal_gaps(&mut logs, false).await {
-                warn!("[MsgSync] 块内连续性检查失败: conv={}, err={}", _conv_id, e);
-            }
-        }
-
-        self.handle_pulled_messages(&resp.msgs).await?;
-
-        let total_convs = seq_map.len() as u8;
-        for (idx, (conv_id, (_, _))) in seq_map.iter().enumerate() {
-            let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
-            self.send(ConversationEvent::SyncProgress { progress: progress as i32, message: format!("重装同步完成 {}: 共 {} 条消息", conv_id, total) });
         }
 
         Ok(())
