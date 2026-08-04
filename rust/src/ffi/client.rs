@@ -8,7 +8,7 @@ pub use crate::ffi::global::{
 use crate::ffi::global::set_client;
 use crate::client::{ConnectionApi, SdkApi};
 use crate::frb_generated::StreamSink;
-use crate::client::client::OpenIMClient;
+use crate::client::core::OpenIMClient;
 use crate::client::config::ClientConfig;
 use anyhow::Result;
 use std::sync::Arc;

@@ -22,7 +22,7 @@ use crate::http::group_api::HttpGroupApi;
 use crate::http::message_api::HttpMessageApi;
 use crate::http::online_api::HttpOnlineStatusApi;
 use crate::http::user_api::HttpUserApi;
-use crate::client::client::OpenIMClient;
+use crate::client::core::OpenIMClient;
 use crate::client::config::ClientConfig;
 use crate::client::context::RuntimeContext;
 use std::sync::Arc;

@@ -26,8 +26,8 @@ pub trait SdkApi: ConnectionApi + ConversationApi + FriendApi + GroupApi + Messa
 impl<T: ConnectionApi + ConversationApi + FriendApi + GroupApi + MessageApi + UserApi + Send + Sync> SdkApi for T {}
 
 // SDK 客户端实现（OpenIMClient）
-pub mod client;
-pub use client::OpenIMClient;
+pub mod core;
+pub use core::OpenIMClient;
 // SDK 客户端实现（由 OpenIMClient 实现各特征）
 pub mod impl_conversation;
 pub mod impl_friend;

@@ -5,7 +5,7 @@
 
 use crate::client::SdkApi;
 use crate::frb_generated::StreamSink;
-use crate::client::client::OpenIMClient;
+use crate::client::core::OpenIMClient;
 use anyhow::Result;
 use std::sync::Arc;
 use std::sync::OnceLock;
