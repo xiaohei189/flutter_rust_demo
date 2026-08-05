@@ -10,11 +10,11 @@ use crate::constant::MessageSendStatus;
 use crate::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::file::uploader::{FileUploader, ProgressCallback};
+use crate::file::upload::{FileUploader, ProgressCallback};
 use crate::message::send::queue::MessageSendQueue;
 use crate::message::ContentTypeUtils;
 use crate::model::local::{LocalChatLog, LocalSendingMessage};
-use crate::model::msg_struct::{get_msg_id, AtInfo, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
+use crate::model::msg_struct::{get_msg_id, AtInfo, CardElem, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
 use crate::user::service::UserService;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
@@ -709,6 +709,131 @@ impl MessageSender {
         let result = self.file_uploader.upload_file_with_progress(file_path, file_name, None, Some(progress.clone())).await?;
         Ok(result.url)
     }
+
+    // ========================================================================
+    // 便捷发送方法（消息构造 + 发送编排，对齐 Go SDK CreateXxx + SendMessage）
+    // 构造逻辑自 SDK 门面层下沉，门面仅保留薄转发
+    // ========================================================================
+
+    /// 发送文本消息
+    pub async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_text_message(text);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送 Markdown 消息
+    pub async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_markdown_message(text);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送富文本消息（带实体，如 @提及、链接）
+    pub async fn send_advanced_text_message(&self, text: &str, entities: Vec<MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_advanced_text_message(text, entities);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送 @ 消息（仅 @ 用户 ID，昵称信息由服务端补充）
+    pub async fn send_at_text_message(&self, text: &str, at_user_ids: Vec<String>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let at_users_info: Vec<AtInfo> = at_user_ids
+            .iter()
+            .map(|uid| AtInfo {
+                at_user_id: uid.clone(),
+                group_nickname: String::new(),
+            })
+            .collect();
+        let mut msg = MsgStruct::create_at_text_message(text, at_user_ids, at_users_info, None);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送自定义消息
+    pub async fn send_custom_message(&self, data: &str, desc: &str, extension: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_custom_message(data, desc, extension);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送引用消息（对齐 Go SDK `CreateQuoteMessage` + `SendMessage`）
+    pub async fn send_quote_message(&self, text: &str, quote: MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_quote_message(text, Box::new(quote));
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
+    pub async fn send_merger_message(&self, title: &str, summary_list: Vec<String>, context_list: Vec<MsgStruct>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_merger_message(context_list, title, summary_list);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送名片消息（对齐 Go SDK `CreateCardMessage` + `SendMessage`）
+    pub async fn send_card_message(&self, user_id: &str, nickname: &str, face_url: &str, ex: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let elem = CardElem {
+            user_id: user_id.to_string(),
+            nickname: nickname.to_string(),
+            face_url: face_url.to_string(),
+            ex: ex.to_string(),
+        };
+        let mut msg = MsgStruct::create_card_message(elem);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送位置消息（对齐 Go SDK `CreateLocationMessage` + `SendMessage`）
+    pub async fn send_location_message(&self, description: &str, longitude: f64, latitude: f64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_location_message(description, longitude, latitude);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送表情消息（对齐 Go SDK `CreateFaceMessage` + `SendMessage`）
+    pub async fn send_face_message(&self, index: i32, data: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_face_message(index, data);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 转发消息（对齐 Go SDK `ForwardMessage`）
+    pub async fn forward_message(&self, mut msg_struct: MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+        msg_struct.session_type = session_type;
+        self.send_msg(msg_struct, source_id, None).await
+    }
+
+    /// 发送分段 @ 消息（带 quote_msg，对齐 Go SDK `CreateAtTextMessage`）
+    pub async fn send_at_text_message_with_quote(
+        &self,
+        text: &str,
+        at_user_list: Vec<String>,
+        at_users_info: Vec<AtInfo>,
+        quote_msg: Option<Box<MsgStruct>>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_at_text_message(text, at_user_list, at_users_info, quote_msg);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
+
+    /// 发送高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage` + `SendMessage`）
+    ///
+    /// 与 `send_quote_message` 的区别：额外支持 `message_entities` 参数
+    pub async fn send_advanced_quote_message(
+        &self,
+        text: &str,
+        quote: MsgStruct,
+        message_entities: Vec<MessageEntity>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError> {
+        let mut msg = MsgStruct::create_advanced_quote_message(text, Box::new(quote), message_entities);
+        msg.session_type = session_type;
+        self.send_msg(msg, source_id, None).await
+    }
 }
 
 impl MessageSender {
@@ -904,34 +1029,437 @@ mod tests {
     // conversation_id_for_msg 测试
     // ========================================================================
 
+    /// 验证单聊消息的 conversation_id 生成规则：si_{sorted_user_ids}
+    ///
+    /// 单聊 ID 格式：si_{小user_id}_{大user_id}（按字典序排列）
     #[test]
     fn test_conversation_id_single_chat_sorted() {
         let mut msg = MsgStruct::default();
-        msg.session_type = 1;
+        msg.session_type = 1; // 单聊
         msg.send_id = "user_b".to_string();
         msg.recv_id = "user_a".to_string();
-        assert_eq!(conversation_id_for_msg(&msg), "si_user_a_user_b");
+
+        // send_id > recv_id，应排序为 si_user_a_user_b
+        let conv_id = conversation_id_for_msg(&msg);
+        assert_eq!(conv_id, "si_user_a_user_b", "单聊 ID 应按字典序排列");
     }
 
+    /// 验证单聊消息 send_id < recv_id 时的 conversation_id
     #[test]
-    fn test_conversation_id_group_chat() {
+    fn test_conversation_id_single_chat_already_sorted() {
         let mut msg = MsgStruct::default();
-        msg.session_type = 3;
+        msg.session_type = 1;
+        msg.send_id = "alice".to_string();
+        msg.recv_id = "bob".to_string();
+
+        let conv_id = conversation_id_for_msg(&msg);
+        assert_eq!(conv_id, "si_alice_bob", "已排序时不应改变顺序");
+    }
+
+    /// 验证群聊消息（session_type=3）的 conversation_id 生成规则：sg_{group_id}
+    #[test]
+    fn test_conversation_id_group_chat_read_type() {
+        let mut msg = MsgStruct::default();
+        msg.session_type = 3; // ReadGroupChat
         msg.group_id = "group_123".to_string();
-        assert_eq!(conversation_id_for_msg(&msg), "sg_group_123");
+
+        let conv_id = conversation_id_for_msg(&msg);
+        assert_eq!(conv_id, "sg_group_123", "ReadGroupChat 应使用 sg_ 前缀");
+    }
+
+    /// 验证群聊消息（session_type=2）的 conversation_id 生成规则：g_{group_id}
+    ///
+    /// 注：session_type=2 (WriteGroupChat) 已被服务端废弃，但 ID 生成逻辑保留
+    #[test]
+    fn test_conversation_id_group_chat_write_type() {
+        let mut msg = MsgStruct::default();
+        msg.session_type = 2; // WriteGroupChat（已废弃）
+        msg.group_id = "group_456".to_string();
+
+        let conv_id = conversation_id_for_msg(&msg);
+        assert_eq!(conv_id, "g_group_456", "WriteGroupChat 应使用 g_ 前缀");
+    }
+
+    /// 验证未知 session_type 回退到 g_{group_id} 格式
+    #[test]
+    fn test_conversation_id_unknown_session_type_fallback() {
+        let mut msg = MsgStruct::default();
+        msg.session_type = 99; // 未知类型
+        msg.group_id = "group_789".to_string();
+
+        let conv_id = conversation_id_for_msg(&msg);
+        assert_eq!(conv_id, "g_group_789", "未知类型应回退到 g_ 前缀");
     }
 
     // ========================================================================
     // content_type_name 测试
     // ========================================================================
 
+    /// 验证常见消息类型的中文名称映射
     #[test]
-    fn test_content_type_name_text() {
+    fn test_content_type_name_common_types() {
+        // 文本消息
         assert_eq!(content_type_name(101), "文本");
+        // 图片消息
+        assert_eq!(content_type_name(102), "图片");
+        // 语音消息
+        assert_eq!(content_type_name(103), "语音");
+        // 视频消息
+        assert_eq!(content_type_name(104), "视频");
+        // 文件消息
+        assert_eq!(content_type_name(105), "文件");
     }
 
+    /// 验证未知消息类型返回默认名称
     #[test]
-    fn test_content_type_name_unknown() {
-        assert_eq!(content_type_name(9999), "未知");
+    fn test_content_type_name_unknown_type() {
+        let name = content_type_name(9999);
+        // 未知类型返回 "未知"
+        assert_eq!(name, "未知", "未知类型应返回 '未知'");
+    }
+
+    // ========================================================================
+    // do_send_message_impl / insert_message_before_send_impl 测试（自 SDK 门面迁移）
+    // 依赖倒置 + MockTransport，验证发送链路与本地持久化
+    // ========================================================================
+
+    use crate::client::config::ClientConfig;
+    use crate::client::context::RuntimeContext;
+    use crate::constant::MessageSendStatus;
+    use crate::db::pool::create_pool_memory;
+    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::model::local::LocalChatLog;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tokio_util::sync::CancellationToken;
+
+    /// Mock 传输层：模拟 WebSocket RPC 发送
+    ///
+    /// 支持三种模式：成功、失败、超时
+    struct MockTransport {
+        /// 预设响应模式
+        mode: MockMode,
+        /// 记录调用次数
+        call_count: AtomicUsize,
+    }
+
+    #[derive(Clone)]
+    enum MockMode {
+        /// 返回成功响应
+        Success(UserSendMsgResp),
+        /// 返回普通错误
+        Fail(String),
+        /// 返回超时错误
+        Timeout,
+    }
+
+    impl MockTransport {
+        fn success(server_msg_id: &str) -> Self {
+            Self {
+                mode: MockMode::Success(UserSendMsgResp {
+                    server_msg_id: server_msg_id.to_string(),
+                    client_msg_id: String::new(),
+                    send_time: 1000,
+                }),
+                call_count: AtomicUsize::new(0),
+            }
+        }
+
+        fn fail(err_msg: &str) -> Self {
+            Self {
+                mode: MockMode::Fail(err_msg.to_string()),
+                call_count: AtomicUsize::new(0),
+            }
+        }
+
+        fn timeout() -> Self {
+            Self {
+                mode: MockMode::Timeout,
+                call_count: AtomicUsize::new(0),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl MessageSendTransport for MockTransport {
+        async fn send_msg_rpc(&self, msg_data: &MsgData) -> std::result::Result<UserSendMsgResp, SdkError> {
+            self.call_count.fetch_add(1, Ordering::SeqCst);
+            match &self.mode {
+                MockMode::Success(resp) => Ok(UserSendMsgResp {
+                    server_msg_id: resp.server_msg_id.clone(),
+                    client_msg_id: msg_data.client_msg_id.clone(),
+                    send_time: resp.send_time,
+                }),
+                MockMode::Fail(msg) => Err(SdkError::message_send(msg.clone())),
+                MockMode::Timeout => Err(SdkError::timeout("ws rpc timeout")),
+            }
+        }
+    }
+
+    /// 创建测试用 RuntimeContext（内存数据库）
+    async fn make_test_context() -> Arc<RuntimeContext> {
+        let pool = create_pool_memory().await.unwrap();
+        let listeners = crate::event::hub::EventHub::new();
+        let http_client = Arc::new(HttpApiClient::new("http://localhost:19999".to_string(), "test_token".to_string(), "test_op".to_string()));
+
+        Arc::new(RuntimeContext {
+            config: ClientConfig {
+                user_id: "test_user".to_string(),
+                token: "test_token".to_string(),
+                platform_id: 1,
+                ws_url: None,
+                api_base_url: "http://localhost:19999".to_string(),
+                upload_url: None,
+                data_dir: std::env::temp_dir().to_string_lossy().to_string(),
+            },
+            listeners,
+            cancel_token: CancellationToken::new(),
+            user_id: crate::model::UserId::new("test_user"),
+            operation_id: "test_op".to_string(),
+            repositories: Arc::new(crate::client::context::Repositories {
+                message_repo: Arc::new(MessageDao::new(pool.clone())),
+                conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+                friend_repo: Arc::new(FriendDao::new(pool.clone())),
+                user_repo: Arc::new(UserDao::new(pool.clone())),
+                group_repo: Arc::new(GroupDao::new(pool.clone())),
+                sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
+                notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+                sending_message_repo: Arc::new(SendingMessageDao::new(pool.clone())),
+            }),
+            infra: crate::client::context::Infra { http_client, db_pool: pool.clone() },
+        })
+    }
+
+    /// 创建测试用 FileUploader（文本消息不会触发实际上传）
+    fn make_test_uploader() -> Arc<FileUploader> {
+        let http_client = Arc::new(HttpApiClient::new("http://localhost:19999".to_string(), "test_token".to_string(), "test_op".to_string()));
+        Arc::new(FileUploader::new(http_client))
+    }
+
+    /// 构造测试用文本消息
+    fn make_test_msg(client_msg_id: &str) -> MsgStruct {
+        let mut msg = MsgStruct::default();
+        msg.client_msg_id = client_msg_id.to_string();
+        msg.session_type = 1; // 单聊
+        msg.send_id = "user_a".to_string();
+        msg.recv_id = "user_b".to_string();
+        msg.content_type = 101; // 文本消息
+        msg.content = "{\"content\":\"hello\"}".to_string();
+        msg.status = 1; // Sending
+        msg
+    }
+
+    /// 测试：发送成功 → DB 状态更新为 SendSuccess + server_msg_id 回填
+    ///
+    /// 验证核心流程：消息入库 → 发送 → 更新状态 → 清理 sending_messages
+    #[tokio::test]
+    async fn test_send_message_success_updates_db() {
+        let context = make_test_context().await;
+        let transport = Arc::new(MockTransport::success("server_msg_001"));
+        let uploader = make_test_uploader();
+        let msg = make_test_msg("client_msg_success");
+
+        let result = do_send_message_impl(context.clone(), transport.clone(), uploader, msg, None, false).await;
+
+        // 发送应成功
+        assert!(result.is_ok(), "发送应成功: {:?}", result.err());
+        let resp = result.unwrap();
+        assert_eq!(resp.server_msg_id, "server_msg_001");
+
+        // DB 中消息状态应为 SendSuccess(2)
+        let db_msg = context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_success").await.unwrap().unwrap();
+        assert_eq!(db_msg.status, MessageSendStatus::SendSuccess as i32, "DB 状态应为 SendSuccess");
+        assert_eq!(db_msg.server_msg_id, "server_msg_001", "server_msg_id 应回填");
+
+        // sending_messages 应被清理
+        let sending = context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_success").await.unwrap();
+        assert!(sending.is_none(), "发送成功后 sending_message 应被删除");
+    }
+
+    /// 测试：发送失败 → DB 标记 SendFailed + 发布 MessageSendFailed 事件
+    ///
+    /// 验证错误路径：消息入库 → 发送失败 → 更新状态为失败 → 发布事件
+    #[tokio::test]
+    async fn test_send_message_failure_marks_send_failed() {
+        let context = make_test_context().await;
+        let transport = Arc::new(MockTransport::fail("network error"));
+        let uploader = make_test_uploader();
+        let msg = make_test_msg("client_msg_fail");
+
+        let result = do_send_message_impl(context.clone(), transport, uploader, msg, None, false).await;
+
+        // 应返回错误
+        assert!(result.is_err(), "发送应失败");
+
+        // DB 中消息状态应为 SendFailed(3)
+        let db_msg = context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_fail").await.unwrap().unwrap();
+        assert_eq!(db_msg.status, MessageSendStatus::SendFailed as i32, "DB 状态应为 SendFailed");
+    }
+
+    /// 测试：超时但 DB 已标记成功 → 返回 Ok（二次确认逻辑）
+    ///
+    /// 场景：网络超时但服务端实际已成功处理，DB 通过其他设备同步已标记成功
+    /// 对齐 Go SDK api.go L682-698 的超时二次确认逻辑
+    #[tokio::test]
+    async fn test_send_message_timeout_db_already_success() {
+        let context = make_test_context().await;
+        let transport = Arc::new(MockTransport::timeout());
+        let uploader = make_test_uploader();
+        let msg = make_test_msg("client_msg_timeout");
+
+        // 先手动插入一条已成功的消息（模拟其他设备同步写入）
+        let mut local_log = LocalChatLog::from(&msg);
+        local_log.conversation_id = "si_user_a_user_b".to_string();
+        local_log.status = MessageSendStatus::SendSuccess as i32;
+        local_log.server_msg_id = "server_already_done".to_string();
+        local_log.send_time = 999;
+        context.repositories.message_repo.batch_insert(&[local_log]).await.unwrap();
+
+        let result = do_send_message_impl(context.clone(), transport, uploader, msg, None, false).await;
+
+        // 超时时 DB 已成功 → 应返回 Ok
+        assert!(result.is_ok(), "超时但 DB 已成功应返回 Ok: {:?}", result.err());
+        let resp = result.unwrap();
+        assert_eq!(resp.server_msg_id, "server_already_done", "应返回 DB 中的 server_msg_id");
+    }
+
+    /// 测试：超时且 DB 未成功 → 标记 SendFailed
+    ///
+    /// 场景：真正的发送失败（超时且服务端未处理）
+    #[tokio::test]
+    async fn test_send_message_timeout_db_not_success() {
+        let context = make_test_context().await;
+        let transport = Arc::new(MockTransport::timeout());
+        let uploader = make_test_uploader();
+        let msg = make_test_msg("client_msg_real_timeout");
+
+        let result = do_send_message_impl(context.clone(), transport, uploader, msg, None, false).await;
+
+        // 应返回错误
+        assert!(result.is_err(), "超时且 DB 未成功应返回 Err");
+
+        // DB 状态应为 SendFailed
+        let db_msg = context
+            .repositories
+            .message_repo
+            .get_by_client_msg_id("si_user_a_user_b", "client_msg_real_timeout")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(db_msg.status, MessageSendStatus::SendFailed as i32);
+    }
+
+    /// 测试：online_only 模式 → 跳过本地持久化
+    ///
+    /// 验证 isOnlineOnly 消息不写入 DB、不更新会话、不同步
+    /// 对齐 Go SDK api.go L154-157, L657-664
+    #[tokio::test]
+    async fn test_send_message_online_only_skips_persistence() {
+        let context = make_test_context().await;
+        let transport = Arc::new(MockTransport::success("server_online"));
+        let uploader = make_test_uploader();
+        let msg = make_test_msg("client_msg_online");
+
+        let result = do_send_message_impl(
+            context.clone(),
+            transport.clone(),
+            uploader,
+            msg,
+            None,
+            true, // online_only = true
+        )
+        .await;
+
+        // 发送应成功
+        assert!(result.is_ok(), "online_only 发送应成功");
+
+        // DB 中不应有消息记录（跳过持久化）
+        let db_msg = context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_online").await.unwrap();
+        assert!(db_msg.is_none(), "online_only 不应写入 DB");
+
+        // transport 应被调用一次
+        assert_eq!(transport.call_count.load(Ordering::SeqCst), 1);
+    }
+
+    /// 测试：online_only 模式发送失败 → 不更新 DB 状态
+    ///
+    /// online_only 消息未入库，失败时无需更新 DB
+    #[tokio::test]
+    async fn test_send_message_online_only_failure_no_db_update() {
+        let context = make_test_context().await;
+        let transport = Arc::new(MockTransport::fail("connection lost"));
+        let uploader = make_test_uploader();
+        let msg = make_test_msg("client_msg_online_fail");
+
+        let result = do_send_message_impl(
+            context.clone(),
+            transport,
+            uploader,
+            msg,
+            None,
+            true, // online_only
+        )
+        .await;
+
+        // 应返回错误
+        assert!(result.is_err());
+
+        // DB 中不应有任何记录
+        let db_msg = context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_online_fail").await.unwrap();
+        assert!(db_msg.is_none(), "online_only 失败不应有 DB 记录");
+    }
+
+    // ========================================================================
+    // insert_message_before_send_impl 测试
+    // ========================================================================
+
+    /// 测试：发送前消息入库 → 状态为 Sending + sending_message 记录 + 会话更新
+    ///
+    /// 验证 insert_message_before_send_impl 的完整写入链路
+    #[tokio::test]
+    async fn test_insert_message_before_send_creates_records() {
+        let context = make_test_context().await;
+        let msg = make_test_msg("client_msg_insert");
+        let send_time = 1700000000000i64;
+
+        // 先创建会话（update_after_sent_message 需要已存在的会话）
+        let conv = crate::model::local::LocalConversation {
+            conversation_id: "si_user_a_user_b".to_string(),
+            conversation_type: 1,
+            user_id: "user_a".to_string(),
+            group_id: String::new(),
+            show_name: String::new(),
+            face_url: String::new(),
+            recv_msg_opt: 0,
+            unread_count: 0,
+            latest_msg: String::new(),
+            latest_msg_send_time: 0,
+            is_pinned: false,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+        };
+        context.repositories.conversation_repo.upsert(&conv).await.unwrap();
+
+        let result = insert_message_before_send_impl(&context, &msg, send_time).await;
+        assert!(result.is_ok(), "入库应成功: {:?}", result.err());
+
+        // 验证 local_chat_logs 写入
+        let db_msg = context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_insert").await.unwrap().unwrap();
+        assert_eq!(db_msg.status, MessageSendStatus::Sending as i32, "状态应为 Sending");
+        assert_eq!(db_msg.send_time, send_time, "send_time 应正确");
+
+        // 验证 sending_messages 写入
+        let sending = context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_insert").await.unwrap();
+        assert!(sending.is_some(), "sending_message 应存在");
     }
 }

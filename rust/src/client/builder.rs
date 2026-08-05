@@ -8,7 +8,7 @@ use crate::conversation::service::ConversationService;
 use crate::conversation::syncer::ConversationSyncer;
 use crate::error::Result;
 use crate::event::hub::EventHub;
-use crate::file::uploader::FileUploader;
+use crate::file::upload::FileUploader;
 use crate::friend::service::FriendService;
 use crate::group::service::GroupService;
 use crate::http::conversation_api::HttpConversationApi;
