@@ -52,3 +52,36 @@ pub struct SetGroupInfoFields {
     pub notification: Option<String>,
     pub ex: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_group_member_creation() {
+        let member = GroupMember {
+            group_id: "g1".to_string(),
+            user_id: "u1".to_string(),
+            nickname: "Test".to_string(),
+            face_url: String::new(),
+            role_level: 1,
+            join_time: 1000,
+            join_source: "1".to_string(),
+        };
+        assert_eq!(member.user_id, "u1");
+        assert_eq!(member.role_level, 1);
+    }
+
+    #[test]
+    fn test_set_group_info_fields_creation() {
+        let fields = SetGroupInfoFields {
+            group_id: "g1".to_string(),
+            group_name: Some("New Name".to_string()),
+            face_url: None,
+            introduction: None,
+            notification: None,
+            ex: None,
+        };
+        assert_eq!(fields.group_id, "g1");
+    }
+}

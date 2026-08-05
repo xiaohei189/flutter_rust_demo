@@ -20,3 +20,24 @@ pub struct FriendInfo {
     /// 扩展字段
     pub ex: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_friend_info_creation() {
+        let info = FriendInfo {
+            user_id: "user_1".to_string(),
+            nickname: "Test".to_string(),
+            face_url: "http://example.com/avatar.jpg".to_string(),
+            gender: 1,
+            remark: "My Friend".to_string(),
+            create_time: 1000,
+            add_source: "1".to_string(),
+            ex: String::new(),
+        };
+        assert_eq!(info.user_id, "user_1");
+        assert_eq!(info.remark, "My Friend");
+    }
+}

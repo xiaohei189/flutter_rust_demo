@@ -1,6 +1,6 @@
-use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
-use rust_lib_flutter_rust_demo::domain::sdk_api::*;
-use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+use rust_lib_flutter_rust_demo::client::config::ClientConfig;
+use rust_lib_flutter_rust_demo::client::*;
+use rust_lib_flutter_rust_demo::client::OpenIMClient;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

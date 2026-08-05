@@ -2,7 +2,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::domain::sdk_api::*;
+use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
 #[tokio::test]
@@ -32,8 +32,8 @@ async fn test_login_invalid_token() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::client::OpenIMClient;
 
     println!("=== 无效 token 登录测试 ===\n");
 
@@ -148,7 +148,7 @@ async fn test_kick_nonexistent_group_member() {
         .with_target(false)
         .try_init();
 
-    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
+    use rust_lib_flutter_rust_demo::constant::enums::GroupType;
 
     println!("=== 踢不存在群成员测试 ===\n");
 

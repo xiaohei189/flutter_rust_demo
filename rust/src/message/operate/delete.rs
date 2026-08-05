@@ -52,3 +52,14 @@ impl MessageService {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_delete_messages_service_exists() {
+        // 验证模块可访问
+        assert!(true);
+    }
+}

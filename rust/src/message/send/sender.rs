@@ -766,3 +766,147 @@ impl MessageSender {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::http::client::HttpApiClient;
+    use crate::model::msg_struct::MsgStruct;
+
+    /// 创建测试用 FileUploader（不会实际触发上传）
+    fn make_uploader() -> Arc<FileUploader> {
+        let http = Arc::new(HttpApiClient::new(
+            "http://localhost:10002".to_string(),
+            "test_token".to_string(),
+            "test_op".to_string(),
+        ));
+        Arc::new(FileUploader::new(http))
+    }
+
+    // ========================================================================
+    // process_media_content_impl 测试
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_process_media_non_media_passthrough() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 101; // 文本消息，非媒体
+        msg.content = r#"{"content":"hello"}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "非媒体消息应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_invalid_content_json() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 102; // 图片
+        msg.content = "not-json".to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "非法 JSON 应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_no_source_path() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 102;
+        msg.content = r#"{"uuid":"test","type":"jpg"}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "无 sourcePath 应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_empty_source_path() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 102;
+        msg.content = r#"{"sourcePath":""}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "空 sourcePath 应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_file_not_exists() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 102;
+        msg.content = r#"{"sourcePath":"/tmp/nonexistent_file_xyz.jpg"}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "文件不存在应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_sound_type_no_source_path() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 103; // 语音
+        msg.content = r#"{"uuid":"test","duration":5}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "语音无 sourcePath 应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_video_type_no_source_path() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 104; // 视频
+        msg.content = r#"{"videoPath":"/tmp/video.mp4"}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "视频无 sourcePath 应原样返回");
+    }
+
+    #[tokio::test]
+    async fn test_process_media_unknown_type_no_source_path() {
+        let uploader = make_uploader();
+        let mut msg = MsgStruct::default();
+        msg.content_type = 105; // 文件
+        msg.content = r#"{"fileName":"test.pdf"}"#.to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        assert_eq!(result, msg.content, "文件无 sourcePath 应原样返回");
+    }
+
+    // ========================================================================
+    // conversation_id_for_msg 测试
+    // ========================================================================
+
+    #[test]
+    fn test_conversation_id_single_chat_sorted() {
+        let mut msg = MsgStruct::default();
+        msg.session_type = 1;
+        msg.send_id = "user_b".to_string();
+        msg.recv_id = "user_a".to_string();
+        assert_eq!(conversation_id_for_msg(&msg), "si_user_a_user_b");
+    }
+
+    #[test]
+    fn test_conversation_id_group_chat() {
+        let mut msg = MsgStruct::default();
+        msg.session_type = 3;
+        msg.group_id = "group_123".to_string();
+        assert_eq!(conversation_id_for_msg(&msg), "sg_group_123");
+    }
+
+    // ========================================================================
+    // content_type_name 测试
+    // ========================================================================
+
+    #[test]
+    fn test_content_type_name_text() {
+        assert_eq!(content_type_name(101), "文本");
+    }
+
+    #[test]
+    fn test_content_type_name_unknown() {
+        assert_eq!(content_type_name(9999), "未知");
+    }
+}

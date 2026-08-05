@@ -293,3 +293,218 @@ impl MessageService {
         Ok(local_log)
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::pool::create_pool_memory;
+    use crate::db::*;
+    use crate::http::client::HttpApiClient;
+    use crate::http::message::{MessageServerApi, RevokeMessageReq, DeleteMessagesReq, MarkMessagesAsReadReq, MarkConversationAsReadReq};
+    use crate::client::context::Repositories;
+    use crate::event::test_util::*;
+    use crate::model::UserId;
+    use crate::model::local::{LocalChatLog, LocalConversation};
+    use async_trait::async_trait;
+    use std::sync::Arc;
+
+    struct MockMessageApi;
+    #[async_trait]
+    impl MessageServerApi for MockMessageApi {
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> Result<()> { Ok(()) }
+        async fn delete_on_server(&self, _conversation_id: &str, _seqs: &[i64], _user_id: &str) -> Result<()> { Ok(()) }
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> Result<()> { Ok(()) }
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> Result<()> { Ok(()) }
+    }
+
+    fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
+        Arc::new(Repositories {
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
+        })
+    }
+
+    fn make_service(pool: sqlx::SqlitePool) -> super::MessageService {
+        let repos = make_repositories(pool);
+        super::MessageService {
+            repositories: repos.clone(),
+            api: Arc::new(MockMessageApi),
+            user_id: UserId::new("test_user"),
+            listener: noop_conversation_listener(),
+            message_listener: noop_message_listener(),
+        }
+    }
+
+    fn make_msg(conv_id: &str, client_msg_id: &str, seq: i64, send_time: i64, send_id: &str) -> LocalChatLog {
+        LocalChatLog {
+            conversation_id: conv_id.to_string(),
+            client_msg_id: client_msg_id.to_string(),
+            server_msg_id: String::new(),
+            send_id: send_id.to_string(),
+            recv_id: "user_b".to_string(),
+            sender_platform_id: 1,
+            sender_nick_name: "Test".to_string(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: r#"{"content":"hello"}"#.to_string(),
+            is_read: 0,
+            status: 2,
+            seq,
+            send_time,
+            create_time: send_time,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_history_messages_empty() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool);
+        let req = GetHistoryMessagesReq {
+            conversation_id: "conv_1".to_string(),
+            start_client_msg_id: String::new(),
+            count: 20,
+        };
+        let result = service.get_history_messages(&req).await.unwrap();
+        assert!(result.messages.is_empty());
+        assert!(result.is_end);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_messages_with_data() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_1", "m2", 2, 2000, "user_a"),
+            make_msg("conv_1", "m3", 3, 3000, "user_a"),
+        ]).await.unwrap();
+        let req = GetHistoryMessagesReq {
+            conversation_id: "conv_1".to_string(),
+            start_client_msg_id: String::new(),
+            count: 20,
+        };
+        let result = service.get_history_messages(&req).await.unwrap();
+        assert_eq!(result.messages.len(), 3);
+        assert_eq!(result.messages[0].send_time, 1000); // .rev() 后为升序
+        assert_eq!(result.messages[2].send_time, 3000); // .rev() 后为升序
+        assert!(result.is_end);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_messages_pagination() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_1", "m2", 2, 2000, "user_a"),
+            make_msg("conv_1", "m3", 3, 3000, "user_a"),
+            make_msg("conv_1", "m4", 4, 4000, "user_a"),
+            make_msg("conv_1", "m5", 5, 5000, "user_a"),
+        ]).await.unwrap();
+        let req = GetHistoryMessagesReq {
+            conversation_id: "conv_1".to_string(),
+            start_client_msg_id: String::new(),
+            count: 2,
+        };
+        let result = service.get_history_messages(&req).await.unwrap();
+        assert_eq!(result.messages.len(), 2);
+        assert!(!result.is_end);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_message_by_seq_found() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[make_msg("conv_1", "m1", 5, 1000, "user_a")]).await.unwrap();
+        let result = service.get_history_message_by_seq(5).await.unwrap();
+        assert_eq!(result.client_msg_id, "m1");
+        assert_eq!(result.seq, 5);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_message_by_seq_not_found() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool);
+        let result = service.get_history_message_by_seq(999).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_find_message_list_empty() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool);
+        let result = service.find_message_list("conv_1", vec![]).await.unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_find_message_list_filters_by_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_2", "m2", 2, 2000, "user_a"),
+        ]).await.unwrap();
+        let result = service.find_message_list("conv_1", vec!["m1".to_string(), "m2".to_string()]).await.unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].client_msg_id, "m1");
+    }
+
+    #[tokio::test]
+    async fn test_delete_message_from_local_storage() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[make_msg("conv_1", "m1", 1, 1000, "user_a")]).await.unwrap();
+        service.delete_message_from_local_storage("conv_1", "m1").await.unwrap();
+        let msg = dao.get_by_client_msg_id("conv_1", "m1").await.unwrap().unwrap();
+        assert_eq!(msg.status, 4);
+    }
+
+    #[tokio::test]
+    async fn test_get_total_unread_msg_count() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let conv_dao = ConversationDao::new(pool);
+        conv_dao.upsert(&LocalConversation {
+            conversation_id: "conv_1".to_string(),
+            unread_count: 5,
+            ..Default::default()
+        }).await.unwrap();
+        conv_dao.upsert(&LocalConversation {
+            conversation_id: "conv_2".to_string(),
+            unread_count: 3,
+            ..Default::default()
+        }).await.unwrap();
+        let total = service.get_total_unread_msg_count().await.unwrap();
+        assert_eq!(total, 8);
+    }
+
+    #[tokio::test]
+    async fn test_insert_group_message_to_local_storage() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool);
+        let log = service.insert_group_message_to_local_storage(
+            "group_1", r#"{"content":"hello"}"#, 101, "user_a",
+        ).await.unwrap();
+        assert_eq!(log.conversation_id, "g_group_1");
+        assert_eq!(log.content_type, 101);
+        assert_eq!(log.status, 2);
+    }
+}
+

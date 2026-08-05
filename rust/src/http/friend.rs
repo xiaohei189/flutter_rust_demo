@@ -283,3 +283,94 @@ pub trait FriendServerApi: Send + Sync {
     async fn accept_friend_application(&self, req: &AcceptFriendApplicationReq) -> Result<()>;
     async fn refuse_friend_application(&self, req: &RefuseFriendApplicationReq) -> Result<()>;
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_friend_req_serialization() {
+        let req = AddFriendReq {
+            from_user_id: "user_a".to_string(),
+            to_user_id: "user_b".to_string(),
+            req_msg: Some("Hello!".to_string()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("fromUserID"));
+        assert!(json.contains("toUserID"));
+        assert!(json.contains("Hello!"));
+    }
+
+    #[test]
+    fn test_friend_apply_info_deserialization() {
+        let json = r#"{"userID":"user_1","nickname":"Test","faceURL":"http://example.com/avatar.jpg","gender":1,"createTime":1234567890,"addSource":1,"ex":"","reqMsg":"Hello","handle_result":0,"handle_msg":null}"#;
+        let info: FriendApplyInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(info.user_id, "user_1");
+        assert_eq!(info.nickname, "Test");
+    }
+
+    #[test]
+    fn test_accept_friend_application_req_serialization() {
+        let req = AcceptFriendApplicationReq {
+            to_user_id: "user_b".to_string(),
+            handle_msg: Some("Accepted".to_string()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("toUserID"));
+        assert!(json.contains("Accepted"));
+    }
+
+    #[test]
+    fn test_get_friend_apply_list_req_serialization() {
+        let req = GetFriendApplyListReq {
+            from_user_id: "user_a".to_string(),
+            pagination: Pagination { page_number: 1, show_number: 50 },
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("pagination"));
+    }
+
+    #[test]
+    fn test_check_friend_result_deserialization() {
+        let json = r#"{"userID":"user_1","result":1}"#;
+        let result: CheckFriendResult = serde_json::from_str(json).unwrap();
+        assert_eq!(result.user_id, "user_1");
+        assert_eq!(result.result, 1);
+    }
+
+    #[test]
+    fn test_get_incremental_friends_req_serialization() {
+        let req = GetIncrementalFriendsReq {
+            user_id: "user_a".to_string(),
+            version_id: "v1".to_string(),
+            version: 5,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userID"));
+        assert!(json.contains("versionID"));
+        assert!(json.contains("version"));
+    }
+
+    #[test]
+    fn test_update_friends_req_serialization_with_pinned() {
+        let req = UpdateFriendsReq {
+            owner_user_id: "user_a".to_string(),
+            friend_user_ids: vec!["user_b".to_string()],
+            is_pinned: Some(true),
+            remark: None,
+            ex: None,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("isPinned"));
+        assert!(json.contains("true"));
+        assert!(!json.contains("remark"));
+    }
+
+    #[test]
+    fn test_search_friend_item_deserialization() {
+        let json = r#"{"friendUserID":"user_1","nickname":"Test","faceURL":"","remark":"","ex":"","createTime":1000,"relationship":1}"#;
+        let item: SearchFriendItem = serde_json::from_str(json).unwrap();
+        assert_eq!(item.friend_user_id, "user_1");
+        assert_eq!(item.relationship, 1);
+    }
+}
+

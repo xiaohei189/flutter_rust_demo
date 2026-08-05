@@ -39,6 +39,18 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
+    pub async fn subscribe_users_status(&self, user_ids: Vec<String>) -> Result<Vec<crate::http::online::OnlineStatus>> {
+        self.inner.subscribe_users_status(user_ids).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn unsubscribe_users_status(&self, user_ids: Vec<String>) -> Result<()> {
+        self.inner.unsubscribe_users_status(user_ids).await
+            .map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
+    #[flutter_rust_bridge::frb]
     pub async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()> {
         self.inner.set_global_msg_recv_opt(global_recv_opt).await
             .map_err(|e| anyhow::anyhow!("{}", e))
@@ -60,4 +72,3 @@ impl OpenIMBridgeClient {
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
 }
-

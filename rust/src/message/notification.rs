@@ -368,3 +368,181 @@ impl NotificationHandler {
 }
 
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::event::hub::EventHub;
+    use crate::event::test_util::*;
+    use crate::model::UserId;
+    use crate::db::pool::create_pool_memory;
+    use crate::db::*;
+    use crate::http::client::HttpApiClient;
+    use crate::client::context::Repositories;
+    use crate::http::friend::FriendServerApi;
+    use crate::http::group::GroupServerApi;
+    use crate::http::UserServerApi;
+    use crate::http::conversation::ConversationServerApi;
+    use crate::event::events::conversation::ConversationListener;
+    use crate::event::events::message::MessageListener;
+    use std::sync::Arc;
+
+    fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
+        Arc::new(Repositories {
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
+        })
+    }
+
+    fn make_http_client() -> Arc<HttpApiClient> {
+        Arc::new(HttpApiClient::new(
+            "http://localhost:10002".to_string(),
+            "test_token".to_string(),
+            "test_op".to_string(),
+        ))
+    }
+
+    #[tokio::test]
+    async fn test_notification_handler_fallback_unhandled() {
+        let pool = create_pool_memory().await.unwrap();
+        let repos = make_repositories(pool);
+        let http = make_http_client();
+        let hub = EventHub::new();
+        let user_id = UserId::new("test_user");
+
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(
+            crate::http::friend_api::HttpFriendApi::new(http.clone())
+        );
+        let friend_service = Arc::new(FriendService::new(
+            friend_api,
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+        ));
+
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(
+            crate::http::group_api::HttpGroupApi::new(http.clone())
+        );
+        let group_service = Arc::new(GroupService::new(
+            group_api,
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+        ));
+
+        let user_service = Arc::new(UserService::new(
+            Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())),
+            hub.clone(),
+        ));
+
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(
+            crate::http::conversation_api::HttpConversationApi::new(http.clone())
+        );
+        let syncer = Arc::new(ConversationSyncer::new_with_api(
+            conv_api,
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+        ));
+
+        let processor = Arc::new(MessageProcessor::new(
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+            hub.clone(),
+        ));
+
+        let handler = NotificationHandler::new(
+            friend_service,
+            group_service,
+            user_service,
+            syncer,
+            processor,
+            noop_friend_listener(),
+            noop_group_listener(),
+            noop_user_listener(),
+            user_id,
+        );
+
+        // 未处理的通知类型不应 panic
+        let msg = MsgData {
+            content_type: 9999,
+            content: br#"{"detail":"{\"key\":\"value\"}"}"#.to_vec(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_notification_handler_empty_list() {
+        let pool = create_pool_memory().await.unwrap();
+        let repos = make_repositories(pool);
+        let http = make_http_client();
+        let hub = EventHub::new();
+        let user_id = UserId::new("test_user");
+
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(
+            crate::http::friend_api::HttpFriendApi::new(http.clone())
+        );
+        let friend_service = Arc::new(FriendService::new(
+            friend_api,
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+        ));
+
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(
+            crate::http::group_api::HttpGroupApi::new(http.clone())
+        );
+        let group_service = Arc::new(GroupService::new(
+            group_api,
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+        ));
+
+        let user_service = Arc::new(UserService::new(
+            Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())),
+            hub.clone(),
+        ));
+
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(
+            crate::http::conversation_api::HttpConversationApi::new(http.clone())
+        );
+        let syncer = Arc::new(ConversationSyncer::new_with_api(
+            conv_api,
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+        ));
+
+        let processor = Arc::new(MessageProcessor::new(
+            repos.clone(),
+            user_id.clone(),
+            hub.clone(),
+            hub.clone(),
+        ));
+
+        let handler = NotificationHandler::new(
+            friend_service,
+            group_service,
+            user_service,
+            syncer,
+            processor,
+            hub.clone(),
+            hub.clone(),
+            hub.clone(),
+            user_id,
+        );
+
+        handler.handle_notifications(&[]).await;
+    }
+}
+
+

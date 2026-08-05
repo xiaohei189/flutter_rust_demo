@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::domain::sdk_api::*;
+use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
 #[tokio::test]
@@ -94,8 +94,8 @@ async fn test_user_state_via_sdk() {
     }
 
     println!("3. 创建 SDK...");
-    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("openim_sdk_{}", user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);

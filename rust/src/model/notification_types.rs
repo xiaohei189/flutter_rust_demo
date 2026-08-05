@@ -28,7 +28,7 @@ pub(crate) fn unmarshal_notification_elem<T: serde::de::DeserializeOwned>(conten
 
 // --- 撤回通知 (2101) ---
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RevokeMsgTipsJson {
     #[serde(rename = "revokerUserID")]
@@ -173,3 +173,132 @@ pub(crate) struct GroupApplicationRejectedTipsJson {
     #[serde(default)]
     pub(crate) request: GroupRequestJson,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_unmarshal_revoke_notification() {
+        let content = r#"{"detail":"{\"revokerUserID\":\"user_1\",\"clientMsgID\":\"msg_001\",\"revokeTime\":1000,\"sesstionType\":1,\"seq\":5,\"conversationID\":\"conv_1\",\"isAdminRevoke\":false,\"revokerNickname\":\"Alice\",\"revokerRole\":1}"}"#;
+        let tips: RevokeMsgTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.revoker_user_id, "user_1");
+        assert_eq!(tips.client_msg_id, "msg_001");
+        assert_eq!(tips.seq, 5);
+        assert_eq!(tips.revoker_nickname, "Alice");
+        assert!(!tips.is_admin_revoke);
+    }
+
+    #[test]
+    fn test_unmarshal_revoke_notification_admin_revoke() {
+        let content = r#"{"detail":"{\"revokerUserID\":\"admin_1\",\"clientMsgID\":\"msg_002\",\"revokeTime\":2000,\"sesstionType\":2,\"seq\":10,\"conversationID\":\"sg_group_1\",\"isAdminRevoke\":true}"}"#;
+        let tips: RevokeMsgTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.revoker_user_id, "admin_1");
+        assert_eq!(tips.seq, 10);
+        assert!(tips.is_admin_revoke);
+        // 没有提供时使用默认值
+        assert_eq!(tips.revoker_nickname, "");
+    }
+
+    #[test]
+    fn test_unmarshal_friend_application_approved() {
+        let content = r#"{"detail":"{\"handleMsg\":\"Welcome!\",\"request\":{\"fromUserID\":\"user_a\",\"toUserID\":\"user_b\",\"fromNickname\":\"Alice\",\"fromFaceURL\":\"http://example.com/avatar.jpg\",\"handleResult\":1,\"reqMsg\":\"\",\"createTime\":1000}}"}"#;
+        let tips: FriendApplicationApprovedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.handle_msg, "Welcome!");
+        assert_eq!(tips.request.from_user_id, "user_a");
+        assert_eq!(tips.request.from_nickname, "Alice");
+    }
+
+    #[test]
+    fn test_unmarshal_friend_application_rejected() {
+        let content = r#"{"detail":"{\"handleMsg\":\"Sorry\",\"request\":{\"fromUserID\":\"user_a\",\"fromNickname\":\"Alice\",\"handleResult\":-1,\"createTime\":1000}}"}"#;
+        let tips: FriendApplicationRejectedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.handle_msg, "Sorry");
+        assert_eq!(tips.request.handle_result, -1);
+    }
+
+    #[test]
+    fn test_unmarshal_friend_application_added() {
+        let content = r#"{"detail":"{\"request\":{\"fromUserID\":\"user_a\",\"fromNickname\":\"Alice\",\"fromFaceURL\":\"http://example.com/avatar.jpg\",\"handleResult\":0,\"reqMsg\":\"Hello!\",\"createTime\":1000}}"}"#;
+        let tips: FriendApplicationTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.request.from_user_id, "user_a");
+        assert_eq!(tips.request.req_msg, "Hello!");
+        assert_eq!(tips.request.handle_result, 0);
+    }
+
+    #[test]
+    fn test_unmarshal_user_info_updated() {
+        let content = r#"{"detail":"{\"userID\":\"user_1\",\"nickname\":\"NewName\",\"faceURL\":\"http://example.com/new.jpg\",\"ex\":\"some ex\",\"globalRecvMsgOpt\":1}"}"#;
+        let info: UserInfoJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(info.user_id, "user_1");
+        assert_eq!(info.nickname, "NewName");
+        assert_eq!(info.global_recv_msg_opt, 1);
+    }
+
+    #[test]
+    fn test_unmarshal_group_application_added() {
+        let content = r#"{"detail":"{\"request\":{\"groupInfo\":{\"groupID\":\"group_1\"},\"userInfo\":{\"userID\":\"user_a\",\"nickname\":\"Alice\",\"faceURL\":\"\"},\"handleResult\":0,\"reqMsg\":\"Please add me\"}}"}"#;
+        let tips: JoinGroupApplicationTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.request.group_info.group_id, "group_1");
+        assert_eq!(tips.request.user_info.user_id, "user_a");
+        assert_eq!(tips.request.req_msg, "Please add me");
+    }
+
+    #[test]
+    fn test_unmarshal_group_application_accepted() {
+        let content = r#"{"detail":"{\"handleMsg\":\"Approved\",\"request\":{\"groupInfo\":{\"groupID\":\"group_1\"},\"userInfo\":{\"userID\":\"user_a\"},\"handleResult\":1}}"}"#;
+        let tips: GroupApplicationAcceptedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.handle_msg, "Approved");
+        assert_eq!(tips.request.group_info.group_id, "group_1");
+    }
+
+    #[test]
+    fn test_unmarshal_group_application_rejected() {
+        let content = r#"{"detail":"{\"handleMsg\":\"Rejected\",\"request\":{\"groupInfo\":{\"groupID\":\"group_1\"},\"userInfo\":{\"userID\":\"user_a\"},\"handleResult\":-1}}"}"#;
+        let tips: GroupApplicationRejectedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.handle_msg, "Rejected");
+        assert_eq!(tips.request.handle_result, -1);
+    }
+
+    // ========== 异常路径测试 ==========
+
+    #[test]
+    fn test_unmarshal_invalid_outer_json() {
+        let content = b"not json";
+        let result: anyhow::Result<RevokeMsgTipsJson> = unmarshal_notification_elem(content);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("外层"));
+    }
+
+    #[test]
+    fn test_unmarshal_invalid_detail_json() {
+        let content = br#"{"detail":"not valid json inside"}"#;
+        let result: anyhow::Result<RevokeMsgTipsJson> = unmarshal_notification_elem(content);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("内层"));
+    }
+
+    #[test]
+    fn test_unmarshal_missing_detail_field() {
+        let content = br#"{"otherField":"value"}"#;
+        let result: anyhow::Result<RevokeMsgTipsJson> = unmarshal_notification_elem(content);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_unmarshal_empty_content() {
+        let content = b"";
+        let result: anyhow::Result<RevokeMsgTipsJson> = unmarshal_notification_elem(content);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_unmarshal_non_utf8_content() {
+        let content = &[0xFF, 0xFE, 0x00, 0x01];
+        let result: anyhow::Result<RevokeMsgTipsJson> = unmarshal_notification_elem(content);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("UTF-8"));
+    }
+}
+
+

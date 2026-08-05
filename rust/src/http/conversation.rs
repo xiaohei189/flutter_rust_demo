@@ -169,3 +169,24 @@ pub trait ConversationServerApi: Send + Sync {
     /// 设置会话属性（对齐 Go SDK `SetConversation` / HTTP 路由 `/conversation/set_conversation`）
     async fn set_conversation_on_server(&self, req: &SetConversationReq) -> Result<()>;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_set_conversation_req_serialization() {
+        let req = SetConversationReq {
+            conversation_id: "si_user_a_user_b".to_string(),
+            recv_msg_opt: Some(2),
+            is_pinned: Some(true),
+            is_private_chat: None,
+            group_at_type: None,
+            ex: None,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("recvMsgOpt"));
+        assert!(json.contains("isPinned"));
+        assert!(json.contains("true"));
+    }
+}

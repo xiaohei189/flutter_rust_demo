@@ -1,7 +1,6 @@
 //! user 域外部服务线格式类型（请求/响应 DTO）
 //!
 //! 对齐 Go SDK HTTP 契约。
-//! 当前由 core::user\::service 消费；如需端口化，可收敛为 $(UserService.Replace('Service',''))ServerApi trait。
 
 use crate::error::Result;
 use async_trait::async_trait;
@@ -69,11 +68,42 @@ pub struct UpdateUserFields {
     pub email: Option<String>,
 }
 
-
 /// 用户域服务端 API（入向契约：SDK → OpenIM 服务端）
 #[async_trait]
 pub trait UserServerApi: Send + Sync {
     async fn get_users_info(&self, req: &GetUsersInfoReq) -> Result<GetUsersInfoResp>;
     async fn update_user_info(&self, req: &UpdateUserInfoReq) -> Result<UpdateUserInfoResp>;
     async fn set_global_msg_recv_opt(&self, user_id: &str, global_recv_opt: i32) -> Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_users_info_req_serialization() {
+        let req = GetUsersInfoReq {
+            user_id_list: vec!["user_1".to_string()],
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userIDs"));
+    }
+
+    #[test]
+    fn test_update_user_info_req_serialization() {
+        let req = UpdateUserInfoReq {
+            user_info: UpdateUserInfoData {
+                user_id: "user_1".to_string(),
+                nickname: Some("NewName".to_string()),
+                face_url: None,
+                gender: None,
+                email: None,
+                ex: None,
+            },
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userInfo"));
+        assert!(json.contains("nickname"));
+        assert!(json.contains("NewName"));
+    }
 }

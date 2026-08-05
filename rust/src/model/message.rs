@@ -51,3 +51,35 @@ impl From<MsgData> for MessageInfo {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_message_info_creation() {
+        let info = MessageInfo {
+            client_msg_id: "msg_1".to_string(),
+            server_msg_id: String::new(),
+            send_id: "user_a".to_string(),
+            recv_id: "user_b".to_string(),
+            sender_platform_id: 1,
+            sender_nickname: "Test".to_string(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 0,
+            content_type: 101,
+            content: String::new(),
+            status: 1,
+            seq: 0,
+            send_time: 1000,
+            create_time: 1000,
+            is_read: false,
+            ex: String::new(),
+            attached_info: String::new(),
+            group_id: String::new(),
+        };
+        assert_eq!(info.client_msg_id, "msg_1");
+        assert_eq!(info.status, 1);
+    }
+}

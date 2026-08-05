@@ -350,3 +350,70 @@ pub trait GroupServerApi: Send + Sync {
     async fn mute_group(&self, group_id: &str, is_mute: bool) -> Result<()>;
     async fn mute_group_member(&self, group_id: &str, user_id: &str, muted_seconds: i64) -> Result<()>;
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_join_group_req_serialization() {
+        let req = JoinGroupReq {
+            group_id: "group_123".to_string(),
+            req_msg: Some("Please add me".to_string()),
+            join_source: 1,
+            ex: None,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("groupID"));
+        assert!(json.contains("Please add me"));
+    }
+
+    #[test]
+    fn test_accept_group_application_req_serialization() {
+        let req = AcceptGroupApplicationReq {
+            group_id: "group_123".to_string(),
+            from_user_id: "user_a".to_string(),
+            handle_msg: Some("Welcome".to_string()),
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("groupID"));
+        assert!(json.contains("fromUserID"));
+    }
+
+    #[test]
+    fn test_group_apply_info_deserialization() {
+        let json = r#"{"userID":"user_1","nickname":"Test","faceURL":"","gender":1,"createTime":1000,"addSource":1,"ex":"","reqMsg":"Join","handleResult":0,"handleMsg":null,"groupID":"group_123","groupName":"Test Group"}"#;
+        let info: GroupApplyInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(info.user_id, "user_1");
+        assert_eq!(info.group_id, "group_123");
+    }
+
+    #[test]
+    fn test_set_group_info_req_serialization() {
+        let req = SetGroupInfoReq {
+            group_id: "group_123".to_string(),
+            group_name: Some("Updated Group".to_string()),
+            face_url: Some("http://example.com/group.jpg".to_string()),
+            introduction: None,
+            notification: None,
+            ex: None,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("groupName"));
+        assert!(json.contains("Updated Group"));
+    }
+
+    #[test]
+    fn test_set_group_member_info_req_serialization() {
+        let req = SetGroupMemberInfoReq {
+            group_id: "group_123".to_string(),
+            user_id: "user_b".to_string(),
+            nickname: Some("NewName".to_string()),
+            face_url: None,
+            role_level: None,
+            ex: None,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("groupID"));
+        assert!(json.contains("NewName"));
+    }
+}

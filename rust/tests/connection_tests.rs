@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::domain::sdk_api::*;
+use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
 #[tokio::test]
@@ -19,8 +19,8 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
     let cert = register_user(&phone, "ReconnectUser").await.expect("注册失败");
     println!("用户: {}", cert.user_id);
 
-    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("reconn_{}", cert.user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);
@@ -105,8 +105,8 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
     let phone = generate_virtual_phone("cst");
     let cert = register_user(&phone, "CSTUser").await.expect("注册失败");
 
-    use rust_lib_flutter_rust_demo::sdk::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("cst_{}", cert.user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);

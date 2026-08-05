@@ -85,3 +85,51 @@ pub trait MessageServerApi: Send + Sync {
     /// 通知服务端按 seq 列表标记消息已读
     async fn mark_messages_as_read_on_server(&self, req: &MarkMessagesAsReadReq) -> Result<()>;
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_revoke_message_req_serialization() {
+        let req = RevokeMessageReq {
+            conversation_id: "si_user_a_user_b".to_string(),
+            seq: 100,
+            user_id: "user_a".to_string(),
+            client_msg_id: "msg_001".to_string(),
+            session_type: 1,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("conversationID"));
+        assert!(json.contains("seq"));
+        assert!(json.contains("userID"));
+        assert!(json.contains("clientMsgID"));
+        assert!(json.contains("sessionType"));
+    }
+
+    #[test]
+    fn test_delete_messages_req_serialization() {
+        let req = DeleteMessagesReq {
+            conversation_id: "si_user_a_user_b".to_string(),
+            client_msg_ids: vec!["msg_001".to_string(), "msg_002".to_string()],
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("conversationID"));
+        assert!(json.contains("clientMsgIDs"));
+        assert!(json.contains("msg_001"));
+    }
+
+    #[test]
+    fn test_mark_messages_as_read_req_serialization() {
+        let req = MarkMessagesAsReadReq {
+            conversation_id: "si_user_a_user_b".to_string(),
+            seqs: vec![1, 2, 3],
+            user_id: "user_a".to_string(),
+            has_read_seq: 0,
+            session_type: 1,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("conversationID"));
+        assert!(json.contains("seqs"));
+        assert!(json.contains("userID"));
+    }
+}
