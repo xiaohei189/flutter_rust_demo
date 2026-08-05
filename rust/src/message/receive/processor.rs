@@ -3,23 +3,23 @@
 //! 对齐 Go SDK `internal/conversation_msg/handler.go`
 
 use super::max_seq_recorder::MaxSeqRecorder;
-use crate::model::revoke::parse_revoke_tips_from_json;
-use crate::constant::content_type_utils::ContentTypeUtils;
 use crate::constant::content_type;
+use crate::constant::content_type_utils::ContentTypeUtils;
 use crate::constant::msg_status;
 use crate::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::error::Result;
+use crate::model::revoke::parse_revoke_tips_from_json;
 
+use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListener, MessageListenerExt};
+use crate::model::local::{LocalChatLog, LocalConversation};
 use crate::model::msg_struct::TypingElem;
 use crate::model::UserId;
-use crate::model::local::{LocalChatLog, LocalConversation};
 use openim_protocol::sdkws::MsgData;
-use crate::client::context::Repositories;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{debug, info, warn, trace};
+use tracing::{debug, info, trace, warn};
 
 /// 消息处理器 — 接收消息的分类入库与事件分发中心
 ///
@@ -53,12 +53,7 @@ pub struct MessageProcessor {
 }
 
 impl MessageProcessor {
-    pub fn new(
-        repositories: Arc<Repositories>,
-        user_id: UserId,
-        listener: Arc<dyn ConversationListener>,
-        message_listener: Arc<dyn MessageListener>,
-    ) -> Self {
+    pub fn new(repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn ConversationListener>, message_listener: Arc<dyn MessageListener>) -> Self {
         Self {
             repositories,
             user_id,
@@ -72,8 +67,6 @@ impl MessageProcessor {
         self.listener.emit(e);
     }
 
-
-
     /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
     ///
     /// 4 种异常类型：
@@ -81,26 +74,12 @@ impl MessageProcessor {
     /// - DELETED: 服务端标记删除（Status=DELETED, ClientMsgID!=""）
     /// - SEQ_DUP: Seq 重复（已存在消息的 Seq == 新消息 Seq）
     /// - CLIENT_DUP: ClientMsgID 重复但 Seq 不同
-    fn handle_exception_messages(
-        &self,
-        existing_message: Option<&LocalChatLog>,
-        message: &mut LocalChatLog,
-    ) {
+    fn handle_exception_messages(&self, existing_message: Option<&LocalChatLog>, message: &mut LocalChatLog) {
         let (prefix, seq, client_msg_id) = match existing_message {
-            None if message.status == msg_status::HAS_DELETED as i32
-                && message.client_msg_id.is_empty() =>
-            {
-                ("[SEQ_GAP_+]".to_string(), message.seq, message.client_msg_id.clone())
-            }
-            None if message.status == msg_status::HAS_DELETED as i32 => {
-                ("[DELETED]".to_string(), message.seq, message.client_msg_id.clone())
-            }
-            Some(existing) if existing.seq == message.seq => {
-                ("[SEQ_DUP]".to_string(), message.seq, existing.client_msg_id.clone())
-            }
-            Some(existing) if existing.seq != message.seq => {
-                ("[CLIENT_DUP]".to_string(), message.seq, existing.client_msg_id.clone())
-            }
+            None if message.status == msg_status::HAS_DELETED as i32 && message.client_msg_id.is_empty() => ("[SEQ_GAP_+]".to_string(), message.seq, message.client_msg_id.clone()),
+            None if message.status == msg_status::HAS_DELETED as i32 => ("[DELETED]".to_string(), message.seq, message.client_msg_id.clone()),
+            Some(existing) if existing.seq == message.seq => ("[SEQ_DUP]".to_string(), message.seq, existing.client_msg_id.clone()),
+            Some(existing) if existing.seq != message.seq => ("[CLIENT_DUP]".to_string(), message.seq, existing.client_msg_id.clone()),
             _ => return,
         };
 
@@ -111,15 +90,11 @@ impl MessageProcessor {
             format!("{}{}_{}", prefix, client_msg_id, random_suffix)
         };
 
-        warn!(
-            "[MsgHandler] {} seq={}, oldClientMsgID={}, newClientMsgID={}",
-            prefix, seq, message.client_msg_id, new_client_msg_id
-        );
+        warn!("[MsgHandler] {} seq={}, oldClientMsgID={}, newClientMsgID={}", prefix, seq, message.client_msg_id, new_client_msg_id);
 
         message.status = msg_status::HAS_DELETED as i32;
         message.client_msg_id = new_client_msg_id;
     }
-
 
     /// 处理消息列表，返回 true 表示有非 typing 的状态变更
     #[tracing::instrument(skip_all, fields(msg_count = %messages.len()))]
@@ -167,9 +142,7 @@ impl MessageProcessor {
         }
 
         // 过滤掉已读回执和撤回通知，只处理普通消息
-        let normal_messages: Vec<MsgData> = messages.into_iter()
-            .filter(|m| m.content_type != HAS_READ_RECEIPT && m.content_type != REVOKE)
-            .collect();
+        let normal_messages: Vec<MsgData> = messages.into_iter().filter(|m| m.content_type != HAS_READ_RECEIPT && m.content_type != REVOKE).collect();
 
         if normal_messages.is_empty() {
             return Ok(false);
@@ -188,15 +161,17 @@ impl MessageProcessor {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
                     let pids: Vec<i32> = if is_typing { vec![platform_id] } else { vec![] };
-                    self.send(ConversationEvent::UserInputStatusChanged { conversation_id: conv_id.to_string(), user_id: msg.send_id.clone(), platform_ids: pids });
+                    self.send(ConversationEvent::UserInputStatusChanged {
+                        conversation_id: conv_id.to_string(),
+                        user_id: msg.send_id.clone(),
+                        platform_ids: pids,
+                    });
                 }
             }
         }
 
         // typing 消息已处理完事件，从 normal_messages 中移除
-        let normal_messages: Vec<MsgData> = normal_messages.into_iter()
-            .filter(|m| m.content_type != content_type::TYPING)
-            .collect();
+        let normal_messages: Vec<MsgData> = normal_messages.into_iter().filter(|m| m.content_type != content_type::TYPING).collect();
 
         if normal_messages.is_empty() {
             return Ok(false);
@@ -216,10 +191,15 @@ impl MessageProcessor {
         let login_user_id = self.user_id.get().await;
         debug!("[MsgHandler] 收到 {} 条消息", normal_messages.len());
         for msg in &normal_messages {
-            trace!("[MsgHandler]   conv={}, send_id={}, seq={}, self={}, type={}({})",
-                conv_id, msg.send_id, msg.seq,
+            trace!(
+                "[MsgHandler]   conv={}, send_id={}, seq={}, self={}, type={}({})",
+                conv_id,
+                msg.send_id,
+                msg.seq,
                 msg.send_id == login_user_id,
-                ContentTypeUtils::display_name(msg.content_type), msg.content_type);
+                ContentTypeUtils::display_name(msg.content_type),
+                msg.content_type
+            );
         }
         let mut insert_list: Vec<LocalChatLog> = Vec::new();
         let mut batch_update_list: Vec<(String, i64)> = Vec::new();
@@ -283,8 +263,7 @@ impl MessageProcessor {
         // 批量插入消息
         if !insert_list.is_empty() {
             for log in &insert_list {
-                trace!("[MsgHandler]   插入: conv={}, client_msg_id={}, seq={}",
-                      log.conversation_id, log.client_msg_id, log.seq);
+                trace!("[MsgHandler]   插入: conv={}, client_msg_id={}, seq={}", log.conversation_id, log.client_msg_id, log.seq);
             }
             self.repositories.message_repo.batch_insert(&insert_list).await?;
         }
@@ -300,11 +279,7 @@ impl MessageProcessor {
             if seen_convs.insert(conv_id.to_string()) {
                 let existing = self.repositories.conversation_repo.get_by_id(conv_id).await?;
                 if existing.is_none() {
-                    let show_name = if msg.session_type == 1 {
-                        msg.sender_nickname.clone()
-                    } else {
-                        format!("Group_{}", msg.group_id)
-                    };
+                    let show_name = if msg.session_type == 1 { msg.sender_nickname.clone() } else { format!("Group_{}", msg.group_id) };
 
                     let conv = LocalConversation {
                         conversation_id: conv_id.to_string(),
@@ -338,23 +313,24 @@ impl MessageProcessor {
             }
 
             if is_conversation_update && !is_online_only {
-                self.repositories.conversation_repo
-                    .update_latest_msg(conv_id, &content_str, msg.send_time)
-                    .await?;
-                
+                self.repositories.conversation_repo.update_latest_msg(conv_id, &content_str, msg.send_time).await?;
+
                 if !is_self {
-                    self.repositories.conversation_repo
-                        .increase_unread_count(conv_id, msg.seq)
-                        .await?;
+                    self.repositories.conversation_repo.increase_unread_count(conv_id, msg.seq).await?;
                 }
             }
         }
 
         // 汇总日志
         let skipped = normal_messages.len() - insert_list.len() - batch_update_list.len();
-        info!("[MsgHandler] 完成: total={}, inserted={}, seq_updated={}, skipped={}, notify={}",
-            normal_messages.len(), insert_list.len(), batch_update_list.len(),
-            skipped, to_notify.len());
+        info!(
+            "[MsgHandler] 完成: total={}, inserted={}, seq_updated={}, skipped={}, notify={}",
+            normal_messages.len(),
+            insert_list.len(),
+            batch_update_list.len(),
+            skipped,
+            to_notify.len()
+        );
 
         // 发布 NewMessage 事件（对齐 Go SDK OnRecvNewMessages）
         for msg in &to_notify {
@@ -363,14 +339,11 @@ impl MessageProcessor {
 
         // 离线新消息通知
         let offline_msgs: Vec<MsgData> = if is_from_sync && !to_notify.is_empty() {
-            to_notify.into_iter()
-                .filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING)
-                .collect()
+            to_notify.into_iter().filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING).collect()
         } else {
             Vec::new()
         };
-        if !offline_msgs.is_empty() {
-        }
+        if !offline_msgs.is_empty() {}
 
         // 对齐 Go SDK：所有消息处理完成后统一发布会话变更
         for conv_id in &seen_convs {
@@ -386,7 +359,7 @@ impl MessageProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 
@@ -403,7 +376,6 @@ mod tests {
             sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
         })
     }
-
 
     // ========================================================================
     // handle_exception_messages 测试
@@ -439,7 +411,12 @@ mod tests {
     fn test_exception_seq_gap() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let mut msg = make_local_log("", 5, msg_status::HAS_DELETED);
         handler.handle_exception_messages(None, &mut msg);
@@ -451,7 +428,12 @@ mod tests {
     fn test_exception_deleted() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let mut msg = make_local_log("msg_123", 5, msg_status::HAS_DELETED);
         handler.handle_exception_messages(None, &mut msg);
@@ -463,7 +445,12 @@ mod tests {
     fn test_exception_seq_dup() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let existing = make_local_log("existing_msg", 10, msg_status::SEND_SUCCESS);
         let mut msg = make_local_log("new_msg", 10, msg_status::SEND_SUCCESS);
@@ -476,7 +463,12 @@ mod tests {
     fn test_exception_client_dup() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let existing = make_local_log("msg_dup", 5, msg_status::SEND_SUCCESS);
         let mut msg = make_local_log("msg_dup", 8, msg_status::SEND_SUCCESS);
@@ -489,7 +481,12 @@ mod tests {
     fn test_exception_no_match_does_nothing() {
         let pool_rt = tokio::runtime::Runtime::new().unwrap();
         let pool = pool_rt.block_on(create_pool_memory()).unwrap();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let mut msg = make_local_log("msg_ok", 5, msg_status::SEND_SUCCESS);
         let original_id = msg.client_msg_id.clone();
@@ -560,12 +557,14 @@ mod tests {
     #[tokio::test]
     async fn test_handle_messages() {
         let pool = create_pool_memory().await.unwrap();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
-        let msgs = vec![
-            make_msg("msg_1", "conv_1", 1),
-            make_msg("msg_2", "conv_1", 2),
-        ];
+        let msgs = vec![make_msg("msg_1", "conv_1", 1), make_msg("msg_2", "conv_1", 2)];
         handler.handle_messages("conv_1", msgs).await.unwrap();
     }
 
@@ -574,16 +573,18 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool.clone());
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs = vec![make_msg("msg_1", "conv_1", 1)];
         handler.handle_messages("conv_1", msgs.clone()).await.unwrap();
         handler.handle_messages("conv_1", msgs).await.unwrap();
 
-        let chat_logs = message_dao
-            .get_by_conversation("conv_1", 0, 100)
-            .await
-            .unwrap();
+        let chat_logs = message_dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
         assert_eq!(chat_logs.len(), 1);
     }
 
@@ -593,7 +594,12 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let mut conv = make_conv("conv_tip");
         conv.unread_count = 5;
@@ -617,7 +623,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs = vec![msg_with_ct("typing_1", "conv_typing", 1, content_type::TYPING)];
         handler.handle_messages("conv_typing", msgs).await.unwrap();
@@ -633,7 +644,12 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs1 = vec![msg_with_ct("msg_1", "conv_normal", 1, content_type::TEXT)];
         handler.handle_messages("conv_normal", msgs1).await.unwrap();
@@ -657,7 +673,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new(""), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new(""),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msg1_content = r#"{"text":"hello"}"#;
         let msgs1 = vec![{
@@ -693,7 +714,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("self_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("self_user"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msg_content = r#"{"text":"message from other"}"#;
         let msgs = vec![{
@@ -728,20 +754,12 @@ mod tests {
         conv.max_seq = 3;
         conversation_dao.upsert(&conv).await.unwrap();
 
-        let msgs = vec![msg_with_ct(
-            "notrigger_1",
-            "conv_notrigger",
-            4,
-            content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION,
-        )];
+        let msgs = vec![msg_with_ct("notrigger_1", "conv_notrigger", 4, content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION)];
         handler.handle_messages("conv_notrigger", msgs).await.unwrap();
 
         let chat_logs = message_dao.get_by_conversation("conv_notrigger", 0, 100).await.unwrap();
         assert_eq!(chat_logs.len(), 1, "NoTriggerConv message should still be stored");
-        assert_eq!(
-            chat_logs[0].content_type,
-            content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION
-        );
+        assert_eq!(chat_logs[0].content_type, content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION);
 
         let conv = conversation_dao.get_by_id("conv_notrigger").await.unwrap().unwrap();
         assert_eq!(conv.unread_count, 3, "unread_count should not increment for NoTriggerConv");
@@ -756,7 +774,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let local_msg = LocalChatLog {
             conversation_id: "conv_seq".to_string(),
@@ -800,12 +823,14 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("other_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("other_user"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
-        let msgs = vec![
-            make_msg("dup_msg", "conv_dup", 1),
-            make_msg("dup_msg", "conv_dup", 2),
-        ];
+        let msgs = vec![make_msg("dup_msg", "conv_dup", 1), make_msg("dup_msg", "conv_dup", 2)];
         handler.handle_messages("conv_dup", msgs).await.unwrap();
 
         let logs = message_dao.get_by_conversation("conv_dup", 0, 100).await.unwrap();
@@ -818,7 +843,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("self_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("self_user"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs = vec![{
             let mut m = msg_with_ct("online_1", "conv_online", 1, content_type::TEXT);
@@ -851,7 +881,11 @@ mod tests {
         let event = rx.try_recv();
         assert!(event.is_ok(), "should publish UserInputStatusChanged");
         match event.unwrap() {
-            ConversationEvent::UserInputStatusChanged { conversation_id, user_id, platform_ids } => {
+            ConversationEvent::UserInputStatusChanged {
+                conversation_id,
+                user_id,
+                platform_ids,
+            } => {
                 assert_eq!(conversation_id, "conv_typing_ev");
                 assert_eq!(user_id, "other_user");
                 assert_eq!(platform_ids, vec![2]);
@@ -886,7 +920,12 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("self_user"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("self_user"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs = vec![{
             let mut m = msg_with_ct("grp_msg_1", "sg_group_1", 1, content_type::TEXT);

@@ -100,10 +100,9 @@ async fn test_user_state_via_sdk() {
     let data_dir = std::env::temp_dir().join(format!("openim_sdk_{}", user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);
 
-    let sdk = OpenIMClient::new(ClientConfig::new(
-        user_id.clone(), token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir),
-    )).await.expect("创建 SDK 失败");
+    let sdk = OpenIMClient::new(ClientConfig::new(user_id.clone(), token.clone(), 1, Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir)))
+        .await
+        .expect("创建 SDK 失败");
 
     println!("4. 连接...");
     let conn = sdk.connect(WS_URL, &token, &user_id).await;
@@ -149,10 +148,7 @@ async fn test_get_user_online_status() {
 
 #[tokio::test]
 async fn test_update_user_profile() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 更新用户资料测试 ===\n");
 
@@ -164,11 +160,7 @@ async fn test_update_user_profile() {
     println!("  新昵称: {}", new_nickname);
 
     println!("更新昵称...");
-    let update_result = sdk.update_user_profile(
-        Some(&new_nickname),
-        None,
-        None,
-    ).await;
+    let update_result = sdk.update_user_profile(Some(&new_nickname), None, None).await;
     assert!(update_result.is_ok(), "更新用户资料失败: {:?}", update_result.err());
     println!("  ✅ 昵称更新成功");
 

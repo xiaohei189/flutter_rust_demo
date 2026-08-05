@@ -1,10 +1,8 @@
-use crate::error::{Result, SdkError};
 use crate::db::misc_dao::UploadDao;
-use crate::model::local::LocalUpload;
+use crate::error::{Result, SdkError};
 use crate::http::client::HttpApiClient;
-use crate::http::{
-    routes::{AUTH_SIGN, COMPLETE_FORM_DATA, COMPLETE_MULTIPART_UPLOAD, INITIATE_FORM_DATA, INITIATE_MULTIPART_UPLOAD, PART_LIMIT},
-};
+use crate::http::routes::{AUTH_SIGN, COMPLETE_FORM_DATA, COMPLETE_MULTIPART_UPLOAD, INITIATE_FORM_DATA, INITIATE_MULTIPART_UPLOAD, PART_LIMIT};
+use crate::model::local::LocalUpload;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -13,7 +11,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 use crate::file::bitmap::Bitmap;
 use crate::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
@@ -253,11 +251,8 @@ impl UploadSession {
     }
 
     fn build_request(&self, index: usize) -> std::result::Result<(String, Vec<(String, Vec<String>)>), SdkError> {
-        let sign = self.resp.upload.as_ref()
-            .and_then(|u| u.sign.as_ref())
-            .ok_or_else(|| SdkError::file_upload("签名信息为空"))?;
-        let part = sign.parts.get(index)
-            .ok_or_else(|| SdkError::file_upload("分片签名不存在"))?;
+        let sign = self.resp.upload.as_ref().and_then(|u| u.sign.as_ref()).ok_or_else(|| SdkError::file_upload("签名信息为空"))?;
+        let part = sign.parts.get(index).ok_or_else(|| SdkError::file_upload("分片签名不存在"))?;
 
         let mut url = sign.url.clone();
         if !part.url.is_empty() {
@@ -325,13 +320,7 @@ impl FileUploader {
     // 公开 API — 带简单进度回调（兼容旧接口）
     // ========================================================================
 
-    pub async fn upload_file_with_progress(
-        &self,
-        file_path: &str,
-        name: &str,
-        content_type: Option<String>,
-        progress: Option<ProgressCallback>,
-    ) -> Result<UploadResult> {
+    pub async fn upload_file_with_progress(&self, file_path: &str, name: &str, content_type: Option<String>, progress: Option<ProgressCallback>) -> Result<UploadResult> {
         let cb = progress.map(|p| SimpleProgressCallback { progress: p });
         self.upload_file_with_callback(file_path, name, content_type, cb.as_ref().map(|c| c as &dyn UploadFileCallback)).await
     }
@@ -340,32 +329,18 @@ impl FileUploader {
     // 公开 API — 带细粒度回调（对齐 Go SDK UploadFileCallback）
     // ========================================================================
 
-    pub async fn upload_file_with_callback(
-        &self,
-        file_path: &str,
-        name: &str,
-        content_type: Option<String>,
-        cb: Option<&dyn UploadFileCallback>,
-    ) -> Result<UploadResult> {
+    pub async fn upload_file_with_callback(&self, file_path: &str, name: &str, content_type: Option<String>, cb: Option<&dyn UploadFileCallback>) -> Result<UploadResult> {
         let path = Path::new(file_path);
         if !path.exists() {
             return Err(SdkError::file_upload(format!("文件不存在: {}", file_path)));
         }
 
-        let file_size = fs::metadata(path).await
-            .map_err(|e| SdkError::file_upload(format!("获取文件信息失败: {}", e)))?
-            .len() as i64;
+        let file_size = fs::metadata(path).await.map_err(|e| SdkError::file_upload(format!("获取文件信息失败: {}", e)))?.len() as i64;
 
-        let detected_content_type = content_type.unwrap_or_else(|| {
-            self.detect_content_type(path.file_name().and_then(|n| n.to_str()).unwrap_or(""))
-        });
+        let detected_content_type = content_type.unwrap_or_else(|| self.detect_content_type(path.file_name().and_then(|n| n.to_str()).unwrap_or("")));
 
         let user_id = self.login_user_id.read().unwrap().clone();
-        let prefixed_name = if user_id.is_empty() {
-            name.to_string()
-        } else {
-            format!("{}/{}", user_id, name)
-        };
+        let prefixed_name = if user_id.is_empty() { name.to_string() } else { format!("{}/{}", user_id, name) };
 
         // 根据文件大小决定上传方式
         match self.get_part_limit().await {
@@ -373,8 +348,7 @@ impl FileUploader {
                 let threshold = limit.min_part_size * limit.max_num_size as i64;
                 if file_size > threshold {
                     // 大文件：使用分片上传
-                    info!("文件 {} 大小 {} 超过阈值 {}，使用分片上传",
-                        prefixed_name, file_size, threshold);
+                    info!("文件 {} 大小 {} 超过阈值 {}，使用分片上传", prefixed_name, file_size, threshold);
                     self.upload_file_multipart(file_path, &prefixed_name, &detected_content_type, file_size, cb).await
                 } else {
                     // 中小文件：使用 form-data 上传
@@ -413,14 +387,7 @@ impl FileUploader {
     // form-data 上传（中小文件）
     // ========================================================================
 
-    async fn upload_file_form_data(
-        &self,
-        file_path: &str,
-        name: &str,
-        content_type: &str,
-        file_size: i64,
-        cb: Option<&dyn UploadFileCallback>,
-    ) -> Result<UploadResult> {
+    async fn upload_file_form_data(&self, file_path: &str, name: &str, content_type: &str, file_size: i64, cb: Option<&dyn UploadFileCallback>) -> Result<UploadResult> {
         let cb_ref = cb.unwrap_or(&EmptyUploadCallback);
         cb_ref.open(file_size);
 
@@ -430,10 +397,7 @@ impl FileUploader {
             size: file_size,
             content_type: content_type.to_string(),
             group: String::new(),
-            millisecond: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as i64,
+            millisecond: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as i64,
             absolute: false,
         };
 
@@ -451,8 +415,7 @@ impl FileUploader {
         }
 
         // 读取文件内容，带进度跟踪
-        let file_data = fs::read(path).await
-            .map_err(|e| SdkError::file_upload(format!("读取文件失败: {}", e)))?;
+        let file_data = fs::read(path).await.map_err(|e| SdkError::file_upload(format!("读取文件失败: {}", e)))?;
 
         // 报告初始进度
         if file_size > 0 {
@@ -504,14 +467,7 @@ impl FileUploader {
     // multipart 分片上传（大文件，对齐 Go SDK upload.go）
     // ========================================================================
 
-    async fn upload_file_multipart(
-        &self,
-        file_path: &str,
-        name: &str,
-        content_type: &str,
-        file_size: i64,
-        cb: Option<&dyn UploadFileCallback>,
-    ) -> Result<UploadResult> {
+    async fn upload_file_multipart(&self, file_path: &str, name: &str, content_type: &str, file_size: i64, cb: Option<&dyn UploadFileCallback>) -> Result<UploadResult> {
         let cb_ref = cb.unwrap_or(&EmptyUploadCallback);
         cb_ref.open(file_size);
 
@@ -524,14 +480,7 @@ impl FileUploader {
 
         // 阶段 3: 初始化上传（含断点续传恢复）
         let max_parts = std::cmp::min(20, info.part_num);
-        let upload_session = self.get_upload(
-            &part_md5_val,
-            file_size,
-            info.part_size,
-            max_parts,
-            name,
-            content_type,
-        ).await?;
+        let upload_session = self.get_upload(&part_md5_val, file_size, info.part_size, max_parts, name, content_type).await?;
 
         // 秒传：服务端已有完整文件
         if upload_session.resp.upload.is_none() {
@@ -551,9 +500,7 @@ impl FileUploader {
         if server_part_size != info.part_size {
             self.clean_part_limit();
             self.unlock_hash(&part_md5_val, &lock).await;
-            return Err(SdkError::file_upload(format!(
-                "分片大小不匹配: 期望 {}, 实际 {}", info.part_size, server_part_size
-            )));
+            return Err(SdkError::file_upload(format!("分片大小不匹配: 期望 {}, 实际 {}", info.part_size, server_part_size)));
         }
 
         cb_ref.upload_id(&upload_session.resp.upload.as_ref().unwrap().upload_id);
@@ -569,8 +516,7 @@ impl FileUploader {
 
         // 阶段 4: 逐片上传
         let mut session = upload_session;
-        let file = fs::File::open(file_path).await
-            .map_err(|e| SdkError::file_upload(format!("打开文件失败: {}", e)))?;
+        let file = fs::File::open(file_path).await.map_err(|e| SdkError::file_upload(format!("打开文件失败: {}", e)))?;
         let mut file_reader = tokio::io::BufReader::new(file);
 
         for i in 0..info.part_sizes.len() {
@@ -582,9 +528,10 @@ impl FileUploader {
                 let mut remaining = current_part_size;
                 while remaining > 0 {
                     let to_read = std::cmp::min(remaining, discard.len());
-                    let n = file_reader.read(&mut discard[..to_read]).await
-                        .map_err(|e| SdkError::file_upload(format!("跳过分片失败: {}", e)))?;
-                    if n == 0 { break; }
+                    let n = file_reader.read(&mut discard[..to_read]).await.map_err(|e| SdkError::file_upload(format!("跳过分片失败: {}", e)))?;
+                    if n == 0 {
+                        break;
+                    }
                     remaining -= n;
                 }
             } else {
@@ -600,9 +547,13 @@ impl FileUploader {
 
                 while read_total < current_part_size {
                     let to_read = std::cmp::min(current_part_size - read_total, 65536);
-                    let n = file_reader.read(&mut data[read_total..read_total + to_read]).await
+                    let n = file_reader
+                        .read(&mut data[read_total..read_total + to_read])
+                        .await
                         .map_err(|e| SdkError::file_upload(format!("读取分片失败: {}", e)))?;
-                    if n == 0 { break; }
+                    if n == 0 {
+                        break;
+                    }
                     part_hasher.update(&data[read_total..read_total + n]);
                     read_total += n;
 
@@ -615,8 +566,7 @@ impl FileUploader {
                 // 构建 PUT 请求 URL（拼接 query 参数）
                 let mut url_with_query = sign_url.clone();
                 if !query_pairs.is_empty() {
-                    let mut parsed = url::Url::parse(&sign_url)
-                        .map_err(|e| SdkError::file_upload(format!("URL 解析失败: {}", e)))?;
+                    let mut parsed = url::Url::parse(&sign_url).map_err(|e| SdkError::file_upload(format!("URL 解析失败: {}", e)))?;
                     {
                         let mut q = parsed.query_pairs_mut();
                         for (key, values) in &query_pairs {
@@ -629,36 +579,27 @@ impl FileUploader {
                 }
 
                 let http_client = reqwest::Client::new();
-                let mut req_builder = http_client.put(&url_with_query)
-                    .header("Content-Length", current_part_size);
+                let mut req_builder = http_client.put(&url_with_query).header("Content-Length", current_part_size);
 
                 // 添加签名 headers
                 for (key, values) in session.get_sign_headers(part_number) {
                     req_builder = req_builder.header(&key, &values.join(","));
                 }
 
-                let resp = req_builder
-                    .body(data)
-                    .send()
-                    .await
-                    .map_err(|e| SdkError::file_upload(format!("PUT 上传分片 {} 失败: {}", i + 1, e)))?;
+                let resp = req_builder.body(data).send().await.map_err(|e| SdkError::file_upload(format!("PUT 上传分片 {} 失败: {}", i + 1, e)))?;
 
                 let status = resp.status();
                 let resp_body = resp.text().await.unwrap_or_default();
                 if !status.is_success() {
                     error!("PUT 分片 {} 失败: status={}, body={}", i + 1, status, resp_body);
                     self.unlock_hash(&part_md5_val, &lock).await;
-                    return Err(SdkError::file_upload(format!(
-                        "上传分片 {} 失败, 状态码: {}, body: {}", i + 1, status, resp_body
-                    )));
+                    return Err(SdkError::file_upload(format!("上传分片 {} 失败, 状态码: {}, body: {}", i + 1, status, resp_body)));
                 }
 
                 // MD5 校验
                 if md5_val != info.part_md5s[i] {
                     self.unlock_hash(&part_md5_val, &lock).await;
-                    return Err(SdkError::file_upload(format!(
-                        "分片 {} MD5 校验失败: 期望 {}, 实际 {}", i + 1, info.part_md5s[i], md5_val
-                    )));
+                    return Err(SdkError::file_upload(format!("分片 {} MD5 校验失败: 期望 {}, 实际 {}", i + 1, info.part_md5s[i], md5_val)));
                 }
 
                 uploaded_size += info.part_sizes[i];
@@ -668,8 +609,7 @@ impl FileUploader {
                 if let Some(ref db_info) = session.db_info {
                     if let Some(ref dao) = self.upload_dao {
                         let mut updated = db_info.clone();
-                        updated.upload_info = base64::engine::general_purpose::STANDARD
-                            .encode(session.bitmap.serialize());
+                        updated.upload_info = base64::engine::general_purpose::STANDARD.encode(session.bitmap.serialize());
                         if let Err(e) = dao.update_upload(&updated).await {
                             warn!("持久化上传状态失败: {}", e);
                         }
@@ -683,9 +623,7 @@ impl FileUploader {
 
         // 阶段 5: 完成上传
         let upload_id = session.resp.upload.as_ref().unwrap().upload_id.clone();
-        let complete_resp = self.complete_multipart_upload(
-            &upload_id, &info.part_md5s, name, content_type,
-        ).await?;
+        let complete_resp = self.complete_multipart_upload(&upload_id, &info.part_md5s, name, content_type).await?;
 
         let typ = if continue_upload { 2 } else { 1 };
         cb_ref.complete(file_size, &complete_resp.url, typ);
@@ -727,8 +665,7 @@ impl FileUploader {
 
         // 逐片计算 MD5
         use md5::Digest;
-        let file = std::fs::File::open(file_path)
-            .map_err(|e| SdkError::file_upload(format!("打开文件失败: {}", e)))?;
+        let file = std::fs::File::open(file_path).map_err(|e| SdkError::file_upload(format!("打开文件失败: {}", e)))?;
         let mut reader = std::io::BufReader::new(file);
 
         let mut part_md5s = Vec::with_capacity(part_num);
@@ -743,8 +680,7 @@ impl FileUploader {
 
             while read_total < remaining {
                 let to_read = std::cmp::min(buf.len(), remaining - read_total);
-                let n = reader.read(&mut buf[..to_read])
-                    .map_err(|e| SdkError::file_upload(format!("读取文件失败: {}", e)))?;
+                let n = reader.read(&mut buf[..to_read]).map_err(|e| SdkError::file_upload(format!("读取文件失败: {}", e)))?;
                 if n == 0 {
                     break;
                 }
@@ -792,10 +728,7 @@ impl FileUploader {
             return Err(SdkError::file_upload("文件大小必须大于 0"));
         }
         if size > limit.max_part_size * limit.max_num_size as i64 {
-            return Err(SdkError::file_upload(format!(
-                "文件大小超过限制: {} > {}",
-                size, limit.max_part_size * limit.max_num_size as i64
-            )));
+            return Err(SdkError::file_upload(format!("文件大小超过限制: {} > {}", size, limit.max_part_size * limit.max_num_size as i64)));
         }
         if size <= limit.min_part_size * limit.max_num_size as i64 {
             return Ok(limit.min_part_size);
@@ -828,10 +761,7 @@ impl FileUploader {
     // 服务端交互（对齐 Go SDK）
     // ========================================================================
 
-    async fn initiate_multipart_upload(
-        &self,
-        req: &InitiateMultipartUploadReq,
-    ) -> Result<InitiateMultipartUploadResp> {
+    async fn initiate_multipart_upload(&self, req: &InitiateMultipartUploadReq) -> Result<InitiateMultipartUploadResp> {
         self.http_client.post(INITIATE_MULTIPART_UPLOAD, req).await
     }
 
@@ -846,13 +776,7 @@ impl FileUploader {
         self.http_client.post(AUTH_SIGN, &req).await
     }
 
-    async fn complete_multipart_upload(
-        &self,
-        upload_id: &str,
-        parts: &[String],
-        name: &str,
-        content_type: &str,
-    ) -> Result<CompleteMultipartUploadResp> {
+    async fn complete_multipart_upload(&self, upload_id: &str, parts: &[String], name: &str, content_type: &str) -> Result<CompleteMultipartUploadResp> {
         let req = CompleteMultipartUploadReq {
             upload_id: upload_id.to_string(),
             parts: parts.to_vec(),
@@ -868,15 +792,7 @@ impl FileUploader {
     // 上传会话管理（含断点续传恢复，对齐 Go SDK getUpload）
     // ========================================================================
 
-    async fn get_upload(
-        &self,
-        part_md5_val: &str,
-        file_size: i64,
-        part_size: i64,
-        max_parts: i32,
-        name: &str,
-        content_type: &str,
-    ) -> Result<UploadSession> {
+    async fn get_upload(&self, part_md5_val: &str, file_size: i64, part_size: i64, max_parts: i32, name: &str, content_type: &str) -> Result<UploadSession> {
         let part_num = ((file_size + part_size - 1) / part_size) as usize;
 
         // 尝试从本地数据库恢复
@@ -885,16 +801,18 @@ impl FileUploader {
         }
 
         // 调用服务端初始化上传
-        let resp = self.initiate_multipart_upload(&InitiateMultipartUploadReq {
-            hash: part_md5_val.to_string(),
-            size: file_size,
-            part_size,
-            max_parts,
-            cause: String::new(),
-            name: name.to_string(),
-            content_type: content_type.to_string(),
-            url_prefix: String::new(),
-        }).await?;
+        let resp = self
+            .initiate_multipart_upload(&InitiateMultipartUploadReq {
+                hash: part_md5_val.to_string(),
+                size: file_size,
+                part_size,
+                max_parts,
+                cause: String::new(),
+                name: name.to_string(),
+                content_type: content_type.to_string(),
+                url_prefix: String::new(),
+            })
+            .await?;
 
         if resp.upload.is_none() {
             // 秒传
@@ -942,13 +860,7 @@ impl FileUploader {
         })
     }
 
-    async fn get_local_upload_info(
-        &self,
-        part_md5_val: &str,
-        part_num: usize,
-        part_size: i64,
-        max_parts: i32,
-    ) -> Option<UploadSession> {
+    async fn get_local_upload_info(&self, part_md5_val: &str, part_num: usize, part_size: i64, max_parts: i32) -> Option<UploadSession> {
         if part_num <= 1 {
             return None;
         }
@@ -962,9 +874,7 @@ impl FileUploader {
             return None;
         }
 
-        let bitmap_bytes = base64::engine::general_purpose::STANDARD
-            .decode(&local.upload_info)
-            .ok()?;
+        let bitmap_bytes = base64::engine::general_purpose::STANDARD.decode(&local.upload_info).ok()?;
         let bitmap = Bitmap::parse(&bitmap_bytes, part_num);
 
         Some(UploadSession {
@@ -993,10 +903,12 @@ impl FileUploader {
         let lock = {
             let mut map = self.uploading.write().unwrap();
             map.entry(hash.to_string())
-                .or_insert_with(|| Arc::new(HashLock {
-                    count: std::sync::atomic::AtomicI32::new(0),
-                    mutex: tokio::sync::Mutex::new(()),
-                }))
+                .or_insert_with(|| {
+                    Arc::new(HashLock {
+                        count: std::sync::atomic::AtomicI32::new(0),
+                        mutex: tokio::sync::Mutex::new(()),
+                    })
+                })
                 .clone()
         };
         lock.count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -1044,11 +956,7 @@ impl FileUploader {
 // ============================================================================
 
 impl UploadSession {
-    async fn get_or_fetch_sign(
-        &mut self,
-        http_client: &Arc<HttpApiClient>,
-        part_number: i32,
-    ) -> Result<(String, Vec<(String, Vec<String>)>)> {
+    async fn get_or_fetch_sign(&mut self, http_client: &Arc<HttpApiClient>, part_number: i32) -> Result<(String, Vec<(String, Vec<String>)>)> {
         // 尝试使用缓存签名
         if let Some(index) = self.get_sign_index(part_number) {
             return self.build_request(index);
@@ -1064,10 +972,7 @@ impl UploadSession {
         }
 
         let upload_id = self.resp.upload.as_ref().unwrap().upload_id.clone();
-        let auth_resp: AuthSignResp = http_client.post(AUTH_SIGN, &AuthSignReq {
-            upload_id,
-            part_numbers,
-        }).await?;
+        let auth_resp: AuthSignResp = http_client.post(AUTH_SIGN, &AuthSignReq { upload_id, part_numbers }).await?;
 
         // 更新缓存
         if let Some(ref mut upload) = self.resp.upload {
@@ -1080,8 +985,7 @@ impl UploadSession {
         }
         self.create_time = std::time::Instant::now();
 
-        let index = self.get_sign_index(part_number)
-            .ok_or_else(|| SdkError::file_upload("服务端返回的签名无效"))?;
+        let index = self.get_sign_index(part_number).ok_or_else(|| SdkError::file_upload("服务端返回的签名无效"))?;
         self.build_request(index)
     }
 
@@ -1177,11 +1081,7 @@ mod tests {
 
     #[test]
     fn test_detect_content_type() {
-        let http_client = Arc::new(HttpApiClient::new(
-            "http://example.com".to_string(),
-            "token".to_string(),
-            "op_id".to_string(),
-        ));
+        let http_client = Arc::new(HttpApiClient::new("http://example.com".to_string(), "token".to_string(), "op_id".to_string()));
         let uploader = FileUploader::new(http_client);
 
         assert_eq!(uploader.detect_content_type("photo.jpg"), "image/jpeg");
@@ -1216,5 +1116,3 @@ mod tests {
         assert!(!bm2.get(1));
     }
 }
-
-

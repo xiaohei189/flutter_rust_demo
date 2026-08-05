@@ -14,9 +14,9 @@ use opentelemetry::trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, Tra
 use opentelemetry::Context;
 use prost::Message;
 use tokio::net::TcpStream;
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
-use tracing::{debug, info, warn, error, info_span, Instrument};
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use tracing::{debug, error, info, info_span, warn, Instrument};
 
 impl ConnectionManager {
     /// 启动消息读取循环

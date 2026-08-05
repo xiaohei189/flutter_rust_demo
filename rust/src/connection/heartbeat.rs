@@ -1,6 +1,6 @@
+use crate::connection::ws::OpenIMResp;
 use crate::constant::ws_req_identifier;
 use crate::error::{Result, SdkError};
-use crate::connection::ws::OpenIMResp;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
@@ -30,11 +30,7 @@ impl HeartbeatManager {
 
     /// 创建默认心跳管理器（30 秒间隔，10 秒超时，最多 3 次失败）
     pub fn default() -> Self {
-        Self::new(
-            Duration::from_secs(30),
-            Duration::from_secs(10),
-            3,
-        )
+        Self::new(Duration::from_secs(30), Duration::from_secs(10), 3)
     }
 
     /// 发送心跳
@@ -91,31 +87,23 @@ mod tests {
 
     #[test]
     fn test_heartbeat_manager_failure_count() {
-        let mut manager = HeartbeatManager::new(
-            Duration::from_secs(10),
-            Duration::from_secs(5),
-            3,
-        );
+        let mut manager = HeartbeatManager::new(Duration::from_secs(10), Duration::from_secs(5), 3);
 
         assert!(!manager.should_reconnect());
-        
+
         manager.record_failure();
         assert!(!manager.should_reconnect());
-        
+
         manager.record_failure();
         assert!(!manager.should_reconnect());
-        
+
         manager.record_failure();
         assert!(manager.should_reconnect());
     }
 
     #[test]
     fn test_heartbeat_manager_reset() {
-        let mut manager = HeartbeatManager::new(
-            Duration::from_secs(10),
-            Duration::from_secs(5),
-            3,
-        );
+        let mut manager = HeartbeatManager::new(Duration::from_secs(10), Duration::from_secs(5), 3);
 
         manager.record_failure();
         manager.record_failure();
@@ -128,11 +116,7 @@ mod tests {
 
     #[test]
     fn test_heartbeat_manager_handle_pong() {
-        let mut manager = HeartbeatManager::new(
-            Duration::from_secs(10),
-            Duration::from_secs(5),
-            3,
-        );
+        let mut manager = HeartbeatManager::new(Duration::from_secs(10), Duration::from_secs(5), 3);
 
         manager.record_failure();
         manager.record_failure();

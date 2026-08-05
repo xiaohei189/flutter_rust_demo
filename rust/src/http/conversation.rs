@@ -149,19 +149,10 @@ pub trait ConversationServerApi: Send + Sync {
     async fn pull_all(&self, user_id: String) -> Result<GetAllConversationsResp>;
 
     /// 增量拉取会话
-    async fn pull_incremental(
-        &self,
-        user_id: String,
-        version: u64,
-        version_id: String,
-    ) -> Result<GetIncrementalConversationResp>;
+    async fn pull_incremental(&self, user_id: String, version: u64, version_id: String) -> Result<GetIncrementalConversationResp>;
 
     /// 按 ID 列表拉取会话
-    async fn pull_conversations_by_ids(
-        &self,
-        user_id: String,
-        conversation_ids: Vec<String>,
-    ) -> Result<Vec<ServerConversation>>;
+    async fn pull_conversations_by_ids(&self, user_id: String, conversation_ids: Vec<String>) -> Result<Vec<ServerConversation>>;
 
     /// 拉取所有会话 ID
     async fn pull_full_conversation_ids(&self, user_id: String) -> Result<GetFullConversationIDsResp>;

@@ -1,5 +1,5 @@
-use crate::model::local::{LocalGroup, LocalGroupMember};
 use crate::error::{Result, SdkError};
+use crate::model::local::{LocalGroup, LocalGroupMember};
 use sqlx::SqlitePool;
 
 pub struct GroupDao {
@@ -42,23 +42,19 @@ impl GroupDao {
     }
 
     pub async fn get_all_groups(&self) -> Result<Vec<LocalGroup>> {
-        let rows = sqlx::query_as::<_, LocalGroup>(
-            "SELECT * FROM local_groups ORDER BY create_time DESC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query all groups: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalGroup>("SELECT * FROM local_groups ORDER BY create_time DESC")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query all groups: {}", e)))?;
         Ok(rows)
     }
 
     pub async fn get_group(&self, group_id: &str) -> Result<Option<LocalGroup>> {
-        let row = sqlx::query_as::<_, LocalGroup>(
-            "SELECT * FROM local_groups WHERE group_id = ?",
-        )
-        .bind(group_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query group: {}", e)))?;
+        let row = sqlx::query_as::<_, LocalGroup>("SELECT * FROM local_groups WHERE group_id = ?")
+            .bind(group_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query group: {}", e)))?;
         Ok(row)
     }
 
@@ -103,25 +99,21 @@ impl GroupDao {
     }
 
     pub async fn get_members(&self, group_id: &str) -> Result<Vec<LocalGroupMember>> {
-        let rows = sqlx::query_as::<_, LocalGroupMember>(
-            "SELECT * FROM local_group_members WHERE group_id = ? ORDER BY role_level DESC, join_time ASC",
-        )
-        .bind(group_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query members: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalGroupMember>("SELECT * FROM local_group_members WHERE group_id = ? ORDER BY role_level DESC, join_time ASC")
+            .bind(group_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query members: {}", e)))?;
         Ok(rows)
     }
 
     pub async fn delete_member(&self, group_id: &str, user_id: &str) -> Result<()> {
-        sqlx::query(
-            "DELETE FROM local_group_members WHERE group_id = ? AND user_id = ?",
-        )
-        .bind(group_id)
-        .bind(user_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("delete member: {}", e)))?;
+        sqlx::query("DELETE FROM local_group_members WHERE group_id = ? AND user_id = ?")
+            .bind(group_id)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete member: {}", e)))?;
         Ok(())
     }
 
@@ -207,13 +199,31 @@ use crate::db::group::GroupRepository;
 
 #[async_trait::async_trait]
 impl GroupRepository for GroupDao {
-    async fn upsert_group(&self, group: &LocalGroup) -> Result<()> { GroupDao::upsert_group(self, group).await }
-    async fn get_all_groups(&self) -> Result<Vec<LocalGroup>> { self.get_all_groups().await }
-    async fn get_group(&self, group_id: &str) -> Result<Option<LocalGroup>> { self.get_group(group_id).await }
-    async fn delete_group(&self, group_id: &str) -> Result<()> { self.delete_group(group_id).await }
-    async fn upsert_member(&self, member: &LocalGroupMember) -> Result<()> { self.upsert_member(member).await }
-    async fn batch_upsert_members(&self, members: &[LocalGroupMember]) -> Result<()> { self.batch_upsert_members(members).await }
-    async fn get_members(&self, group_id: &str) -> Result<Vec<LocalGroupMember>> { self.get_members(group_id).await }
-    async fn delete_member(&self, group_id: &str, user_id: &str) -> Result<()> { self.delete_member(group_id, user_id).await }
-    async fn delete_members_by_group(&self, group_id: &str) -> Result<()> { self.delete_members_by_group(group_id).await }
+    async fn upsert_group(&self, group: &LocalGroup) -> Result<()> {
+        GroupDao::upsert_group(self, group).await
+    }
+    async fn get_all_groups(&self) -> Result<Vec<LocalGroup>> {
+        self.get_all_groups().await
+    }
+    async fn get_group(&self, group_id: &str) -> Result<Option<LocalGroup>> {
+        self.get_group(group_id).await
+    }
+    async fn delete_group(&self, group_id: &str) -> Result<()> {
+        self.delete_group(group_id).await
+    }
+    async fn upsert_member(&self, member: &LocalGroupMember) -> Result<()> {
+        self.upsert_member(member).await
+    }
+    async fn batch_upsert_members(&self, members: &[LocalGroupMember]) -> Result<()> {
+        self.batch_upsert_members(members).await
+    }
+    async fn get_members(&self, group_id: &str) -> Result<Vec<LocalGroupMember>> {
+        self.get_members(group_id).await
+    }
+    async fn delete_member(&self, group_id: &str, user_id: &str) -> Result<()> {
+        self.delete_member(group_id, user_id).await
+    }
+    async fn delete_members_by_group(&self, group_id: &str) -> Result<()> {
+        self.delete_members_by_group(group_id).await
+    }
 }

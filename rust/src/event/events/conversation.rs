@@ -10,10 +10,19 @@ pub enum ConversationEvent {
     SyncStarted,
     SyncFinished,
     SyncFailed(String),
-    SyncProgress { progress: i32, message: String },
-    UserInputStatusChanged { conversation_id: String, user_id: String, platform_ids: Vec<i32> },
+    SyncProgress {
+        progress: i32,
+        message: String,
+    },
+    UserInputStatusChanged {
+        conversation_id: String,
+        user_id: String,
+        platform_ids: Vec<i32>,
+    },
     /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
-    UpdateLatestMessageReadState { conversation_id: String },
+    UpdateLatestMessageReadState {
+        conversation_id: String,
+    },
 }
 
 impl ConversationEvent {
@@ -60,7 +69,11 @@ pub trait ConversationListenerExt: ConversationListener {
             ConversationEvent::SyncFinished => self.on_sync_finished(),
             ConversationEvent::SyncFailed(error) => self.on_sync_failed(&error),
             ConversationEvent::SyncProgress { progress, message } => self.on_sync_progress(progress, &message),
-            ConversationEvent::UserInputStatusChanged { conversation_id, user_id, platform_ids } => self.on_user_input_status_changed(&conversation_id, &user_id, &platform_ids),
+            ConversationEvent::UserInputStatusChanged {
+                conversation_id,
+                user_id,
+                platform_ids,
+            } => self.on_user_input_status_changed(&conversation_id, &user_id, &platform_ids),
             ConversationEvent::UpdateLatestMessageReadState { conversation_id } => self.on_update_latest_message_read_state(&conversation_id),
         }
     }

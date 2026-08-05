@@ -45,9 +45,6 @@ pub trait GroupListener: Send + Sync {
     fn on_application_rejected(&self, _group_id: &str) {}
 }
 
-
-
-
 /// 事件 → 回调 的统一分发（Service 通过它把领域事件交给 Listener）
 pub trait GroupListenerExt: GroupListener {
     fn emit(&self, event: GroupEvent) {

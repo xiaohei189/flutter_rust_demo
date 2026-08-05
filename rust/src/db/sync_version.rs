@@ -15,4 +15,3 @@ pub trait SyncVersionRepository: Send + Sync {
     async fn delete_version_sync(&self, table_name: &str, entity_id: &str) -> Result<()>;
     async fn mark_reinstall_complete(&self, version: &str) -> Result<()>;
 }
-

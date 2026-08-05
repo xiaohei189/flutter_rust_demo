@@ -4,16 +4,16 @@
 //! EventHub 将这些回调转发到各领域 mpsc 通道，作为 Dart StreamSink 的数据源。
 //! 未来外部 SDK 接入时，同样只需实现对应的 Listener trait。
 
-use crate::model::friend::FriendInfo;
-use crate::model::group::GroupInfo;
-use crate::model::local::LocalConversation;
-use crate::model::user::UserInfo;
 use crate::event::events::connection::{ConnectionEvent, ConnectionListener};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener};
 use crate::event::events::friend::{FriendEvent, FriendListener};
 use crate::event::events::group::{GroupEvent, GroupListener};
 use crate::event::events::message::{GroupReadReceipt, MessageEvent, MessageListener, MessageReceipt};
 use crate::event::events::user::{UserEvent, UserListener};
+use crate::model::friend::FriendInfo;
+use crate::model::group::GroupInfo;
+use crate::model::local::LocalConversation;
+use crate::model::user::UserInfo;
 use openim_protocol::sdkws::MsgData;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
@@ -80,26 +80,63 @@ impl EventHub {
 }
 
 impl ConnectionListener for EventHub {
-    fn on_connecting(&self) { let _ = self.conn_tx.send(ConnectionEvent::Connecting); }
-    fn on_connected(&self) { let _ = self.conn_tx.send(ConnectionEvent::Connected); }
-    fn on_disconnected(&self, reason: &str) { let _ = self.conn_tx.send(ConnectionEvent::Disconnected(reason.to_string())); }
-    fn on_connect_failed(&self, error: &str) { let _ = self.conn_tx.send(ConnectionEvent::ConnectFailed(error.to_string())); }
-    fn on_kicked_offline(&self, reason: &str) { let _ = self.conn_tx.send(ConnectionEvent::KickedOffline(reason.to_string())); }
-    fn on_token_expired(&self) { let _ = self.conn_tx.send(ConnectionEvent::TokenExpired); }
-    fn on_reconnecting(&self, attempt: u32, max_attempts: u32) { let _ = self.conn_tx.send(ConnectionEvent::Reconnecting { attempt, max_attempts }); }
-    fn on_login_success(&self, user_id: &str) { let _ = self.conn_tx.send(ConnectionEvent::LoginSuccess(user_id.to_string())); }
-    fn on_logout(&self) { let _ = self.conn_tx.send(ConnectionEvent::Logout); }
+    fn on_connecting(&self) {
+        let _ = self.conn_tx.send(ConnectionEvent::Connecting);
+    }
+    fn on_connected(&self) {
+        let _ = self.conn_tx.send(ConnectionEvent::Connected);
+    }
+    fn on_disconnected(&self, reason: &str) {
+        let _ = self.conn_tx.send(ConnectionEvent::Disconnected(reason.to_string()));
+    }
+    fn on_connect_failed(&self, error: &str) {
+        let _ = self.conn_tx.send(ConnectionEvent::ConnectFailed(error.to_string()));
+    }
+    fn on_kicked_offline(&self, reason: &str) {
+        let _ = self.conn_tx.send(ConnectionEvent::KickedOffline(reason.to_string()));
+    }
+    fn on_token_expired(&self) {
+        let _ = self.conn_tx.send(ConnectionEvent::TokenExpired);
+    }
+    fn on_reconnecting(&self, attempt: u32, max_attempts: u32) {
+        let _ = self.conn_tx.send(ConnectionEvent::Reconnecting { attempt, max_attempts });
+    }
+    fn on_login_success(&self, user_id: &str) {
+        let _ = self.conn_tx.send(ConnectionEvent::LoginSuccess(user_id.to_string()));
+    }
+    fn on_logout(&self) {
+        let _ = self.conn_tx.send(ConnectionEvent::Logout);
+    }
 }
 
 impl ConversationListener for EventHub {
-    fn on_changed(&self, conversations: &[LocalConversation]) { let _ = self.conv_tx.send(ConversationEvent::Changed(conversations.to_vec())); }
-    fn on_deleted(&self, ids: &[String]) { let _ = self.conv_tx.send(ConversationEvent::Deleted(ids.to_vec())); }
-    fn on_new(&self, conversations: &[LocalConversation]) { let _ = self.conv_tx.send(ConversationEvent::New(conversations.to_vec())); }
-    fn on_total_unread_count_changed(&self, count: i64) { let _ = self.conv_tx.send(ConversationEvent::TotalUnreadCountChanged(count)); }
-    fn on_sync_started(&self) { let _ = self.conv_tx.send(ConversationEvent::SyncStarted); }
-    fn on_sync_finished(&self) { let _ = self.conv_tx.send(ConversationEvent::SyncFinished); }
-    fn on_sync_failed(&self, error: &str) { let _ = self.conv_tx.send(ConversationEvent::SyncFailed(error.to_string())); }
-    fn on_sync_progress(&self, progress: i32, message: &str) { let _ = self.conv_tx.send(ConversationEvent::SyncProgress { progress, message: message.to_string() }); }
+    fn on_changed(&self, conversations: &[LocalConversation]) {
+        let _ = self.conv_tx.send(ConversationEvent::Changed(conversations.to_vec()));
+    }
+    fn on_deleted(&self, ids: &[String]) {
+        let _ = self.conv_tx.send(ConversationEvent::Deleted(ids.to_vec()));
+    }
+    fn on_new(&self, conversations: &[LocalConversation]) {
+        let _ = self.conv_tx.send(ConversationEvent::New(conversations.to_vec()));
+    }
+    fn on_total_unread_count_changed(&self, count: i64) {
+        let _ = self.conv_tx.send(ConversationEvent::TotalUnreadCountChanged(count));
+    }
+    fn on_sync_started(&self) {
+        let _ = self.conv_tx.send(ConversationEvent::SyncStarted);
+    }
+    fn on_sync_finished(&self) {
+        let _ = self.conv_tx.send(ConversationEvent::SyncFinished);
+    }
+    fn on_sync_failed(&self, error: &str) {
+        let _ = self.conv_tx.send(ConversationEvent::SyncFailed(error.to_string()));
+    }
+    fn on_sync_progress(&self, progress: i32, message: &str) {
+        let _ = self.conv_tx.send(ConversationEvent::SyncProgress {
+            progress,
+            message: message.to_string(),
+        });
+    }
     fn on_user_input_status_changed(&self, conversation_id: &str, user_id: &str, platform_ids: &[i32]) {
         let _ = self.conv_tx.send(ConversationEvent::UserInputStatusChanged {
             conversation_id: conversation_id.to_string(),
@@ -108,31 +145,67 @@ impl ConversationListener for EventHub {
         });
     }
     fn on_update_latest_message_read_state(&self, conversation_id: &str) {
-        let _ = self.conv_tx.send(ConversationEvent::UpdateLatestMessageReadState { conversation_id: conversation_id.to_string() });
+        let _ = self.conv_tx.send(ConversationEvent::UpdateLatestMessageReadState {
+            conversation_id: conversation_id.to_string(),
+        });
     }
 }
 
 impl FriendListener for EventHub {
-    fn on_added(&self, friends: &[FriendInfo]) { let _ = self.friend_tx.send(FriendEvent::Added(friends.to_vec())); }
-    fn on_deleted(&self, user_id: &str) { let _ = self.friend_tx.send(FriendEvent::Deleted(user_id.to_string())); }
-    fn on_info_changed(&self, friends: &[FriendInfo]) { let _ = self.friend_tx.send(FriendEvent::InfoChanged(friends.to_vec())); }
-    fn on_black_added(&self, user_id: &str) { let _ = self.friend_tx.send(FriendEvent::BlackAdded(user_id.to_string())); }
-    fn on_black_deleted(&self, user_id: &str) { let _ = self.friend_tx.send(FriendEvent::BlackDeleted(user_id.to_string())); }
-    fn on_application_added(&self, user_id: &str) { let _ = self.friend_tx.send(FriendEvent::ApplicationAdded(user_id.to_string())); }
-    fn on_application_accepted(&self, user_id: &str) { let _ = self.friend_tx.send(FriendEvent::ApplicationAccepted(user_id.to_string())); }
-    fn on_application_rejected(&self, user_id: &str) { let _ = self.friend_tx.send(FriendEvent::ApplicationRejected(user_id.to_string())); }
+    fn on_added(&self, friends: &[FriendInfo]) {
+        let _ = self.friend_tx.send(FriendEvent::Added(friends.to_vec()));
+    }
+    fn on_deleted(&self, user_id: &str) {
+        let _ = self.friend_tx.send(FriendEvent::Deleted(user_id.to_string()));
+    }
+    fn on_info_changed(&self, friends: &[FriendInfo]) {
+        let _ = self.friend_tx.send(FriendEvent::InfoChanged(friends.to_vec()));
+    }
+    fn on_black_added(&self, user_id: &str) {
+        let _ = self.friend_tx.send(FriendEvent::BlackAdded(user_id.to_string()));
+    }
+    fn on_black_deleted(&self, user_id: &str) {
+        let _ = self.friend_tx.send(FriendEvent::BlackDeleted(user_id.to_string()));
+    }
+    fn on_application_added(&self, user_id: &str) {
+        let _ = self.friend_tx.send(FriendEvent::ApplicationAdded(user_id.to_string()));
+    }
+    fn on_application_accepted(&self, user_id: &str) {
+        let _ = self.friend_tx.send(FriendEvent::ApplicationAccepted(user_id.to_string()));
+    }
+    fn on_application_rejected(&self, user_id: &str) {
+        let _ = self.friend_tx.send(FriendEvent::ApplicationRejected(user_id.to_string()));
+    }
 }
 
 impl GroupListener for EventHub {
-    fn on_joined_group_added(&self, group: &GroupInfo) { let _ = self.group_tx.send(GroupEvent::JoinedGroupAdded(group.clone())); }
-    fn on_joined_group_deleted(&self, group: &GroupInfo) { let _ = self.group_tx.send(GroupEvent::JoinedGroupDeleted(group.clone())); }
-    fn on_group_info_changed(&self, group: &GroupInfo) { let _ = self.group_tx.send(GroupEvent::GroupInfoChanged(group.clone())); }
-    fn on_member_added(&self, group_id: &str) { let _ = self.group_tx.send(GroupEvent::MemberAdded(group_id.to_string())); }
-    fn on_member_deleted(&self, group_id: &str) { let _ = self.group_tx.send(GroupEvent::MemberDeleted(group_id.to_string())); }
-    fn on_group_read_receipt(&self, receipts: &[GroupReadReceipt]) { let _ = self.group_tx.send(GroupEvent::GroupReadReceipt(receipts.to_vec())); }
-    fn on_application_added(&self, group_id: &str) { let _ = self.group_tx.send(GroupEvent::ApplicationAdded(group_id.to_string())); }
-    fn on_application_approved(&self, group_id: &str) { let _ = self.group_tx.send(GroupEvent::ApplicationApproved(group_id.to_string())); }
-    fn on_application_rejected(&self, group_id: &str) { let _ = self.group_tx.send(GroupEvent::ApplicationRejected(group_id.to_string())); }
+    fn on_joined_group_added(&self, group: &GroupInfo) {
+        let _ = self.group_tx.send(GroupEvent::JoinedGroupAdded(group.clone()));
+    }
+    fn on_joined_group_deleted(&self, group: &GroupInfo) {
+        let _ = self.group_tx.send(GroupEvent::JoinedGroupDeleted(group.clone()));
+    }
+    fn on_group_info_changed(&self, group: &GroupInfo) {
+        let _ = self.group_tx.send(GroupEvent::GroupInfoChanged(group.clone()));
+    }
+    fn on_member_added(&self, group_id: &str) {
+        let _ = self.group_tx.send(GroupEvent::MemberAdded(group_id.to_string()));
+    }
+    fn on_member_deleted(&self, group_id: &str) {
+        let _ = self.group_tx.send(GroupEvent::MemberDeleted(group_id.to_string()));
+    }
+    fn on_group_read_receipt(&self, receipts: &[GroupReadReceipt]) {
+        let _ = self.group_tx.send(GroupEvent::GroupReadReceipt(receipts.to_vec()));
+    }
+    fn on_application_added(&self, group_id: &str) {
+        let _ = self.group_tx.send(GroupEvent::ApplicationAdded(group_id.to_string()));
+    }
+    fn on_application_approved(&self, group_id: &str) {
+        let _ = self.group_tx.send(GroupEvent::ApplicationApproved(group_id.to_string()));
+    }
+    fn on_application_rejected(&self, group_id: &str) {
+        let _ = self.group_tx.send(GroupEvent::ApplicationRejected(group_id.to_string()));
+    }
 }
 
 impl MessageListener for EventHub {
@@ -168,7 +241,9 @@ impl MessageListener for EventHub {
 }
 
 impl UserListener for EventHub {
-    fn on_user_info_updated(&self, user: &UserInfo) { let _ = self.user_tx.send(UserEvent::UserInfoUpdated { user: user.clone() }); }
+    fn on_user_info_updated(&self, user: &UserInfo) {
+        let _ = self.user_tx.send(UserEvent::UserInfoUpdated { user: user.clone() });
+    }
     fn on_user_status_changed(&self, user_id: &str, status: i32, platform_ids: &[i32]) {
         let _ = self.user_tx.send(UserEvent::UserStatusChanged {
             user_id: user_id.to_string(),
@@ -245,7 +320,17 @@ mod tests {
         conn.on_connected();
         conv.on_changed(&[]);
         friend.on_added(&[]);
-        group.on_joined_group_added(&GroupInfo { group_id: "g1".to_string(), group_name: "Test".to_string(), face_url: String::new(), introduction: String::new(), notification: String::new(), owner_user_id: String::new(), create_time: 0, member_count: 0, status: 0 });
+        group.on_joined_group_added(&GroupInfo {
+            group_id: "g1".to_string(),
+            group_name: "Test".to_string(),
+            face_url: String::new(),
+            introduction: String::new(),
+            notification: String::new(),
+            owner_user_id: String::new(),
+            create_time: 0,
+            member_count: 0,
+            status: 0,
+        });
         user.on_user_status_changed("u1", 1, &[]);
         msg.on_new_message(&MsgData::default());
 
@@ -284,5 +369,3 @@ mod tests {
         assert_eq!(count, 8, "on_connect_failed 和 on_connect_failed 可能合并或未发送");
     }
 }
-
-

@@ -10,10 +10,7 @@ pub struct Md5Reader<R> {
 
 impl<R: Read> Md5Reader<R> {
     pub fn new(reader: R) -> Self {
-        Self {
-            reader,
-            hasher: md5::Md5::new(),
-        }
+        Self { reader, hasher: md5::Md5::new() }
     }
 
     /// 获取当前已计算的 MD5（hex 编码）

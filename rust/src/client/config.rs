@@ -20,14 +20,7 @@ pub struct ClientConfig {
 }
 
 impl ClientConfig {
-    pub fn new(
-        user_id: String,
-        token: String,
-        platform_id: i32,
-        ws_url: Option<String>,
-        api_base_url: Option<String>,
-        data_dir: Option<String>,
-    ) -> Self {
+    pub fn new(user_id: String, token: String, platform_id: i32, ws_url: Option<String>, api_base_url: Option<String>, data_dir: Option<String>) -> Self {
         Self {
             user_id,
             token,
@@ -65,14 +58,7 @@ mod tests {
 
     #[test]
     fn test_client_config_default_api_base() {
-        let config = ClientConfig::new(
-            "user_123".to_string(),
-            "token_abc".to_string(),
-            5,
-            None,
-            None,
-            None,
-        );
+        let config = ClientConfig::new("user_123".to_string(), "token_abc".to_string(), 5, None, None, None);
 
         assert_eq!(config.api_base_url, "");
         assert!(config.ws_url.is_none());

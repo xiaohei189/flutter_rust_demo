@@ -11,12 +11,12 @@
 //! 消息翻页加载场景也可直接使用。
 
 use crate::connection::manager::ConnectionManager;
-use crate::constant::{msg_status, pull_msg_num, ws_req_identifier};
-use crate::error::{Result, SdkError};
 use crate::connection::sync_server::SyncServerApi;
+use crate::constant::{msg_status, pull_msg_num, ws_req_identifier};
 use crate::db::{ConversationRepository, MessageRepository};
+use crate::error::{Result, SdkError};
 use crate::model::local::LocalChatLog;
-use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp, ConversationSeqs};
+use openim_protocol::msg::{ConversationSeqs, GetSeqMessageReq, GetSeqMessageResp};
 use openim_protocol::sdkws::PullOrder;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -46,38 +46,27 @@ pub struct SeqPullContext {
 }
 
 impl MessageChecker {
-    pub fn new(
-        remote: Arc<dyn SyncServerApi>,
-        message_repo: Arc<dyn MessageRepository>,
-        conversation_repo: Arc<dyn ConversationRepository>,
-        user_id: String,
-    ) -> Self {
-        Self { remote, message_repo, conversation_repo, user_id }
+    pub fn new(remote: Arc<dyn SyncServerApi>, message_repo: Arc<dyn MessageRepository>, conversation_repo: Arc<dyn ConversationRepository>, user_id: String) -> Self {
+        Self {
+            remote,
+            message_repo,
+            conversation_repo,
+            user_id,
+        }
     }
 
     /// 第 1 层：块内连续性检查（对齐 Go SDK alidateAndFillInternalGaps）
     ///
     /// 检查一批消息内部是否存在 seq 间隙，发现缺口后通过 1005 RPC 补拉。
     /// 返回本批消息的边界 seq（反序返回 minSeq，正序返回 maxSeq）。
-    pub async fn validate_and_fill_internal_gaps(
-        &self,
-        messages: &mut Vec<LocalChatLog>,
-        is_reverse: bool,
-    ) -> Result<i64> {
+    pub async fn validate_and_fill_internal_gaps(&self, messages: &mut Vec<LocalChatLog>, is_reverse: bool) -> Result<i64> {
         let (max_seq, min_seq, have_seq_list) = get_max_and_min_have_seq_list(messages);
 
         let lost_seqs = get_lost_seq_list_with_limit_length(min_seq, max_seq, &have_seq_list, is_reverse);
 
         if !lost_seqs.is_empty() {
-            debug!(
-                "[MsgCheck] 块内间隙: min={}, max={}, lost_count={}",
-                min_seq, max_seq, lost_seqs.len()
-            );
-            if let Some(fetched) = self.fetch_and_merge_missing_messages(
-                &first_conversation_id(messages),
-                &lost_seqs,
-                is_reverse,
-            ).await? {
+            debug!("[MsgCheck] 块内间隙: min={}, max={}, lost_count={}", min_seq, max_seq, lost_seqs.len());
+            if let Some(fetched) = self.fetch_and_merge_missing_messages(&first_conversation_id(messages), &lost_seqs, is_reverse).await? {
                 messages.extend(fetched);
             }
         }
@@ -88,13 +77,7 @@ impl MessageChecker {
     /// 第 2 层：块间连续性检查（对齐 Go SDK alidateAndFillInterBlockGaps）
     ///
     /// 检查当前批次与上一批次之间是否存在 seq 间隙。
-    pub async fn validate_and_fill_inter_block_gaps(
-        &self,
-        conversation_id: &str,
-        messages: &mut Vec<LocalChatLog>,
-        last_end_seq: i64,
-        is_reverse: bool,
-    ) -> Result<()> {
+    pub async fn validate_and_fill_inter_block_gaps(&self, conversation_id: &str, messages: &mut Vec<LocalChatLog>, last_end_seq: i64, is_reverse: bool) -> Result<()> {
         if last_end_seq == 0 || messages.is_empty() {
             return Ok(());
         }
@@ -122,15 +105,8 @@ impl MessageChecker {
         let lost_seqs = get_lost_seq_list_with_limit_length(gap_begin, gap_end, &have_seq_list, is_reverse);
 
         if !lost_seqs.is_empty() {
-            info!(
-                "[MsgCheck] 块间间隙: conv={}, gap=[{}, {}], lost_count={}",
-                conversation_id, gap_begin, gap_end, lost_seqs.len()
-            );
-            if let Some(fetched) = self.fetch_and_merge_missing_messages(
-                conversation_id,
-                &lost_seqs,
-                is_reverse,
-            ).await? {
+            info!("[MsgCheck] 块间间隙: conv={}, gap=[{}, {}], lost_count={}", conversation_id, gap_begin, gap_end, lost_seqs.len());
+            if let Some(fetched) = self.fetch_and_merge_missing_messages(conversation_id, &lost_seqs, is_reverse).await? {
                 messages.extend(fetched);
             }
         }
@@ -141,13 +117,7 @@ impl MessageChecker {
     /// 第 3 层：末尾连续性检查（对齐 Go SDK alidateAndFillEndBlockContinuity）
     ///
     /// 当拉取到的消息数量少于请求数量时，判断是否已到底。如果未到底则补拉缺失消息。
-    pub async fn validate_and_fill_end_block_continuity(
-        &self,
-        conversation_id: &str,
-        messages: &mut Vec<LocalChatLog>,
-        request_count: i64,
-        is_reverse: bool,
-    ) -> Result<bool> {
+    pub async fn validate_and_fill_end_block_continuity(&self, conversation_id: &str, messages: &mut Vec<LocalChatLog>, request_count: i64, is_reverse: bool) -> Result<bool> {
         let (is_end, lost_seqs) = self.check_end_block(conversation_id, messages, request_count, is_reverse).await?;
 
         if is_end {
@@ -155,15 +125,8 @@ impl MessageChecker {
         }
 
         if !lost_seqs.is_empty() {
-            info!(
-                "[MsgCheck] 末尾不连续: conv={}, lost_count={}",
-                conversation_id, lost_seqs.len()
-            );
-            if let Some(fetched) = self.fetch_and_merge_missing_messages(
-                conversation_id,
-                &lost_seqs,
-                is_reverse,
-            ).await? {
+            info!("[MsgCheck] 末尾不连续: conv={}, lost_count={}", conversation_id, lost_seqs.len());
+            if let Some(fetched) = self.fetch_and_merge_missing_messages(conversation_id, &lost_seqs, is_reverse).await? {
                 messages.extend(fetched);
             }
 
@@ -176,13 +139,7 @@ impl MessageChecker {
     }
 
     /// alidate_and_fill_end_block_continuity 的核心逻辑（对齐 Go SDK checkEndBlock）
-    async fn check_end_block(
-        &self,
-        conversation_id: &str,
-        messages: &[LocalChatLog],
-        request_count: i64,
-        is_reverse: bool,
-    ) -> Result<(bool, Vec<i64>)> {
+    async fn check_end_block(&self, conversation_id: &str, messages: &[LocalChatLog], request_count: i64, is_reverse: bool) -> Result<(bool, Vec<i64>)> {
         if messages.len() as i64 >= request_count {
             // 拉满说明可能还有更多，不算到底
             return Ok((false, Vec::new()));
@@ -220,12 +177,7 @@ impl MessageChecker {
     /// 通过 seq 列表从服务端拉取缺失消息并合并（对齐 Go SDK etchAndMergeMissingMessages）
     ///
     /// 使用 1005 (PULL_MSG_BY_SEQ_LIST) RPC 调用。
-    async fn fetch_and_merge_missing_messages(
-        &self,
-        conversation_id: &str,
-        seq_list: &[i64],
-        is_reverse: bool,
-    ) -> Result<Option<Vec<LocalChatLog>>> {
+    async fn fetch_and_merge_missing_messages(&self, conversation_id: &str, seq_list: &[i64], is_reverse: bool) -> Result<Option<Vec<LocalChatLog>>> {
         if seq_list.is_empty() {
             return Ok(None);
         }
@@ -241,18 +193,23 @@ impl MessageChecker {
             order,
         };
 
-        info!("[MsgCheck] fetch_missing_messages 请求: user_id={}, conv={}, seqs={:?}, order={}",
-            req.user_id, conversation_id, seq_list, order);
+        info!(
+            "[MsgCheck] fetch_missing_messages 请求: user_id={}, conv={}, seqs={:?}, order={}",
+            req.user_id, conversation_id, seq_list, order
+        );
 
-        let resp: GetSeqMessageResp = self.remote
+        let resp: GetSeqMessageResp = self
+            .remote
             .pull_messages_by_seq_list(&req)
             .await
             .map_err(|e| SdkError::network(format!("fetch missing messages by seq list failed: {}", e)))?;
 
-        info!("[MsgCheck] fetch_missing_messages: conv={}, seqs_requested={}, msgs_fetched={}",
+        info!(
+            "[MsgCheck] fetch_missing_messages: conv={}, seqs_requested={}, msgs_fetched={}",
             conversation_id,
             seq_list.len(),
-            resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>());
+            resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>()
+        );
 
         // 入库拉取到的消息
         let mut fetched_logs: Vec<LocalChatLog> = Vec::new();
@@ -299,10 +256,7 @@ impl MessageChecker {
                 warn!("[MsgCheck] 缺失消息入库失败: {}", e);
             }
 
-            info!(
-                "[MsgCheck] 补拉缺失消息: conv={}, count={}",
-                conversation_id, fetched_logs.len()
-            );
+            info!("[MsgCheck] 补拉缺失消息: conv={}, count={}", conversation_id, fetched_logs.len());
             Ok(Some(fetched_logs))
         } else {
             Ok(None)
@@ -330,7 +284,8 @@ impl MessageChecker {
 
     /// 获取会话的 maxSeq（对齐 Go SDK getConversationMaxSeq）
     async fn get_conversation_max_seq(&self, conversation_id: &str) -> i64 {
-        self.conversation_repo.get_max_seq(conversation_id)
+        self.conversation_repo
+            .get_max_seq(conversation_id)
             .await
             .unwrap_or(0)
             .max(self.message_repo.get_max_seq(conversation_id).await.unwrap_or(0))
@@ -338,10 +293,7 @@ impl MessageChecker {
 
     /// 获取会话的 minSeq（对齐 Go SDK getConversationMinSeq）
     async fn get_conversation_min_seq(&self, conversation_id: &str) -> i64 {
-        self.conversation_repo.get_min_seq(conversation_id)
-            .await
-            .unwrap_or(0)
-            .max(1)
+        self.conversation_repo.get_min_seq(conversation_id).await.unwrap_or(0).max(1)
     }
 
     /// 获取上次拉取的结束 seq（从 SeqPullContext 中获取）
@@ -384,20 +336,13 @@ fn get_max_and_min_have_seq_list(messages: &[LocalChatLog]) -> (i64, i64, Vec<i6
 /// 计算 [min_seq, max_seq] 范围内缺失的 seq 列表（对齐 Go SDK getLostSeqListWithLimitLength）
 ///
 /// 返回不在 have_seq_list 中的 seq，数量限制为 pull_msg_num::PULL_MSG_NUM_FOR_READ_DIFFUSION。
-fn get_lost_seq_list_with_limit_length(
-    min_seq: i64,
-    max_seq: i64,
-    have_seq_list: &[i64],
-    is_reverse: bool,
-) -> Vec<i64> {
+fn get_lost_seq_list_with_limit_length(min_seq: i64, max_seq: i64, have_seq_list: &[i64], is_reverse: bool) -> Vec<i64> {
     if min_seq > max_seq || min_seq <= 0 {
         return Vec::new();
     }
 
     let have_set: HashSet<i64> = have_seq_list.iter().copied().collect();
-    let mut lost_seqs: Vec<i64> = (min_seq..=max_seq)
-        .filter(|seq| !have_set.contains(seq))
-        .collect();
+    let mut lost_seqs: Vec<i64> = (min_seq..=max_seq).filter(|seq| !have_set.contains(seq)).collect();
 
     let limit = pull_msg_num::PULL_MSG_NUM_FOR_READ_DIFFUSION as usize;
     if lost_seqs.len() > limit {
@@ -416,21 +361,14 @@ fn get_lost_seq_list_with_limit_length(
 
 /// 获取消息列表中的 conversation_id（取第一条的）
 fn first_conversation_id(messages: &[LocalChatLog]) -> String {
-    messages.first()
-        .map(|m| m.conversation_id.clone())
-        .unwrap_or_default()
+    messages.first().map(|m| m.conversation_id.clone()).unwrap_or_default()
 }
 
 /// 归并两个已排序的 LocalChatLog 切片（对齐 Go SDK mergeSortedArrays）
 ///
 /// - is_desc=true：按 send_time 降序，相同 send_time 按 seq 降序
 /// - is_desc=false：按 send_time 升序，相同 send_time 按 seq 升序
-fn merge_sorted_arrays(
-    a: &[LocalChatLog],
-    b: &[LocalChatLog],
-    n: usize,
-    is_desc: bool,
-) -> Vec<LocalChatLog> {
+fn merge_sorted_arrays(a: &[LocalChatLog], b: &[LocalChatLog], n: usize, is_desc: bool) -> Vec<LocalChatLog> {
     let mut result = Vec::with_capacity(a.len() + b.len());
     let mut i = 0;
     let mut j = 0;
@@ -593,10 +531,7 @@ mod tests {
 
     #[test]
     fn test_get_max_min_all_zero_seq() {
-        let msgs = vec![
-            make_log("a", 0, 1000),
-            make_log("b", 0, 2000),
-        ];
+        let msgs = vec![make_log("a", 0, 1000), make_log("b", 0, 2000)];
         let (max, min, list) = get_max_and_min_have_seq_list(&msgs);
         assert_eq!(max, 0);
         assert_eq!(min, 0);
@@ -691,12 +626,7 @@ mod tests {
 
     #[test]
     fn test_first_conversation_id_takes_first() {
-        let msgs = vec![
-            make_log("a", 1, 1000),
-            make_log("b", 2, 2000),
-        ];
+        let msgs = vec![make_log("a", 1, 1000), make_log("b", 2, 2000)];
         assert_eq!(first_conversation_id(&msgs), "conv_1");
     }
 }
-
-

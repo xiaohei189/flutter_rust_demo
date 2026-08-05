@@ -15,10 +15,16 @@ pub enum SdkError {
     ApiError { code: i32, message: String },
 
     #[error("Protobuf 解析错误: {source}")]
-    ProtobufError { #[from] source: prost::DecodeError },
+    ProtobufError {
+        #[from]
+        source: prost::DecodeError,
+    },
 
     #[error("JSON 序列化错误: {source}")]
-    JsonError { #[from] source: serde_json::Error },
+    JsonError {
+        #[from]
+        source: serde_json::Error,
+    },
 
     #[error("超时: {message}")]
     Timeout { message: String },
@@ -59,122 +65,83 @@ impl SdkError {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            SdkError::NetworkError { .. }
-                | SdkError::ConnectionError { .. }
-                | SdkError::Timeout { .. }
-                | SdkError::HttpError { .. }
+            SdkError::NetworkError { .. } | SdkError::ConnectionError { .. } | SdkError::Timeout { .. } | SdkError::HttpError { .. }
         )
     }
 
     pub fn network(message: impl Into<String>) -> Self {
-        SdkError::NetworkError {
-            message: message.into(),
-        }
+        SdkError::NetworkError { message: message.into() }
     }
 
     pub fn connection(message: impl Into<String>) -> Self {
-        SdkError::ConnectionError {
-            message: message.into(),
-        }
+        SdkError::ConnectionError { message: message.into() }
     }
 
     pub fn http(status: u16, message: impl Into<String>) -> Self {
-        SdkError::HttpError {
-            status,
-            message: message.into(),
-        }
+        SdkError::HttpError { status, message: message.into() }
     }
 
     pub fn api(code: i32, message: impl Into<String>) -> Self {
-        SdkError::ApiError {
-            code,
-            message: message.into(),
-        }
+        SdkError::ApiError { code, message: message.into() }
     }
 
     pub fn timeout(message: impl Into<String>) -> Self {
-        SdkError::Timeout {
-            message: message.into(),
-        }
+        SdkError::Timeout { message: message.into() }
     }
 
     pub fn message_send(message: impl Into<String>) -> Self {
-        SdkError::MessageSendFailed {
-            message: message.into(),
-        }
+        SdkError::MessageSendFailed { message: message.into() }
     }
 
     pub fn msg_repeated(message: impl Into<String>) -> Self {
-        SdkError::MsgRepeated {
-            message: message.into(),
-        }
+        SdkError::MsgRepeated { message: message.into() }
     }
 
     pub fn auth_failed(message: impl Into<String>) -> Self {
-        SdkError::AuthFailed {
-            message: message.into(),
-        }
+        SdkError::AuthFailed { message: message.into() }
     }
 
     pub fn kicked(reason: impl Into<String>) -> Self {
-        SdkError::KickedOffline {
-            reason: reason.into(),
-        }
+        SdkError::KickedOffline { reason: reason.into() }
     }
 
     pub fn invalid_argument(message: impl Into<String>) -> Self {
-        SdkError::InvalidArgument {
-            message: message.into(),
-        }
+        SdkError::InvalidArgument { message: message.into() }
     }
 
     pub fn database(message: impl Into<String>) -> Self {
-        SdkError::DatabaseError {
-            message: message.into(),
-        }
+        SdkError::DatabaseError { message: message.into() }
     }
 
     pub fn cache(message: impl Into<String>) -> Self {
-        SdkError::CacheError {
-            message: message.into(),
-        }
+        SdkError::CacheError { message: message.into() }
     }
 
     pub fn file_upload(message: impl Into<String>) -> Self {
-        SdkError::FileUploadError {
-            message: message.into(),
-        }
+        SdkError::FileUploadError { message: message.into() }
     }
 
     pub fn unknown(message: impl Into<String>) -> Self {
-        SdkError::Unknown {
-            message: message.into(),
-        }
+        SdkError::Unknown { message: message.into() }
     }
 }
 
 impl From<anyhow::Error> for SdkError {
     fn from(err: anyhow::Error) -> Self {
-        SdkError::Unknown {
-            message: err.to_string(),
-        }
+        SdkError::Unknown { message: err.to_string() }
     }
 }
 
 impl From<tokio::time::error::Elapsed> for SdkError {
     fn from(_: tokio::time::error::Elapsed) -> Self {
-        SdkError::Timeout {
-            message: "操作超时".into(),
-        }
+        SdkError::Timeout { message: "操作超时".into() }
     }
 }
 
 impl From<reqwest::Error> for SdkError {
     fn from(err: reqwest::Error) -> Self {
         if err.is_timeout() {
-            SdkError::Timeout {
-                message: "HTTP 请求超时".into(),
-            }
+            SdkError::Timeout { message: "HTTP 请求超时".into() }
         } else if err.is_connect() {
             SdkError::NetworkError {
                 message: format!("网络连接失败: {}", err),

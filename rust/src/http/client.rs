@@ -14,7 +14,7 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
-    pub fn into_result(self) -> Result<T> 
+    pub fn into_result(self) -> Result<T>
     where
         T: Default,
     {
@@ -37,10 +37,7 @@ pub struct HttpApiClient {
 
 impl HttpApiClient {
     pub fn new(base_url: String, token: String, operation_id: String) -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()
-            .expect("Failed to create HTTP client");
+        let client = Client::builder().timeout(Duration::from_secs(30)).build().expect("Failed to create HTTP client");
 
         Self {
             client,
@@ -56,11 +53,7 @@ impl HttpApiClient {
         self
     }
 
-    pub async fn post<T: Serialize, R: for<'de> Deserialize<'de> + Default>(
-        &self,
-        route: &str,
-        body: &T,
-    ) -> Result<R> {
+    pub async fn post<T: Serialize, R: for<'de> Deserialize<'de> + Default>(&self, route: &str, body: &T) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
         // 记录请求
@@ -81,7 +74,7 @@ impl HttpApiClient {
 
         let duration = start.elapsed();
         let status = response.status().as_u16();
-        
+
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
             tracing::error!("[HTTP] POST {} 失败 - 状态码: {}, Body: {}, 耗时: {:?}", route, status, body, duration);
@@ -92,11 +85,10 @@ impl HttpApiClient {
         let raw_bytes = response.bytes().await?;
         let raw_str = String::from_utf8_lossy(&raw_bytes);
 
-        let api_resp: ApiResponse<R> = serde_json::from_slice(&raw_bytes)
-            .map_err(|e| {
-                tracing::error!("[HTTP] POST {} 解析失败: {} - Raw: {}, 耗时: {:?}", route, e, raw_str, duration);
-                SdkError::unknown(&format!("响应解析错误: {}", e))
-            })?;
+        let api_resp: ApiResponse<R> = serde_json::from_slice(&raw_bytes).map_err(|e| {
+            tracing::error!("[HTTP] POST {} 解析失败: {} - Raw: {}, 耗时: {:?}", route, e, raw_str, duration);
+            SdkError::unknown(&format!("响应解析错误: {}", e))
+        })?;
 
         // 业务错误用 error，成功用 info
         if api_resp.err_code != 0 {
@@ -107,11 +99,7 @@ impl HttpApiClient {
         api_resp.into_result()
     }
 
-    pub async fn post_no_auth<T: Serialize, R: for<'de> Deserialize<'de> + Default>(
-        &self,
-        route: &str,
-        body: &T,
-    ) -> Result<R> {
+    pub async fn post_no_auth<T: Serialize, R: for<'de> Deserialize<'de> + Default>(&self, route: &str, body: &T) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
         // 记录请求
@@ -120,17 +108,11 @@ impl HttpApiClient {
         tracing::debug!("[HTTP] POST {} (no_auth) Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
-        let response = self
-            .client
-            .post(&url)
-            .timeout(self.timeout)
-            .json(body)
-            .send()
-            .await?;
+        let response = self.client.post(&url).timeout(self.timeout).json(body).send().await?;
 
         let duration = start.elapsed();
         let status = response.status().as_u16();
-        
+
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
             tracing::error!("[HTTP] POST {} 失败 - 状态码: {}, Body: {}, 耗时: {:?}", route, status, body, duration);
@@ -164,7 +146,7 @@ impl HttpApiClient {
 
         let duration = start.elapsed();
         let status = response.status().as_u16();
-        
+
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
             tracing::error!("[HTTP] GET {} 失败 - 状态码: {}, Body: {}, 耗时: {:?}", route, status, body, duration);

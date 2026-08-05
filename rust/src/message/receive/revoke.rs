@@ -3,21 +3,27 @@
 use super::processor::MessageProcessor;
 use crate::constant::notification_type::REVOKE;
 use crate::error::{Result, SdkError};
-use crate::model::revoke::{RevokeTipsWithNickname, parse_revoke_tips_from_json};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
+use crate::model::revoke::{parse_revoke_tips_from_json, RevokeTipsWithNickname};
 use openim_protocol::sdkws::{MsgData, RevokeMsgTips};
 use tracing::{info, warn};
 
 impl MessageProcessor {
     /// 从通知 JSON 中提取 revokerNickname（服务端下发的真实昵称）
     pub(crate) fn extract_nickname_from_notification(content: &str) -> Option<String> {
-        if content.is_empty() { return None; }
+        if content.is_empty() {
+            return None;
+        }
         let outer: serde_json::Value = serde_json::from_str(content).ok()?;
         let detail_str = outer.get("detail")?.as_str()?;
         let inner: serde_json::Value = serde_json::from_str(detail_str).ok()?;
         let name = inner.get("revokerNickname")?.as_str()?;
-        if name.is_empty() { None } else { Some(name.to_string()) }
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_string())
+        }
     }
 
     /// 获取撤回者昵称（对齐 Go SDK getUserNameAndFaceURL + GetSpecifiedGroupMembersInfo）
@@ -31,8 +37,7 @@ impl MessageProcessor {
                     return (user.name, 0);
                 }
             }
-        } else if tips.sesstion_type == crate::constant::session_type::WRITE_GROUP_CHAT
-            || tips.sesstion_type == crate::constant::session_type::READ_GROUP_CHAT {
+        } else if tips.sesstion_type == crate::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::constant::session_type::READ_GROUP_CHAT {
             if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.repositories.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -50,16 +55,17 @@ impl MessageProcessor {
     /// 撤回通知处理（严格对齐 Go SDK revoke_message）
     pub(crate) async fn handle_revoke_notification(&self, tips: &RevokeMsgTips, server_revoker_nickname: &str, server_revoker_role: i32) -> Result<()> {
         // 1. 获取被撤回的消息
-        let revoked_msg = self.repositories.message_repo.get_by_conversation_and_seq(&tips.conversation_id, tips.seq).await?
-            .ok_or_else(|| {
-                let err_msg = format!("被撤回的消息不存在: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
-                warn!("[REVOKE] {}", err_msg);
-                SdkError::InvalidArgument { message: err_msg }
-            })?;
+        let revoked_msg = self.repositories.message_repo.get_by_conversation_and_seq(&tips.conversation_id, tips.seq).await?.ok_or_else(|| {
+            let err_msg = format!("被撤回的消息不存在: conversation_id={}, seq={}", tips.conversation_id, tips.seq);
+            warn!("[REVOKE] {}", err_msg);
+            SdkError::InvalidArgument { message: err_msg }
+        })?;
 
         // 2. 获取撤回者昵称
-        info!("[REVOKE-DEBUG] server_revoker_nickname='{}', server_revoker_role={}, revoker_user_id={}", 
-            server_revoker_nickname, server_revoker_role, tips.revoker_user_id);
+        info!(
+            "[REVOKE-DEBUG] server_revoker_nickname='{}', server_revoker_role={}, revoker_user_id={}",
+            server_revoker_nickname, server_revoker_role, tips.revoker_user_id
+        );
         let mut revoker_role = server_revoker_role;
         let mut revoker_nickname = if !server_revoker_nickname.is_empty() {
             info!("[REVOKE-DEBUG] 使用服务端昵称: '{}'", server_revoker_nickname);
@@ -75,8 +81,7 @@ impl MessageProcessor {
             revoker_nickname = revoked_msg.sender_nick_name.clone();
         }
         info!("[REVOKE-DEBUG] 最终昵称: '{}', user_id: '{}'", revoker_nickname, tips.revoker_user_id);
-        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::constant::session_type::WRITE_GROUP_CHAT
-            || tips.sesstion_type == crate::constant::session_type::READ_GROUP_CHAT {
+        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::constant::session_type::READ_GROUP_CHAT {
             if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.repositories.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -118,14 +123,12 @@ impl MessageProcessor {
             "isAdminRevoke": tips.is_admin_revoke,
         });
         info!("[REVOKE-DEBUG] 写入DB的notification_content: {}", notification_content);
-        
-        self.repositories.message_repo.update_message_content_and_type(
-            &tips.conversation_id,
-            &revoked_msg.client_msg_id,
-            &notification_content.to_string(),
-            REVOKE,
-        ).await?;
-        
+
+        self.repositories
+            .message_repo
+            .update_message_content_and_type(&tips.conversation_id, &revoked_msg.client_msg_id, &notification_content.to_string(), REVOKE)
+            .await?;
+
         info!("[REVOKE] 更新消息内容类型和内容: content_type={}, content={}", REVOKE, notification_content);
 
         // 5. 如果撤回的是最新消息 → 刷新会话 LatestMsg
@@ -160,14 +163,9 @@ impl MessageProcessor {
     }
 
     /// 处理引用消息的撤回（对齐官方实现 quoteMsgRevokeHandle）
-    async fn handle_quote_msg_revoke(
-        &self,
-        conversation_id: &str,
-        revoked_client_msg_id: &str,
-        revoke_notification_content: &str,
-    ) -> Result<()> {
+    async fn handle_quote_msg_revoke(&self, conversation_id: &str, revoked_client_msg_id: &str, revoke_notification_content: &str) -> Result<()> {
         let quote_msgs = self.repositories.message_repo.search_by_content_type(conversation_id, 104).await?;
-        
+
         if quote_msgs.is_empty() {
             info!("[REVOKE] 没有找到引用消息");
             return Ok(());
@@ -180,13 +178,11 @@ impl MessageProcessor {
                 if let Some(quote_message) = quote_elem.get("quoteMessage") {
                     if let Some(client_msg_id) = quote_message.get("clientMsgID").and_then(|v| v.as_str()) {
                         if client_msg_id == revoked_client_msg_id {
-                            self.repositories.message_repo.update_message_content_and_type(
-                                conversation_id,
-                                &quote_msg.client_msg_id,
-                                revoke_notification_content,
-                                REVOKE,
-                            ).await?;
-                            
+                            self.repositories
+                                .message_repo
+                                .update_message_content_and_type(conversation_id, &quote_msg.client_msg_id, revoke_notification_content, REVOKE)
+                                .await?;
+
                             info!("[REVOKE] 更新引用消息: client_msg_id={}", quote_msg.client_msg_id);
                         }
                     }
@@ -332,12 +328,12 @@ mod tests {
     // 撤回通知集成测试（内存 DB）
     // ========================================================================
 
-    use crate::model::UserId;
+    use crate::client::context::Repositories;
+    use crate::constant::notification_type::REVOKE as REVOKE_CT;
+    use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::model::local::{LocalChatLog, LocalConversation};
-    use crate::db::pool::create_pool_memory;
-    use crate::constant::notification_type::REVOKE as REVOKE_CT;
-    use crate::client::context::Repositories;
+    use crate::model::UserId;
     use std::sync::Arc;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -407,21 +403,39 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_repo = repositories.message_repo.clone();
         let conversation_repo = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         message_repo.batch_insert(&[make_local_msg("conv_revoke", "msg_target", 5, "user_1")]).await.unwrap();
         let conv = LocalConversation {
             conversation_id: "conv_revoke".to_string(),
             conversation_type: 1,
-            user_id: String::new(), group_id: String::new(),
-            show_name: String::new(), face_url: String::new(),
-            latest_msg: String::new(), latest_msg_send_time: 0,
-            unread_count: 0, recv_msg_opt: 0, is_pinned: false,
-            is_private_chat: false, burn_duration: 0, group_at_type: 0,
-            is_not_in_group: false, update_unread_count_time: 0,
-            attached_info: String::new(), ex: String::new(),
-            draft_text: String::new(), draft_text_time: 0,
-            max_seq: 5, min_seq: 0, is_msg_destruct: false, msg_destruct_time: 0,
+            user_id: String::new(),
+            group_id: String::new(),
+            show_name: String::new(),
+            face_url: String::new(),
+            latest_msg: String::new(),
+            latest_msg_send_time: 0,
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: false,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 5,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
         };
         conversation_repo.upsert(&conv).await.unwrap();
 
@@ -440,7 +454,12 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_repo = repositories.message_repo.clone();
         let conversation_repo = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let mut quote_msg = make_local_msg("conv_quote", "quote_msg", 6, "user_2");
         quote_msg.content_type = 104;
@@ -450,24 +469,35 @@ mod tests {
                 "clientMsgID": "msg_origin",
                 "content": "{\"text\":\"original\"}"
             }
-        }).to_string();
+        })
+        .to_string();
 
-        message_repo.batch_insert(&[
-            make_local_msg("conv_quote", "msg_origin", 3, "user_1"),
-            quote_msg,
-        ]).await.unwrap();
+        message_repo.batch_insert(&[make_local_msg("conv_quote", "msg_origin", 3, "user_1"), quote_msg]).await.unwrap();
         let conv = LocalConversation {
             conversation_id: "conv_quote".to_string(),
             conversation_type: 1,
-            user_id: String::new(), group_id: String::new(),
-            show_name: String::new(), face_url: String::new(),
-            latest_msg: String::new(), latest_msg_send_time: 0,
-            unread_count: 0, recv_msg_opt: 0, is_pinned: false,
-            is_private_chat: false, burn_duration: 0, group_at_type: 0,
-            is_not_in_group: false, update_unread_count_time: 0,
-            attached_info: String::new(), ex: String::new(),
-            draft_text: String::new(), draft_text_time: 0,
-            max_seq: 6, min_seq: 0, is_msg_destruct: false, msg_destruct_time: 0,
+            user_id: String::new(),
+            group_id: String::new(),
+            show_name: String::new(),
+            face_url: String::new(),
+            latest_msg: String::new(),
+            latest_msg_send_time: 0,
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: false,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 6,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
         };
         conversation_repo.upsert(&conv).await.unwrap();
 

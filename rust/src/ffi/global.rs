@@ -3,9 +3,9 @@
 //! 从 api/client.rs 拆出，职责：不属于特定客户端的全局函数
 //! 包括：App 前后台切换、网络状态通知、SDK 版本查询等
 
+use crate::client::core::OpenIMClient;
 use crate::client::SdkApi;
 use crate::frb_generated::StreamSink;
-use crate::client::core::OpenIMClient;
 use anyhow::Result;
 use std::sync::Arc;
 use std::sync::OnceLock;
@@ -63,7 +63,6 @@ pub async fn get_sdk_version() -> Result<String> {
 #[flutter_rust_bridge::frb]
 pub async fn un_init_sdk() -> Result<()> {
     let client = client_holder()?;
-    client.logout().await
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
+    client.logout().await.map_err(|e| anyhow::anyhow!("{}", e))?;
     Ok(())
 }

@@ -10,18 +10,11 @@
 //! - `sdk_span!`
 
 pub mod config;
-mod otel;
 mod macros;
+mod otel;
 
 pub use config::LogConfig;
 pub use otel::{
-    extract_trace_id,
-    extract_span_id,
-    encode_operation_id,
-    decode_operation_id,
-    span_from_remote_trace_id,
-    span_from_operation_id,
-    build_w3c_traceparent, context_from_traceparent,
-    init_otel_subscriber,
-    set_span_events_enabled,
+    build_w3c_traceparent, context_from_traceparent, decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id, init_otel_subscriber, set_span_events_enabled,
+    span_from_operation_id, span_from_remote_trace_id,
 };

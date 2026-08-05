@@ -1,6 +1,6 @@
 use rust_lib_flutter_rust_demo::client::config::ClientConfig;
-use rust_lib_flutter_rust_demo::client::*;
 use rust_lib_flutter_rust_demo::client::OpenIMClient;
+use rust_lib_flutter_rust_demo::client::*;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -10,10 +10,10 @@ pub const CHAT_API_BASE_URL: &str = "http://localhost:10008";
 pub const DEFAULT_VERIFICATION_CODE: &str = "666666";
 
 // 固定测试手机号
-pub const SENDER_PHONE: &str = "17764008284";   // 发送方
+pub const SENDER_PHONE: &str = "17764008284"; // 发送方
 pub const RECEIVER_PHONE: &str = "17764008283"; // 接收方
-// 群组测试固定手机号
-pub const GROUP_OWNER_PHONE: &str = "17764008280";   // 群主
+                                                // 群组测试固定手机号
+pub const GROUP_OWNER_PHONE: &str = "17764008280"; // 群主
 pub const GROUP_MEMBER1_PHONE: &str = "17764008281"; // 群成员1
 pub const GROUP_MEMBER2_PHONE: &str = "17764008282"; // 群成员2
 pub const GROUP_APPLICANT_PHONE: &str = "17764008285"; // 申请人
@@ -64,10 +64,7 @@ pub struct UserInfoResp {
 }
 
 pub fn generate_virtual_phone(test_name: &str) -> String {
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+    let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
     let name_hash: u64 = test_name.bytes().fold(0u64, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u64));
     format!("138{:07}{:02}", timestamp % 10000000, name_hash % 100)
 }
@@ -98,8 +95,7 @@ pub async fn register_user(phone: &str, nickname: &str) -> Result<RegisterRespon
     let body = resp.text().await.map_err(|e| format!("读取响应失败: {}", e))?;
 
     if status.is_success() {
-        let outer: serde_json::Value = serde_json::from_str(&body)
-            .map_err(|e| format!("解析响应失败: {}, body={}", e, body))?;
+        let outer: serde_json::Value = serde_json::from_str(&body).map_err(|e| format!("解析响应失败: {}, body={}", e, body))?;
 
         if let Some(err_code) = outer.get("errCode").and_then(|v| v.as_i64()) {
             if err_code != 0 {
@@ -108,8 +104,7 @@ pub async fn register_user(phone: &str, nickname: &str) -> Result<RegisterRespon
         }
 
         let data = outer.get("data").ok_or_else(|| format!("响应缺少 data 字段: body={}", body))?;
-        let cert: RegisterResponse = serde_json::from_value(data.clone())
-            .map_err(|e| format!("解析失败: {}, body={}", e, body))?;
+        let cert: RegisterResponse = serde_json::from_value(data.clone()).map_err(|e| format!("解析失败: {}, body={}", e, body))?;
         Ok(cert)
     } else {
         Err(format!("注册失败: status={}, body={}", status, body))
@@ -137,8 +132,7 @@ pub async fn login_user(phone: &str) -> Result<LoginCertificate, String> {
     let body = resp.text().await.map_err(|e| format!("读取响应失败: {}", e))?;
 
     if status.is_success() {
-        let outer: serde_json::Value = serde_json::from_str(&body)
-            .map_err(|e| format!("解析响应失败: {}, body={}", e, body))?;
+        let outer: serde_json::Value = serde_json::from_str(&body).map_err(|e| format!("解析响应失败: {}, body={}", e, body))?;
 
         if let Some(err_code) = outer.get("errCode").and_then(|v| v.as_i64()) {
             if err_code != 0 {
@@ -147,8 +141,7 @@ pub async fn login_user(phone: &str) -> Result<LoginCertificate, String> {
         }
 
         let data = outer.get("data").ok_or_else(|| format!("响应缺少 data 字段: body={}", body))?;
-        let cert: LoginCertificate = serde_json::from_value(data.clone())
-            .map_err(|e| format!("解析失败: {}, body={}", e, body))?;
+        let cert: LoginCertificate = serde_json::from_value(data.clone()).map_err(|e| format!("解析失败: {}, body={}", e, body))?;
         Ok(cert)
     } else {
         Err(format!("登录失败: status={}, body={}", status, body))
@@ -164,10 +157,7 @@ pub async fn login_account(account: &TestAccount) -> Result<(String, String), St
 }
 
 pub async fn get_or_create_user1() -> TestAccount {
-    if let (Ok(user_id), Ok(phone)) = (
-        std::env::var("OPENIM_TEST_USER1_ID"),
-        std::env::var("OPENIM_TEST_USER1_PHONE"),
-    ) {
+    if let (Ok(user_id), Ok(phone)) = (std::env::var("OPENIM_TEST_USER1_ID"), std::env::var("OPENIM_TEST_USER1_PHONE")) {
         println!("使用固定测试账号1(发送方): user_id={}, phone={}", user_id, phone);
         return TestAccount {
             user_id,
@@ -191,10 +181,7 @@ pub async fn get_or_create_user1() -> TestAccount {
 }
 
 pub async fn get_or_create_user2() -> TestAccount {
-    if let (Ok(user_id), Ok(phone)) = (
-        std::env::var("OPENIM_TEST_USER2_ID"),
-        std::env::var("OPENIM_TEST_USER2_PHONE"),
-    ) {
+    if let (Ok(user_id), Ok(phone)) = (std::env::var("OPENIM_TEST_USER2_ID"), std::env::var("OPENIM_TEST_USER2_PHONE")) {
         println!("使用固定测试账号2(接收方): user_id={}, phone={}", user_id, phone);
         return TestAccount {
             user_id,
@@ -234,10 +221,7 @@ pub async fn get_or_create_group_applicant() -> TestAccount {
 }
 
 pub async fn create_sdk(account: &TestAccount, im_token: &str) -> OpenIMClient {
-    let data_dir = std::env::temp_dir()
-        .join(format!("openim_test_{}", account.user_id))
-        .to_string_lossy()
-        .to_string();
+    let data_dir = std::env::temp_dir().join(format!("openim_test_{}", account.user_id)).to_string_lossy().to_string();
 
     let _ = std::fs::create_dir_all(&data_dir);
 
@@ -327,13 +311,9 @@ pub async fn login_or_register_user(phone: &str, nickname: &str) -> TestAccount 
 
 /// 创建一个全新的随机账号（每次调用注册新用户，确保无历史数据）
 pub async fn create_random_account(nickname: &str) -> TestAccount {
-    let phone = generate_virtual_phone(&format!("{}_{}", nickname, std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos()));
+    let phone = generate_virtual_phone(&format!("{}_{}", nickname, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
     println!("创建随机账号: nickname={}, phone={}", nickname, phone);
-    let reg = register_user(&phone, nickname).await
-        .unwrap_or_else(|e| panic!("注册随机账号失败: {}", e));
+    let reg = register_user(&phone, nickname).await.unwrap_or_else(|e| panic!("注册随机账号失败: {}", e));
     TestAccount {
         user_id: reg.user_id,
         phone,
@@ -345,12 +325,7 @@ pub async fn create_random_account(nickname: &str) -> TestAccount {
 
 /// 确保两个用户是好友关系
 /// 如果还不是好友，则 user1_sdk 向 user2 发送好友申请，user2_sdk 接受
-pub async fn ensure_friends(
-    user1_sdk: &OpenIMClient,
-    user1_id: &str,
-    user2_sdk: &OpenIMClient,
-    user2_id: &str,
-) {
+pub async fn ensure_friends(user1_sdk: &OpenIMClient, user1_id: &str, user2_sdk: &OpenIMClient, user2_id: &str) {
     // 先同步好友列表，确保 is_friend 检查准确
     user1_sdk.sync_friends().await.ok();
     user2_sdk.sync_friends().await.ok();
@@ -402,14 +377,8 @@ pub async fn ensure_friends(
             for apply in apply_infos {
                 if apply.user_id == user1_id && apply.handle_result == 0 {
                     println!("{} 接受 {} 的好友申请", user2_id, user1_id);
-                    let accept_result = user2_sdk
-                        .accept_friend_application(user1_id, Some("同意加好友"))
-                        .await;
-                    assert!(
-                        accept_result.is_ok(),
-                        "接受好友申请失败: {:?}",
-                        accept_result.err()
-                    );
+                    let accept_result = user2_sdk.accept_friend_application(user1_id, Some("同意加好友")).await;
+                    assert!(accept_result.is_ok(), "接受好友申请失败: {:?}", accept_result.err());
                     // 等待好友关系同步
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     println!("好友关系建立成功: {} <-> {}", user1_id, user2_id);
@@ -455,7 +424,7 @@ pub fn create_test_audio_file(dir: &std::path::Path) -> std::path::PathBuf {
     // fmt chunk
     wav.extend_from_slice(b"fmt ");
     wav.extend_from_slice(&16u32.to_le_bytes()); // chunk size
-    wav.extend_from_slice(&1u16.to_le_bytes());  // PCM format
+    wav.extend_from_slice(&1u16.to_le_bytes()); // PCM format
     wav.extend_from_slice(&num_channels.to_le_bytes());
     wav.extend_from_slice(&sample_rate.to_le_bytes());
     wav.extend_from_slice(&(sample_rate * num_channels as u32 * bits_per_sample as u32 / 8).to_le_bytes());
@@ -511,14 +480,8 @@ pub fn create_test_snapshot_file(dir: &std::path::Path) -> std::path::PathBuf {
     }
 
     let png_bytes: Vec<u8> = vec![
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
-        0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
-        0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
-        0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC,
-        0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+        0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC, 0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
         0x44, 0xAE, 0x42, 0x60, 0x82,
     ];
     std::fs::write(&path, &png_bytes).expect("创建测试截图文件失败");
@@ -532,8 +495,8 @@ pub fn create_test_snapshot_file(dir: &std::path::Path) -> std::path::PathBuf {
 /// 使用 wiremock 创建本地 mock HTTP 服务器，测试不依赖外部服务
 #[cfg(test)]
 pub mod mock {
-    use wiremock::MockServer;
     use wiremock::matchers::{method, path};
+    use wiremock::MockServer;
     use wiremock::ResponseTemplate;
 
     /// 创建一个本地 mock 服务器，并注册所有基础 API 端点
@@ -546,58 +509,68 @@ pub mod mock {
     /// 注册默认的 API 端点处理
     async fn register_default_handlers(server: &MockServer) {
         // 注册成功响应
-        server.register(
-            wiremock::Mock::given(method("POST"))
-                .and(path("/account/register"))
-                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0,
-                    "errMsg": "",
-                    "data": {
-                        "userID": "mock_user_001",
-                        "imToken": "mock_im_token",
-                        "chatToken": "mock_chat_token"
-                    }
-                })))
-        ).await;
+        server
+            .register(
+                wiremock::Mock::given(method("POST"))
+                    .and(path("/account/register"))
+                    .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "errCode": 0,
+                        "errMsg": "",
+                        "data": {
+                            "userID": "mock_user_001",
+                            "imToken": "mock_im_token",
+                            "chatToken": "mock_chat_token"
+                        }
+                    }))),
+            )
+            .await;
 
-        server.register(
-            wiremock::Mock::given(method("POST"))
-                .and(path("/account/login"))
-                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0,
-                    "errMsg": "",
-                    "data": {
-                        "userID": "mock_user_001",
-                        "imToken": "mock_im_token",
-                        "chatToken": "mock_chat_token"
-                    }
-                })))
-        ).await;
+        server
+            .register(
+                wiremock::Mock::given(method("POST"))
+                    .and(path("/account/login"))
+                    .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "errCode": 0,
+                        "errMsg": "",
+                        "data": {
+                            "userID": "mock_user_001",
+                            "imToken": "mock_im_token",
+                            "chatToken": "mock_chat_token"
+                        }
+                    }))),
+            )
+            .await;
 
         // 通用的成功响应（用于其他所有 API 端点）
-        server.register(
-            wiremock::Mock::given(method("POST"))
-                .and(path("/msg/revoke_msg"))
-                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0, "errMsg": ""
-                })))
-        ).await;
+        server
+            .register(
+                wiremock::Mock::given(method("POST"))
+                    .and(path("/msg/revoke_msg"))
+                    .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "errCode": 0, "errMsg": ""
+                    }))),
+            )
+            .await;
 
-        server.register(
-            wiremock::Mock::given(method("POST"))
-                .and(path("/msg/delete_msgs"))
-                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0, "errMsg": ""
-                })))
-        ).await;
+        server
+            .register(
+                wiremock::Mock::given(method("POST"))
+                    .and(path("/msg/delete_msgs"))
+                    .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "errCode": 0, "errMsg": ""
+                    }))),
+            )
+            .await;
 
-        server.register(
-            wiremock::Mock::given(method("POST"))
-                .and(path("/msg/mark_msgs_as_read"))
-                .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0, "errMsg": ""
-                })))
-        ).await;
+        server
+            .register(
+                wiremock::Mock::given(method("POST"))
+                    .and(path("/msg/mark_msgs_as_read"))
+                    .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "errCode": 0, "errMsg": ""
+                    }))),
+            )
+            .await;
     }
 }
 

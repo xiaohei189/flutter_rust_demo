@@ -3,9 +3,9 @@
 //! trait 定义在 `domain::ports::user`
 
 use crate::error::Result;
-use crate::http::user::{GetUsersInfoReq, GetUsersInfoResp, UpdateUserInfoReq, UpdateUserInfoResp, UserServerApi};
 use crate::http::client::HttpApiClient;
 use crate::http::routes::{GET_USERS_INFO, SET_GLOBAL_MSG_RECV_OPT, UPDATE_USER_INFO};
+use crate::http::user::{GetUsersInfoReq, GetUsersInfoResp, UpdateUserInfoReq, UpdateUserInfoResp, UserServerApi};
 use async_trait::async_trait;
 use std::sync::Arc;
 

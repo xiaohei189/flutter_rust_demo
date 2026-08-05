@@ -1,5 +1,5 @@
-use crate::model::local::LocalFriend;
 use crate::error::{Result, SdkError};
+use crate::model::local::LocalFriend;
 use sqlx::SqlitePool;
 
 pub struct FriendDao {
@@ -40,41 +40,31 @@ impl FriendDao {
     }
 
     pub async fn get_all(&self, owner_user_id: &str) -> Result<Vec<LocalFriend>> {
-        let rows = sqlx::query_as::<_, LocalFriend>(
-            "SELECT * FROM local_friends WHERE owner_user_id = ? ORDER BY is_pinned DESC, create_time DESC",
-        )
-        .bind(owner_user_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query friends: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalFriend>("SELECT * FROM local_friends WHERE owner_user_id = ? ORDER BY is_pinned DESC, create_time DESC")
+            .bind(owner_user_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query friends: {}", e)))?;
         Ok(rows)
     }
 
-    pub async fn get_by_id(
-        &self,
-        owner_user_id: &str,
-        friend_user_id: &str,
-    ) -> Result<Option<LocalFriend>> {
-        let row = sqlx::query_as::<_, LocalFriend>(
-            "SELECT * FROM local_friends WHERE owner_user_id = ? AND friend_user_id = ?",
-        )
-        .bind(owner_user_id)
-        .bind(friend_user_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query friend: {}", e)))?;
+    pub async fn get_by_id(&self, owner_user_id: &str, friend_user_id: &str) -> Result<Option<LocalFriend>> {
+        let row = sqlx::query_as::<_, LocalFriend>("SELECT * FROM local_friends WHERE owner_user_id = ? AND friend_user_id = ?")
+            .bind(owner_user_id)
+            .bind(friend_user_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query friend: {}", e)))?;
         Ok(row)
     }
 
     pub async fn delete(&self, owner_user_id: &str, friend_user_id: &str) -> Result<()> {
-        sqlx::query(
-            "DELETE FROM local_friends WHERE owner_user_id = ? AND friend_user_id = ?",
-        )
-        .bind(owner_user_id)
-        .bind(friend_user_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("delete friend: {}", e)))?;
+        sqlx::query("DELETE FROM local_friends WHERE owner_user_id = ? AND friend_user_id = ?")
+            .bind(owner_user_id)
+            .bind(friend_user_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete friend: {}", e)))?;
         Ok(())
     }
 
@@ -143,11 +133,25 @@ use crate::db::friend::FriendRepository;
 
 #[async_trait::async_trait]
 impl FriendRepository for FriendDao {
-    async fn upsert(&self, friend: &LocalFriend) -> Result<()> { FriendDao::upsert(self, friend).await }
-    async fn batch_upsert(&self, friends: &[LocalFriend]) -> Result<()> { self.batch_upsert(friends).await }
-    async fn get_all(&self, owner_user_id: &str) -> Result<Vec<LocalFriend>> { self.get_all(owner_user_id).await }
-    async fn get_by_id(&self, owner_user_id: &str, friend_user_id: &str) -> Result<Option<LocalFriend>> { self.get_by_id(owner_user_id, friend_user_id).await }
-    async fn delete(&self, owner_user_id: &str, friend_user_id: &str) -> Result<()> { self.delete(owner_user_id, friend_user_id).await }
-    async fn batch_delete(&self, owner_user_id: &str, friend_user_ids: &[String]) -> Result<()> { self.batch_delete(owner_user_id, friend_user_ids).await }
-    async fn search_friends(&self, owner_user_id: &str, keyword: &str) -> Result<Vec<LocalFriend>> { self.search_friends(owner_user_id, keyword).await }
+    async fn upsert(&self, friend: &LocalFriend) -> Result<()> {
+        FriendDao::upsert(self, friend).await
+    }
+    async fn batch_upsert(&self, friends: &[LocalFriend]) -> Result<()> {
+        self.batch_upsert(friends).await
+    }
+    async fn get_all(&self, owner_user_id: &str) -> Result<Vec<LocalFriend>> {
+        self.get_all(owner_user_id).await
+    }
+    async fn get_by_id(&self, owner_user_id: &str, friend_user_id: &str) -> Result<Option<LocalFriend>> {
+        self.get_by_id(owner_user_id, friend_user_id).await
+    }
+    async fn delete(&self, owner_user_id: &str, friend_user_id: &str) -> Result<()> {
+        self.delete(owner_user_id, friend_user_id).await
+    }
+    async fn batch_delete(&self, owner_user_id: &str, friend_user_ids: &[String]) -> Result<()> {
+        self.batch_delete(owner_user_id, friend_user_ids).await
+    }
+    async fn search_friends(&self, owner_user_id: &str, keyword: &str) -> Result<Vec<LocalFriend>> {
+        self.search_friends(owner_user_id, keyword).await
+    }
 }

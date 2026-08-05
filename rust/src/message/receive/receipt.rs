@@ -25,33 +25,23 @@ impl MessageProcessor {
     ///    - 群聊/通知：仅重算未读数（doUnreadCount）
     /// 2. 自己的已读回执（其他设备同步）：更新未读数
     pub(crate) async fn handle_read_receipt(&self, msg: &MsgData) -> Result<()> {
-        let tips = MarkAsReadTips::decode(msg.content.as_slice())
-            .map_err(|e| SdkError::invalid_argument(format!("解析 MarkAsReadTips 失败: {}", e)))?;
+        let tips = MarkAsReadTips::decode(msg.content.as_slice()).map_err(|e| SdkError::invalid_argument(format!("解析 MarkAsReadTips 失败: {}", e)))?;
 
         let login_user_id = self.user_id.get().await;
 
         if tips.mark_as_read_user_id != login_user_id {
             // 别人发来的已读回执：对方标记我的消息为已读
             let conversation = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await?;
-            let session_type_val = conversation.as_ref()
-                .map(|c| c.conversation_type)
-                .unwrap_or(msg.session_type);
+            let session_type_val = conversation.as_ref().map(|c| c.conversation_type).unwrap_or(msg.session_type);
 
             if session_type_val == session_type::SINGLE_CHAT {
                 // 单聊已读回执：由 do_unread_count 统一标记已读 + 重算未读数
-            } else if session_type_val == session_type::WRITE_GROUP_CHAT
-                || session_type_val == session_type::READ_GROUP_CHAT
-            {
+            } else if session_type_val == session_type::WRITE_GROUP_CHAT || session_type_val == session_type::READ_GROUP_CHAT {
                 // 群聊：发布群已读回执事件
             }
 
             // 重算未读数
-            self.do_unread_count(
-                &tips.conversation_id,
-                session_type_val,
-                tips.has_read_seq,
-                &tips.seqs,
-            ).await?;
+            self.do_unread_count(&tips.conversation_id, session_type_val, tips.has_read_seq, &tips.seqs).await?;
 
             // 单聊：发布 C2CReadReceipt 事件
             if session_type_val == session_type::SINGLE_CHAT && !tips.seqs.is_empty() {
@@ -66,7 +56,6 @@ impl MessageProcessor {
             }
 
             info!("[RECEIPT] conv={} mark_user={} seqs={}", tips.conversation_id, tips.mark_as_read_user_id, tips.seqs.len());
-
         } else {
             // 自己的已读回执（其他设备同步过来的）
             self.repositories.conversation_repo.update_unread_count(&tips.conversation_id, 0).await?;
@@ -83,11 +72,10 @@ impl MessageProcessor {
 
     /// 处理来自 NotificationHandler 的已读回执（MsgData 格式，content_type=2200）
     pub async fn handle_read_receipt_from_msg_data(&self, msg: &openim_protocol::sdkws::MsgData) -> Result<()> {
-        let content_str = std::str::from_utf8(&msg.content)
-            .map_err(|e| SdkError::invalid_argument(format!("content 不是有效 UTF-8: {}", e)))?;
-        let outer: serde_json::Value = serde_json::from_str(content_str)
-            .map_err(|e| SdkError::invalid_argument(format!("解析外层 JSON 失败: {}", e)))?;
-        let detail_str = outer.get("detail")
+        let content_str = std::str::from_utf8(&msg.content).map_err(|e| SdkError::invalid_argument(format!("content 不是有效 UTF-8: {}", e)))?;
+        let outer: serde_json::Value = serde_json::from_str(content_str).map_err(|e| SdkError::invalid_argument(format!("解析外层 JSON 失败: {}", e)))?;
+        let detail_str = outer
+            .get("detail")
             .and_then(|v| v.as_str())
             .ok_or_else(|| SdkError::invalid_argument("JSON 缺少 detail 字段".to_string()))?;
 
@@ -102,17 +90,14 @@ impl MessageProcessor {
             #[serde(rename = "hasReadSeq")]
             has_read_seq: i64,
         }
-        let tips_json: MarkAsReadTipsJson = serde_json::from_str(detail_str)
-            .map_err(|e| SdkError::invalid_argument(format!("解析 detail JSON 失败: {}", e)))?;
+        let tips_json: MarkAsReadTipsJson = serde_json::from_str(detail_str).map_err(|e| SdkError::invalid_argument(format!("解析 detail JSON 失败: {}", e)))?;
         let seqs = tips_json.seqs.unwrap_or_default();
 
         let login_user_id = self.user_id.get().await;
 
         if tips_json.mark_as_read_user_id != login_user_id {
             let conversation = self.repositories.conversation_repo.get_by_id(&tips_json.conversation_id).await?;
-            let session_type_val = conversation.as_ref()
-                .map(|c| c.conversation_type)
-                .unwrap_or(msg.session_type);
+            let session_type_val = conversation.as_ref().map(|c| c.conversation_type).unwrap_or(msg.session_type);
 
             if session_type_val == session_type::SINGLE_CHAT {
                 if !seqs.is_empty() {
@@ -122,10 +107,7 @@ impl MessageProcessor {
                     for mut m in messages {
                         if m.is_read == 0 {
                             m.is_read = 1;
-                            self.repositories.message_repo.mark_as_read_by_seqs_all(
-                                &tips_json.conversation_id,
-                                &[m.seq],
-                            ).await?;
+                            self.repositories.message_repo.mark_as_read_by_seqs_all(&tips_json.conversation_id, &[m.seq]).await?;
                             updated_client_msg_ids.push(m.client_msg_id.clone());
                         }
                     }
@@ -141,17 +123,10 @@ impl MessageProcessor {
                         });
                     }
                 }
-            } else if session_type_val == session_type::WRITE_GROUP_CHAT
-                || session_type_val == session_type::READ_GROUP_CHAT
-            {
+            } else if session_type_val == session_type::WRITE_GROUP_CHAT || session_type_val == session_type::READ_GROUP_CHAT {
             }
 
-            self.do_unread_count(
-                &tips_json.conversation_id,
-                session_type_val,
-                tips_json.has_read_seq,
-                &seqs,
-            ).await?;
+            self.do_unread_count(&tips_json.conversation_id, session_type_val, tips_json.has_read_seq, &seqs).await?;
 
             info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
@@ -167,13 +142,7 @@ impl MessageProcessor {
     }
 
     /// 重算会话未读数（对齐 Go SDK `doUnreadCount` read_drawing.go L173-225）
-    async fn do_unread_count(
-        &self,
-        conversation_id: &str,
-        session_type_val: i32,
-        has_read_seq: i64,
-        seqs: &[i64],
-    ) -> Result<()> {
+    async fn do_unread_count(&self, conversation_id: &str, session_type_val: i32, has_read_seq: i64, seqs: &[i64]) -> Result<()> {
         if session_type_val == session_type::SINGLE_CHAT {
             // 幂等性检查：如果 has_read_seq 对应的消息已读，说明已处理过此回执
             if !seqs.is_empty() {
@@ -192,14 +161,9 @@ impl MessageProcessor {
 
             // 计算未读数 = max_seq - has_read_seq
             let current_max_seq = self.max_seq_recorder.get(conversation_id);
-            let unread_count = if current_max_seq > has_read_seq {
-                (current_max_seq - has_read_seq) as i32
-            } else {
-                0
-            };
+            let unread_count = if current_max_seq > has_read_seq { (current_max_seq - has_read_seq) as i32 } else { 0 };
 
             self.repositories.conversation_repo.update_unread_count(conversation_id, unread_count).await?;
-
         } else {
             self.repositories.conversation_repo.update_unread_count(conversation_id, 0).await?;
         }
@@ -211,13 +175,13 @@ impl MessageProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::client::context::Repositories;
     use crate::constant::notification_type::HAS_READ_RECEIPT;
-    use crate::model::UserId;
+    use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::model::local::{LocalChatLog, LocalConversation};
-    use crate::db::pool::create_pool_memory;
+    use crate::model::UserId;
     use openim_protocol::sdkws::MarkAsReadTips;
-    use crate::client::context::Repositories;
     use prost::Message as ProstMessage;
     use std::sync::Arc;
 
@@ -314,7 +278,12 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs = vec![
             make_local_msg("conv_read", "msg_1", 1, "user_2"),
@@ -340,7 +309,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         conversation_dao.upsert(&make_conv("conv_self_read", 5)).await.unwrap();
 
@@ -379,7 +353,12 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let msgs = vec![
             make_local_msg("conv_partial", "msg_1", 1, "user_2"),
@@ -407,16 +386,21 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
-        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_1"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
 
         let mut group_conv = make_conv("conv_group", 5);
         group_conv.conversation_type = 3;
         conversation_dao.upsert(&group_conv).await.unwrap();
 
-        message_dao.batch_insert(&[
-            make_local_msg("conv_group", "g1", 1, "user_2"),
-            make_local_msg("conv_group", "g2", 2, "user_3"),
-        ]).await.unwrap();
+        message_dao
+            .batch_insert(&[make_local_msg("conv_group", "g1", 1, "user_2"), make_local_msg("conv_group", "g2", 2, "user_3")])
+            .await
+            .unwrap();
 
         let receipt = make_receipt_msg("conv_group", "user_2", vec![1, 2], 2);
         handler.handle_messages("conv_group", vec![receipt]).await.unwrap();
@@ -425,4 +409,3 @@ mod tests {
         assert_eq!(conv.unread_count, 0, "group chat unread should be 0 after receipt");
     }
 }
-

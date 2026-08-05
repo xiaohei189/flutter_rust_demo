@@ -1,8 +1,8 @@
+use openim_protocol::sdkws::{PullMsgs, PushMessages};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{Mutex, mpsc};
-use openim_protocol::sdkws::{PullMsgs, PushMessages};
+use tokio::sync::{mpsc, Mutex};
 
 // 对齐 Go SDK message_batcher.go 常量
 const MAX_BATCH_MESSAGES: usize = 400;
@@ -74,10 +74,7 @@ impl MessageBatcher {
     }
 
     /// flush 循环：接收 timer 到期信号
-    async fn flush_loop(
-        inner: Arc<Mutex<MessageBatcherInner>>,
-        mut flush_rx: mpsc::Receiver<()>,
-    ) {
+    async fn flush_loop(inner: Arc<Mutex<MessageBatcherInner>>, mut flush_rx: mpsc::Receiver<()>) {
         while flush_rx.recv().await.is_some() {
             let mut guard = inner.lock().await;
             if guard.timer_tx.take().is_some() {
@@ -253,10 +250,7 @@ impl MessageBatcherInner {
 }
 
 /// 按 conversationID 合并 PullMsgs
-fn merge_pulls(
-    destination: &mut HashMap<String, PullMsgs>,
-    source: &HashMap<String, PullMsgs>,
-) {
+fn merge_pulls(destination: &mut HashMap<String, PullMsgs>, source: &HashMap<String, PullMsgs>) {
     for (conv_id, pulls) in source {
         if let Some(existing) = destination.get_mut(conv_id) {
             existing.msgs.extend(pulls.msgs.iter().cloned());
@@ -370,7 +364,14 @@ mod tests {
 
         // 非空批次：包含一条消息
         let mut msgs = HashMap::new();
-        msgs.insert("conv1".into(), PullMsgs { msgs: vec![MsgData::default()], is_end: false, end_seq: 1 });
+        msgs.insert(
+            "conv1".into(),
+            PullMsgs {
+                msgs: vec![MsgData::default()],
+                is_end: false,
+                end_seq: 1,
+            },
+        );
         let batch = PushMessages {
             msgs,
             notification_msgs: HashMap::new(),
@@ -397,7 +398,14 @@ mod tests {
 
         // 非空批次
         let mut msgs = HashMap::new();
-        msgs.insert("conv1".into(), PullMsgs { msgs: vec![MsgData::default()], is_end: false, end_seq: 1 });
+        msgs.insert(
+            "conv1".into(),
+            PullMsgs {
+                msgs: vec![MsgData::default()],
+                is_end: false,
+                end_seq: 1,
+            },
+        );
         let batch = PushMessages {
             msgs,
             notification_msgs: HashMap::new(),

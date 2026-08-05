@@ -17,12 +17,25 @@ impl ContentTypeUtils {
     /// 英文可读名称（用于 debug 日志）
     pub fn display_name(ct: i32) -> &'static str {
         match ct {
-            101 => "Text", 102 => "Picture", 103 => "Sound", 104 => "Video",
-            105 => "File", 106 => "AtText", 107 => "Merger", 108 => "Card",
-            109 => "Location", 110 => "Custom", 113 => "Typing", 114 => "Quote",
-            115 => "Face", 117 => "AdvancedText", 118 => "MarkdownText",
-            119 => "CustomNotTrigger", 120 => "CustomOnlineOnly",
-            121 => "ReactionModifier", 122 => "ReactionDeleter",
+            101 => "Text",
+            102 => "Picture",
+            103 => "Sound",
+            104 => "Video",
+            105 => "File",
+            106 => "AtText",
+            107 => "Merger",
+            108 => "Card",
+            109 => "Location",
+            110 => "Custom",
+            113 => "Typing",
+            114 => "Quote",
+            115 => "Face",
+            117 => "AdvancedText",
+            118 => "MarkdownText",
+            119 => "CustomNotTrigger",
+            120 => "CustomOnlineOnly",
+            121 => "ReactionModifier",
+            122 => "ReactionDeleter",
             1000..=5000 => "Notification",
             _ => "Unknown",
         }
@@ -86,17 +99,14 @@ impl ContentTypeUtils {
     ///
     /// 排除：通知(tip)、正在输入、仅在线消息
     pub fn should_store(ct: i32) -> bool {
-        !Self::is_tip(ct)
-            && ct != content_type::TYPING
-            && ct != content_type::CUSTOM_MSG_ONLINE_ONLY
+        !Self::is_tip(ct) && ct != content_type::TYPING && ct != content_type::CUSTOM_MSG_ONLINE_ONLY
     }
 
     /// 判断消息是否应触发会话更新（latestMsg / unreadCount）
     ///
     /// 排除：不触发会话的自定义消息
     pub fn should_update_conversation(ct: i32) -> bool {
-        Self::should_store(ct)
-            && ct != content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION
+        Self::should_store(ct) && ct != content_type::CUSTOM_MSG_NOT_TRIGGER_CONVERSATION
     }
 }
 
@@ -218,7 +228,7 @@ mod tests {
         assert!(ContentTypeUtils::should_store(102)); // PICTURE
         assert!(ContentTypeUtils::should_store(114)); // QUOTE
         assert!(ContentTypeUtils::should_store(119)); // CUSTOM_NOT_TRIGGER
-        // 通知不存储
+                                                      // 通知不存储
         assert!(!ContentTypeUtils::should_store(1000));
         assert!(!ContentTypeUtils::should_store(2101));
         // TYPING 不存储
@@ -231,7 +241,7 @@ mod tests {
     fn test_should_update_conversation() {
         assert!(ContentTypeUtils::should_update_conversation(101)); // TEXT
         assert!(ContentTypeUtils::should_update_conversation(102)); // PICTURE
-        // NOT_TRIGGER_CONVERSATION 不更新会话
+                                                                    // NOT_TRIGGER_CONVERSATION 不更新会话
         assert!(!ContentTypeUtils::should_update_conversation(119));
         // TYPING 不更新
         assert!(!ContentTypeUtils::should_update_conversation(113));
@@ -241,4 +251,3 @@ mod tests {
         assert!(!ContentTypeUtils::should_update_conversation(1203));
     }
 }
-

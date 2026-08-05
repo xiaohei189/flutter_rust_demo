@@ -1,50 +1,20 @@
 use crate::error::{Result, SdkError};
 use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 
-use crate::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
-use crate::model::UserId;
-use crate::model::local::LocalGroup;
 use crate::http::GroupServerApi;
+use crate::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
+use crate::model::local::LocalGroup;
+use crate::model::UserId;
 
-use crate::http::Pagination;
-use crate::http::group::*;
 use crate::client::context::Repositories;
+use crate::http::group::*;
+use crate::http::Pagination;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ========== 增量同步类型 ==========
-
-
-
-
 
 pub struct GroupService {
     /// 外部依赖
@@ -60,12 +30,7 @@ pub struct GroupService {
 }
 
 impl GroupService {
-    pub fn new(
-        api: Arc<dyn GroupServerApi>,
-        repositories: Arc<Repositories>,
-        user_id: UserId,
-        listener: Arc<dyn GroupListener>,
-    ) -> Self {
+    pub fn new(api: Arc<dyn GroupServerApi>, repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn GroupListener>) -> Self {
         Self {
             api,
             repositories,
@@ -79,7 +44,6 @@ impl GroupService {
     pub(crate) fn send(&self, e: GroupEvent) {
         self.listener.emit(e);
     }
-
 
     /// 从本地数据库加载群组列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据
@@ -106,20 +70,12 @@ impl GroupService {
         let user_id = self.user_id.get().await;
         let req = GetJoinedGroupListReq {
             user_id: user_id.clone(),
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
 
         let resp = self.api.get_joined_group_list(&req).await?;
 
-        let groups: Vec<GroupInfo> = resp
-            .groups
-            .unwrap_or_default()
-            .into_iter()
-            .map(|s| server_to_group_info(s))
-            .collect();
+        let groups: Vec<GroupInfo> = resp.groups.unwrap_or_default().into_iter().map(|s| server_to_group_info(s)).collect();
 
         // 持久化到数据库
         for group in &groups {
@@ -228,23 +184,16 @@ impl GroupService {
             warn!("更新群组同步版本失败: {}", e);
         }
 
-        info!("增量同步群组完成, insert={}, update={}, delete={}",
-            resp.insert.len(), resp.update.len(), resp.delete.len());
+        info!("增量同步群组完成, insert={}, update={}, delete={}", resp.insert.len(), resp.update.len(), resp.delete.len());
         Ok(())
     }
 
     pub async fn get_groups_info(&self, group_ids: Vec<String>) -> Result<Vec<GroupInfo>> {
-        let req = GetGroupsInfoReq {
-            group_ids: group_ids.clone(),
-        };
+        let req = GetGroupsInfoReq { group_ids: group_ids.clone() };
 
         let resp = self.api.get_groups_info(&req).await?;
 
-        let groups: Vec<GroupInfo> = resp
-            .groups_info
-            .into_iter()
-            .map(|s| server_to_group_info(s))
-            .collect();
+        let groups: Vec<GroupInfo> = resp.groups_info.into_iter().map(|s| server_to_group_info(s)).collect();
 
         Ok(groups)
     }
@@ -265,7 +214,7 @@ impl GroupService {
                 face_url,
                 introduction,
                 notification,
-                group_type: 2,  // 2 = 普通群（与 Go SDK 一致）
+                group_type: 2, // 2 = 普通群（与 Go SDK 一致）
                 ex: None,
             },
             member_user_ids,
@@ -277,7 +226,6 @@ impl GroupService {
 
         let group = server_to_group_info(resp.group);
         self.groups.write().await.push(group.clone());
-
 
         info!("群组已创建: {}", group.group_id);
         Ok(group)
@@ -298,9 +246,7 @@ impl GroupService {
     }
 
     pub async fn quit_group(&self, group_id: String) -> Result<()> {
-        let req = QuitGroupReq {
-            group_id: group_id.clone(),
-        };
+        let req = QuitGroupReq { group_id: group_id.clone() };
 
         self.api.quit_group(&req).await?;
 
@@ -312,15 +258,12 @@ impl GroupService {
     }
 
     pub async fn dismiss_group(&self, group_id: String) -> Result<()> {
-        let req = DismissGroupReq {
-            group_id: group_id.clone(),
-        };
+        let req = DismissGroupReq { group_id: group_id.clone() };
 
         self.api.dismiss_group(&req).await?;
 
         self.groups.write().await.retain(|g| g.group_id != group_id);
         self.members.write().await.retain(|m| m.group_id != group_id);
-
 
         info!("群组已解散: {}", group_id);
         Ok(())
@@ -338,13 +281,7 @@ impl GroupService {
 
         self.api.set_group_info(&req).await?;
 
-        if let Some(group) = self
-            .groups
-            .write()
-            .await
-            .iter_mut()
-            .find(|g| g.group_id == updates.group_id)
-        {
+        if let Some(group) = self.groups.write().await.iter_mut().find(|g| g.group_id == updates.group_id) {
             if let Some(name) = &req.group_name {
                 group.group_name = name.clone();
             }
@@ -352,7 +289,6 @@ impl GroupService {
                 group.face_url = url.clone();
             }
         }
-
 
         info!("群组信息已更新: {}", updates.group_id);
         Ok(())
@@ -366,13 +302,7 @@ impl GroupService {
         self.groups.read().await.len()
     }
 
-    pub async fn get_group_member_list(
-        &self,
-        group_id: String,
-        filter: i32,
-        offset: u32,
-        count: u32,
-    ) -> Result<Vec<GroupMember>> {
+    pub async fn get_group_member_list(&self, group_id: String, filter: i32, offset: u32, count: u32) -> Result<Vec<GroupMember>> {
         let req = GetGroupMemberListReq {
             group_id: group_id.clone(),
             filter,
@@ -385,43 +315,22 @@ impl GroupService {
 
         let resp = self.api.get_group_member_list(&req).await?;
 
-        let members: Vec<GroupMember> = resp
-            .members
-            .unwrap_or_default()
-            .into_iter()
-            .map(|s| server_to_group_member(s))
-            .collect();
+        let members: Vec<GroupMember> = resp.members.unwrap_or_default().into_iter().map(|s| server_to_group_member(s)).collect();
 
         Ok(members)
     }
 
-    pub async fn get_group_members_info(
-        &self,
-        group_id: String,
-        user_ids: Vec<String>,
-    ) -> Result<Vec<GroupMember>> {
-        let req = GetGroupMembersInfoReq {
-            group_id: group_id.clone(),
-            user_ids,
-        };
+    pub async fn get_group_members_info(&self, group_id: String, user_ids: Vec<String>) -> Result<Vec<GroupMember>> {
+        let req = GetGroupMembersInfoReq { group_id: group_id.clone(), user_ids };
 
         let resp = self.api.get_group_members_info(&req).await?;
 
-        let members: Vec<GroupMember> = resp
-            .members_info
-            .into_iter()
-            .map(|s| server_to_group_member(s))
-            .collect();
+        let members: Vec<GroupMember> = resp.members_info.into_iter().map(|s| server_to_group_member(s)).collect();
 
         Ok(members)
     }
 
-    pub async fn kick_group_member(
-        &self,
-        group_id: String,
-        user_ids: Vec<String>,
-        reason: Option<String>,
-    ) -> Result<()> {
+    pub async fn kick_group_member(&self, group_id: String, user_ids: Vec<String>, reason: Option<String>) -> Result<()> {
         let req = KickGroupMemberReq {
             group_id: group_id.clone(),
             user_id_list: user_ids,
@@ -430,21 +339,13 @@ impl GroupService {
 
         self.api.kick_group_member(&req).await?;
 
-        self.members
-            .write()
-            .await
-            .retain(|m| m.group_id != group_id || !req.user_id_list.contains(&m.user_id));
+        self.members.write().await.retain(|m| m.group_id != group_id || !req.user_id_list.contains(&m.user_id));
 
         info!("群成员已踢出: group={}", group_id);
         Ok(())
     }
 
-    pub async fn invite_user_to_group(
-        &self,
-        group_id: String,
-        user_ids: Vec<String>,
-        reason: Option<String>,
-    ) -> Result<()> {
+    pub async fn invite_user_to_group(&self, group_id: String, user_ids: Vec<String>, reason: Option<String>) -> Result<()> {
         let req = InviteUserToGroupReq {
             group_id: group_id.clone(),
             user_id_list: user_ids,
@@ -477,10 +378,7 @@ impl GroupService {
         let user_id = self.user_id.get().await;
         let req = GetGroupApplicationListReq {
             from_user_id: user_id,
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_group_application_list(&req).await?;
         Ok(resp)
@@ -491,10 +389,7 @@ impl GroupService {
         let user_id = self.user_id.get().await;
         let req = GetGroupApplicationListReq {
             from_user_id: user_id,
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_recv_group_application_list(&req).await?;
         Ok(resp)
@@ -505,10 +400,7 @@ impl GroupService {
         let user_id = self.user_id.get().await;
         let req = GetGroupApplicationListReq {
             from_user_id: user_id,
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_send_group_application_list(&req).await?;
         Ok(resp)
@@ -575,11 +467,7 @@ impl GroupService {
     /// 分页获取已加入群组列表（对齐 Go SDK `GetJoinedGroupListPage`）
     ///
     /// 优先从服务端分页获取，返回指定页的群组列表。
-    pub async fn get_joined_group_list_page(
-        &self,
-        offset: i32,
-        count: i32,
-    ) -> Result<Vec<GroupInfo>> {
+    pub async fn get_joined_group_list_page(&self, offset: i32, count: i32) -> Result<Vec<GroupInfo>> {
         let user_id = self.user_id.get().await;
         let req = GetJoinedGroupListReq {
             user_id,
@@ -591,12 +479,7 @@ impl GroupService {
 
         let resp = self.api.get_joined_group_list(&req).await?;
 
-        let groups: Vec<GroupInfo> = resp
-            .groups
-            .unwrap_or_default()
-            .into_iter()
-            .map(server_to_group_info)
-            .collect();
+        let groups: Vec<GroupInfo> = resp.groups.unwrap_or_default().into_iter().map(server_to_group_info).collect();
 
         Ok(groups)
     }
@@ -610,10 +493,7 @@ impl GroupService {
             .read()
             .await
             .iter()
-            .filter(|g| {
-                g.group_id.to_lowercase().contains(&kw)
-                    || g.group_name.to_lowercase().contains(&kw)
-            })
+            .filter(|g| g.group_id.to_lowercase().contains(&kw) || g.group_name.to_lowercase().contains(&kw))
             .cloned()
             .collect()
     }
@@ -621,10 +501,7 @@ impl GroupService {
     /// 获取群主和管理员列表（对齐 Go SDK `GetGroupMemberOwnerAndAdmin`）
     ///
     /// 从服务端获取 roleLevel >= 2（管理员和群主）的成员。
-    pub async fn get_group_member_owner_and_admin(
-        &self,
-        group_id: String,
-    ) -> Result<Vec<GroupMember>> {
+    pub async fn get_group_member_owner_and_admin(&self, group_id: String) -> Result<Vec<GroupMember>> {
         // filter=3 表示获取群主+管理员
         self.get_group_member_list(group_id, 3, 0, 1000).await
     }
@@ -644,21 +521,13 @@ impl GroupService {
         // 先从服务端获取全部成员（使用 filter=0 表示所有成员）
         let all_members = self.get_group_member_list(group_id, 0, 0, 10000).await?;
 
-        let end_time = if join_time_end == 0 {
-            i64::MAX
-        } else {
-            join_time_end
-        };
+        let end_time = if join_time_end == 0 { i64::MAX } else { join_time_end };
 
         let filter_set: std::collections::HashSet<String> = filter_user_ids.into_iter().collect();
 
         let filtered: Vec<GroupMember> = all_members
             .into_iter()
-            .filter(|m| {
-                m.join_time >= join_time_begin
-                    && m.join_time <= end_time
-                    && !filter_set.contains(&m.user_id)
-            })
+            .filter(|m| m.join_time >= join_time_begin && m.join_time <= end_time && !filter_set.contains(&m.user_id))
             .skip(offset.max(0) as usize)
             .take(count.max(0) as usize)
             .collect();
@@ -669,21 +538,13 @@ impl GroupService {
     /// 搜索群成员（对齐 Go SDK `SearchGroupMembers`）
     ///
     /// 在本地缓存中按 user_id 或 nickname 模糊搜索指定群组的成员。
-    pub async fn search_group_members(
-        &self,
-        group_id: &str,
-        keyword: &str,
-    ) -> Vec<GroupMember> {
+    pub async fn search_group_members(&self, group_id: &str, keyword: &str) -> Vec<GroupMember> {
         let kw = keyword.to_lowercase();
         self.members
             .read()
             .await
             .iter()
-            .filter(|m| {
-                m.group_id == group_id
-                    && (m.user_id.to_lowercase().contains(&kw)
-                        || m.nickname.to_lowercase().contains(&kw))
-            })
+            .filter(|m| m.group_id == group_id && (m.user_id.to_lowercase().contains(&kw) || m.nickname.to_lowercase().contains(&kw)))
             .cloned()
             .collect()
     }
@@ -691,22 +552,11 @@ impl GroupService {
     /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
     ///
     /// 返回传入 user_ids 中存在于该群组的用户 ID 列表。
-    pub async fn get_users_in_group(
-        &self,
-        group_id: &str,
-        user_ids: Vec<String>,
-    ) -> Vec<String> {
+    pub async fn get_users_in_group(&self, group_id: &str, user_ids: Vec<String>) -> Vec<String> {
         let members = self.members.read().await;
-        let member_set: std::collections::HashSet<String> = members
-            .iter()
-            .filter(|m| m.group_id == group_id)
-            .map(|m| m.user_id.clone())
-            .collect();
+        let member_set: std::collections::HashSet<String> = members.iter().filter(|m| m.group_id == group_id).map(|m| m.user_id.clone()).collect();
 
-        user_ids
-            .into_iter()
-            .filter(|uid| member_set.contains(uid))
-            .collect()
+        user_ids.into_iter().filter(|uid| member_set.contains(uid)).collect()
     }
 
     /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
@@ -722,11 +572,7 @@ impl GroupService {
     ///
     /// 简化实现：检查本地缓存中是否有该群组的成员数据。
     pub async fn check_group_member_full_sync(&self, group_id: &str) -> bool {
-        self.members
-            .read()
-            .await
-            .iter()
-            .any(|m| m.group_id == group_id)
+        self.members.read().await.iter().any(|m| m.group_id == group_id)
     }
 
     /// 同步指定群组的成员列表到本地缓存
@@ -811,7 +657,6 @@ fn local_to_group_info(l: &LocalGroup) -> GroupInfo {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -863,10 +708,7 @@ mod tests {
     fn test_get_joined_group_list_req_serialization() {
         let req = GetJoinedGroupListReq {
             user_id: "test_user".to_string(),
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 100,
-            },
+            pagination: Pagination { page_number: 1, show_number: 100 },
         };
 
         let json = serde_json::to_string(&req).unwrap();
@@ -909,6 +751,3 @@ mod tests {
         assert!(json.contains("violation"));
     }
 }
-
-
-

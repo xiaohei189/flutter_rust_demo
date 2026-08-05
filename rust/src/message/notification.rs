@@ -9,16 +9,16 @@
 //! 对齐 Go SDK `UnmarshalNotificationElem`：先解析外层 NotificationElem，
 //! 再解析内层 detail 到目标类型。
 
-use crate::conversation::syncer::ConversationSyncer;
-use crate::friend::service::FriendService;
-use crate::group::service::GroupService;
-use crate::message::MessageProcessor;
-use crate::user::service::UserService;
 use crate::constant::notification_type;
+use crate::conversation::syncer::ConversationSyncer;
 use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
+use crate::friend::service::FriendService;
+use crate::group::service::GroupService;
+use crate::message::MessageProcessor;
 use crate::model::UserId;
+use crate::user::service::UserService;
 use openim_protocol::sdkws::MsgData;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -65,15 +65,11 @@ impl NotificationHandler {
         }
     }
 
-
     /// 处理通知消息列表（对齐 Go SDK Work() 方法的 CmdNotification 路由）
     pub async fn handle_notifications(&self, msgs: &[MsgData]) {
         for msg in msgs {
             if let Err(e) = self.handle_single_notification(msg).await {
-                warn!(
-                    "[NOTIFY] 处理失败: content_type={} err={}",
-                    msg.content_type, e
-                );
+                warn!("[NOTIFY] 处理失败: content_type={} err={}", msg.content_type, e);
             }
         }
     }
@@ -184,8 +180,10 @@ impl NotificationHandler {
         let raw_str = String::from_utf8_lossy(content);
         info!("[REVOKE-DEBUG-RAW] 原始通知内容前200字: {}", &raw_str[..raw_str.len().min(200)]);
         let tips: RevokeMsgTipsJson = unmarshal_notification_elem(content)?;
-        info!("[REVOKE-DEBUG-PARSED] 解析结果: revoker_nickname='{}', revoker_role={}, user_id='{}', seq={}, conv='{}'",
-            tips.revoker_nickname, tips.revoker_role, tips.revoker_user_id, tips.seq, tips.conversation_id);
+        info!(
+            "[REVOKE-DEBUG-PARSED] 解析结果: revoker_nickname='{}', revoker_role={}, user_id='{}', seq={}, conv='{}'",
+            tips.revoker_nickname, tips.revoker_role, tips.revoker_user_id, tips.seq, tips.conversation_id
+        );
 
         // 委托给 MessageProcessor 处理（构造 protobuf 类型兼容的结构）
         let revoke_tips = openim_protocol::sdkws::RevokeMsgTips {
@@ -227,8 +225,7 @@ impl NotificationHandler {
             warn!("[NOTIFY] 接受好友申请后增量同步好友列表失败: {}", e);
         }
 
-        self.friend_listener
-            .emit(FriendEvent::ApplicationAccepted(application_json));
+        self.friend_listener.emit(FriendEvent::ApplicationAccepted(application_json));
 
         Ok(())
     }
@@ -248,8 +245,7 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.friend_listener
-            .emit(FriendEvent::ApplicationRejected(application_json));
+        self.friend_listener.emit(FriendEvent::ApplicationRejected(application_json));
 
         Ok(())
     }
@@ -269,8 +265,7 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.friend_listener
-            .emit(FriendEvent::ApplicationAdded(application_json));
+        self.friend_listener.emit(FriendEvent::ApplicationAdded(application_json));
 
         Ok(())
     }
@@ -314,8 +309,7 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.group_listener
-            .emit(GroupEvent::ApplicationAdded(application_json));
+        self.group_listener.emit(GroupEvent::ApplicationAdded(application_json));
 
         Ok(())
     }
@@ -339,8 +333,7 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.group_listener
-            .emit(GroupEvent::ApplicationApproved(application_json));
+        self.group_listener.emit(GroupEvent::ApplicationApproved(application_json));
 
         Ok(())
     }
@@ -360,31 +353,28 @@ impl NotificationHandler {
         })
         .to_string();
 
-        self.group_listener
-            .emit(GroupEvent::ApplicationRejected(application_json));
+        self.group_listener.emit(GroupEvent::ApplicationRejected(application_json));
 
         Ok(())
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::hub::EventHub;
-    use crate::event::test_util::*;
-    use crate::model::UserId;
+    use crate::client::context::Repositories;
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
+    use crate::event::events::conversation::ConversationListener;
+    use crate::event::events::message::MessageListener;
+    use crate::event::hub::EventHub;
+    use crate::event::test_util::*;
     use crate::http::client::HttpApiClient;
-    use crate::client::context::Repositories;
+    use crate::http::conversation::ConversationServerApi;
     use crate::http::friend::FriendServerApi;
     use crate::http::group::GroupServerApi;
     use crate::http::UserServerApi;
-    use crate::http::conversation::ConversationServerApi;
-    use crate::event::events::conversation::ConversationListener;
-    use crate::event::events::message::MessageListener;
+    use crate::model::UserId;
     use std::sync::Arc;
 
     fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -401,11 +391,7 @@ mod tests {
     }
 
     fn make_http_client() -> Arc<HttpApiClient> {
-        Arc::new(HttpApiClient::new(
-            "http://localhost:10002".to_string(),
-            "test_token".to_string(),
-            "test_op".to_string(),
-        ))
+        Arc::new(HttpApiClient::new("http://localhost:10002".to_string(), "test_token".to_string(), "test_op".to_string()))
     }
 
     #[tokio::test]
@@ -416,47 +402,18 @@ mod tests {
         let hub = EventHub::new();
         let user_id = UserId::new("test_user");
 
-        let friend_api: Arc<dyn FriendServerApi> = Arc::new(
-            crate::http::friend_api::HttpFriendApi::new(http.clone())
-        );
-        let friend_service = Arc::new(FriendService::new(
-            friend_api,
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-        ));
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let group_api: Arc<dyn GroupServerApi> = Arc::new(
-            crate::http::group_api::HttpGroupApi::new(http.clone())
-        );
-        let group_service = Arc::new(GroupService::new(
-            group_api,
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-        ));
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::http::group_api::HttpGroupApi::new(http.clone()));
+        let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(
-            Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())),
-            hub.clone(),
-        ));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
 
-        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(
-            crate::http::conversation_api::HttpConversationApi::new(http.clone())
-        );
-        let syncer = Arc::new(ConversationSyncer::new_with_api(
-            conv_api,
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-        ));
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let processor = Arc::new(MessageProcessor::new(
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-            hub.clone(),
-        ));
+        let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
         let handler = NotificationHandler::new(
             friend_service,
@@ -487,62 +444,21 @@ mod tests {
         let hub = EventHub::new();
         let user_id = UserId::new("test_user");
 
-        let friend_api: Arc<dyn FriendServerApi> = Arc::new(
-            crate::http::friend_api::HttpFriendApi::new(http.clone())
-        );
-        let friend_service = Arc::new(FriendService::new(
-            friend_api,
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-        ));
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let group_api: Arc<dyn GroupServerApi> = Arc::new(
-            crate::http::group_api::HttpGroupApi::new(http.clone())
-        );
-        let group_service = Arc::new(GroupService::new(
-            group_api,
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-        ));
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::http::group_api::HttpGroupApi::new(http.clone()));
+        let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(
-            Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())),
-            hub.clone(),
-        ));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
 
-        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(
-            crate::http::conversation_api::HttpConversationApi::new(http.clone())
-        );
-        let syncer = Arc::new(ConversationSyncer::new_with_api(
-            conv_api,
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-        ));
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let processor = Arc::new(MessageProcessor::new(
-            repos.clone(),
-            user_id.clone(),
-            hub.clone(),
-            hub.clone(),
-        ));
+        let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
-        let handler = NotificationHandler::new(
-            friend_service,
-            group_service,
-            user_service,
-            syncer,
-            processor,
-            hub.clone(),
-            hub.clone(),
-            hub.clone(),
-            user_id,
-        );
+        let handler = NotificationHandler::new(friend_service, group_service, user_service, syncer, processor, hub.clone(), hub.clone(), hub.clone(), user_id);
 
         handler.handle_notifications(&[]).await;
     }
 }
-
-

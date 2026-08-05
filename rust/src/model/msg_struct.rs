@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 use crate::model::local::LocalChatLog;
 use openim_protocol::sdkws::MsgData;
+use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// 生成消息 ID（对齐 Go SDK utils.GetMsgID）
 /// Go: MD5(nanoTime + sendID + random)
@@ -9,10 +9,7 @@ pub fn get_msg_id(send_id: &str) -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
     let mut hasher = DefaultHasher::new();
     now.hash(&mut hasher);
     send_id.hash(&mut hasher);
@@ -321,9 +318,7 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_image_message(
-        source_path: &str, source: PictureBaseInfo, big: PictureBaseInfo, snapshot: PictureBaseInfo,
-    ) -> MsgStruct {
+    pub fn create_image_message(source_path: &str, source: PictureBaseInfo, big: PictureBaseInfo, snapshot: PictureBaseInfo) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 102;
         msg.msg_from = MSG_FROM_USER;
@@ -365,10 +360,7 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_at_text_message(
-        text: &str, at_user_list: Vec<String>, at_users_info: Vec<AtInfo>,
-        quote_msg: Option<Box<MsgStruct>>,
-    ) -> MsgStruct {
+    pub fn create_at_text_message(text: &str, at_user_list: Vec<String>, at_users_info: Vec<AtInfo>, quote_msg: Option<Box<MsgStruct>>) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 106;
         msg.msg_from = MSG_FROM_USER;
@@ -391,9 +383,7 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_merger_message(
-        messages: Vec<MsgStruct>, title: &str, summaries: Vec<String>,
-    ) -> MsgStruct {
+    pub fn create_merger_message(messages: Vec<MsgStruct>, title: &str, summaries: Vec<String>) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 107;
         msg.msg_from = MSG_FROM_USER;
@@ -416,13 +406,15 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_location_message(
-        description: &str, longitude: f64, latitude: f64,
-    ) -> MsgStruct {
+    pub fn create_location_message(description: &str, longitude: f64, latitude: f64) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 109;
         msg.msg_from = MSG_FROM_USER;
-        let elem = LocationElem { description: description.to_string(), longitude, latitude };
+        let elem = LocationElem {
+            description: description.to_string(),
+            longitude,
+            latitude,
+        };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.location_elem = Some(elem);
         msg
@@ -437,9 +429,7 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_custom_message(
-        data: &str, extension: &str, description: &str,
-    ) -> MsgStruct {
+    pub fn create_custom_message(data: &str, extension: &str, description: &str) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 110;
         msg.msg_from = MSG_FROM_USER;
@@ -453,9 +443,7 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_quote_message(
-        text: &str, quoted_msg: Box<MsgStruct>,
-    ) -> MsgStruct {
+    pub fn create_quote_message(text: &str, quoted_msg: Box<MsgStruct>) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 114;
         msg.msg_from = MSG_FROM_USER;
@@ -479,11 +467,7 @@ impl MsgStruct {
     ///
     /// 与 `create_quote_message` 的区别：额外支持 `message_entities` 参数，
     /// 可以为引用消息的文本添加实体（如 @提及、链接等富文本）。
-    pub fn create_advanced_quote_message(
-        text: &str,
-        quoted_msg: Box<MsgStruct>,
-        message_entities: Vec<MessageEntity>,
-    ) -> MsgStruct {
+    pub fn create_advanced_quote_message(text: &str, quoted_msg: Box<MsgStruct>, message_entities: Vec<MessageEntity>) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 114;
         msg.msg_from = MSG_FROM_USER;
@@ -514,13 +498,14 @@ impl MsgStruct {
         msg
     }
 
-    pub fn create_advanced_text_message(
-        text: &str, entities: Vec<MessageEntity>,
-    ) -> MsgStruct {
+    pub fn create_advanced_text_message(text: &str, entities: Vec<MessageEntity>) -> MsgStruct {
         let mut msg = MsgStruct::new();
         msg.content_type = 117;
         msg.msg_from = MSG_FROM_USER;
-        let elem = AdvancedTextElem { text: text.to_string(), message_entity_list: entities };
+        let elem = AdvancedTextElem {
+            text: text.to_string(),
+            message_entity_list: entities,
+        };
         msg.content = serde_json::to_string(&elem).unwrap();
         msg.advanced_text_elem = Some(elem);
         msg
@@ -540,20 +525,76 @@ impl MsgStruct {
     pub fn populate_elem_by_content_type(&mut self) {
         let content = self.content.clone();
         match self.content_type {
-            101 => { let _ = serde_json::from_str::<TextElem>(&content).map(|e| { self.text_elem = Some(e); }); }
-            102 => { let _ = serde_json::from_str::<PictureElem>(&content).map(|e| { self.picture_elem = Some(e); }); }
-            103 => { let _ = serde_json::from_str::<SoundElem>(&content).map(|e| { self.sound_elem = Some(e); }); }
-            104 => { let _ = serde_json::from_str::<VideoElem>(&content).map(|e| { self.video_elem = Some(e); }); }
-            105 => { let _ = serde_json::from_str::<FileElem>(&content).map(|e| { self.file_elem = Some(e); }); }
-            106 => { let _ = serde_json::from_str::<AtTextElem>(&content).map(|e| { self.at_text_elem = Some(e); }); }
-            107 => { let _ = serde_json::from_str::<MergeElem>(&content).map(|e| { self.merge_elem = Some(e); }); }
-            108 => { let _ = serde_json::from_str::<CardElem>(&content).map(|e| { self.card_elem = Some(e); }); }
-            109 => { let _ = serde_json::from_str::<LocationElem>(&content).map(|e| { self.location_elem = Some(e); }); }
-            110 => { let _ = serde_json::from_str::<CustomElem>(&content).map(|e| { self.custom_elem = Some(e); }); }
-            114 => { let _ = serde_json::from_str::<QuoteElem>(&content).map(|e| { self.quote_elem = Some(e); }); }
-            115 => { let _ = serde_json::from_str::<FaceElem>(&content).map(|e| { self.face_elem = Some(e); }); }
-            117 => { let _ = serde_json::from_str::<AdvancedTextElem>(&content).map(|e| { self.advanced_text_elem = Some(e); }); }
-            118 => { let _ = serde_json::from_str::<MarkdownTextElem>(&content).map(|e| { self.markdown_text_elem = Some(e); }); }
+            101 => {
+                let _ = serde_json::from_str::<TextElem>(&content).map(|e| {
+                    self.text_elem = Some(e);
+                });
+            }
+            102 => {
+                let _ = serde_json::from_str::<PictureElem>(&content).map(|e| {
+                    self.picture_elem = Some(e);
+                });
+            }
+            103 => {
+                let _ = serde_json::from_str::<SoundElem>(&content).map(|e| {
+                    self.sound_elem = Some(e);
+                });
+            }
+            104 => {
+                let _ = serde_json::from_str::<VideoElem>(&content).map(|e| {
+                    self.video_elem = Some(e);
+                });
+            }
+            105 => {
+                let _ = serde_json::from_str::<FileElem>(&content).map(|e| {
+                    self.file_elem = Some(e);
+                });
+            }
+            106 => {
+                let _ = serde_json::from_str::<AtTextElem>(&content).map(|e| {
+                    self.at_text_elem = Some(e);
+                });
+            }
+            107 => {
+                let _ = serde_json::from_str::<MergeElem>(&content).map(|e| {
+                    self.merge_elem = Some(e);
+                });
+            }
+            108 => {
+                let _ = serde_json::from_str::<CardElem>(&content).map(|e| {
+                    self.card_elem = Some(e);
+                });
+            }
+            109 => {
+                let _ = serde_json::from_str::<LocationElem>(&content).map(|e| {
+                    self.location_elem = Some(e);
+                });
+            }
+            110 => {
+                let _ = serde_json::from_str::<CustomElem>(&content).map(|e| {
+                    self.custom_elem = Some(e);
+                });
+            }
+            114 => {
+                let _ = serde_json::from_str::<QuoteElem>(&content).map(|e| {
+                    self.quote_elem = Some(e);
+                });
+            }
+            115 => {
+                let _ = serde_json::from_str::<FaceElem>(&content).map(|e| {
+                    self.face_elem = Some(e);
+                });
+            }
+            117 => {
+                let _ = serde_json::from_str::<AdvancedTextElem>(&content).map(|e| {
+                    self.advanced_text_elem = Some(e);
+                });
+            }
+            118 => {
+                let _ = serde_json::from_str::<MarkdownTextElem>(&content).map(|e| {
+                    self.markdown_text_elem = Some(e);
+                });
+            }
             _ => {}
         }
     }
@@ -650,21 +691,15 @@ mod tests {
     #[test]
     fn test_create_advanced_quote_message_basic() {
         let quoted = MsgStruct::create_text_message("原始消息");
-        let entities = vec![
-            MessageEntity {
-                entity_type: "at".to_string(),
-                offset: 0,
-                length: 3,
-                url: String::new(),
-                ex: "@user1".to_string(),
-            },
-        ];
+        let entities = vec![MessageEntity {
+            entity_type: "at".to_string(),
+            offset: 0,
+            length: 3,
+            url: String::new(),
+            ex: "@user1".to_string(),
+        }];
 
-        let msg = MsgStruct::create_advanced_quote_message(
-            "引用文本",
-            Box::new(quoted),
-            entities,
-        );
+        let msg = MsgStruct::create_advanced_quote_message("引用文本", Box::new(quoted), entities);
 
         assert_eq!(msg.content_type, 114); // QUOTE
         assert_eq!(msg.msg_from, MSG_FROM_USER);
@@ -685,16 +720,9 @@ mod tests {
     fn test_create_advanced_quote_message_nested_quote_flattened() {
         // 如果被引用消息本身是引用消息，应被扁平化为文本
         let inner_quote = MsgStruct::create_text_message("内部消息");
-        let outer_quote = MsgStruct::create_quote_message(
-            "引用引用",
-            Box::new(inner_quote),
-        );
+        let outer_quote = MsgStruct::create_quote_message("引用引用", Box::new(inner_quote));
 
-        let msg = MsgStruct::create_advanced_quote_message(
-            "高级引用",
-            Box::new(outer_quote),
-            vec![],
-        );
+        let msg = MsgStruct::create_advanced_quote_message("高级引用", Box::new(outer_quote), vec![]);
 
         let quote_elem = msg.quote_elem.as_ref().unwrap();
         let quoted_msg = quote_elem.quote_message.as_ref().unwrap();
@@ -720,21 +748,15 @@ mod tests {
     #[test]
     fn test_create_advanced_quote_message_serialization() {
         let quoted = MsgStruct::create_text_message("原文");
-        let entities = vec![
-            MessageEntity {
-                entity_type: "url".to_string(),
-                offset: 5,
-                length: 10,
-                url: "https://example.com".to_string(),
-                ex: String::new(),
-            },
-        ];
+        let entities = vec![MessageEntity {
+            entity_type: "url".to_string(),
+            offset: 5,
+            length: 10,
+            url: "https://example.com".to_string(),
+            ex: String::new(),
+        }];
 
-        let msg = MsgStruct::create_advanced_quote_message(
-            "查看链接",
-            Box::new(quoted),
-            entities,
-        );
+        let msg = MsgStruct::create_advanced_quote_message("查看链接", Box::new(quoted), entities);
 
         // 验证 content JSON 包含 messageEntityList
         let content_json: serde_json::Value = serde_json::from_str(&msg.content).unwrap();
@@ -747,21 +769,15 @@ mod tests {
     #[test]
     fn test_create_advanced_quote_message_populate_from_content() {
         let quoted = MsgStruct::create_text_message("原文");
-        let entities = vec![
-            MessageEntity {
-                entity_type: "at".to_string(),
-                offset: 0,
-                length: 3,
-                url: String::new(),
-                ex: "@someone".to_string(),
-            },
-        ];
+        let entities = vec![MessageEntity {
+            entity_type: "at".to_string(),
+            offset: 0,
+            length: 3,
+            url: String::new(),
+            ex: "@someone".to_string(),
+        }];
 
-        let msg = MsgStruct::create_advanced_quote_message(
-            "引用",
-            Box::new(quoted),
-            entities,
-        );
+        let msg = MsgStruct::create_advanced_quote_message("引用", Box::new(quoted), entities);
 
         // 从 content 恢复 QuoteElem
         let mut restored = MsgStruct::new();

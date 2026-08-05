@@ -34,11 +34,7 @@ mod tests {
     fn test_generate_random_id_charset() {
         let id = generate_random_id(100);
         for c in id.chars() {
-            assert!(
-                c.is_ascii_digit() || (c.is_ascii_lowercase() && c <= 'z'),
-                "unexpected char: {}",
-                c
-            );
+            assert!(c.is_ascii_digit() || (c.is_ascii_lowercase() && c <= 'z'), "unexpected char: {}", c);
         }
     }
 

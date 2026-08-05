@@ -1,19 +1,13 @@
 use crate::error::{Result, SdkError};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
+use crate::http::UserServerApi;
 use crate::model::user::UserInfo;
- use crate::http::UserServerApi;
 
 use crate::http::user::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
-
-
-
-
-
-
 
 pub struct UserService {
     api: Arc<dyn UserServerApi>,
@@ -31,17 +25,11 @@ impl UserService {
     }
 
     pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<UserInfo>> {
-        let req = GetUsersInfoReq {
-            user_id_list: user_ids.clone(),
-        };
+        let req = GetUsersInfoReq { user_id_list: user_ids.clone() };
 
         let resp = self.api.get_users_info(&req).await?;
 
-        let users = resp
-            .users_info
-            .into_iter()
-            .map(|s| server_to_domain(s))
-            .collect();
+        let users = resp.users_info.into_iter().map(|s| server_to_domain(s)).collect();
 
         Ok(users)
     }
@@ -61,11 +49,7 @@ impl UserService {
 
     pub async fn update_self_user_info(&self, updates: UpdateUserFields) -> Result<()> {
         let self_user = self.self_user.read().await.clone();
-        let user_id = self_user
-            .as_ref()
-            .ok_or_else(|| SdkError::unknown("用户未登录"))?
-            .user_id
-            .clone();
+        let user_id = self_user.as_ref().ok_or_else(|| SdkError::unknown("用户未登录"))?.user_id.clone();
 
         let req = UpdateUserInfoReq {
             user_info: UpdateUserInfoData {
@@ -102,9 +86,7 @@ impl UserService {
         };
 
         if let Some(updated_user) = updated_user {
-            self.listener.emit(UserEvent::UserInfoUpdated {
-                user: updated_user,
-            });
+            self.listener.emit(UserEvent::UserInfoUpdated { user: updated_user });
         }
 
         info!("用户信息已更新到服务器");
@@ -149,7 +131,6 @@ fn server_to_domain(s: ServerUserInfo) -> UserInfo {
         global_recv_msg_opt: 0,
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -203,5 +184,3 @@ mod tests {
         assert!(json.contains("New Name"));
     }
 }
-
-

@@ -9,14 +9,6 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
 
-
-
-
-
-
-
-
-
 pub mod status {
     pub const OFFLINE: i32 = 0;
     pub const ONLINE: i32 = 1;
@@ -44,9 +36,7 @@ impl OnlineStatusService {
             return Ok(vec![]);
         }
 
-        let req = GetUserStatusReq {
-            user_ids: user_ids.clone(),
-        };
+        let req = GetUserStatusReq { user_ids: user_ids.clone() };
 
         let resp = self.api.get_user_status(&req).await?;
 
@@ -68,9 +58,7 @@ impl OnlineStatusService {
             return Ok(vec![]);
         }
 
-        let req = SubscribeUsersStatusReq {
-            user_ids: user_ids.clone(),
-        };
+        let req = SubscribeUsersStatusReq { user_ids: user_ids.clone() };
 
         let resp = self.api.subscribe_users_status(&req).await?;
 
@@ -110,9 +98,7 @@ impl OnlineStatusService {
             return Ok(());
         }
 
-        let req = UnsubscribeUsersStatusReq {
-            user_ids: user_ids.clone(),
-        };
+        let req = UnsubscribeUsersStatusReq { user_ids: user_ids.clone() };
 
         self.api.unsubscribe_users_status(&req).await?;
 
@@ -203,9 +189,7 @@ mod tests {
 
     #[test]
     fn test_subscribe_users_status_req_serialization() {
-        let req = SubscribeUsersStatusReq {
-            user_ids: vec!["user_3".to_string()],
-        };
+        let req = SubscribeUsersStatusReq { user_ids: vec!["user_3".to_string()] };
 
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("userIDs"));
@@ -227,5 +211,3 @@ mod tests {
         assert_eq!(status::ONLINE, 1);
     }
 }
-
-

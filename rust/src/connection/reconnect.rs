@@ -27,12 +27,7 @@ impl ReconnectStrategy {
     }
 
     /// 创建自定义重连策略
-    pub fn with_params(
-        initial_delay_ms: u64,
-        max_delay_ms: u64,
-        backoff_factor: u64,
-        jitter_ms: u64,
-    ) -> Self {
+    pub fn with_params(initial_delay_ms: u64, max_delay_ms: u64, backoff_factor: u64, jitter_ms: u64) -> Self {
         Self {
             attempt: 0,
             initial_delay_ms,
@@ -45,23 +40,15 @@ impl ReconnectStrategy {
     /// 获取下次重连的等待时间
     pub fn next_interval(&mut self) -> Duration {
         self.attempt += 1;
-        
+
         let exponential_delay = self.initial_delay_ms * self.backoff_factor.pow(self.attempt - 1);
         let delay_ms = exponential_delay.min(self.max_delay_ms);
-        
-        let jitter = if self.jitter_ms > 0 {
-            rand::random::<u64>() % self.jitter_ms
-        } else {
-            0
-        };
+
+        let jitter = if self.jitter_ms > 0 { rand::random::<u64>() % self.jitter_ms } else { 0 };
         let final_delay = delay_ms + jitter;
-        
-        info!(
-            "重连策略: 第 {} 次重试，延迟 {:?} (指数退避 + 抖动)",
-            self.attempt,
-            Duration::from_millis(final_delay)
-        );
-        
+
+        info!("重连策略: 第 {} 次重试，延迟 {:?} (指数退避 + 抖动)", self.attempt, Duration::from_millis(final_delay));
+
         Duration::from_millis(final_delay)
     }
 
@@ -96,13 +83,13 @@ mod tests {
     #[test]
     fn test_reconnect_strategy_exponential_backoff() {
         let mut strategy = ReconnectStrategy::with_params(1000, 30000, 2, 0);
-        
+
         let delay1 = strategy.next_interval();
         assert_eq!(delay1, Duration::from_millis(1000));
-        
+
         let delay2 = strategy.next_interval();
         assert_eq!(delay2, Duration::from_millis(2000));
-        
+
         let delay3 = strategy.next_interval();
         assert_eq!(delay3, Duration::from_millis(4000));
     }
@@ -110,13 +97,13 @@ mod tests {
     #[test]
     fn test_reconnect_strategy_max_delay() {
         let mut strategy = ReconnectStrategy::with_params(1000, 10000, 2, 0);
-        
+
         strategy.next_interval();
         strategy.next_interval();
         strategy.next_interval();
         strategy.next_interval();
         strategy.next_interval();
-        
+
         let delay = strategy.next_interval();
         assert!(delay <= Duration::from_millis(10000 + 500));
     }
@@ -124,11 +111,11 @@ mod tests {
     #[test]
     fn test_reconnect_strategy_reset() {
         let mut strategy = ReconnectStrategy::new();
-        
+
         strategy.next_interval();
         strategy.next_interval();
         assert_eq!(strategy.attempt(), 2);
-        
+
         strategy.reset();
         assert_eq!(strategy.attempt(), 0);
     }

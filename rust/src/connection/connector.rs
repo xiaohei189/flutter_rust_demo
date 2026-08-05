@@ -11,9 +11,9 @@ use futures_util::StreamExt;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
-use tracing::{info, error, warn};
+use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use tracing::{error, info, warn};
 
 impl ConnectionManager {
     /// 执行 WebSocket 连接 + 服务端认证握手
@@ -57,12 +57,10 @@ impl ConnectionManager {
 
         let compressor = GzipCompressor::new();
         let auth_result: std::result::Result<WebSocketConnectResp, SdkError> = match read.next().await {
-            Some(Ok(WsMessage::Text(text))) => serde_json::from_str::<WebSocketConnectResp>(&text)
-                .map_err(|e| SdkError::connection(format!("auth parse error: {}", e))),
+            Some(Ok(WsMessage::Text(text))) => serde_json::from_str::<WebSocketConnectResp>(&text).map_err(|e| SdkError::connection(format!("auth parse error: {}", e))),
             Some(Ok(WsMessage::Binary(data))) => {
                 let data = compressor.decompress(&data).unwrap_or(data);
-                serde_json::from_slice::<WebSocketConnectResp>(&data)
-                    .map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
+                serde_json::from_slice::<WebSocketConnectResp>(&data).map_err(|e| SdkError::connection(format!("auth parse error: {}", e)))
             }
             Some(Ok(WsMessage::Close(_))) => Err(SdkError::connection("server closed during auth")),
             Some(Err(e)) => Err(SdkError::connection(format!("ws error during auth: {}", e))),

@@ -2,9 +2,9 @@
 //!
 //! 合并了原 sdk/ 和 domain/sdk_api/ 模块
 
+pub mod builder;
 pub mod config;
 pub mod context;
-pub mod builder;
 
 // SDK 公开 API 特征（由 OpenIMClient 实现）
 pub mod connection;

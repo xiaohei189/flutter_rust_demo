@@ -1,9 +1,9 @@
 // misc DAO — 轻量数据访问对象聚合
 // 包含: 通知序列(notification_seq)、发送中消息(sending_message)、上传记录(upload)
 
-use crate::model::local::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
-use crate::error::{Result, SdkError};
 use crate::db::{NotificationSeqRepository, SendingMessageRepository};
+use crate::error::{Result, SdkError};
+use crate::model::local::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
 use async_trait::async_trait;
 use sqlx::SqlitePool;
 
@@ -58,12 +58,10 @@ impl NotificationSeqDao {
     /// 获取所有通知会话的 seq 记录
     /// 对齐 Go SDK `notification_model.go:46-51` GetNotificationAllSeqs
     pub async fn get_all(&self) -> Result<Vec<LocalNotificationSeq>> {
-        let rows = sqlx::query_as::<_, LocalNotificationSeq>(
-            "SELECT * FROM local_notification_seqs",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("get all notification seqs: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalNotificationSeq>("SELECT * FROM local_notification_seqs")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("get all notification seqs: {}", e)))?;
         Ok(rows)
     }
 }
@@ -97,50 +95,42 @@ impl SendingMessageDao {
     }
 
     pub async fn insert(&self, msg: &LocalSendingMessage) -> Result<()> {
-        sqlx::query(
-            "INSERT OR IGNORE INTO local_sending_messages (conversation_id, client_msg_id, ex) VALUES (?, ?, ?)",
-        )
-        .bind(&msg.conversation_id)
-        .bind(&msg.client_msg_id)
-        .bind(&msg.ex)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("insert sending message: {}", e)))?;
+        sqlx::query("INSERT OR IGNORE INTO local_sending_messages (conversation_id, client_msg_id, ex) VALUES (?, ?, ?)")
+            .bind(&msg.conversation_id)
+            .bind(&msg.client_msg_id)
+            .bind(&msg.ex)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("insert sending message: {}", e)))?;
         Ok(())
     }
 
     pub async fn delete(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
-        sqlx::query(
-            "DELETE FROM local_sending_messages WHERE conversation_id = ? AND client_msg_id = ?",
-        )
-        .bind(conversation_id)
-        .bind(client_msg_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("delete sending message: {}", e)))?;
+        sqlx::query("DELETE FROM local_sending_messages WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete sending message: {}", e)))?;
         Ok(())
     }
 
     pub async fn get_all(&self) -> Result<Vec<LocalSendingMessage>> {
-        let rows = sqlx::query_as::<_, LocalSendingMessage>(
-            "SELECT conversation_id, client_msg_id, ex FROM local_sending_messages",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("get all sending messages: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalSendingMessage>("SELECT conversation_id, client_msg_id, ex FROM local_sending_messages")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("get all sending messages: {}", e)))?;
         Ok(rows)
     }
 
     /// 根据 conversation_id + client_msg_id 查询发送中消息
     pub async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalSendingMessage>> {
-        let row = sqlx::query_as::<_, LocalSendingMessage>(
-            "SELECT conversation_id, client_msg_id, ex FROM local_sending_messages WHERE conversation_id = ? AND client_msg_id = ?",
-        )
-        .bind(conversation_id)
-        .bind(client_msg_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("get sending message by client_msg_id: {}", e)))?;
+        let row = sqlx::query_as::<_, LocalSendingMessage>("SELECT conversation_id, client_msg_id, ex FROM local_sending_messages WHERE conversation_id = ? AND client_msg_id = ?")
+            .bind(conversation_id)
+            .bind(client_msg_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("get sending message by client_msg_id: {}", e)))?;
         Ok(row)
     }
 }
@@ -159,11 +149,7 @@ impl SendingMessageRepository for SendingMessageDao {
         self.get_all().await
     }
 
-    async fn get_by_client_msg_id(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-    ) -> Result<Option<LocalSendingMessage>> {
+    async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalSendingMessage>> {
         self.get_by_client_msg_id(conversation_id, client_msg_id).await
     }
 }
@@ -185,44 +171,38 @@ impl UploadDao {
 
     /// 根据 part_hash 查询上传记录
     pub async fn get_upload(&self, part_hash: &str) -> Result<Option<LocalUpload>> {
-        let row = sqlx::query_as::<_, LocalUpload>(
-            "SELECT part_hash, upload_id, upload_info, expire_time, create_time FROM local_uploads WHERE part_hash = ?",
-        )
-        .bind(part_hash)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("查询上传记录失败: {}", e)))?;
+        let row = sqlx::query_as::<_, LocalUpload>("SELECT part_hash, upload_id, upload_info, expire_time, create_time FROM local_uploads WHERE part_hash = ?")
+            .bind(part_hash)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("查询上传记录失败: {}", e)))?;
         Ok(row)
     }
 
     /// 插入新的上传记录
     pub async fn insert_upload(&self, info: &LocalUpload) -> Result<()> {
-        sqlx::query(
-            "INSERT OR REPLACE INTO local_uploads (part_hash, upload_id, upload_info, expire_time, create_time) VALUES (?, ?, ?, ?, ?)",
-        )
-        .bind(&info.part_hash)
-        .bind(&info.upload_id)
-        .bind(&info.upload_info)
-        .bind(info.expire_time)
-        .bind(info.create_time)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("插入上传记录失败: {}", e)))?;
+        sqlx::query("INSERT OR REPLACE INTO local_uploads (part_hash, upload_id, upload_info, expire_time, create_time) VALUES (?, ?, ?, ?, ?)")
+            .bind(&info.part_hash)
+            .bind(&info.upload_id)
+            .bind(&info.upload_info)
+            .bind(info.expire_time)
+            .bind(info.create_time)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("插入上传记录失败: {}", e)))?;
         Ok(())
     }
 
     /// 更新上传记录
     pub async fn update_upload(&self, info: &LocalUpload) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_uploads SET upload_id = ?, upload_info = ?, expire_time = ? WHERE part_hash = ?",
-        )
-        .bind(&info.upload_id)
-        .bind(&info.upload_info)
-        .bind(info.expire_time)
-        .bind(&info.part_hash)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("更新上传记录失败: {}", e)))?;
+        sqlx::query("UPDATE local_uploads SET upload_id = ?, upload_info = ?, expire_time = ? WHERE part_hash = ?")
+            .bind(&info.upload_id)
+            .bind(&info.upload_info)
+            .bind(info.expire_time)
+            .bind(&info.part_hash)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("更新上传记录失败: {}", e)))?;
         Ok(())
     }
 

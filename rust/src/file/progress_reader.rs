@@ -1,5 +1,8 @@
 use std::io::Read;
-use std::sync::{Arc, atomic::{AtomicI64, Ordering}};
+use std::sync::{
+    atomic::{AtomicI64, Ordering},
+    Arc,
+};
 
 /// ProgressReader — 追踪读取进度的 Reader 包装器
 /// 对齐 Go SDK `internal/third/file/progress.go`
@@ -13,11 +16,7 @@ pub struct ProgressReader<R> {
 
 impl<R: Read> ProgressReader<R> {
     pub fn new(reader: R, callback: Arc<dyn Fn(i64) + Send + Sync>) -> Self {
-        Self {
-            reader,
-            read: 0,
-            callback,
-        }
+        Self { reader, read: 0, callback }
     }
 }
 
@@ -41,10 +40,7 @@ pub struct AtomicProgress {
 
 impl AtomicProgress {
     pub fn new(total: i64) -> Self {
-        Self {
-            uploaded: AtomicI64::new(0),
-            total,
-        }
+        Self { uploaded: AtomicI64::new(0), total }
     }
 
     pub fn add(&self, bytes: i64) {

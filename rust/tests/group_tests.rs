@@ -7,10 +7,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_create_group() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 创建群组测试 ===\n");
 
@@ -20,11 +17,7 @@ async fn test_create_group() {
 
     let group_name = format!("TestGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
 
-    let result = sdk.create_group(
-        &group_name,
-        GroupType::Normal,
-        &vec![account.user_id.clone()],
-    ).await;
+    let result = sdk.create_group(&group_name, GroupType::Normal, &vec![account.user_id.clone()]).await;
 
     assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
     let group = result.unwrap();
@@ -35,10 +28,7 @@ async fn test_create_group() {
 
 #[tokio::test]
 async fn test_join_and_quit_group() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 加入/退出群组测试 ===\n");
 
@@ -51,10 +41,7 @@ async fn test_join_and_quit_group() {
     let sdk2 = create_sdk(&account2, &im_token2).await;
 
     let group_name = format!("JQGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(
-        &group_name, GroupType::Normal,
-        &vec![account1.user_id.clone()],
-    ).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, &vec![account1.user_id.clone()]).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入...");
@@ -78,10 +65,7 @@ async fn test_join_and_quit_group() {
 
 #[tokio::test]
 async fn test_group_member_management() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群成员管理测试 ===\n");
 
@@ -89,10 +73,7 @@ async fn test_group_member_management() {
     let (im_token, _) = login_account(&account).await.expect("登录失败");
     let sdk = create_sdk(&account, &im_token).await;
 
-    let group = sdk.create_group(
-        "MemberTestGroup", GroupType::Normal,
-        &vec![account.user_id.clone()],
-    ).await.expect("创建群组失败");
+    let group = sdk.create_group("MemberTestGroup", GroupType::Normal, &vec![account.user_id.clone()]).await.expect("创建群组失败");
 
     println!("获取群成员...");
     let members_result = sdk.get_group_members(&group.group_id).await;
@@ -123,13 +104,8 @@ async fn test_group_member_management() {
 
     // 按入群时间过滤群成员
     println!("按入群时间过滤群成员...");
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-    let filtered = sdk.get_group_member_list_by_join_time_filter(
-        &group.group_id, 0, 10, 0, now, vec![],
-    ).await;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
+    let filtered = sdk.get_group_member_list_by_join_time_filter(&group.group_id, 0, 10, 0, now, vec![]).await;
     match &filtered {
         Ok(members) => {
             println!("  时间范围内成员数: {}", members.len());
@@ -140,24 +116,14 @@ async fn test_group_member_management() {
 
     // 检查用户是否在群中
     println!("检查用户是否在群中...");
-    let users_check = sdk.get_users_in_group(
-        &group.group_id,
-        vec![account.user_id.clone(), "nonexistent_user".to_string()],
-    ).await;
+    let users_check = sdk.get_users_in_group(&group.group_id, vec![account.user_id.clone(), "nonexistent_user".to_string()]).await;
     println!("  在群中的用户: {:?}", users_check);
     assert!(users_check.contains(&account.user_id), "群主应在群中");
     assert!(!users_check.contains(&"nonexistent_user".to_string()), "不存在的用户不应在群中");
 
     // 设置群成员信息
     println!("设置群成员信息...");
-    let member_info_result = sdk.set_group_member_info(
-        &group.group_id,
-        &account.user_id,
-        Some("新昵称"),
-        None,
-        None,
-        None,
-    ).await;
+    let member_info_result = sdk.set_group_member_info(&group.group_id, &account.user_id, Some("新昵称"), None, None, None).await;
     match &member_info_result {
         Ok(_) => println!("  ✅ 设置成功"),
         Err(e) => println!("  ⚠ 失败: {:?}", e),
@@ -173,10 +139,7 @@ async fn test_group_member_management() {
 
 #[tokio::test]
 async fn test_group_info_update() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群信息更新测试 ===\n");
 
@@ -184,10 +147,7 @@ async fn test_group_info_update() {
     let (im_token, _) = login_account(&account).await.expect("登录失败");
     let sdk = create_sdk(&account, &im_token).await;
 
-    let group = sdk.create_group(
-        "InfoTestGroup", GroupType::Normal,
-        &vec![account.user_id.clone()],
-    ).await.expect("创建失败");
+    let group = sdk.create_group("InfoTestGroup", GroupType::Normal, &vec![account.user_id.clone()]).await.expect("创建失败");
     println!("群: {} ({})", group.group_name, group.group_id);
 
     println!("更新群名称...");
@@ -208,10 +168,7 @@ async fn test_group_info_update() {
 
 #[tokio::test]
 async fn test_group_list_sync() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群列表同步测试 ===\n");
 
@@ -226,10 +183,7 @@ async fn test_group_list_sync() {
 
 #[tokio::test]
 async fn test_user_state_group_management() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群组管理测试 ===\n");
 
@@ -238,10 +192,7 @@ async fn test_user_state_group_management() {
     let sdk = create_sdk(&account, &im_token).await;
 
     let group_name = format!("UGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let result = sdk.create_group(
-        &group_name, GroupType::Normal,
-        &vec![account.user_id.clone()],
-    ).await;
+    let result = sdk.create_group(&group_name, GroupType::Normal, &vec![account.user_id.clone()]).await;
 
     assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
     let group = result.unwrap();
@@ -255,10 +206,7 @@ async fn test_user_state_group_management() {
 
 #[tokio::test]
 async fn test_group_application_flow() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群组申请/审批流程测试 ===\n");
 
@@ -271,10 +219,7 @@ async fn test_group_application_flow() {
     let sdk2 = create_sdk(&account2, &im_token2).await;
 
     let group_name = format!("GAppGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(
-        &group_name, GroupType::Normal,
-        &vec![account1.user_id.clone()],
-    ).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, &vec![account1.user_id.clone()]).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入群组...");
@@ -323,10 +268,7 @@ async fn test_group_application_flow() {
 
 #[tokio::test]
 async fn test_group_dismiss_and_transfer() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群组解散与转让测试 ===\n");
 
@@ -342,10 +284,7 @@ async fn test_group_dismiss_and_transfer() {
 
     // 创建群组
     let group_name = format!("DismissTransfer_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(
-        &group_name, GroupType::Normal,
-        &vec![account1.user_id.clone()],
-    ).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, &vec![account1.user_id.clone()]).await.expect("创建群组失败");
     println!("群组: {} ({})", group.group_name, group.group_id);
 
     // 邀请 account2
@@ -392,10 +331,7 @@ async fn test_group_dismiss_and_transfer() {
 
 #[tokio::test]
 async fn test_group_mute_operations() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 群组禁言测试 ===\n");
 
@@ -411,10 +347,7 @@ async fn test_group_mute_operations() {
 
     // 创建群组
     let group_name = format!("MuteTest_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(
-        &group_name, GroupType::Normal,
-        &vec![account1.user_id.clone()],
-    ).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, &vec![account1.user_id.clone()]).await.expect("创建群组失败");
     println!("群组: {} ({})", group.group_name, group.group_id);
 
     // 邀请 account2

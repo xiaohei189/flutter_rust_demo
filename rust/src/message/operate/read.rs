@@ -1,12 +1,12 @@
 //! 标记已读逻辑（单会话/批量/按 seq）
 
 use super::MessageService;
-use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
 use crate::constant::session_type;
 use crate::error::{Result, SdkError};
-use crate::event::events::conversation::ConversationListenerExt;
-use crate::model::local::LocalConversation;
 use crate::event::events::conversation::ConversationEvent;
+use crate::event::events::conversation::ConversationListenerExt;
+use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
+use crate::model::local::LocalConversation;
 use tracing::{error, info, warn};
 
 impl MessageService {
@@ -68,10 +68,7 @@ impl MessageService {
 
                 // L86: MarkConversationMessageAsReadDB（通过 client_msg_id 逐条标记）
                 if !msg_ids.is_empty() {
-                    if let Err(e) = self.repositories.message_repo
-                        .mark_as_read_by_client_msg_ids(&conversation_id, &msg_ids, &user_id)
-                        .await
-                    {
+                    if let Err(e) = self.repositories.message_repo.mark_as_read_by_client_msg_ids(&conversation_id, &msg_ids, &user_id).await {
                         error!("[READ] markAsReadDB FAILED: conv={} err={}", conversation_id, e);
                     }
                 }
@@ -117,12 +114,7 @@ impl MessageService {
     }
 
     /// 调用服务端 `markConversationAsRead` API（对齐 Go SDK `server_api.go` L17-22）
-    pub(crate) async fn mark_conversation_as_read_server(
-        &self,
-        conversation_id: &str,
-        has_read_seq: i64,
-        seqs: &[i64],
-    ) -> Result<()> {
+    pub(crate) async fn mark_conversation_as_read_server(&self, conversation_id: &str, has_read_seq: i64, seqs: &[i64]) -> Result<()> {
         let user_id = self.user_id.get().await;
         let req = MarkConversationAsReadReq {
             user_id,
@@ -174,4 +166,3 @@ impl MessageService {
         Ok(())
     }
 }
-

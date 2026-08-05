@@ -60,7 +60,6 @@ pub struct OnlineStatus {
     pub platform_ids: Vec<i32>,
 }
 
-
 /// 在线状态域服务端 API（入向契约：SDK → OpenIM 服务端）
 #[async_trait]
 pub trait OnlineStatusServerApi: Send + Sync {
@@ -85,9 +84,7 @@ mod tests {
 
     #[test]
     fn test_subscribe_users_status_req_serialization() {
-        let req = SubscribeUsersStatusReq {
-            user_ids: vec!["user_1".to_string()],
-        };
+        let req = SubscribeUsersStatusReq { user_ids: vec!["user_1".to_string()] };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("userIDs"));
     }
@@ -114,9 +111,7 @@ mod tests {
 
     #[test]
     fn test_unsubscribe_users_status_req_serialization() {
-        let req = UnsubscribeUsersStatusReq {
-            user_ids: vec!["user_1".to_string()],
-        };
+        let req = UnsubscribeUsersStatusReq { user_ids: vec!["user_1".to_string()] };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("userIDs"));
     }

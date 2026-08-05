@@ -3,13 +3,13 @@
 //! 转发、seq 查询、Typing、编辑、删除系列、本地存储管理等
 //! 所有操作委托给 OpenIMClient
 
-use crate::http::message::DeleteMessagesReq;
 use crate::client::SdkApi;
-use crate::ffi::global::client_holder;
 use crate::constant::SessionType;
-use crate::model::msg_struct::MsgStruct;
+use crate::ffi::global::client_holder;
+use crate::http::message::DeleteMessagesReq;
 use crate::model::local::LocalChatLog;
-use anyhow::{Result, anyhow};
+use crate::model::msg_struct::MsgStruct;
+use anyhow::{anyhow, Result};
 
 // ============================================================================
 // 消息转发
@@ -17,11 +17,7 @@ use anyhow::{Result, anyhow};
 
 /// 转发消息（对齐 Go SDK `ForwardMessage`）
 #[flutter_rust_bridge::frb]
-pub async fn forward_message(
-    msg_struct: MsgStruct,
-    source_id: String,
-    session_type: SessionType,
-) -> Result<MsgStruct> {
+pub async fn forward_message(msg_struct: MsgStruct, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
     let client = client_holder()?;
     let result = client.forward_message(msg_struct, &source_id, session_type.into()).await?;
     Ok(result)
@@ -29,20 +25,11 @@ pub async fn forward_message(
 
 /// 转发消息（按 clientMsgId 查找消息并转发）
 #[flutter_rust_bridge::frb]
-pub async fn forward_message_by_client_id(
-    client_msg_id: String,
-    source_id: String,
-    session_type: SessionType,
-) -> Result<MsgStruct> {
+pub async fn forward_message_by_client_id(client_msg_id: String, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
     let client = client_holder()?;
-    let log = client
-        .get_message_by_client_msg_id(&client_msg_id)
-        .await?
-        .ok_or_else(|| anyhow!("消息不存在: {}", client_msg_id))?;
+    let log = client.get_message_by_client_msg_id(&client_msg_id).await?.ok_or_else(|| anyhow!("消息不存在: {}", client_msg_id))?;
     let msg_struct = MsgStruct::from(&log);
-    let result = client
-        .forward_message(msg_struct, &source_id, session_type.into())
-        .await?;
+    let result = client.forward_message(msg_struct, &source_id, session_type.into()).await?;
     Ok(result)
 }
 
@@ -60,12 +47,7 @@ pub async fn get_history_message_by_seq(seq: i64) -> Result<LocalChatLog> {
 
 /// 按 seq 范围获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListBySeq`）
 #[flutter_rust_bridge::frb]
-pub async fn get_advanced_history_message_list_by_seq(
-    conversation_id: String,
-    start_seq: i64,
-    end_seq: i64,
-    count: i32,
-) -> Result<Vec<LocalChatLog>> {
+pub async fn get_advanced_history_message_list_by_seq(conversation_id: String, start_seq: i64, end_seq: i64, count: i32) -> Result<Vec<LocalChatLog>> {
     let client = client_holder()?;
     let msgs = client.get_advanced_history_message_list_by_seq(&conversation_id, start_seq, end_seq, count).await?;
     Ok(msgs)
@@ -75,11 +57,7 @@ pub async fn get_advanced_history_message_list_by_seq(
 ///
 /// 与 `get_history_messages` 相同参数，但按 send_time ASC 返回（向上翻页获取更早消息）
 #[flutter_rust_bridge::frb]
-pub async fn get_history_messages_reverse(
-    conversation_id: String,
-    start_client_msg_id: String,
-    count: i64,
-) -> Result<crate::client::GetHistoryMessagesResult> {
+pub async fn get_history_messages_reverse(conversation_id: String, start_client_msg_id: String, count: i64) -> Result<crate::client::GetHistoryMessagesResult> {
     let client = client_holder()?;
 
     let start_time = if start_client_msg_id.is_empty() {
@@ -94,10 +72,7 @@ pub async fn get_history_messages_reverse(
 
 /// 按 clientMsgID 列表查找消息（对齐 Go SDK `FindMessageList`）
 #[flutter_rust_bridge::frb]
-pub async fn find_message_list(
-    conversation_id: String,
-    client_msg_ids: Vec<String>,
-) -> Result<Vec<LocalChatLog>> {
+pub async fn find_message_list(conversation_id: String, client_msg_ids: Vec<String>) -> Result<Vec<LocalChatLog>> {
     let client = client_holder()?;
     let msgs = client.find_message_list(&conversation_id, client_msg_ids).await?;
     Ok(msgs)
@@ -111,24 +86,21 @@ pub async fn find_message_list(
 ///
 /// 先从服务端删除，再从本地删除
 #[flutter_rust_bridge::frb]
-pub async fn delete_message(
-    conversation_id: String,
-    client_msg_id: String,
-) -> Result<()> {
+pub async fn delete_message(conversation_id: String, client_msg_id: String) -> Result<()> {
     let client = client_holder()?;
     // 委托给 message_service（已包含服务端 + 本地删除 + 事件发布）
-    client.delete_messages(DeleteMessagesReq {
-        conversation_id,
-        client_msg_ids: vec![client_msg_id],
-    }).await.map_err(|e| anyhow::anyhow!("{}", e))
+    client
+        .delete_messages(DeleteMessagesReq {
+            conversation_id,
+            client_msg_ids: vec![client_msg_id],
+        })
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
 #[flutter_rust_bridge::frb]
-pub async fn delete_message_from_local_storage(
-    conversation_id: String,
-    client_msg_id: String,
-) -> Result<()> {
+pub async fn delete_message_from_local_storage(conversation_id: String, client_msg_id: String) -> Result<()> {
     let client = client_holder()?;
     client.delete_message_from_local_storage(&conversation_id, &client_msg_id).await?;
     Ok(())
@@ -175,10 +147,7 @@ pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> 
 pub async fn get_server_time() -> Result<i64> {
     // 简化实现：返回本地当前时间戳（ms）
     // 完整实现应通过 RPC 获取服务端时间
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as i64;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
     Ok(now)
 }
 
@@ -195,8 +164,7 @@ pub async fn get_total_unread_msg_count() -> Result<i64> {
 #[flutter_rust_bridge::frb]
 pub async fn mark_all_conversation_message_as_read() -> Result<()> {
     let client = client_holder()?;
-    client.mark_all_conversation_as_read().await
-        .map_err(|e| anyhow::anyhow!("{}", e))
+    client.mark_all_conversation_as_read().await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 // ============================================================================
@@ -230,8 +198,7 @@ impl From<openim_protocol::sdkws::UserSendMsgResp> for SendTypingResp {
 #[flutter_rust_bridge::frb]
 pub async fn send_typing(source_id: String, session_type: SessionType, focus: bool) -> Result<SendTypingResp> {
     let client = client_holder()?;
-    let resp = client.send_typing(&source_id, session_type.into(), focus).await
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
+    let resp = client.send_typing(&source_id, session_type.into(), focus).await.map_err(|e| anyhow::anyhow!("{}", e))?;
     Ok(resp.into())
 }
 
@@ -243,16 +210,9 @@ pub async fn send_typing(source_id: String, session_type: SessionType, focus: bo
 /// - `content`: 编辑后的新内容（JSON 字符串，如 `{"text":"新内容"}`）
 /// - `content_type`: 消息内容类型（如 101=文本, 117=富文本, 118=Markdown）
 #[flutter_rust_bridge::frb]
-pub async fn edit_message(
-    conversation_id: String,
-    client_msg_id: String,
-    content: String,
-    content_type: i32,
-) -> Result<MsgStruct> {
+pub async fn edit_message(conversation_id: String, client_msg_id: String, content: String, content_type: i32) -> Result<MsgStruct> {
     let client = client_holder()?;
-    let result = client.edit_message(
-        &conversation_id, &client_msg_id, &content, content_type,
-    ).await?;
+    let result = client.edit_message(&conversation_id, &client_msg_id, &content, content_type).await?;
     Ok(result.into())
 }
 
@@ -267,8 +227,7 @@ pub async fn edit_message(
 #[flutter_rust_bridge::frb]
 pub async fn incr_sync_conversations() -> Result<()> {
     let client = client_holder()?;
-    client.incr_sync_conversations().await
-        .map_err(|e| anyhow::anyhow!("{}", e))
+    client.incr_sync_conversations().await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 // ============================================================================
@@ -277,11 +236,7 @@ pub async fn incr_sync_conversations() -> Result<()> {
 
 /// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
 #[flutter_rust_bridge::frb]
-pub async fn set_message_local_ex(
-    conversation_id: String,
-    client_msg_id: String,
-    local_ex: String,
-) -> Result<()> {
+pub async fn set_message_local_ex(conversation_id: String, client_msg_id: String, local_ex: String) -> Result<()> {
     let client = client_holder()?;
     client.set_message_local_ex(&conversation_id, &client_msg_id, &local_ex).await?;
     Ok(())
@@ -291,12 +246,7 @@ pub async fn set_message_local_ex(
 ///
 /// 用于插入自定义/系统消息到本地数据库
 #[flutter_rust_bridge::frb]
-pub async fn insert_group_message_to_local_storage(
-    group_id: String,
-    content: String,
-    content_type: i32,
-    send_id: String,
-) -> Result<LocalChatLog> {
+pub async fn insert_group_message_to_local_storage(group_id: String, content: String, content_type: i32, send_id: String) -> Result<LocalChatLog> {
     let client = client_holder()?;
     let local_log = client.insert_group_message_to_local_storage(&group_id, &content, content_type, &send_id).await?;
     Ok(local_log)

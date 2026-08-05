@@ -3,17 +3,12 @@
 //! trait 定义在 `domain::ports::conversation`
 
 use crate::error::Result;
-use crate::http::conversation::{
-    ConversationServerApi, GetAllConversationsReq, GetAllConversationsResp,
-    GetConversationsByIDsReq, GetConversationsByIDsResp, GetFullConversationIDsReq,
-    GetFullConversationIDsResp, GetIncrementalConversationReq, GetIncrementalConversationResp,
-    ServerConversation, SetConversationReq,
-};
 use crate::http::client::HttpApiClient;
-use crate::http::routes::{
-    GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS,
-    GET_INCREMENTAL_CONVERSATION, SET_CONVERSATION,
+use crate::http::conversation::{
+    ConversationServerApi, GetAllConversationsReq, GetAllConversationsResp, GetConversationsByIDsReq, GetConversationsByIDsResp, GetFullConversationIDsReq, GetFullConversationIDsResp,
+    GetIncrementalConversationReq, GetIncrementalConversationResp, ServerConversation, SetConversationReq,
 };
+use crate::http::routes::{GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS, GET_INCREMENTAL_CONVERSATION, SET_CONVERSATION};
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -34,55 +29,30 @@ impl ConversationServerApi for HttpConversationApi {
         let req = GetAllConversationsReq { owner_user_id: user_id };
         tracing::debug!("从服务器拉取所有会话");
         let resp: GetAllConversationsResp = self.http_client.post(GET_ALL_CONVERSATION_LIST, &req).await?;
-        tracing::debug!(
-            "拉取到 {} 个会话",
-            resp.conversations.as_ref().map_or(0, |v| v.len())
-        );
+        tracing::debug!("拉取到 {} 个会话", resp.conversations.as_ref().map_or(0, |v| v.len()));
         Ok(resp)
     }
 
-    async fn pull_incremental(
-        &self,
-        user_id: String,
-        version: u64,
-        version_id: String,
-    ) -> Result<GetIncrementalConversationResp> {
-        let req = GetIncrementalConversationReq {
-            user_id,
-            version_id,
-            version,
-        };
+    async fn pull_incremental(&self, user_id: String, version: u64, version_id: String) -> Result<GetIncrementalConversationResp> {
+        let req = GetIncrementalConversationReq { user_id, version_id, version };
         tracing::debug!("从服务器拉取增量会话，版本: {}", version);
-        let resp: GetIncrementalConversationResp =
-            self.http_client.post(GET_INCREMENTAL_CONVERSATION, &req).await?;
-        tracing::debug!(
-            "增量响应: full={}, insert={}, update={}, delete={}",
-            resp.full,
-            resp.insert.len(),
-            resp.update.len(),
-            resp.delete.len()
-        );
+        let resp: GetIncrementalConversationResp = self.http_client.post(GET_INCREMENTAL_CONVERSATION, &req).await?;
+        tracing::debug!("增量响应: full={}, insert={}, update={}, delete={}", resp.full, resp.insert.len(), resp.update.len(), resp.delete.len());
         Ok(resp)
     }
 
-    async fn pull_conversations_by_ids(
-        &self,
-        user_id: String,
-        conversation_ids: Vec<String>,
-    ) -> Result<Vec<ServerConversation>> {
+    async fn pull_conversations_by_ids(&self, user_id: String, conversation_ids: Vec<String>) -> Result<Vec<ServerConversation>> {
         let req = GetConversationsByIDsReq {
             owner_user_id: user_id,
             conversation_ids,
         };
-        let resp: GetConversationsByIDsResp =
-            self.http_client.post(GET_CONVERSATIONS, &req).await?;
+        let resp: GetConversationsByIDsResp = self.http_client.post(GET_CONVERSATIONS, &req).await?;
         Ok(resp.conversations.unwrap_or_default())
     }
 
     async fn pull_full_conversation_ids(&self, user_id: String) -> Result<GetFullConversationIDsResp> {
         let req = GetFullConversationIDsReq { user_id };
-        let resp: GetFullConversationIDsResp =
-            self.http_client.post(GET_FULL_CONVERSATION_IDS, &req).await?;
+        let resp: GetFullConversationIDsResp = self.http_client.post(GET_FULL_CONVERSATION_IDS, &req).await?;
         Ok(resp)
     }
 

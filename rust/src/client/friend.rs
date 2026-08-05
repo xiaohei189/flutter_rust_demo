@@ -6,29 +6,29 @@ use crate::client::OpenIMClient;
 
 use crate::constant::GroupType;
 use crate::error::{Result, SdkError};
-use crate::model::friend::FriendInfo;
-use crate::model::group::{GroupInfo, GroupMember};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
-use crate::model::user::UserInfo;
-use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
-use crate::http::group::GroupApplyInfo;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::http::online::OnlineStatus;
 use crate::event::events::connection::ConnectionEvent;
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::friend::FriendEvent;
 use crate::event::events::group::GroupEvent;
 use crate::event::events::message::MessageEvent;
 use crate::event::events::user::UserEvent;
+use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
+use crate::http::group::GroupApplyInfo;
+use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::http::online::OnlineStatus;
+use crate::model::friend::FriendInfo;
+use crate::model::group::{GroupInfo, GroupMember};
+use crate::model::local::{LocalChatLog, LocalConversation};
+use crate::model::message::MessageInfo;
+use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
+use crate::model::user::UserInfo;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[async_trait]
-pub trait FriendApi : Send + Sync {
+pub trait FriendApi: Send + Sync {
     fn take_friend_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<FriendEvent>, SdkError>;
     async fn get_friend_list(&self) -> Vec<FriendInfo>;
     async fn sync_friends(&self) -> Result<()>;
@@ -48,11 +48,10 @@ pub trait FriendApi : Send + Sync {
     async fn get_friend_id_list(&self) -> Vec<String>;
     async fn sync_friends_incremental(&self) -> Result<()>;
     async fn search_friends(&self, keyword: &str) -> Result<Vec<SearchFriendItem>>;
-    async fn get_specified_friends_info(&self, friend_user_ids: Vec<String>, filter_black: bool,) -> Result<Vec<FriendInfo>>;
-    async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool,) -> Result<Vec<FriendInfo>>;
-    async fn update_friends(&self, friend_user_ids: Vec<String>, is_pinned: Option<bool>, remark: Option<String>, ex: Option<String>,) -> Result<()>;
+    async fn get_specified_friends_info(&self, friend_user_ids: Vec<String>, filter_black: bool) -> Result<Vec<FriendInfo>>;
+    async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool) -> Result<Vec<FriendInfo>>;
+    async fn update_friends(&self, friend_user_ids: Vec<String>, is_pinned: Option<bool>, remark: Option<String>, ex: Option<String>) -> Result<()>;
 }
-
 
 #[async_trait]
 impl FriendApi for OpenIMClient {
@@ -155,40 +154,19 @@ impl FriendApi for OpenIMClient {
 
     /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
     #[tracing::instrument(skip_all)]
-    async fn get_specified_friends_info(
-        &self,
-        friend_user_ids: Vec<String>,
-        filter_black: bool,
-    ) -> Result<Vec<FriendInfo>> {
-        self.friend
-            .get_specified_friends_info(friend_user_ids, filter_black)
-            .await
+    async fn get_specified_friends_info(&self, friend_user_ids: Vec<String>, filter_black: bool) -> Result<Vec<FriendInfo>> {
+        self.friend.get_specified_friends_info(friend_user_ids, filter_black).await
     }
 
     /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
-    async fn get_friend_list_page(
-        &self,
-        offset: i32,
-        count: i32,
-        filter_black: bool,
-    ) -> Result<Vec<FriendInfo>> {
-        self.friend
-            .get_friend_list_page(offset, count, filter_black)
-            .await
+    async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool) -> Result<Vec<FriendInfo>> {
+        self.friend.get_friend_list_page(offset, count, filter_black).await
     }
 
     /// 批量更新好友信息（对齐 Go SDK UpdateFriends）
     #[tracing::instrument(skip_all)]
-    async fn update_friends(
-        &self,
-        friend_user_ids: Vec<String>,
-        is_pinned: Option<bool>,
-        remark: Option<String>,
-        ex: Option<String>,
-    ) -> Result<()> {
-        self.friend
-            .update_friends(friend_user_ids, is_pinned, remark, ex)
-            .await
+    async fn update_friends(&self, friend_user_ids: Vec<String>, is_pinned: Option<bool>, remark: Option<String>, ex: Option<String>) -> Result<()> {
+        self.friend.update_friends(friend_user_ids, is_pinned, remark, ex).await
     }
 
     /// 获取好友事件接收器（只能调用一次，重复调用返回错误）

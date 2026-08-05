@@ -1,5 +1,5 @@
-use crate::model::local::LocalUser;
 use crate::error::{Result, SdkError};
+use crate::model::local::LocalUser;
 use sqlx::SqlitePool;
 
 pub struct UserDao {
@@ -37,13 +37,11 @@ impl UserDao {
     }
 
     pub async fn get_by_id(&self, user_id: &str) -> Result<Option<LocalUser>> {
-        let row = sqlx::query_as::<_, LocalUser>(
-            "SELECT * FROM local_users WHERE user_id = ?",
-        )
-        .bind(user_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query user: {}", e)))?;
+        let row = sqlx::query_as::<_, LocalUser>("SELECT * FROM local_users WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query user: {}", e)))?;
         Ok(row)
     }
 
@@ -93,10 +91,18 @@ use crate::db::user::UserRepository;
 
 #[async_trait::async_trait]
 impl UserRepository for UserDao {
-    async fn upsert(&self, user: &LocalUser) -> Result<()> { UserDao::upsert(self, user).await }
-    async fn batch_upsert(&self, users: &[LocalUser]) -> Result<()> { self.batch_upsert(users).await }
-    async fn get_by_id(&self, user_id: &str) -> Result<Option<LocalUser>> { self.get_by_id(user_id).await }
-    async fn delete(&self, user_id: &str) -> Result<()> { self.delete(user_id).await }
+    async fn upsert(&self, user: &LocalUser) -> Result<()> {
+        UserDao::upsert(self, user).await
+    }
+    async fn batch_upsert(&self, users: &[LocalUser]) -> Result<()> {
+        self.batch_upsert(users).await
+    }
+    async fn get_by_id(&self, user_id: &str) -> Result<Option<LocalUser>> {
+        self.get_by_id(user_id).await
+    }
+    async fn delete(&self, user_id: &str) -> Result<()> {
+        self.delete(user_id).await
+    }
 }
 
 // ============================================================
@@ -140,25 +146,21 @@ impl BlackDao {
     }
 
     pub async fn get_all(&self, owner_user_id: &str) -> Result<Vec<LocalBlack>> {
-        let rows = sqlx::query_as::<_, LocalBlack>(
-            "SELECT * FROM local_blacks WHERE owner_user_id = ? ORDER BY create_time DESC",
-        )
-        .bind(owner_user_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query blacks: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalBlack>("SELECT * FROM local_blacks WHERE owner_user_id = ? ORDER BY create_time DESC")
+            .bind(owner_user_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query blacks: {}", e)))?;
         Ok(rows)
     }
 
     pub async fn delete(&self, owner_user_id: &str, block_user_id: &str) -> Result<()> {
-        sqlx::query(
-            "DELETE FROM local_blacks WHERE owner_user_id = ? AND block_user_id = ?",
-        )
-        .bind(owner_user_id)
-        .bind(block_user_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("delete black: {}", e)))?;
+        sqlx::query("DELETE FROM local_blacks WHERE owner_user_id = ? AND block_user_id = ?")
+            .bind(owner_user_id)
+            .bind(block_user_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("delete black: {}", e)))?;
         Ok(())
     }
 }

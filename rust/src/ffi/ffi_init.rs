@@ -28,23 +28,38 @@ mod android_logcat {
 
     impl LogcatWriter {
         pub fn new(priority: i32) -> Self {
-            Self { priority, buf: RefCell::new(Vec::with_capacity(1024)) }
+            Self {
+                priority,
+                buf: RefCell::new(Vec::with_capacity(1024)),
+            }
         }
 
         fn shorten_paths(buf: &mut Vec<u8>) {
             let Ok(text) = std::str::from_utf8(buf) else { return };
             let marker = ".cargo/registry/src/";
-            if !text.contains(marker) { return; }
+            if !text.contains(marker) {
+                return;
+            }
             let mut out = String::with_capacity(text.len());
             let mut rem = text;
             while let Some(idx) = rem.find(marker) {
                 out.push_str(&rem[..idx]);
                 let after = &rem[idx + marker.len()..];
-                let Some(slash1) = after.find('/') else { out.push_str(&rem[idx..]); break; };
+                let Some(slash1) = after.find('/') else {
+                    out.push_str(&rem[idx..]);
+                    break;
+                };
                 let crate_path = &after[slash1 + 1..];
-                let Some(slash2) = crate_path.find('/') else { out.push_str(crate_path); break; };
+                let Some(slash2) = crate_path.find('/') else {
+                    out.push_str(crate_path);
+                    break;
+                };
                 let cv = &crate_path[..slash2];
-                let dash = cv.as_bytes().iter().enumerate().rev()
+                let dash = cv
+                    .as_bytes()
+                    .iter()
+                    .enumerate()
+                    .rev()
                     .find(|(i, &b)| b == b'-' && i + 1 < cv.len() && cv.as_bytes()[i + 1].is_ascii_digit())
                     .map(|(i, _)| i);
                 let cn = dash.map_or(cv, |d| &cv[..d]);
@@ -74,7 +89,9 @@ mod android_logcat {
 
         fn flush(&mut self) -> std::io::Result<()> {
             let mut inner = self.buf.borrow_mut();
-            while inner.last() == Some(&b'\n') { inner.pop(); }
+            while inner.last() == Some(&b'\n') {
+                inner.pop();
+            }
             if !inner.is_empty() {
                 Self::shorten_paths(&mut inner);
                 let prefix = self.ansi_prefix();
@@ -85,7 +102,9 @@ mod android_logcat {
                 colored.extend_from_slice(reset);
                 if let Ok(text) = CString::new(colored.as_slice()) {
                     if let Ok(tag) = CString::new(LOG_TAG) {
-                        unsafe { __android_log_write(self.priority, tag.as_ptr(), text.as_ptr()); }
+                        unsafe {
+                            __android_log_write(self.priority, tag.as_ptr(), text.as_ptr());
+                        }
                     }
                 }
                 inner.clear();
@@ -95,7 +114,9 @@ mod android_logcat {
     }
 
     impl Drop for LogcatWriter {
-        fn drop(&mut self) { let _ = self.flush(); }
+        fn drop(&mut self) {
+            let _ = self.flush();
+        }
     }
 
     pub struct LogcatMakeWriter;

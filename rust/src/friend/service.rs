@@ -1,53 +1,26 @@
 use crate::error::{Result, SdkError};
 use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
-use crate::model::friend::FriendInfo;
-use crate::model::UserId;
-use crate::model::local::LocalFriend;
 use crate::http::FriendServerApi;
+use crate::model::friend::FriendInfo;
+use crate::model::local::LocalFriend;
+use crate::model::UserId;
 
-use crate::http::Pagination;
-use crate::http::friend::*;
 use crate::client::context::Repositories;
+use crate::http::friend::*;
+use crate::http::Pagination;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ========== 增量同步类型 ==========
-
-
-
-
 
 // ========== 搜索好友类型（对齐 Go SDK SearchFriendsParam） ==========
 
-
-
 // ========== 指定好友查询（对齐 Go SDK GetSpecifiedFriendsInfo） ==========
 
-
-
 // ========== 批量更新好友（对齐 Go SDK UpdateFriends） ==========
-
 
 pub struct FriendService {
     /// 外部依赖
@@ -63,12 +36,7 @@ pub struct FriendService {
 }
 
 impl FriendService {
-    pub fn new(
-        api: Arc<dyn FriendServerApi>,
-        repositories: Arc<Repositories>,
-        user_id: UserId,
-        listener: Arc<dyn FriendListener>,
-    ) -> Self {
+    pub fn new(api: Arc<dyn FriendServerApi>, repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn FriendListener>) -> Self {
         Self {
             api,
             repositories,
@@ -82,7 +50,6 @@ impl FriendService {
     pub(crate) fn send(&self, e: FriendEvent) {
         self.listener.emit(e);
     }
-
 
     /// 从本地数据库加载好友列表到内存缓存
     /// 在登录时调用，确保切换账号后能立即显示已有数据
@@ -106,12 +73,7 @@ impl FriendService {
     }
 
     pub async fn get_friend_id_list(&self) -> Vec<String> {
-        self.friends
-            .read()
-            .await
-            .iter()
-            .map(|f| f.user_id.clone())
-            .collect()
+        self.friends.read().await.iter().map(|f| f.user_id.clone()).collect()
     }
 
     /// 全量同步好友列表（对齐 Go SDK FullSync）
@@ -121,20 +83,12 @@ impl FriendService {
         let user_id = self.user_id.get().await;
         let req = GetFriendListReq {
             user_id: user_id.clone(),
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
 
         let resp = self.api.get_friend_list(&req).await?;
 
-        let friends: Vec<FriendInfo> = resp
-            .friends_info
-            .unwrap_or_default()
-            .into_iter()
-            .map(|s| server_to_friend(s))
-            .collect();
+        let friends: Vec<FriendInfo> = resp.friends_info.unwrap_or_default().into_iter().map(|s| server_to_friend(s)).collect();
 
         // 持久化到数据库
         let local_friends: Vec<LocalFriend> = friends.iter().map(|f| friend_info_to_local(f, &user_id)).collect();
@@ -247,14 +201,11 @@ impl FriendService {
 
         // 发布事件
         if !resp.insert.is_empty() || !resp.update.is_empty() {
-            let all_changed: Vec<FriendInfo> = resp.insert.iter().chain(resp.update.iter())
-                .map(|s| server_to_friend(s.clone()))
-                .collect();
+            let all_changed: Vec<FriendInfo> = resp.insert.iter().chain(resp.update.iter()).map(|s| server_to_friend(s.clone())).collect();
             self.send(FriendEvent::Added(all_changed.to_vec()));
         }
 
-        info!("增量同步好友完成, insert={}, update={}, delete={}",
-            resp.insert.len(), resp.update.len(), resp.delete.len());
+        info!("增量同步好友完成, insert={}, update={}, delete={}", resp.insert.len(), resp.update.len(), resp.delete.len());
         Ok(())
     }
 
@@ -269,18 +220,21 @@ impl FriendService {
         let blacks = self.blacks.read().await;
         let black_set: HashSet<&String> = blacks.iter().collect();
 
-        let items: Vec<SearchFriendItem> = local_friends.into_iter().map(|f| {
-            let relationship = if black_set.contains(&f.friend_user_id) { 2 } else { 1 };
-            SearchFriendItem {
-                friend_user_id: f.friend_user_id,
-                nickname: f.nickname,
-                face_url: f.face_url,
-                remark: f.remark,
-                ex: f.ex,
-                create_time: f.create_time,
-                relationship,
-            }
-        }).collect();
+        let items: Vec<SearchFriendItem> = local_friends
+            .into_iter()
+            .map(|f| {
+                let relationship = if black_set.contains(&f.friend_user_id) { 2 } else { 1 };
+                SearchFriendItem {
+                    friend_user_id: f.friend_user_id,
+                    nickname: f.nickname,
+                    face_url: f.face_url,
+                    remark: f.remark,
+                    ex: f.ex,
+                    create_time: f.create_time,
+                    relationship,
+                }
+            })
+            .collect();
 
         Ok(items)
     }
@@ -289,16 +243,11 @@ impl FriendService {
     ///
     /// 先查本地 DB，缺失的从服务端拉取并缓存到本地。
     /// filterBlack=true 时过滤掉黑名单中的好友。
-    pub async fn get_specified_friends_info(
-        &self,
-        friend_user_ids: Vec<String>,
-        filter_black: bool,
-    ) -> Result<Vec<FriendInfo>> {
+    pub async fn get_specified_friends_info(&self, friend_user_ids: Vec<String>, filter_black: bool) -> Result<Vec<FriendInfo>> {
         let user_id = self.user_id.get().await;
 
         // 1. 从本地 DB 查询已有数据
-        let mut local_map: std::collections::HashMap<String, LocalFriend> =
-            std::collections::HashMap::new();
+        let mut local_map: std::collections::HashMap<String, LocalFriend> = std::collections::HashMap::new();
         let mut missing_ids: Vec<String> = Vec::new();
 
         for uid in &friend_user_ids {
@@ -370,12 +319,7 @@ impl FriendService {
     ///
     /// 从本地 DB 按 is_pinned DESC, create_time DESC 排序分页获取。
     /// filterBlack=true 时过滤黑名单好友。
-    pub async fn get_friend_list_page(
-        &self,
-        offset: i32,
-        count: i32,
-        filter_black: bool,
-    ) -> Result<Vec<FriendInfo>> {
+    pub async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool) -> Result<Vec<FriendInfo>> {
         let user_id = self.user_id.get().await;
 
         // 从本地 DB 获取全部好友（DAO 已按 is_pinned DESC, create_time DESC 排序）
@@ -385,22 +329,14 @@ impl FriendService {
         let filtered: Vec<&LocalFriend> = if filter_black {
             let blacks = self.blacks.read().await;
             let black_set: HashSet<&String> = blacks.iter().collect();
-            all_local
-                .iter()
-                .filter(|f| !black_set.contains(&f.friend_user_id))
-                .collect()
+            all_local.iter().filter(|f| !black_set.contains(&f.friend_user_id)).collect()
         } else {
             all_local.iter().collect()
         };
 
         // 分页
         let start = offset.max(0) as usize;
-        let page: Vec<FriendInfo> = filtered
-            .into_iter()
-            .skip(start)
-            .take(count.max(0) as usize)
-            .map(|l| local_to_friend_info(l))
-            .collect();
+        let page: Vec<FriendInfo> = filtered.into_iter().skip(start).take(count.max(0) as usize).map(|l| local_to_friend_info(l)).collect();
 
         Ok(page)
     }
@@ -409,13 +345,7 @@ impl FriendService {
     ///
     /// 支持部分更新：is_pinned / remark / ex 为 None 时不修改对应字段。
     /// 更新成功后自动执行增量同步刷新本地数据。
-    pub async fn update_friends(
-        &self,
-        friend_user_ids: Vec<String>,
-        is_pinned: Option<bool>,
-        remark: Option<String>,
-        ex: Option<String>,
-    ) -> Result<()> {
+    pub async fn update_friends(&self, friend_user_ids: Vec<String>, is_pinned: Option<bool>, remark: Option<String>, ex: Option<String>) -> Result<()> {
         let user_id = self.user_id.get().await;
 
         let req = UpdateFriendsReq {
@@ -452,9 +382,7 @@ impl FriendService {
     }
 
     pub async fn delete_friend(&self, user_id: String) -> Result<()> {
-        let req = DeleteFriendReq {
-            to_user_id: user_id.clone(),
-        };
+        let req = DeleteFriendReq { to_user_id: user_id.clone() };
 
         self.api.delete_friend(&req).await?;
 
@@ -495,9 +423,7 @@ impl FriendService {
     }
 
     pub async fn add_black(&self, user_id: String) -> Result<()> {
-        let req = AddBlackReq {
-            to_user_id: user_id.clone(),
-        };
+        let req = AddBlackReq { to_user_id: user_id.clone() };
 
         self.api.add_black(&req).await?;
 
@@ -510,9 +436,7 @@ impl FriendService {
     }
 
     pub async fn remove_black(&self, user_id: String) -> Result<()> {
-        let req = RemoveBlackReq {
-            to_user_id: user_id.clone(),
-        };
+        let req = RemoveBlackReq { to_user_id: user_id.clone() };
 
         self.api.remove_black(&req).await?;
 
@@ -532,10 +456,7 @@ impl FriendService {
         let user_id = self.user_id.get().await;
         let req = GetFriendApplyListReq {
             from_user_id: user_id,
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_friend_apply_list(&req).await?;
         Ok(resp)
@@ -546,10 +467,7 @@ impl FriendService {
         let user_id = self.user_id.get().await;
         let req = GetFriendApplyListReq {
             from_user_id: user_id,
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 1000,
-            },
+            pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_self_friend_apply_list(&req).await?;
         Ok(resp)
@@ -669,10 +587,7 @@ mod tests {
     fn test_get_friend_list_req_serialization() {
         let req = GetFriendListReq {
             user_id: "test_user".to_string(),
-            pagination: Pagination {
-                page_number: 1,
-                show_number: 100,
-            },
+            pagination: Pagination { page_number: 1, show_number: 100 },
         };
 
         let json = serde_json::to_string(&req).unwrap();
@@ -696,15 +611,10 @@ mod tests {
 
     #[test]
     fn test_add_black_req_serialization() {
-        let req = AddBlackReq {
-            to_user_id: "user_789".to_string(),
-        };
+        let req = AddBlackReq { to_user_id: "user_789".to_string() };
 
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("toUserID"));
         assert!(json.contains("user_789"));
     }
 }
-
-
-

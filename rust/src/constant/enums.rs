@@ -33,8 +33,6 @@ impl sqlx::Type<sqlx::Sqlite> for SessionType {
     }
 }
 
-
-
 /// 消息内容类型
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ContentType {
@@ -94,8 +92,6 @@ impl sqlx::Type<sqlx::Sqlite> for ContentType {
     }
 }
 
-
-
 /// 消息来源
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MsgFrom {
@@ -143,7 +139,6 @@ impl From<GroupType> for i32 {
         g as i32
     }
 }
-
 
 /// 消息发送状态（对齐 Go SDK 的 MsgStatus）
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

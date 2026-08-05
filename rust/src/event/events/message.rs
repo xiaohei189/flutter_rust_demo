@@ -53,7 +53,12 @@ pub enum MessageEvent {
     /// 消息发送失败
     SendFailed { client_msg_id: String, error: String },
     /// 上传进度
-    UploadProgress { client_msg_id: String, progress: u8, total_size: u64, uploaded_size: u64 },
+    UploadProgress {
+        client_msg_id: String,
+        progress: u8,
+        total_size: u64,
+        uploaded_size: u64,
+    },
 }
 
 /// 消息监听 trait（对齐 Go SDK `MsgListener`）
@@ -75,7 +80,12 @@ pub trait MessageListenerExt: MessageListener {
             MessageEvent::C2CReadReceipt { receipts } => self.on_c2c_read_receipt(&receipts),
             MessageEvent::Deleted { conversation_id, client_msg_ids } => self.on_message_deleted(&conversation_id, &client_msg_ids),
             MessageEvent::SendFailed { client_msg_id, error } => self.on_send_failed(&client_msg_id, &error),
-            MessageEvent::UploadProgress { client_msg_id, progress, total_size, uploaded_size } => self.on_upload_progress(&client_msg_id, progress, total_size, uploaded_size),
+            MessageEvent::UploadProgress {
+                client_msg_id,
+                progress,
+                total_size,
+                uploaded_size,
+            } => self.on_upload_progress(&client_msg_id, progress, total_size, uploaded_size),
         }
     }
 }

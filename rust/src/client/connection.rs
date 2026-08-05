@@ -2,31 +2,12 @@
 //!
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
-use crate::constant::GroupType;
 use crate::error::{Result, SdkError};
-use crate::model::friend::FriendInfo;
-use crate::model::group::{GroupInfo, GroupMember};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
-use crate::model::user::UserInfo;
-use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
-use crate::http::group::GroupApplyInfo;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::http::online::OnlineStatus;
 use crate::event::events::connection::ConnectionEvent;
-use crate::event::events::conversation::ConversationEvent;
-use crate::event::events::friend::FriendEvent;
-use crate::event::events::group::GroupEvent;
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
 use async_trait::async_trait;
-use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[async_trait]
-pub trait ConnectionApi : Send + Sync {
+pub trait ConnectionApi: Send + Sync {
     fn take_conn_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConnectionEvent>, SdkError>;
     async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()>;
     async fn disconnect(&self);

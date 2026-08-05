@@ -17,12 +17,9 @@ pub(crate) struct NotificationElem {
 /// 1. 解析外层 `{"detail": "..."}` → 取出 detail 字符串
 /// 2. 解析内层 detail JSON → 目标类型 T
 pub(crate) fn unmarshal_notification_elem<T: serde::de::DeserializeOwned>(content: &[u8]) -> anyhow::Result<T> {
-    let content_str = std::str::from_utf8(content)
-        .map_err(|e| anyhow::anyhow!("content 不是有效 UTF-8: {}", e))?;
-    let outer: NotificationElem = serde_json::from_str(content_str)
-        .map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
-    let inner: T = serde_json::from_str(&outer.detail)
-        .map_err(|e| anyhow::anyhow!("解析内层 detail 失败: {}", e))?;
+    let content_str = std::str::from_utf8(content).map_err(|e| anyhow::anyhow!("content 不是有效 UTF-8: {}", e))?;
+    let outer: NotificationElem = serde_json::from_str(content_str).map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
+    let inner: T = serde_json::from_str(&outer.detail).map_err(|e| anyhow::anyhow!("解析内层 detail 失败: {}", e))?;
     Ok(inner)
 }
 
@@ -191,7 +188,8 @@ mod tests {
 
     #[test]
     fn test_unmarshal_revoke_notification_admin_revoke() {
-        let content = r#"{"detail":"{\"revokerUserID\":\"admin_1\",\"clientMsgID\":\"msg_002\",\"revokeTime\":2000,\"sesstionType\":2,\"seq\":10,\"conversationID\":\"sg_group_1\",\"isAdminRevoke\":true}"}"#;
+        let content =
+            r#"{"detail":"{\"revokerUserID\":\"admin_1\",\"clientMsgID\":\"msg_002\",\"revokeTime\":2000,\"sesstionType\":2,\"seq\":10,\"conversationID\":\"sg_group_1\",\"isAdminRevoke\":true}"}"#;
         let tips: RevokeMsgTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
         assert_eq!(tips.revoker_user_id, "admin_1");
         assert_eq!(tips.seq, 10);
@@ -300,5 +298,3 @@ mod tests {
         assert!(result.unwrap_err().to_string().contains("UTF-8"));
     }
 }
-
-

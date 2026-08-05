@@ -1,10 +1,10 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
-use crate::error::Result;
-use crate::http::conversation::{ConversationServerApi, SetConversationReq};
-use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
-use crate::model::local::LocalConversation;
 use crate::client::context::Repositories;
+use crate::error::Result;
+use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
+use crate::http::conversation::{ConversationServerApi, SetConversationReq};
+use crate::model::local::LocalConversation;
 
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -19,10 +19,7 @@ pub struct ConversationService {
 }
 
 impl ConversationService {
-    pub fn new(
-        repositories: Arc<Repositories>,
-        listener: Arc<dyn ConversationListener>,
-    ) -> Self {
+    pub fn new(repositories: Arc<Repositories>, listener: Arc<dyn ConversationListener>) -> Self {
         Self {
             repositories,
             server_api: None,
@@ -50,11 +47,7 @@ impl ConversationService {
                     if let Some(latest) = messages.first() {
                         conv.latest_msg = latest.content.clone();
                         conv.latest_msg_send_time = latest.send_time;
-                        let _ = self.repositories.conversation_repo.update_latest_msg(
-                            &conv.conversation_id,
-                            &latest.content,
-                            latest.send_time,
-                        ).await;
+                        let _ = self.repositories.conversation_repo.update_latest_msg(&conv.conversation_id, &latest.content, latest.send_time).await;
                     }
                 }
             }
@@ -325,5 +318,3 @@ mod tests {
         assert_eq!(conv.draft_text, "");
     }
 }
-
-

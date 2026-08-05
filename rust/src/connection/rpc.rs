@@ -4,8 +4,8 @@
 
 use crate::connection::manager::ConnectionManager;
 use crate::connection::ws::OpenIMReq;
-use crate::error::{Result, SdkError};
 use crate::constant::req_identifier_name;
+use crate::error::{Result, SdkError};
 use crate::logger::{encode_operation_id, extract_span_id, extract_trace_id};
 use futures_util::SinkExt;
 use std::time::Duration;
@@ -30,11 +30,7 @@ impl ConnectionManager {
         let trace_id = extract_trace_id();
         let span_id = extract_span_id();
         let operation_id = encode_operation_id(&trace_id, span_id);
-        let operation_id = if operation_id.is_empty() {
-            format!("op_{}_{}", req_identifier, msg_incr)
-        } else {
-            operation_id
-        };
+        let operation_id = if operation_id.is_empty() { format!("op_{}_{}", req_identifier, msg_incr) } else { operation_id };
 
         tracing::Span::current().record("operationID", &operation_id);
 
@@ -60,14 +56,12 @@ impl ConnectionManager {
             },
         );
 
-        let compressed = self.compressor.compress(req_json.as_bytes())
-            .map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
+        let compressed = self.compressor.compress(req_json.as_bytes()).map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
 
         let send_result = {
             let mut w = self.writer.write().await;
             if let Some(writer) = w.as_mut() {
-                writer.send(WsMessage::Binary(compressed)).await
-                    .map_err(|e| SdkError::connection(format!("send failed: {}", e)))
+                writer.send(WsMessage::Binary(compressed)).await.map_err(|e| SdkError::connection(format!("send failed: {}", e)))
             } else {
                 Err(SdkError::connection("not connected"))
             }

@@ -3,13 +3,9 @@
 //! trait 定义在 `domain::ports::message`
 
 use crate::error::Result;
-use crate::http::message::{
-    MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq,
-};
 use crate::http::client::HttpApiClient;
-use crate::http::routes::{
-    DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG,
-};
+use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+use crate::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
 use async_trait::async_trait;
 use serde::Serialize;
 use std::sync::Arc;
@@ -88,7 +84,13 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST")).and(path("/msg/revoke_msg")).respond_with(ok_response()).mount(&server).await;
         let api = make_api(&server);
-        let req = RevokeMessageReq { conversation_id: "conv_1".to_string(), seq: 5, user_id: "user_1".to_string(), client_msg_id: "msg_1".to_string(), session_type: 1 };
+        let req = RevokeMessageReq {
+            conversation_id: "conv_1".to_string(),
+            seq: 5,
+            user_id: "user_1".to_string(),
+            client_msg_id: "msg_1".to_string(),
+            session_type: 1,
+        };
         assert!(api.revoke_on_server(&req).await.is_ok());
     }
 
@@ -97,7 +99,13 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST")).and(path("/msg/revoke_msg")).respond_with(err_response()).mount(&server).await;
         let api = make_api(&server);
-        let req = RevokeMessageReq { conversation_id: "conv_1".to_string(), seq: 5, user_id: "user_1".to_string(), client_msg_id: "msg_1".to_string(), session_type: 1 };
+        let req = RevokeMessageReq {
+            conversation_id: "conv_1".to_string(),
+            seq: 5,
+            user_id: "user_1".to_string(),
+            client_msg_id: "msg_1".to_string(),
+            session_type: 1,
+        };
         assert!(api.revoke_on_server(&req).await.is_err());
     }
 
@@ -114,7 +122,12 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST")).and(path("/msg/mark_conversation_as_read")).respond_with(ok_response()).mount(&server).await;
         let api = make_api(&server);
-        let req = MarkConversationAsReadReq { user_id: "user_1".to_string(), conversation_id: "conv_1".to_string(), has_read_seq: 10, seqs: vec![1, 2, 3] };
+        let req = MarkConversationAsReadReq {
+            user_id: "user_1".to_string(),
+            conversation_id: "conv_1".to_string(),
+            has_read_seq: 10,
+            seqs: vec![1, 2, 3],
+        };
         assert!(api.mark_conversation_as_read_on_server(&req).await.is_ok());
     }
 
@@ -123,7 +136,13 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST")).and(path("/msg/mark_msgs_as_read")).respond_with(ok_response()).mount(&server).await;
         let api = make_api(&server);
-        let req = MarkMessagesAsReadReq { conversation_id: "conv_1".to_string(), user_id: "user_1".to_string(), session_type: 1, has_read_seq: 6, seqs: vec![5, 6] };
+        let req = MarkMessagesAsReadReq {
+            conversation_id: "conv_1".to_string(),
+            user_id: "user_1".to_string(),
+            session_type: 1,
+            has_read_seq: 6,
+            seqs: vec![5, 6],
+        };
         assert!(api.mark_messages_as_read_on_server(&req).await.is_ok());
     }
 }

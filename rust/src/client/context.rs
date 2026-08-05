@@ -1,16 +1,13 @@
 //! 运行时上下文 — 聚合基础设施与仓储，管理 SDK 生命周期
 
-use crate::event::hub::EventHub;
 use crate::client::config::ClientConfig;
-use crate::error::{Result, SdkError};
-use crate::model::UserId;
-use crate::db::*;
 use crate::db::pool::create_pool;
-use crate::db::{
-    ConversationDao, FriendDao, GroupDao, MessageDao,
-    NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao,
-};
+use crate::db::*;
+use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+use crate::error::{Result, SdkError};
+use crate::event::hub::EventHub;
 use crate::http::client::HttpApiClient;
+use crate::model::UserId;
 use sqlx::SqlitePool;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -33,15 +30,10 @@ pub fn gen_operation_id(prefix: &str) -> String {
 impl Infra {
     /// 创建基础设施：数据库连接池 + HTTP 客户端
     pub async fn new(config: &ClientConfig) -> Result<Self> {
-        std::fs::create_dir_all(&config.data_dir)
-            .map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
+        std::fs::create_dir_all(&config.data_dir).map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
         let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
         let db_pool = create_pool(&db_url).await?;
-        let http_client = Arc::new(HttpApiClient::new(
-            config.api_base_url.clone(),
-            config.token.clone(),
-            "sdk_init".to_string(),
-        ));
+        let http_client = Arc::new(HttpApiClient::new(config.api_base_url.clone(), config.token.clone(), "sdk_init".to_string()));
         Ok(Self { http_client, db_pool })
     }
 }
@@ -97,11 +89,7 @@ pub struct RuntimeContext {
 
 impl RuntimeContext {
     /// 创建运行时上下文
-    pub async fn new(
-        config: ClientConfig,
-        listeners: Arc<EventHub>,
-        cancel_token: CancellationToken,
-    ) -> Result<Self> {
+    pub async fn new(config: ClientConfig, listeners: Arc<EventHub>, cancel_token: CancellationToken) -> Result<Self> {
         let infra = Infra::new(&config).await?;
         let repositories = Repositories::new(&infra.db_pool);
         let operation_id = format!("op_{}", chrono::Utc::now().timestamp_millis());
@@ -166,4 +154,3 @@ mod tests {
         let _ = std::fs::remove_dir_all(&data_dir);
     }
 }
-

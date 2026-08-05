@@ -8,9 +8,5 @@ pub trait SendingMessageRepository: Send + Sync {
     async fn insert(&self, msg: &LocalSendingMessage) -> Result<()>;
     async fn delete(&self, conversation_id: &str, client_msg_id: &str) -> Result<()>;
     async fn get_all(&self) -> Result<Vec<LocalSendingMessage>>;
-    async fn get_by_client_msg_id(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-    ) -> Result<Option<LocalSendingMessage>>;
+    async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalSendingMessage>>;
 }

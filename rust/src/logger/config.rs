@@ -27,7 +27,7 @@ pub struct LogConfig {
 impl Default for LogConfig {
     fn default() -> Self {
         Self {
-            log_level: 0,           // trace
+            log_level: 0, // trace
             is_log_standard_output: true,
             log_file_path: "./logs".to_string(),
             log_remain_count: 7,

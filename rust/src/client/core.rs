@@ -1,39 +1,28 @@
 use crate::client::builder::OpenIMClientBuilder;
 
-
-
-
-
-
-
-
-
-
-
-
 use crate::client::{ConnectionApi, MessageApi};
-use async_trait::async_trait;
 use crate::connection::manager::ConnectionManager;
 use crate::conversation::service::ConversationService;
 use crate::conversation::syncer::ConversationSyncer;
-use crate::message::send::MessageSender;
 use crate::friend::service::FriendService;
 use crate::group::service::GroupService;
+use crate::message::send::MessageSender;
 use crate::message::MessageProcessor;
+use async_trait::async_trait;
 
-use crate::message::MessageService;
-use crate::message::MessageSyncer;
-use crate::message::notification::NotificationHandler;
-use crate::user::online::service::OnlineStatusService;
-use crate::user::service::UserService;
 use crate::error::{Result, SdkError};
 use crate::event::events::connection::ConnectionEvent;
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
-use crate::event::hub::EventHub;
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::friend::FriendEvent;
 use crate::event::events::group::GroupEvent;
+use crate::event::events::message::MessageEvent;
+use crate::event::events::user::UserEvent;
+use crate::event::hub::EventHub;
+use crate::message::notification::NotificationHandler;
+use crate::message::MessageService;
+use crate::message::MessageSyncer;
+use crate::user::online::service::OnlineStatusService;
+use crate::user::service::UserService;
 
 use crate::client::context::RuntimeContext;
 
@@ -57,7 +46,6 @@ pub struct OpenIMClient {
     pub(crate) online_status: Arc<OnlineStatusService>,
     pub(crate) sender: Arc<MessageSender>,
     pub(crate) message_service: Arc<MessageService>,
-    
 
     /// 事件中枢（Listener 实现 → Dart StreamSink 数据源）
     pub(crate) listeners: Arc<EventHub>,
@@ -68,15 +56,10 @@ use crate::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use prost::Message as ProstMessage;
 use tokio_util::sync::CancellationToken;
-use tracing::{info, warn, debug, Instrument};
+use tracing::{debug, info, warn, Instrument};
 
 /// 处理一批推送消息
-async fn handle_push_batch(
-    message_processor: Arc<MessageProcessor>,
-    message_syncer: Arc<MessageSyncer>,
-    notification_handler: Arc<NotificationHandler>,
-    batch: PushMessages,
-) {
+async fn handle_push_batch(message_processor: Arc<MessageProcessor>, message_syncer: Arc<MessageSyncer>, notification_handler: Arc<NotificationHandler>, batch: PushMessages) {
     let mut has_message_changes = false;
 
     for (conv_id, pull_msgs) in &batch.msgs {
@@ -85,7 +68,11 @@ async fn handle_push_batch(
 
         if !messages.is_empty() {
             match message_processor.handle_messages(conv_id, messages).await {
-                Ok(changed) => { if changed { has_message_changes = true; } }
+                Ok(changed) => {
+                    if changed {
+                        has_message_changes = true;
+                    }
+                }
                 Err(e) => warn!("failed to handle push messages for {}: {:?}", conv_id, e),
             }
             if let Err(e) = message_syncer.push_trigger_and_sync(conv_id, &seqs).await {
@@ -192,9 +179,14 @@ impl ConnectionApi for OpenIMClient {
                     debug!("[SDK] self_user 缓存已初始化");
                 } else {
                     let minimal = crate::model::user::UserInfo {
-                        user_id: uid.clone(), nickname: uid.clone(),
-                        face_url: String::new(), gender: 0, telephone: String::new(),
-                        email: String::new(), remark: String::new(), global_recv_msg_opt: 0,
+                        user_id: uid.clone(),
+                        nickname: uid.clone(),
+                        face_url: String::new(),
+                        gender: 0,
+                        telephone: String::new(),
+                        email: String::new(),
+                        remark: String::new(),
+                        global_recv_msg_opt: 0,
                     };
                     self.user.set_self_user_info(minimal).await;
                     debug!("[SDK] self_user 使用最小信息初始化");
@@ -203,9 +195,14 @@ impl ConnectionApi for OpenIMClient {
             Err(e) => {
                 warn!("[SDK] 获取 self_user 失败，使用最小信息兜底: {}", e);
                 let minimal = crate::model::user::UserInfo {
-                    user_id: uid.clone(), nickname: uid.clone(),
-                    face_url: String::new(), gender: 0, telephone: String::new(),
-                    email: String::new(), remark: String::new(), global_recv_msg_opt: 0,
+                    user_id: uid.clone(),
+                    nickname: uid.clone(),
+                    face_url: String::new(),
+                    gender: 0,
+                    telephone: String::new(),
+                    email: String::new(),
+                    remark: String::new(),
+                    global_recv_msg_opt: 0,
                 };
                 self.user.set_self_user_info(minimal).await;
             }
@@ -240,13 +237,12 @@ impl ConnectionApi for OpenIMClient {
     async fn is_connected(&self) -> bool {
         self.connection.is_connected().await
     }
-
 }
 
 impl OpenIMClient {
     /// 启动推送消息处理器 + 重连消息同步监听
     fn spawn_push_message_handler(&self) {
-                let message_processor = self.message_processor.clone();
+        let message_processor = self.message_processor.clone();
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();
         let conversation_syncer = self.conversation_syncer.clone();
@@ -267,8 +263,13 @@ impl OpenIMClient {
                 let ct = ct.clone();
                 tokio::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-                    if ct.is_cancelled() { return; }
-                    if ms.is_connection_kicked().await { info!("push_message_handler: connection was kicked, skipping sync"); return; }
+                    if ct.is_cancelled() {
+                        return;
+                    }
+                    if ms.is_connection_kicked().await {
+                        info!("push_message_handler: connection was kicked, skipping sync");
+                        return;
+                    }
                     info!("push_message_handler: connection established, syncing conversations then messages");
                     if let Err(e) = cs.sync_incremental().await {
                         warn!("push_message_handler: conversation sync after reconnect failed: {:?}", e);
@@ -281,7 +282,7 @@ impl OpenIMClient {
         }));
 
         tokio::spawn(async move {
-                        debug!("push_message_handler: started");
+            debug!("push_message_handler: started");
             loop {
                 tokio::select! {
                     _ = cancel_token.cancelled() => {

@@ -4,7 +4,7 @@
 //! 目前仅被连接模块（core::connection）使用，因此放在本模块下。
 
 use anyhow::Context;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -26,11 +26,7 @@ where
                 BASE64.decode(&s).map_err(|e| Error::custom(format!("base64 decode failed: {}", e)))
             }
         }
-        serde_json::Value::Array(arr) => {
-            arr.into_iter()
-                .map(|v| v.as_u64().map(|n| n as u8).ok_or_else(|| Error::custom("expected u8")))
-                .collect()
-        }
+        serde_json::Value::Array(arr) => arr.into_iter().map(|v| v.as_u64().map(|n| n as u8).ok_or_else(|| Error::custom("expected u8"))).collect(),
         serde_json::Value::Null => Ok(Vec::new()),
         _ => Err(Error::custom("expected string, array, or null")),
     }
@@ -80,14 +76,7 @@ pub struct WebSocketConnectResp {
 }
 
 impl OpenIMReq {
-    pub fn new(
-        req_identifier: i32,
-        token: String,
-        send_id: String,
-        operation_id: String,
-        msg_incr: String,
-        data: Vec<u8>,
-    ) -> Self {
+    pub fn new(req_identifier: i32, token: String, send_id: String, operation_id: String, msg_incr: String, data: Vec<u8>) -> Self {
         Self {
             req_identifier,
             token,
@@ -147,9 +136,7 @@ impl GzipCompressor {
     /// Gzip 压缩
     pub fn compress(&self, raw_data: &[u8]) -> anyhow::Result<Vec<u8>> {
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-        encoder
-            .write_all(raw_data)
-            .context("gzip write failed")?;
+        encoder.write_all(raw_data).context("gzip write failed")?;
         encoder.finish().context("gzip finish failed")
     }
 
@@ -157,9 +144,7 @@ impl GzipCompressor {
     pub fn decompress(&self, compressed_data: &[u8]) -> anyhow::Result<Vec<u8>> {
         let mut decoder = GzDecoder::new(compressed_data);
         let mut output = Vec::new();
-        decoder
-            .read_to_end(&mut output)
-            .context("gzip decompress failed")?;
+        decoder.read_to_end(&mut output).context("gzip decompress failed")?;
         Ok(output)
     }
 }
@@ -176,14 +161,7 @@ mod tests {
 
     #[test]
     fn test_openim_req_encode_decode() {
-        let req = OpenIMReq::new(
-            1003,
-            "test_token".into(),
-            "user_123".into(),
-            "op_001".into(),
-            "msg_1".into(),
-            vec![1, 2, 3],
-        );
+        let req = OpenIMReq::new(1003, "test_token".into(), "user_123".into(), "op_001".into(), "msg_1".into(), vec![1, 2, 3]);
 
         let encoded = req.encode_to_vec().unwrap();
         let decoded = OpenIMReq::decode_from_bytes(&encoded).unwrap();

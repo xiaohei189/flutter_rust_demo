@@ -1,15 +1,12 @@
 //! OpenIM FFI bridge layer - client lifecycle
 
-pub use crate::ffi::global::{
-    set_app_background_status, network_status_changed,
-    get_login_user_id, get_sdk_version, un_init_sdk,
-};
+pub use crate::ffi::global::{get_login_user_id, get_sdk_version, network_status_changed, set_app_background_status, un_init_sdk};
 
-use crate::ffi::global::set_client;
-use crate::client::{ConnectionApi, SdkApi};
-use crate::frb_generated::StreamSink;
-use crate::client::core::OpenIMClient;
 use crate::client::config::ClientConfig;
+use crate::client::core::OpenIMClient;
+use crate::client::{ConnectionApi, SdkApi};
+use crate::ffi::global::set_client;
+use crate::frb_generated::StreamSink;
 use anyhow::Result;
 use std::sync::Arc;
 
@@ -21,22 +18,24 @@ pub struct OpenIMBridgeClient {
 impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn new(config: ClientConfig) -> Result<Self> {
-        tracing::info!("[Bridge] creating client instance, user_id={}, ws_url={:?}, api_url={:?}",
-            config.user_id, config.ws_url, config.api_base_url);
+        tracing::info!(
+            "[Bridge] creating client instance, user_id={}, ws_url={:?}, api_url={:?}",
+            config.user_id,
+            config.ws_url,
+            config.api_base_url
+        );
 
-        let client = OpenIMClient::new(config.clone()).await
-            .map_err(|e| {
-                tracing::error!("[Bridge] client creation failed: {}", e);
-                anyhow::anyhow!("{}", e)
-            })?;
+        let client = OpenIMClient::new(config.clone()).await.map_err(|e| {
+            tracing::error!("[Bridge] client creation failed: {}", e);
+            anyhow::anyhow!("{}", e)
+        })?;
 
         tracing::info!("[Bridge] client created, logging in...");
 
-        client.login(&config.user_id, &config.token).await
-            .map_err(|e| {
-                tracing::error!("[Bridge] login failed: {}", e);
-                anyhow::anyhow!("{}", e)
-            })?;
+        client.login(&config.user_id, &config.token).await.map_err(|e| {
+            tracing::error!("[Bridge] login failed: {}", e);
+            anyhow::anyhow!("{}", e)
+        })?;
 
         tracing::info!("[Bridge] login successful");
 
@@ -57,11 +56,10 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn logout(&self) -> Result<()> {
         tracing::info!("[Bridge] logging out");
-        self.inner.logout().await
-            .map_err(|e| {
-                tracing::error!("[Bridge] logout failed: {}", e);
-                anyhow::anyhow!("{}", e)
-            })
+        self.inner.logout().await.map_err(|e| {
+            tracing::error!("[Bridge] logout failed: {}", e);
+            anyhow::anyhow!("{}", e)
+        })
     }
 
     #[flutter_rust_bridge::frb]
@@ -90,14 +88,22 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn friend_stream(&self, sink: StreamSink<crate::event::events::friend::FriendEvent>) -> Result<()> {
         let mut rx = self.inner.take_friend_rx()?;
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        tokio::spawn(async move {
+            while let Some(e) = rx.recv().await {
+                let _ = sink.add(e);
+            }
+        });
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn group_stream(&self, sink: StreamSink<crate::event::events::group::GroupEvent>) -> Result<()> {
         let mut rx = self.inner.take_group_rx()?;
-        tokio::spawn(async move { while let Some(e) = rx.recv().await { let _ = sink.add(e); } });
+        tokio::spawn(async move {
+            while let Some(e) = rx.recv().await {
+                let _ = sink.add(e);
+            }
+        });
         Ok(())
     }
 }

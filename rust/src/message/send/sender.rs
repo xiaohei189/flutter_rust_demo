@@ -4,18 +4,18 @@
 //! 媒体上传+消息构造、发送中消息清理所需的自由函数。
 //! 门面层只保留 `MessageApi` 的薄委托。
 
+use crate::client::context::RuntimeContext;
 use crate::connection::manager::ConnectionManager;
+use crate::constant::MessageSendStatus;
+use crate::error::{Result, SdkError};
+use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
+use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::file::uploader::{FileUploader, ProgressCallback};
 use crate::message::send::queue::MessageSendQueue;
 use crate::message::ContentTypeUtils;
-use crate::user::service::UserService;
-use crate::constant::MessageSendStatus;
-use crate::error::{Result, SdkError};
 use crate::model::local::{LocalChatLog, LocalSendingMessage};
 use crate::model::msg_struct::{get_msg_id, AtInfo, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
-use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
-use crate::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::client::context::RuntimeContext;
+use crate::user::service::UserService;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
 use serde_json::{json, Value};
@@ -58,10 +58,7 @@ pub(crate) fn content_type_name(ct: i32) -> &'static str {
 }
 
 /// 处理媒体内容上传（独立函数版本）
-pub(crate) async fn process_media_content_impl(
-    file_uploader: &FileUploader,
-    msg: &MsgStruct,
-) -> std::result::Result<String, SdkError> {
+pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg: &MsgStruct) -> std::result::Result<String, SdkError> {
     if !ContentTypeUtils::is_media(msg.content_type) {
         return Ok(msg.content.clone());
     }
@@ -83,10 +80,7 @@ pub(crate) async fn process_media_content_impl(
         return Ok(msg.content.clone());
     }
 
-    let file_name = path.file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("unknown")
-        .to_string();
+    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
 
     info!("开始上传媒体文件: content_type={}, path={}", msg.content_type, source_path);
 
@@ -121,21 +115,15 @@ pub(crate) async fn process_media_content_impl(
         value["sourceUrl"] = json!(url);
     }
 
-    value.as_object_mut()
-        .and_then(|map| map.remove("sourcePath"));
+    value.as_object_mut().and_then(|map| map.remove("sourcePath"));
 
-    let new_content = serde_json::to_string(&value)
-        .unwrap_or_else(|_| msg.content.clone());
+    let new_content = serde_json::to_string(&value).unwrap_or_else(|_| msg.content.clone());
 
     Ok(new_content)
 }
 
 /// 发送前插入消息到 DB（独立函数版本）
-pub(crate) async fn insert_message_before_send_impl(
-    context: &RuntimeContext,
-    msg: &MsgStruct,
-    send_time: i64,
-) -> Result<()> {
+pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, msg: &MsgStruct, send_time: i64) -> Result<()> {
     let conversation_id = conversation_id_for_msg(msg);
 
     let mut local_log = LocalChatLog::from(msg);
@@ -145,16 +133,16 @@ pub(crate) async fn insert_message_before_send_impl(
     local_log.status = MessageSendStatus::Sending as i32;
 
     context.repositories.message_repo.batch_insert(&[local_log]).await?;
-    context.repositories.sending_message_repo.insert(&LocalSendingMessage {
-        conversation_id: conversation_id.clone(),
-        client_msg_id: msg.client_msg_id.clone(),
-        ex: String::new(),
-    }).await?;
-    context.repositories.conversation_repo.update_after_sent_message(
-        &conversation_id,
-        &msg.content,
-        send_time,
-    ).await?;
+    context
+        .repositories
+        .sending_message_repo
+        .insert(&LocalSendingMessage {
+            conversation_id: conversation_id.clone(),
+            client_msg_id: msg.client_msg_id.clone(),
+            ex: String::new(),
+        })
+        .await?;
+    context.repositories.conversation_repo.update_after_sent_message(&conversation_id, &msg.content, send_time).await?;
 
     // 会话乐观更新（对齐 Go SDK api.go L322-324）
     if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
@@ -176,13 +164,15 @@ pub(crate) async fn do_send_message_impl(
 ) -> std::result::Result<UserSendMsgResp, SdkError> {
     let start = std::time::Instant::now();
     let conversation_id = conversation_id_for_msg(&msg);
-    info!("[SendMsg] 开始: conv={}, content_type={}({}), online_only={}",
-        conversation_id, msg.content_type, content_type_name(msg.content_type), online_only);
+    info!(
+        "[SendMsg] 开始: conv={}, content_type={}({}), online_only={}",
+        conversation_id,
+        msg.content_type,
+        content_type_name(msg.content_type),
+        online_only
+    );
 
-    let send_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0);
+    let send_time = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
 
     let content = process_media_content_impl(&file_uploader, &msg).await?;
 
@@ -212,17 +202,19 @@ pub(crate) async fn do_send_message_impl(
 
     let resp: UserSendMsgResp = match transport.send_msg_rpc(&msg_data).await {
         Ok(r) => {
-            info!("[SendMsg] 完成: client_msg_id={}, server_msg_id={}, elapsed={}ms",
-                r.client_msg_id, r.server_msg_id, start.elapsed().as_millis());
+            info!(
+                "[SendMsg] 完成: client_msg_id={}, server_msg_id={}, elapsed={}ms",
+                r.client_msg_id,
+                r.server_msg_id,
+                start.elapsed().as_millis()
+            );
             r
         }
         Err(e) => {
             if !online_only {
                 // 网络超时二次确认（对齐 Go SDK api.go L682-698）
                 if let SdkError::Timeout { .. } = &e {
-                    if let Ok(Some(old_msg)) = context.repositories.message_repo
-                        .get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await
-                    {
+                    if let Ok(Some(old_msg)) = context.repositories.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
                         if old_msg.status == MessageSendStatus::SendSuccess as i32 {
                             info!("消息超时但DB已标记成功: client_msg_id={}", msg.client_msg_id);
                             return Ok(UserSendMsgResp {
@@ -234,11 +226,13 @@ pub(crate) async fn do_send_message_impl(
                     }
                 }
                 context.repositories.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
-                MessageListenerExt::emit(&*context.listeners, MessageEvent::SendFailed {
-                    client_msg_id: msg.client_msg_id.clone(),
-                    error: format!("{}", e),
-                });
-
+                MessageListenerExt::emit(
+                    &*context.listeners,
+                    MessageEvent::SendFailed {
+                        client_msg_id: msg.client_msg_id.clone(),
+                        error: format!("{}", e),
+                    },
+                );
             }
             return Err(SdkError::message_send(format!("send message via ws failed: {}", e)));
         }
@@ -246,7 +240,12 @@ pub(crate) async fn do_send_message_impl(
 
     // isOnlineOnly: 跳过本地状态更新和会话触发（对齐 Go SDK api.go L154-157）
     if !online_only {
-        if let Err(e) = context.repositories.message_repo.update_after_send_success(&msg.client_msg_id, &resp.server_msg_id, resp.send_time).await {
+        if let Err(e) = context
+            .repositories
+            .message_repo
+            .update_after_send_success(&msg.client_msg_id, &resp.server_msg_id, resp.send_time)
+            .await
+        {
             error!("更新发送结果失败: {}", e);
         }
 
@@ -271,14 +270,14 @@ pub struct MessageSender {
 }
 
 impl MessageSender {
-    pub fn new(
-        context: Arc<RuntimeContext>,
-        connection: Arc<ConnectionManager>,
-        file_uploader: Arc<FileUploader>,
-        send_queue: Arc<MessageSendQueue>,
-        user: Arc<UserService>,
-    ) -> Self {
-        Self { context, connection, file_uploader, send_queue, user }
+    pub fn new(context: Arc<RuntimeContext>, connection: Arc<ConnectionManager>, file_uploader: Arc<FileUploader>, send_queue: Arc<MessageSendQueue>, user: Arc<UserService>) -> Self {
+        Self {
+            context,
+            connection,
+            file_uploader,
+            send_queue,
+            user,
+        }
     }
 
     /// 登录时设置上传器登录用户
@@ -300,14 +299,22 @@ impl MessageSender {
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let upload_result = self.file_uploader.upload_image(file_path, None).await
+        let upload_result = self
+            .file_uploader
+            .upload_image(file_path, None)
+            .await
             .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
         let source = crate::model::msg_struct::PictureBaseInfo {
-            width: 0, height: 0, picture_type: String::new(),
-            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
+            width: 0,
+            height: 0,
+            picture_type: String::new(),
+            size: upload_result.size as i64,
+            url: upload_result.url,
+            uuid: String::new(),
         };
         let mut msg = MsgStruct::create_image_message(
-            file_path, source,
+            file_path,
+            source,
             crate::model::msg_struct::PictureBaseInfo::default(),
             crate::model::msg_struct::PictureBaseInfo::default(),
         );
@@ -317,14 +324,22 @@ impl MessageSender {
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_image_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
-        let upload_result = self.file_uploader.upload_image(file_path, Some(progress.clone())).await
+        let upload_result = self
+            .file_uploader
+            .upload_image(file_path, Some(progress.clone()))
+            .await
             .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
         let source = crate::model::msg_struct::PictureBaseInfo {
-            width: 0, height: 0, picture_type: String::new(),
-            size: upload_result.size as i64, url: upload_result.url, uuid: String::new(),
+            width: 0,
+            height: 0,
+            picture_type: String::new(),
+            size: upload_result.size as i64,
+            url: upload_result.url,
+            uuid: String::new(),
         };
         let mut msg = MsgStruct::create_image_message(
-            file_path, source,
+            file_path,
+            source,
             crate::model::msg_struct::PictureBaseInfo::default(),
             crate::model::msg_struct::PictureBaseInfo::default(),
         );
@@ -335,11 +350,11 @@ impl MessageSender {
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file(file_path, &file_name, None).await
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
+        let upload_result = self
+            .file_uploader
+            .upload_file(file_path, &file_name, None)
+            .await
             .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
         let file_elem = crate::model::msg_struct::FileElem {
             file_path: file_path.to_string(),
@@ -357,11 +372,11 @@ impl MessageSender {
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_file_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
         let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress.clone())).await
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
+        let upload_result = self
+            .file_uploader
+            .upload_file_with_progress(file_path, &file_name, None, Some(progress.clone()))
+            .await
             .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
         let file_elem = crate::model::msg_struct::FileElem {
             file_path: file_path.to_string(),
@@ -380,11 +395,11 @@ impl MessageSender {
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_sound_message(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64) -> std::result::Result<MsgStruct, SdkError> {
         let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("audio")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file(file_path, &file_name, None).await
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("audio").to_string();
+        let upload_result = self
+            .file_uploader
+            .upload_file(file_path, &file_name, None)
+            .await
             .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
         let sound_elem = crate::model::msg_struct::SoundElem {
             uuid: upload_result.file_id.clone(),
@@ -402,11 +417,11 @@ impl MessageSender {
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_sound_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
         let path = std::path::Path::new(file_path);
-        let file_name = path.file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("audio")
-            .to_string();
-        let upload_result = self.file_uploader.upload_file_with_progress(file_path, &file_name, None, Some(progress.clone())).await
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("audio").to_string();
+        let upload_result = self
+            .file_uploader
+            .upload_file_with_progress(file_path, &file_name, None, Some(progress.clone()))
+            .await
             .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
         let sound_elem = crate::model::msg_struct::SoundElem {
             uuid: upload_result.file_id.clone(),
@@ -427,13 +442,19 @@ impl MessageSender {
         // 上传视频文件
         let v_path = std::path::Path::new(video_path);
         let v_name = v_path.file_name().and_then(|n| n.to_str()).unwrap_or("video").to_string();
-        let v_upload = self.file_uploader.upload_file(video_path, &v_name, None).await
+        let v_upload = self
+            .file_uploader
+            .upload_file(video_path, &v_name, None)
+            .await
             .map_err(|e| SdkError::message_send(format!("upload video failed: {}", e)))?;
 
         // 上传封面图
         let s_path = std::path::Path::new(snapshot_path);
         let s_name = s_path.file_name().and_then(|n| n.to_str()).unwrap_or("snapshot").to_string();
-        let s_upload = self.file_uploader.upload_file(snapshot_path, &s_name, None).await
+        let s_upload = self
+            .file_uploader
+            .upload_file(snapshot_path, &s_name, None)
+            .await
             .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
 
         let video_elem = crate::model::msg_struct::VideoElem {
@@ -458,17 +479,31 @@ impl MessageSender {
 
     /// 发送视频消息（带上传进度回调，进度跟踪主视频文件）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    pub async fn send_video_message_with_progress(&self, video_path: &str, snapshot_path: &str, source_id: &str, session_type: i32, duration: i64, progress: &ProgressCallback) -> std::result::Result<MsgStruct, SdkError> {
+    pub async fn send_video_message_with_progress(
+        &self,
+        video_path: &str,
+        snapshot_path: &str,
+        source_id: &str,
+        session_type: i32,
+        duration: i64,
+        progress: &ProgressCallback,
+    ) -> std::result::Result<MsgStruct, SdkError> {
         // 上传视频文件（带进度回调）
         let v_path = std::path::Path::new(video_path);
         let v_name = v_path.file_name().and_then(|n| n.to_str()).unwrap_or("video").to_string();
-        let v_upload = self.file_uploader.upload_file_with_progress(video_path, &v_name, None, Some(progress.clone())).await
+        let v_upload = self
+            .file_uploader
+            .upload_file_with_progress(video_path, &v_name, None, Some(progress.clone()))
+            .await
             .map_err(|e| SdkError::message_send(format!("upload video failed: {}", e)))?;
 
         // 上传封面图（无进度回调）
         let s_path = std::path::Path::new(snapshot_path);
         let s_name = s_path.file_name().and_then(|n| n.to_str()).unwrap_or("snapshot").to_string();
-        let s_upload = self.file_uploader.upload_file(snapshot_path, &s_name, None).await
+        let s_upload = self
+            .file_uploader
+            .upload_file(snapshot_path, &s_name, None)
+            .await
             .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
 
         let video_elem = crate::model::msg_struct::VideoElem {
@@ -588,15 +623,13 @@ impl MessageSender {
         msg_data.options = options;
 
         // 直接通过 WS RPC 发送，不走 send_msg（不入库、不更新会话）
-        info!("[Typing] 请求: source_id={}, session_type={}, focus={}",
-            source_id, session_type, focus);
-        let resp: UserSendMsgResp = self.connection.send_rpc(
-            crate::constant::ws_req_identifier::SEND_MSG,
-            &msg_data,
-        ).await?;
+        info!("[Typing] 请求: source_id={}, session_type={}, focus={}", source_id, session_type, focus);
+        let resp: UserSendMsgResp = self.connection.send_rpc(crate::constant::ws_req_identifier::SEND_MSG, &msg_data).await?;
 
-        info!("[Typing] 响应: client_msg_id={}, server_msg_id={}, send_time={}",
-            resp.client_msg_id, resp.server_msg_id, resp.send_time);
+        info!(
+            "[Typing] 响应: client_msg_id={}, server_msg_id={}, send_time={}",
+            resp.client_msg_id, resp.server_msg_id, resp.send_time
+        );
         Ok(resp)
     }
 
@@ -609,15 +642,12 @@ impl MessageSender {
     /// - `client_msg_id`: 要编辑的消息的 clientMsgId
     /// - `content`: 编辑后的新内容（JSON 字符串）
     /// - `content_type`: 消息内容类型（如 101=文本）
-    pub async fn edit_message(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-        content: &str,
-        content_type: i32,
-    ) -> std::result::Result<MsgStruct, SdkError> {
+    pub async fn edit_message(&self, conversation_id: &str, client_msg_id: &str, content: &str, content_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         // 查找原始消息以获取会话信息
-        let original = self.context.repositories.message_repo
+        let original = self
+            .context
+            .repositories
+            .message_repo
             .get_by_client_msg_id(conversation_id, client_msg_id)
             .await?
             .ok_or_else(|| SdkError::invalid_argument(format!("消息不存在: client_msg_id={}", client_msg_id)))?;
@@ -679,7 +709,6 @@ impl MessageSender {
         let result = self.file_uploader.upload_file_with_progress(file_path, file_name, None, Some(progress.clone())).await?;
         Ok(result.url)
     }
-
 }
 
 impl MessageSender {
@@ -732,11 +761,12 @@ impl MessageSender {
         let file_uploader = self.file_uploader.clone();
         let msg_clone = msg.clone();
 
-        let resp = self.send_queue.submit(msg.content_type, move || {
-            Box::pin(async move {
-                do_send_message_impl(context, connection, file_uploader, msg_clone, offline_push_info, online_only).await
+        let resp = self
+            .send_queue
+            .submit(msg.content_type, move || {
+                Box::pin(async move { do_send_message_impl(context, connection, file_uploader, msg_clone, offline_push_info, online_only).await })
             })
-        }).await?;
+            .await?;
 
         // 回填服务端返回字段（对齐 Go SDK api.go sendMsg L730-732）
         msg.server_msg_id = resp.server_msg_id;
@@ -766,7 +796,6 @@ impl MessageSender {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -775,11 +804,7 @@ mod tests {
 
     /// 创建测试用 FileUploader（不会实际触发上传）
     fn make_uploader() -> Arc<FileUploader> {
-        let http = Arc::new(HttpApiClient::new(
-            "http://localhost:10002".to_string(),
-            "test_token".to_string(),
-            "test_op".to_string(),
-        ));
+        let http = Arc::new(HttpApiClient::new("http://localhost:10002".to_string(), "test_token".to_string(), "test_op".to_string()));
         Arc::new(FileUploader::new(http))
     }
 

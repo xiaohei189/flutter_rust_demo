@@ -14,15 +14,15 @@ use std::time::Instant;
 use tracing::Span;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_subscriber::fmt::format::FmtSpan;
-use tracing_subscriber::fmt::MakeWriter;
-use tracing_subscriber::fmt::FormatEvent;
-use tracing_subscriber::fmt::FmtContext;
 use tracing_subscriber::fmt::format::Writer;
+use tracing_subscriber::fmt::FmtContext;
+use tracing_subscriber::fmt::FormatEvent;
+use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::Registry;
 use tracing_subscriber::Layer;
+use tracing_subscriber::Registry;
 
 use super::config::LogConfig;
 
@@ -97,12 +97,7 @@ where
     S: tracing::Subscriber + for<'a> LookupSpan<'a>,
     W: for<'writer> MakeWriter<'writer> + 'static,
 {
-    fn on_new_span(
-        &self,
-        attrs: &tracing::span::Attributes<'_>,
-        id: &tracing::span::Id,
-        _ctx: tracing_subscriber::layer::Context<'_, S>,
-    ) {
+    fn on_new_span(&self, attrs: &tracing::span::Attributes<'_>, id: &tracing::span::Id, _ctx: tracing_subscriber::layer::Context<'_, S>) {
         let meta = attrs.metadata();
         let mut fields = String::new();
         attrs.record(&mut FieldVisitor(&mut fields));
@@ -195,16 +190,7 @@ where
             spans.remove(&span_id_u64).and_then(|state| {
                 if self.log_span_events && SPAN_EVENTS_ENABLED.load(Ordering::Relaxed) {
                     let busy = state.start.elapsed();
-                    Some((
-                        state.name,
-                        state.fields,
-                        state.trace_id,
-                        state.span_id,
-                        state.parent_span_id,
-                        state.file,
-                        state.line,
-                        busy,
-                    ))
+                    Some((state.name, state.fields, state.trace_id, state.span_id, state.parent_span_id, state.file, state.line, busy))
                 } else {
                     None
                 }
@@ -361,12 +347,7 @@ where
     S: tracing::Subscriber + for<'a> LookupSpan<'a>,
     N: for<'a> tracing_subscriber::fmt::FormatFields<'a> + 'static,
 {
-    fn format_event(
-        &self,
-        ctx: &FmtContext<'_, S, N>,
-        mut writer: Writer<'_>,
-        event: &tracing::Event<'_>,
-    ) -> fmt::Result {
+    fn format_event(&self, ctx: &FmtContext<'_, S, N>, mut writer: Writer<'_>, event: &tracing::Event<'_>) -> fmt::Result {
         // 1) 时间戳
         let ts = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ");
         if self.with_ansi {
@@ -380,8 +361,8 @@ where
         if self.with_ansi {
             let color = match *level {
                 tracing::Level::ERROR => "\x1b[31m",
-                tracing::Level::WARN  => "\x1b[33m",
-                tracing::Level::INFO  => "\x1b[32m",
+                tracing::Level::WARN => "\x1b[33m",
+                tracing::Level::INFO => "\x1b[32m",
                 tracing::Level::DEBUG => "\x1b[34m",
                 tracing::Level::TRACE => "\x1b[35m",
             };
@@ -414,20 +395,15 @@ where
             if let Some(span_ref) = scope.from_root().last() {
                 let name = span_ref.metadata().name();
                 let extensions = span_ref.extensions();
-                let fields_str = extensions
-                    .get::<tracing_subscriber::fmt::FormattedFields<N>>()
-                    .map(|f| f.as_str())
-                    .unwrap_or("");
+                let fields_str = extensions.get::<tracing_subscriber::fmt::FormattedFields<N>>().map(|f| f.as_str()).unwrap_or("");
 
-                let otel_info: Option<(String, String)> = extensions
-                    .get::<tracing_opentelemetry::OtelData>()
-                    .and_then(|data| {
-                        let (tid, sid, _psid) = otel_trace_span_id(data);
-                        match (tid, sid) {
-                            (Some(tid), Some(sid)) => Some((tid, sid)),
-                            _ => None,
-                        }
-                    });
+                let otel_info: Option<(String, String)> = extensions.get::<tracing_opentelemetry::OtelData>().and_then(|data| {
+                    let (tid, sid, _psid) = otel_trace_span_id(data);
+                    match (tid, sid) {
+                        (Some(tid), Some(sid)) => Some((tid, sid)),
+                        _ => None,
+                    }
+                });
 
                 if self.with_ansi {
                     write!(writer, " {}span={}", GREY, name)?;
@@ -491,11 +467,7 @@ fn shorten_cargo_path(file: &str) -> String {
                     .iter()
                     .enumerate()
                     .rev()
-                    .find(|(i, &b)| {
-                        b == b'-'
-                            && i + 1 < cv.len()
-                            && cv.as_bytes()[i + 1].is_ascii_digit()
-                    })
+                    .find(|(i, &b)| b == b'-' && i + 1 < cv.len() && cv.as_bytes()[i + 1].is_ascii_digit())
                     .map(|(i, _)| i);
                 let cn = dash.map_or(cv, |d| &cv[..d]);
                 return format!("{}{}", cn, &crate_path[slash2..]);
@@ -514,7 +486,8 @@ fn shorten_cargo_path(file: &str) -> String {
 pub fn extract_trace_id() -> String {
     let span = Span::current();
     let cx = span.context();
-    let span_ref = cx.span(); let sc = span_ref.span_context();
+    let span_ref = cx.span();
+    let sc = span_ref.span_context();
     if sc.is_valid() {
         sc.trace_id().to_string()
     } else {
@@ -554,9 +527,7 @@ pub fn decode_operation_id(operation_id: &str) -> (&str, Option<&str>) {
         let trace_id = &operation_id[..idx];
         let span_id = &operation_id[idx + 1..];
         // 验证 trace_id 是32位 hex 且 span_id 是16位 hex
-        if trace_id.len() == 32 && trace_id.chars().all(|c| c.is_ascii_hexdigit())
-            && span_id.len() == 16 && span_id.chars().all(|c| c.is_ascii_hexdigit())
-        {
+        if trace_id.len() == 32 && trace_id.chars().all(|c| c.is_ascii_hexdigit()) && span_id.len() == 16 && span_id.chars().all(|c| c.is_ascii_hexdigit()) {
             return (trace_id, Some(span_id));
         }
     }
@@ -567,19 +538,13 @@ pub fn decode_operation_id(operation_id: &str) -> (&str, Option<&str>) {
 ///
 /// 注意：tracing 0.1 的 span 名称必须是字面量，因此用固定名 `remote_span`，
 /// 实际 span 名记录在 `otel.name` 字段中。
-pub fn span_from_remote_trace_id(
-    name: &str,
-    trace_id_hex: &str,
-    parent_span_id_hex: Option<&str>,
-) -> Span {
+pub fn span_from_remote_trace_id(name: &str, trace_id_hex: &str, parent_span_id_hex: Option<&str>) -> Span {
     let trace_id = TraceId::from_hex(trace_id_hex).unwrap_or(TraceId::INVALID);
     if trace_id == TraceId::INVALID {
         return tracing::info_span!("remote_span", otel.name = %name);
     }
 
-    let parent_span_id = parent_span_id_hex
-        .and_then(|s| SpanId::from_hex(s).ok())
-        .unwrap_or(SpanId::INVALID);
+    let parent_span_id = parent_span_id_hex.and_then(|s| SpanId::from_hex(s).ok()).unwrap_or(SpanId::INVALID);
 
     let remote_sc = SpanContext::new(
         trace_id,
@@ -691,11 +656,7 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
             with_ansi: !cfg!(target_os = "android"),
         });
 
-    let console_layer_span = CompactLayer::new(
-        console_writer,
-        !cfg!(target_os = "android"),
-        config.is_log_span_events,
-    );
+    let console_layer_span = CompactLayer::new(console_writer, !cfg!(target_os = "android"), config.is_log_span_events);
 
     // --- 组装 subscriber ---
     // fmt::Layer 处理普通事件，CompactLayer 处理 span 生命周期事件

@@ -12,8 +12,8 @@ use crate::connection::ws::GzipCompressor;
 use crate::connection::ws::OpenIMResp;
 use crate::error::{Result, SdkError};
 use crate::event::events::connection::{ConnectionEvent, ConnectionListener, ConnectionListenerExt};
-use futures_util::SinkExt;
 use futures_util::stream::SplitSink;
+use futures_util::SinkExt;
 use openim_protocol::sdkws::PushMessages;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
@@ -22,8 +22,8 @@ use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::{oneshot, RwLock};
 use tokio::time::{interval, sleep, MissedTickBehavior};
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
@@ -191,9 +191,13 @@ impl ConnectionManager {
     }
 
     fn calculate_reconnect_delay(&self, attempt: u32) -> Duration {
-        let delay_secs = if attempt < 5 { 1 << attempt }
-            else if attempt < 10 { 16 + (attempt - 5) * 4 }
-            else { 60 };
+        let delay_secs = if attempt < 5 {
+            1 << attempt
+        } else if attempt < 10 {
+            16 + (attempt - 5) * 4
+        } else {
+            60
+        };
         Duration::from_secs(delay_secs as u64).min(RECONNECT_MAX_DELAY)
     }
 
@@ -267,10 +271,18 @@ impl ConnectionManager {
         warn!("kicked offline: {}", reason);
     }
 
-    pub fn message_batcher(&self) -> &MessageBatcher { &self.message_batcher }
-    pub async fn get_state(&self) -> ConnectionState { self.state.read().await.clone() }
-    pub(crate) async fn set_state(&self, state: ConnectionState) { *self.state.write().await = state; }
-    pub async fn is_connected(&self) -> bool { matches!(*self.state.read().await, ConnectionState::Connected) }
+    pub fn message_batcher(&self) -> &MessageBatcher {
+        &self.message_batcher
+    }
+    pub async fn get_state(&self) -> ConnectionState {
+        self.state.read().await.clone()
+    }
+    pub(crate) async fn set_state(&self, state: ConnectionState) {
+        *self.state.write().await = state;
+    }
+    pub async fn is_connected(&self) -> bool {
+        matches!(*self.state.read().await, ConnectionState::Connected)
+    }
 }
 
 #[cfg(test)]
@@ -306,22 +318,18 @@ mod tests {
     }
 }
 
-
-    #[tokio::test]
-    async fn test_clone_shallow_copies_all_fields() {
-        let cancel_token = CancellationToken::new();
-        let original = ConnectionManager::new(cancel_token.clone(), crate::event::test_util::noop_connection_listener());
-        let cloned = original.clone_shallow();
-        assert!(!cloned.cancel_token.is_cancelled());
-        assert_eq!(original.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
-        assert_eq!(cloned.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
-        assert_eq!(original.reconnect_attempts.load(Ordering::SeqCst), 0);
-        assert_eq!(cloned.reconnect_attempts.load(Ordering::SeqCst), 0);
-        assert!(original.writer.try_read().unwrap().is_none());
-        assert!(cloned.writer.try_read().unwrap().is_none());
-        assert!(Arc::ptr_eq(&original.push_tx, &cloned.push_tx));
-        assert!(Arc::ptr_eq(&original.on_connected_hook, &cloned.on_connected_hook));
-    }
-
-
-
+#[tokio::test]
+async fn test_clone_shallow_copies_all_fields() {
+    let cancel_token = CancellationToken::new();
+    let original = ConnectionManager::new(cancel_token.clone(), crate::event::test_util::noop_connection_listener());
+    let cloned = original.clone_shallow();
+    assert!(!cloned.cancel_token.is_cancelled());
+    assert_eq!(original.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
+    assert_eq!(cloned.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
+    assert_eq!(original.reconnect_attempts.load(Ordering::SeqCst), 0);
+    assert_eq!(cloned.reconnect_attempts.load(Ordering::SeqCst), 0);
+    assert!(original.writer.try_read().unwrap().is_none());
+    assert!(cloned.writer.try_read().unwrap().is_none());
+    assert!(Arc::ptr_eq(&original.push_tx, &cloned.push_tx));
+    assert!(Arc::ptr_eq(&original.on_connected_hook, &cloned.on_connected_hook));
+}

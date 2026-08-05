@@ -4,14 +4,14 @@
 //! 发送中消息清理、群消息本地插入等。只读写本地仓库并发布事件，不依赖门面。
 
 use super::MessageService;
+use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
 use crate::constant::MessageSendStatus;
 use crate::error::{Result, SdkError};
+use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
+use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::model::local::LocalChatLog;
 use crate::model::message::MessageInfo;
 use crate::model::msg_struct::{get_msg_id, MsgStruct};
-use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
-use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
-use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use openim_protocol::sdkws::MsgData;
 use tracing::{debug, info, warn};
 
@@ -21,21 +21,18 @@ impl MessageService {
         let start_time = if req.start_client_msg_id.is_empty() {
             0
         } else {
-            let msg = self.repositories.message_repo
-                .get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id)
-                .await?;
+            let msg = self.repositories.message_repo.get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id).await?;
             let st = msg.as_ref().map(|m| m.send_time).unwrap_or(0);
             info!("通过 client_msg_id 查询到 send_time={}", st);
             st
         };
 
-        let messages = self.repositories.message_repo
-            .get_by_conversation(&req.conversation_id, start_time, req.count)
-            .await?;
+        let messages = self.repositories.message_repo.get_by_conversation(&req.conversation_id, start_time, req.count).await?;
 
         let is_end = messages.len() < req.count as usize;
 
-        let msg_info_list: Vec<MessageInfo> = messages.into_iter()
+        let msg_info_list: Vec<MessageInfo> = messages
+            .into_iter()
             .rev()
             .map(|m| {
                 let msg_struct = MsgStruct::from(&m);
@@ -43,33 +40,21 @@ impl MessageService {
             })
             .collect();
 
-        Ok(GetHistoryMessagesResult {
-            messages: msg_info_list,
-            is_end,
-        })
+        Ok(GetHistoryMessagesResult { messages: msg_info_list, is_end })
     }
 
     /// 倒序获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
     ///
     /// 从 start_client_msg_id 之前的消息开始倒序获取；为空时从最新消息开始。
-    pub async fn get_history_messages_reverse(
-        &self,
-        conversation_id: &str,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<GetHistoryMessagesResult> {
+    pub async fn get_history_messages_reverse(&self, conversation_id: &str, start_client_msg_id: &str, count: i64) -> Result<GetHistoryMessagesResult> {
         let start_time = if start_client_msg_id.is_empty() {
             0
         } else {
-            let msg = self.repositories.message_repo
-                .get_by_client_msg_id(conversation_id, start_client_msg_id)
-                .await?;
+            let msg = self.repositories.message_repo.get_by_client_msg_id(conversation_id, start_client_msg_id).await?;
             msg.as_ref().map(|m| m.send_time).unwrap_or(0)
         };
 
-        let messages = self.repositories.message_repo
-            .get_by_conversation_asc(conversation_id, start_time, count + 1)
-            .await?;
+        let messages = self.repositories.message_repo.get_by_conversation_asc(conversation_id, start_time, count + 1).await?;
 
         let mut messages: Vec<LocalChatLog> = messages.into_iter().rev().collect();
 
@@ -78,54 +63,39 @@ impl MessageService {
             messages.truncate(count as usize);
         }
 
-        let msg_info_list: Vec<MessageInfo> = messages.into_iter()
+        let msg_info_list: Vec<MessageInfo> = messages
+            .into_iter()
             .map(|m| {
                 let msg_struct = MsgStruct::from(&m);
                 MessageInfo::from(MsgData::from(&msg_struct))
             })
             .collect();
 
-        Ok(GetHistoryMessagesResult {
-            messages: msg_info_list,
-            is_end,
-        })
+        Ok(GetHistoryMessagesResult { messages: msg_info_list, is_end })
     }
 
     /// 按 seq 范围获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListBySeq`）
-    pub async fn get_advanced_history_message_list_by_seq(
-        &self,
-        conversation_id: &str,
-        start_seq: i64,
-        end_seq: i64,
-        count: i32,
-    ) -> Result<Vec<LocalChatLog>> {
-        let rows = self.repositories.message_repo
-            .get_by_seq_range(conversation_id, start_seq, end_seq, count as i64)
-            .await?;
+    pub async fn get_advanced_history_message_list_by_seq(&self, conversation_id: &str, start_seq: i64, end_seq: i64, count: i32) -> Result<Vec<LocalChatLog>> {
+        let rows = self.repositories.message_repo.get_by_seq_range(conversation_id, start_seq, end_seq, count as i64).await?;
         Ok(rows)
     }
 
     /// 按 seq 获取单条消息（对齐 Go SDK `GetMessageBySeq`）
     pub async fn get_history_message_by_seq(&self, seq: i64) -> Result<LocalChatLog> {
-        self.repositories.message_repo.get_by_seq(seq).await?
+        self.repositories
+            .message_repo
+            .get_by_seq(seq)
+            .await?
             .ok_or_else(|| SdkError::invalid_argument(format!("seq={} 的消息不存在", seq)))
     }
 
     /// 按 clientMsgId 列表批量查找消息并按会话过滤（对齐 Go SDK `FindMessageList`）
-    pub async fn find_message_list(
-        &self,
-        conversation_id: &str,
-        client_msg_ids: Vec<String>,
-    ) -> Result<Vec<LocalChatLog>> {
+    pub async fn find_message_list(&self, conversation_id: &str, client_msg_ids: Vec<String>) -> Result<Vec<LocalChatLog>> {
         if client_msg_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let all = self.repositories.message_repo
-            .get_by_client_msg_ids(&client_msg_ids)
-            .await?;
-        Ok(all.into_iter()
-            .filter(|m| m.conversation_id == conversation_id)
-            .collect())
+        let all = self.repositories.message_repo.get_by_client_msg_ids(&client_msg_ids).await?;
+        Ok(all.into_iter().filter(|m| m.conversation_id == conversation_id).collect())
     }
 
     /// 按 clientMsgId 查询单条本地消息（不限定会话）
@@ -136,13 +106,8 @@ impl MessageService {
     /// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
     ///
     /// 软删除：标记为 MsgStatusHasDeleted(4)，不通知服务端。
-    pub async fn delete_message_from_local_storage(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-    ) -> Result<()> {
-        self.repositories.message_repo
-            .mark_as_deleted(conversation_id, client_msg_id).await?;
+    pub async fn delete_message_from_local_storage(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
+        self.repositories.message_repo.mark_as_deleted(conversation_id, client_msg_id).await?;
         self.message_listener.emit(MessageEvent::Deleted {
             conversation_id: conversation_id.to_string(),
             client_msg_ids: vec![client_msg_id.to_string()],
@@ -188,8 +153,7 @@ impl MessageService {
         let conversations = self.repositories.conversation_repo.get_all().await?;
         for conv in &conversations {
             if conv.unread_count > 0 {
-                let _ = self.repositories.conversation_repo
-                    .update_unread_count(&conv.conversation_id, 0).await;
+                let _ = self.repositories.conversation_repo.update_unread_count(&conv.conversation_id, 0).await;
             }
         }
         self.listener.emit(ConversationEvent::TotalUnreadCountChanged(0));
@@ -213,14 +177,8 @@ impl MessageService {
     }
 
     /// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
-    pub async fn set_message_local_ex(
-        &self,
-        conversation_id: &str,
-        client_msg_id: &str,
-        local_ex: &str,
-    ) -> Result<()> {
-        self.repositories.message_repo
-            .update_local_ex(conversation_id, client_msg_id, local_ex).await?;
+    pub async fn set_message_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<()> {
+        self.repositories.message_repo.update_local_ex(conversation_id, client_msg_id, local_ex).await?;
         Ok(())
     }
 
@@ -235,19 +193,14 @@ impl MessageService {
         };
 
         for sm in &sending_messages {
-            if let Ok(Some(msg)) = self.repositories.message_repo
-                .get_by_client_msg_id(&sm.conversation_id, &sm.client_msg_id).await
-            {
+            if let Ok(Some(msg)) = self.repositories.message_repo.get_by_client_msg_id(&sm.conversation_id, &sm.client_msg_id).await {
                 if msg.status == MessageSendStatus::Sending as i32 {
-                    if let Err(e) = self.repositories.message_repo
-                        .update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed.into()).await
-                    {
+                    if let Err(e) = self.repositories.message_repo.update_send_status(&sm.client_msg_id, MessageSendStatus::SendFailed.into()).await {
                         warn!("更新sending消息状态失败: client_msg_id={}, err={}", sm.client_msg_id, e);
                     }
                 }
             }
-            let _ = self.repositories.sending_message_repo
-                .delete(&sm.conversation_id, &sm.client_msg_id).await;
+            let _ = self.repositories.sending_message_repo.delete(&sm.conversation_id, &sm.client_msg_id).await;
         }
 
         if !sending_messages.is_empty() {
@@ -256,13 +209,7 @@ impl MessageService {
     }
 
     /// 插入群聊消息到本地存储（对齐 Go SDK `InsertGroupMessageToLocalStorage`）
-    pub async fn insert_group_message_to_local_storage(
-        &self,
-        group_id: &str,
-        content: &str,
-        content_type: i32,
-        send_id: &str,
-    ) -> Result<LocalChatLog> {
+    pub async fn insert_group_message_to_local_storage(&self, group_id: &str, content: &str, content_type: i32, send_id: &str) -> Result<LocalChatLog> {
         let conversation_id = format!("g_{}", group_id);
         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
         let client_msg_id = get_msg_id(send_id);
@@ -296,24 +243,32 @@ impl MessageService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::client::context::Repositories;
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
-    use crate::http::client::HttpApiClient;
-    use crate::http::message::{MessageServerApi, RevokeMessageReq, DeleteMessagesReq, MarkMessagesAsReadReq, MarkConversationAsReadReq};
-    use crate::client::context::Repositories;
     use crate::event::test_util::*;
-    use crate::model::UserId;
+    use crate::http::client::HttpApiClient;
+    use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
+    use crate::model::UserId;
     use async_trait::async_trait;
     use std::sync::Arc;
 
     struct MockMessageApi;
     #[async_trait]
     impl MessageServerApi for MockMessageApi {
-        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> Result<()> { Ok(()) }
-        async fn delete_on_server(&self, _conversation_id: &str, _seqs: &[i64], _user_id: &str) -> Result<()> { Ok(()) }
-        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> Result<()> { Ok(()) }
-        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> Result<()> { Ok(()) }
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> Result<()> {
+            Ok(())
+        }
+        async fn delete_on_server(&self, _conversation_id: &str, _seqs: &[i64], _user_id: &str) -> Result<()> {
+            Ok(())
+        }
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> Result<()> {
+            Ok(())
+        }
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> Result<()> {
+            Ok(())
+        }
     }
 
     fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -389,7 +344,9 @@ mod tests {
             make_msg("conv_1", "m1", 1, 1000, "user_a"),
             make_msg("conv_1", "m2", 2, 2000, "user_a"),
             make_msg("conv_1", "m3", 3, 3000, "user_a"),
-        ]).await.unwrap();
+        ])
+        .await
+        .unwrap();
         let req = GetHistoryMessagesReq {
             conversation_id: "conv_1".to_string(),
             start_client_msg_id: String::new(),
@@ -413,7 +370,9 @@ mod tests {
             make_msg("conv_1", "m3", 3, 3000, "user_a"),
             make_msg("conv_1", "m4", 4, 4000, "user_a"),
             make_msg("conv_1", "m5", 5, 5000, "user_a"),
-        ]).await.unwrap();
+        ])
+        .await
+        .unwrap();
         let req = GetHistoryMessagesReq {
             conversation_id: "conv_1".to_string(),
             start_client_msg_id: String::new(),
@@ -456,10 +415,9 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let service = make_service(pool.clone());
         let dao = MessageDao::new(pool);
-        dao.batch_insert(&[
-            make_msg("conv_1", "m1", 1, 1000, "user_a"),
-            make_msg("conv_2", "m2", 2, 2000, "user_a"),
-        ]).await.unwrap();
+        dao.batch_insert(&[make_msg("conv_1", "m1", 1, 1000, "user_a"), make_msg("conv_2", "m2", 2, 2000, "user_a")])
+            .await
+            .unwrap();
         let result = service.find_message_list("conv_1", vec!["m1".to_string(), "m2".to_string()]).await.unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].client_msg_id, "m1");
@@ -481,16 +439,22 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let service = make_service(pool.clone());
         let conv_dao = ConversationDao::new(pool);
-        conv_dao.upsert(&LocalConversation {
-            conversation_id: "conv_1".to_string(),
-            unread_count: 5,
-            ..Default::default()
-        }).await.unwrap();
-        conv_dao.upsert(&LocalConversation {
-            conversation_id: "conv_2".to_string(),
-            unread_count: 3,
-            ..Default::default()
-        }).await.unwrap();
+        conv_dao
+            .upsert(&LocalConversation {
+                conversation_id: "conv_1".to_string(),
+                unread_count: 5,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        conv_dao
+            .upsert(&LocalConversation {
+                conversation_id: "conv_2".to_string(),
+                unread_count: 3,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
         let total = service.get_total_unread_msg_count().await.unwrap();
         assert_eq!(total, 8);
     }
@@ -499,12 +463,9 @@ mod tests {
     async fn test_insert_group_message_to_local_storage() {
         let pool = create_pool_memory().await.unwrap();
         let service = make_service(pool);
-        let log = service.insert_group_message_to_local_storage(
-            "group_1", r#"{"content":"hello"}"#, 101, "user_a",
-        ).await.unwrap();
+        let log = service.insert_group_message_to_local_storage("group_1", r#"{"content":"hello"}"#, 101, "user_a").await.unwrap();
         assert_eq!(log.conversation_id, "g_group_1");
         assert_eq!(log.content_type, 101);
         assert_eq!(log.status, 2);
     }
 }
-

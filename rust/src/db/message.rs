@@ -43,5 +43,3 @@ pub trait MessageRepository: Send + Sync {
     async fn mark_all_as_deleted(&self) -> Result<()>;
     async fn update_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<()>;
 }
-
-

@@ -24,6 +24,6 @@
 //! | [`converter`] | - | ServerConversation -> LocalConversation 转换（`From` trait） |
 //! | [`types`] | - | 请求/响应 DTO 定义 |
 
+pub mod converter;
 pub mod service;
 pub mod syncer;
-pub mod converter;

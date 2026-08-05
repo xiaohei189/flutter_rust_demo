@@ -1,9 +1,9 @@
 //! 消息删除逻辑
 
 use super::MessageService;
-use crate::http::message::DeleteMessagesReq;
 use crate::error::Result;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
+use crate::http::message::DeleteMessagesReq;
 
 use tracing::info;
 
@@ -34,11 +34,7 @@ impl MessageService {
     }
 
     /// 本地删除逻辑（服务端已确认成功后调用）
-    pub(crate) async fn apply_local_delete(
-        &self,
-        conversation_id: &str,
-        client_msg_ids: &[String],
-    ) -> Result<()> {
+    pub(crate) async fn apply_local_delete(&self, conversation_id: &str, client_msg_ids: &[String]) -> Result<()> {
         for client_msg_id in client_msg_ids {
             self.repositories.message_repo.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
         }
@@ -51,7 +47,6 @@ impl MessageService {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

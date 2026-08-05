@@ -15,8 +15,7 @@ pub fn parse_revoke_tips_from_json(content: &str) -> anyhow::Result<RevokeTipsWi
         #[serde(default)]
         detail: String,
     }
-    let outer: Outer = serde_json::from_str(content_str)
-        .map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
+    let outer: Outer = serde_json::from_str(content_str).map_err(|e| anyhow::anyhow!("解析外层 NotificationElem 失败: {}", e))?;
 
     // 解析内层 RevokeMsgTips JSON
     #[derive(serde::Deserialize)]
@@ -41,11 +40,14 @@ pub fn parse_revoke_tips_from_json(content: &str) -> anyhow::Result<RevokeTipsWi
         #[serde(rename = "revokerRole", default)]
         revoker_role: i32,
     }
-    let inner: Inner = serde_json::from_str(&outer.detail)
-        .map_err(|e| anyhow::anyhow!("解析内层 RevokeMsgTips 失败: {}", e))?;
+    let inner: Inner = serde_json::from_str(&outer.detail).map_err(|e| anyhow::anyhow!("解析内层 RevokeMsgTips 失败: {}", e))?;
 
-    tracing::info!("[REVOKE-DEBUG-PARSE] parsed revoker_nickname='{}', revoker_role={}, user_id='{}'",
-        inner.revoker_nickname, inner.revoker_role, inner.revoker_user_id);
+    tracing::info!(
+        "[REVOKE-DEBUG-PARSE] parsed revoker_nickname='{}', revoker_role={}, user_id='{}'",
+        inner.revoker_nickname,
+        inner.revoker_role,
+        inner.revoker_user_id
+    );
     Ok(RevokeTipsWithNickname {
         tips: openim_protocol::sdkws::RevokeMsgTips {
             revoker_user_id: inner.revoker_user_id,

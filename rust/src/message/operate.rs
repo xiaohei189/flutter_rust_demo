@@ -2,17 +2,17 @@
 //!
 //! 处理用户主动发起的消息操作（撤回/删除/标记已读/搜索）
 
-mod revoke;
 mod delete;
-mod read;
-mod search;
 mod query;
+mod read;
+mod revoke;
+mod search;
 
-use crate::http::message::MessageServerApi;
+use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::{MessageListener, MessageListenerExt};
+use crate::http::message::MessageServerApi;
 use crate::model::UserId;
-use crate::client::context::Repositories;
 use std::sync::Arc;
 
 /// 消息服务 — 用户主动发起的消息操作（撤回/删除/标记已读/搜索）
@@ -25,13 +25,7 @@ pub struct MessageService {
 }
 
 impl MessageService {
-    pub fn new(
-        repositories: Arc<Repositories>,
-        api: Arc<dyn MessageServerApi>,
-        listener: Arc<dyn ConversationListener>,
-        message_listener: Arc<dyn MessageListener>,
-        user_id: UserId,
-    ) -> Self {
+    pub fn new(repositories: Arc<Repositories>, api: Arc<dyn MessageServerApi>, listener: Arc<dyn ConversationListener>, message_listener: Arc<dyn MessageListener>, user_id: UserId) -> Self {
         Self {
             repositories,
             api,
@@ -44,24 +38,16 @@ impl MessageService {
     pub(crate) fn send(&self, e: ConversationEvent) {
         self.listener.emit(e);
     }
-
-
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::UserId;
-    use crate::http::message::{
-        RevokeMessageReq, DeleteMessagesReq, MarkMessagesAsReadReq,
-        MarkConversationAsReadReq, MessageServerApi,
-    };
     use crate::db::pool::create_pool_memory;
-    use crate::db::{
-        ConversationDao, FriendDao, GroupDao, MessageDao,
-        NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao,
-    };
+    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
+    use crate::model::UserId;
     use std::sync::Arc;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -81,10 +67,18 @@ mod tests {
 
     #[async_trait::async_trait]
     impl MessageServerApi for SuccessMockApi {
-        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::error::Result<()> { Ok(()) }
-        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::error::Result<()> { Ok(()) }
-        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::error::Result<()> { Ok(()) }
-        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::error::Result<()> { Ok(()) }
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::error::Result<()> {
+            Ok(())
+        }
+        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::error::Result<()> {
+            Ok(())
+        }
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::error::Result<()> {
+            Ok(())
+        }
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::error::Result<()> {
+            Ok(())
+        }
     }
 
     pub(crate) struct FailMockApi;
@@ -107,14 +101,23 @@ mod tests {
 
     pub(crate) fn make_service(repositories: Arc<Repositories>) -> MessageService {
         let api: Arc<dyn MessageServerApi> = Arc::new(SuccessMockApi);
-        MessageService::new(repositories, api, crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener(), UserId::new("user_1"))
+        MessageService::new(
+            repositories,
+            api,
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+            UserId::new("user_1"),
+        )
     }
 
-    pub(crate) fn make_service_with_api(
-        repositories: Arc<Repositories>,
-        api: Arc<dyn MessageServerApi>,
-    ) -> MessageService {
-        MessageService::new(repositories, api, crate::event::test_util::noop_conversation_listener(), crate::event::test_util::noop_message_listener(), UserId::new("user_1"))
+    pub(crate) fn make_service_with_api(repositories: Arc<Repositories>, api: Arc<dyn MessageServerApi>) -> MessageService {
+        MessageService::new(
+            repositories,
+            api,
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+            UserId::new("user_1"),
+        )
     }
 
     fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64, send_id: &str) -> LocalChatLog {
@@ -178,10 +181,10 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let service = make_service(repositories);
-        message_dao.batch_insert(&[
-            make_local_msg("conv_s", "msg_1", 1, "user_2"),
-            make_local_msg("conv_s", "msg_2", 2, "user_2"),
-        ]).await.unwrap();
+        message_dao
+            .batch_insert(&[make_local_msg("conv_s", "msg_1", 1, "user_2"), make_local_msg("conv_s", "msg_2", 2, "user_2")])
+            .await
+            .unwrap();
         let results = service.search_local_messages("conv_s".to_string(), "hello".to_string(), 10).await.unwrap();
         assert_eq!(results.len(), 2);
     }
@@ -193,10 +196,10 @@ mod tests {
         let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
         let service = make_service(repositories);
-        message_dao.batch_insert(&[
-            make_local_msg("conv_read", "msg_1", 1, "user_2"),
-            make_local_msg("conv_read", "msg_2", 2, "user_2"),
-        ]).await.unwrap();
+        message_dao
+            .batch_insert(&[make_local_msg("conv_read", "msg_1", 1, "user_2"), make_local_msg("conv_read", "msg_2", 2, "user_2")])
+            .await
+            .unwrap();
         conversation_dao.upsert(&make_conv("conv_read", 2)).await.unwrap();
         service.mark_conversation_message_as_read("conv_read".to_string(), 1).await.unwrap();
         let conv = conversation_dao.get_by_id("conv_read").await.unwrap().unwrap();
@@ -209,16 +212,17 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let service = make_service(repositories);
-        message_dao.batch_insert(&[
-            make_local_msg("conv_r", "msg_r1", 5, "user_1"),
-        ]).await.unwrap();
-        service.revoke_message(RevokeMessageReq {
-            conversation_id: "conv_r".into(),
-            seq: 5,
-            user_id: "user_1".into(),
-            client_msg_id: "msg_r1".into(),
-            session_type: 1,
-        }).await.unwrap();
+        message_dao.batch_insert(&[make_local_msg("conv_r", "msg_r1", 5, "user_1")]).await.unwrap();
+        service
+            .revoke_message(RevokeMessageReq {
+                conversation_id: "conv_r".into(),
+                seq: 5,
+                user_id: "user_1".into(),
+                client_msg_id: "msg_r1".into(),
+                session_type: 1,
+            })
+            .await
+            .unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_r", "msg_r1").await.unwrap().unwrap();
         assert_eq!(msg.content_type, crate::constant::notification_type::REVOKE);
     }
@@ -229,14 +233,17 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let service = make_service(repositories);
-        message_dao.batch_insert(&[
-            make_local_msg("conv_d", "msg_d1", 1, "user_2"),
-            make_local_msg("conv_d", "msg_d2", 2, "user_2"),
-        ]).await.unwrap();
-        service.delete_messages(DeleteMessagesReq {
-            conversation_id: "conv_d".into(),
-            client_msg_ids: vec!["msg_d1".into(), "msg_d2".into()],
-        }).await.unwrap();
+        message_dao
+            .batch_insert(&[make_local_msg("conv_d", "msg_d1", 1, "user_2"), make_local_msg("conv_d", "msg_d2", 2, "user_2")])
+            .await
+            .unwrap();
+        service
+            .delete_messages(DeleteMessagesReq {
+                conversation_id: "conv_d".into(),
+                client_msg_ids: vec!["msg_d1".into(), "msg_d2".into()],
+            })
+            .await
+            .unwrap();
         assert!(message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().is_none());
     }
 
@@ -246,19 +253,21 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
         let service = make_service(repositories);
-        message_dao.batch_insert(&[
-            make_local_msg("conv_mr", "m1", 1, "user_2"),
-            make_local_msg("conv_mr", "m2", 2, "user_2"),
-        ]).await.unwrap();
-        service.mark_messages_as_read(MarkMessagesAsReadReq {
-            conversation_id: "conv_mr".into(),
-            user_id: "user_1".into(),
-            session_type: 1,
-            has_read_seq: 2,
-            seqs: vec![1, 2],
-        }).await.unwrap();
+        message_dao
+            .batch_insert(&[make_local_msg("conv_mr", "m1", 1, "user_2"), make_local_msg("conv_mr", "m2", 2, "user_2")])
+            .await
+            .unwrap();
+        service
+            .mark_messages_as_read(MarkMessagesAsReadReq {
+                conversation_id: "conv_mr".into(),
+                user_id: "user_1".into(),
+                session_type: 1,
+                has_read_seq: 2,
+                seqs: vec![1, 2],
+            })
+            .await
+            .unwrap();
         let logs = message_dao.get_by_conversation("conv_mr", 0, 100).await.unwrap();
         assert!(logs.iter().all(|m| m.is_read == 1));
     }
 }
-

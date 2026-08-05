@@ -7,29 +7,29 @@ use crate::constant::SessionType;
 
 use crate::constant::GroupType;
 use crate::error::{Result, SdkError};
-use crate::model::friend::FriendInfo;
-use crate::model::group::{GroupInfo, GroupMember};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
-use crate::model::user::UserInfo;
-use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
-use crate::http::group::GroupApplyInfo;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::http::online::OnlineStatus;
 use crate::event::events::connection::ConnectionEvent;
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::friend::FriendEvent;
 use crate::event::events::group::GroupEvent;
 use crate::event::events::message::MessageEvent;
 use crate::event::events::user::UserEvent;
+use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
+use crate::http::group::GroupApplyInfo;
+use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::http::online::OnlineStatus;
+use crate::model::friend::FriendInfo;
+use crate::model::group::{GroupInfo, GroupMember};
+use crate::model::local::{LocalChatLog, LocalConversation};
+use crate::model::message::MessageInfo;
+use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
+use crate::model::user::UserInfo;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[async_trait]
-pub trait ConversationApi : Send + Sync {
+pub trait ConversationApi: Send + Sync {
     fn take_conv_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>, SdkError>;
     async fn sync_all_conversation_hash_read_seqs(&self) -> Result<()>;
     async fn incr_sync_conversations(&self) -> Result<()>;
@@ -45,14 +45,21 @@ pub trait ConversationApi : Send + Sync {
     async fn clear_conversation_draft(&self, conversation_id: &str) -> Result<()>;
     async fn mark_conversation_message_as_read(&self, conversation_id: String, session_type: i32) -> Result<()>;
     async fn mark_all_conversation_as_read(&self) -> Result<()>;
-    async fn get_conversation_list_split(&self, offset: i64, count: i64,) -> std::result::Result<Vec<LocalConversation>, SdkError>;
-    async fn get_multiple_conversations(&self, conversation_ids: Vec<String>,) -> std::result::Result<Vec<LocalConversation>, SdkError>;
+    async fn get_conversation_list_split(&self, offset: i64, count: i64) -> std::result::Result<Vec<LocalConversation>, SdkError>;
+    async fn get_multiple_conversations(&self, conversation_ids: Vec<String>) -> std::result::Result<Vec<LocalConversation>, SdkError>;
     async fn get_conversation_ids(&self) -> std::result::Result<Vec<String>, SdkError>;
-    async fn search_conversations(&self, keyword: &str,) -> std::result::Result<Vec<LocalConversation>, SdkError>;
-    async fn hide_conversation(&self, conversation_id: &str,) -> std::result::Result<(), SdkError>;
-    async fn set_conversation(&self, conversation_id: &str, recv_msg_opt: Option<i32>, is_pinned: Option<bool>, is_private_chat: Option<bool>, group_at_type: Option<i32>, ex: Option<&str>,) -> Result<()>;
+    async fn search_conversations(&self, keyword: &str) -> std::result::Result<Vec<LocalConversation>, SdkError>;
+    async fn hide_conversation(&self, conversation_id: &str) -> std::result::Result<(), SdkError>;
+    async fn set_conversation(
+        &self,
+        conversation_id: &str,
+        recv_msg_opt: Option<i32>,
+        is_pinned: Option<bool>,
+        is_private_chat: Option<bool>,
+        group_at_type: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()>;
 }
-
 
 #[async_trait]
 impl ConversationApi for OpenIMClient {
@@ -145,19 +152,12 @@ impl ConversationApi for OpenIMClient {
     /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
     ///
     /// 过滤有消息的会话，置顶优先，按时间降序分页。
-    async fn get_conversation_list_split(
-        &self,
-        offset: i64,
-        count: i64,
-    ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+    async fn get_conversation_list_split(&self, offset: i64, count: i64) -> std::result::Result<Vec<LocalConversation>, SdkError> {
         self.conversation.get_split(offset, count).await
     }
 
     /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
-    async fn get_multiple_conversations(
-        &self,
-        conversation_ids: Vec<String>,
-    ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+    async fn get_multiple_conversations(&self, conversation_ids: Vec<String>) -> std::result::Result<Vec<LocalConversation>, SdkError> {
         self.conversation.get_multiple(&conversation_ids).await
     }
 
@@ -168,10 +168,7 @@ impl ConversationApi for OpenIMClient {
         self.conversation_syncer.get_all_conversation_ids().await
     }
 
-    async fn search_conversations(
-        &self,
-        keyword: &str,
-    ) -> std::result::Result<Vec<LocalConversation>, SdkError> {
+    async fn search_conversations(&self, keyword: &str) -> std::result::Result<Vec<LocalConversation>, SdkError> {
         if keyword.is_empty() {
             return Err(SdkError::invalid_argument("搜索关键词不能为空"));
         }
@@ -182,10 +179,7 @@ impl ConversationApi for OpenIMClient {
     ///
     /// 重置会话的未读数、最新消息、草稿等，使其不出现在会话列表中。
     #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
-    async fn hide_conversation(
-        &self,
-        conversation_id: &str,
-    ) -> std::result::Result<(), SdkError> {
+    async fn hide_conversation(&self, conversation_id: &str) -> std::result::Result<(), SdkError> {
         self.conversation.reset(conversation_id).await
     }
 
@@ -203,11 +197,8 @@ impl ConversationApi for OpenIMClient {
         group_at_type: Option<i32>,
         ex: Option<&str>,
     ) -> Result<()> {
-        self.conversation
-            .set_conversation(conversation_id, recv_msg_opt, is_pinned, is_private_chat, group_at_type, ex)
-            .await
+        self.conversation.set_conversation(conversation_id, recv_msg_opt, is_pinned, is_private_chat, group_at_type, ex).await
     }
-
 
     /// 获取会话事件接收器（只能调用一次，重复调用返回错误）
     fn take_conv_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>, SdkError> {
@@ -215,8 +206,7 @@ impl ConversationApi for OpenIMClient {
     }
 
     async fn sync_all_conversation_hash_read_seqs(&self) -> Result<()> {
-        self.conversation_syncer
-            .sync_conversation_hash_read_seqs(&self.message_processor.max_seq_recorder).await
+        self.conversation_syncer.sync_conversation_hash_read_seqs(&self.message_processor.max_seq_recorder).await
     }
 
     async fn incr_sync_conversations(&self) -> Result<()> {

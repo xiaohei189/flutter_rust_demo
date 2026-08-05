@@ -1,10 +1,10 @@
 pub mod client;
-pub mod global;
 pub mod conversation;
+pub mod ffi_init;
+pub mod friend;
+pub mod global;
+pub mod group;
 pub mod message;
 pub mod message_advanced;
 pub mod message_media;
-pub mod friend;
-pub mod group;
 pub mod user;
-pub mod ffi_init;

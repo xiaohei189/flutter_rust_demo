@@ -17,10 +17,7 @@ pub async fn create_pool(db_url: &str) -> Result<SqlitePool> {
         .await
         .map_err(|e| SdkError::database(format!("connect failed: {}", e)))?;
 
-    sqlx::migrate!()
-        .run(&pool)
-        .await
-        .map_err(|e| SdkError::database(format!("migration failed: {}", e)))?;
+    sqlx::migrate!().run(&pool).await.map_err(|e| SdkError::database(format!("migration failed: {}", e)))?;
 
     Ok(pool)
 }
@@ -32,10 +29,7 @@ pub async fn create_pool_memory() -> Result<SqlitePool> {
         .await
         .map_err(|e| SdkError::database(format!("connect failed: {}", e)))?;
 
-    sqlx::migrate!()
-        .run(&pool)
-        .await
-        .map_err(|e| SdkError::database(format!("migration failed: {}", e)))?;
+    sqlx::migrate!().run(&pool).await.map_err(|e| SdkError::database(format!("migration failed: {}", e)))?;
 
     Ok(pool)
 }

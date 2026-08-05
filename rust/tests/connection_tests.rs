@@ -6,12 +6,9 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_websocket_reconnection() {
-use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
+    use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 断线重连测试 ===\n");
 
@@ -26,9 +23,15 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
     let _ = std::fs::create_dir_all(&data_dir);
 
     let sdk = OpenIMClient::new(ClientConfig::new(
-        cert.user_id.clone(), cert.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir),
-    )).await.unwrap();
+        cert.user_id.clone(),
+        cert.im_token.clone(),
+        1,
+        Some(WS_URL.into()),
+        Some(API_BASE_URL.into()),
+        Some(data_dir),
+    ))
+    .await
+    .unwrap();
 
     let mut event_sub = subscribe_all(&sdk);
 
@@ -68,10 +71,7 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
 #[tokio::test]
 async fn test_reconnection() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 重连测试 ===\n");
 
@@ -93,12 +93,9 @@ async fn test_reconnection() {
 
 #[tokio::test]
 async fn test_connection_state_transitions() {
-use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
+    use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
 
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 连接状态转换测试 ===\n");
 
@@ -112,9 +109,15 @@ use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
     let _ = std::fs::create_dir_all(&data_dir);
 
     let sdk = OpenIMClient::new(ClientConfig::new(
-        cert.user_id.clone(), cert.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir),
-    )).await.unwrap();
+        cert.user_id.clone(),
+        cert.im_token.clone(),
+        1,
+        Some(WS_URL.into()),
+        Some(API_BASE_URL.into()),
+        Some(data_dir),
+    ))
+    .await
+    .unwrap();
 
     let mut events = Vec::new();
     let mut event_sub = subscribe_all(&sdk);

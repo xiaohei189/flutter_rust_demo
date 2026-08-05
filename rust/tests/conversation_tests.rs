@@ -19,13 +19,10 @@ fn make_conversation_id(uid1: &str, uid2: &str) -> String {
 /// 验证：B 的会话列表包含与 A 的会话，字段正确
 #[tokio::test]
 async fn test_conversation_list_sync() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -73,13 +70,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：get_conversation 返回正确会话
 #[tokio::test]
 async fn test_get_single_conversation() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -130,13 +124,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：未读数与消息数一致
 #[tokio::test]
 async fn test_conversation_unread_count() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -150,11 +141,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     // 发送 3 条消息
     for i in 1..=3 {
-        let _ = user1_sdk.send_text_message(
-            &format!("未读数测试 {}", i),
-            &user2.user_id,
-            1,
-        ).await;
+        let _ = user1_sdk.send_text_message(&format!("未读数测试 {}", i), &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -181,8 +168,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     let conv = user2_sdk.get_conversation(&conv_id).await.expect("获取会话失败");
     match conv {
         Some(c) => {
-            assert!(c.unread_count >= 3,
-                "未读数应 >= 3, 实际: {}", c.unread_count);
+            assert!(c.unread_count >= 3, "未读数应 >= 3, 实际: {}", c.unread_count);
             println!("未读数: {}", c.unread_count);
         }
         None => panic!("未找到会话"),
@@ -194,13 +180,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 2. Fallback 路径：重新登录，消息表为空 → 同步会话 → 标记已读 → 验证使用会话表 maxSeq
 #[tokio::test]
 async fn test_conversation_mark_read() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -216,11 +199,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     println!("=== 阶段一：正常路径 ===");
 
     for i in 1..=2 {
-        let _ = user1_sdk.send_text_message(
-            &format!("已读测试 {}", i),
-            &user2.user_id,
-            1,
-        ).await;
+        let _ = user1_sdk.send_text_message(&format!("已读测试 {}", i), &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -278,11 +257,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     println!("=== 阶段二：Fallback 路径 ===");
 
     for i in 3..=4 {
-        let _ = user1_sdk.send_text_message(
-            &format!("新消息 {}", i),
-            &user2.user_id,
-            1,
-        ).await;
+        let _ = user1_sdk.send_text_message(&format!("新消息 {}", i), &user2.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -330,13 +305,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：get_pinned_conversations 包含该会话
 #[tokio::test]
 async fn test_conversation_pinned() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -390,13 +362,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：set_conversation_private 成功
 #[tokio::test]
 async fn test_conversation_private() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -443,13 +412,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：草稿设置/清除操作成功
 #[tokio::test]
 async fn test_conversation_draft() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -516,13 +482,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：delete_conversation 成功后 get_conversation 返回 None
 #[tokio::test]
 async fn test_conversation_delete() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -573,13 +536,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：各属性均正确更新
 #[tokio::test]
 async fn test_set_conversation() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -609,14 +569,16 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     let conv_id = make_conversation_id(&user2.user_id, &user1.user_id);
 
     // 设置 recv_msg_opt=1 (不接收), is_pinned=true, is_private_chat=true, ex="test_key"
-    let result = receiver_sdk.set_conversation(
-        &conv_id,
-        Some(1),   // recv_msg_opt: 不接收消息
-        Some(true),  // is_pinned: 置顶
-        Some(true),  // is_private_chat: 免打扰
-        None,        // group_at_type
-        Some("test_key=test_value"),  // ex
-    ).await;
+    let result = receiver_sdk
+        .set_conversation(
+            &conv_id,
+            Some(1),                     // recv_msg_opt: 不接收消息
+            Some(true),                  // is_pinned: 置顶
+            Some(true),                  // is_private_chat: 免打扰
+            None,                        // group_at_type
+            Some("test_key=test_value"), // ex
+        )
+        .await;
     assert!(result.is_ok(), "set_conversation 失败: {:?}", result.err());
 
     // 验证属性已更新
@@ -632,9 +594,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     }
 
     // 恢复设置
-    let _ = receiver_sdk.set_conversation(
-        &conv_id, Some(0), Some(false), Some(false), None, Some(""),
-    ).await;
+    let _ = receiver_sdk.set_conversation(&conv_id, Some(0), Some(false), Some(false), None, Some("")).await;
 }
 
 // ============================================================================
@@ -646,10 +606,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：单聊 si_、群聊 g_、超级群聊 sg_、通知 sn_ 前缀
 #[tokio::test]
 async fn test_get_conversation_id_by_session_type() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     let user1 = get_or_create_user1().await;
     let (im_token, _) = login_account(&user1).await.expect("用户1登录失败");
@@ -685,13 +642,10 @@ async fn test_get_conversation_id_by_session_type() {
 /// 验证：每个步骤都正确执行
 #[tokio::test]
 async fn test_conversation_lifecycle() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -766,13 +720,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：未读数在重新登录后持久化
 #[tokio::test]
 async fn test_unread_count_persistence() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -822,8 +773,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     let conv_after = receiver_sdk.get_conversation(&conv_id).await.unwrap();
     match conv_after {
         Some(c) => {
-            assert_eq!(c.unread_count as i64, test_unread,
-                "重新登录后未读数应保持 {}, 实际: {}", test_unread, c.unread_count);
+            assert_eq!(c.unread_count as i64, test_unread, "重新登录后未读数应保持 {}, 实际: {}", test_unread, c.unread_count);
         }
         None => {
             // 会话可能在重新登录后通过同步重建
@@ -841,13 +791,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：未读数递增→清零的完整流程
 #[tokio::test]
 async fn test_unread_count_after_message() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -896,13 +843,14 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     assert_eq!(conv_after.unread_count, 0, "标记已读后未读数应为 0");
 
     // 验证 B 的消息已读状态
-    let history = user2_sdk.get_history_messages(
-        rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq {
+    let history = user2_sdk
+        .get_history_messages(rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq {
             conversation_id: conv_id,
             start_client_msg_id: String::new(),
             count: 10,
-        },
-    ).await.unwrap();
+        })
+        .await
+        .unwrap();
 
     let read_msgs = history.messages.iter().filter(|m| m.is_read).count();
     assert!(read_msgs > 0, "应有消息标记为已读");
@@ -917,13 +865,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 /// 验证：update_conversation_unread_count 正确更新
 #[tokio::test]
 async fn test_update_conversation_unread_count() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
     let user2 = get_or_create_user2().await;
@@ -980,13 +925,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 ///   Phase 7: B 置顶第 3 个会话，重新查询 offset=0, count=3 → 验证置顶的排在前面
 #[tokio::test]
 async fn test_conversation_list_split() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建 5 个随机账号...");
     let mut sender_accounts = Vec::new();
@@ -1011,11 +953,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     println!("[Phase 2] 发送 5 条消息创建 5 个会话...");
     let mut receiver_events = subscribe_all(&receiver_sdk);
     for (i, sdk) in sender_sdks.iter().enumerate() {
-        let _ = sdk.send_text_message(
-            &format!("分页测试消息 {}", i),
-            &receiver.user_id,
-            1,
-        ).await;
+        let _ = sdk.send_text_message(&format!("分页测试消息 {}", i), &receiver.user_id, 1).await;
         tokio::time::sleep(Duration::from_millis(300)).await;
     }
 
@@ -1037,14 +975,12 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     println!("[Phase 4] 分页查询 offset=0, count=3...");
-    let page1 = receiver_sdk.get_conversation_list_split(0, 3).await
-        .expect("分页查询失败");
+    let page1 = receiver_sdk.get_conversation_list_split(0, 3).await.expect("分页查询失败");
     assert_eq!(page1.len(), 3, "第一页应返回 3 条，实际: {}", page1.len());
     println!("  第一页: {} 条会话", page1.len());
 
     println!("[Phase 5] 分页查询 offset=3, count=3...");
-    let page2 = receiver_sdk.get_conversation_list_split(3, 3).await
-        .expect("分页查询失败");
+    let page2 = receiver_sdk.get_conversation_list_split(3, 3).await.expect("分页查询失败");
     assert_eq!(page2.len(), 2, "第二页应返回 2 条，实际: {}", page2.len());
     println!("  第二页: {} 条会话", page2.len());
 
@@ -1062,20 +998,15 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     }
     // 跨页验证：第一页最后一条 >= 第二页第一条
     if !page1.is_empty() && !page2.is_empty() {
-        assert!(
-            page1.last().unwrap().latest_msg_send_time >= page2.first().unwrap().latest_msg_send_time,
-            "跨页排序不正确"
-        );
+        assert!(page1.last().unwrap().latest_msg_send_time >= page2.first().unwrap().latest_msg_send_time, "跨页排序不正确");
     }
     println!("  排序验证通过");
 
     println!("[Phase 7] 置顶第 3 个会话后重新查询...");
     let third_conv_id = &page1[2].conversation_id;
-    receiver_sdk.set_conversation_pinned(third_conv_id, true).await
-        .expect("置顶失败");
+    receiver_sdk.set_conversation_pinned(third_conv_id, true).await.expect("置顶失败");
 
-    let page1_pinned = receiver_sdk.get_conversation_list_split(0, 3).await
-        .expect("置顶后分页查询失败");
+    let page1_pinned = receiver_sdk.get_conversation_list_split(0, 3).await.expect("置顶后分页查询失败");
     assert_eq!(page1_pinned.len(), 3, "置顶后第一页仍应返回 3 条");
 
     // 验证置顶的排在最前面
@@ -1105,13 +1036,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 ///   Phase 4: 查询空列表 → 验证返回空
 #[tokio::test]
 async fn test_multiple_conversations() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方，发送 2 条消息...");
     let sender = create_random_account("MultiSender").await;
@@ -1154,11 +1082,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     let nonexistent_id = "si_does_not_exist_xyz";
 
     println!("[Phase 3] 批量查询 2 个有效 ID + 1 个不存在的 ID...");
-    let results = receiver_sdk.get_multiple_conversations(vec![
-        conv_id.clone(),
-        fake_id.to_string(),
-        nonexistent_id.to_string(),
-    ]).await.expect("批量查询失败");
+    let results = receiver_sdk
+        .get_multiple_conversations(vec![conv_id.clone(), fake_id.to_string(), nonexistent_id.to_string()])
+        .await
+        .expect("批量查询失败");
 
     // 至少应找到 conv_id 对应的会话
     let found = results.iter().any(|c| c.conversation_id == conv_id);
@@ -1166,14 +1093,11 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     println!("  批量查询返回 {} 条（期望至少 1 条）", results.len());
 
     // fake_id 和 nonexistent_id 不应存在
-    assert!(!results.iter().any(|c| c.conversation_id == fake_id),
-        "不存在的会话不应返回: {}", fake_id);
-    assert!(!results.iter().any(|c| c.conversation_id == nonexistent_id),
-        "不存在的会话不应返回: {}", nonexistent_id);
+    assert!(!results.iter().any(|c| c.conversation_id == fake_id), "不存在的会话不应返回: {}", fake_id);
+    assert!(!results.iter().any(|c| c.conversation_id == nonexistent_id), "不存在的会话不应返回: {}", nonexistent_id);
 
     println!("[Phase 4] 查询空列表...");
-    let empty = receiver_sdk.get_multiple_conversations(vec![]).await
-        .expect("空列表查询失败");
+    let empty = receiver_sdk.get_multiple_conversations(vec![]).await.expect("空列表查询失败");
     assert!(empty.is_empty(), "空列表查询应返回空，实际: {}", empty.len());
 
     println!("test_multiple_conversations 通过!");
@@ -1194,13 +1118,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 ///   Phase 5: 空关键词搜索 → 验证返回错误
 #[tokio::test]
 async fn test_search_conversations() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
     let sender = create_random_account("SearchSender").await;
@@ -1235,9 +1156,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     // 注意: show_name 在同步时可能为空或为默认值，搜索按 show_name 匹配
     // 先获取会话列表确认 show_name 的实际值
     let all_convs = receiver_sdk.get_conversations().await.unwrap();
-    let target_conv = all_convs.iter().find(|c| {
-        c.conversation_id.contains(&sender.user_id) || c.conversation_id.contains(&receiver.user_id)
-    });
+    let target_conv = all_convs.iter().find(|c| c.conversation_id.contains(&sender.user_id) || c.conversation_id.contains(&receiver.user_id));
     if let Some(conv) = target_conv {
         println!("  目标会话 show_name='{}', conv_id='{}'", conv.show_name, conv.conversation_id);
         if !conv.show_name.is_empty() {
@@ -1252,8 +1171,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     }
 
     println!("[Phase 4] 用不存在的关键词搜索...");
-    let not_found = receiver_sdk.search_conversations("ZZZZZZ_NONEXISTENT_KEYWORD").await
-        .expect("搜索不存在的关键词失败");
+    let not_found = receiver_sdk.search_conversations("ZZZZZZ_NONEXISTENT_KEYWORD").await.expect("搜索不存在的关键词失败");
     assert!(not_found.is_empty(), "搜索不存在的关键词应返回空");
     println!("  不存在的关键词搜索返回 0 条 ✓");
 
@@ -1282,13 +1200,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 ///   Phase 7: A 再发一条消息 → B 重新同步 → 验证会话重新出现
 #[tokio::test]
 async fn test_hide_conversation() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
     let sender = create_random_account("HideSender").await;
@@ -1322,8 +1237,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     let conv_id = make_conversation_id(&receiver.user_id, &sender.user_id);
 
     println!("[Phase 3] 验证会话在分页列表中...");
-    let page = receiver_sdk.get_conversation_list_split(0, 100).await
-        .expect("分页查询失败");
+    let page = receiver_sdk.get_conversation_list_split(0, 100).await.expect("分页查询失败");
     let found_before = page.iter().any(|c| c.conversation_id == conv_id);
     assert!(found_before, "隐藏前会话应在分页列表中: {}", conv_id);
     println!("  隐藏前找到会话 ✓");
@@ -1334,15 +1248,13 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     println!("  隐藏成功 ✓");
 
     println!("[Phase 5] 验证会话不在分页列表中...");
-    let page_after = receiver_sdk.get_conversation_list_split(0, 100).await
-        .expect("隐藏后分页查询失败");
+    let page_after = receiver_sdk.get_conversation_list_split(0, 100).await.expect("隐藏后分页查询失败");
     let found_after = page_after.iter().any(|c| c.conversation_id == conv_id);
     assert!(!found_after, "隐藏后会话不应在分页列表中: {}", conv_id);
     println!("  隐藏后不在列表中 ✓");
 
     println!("[Phase 6] 验证会话仍在 DB 中...");
-    let conv_direct = receiver_sdk.get_conversation(&conv_id).await
-        .expect("get_conversation 失败");
+    let conv_direct = receiver_sdk.get_conversation(&conv_id).await.expect("get_conversation 失败");
     // get_conversation 可能返回 None 因为 reset 清了 latest_msg_send_time
     // 但会话记录本身可能仍存在（取决于 get_conversation 的实现）
     // 这里验证 get_conversation 不会报错即可
@@ -1371,8 +1283,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     }
     tokio::time::sleep(Duration::from_secs(2)).await;
 
-    let page_reappear = receiver_sdk.get_conversation_list_split(0, 100).await
-        .expect("恢复后分页查询失败");
+    let page_reappear = receiver_sdk.get_conversation_list_split(0, 100).await.expect("恢复后分页查询失败");
     let found_reappear = page_reappear.iter().any(|c| c.conversation_id == conv_id);
     assert!(found_reappear, "新消息后会话应重新出现在分页列表中: {}", conv_id);
     println!("  新消息后会话重新出现 ✓");
@@ -1395,13 +1306,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 ///   Phase 6: 恢复设置
 #[tokio::test]
 async fn test_conversation_full_persistence() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     // Phase 1: A 发消息给 B
     println!("\n========== Phase 1: A 发消息给 B ==========");
@@ -1439,9 +1347,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     receiver_sdk.set_conversation_pinned(&conv_id, true).await.unwrap();
     receiver_sdk.set_conversation_draft(&conv_id, "持久化草稿").await.unwrap();
     receiver_sdk.set_conversation_private(&conv_id, true).await.unwrap();
-    receiver_sdk.set_conversation(
-        &conv_id, Some(0), None, None, None, Some("persist_key=persist_value"),
-    ).await.unwrap();
+    receiver_sdk.set_conversation(&conv_id, Some(0), None, None, None, Some("persist_key=persist_value")).await.unwrap();
     println!("  所有属性设置完成");
 
     // Phase 3: 验证设置生效
@@ -1471,8 +1377,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     assert!(conv_after.is_pinned, "重新登录后 is_pinned 应保持 true");
     assert!(!conv_after.draft_text.is_empty(), "重新登录后 draft_text 应保持非空");
     assert!(conv_after.is_private_chat, "重新登录后 is_private_chat 应保持 true");
-    assert_eq!(conv_after.ex, "persist_key=persist_value",
-        "重新登录后 ex 字段应保持: 实际={}", conv_after.ex);
+    assert_eq!(conv_after.ex, "persist_key=persist_value", "重新登录后 ex 字段应保持: 实际={}", conv_after.ex);
     println!("  Phase 5 通过: 所有属性持久化成功");
 
     // Phase 6: 恢复设置
@@ -1499,13 +1404,10 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 ///   Phase 3: 等待全部完成，验证所有属性正确
 #[tokio::test]
 async fn test_concurrent_conversation_ops() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
+    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     use std::sync::Arc;
 
     // Phase 1: A 发消息给 B
@@ -1544,27 +1446,19 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let sdk_clone = sdk.clone();
     let conv_id_clone = conv_id.clone();
-    let h1 = tokio::spawn(async move {
-        sdk_clone.set_conversation_pinned(&conv_id_clone, true).await
-    });
+    let h1 = tokio::spawn(async move { sdk_clone.set_conversation_pinned(&conv_id_clone, true).await });
 
     let sdk_clone = sdk.clone();
     let conv_id_clone = conv_id.clone();
-    let h2 = tokio::spawn(async move {
-        sdk_clone.set_conversation_draft(&conv_id_clone, "并发草稿").await
-    });
+    let h2 = tokio::spawn(async move { sdk_clone.set_conversation_draft(&conv_id_clone, "并发草稿").await });
 
     let sdk_clone = sdk.clone();
     let conv_id_clone = conv_id.clone();
-    let h3 = tokio::spawn(async move {
-        sdk_clone.set_conversation_private(&conv_id_clone, true).await
-    });
+    let h3 = tokio::spawn(async move { sdk_clone.set_conversation_private(&conv_id_clone, true).await });
 
     let sdk_clone = sdk.clone();
     let conv_id_clone = conv_id.clone();
-    let h4 = tokio::spawn(async move {
-        sdk_clone.set_conversation(&conv_id_clone, None, None, None, None, Some("concurrent_ex")).await
-    });
+    let h4 = tokio::spawn(async move { sdk_clone.set_conversation(&conv_id_clone, None, None, None, None, Some("concurrent_ex")).await });
 
     let (r1, r2, r3, r4) = tokio::join!(h1, h2, h3, h4);
     assert!(r1.unwrap().is_ok(), "并发置顶失败");

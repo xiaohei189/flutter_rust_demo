@@ -1,8 +1,9 @@
-pub mod ws;
-pub mod manager;
 pub mod connector;
-pub mod reader;
-pub mod rpc;
+pub mod heartbeat;
+pub mod manager;
 pub mod message_batcher;
+pub mod reader;
 pub mod reconnect;
-pub mod heartbeat;pub mod sync_server;
+pub mod rpc;
+pub mod sync_server;
+pub mod ws;

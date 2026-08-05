@@ -39,19 +39,13 @@ impl LocalChatLog {
     /// 协议消息 → 本地消息（对齐 Go SDK `MsgDataToLocalChatLog`）
     pub fn from_msg_data(conv_id: &str, msg: &MsgData) -> Self {
         // 群聊消息：RecvID 使用 GroupID（对齐 Go SDK）
-        let recv_id = if msg.session_type == session_type::WRITE_GROUP_CHAT
-            || msg.session_type == session_type::READ_GROUP_CHAT
-        {
+        let recv_id = if msg.session_type == session_type::WRITE_GROUP_CHAT || msg.session_type == session_type::READ_GROUP_CHAT {
             msg.group_id.clone()
         } else {
             msg.recv_id.clone()
         };
         // status >= HAS_DELETED 保持原值，否则置为发送成功（对齐 Go SDK）
-        let status = if msg.status >= msg_status::HAS_DELETED {
-            msg.status
-        } else {
-            msg_status::SEND_SUCCESS
-        };
+        let status = if msg.status >= msg_status::HAS_DELETED { msg.status } else { msg_status::SEND_SUCCESS };
         Self {
             conversation_id: conv_id.to_string(),
             client_msg_id: msg.client_msg_id.clone(),

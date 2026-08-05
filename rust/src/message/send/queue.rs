@@ -88,19 +88,11 @@ impl MessageSendQueue {
             result_tx,
         };
 
-        let tx = if ContentTypeUtils::is_media(content_type) {
-            &self.low_tx
-        } else {
-            &self.high_tx
-        };
+        let tx = if ContentTypeUtils::is_media(content_type) { &self.low_tx } else { &self.high_tx };
 
-        tx.send(task).await.map_err(|_| {
-            SdkError::message_send("send queue closed")
-        })?;
+        tx.send(task).await.map_err(|_| SdkError::message_send("send queue closed"))?;
 
-        result_rx.await.map_err(|_| {
-            SdkError::message_send("send task cancelled")
-        })?
+        result_rx.await.map_err(|_| SdkError::message_send("send task cancelled"))?
     }
 
     /// 判断 content_type 是否为媒体类型
@@ -153,15 +145,17 @@ mod tests {
     async fn test_text_message_goes_to_high_lane() {
         let queue = MessageSendQueue::new();
         // 文本消息应走 high lane，并正常返回结果
-        let result = queue.submit(101, || {
-            Box::pin(async {
-                Ok(UserSendMsgResp {
-                    server_msg_id: "srv_1".to_string(),
-                    client_msg_id: "cli_1".to_string(),
-                    send_time: 1000,
+        let result = queue
+            .submit(101, || {
+                Box::pin(async {
+                    Ok(UserSendMsgResp {
+                        server_msg_id: "srv_1".to_string(),
+                        client_msg_id: "cli_1".to_string(),
+                        send_time: 1000,
+                    })
                 })
             })
-        }).await;
+            .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().server_msg_id, "srv_1");
     }
@@ -170,15 +164,17 @@ mod tests {
     async fn test_media_message_goes_to_low_lane() {
         let queue = MessageSendQueue::new();
         // 媒体消息应走 low lane，并正常返回结果
-        let result = queue.submit(102, || {
-            Box::pin(async {
-                Ok(UserSendMsgResp {
-                    server_msg_id: "srv_media".to_string(),
-                    client_msg_id: "cli_media".to_string(),
-                    send_time: 2000,
+        let result = queue
+            .submit(102, || {
+                Box::pin(async {
+                    Ok(UserSendMsgResp {
+                        server_msg_id: "srv_media".to_string(),
+                        client_msg_id: "cli_media".to_string(),
+                        send_time: 2000,
+                    })
                 })
             })
-        }).await;
+            .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().server_msg_id, "srv_media");
     }
@@ -186,11 +182,7 @@ mod tests {
     #[tokio::test]
     async fn test_send_failure_propagates() {
         let queue = MessageSendQueue::new();
-        let result = queue.submit(101, || {
-            Box::pin(async {
-                Err(SdkError::message_send("network timeout"))
-            })
-        }).await;
+        let result = queue.submit(101, || Box::pin(async { Err(SdkError::message_send("network timeout")) })).await;
         assert!(result.is_err());
     }
 
@@ -204,16 +196,18 @@ mod tests {
         let mut results = Vec::new();
         for i in 0..3 {
             let c = counter.clone();
-            let result = queue.submit(101, move || {
-                let order = c.fetch_add(1, Ordering::SeqCst);
-                Box::pin(async move {
-                    Ok(UserSendMsgResp {
-                        server_msg_id: format!("srv_{}_{}", order, i),
-                        client_msg_id: format!("cli_{}", i),
-                        send_time: i as i64 * 1000,
+            let result = queue
+                .submit(101, move || {
+                    let order = c.fetch_add(1, Ordering::SeqCst);
+                    Box::pin(async move {
+                        Ok(UserSendMsgResp {
+                            server_msg_id: format!("srv_{}_{}", order, i),
+                            client_msg_id: format!("cli_{}", i),
+                            send_time: i as i64 * 1000,
+                        })
                     })
                 })
-            }).await;
+                .await;
             results.push(result.unwrap());
         }
 
@@ -236,37 +230,41 @@ mod tests {
         // 先提交媒体消息（Lane B），sleep 200ms 模拟上传
         let q2 = queue.clone();
         let media_handle = tokio::spawn(async move {
-            q2.submit(102, || Box::pin(async {
-                tokio::time::sleep(Duration::from_millis(200)).await;
-                Ok(UserSendMsgResp {
-                    server_msg_id: "media".to_string(),
-                    client_msg_id: "cli_media".to_string(),
-                    send_time: 0,
+            q2.submit(102, || {
+                Box::pin(async {
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    Ok(UserSendMsgResp {
+                        server_msg_id: "media".to_string(),
+                        client_msg_id: "cli_media".to_string(),
+                        send_time: 0,
+                    })
                 })
-            })).await
+            })
+            .await
         });
 
         // 等 10ms 确保媒体任务已进入 lane_worker
         tokio::time::sleep(Duration::from_millis(10)).await;
 
         // 再提交文本消息（Lane A），应立即返回
-        let text_result = queue.submit(101, || Box::pin(async {
-            Ok(UserSendMsgResp {
-                server_msg_id: "text".to_string(),
-                client_msg_id: "cli_text".to_string(),
-                send_time: 0,
+        let text_result = queue
+            .submit(101, || {
+                Box::pin(async {
+                    Ok(UserSendMsgResp {
+                        server_msg_id: "text".to_string(),
+                        client_msg_id: "cli_text".to_string(),
+                        send_time: 0,
+                    })
+                })
             })
-        })).await;
+            .await;
 
         let text_elapsed = start.elapsed();
         assert!(text_result.is_ok());
         assert_eq!(text_result.unwrap().server_msg_id, "text");
 
         // 关键断言：文本完成时间 < 100ms（远小于媒体的 200ms）
-        assert!(
-            text_elapsed < Duration::from_millis(100),
-            "text lane was blocked by media lane: {:?}", text_elapsed
-        );
+        assert!(text_elapsed < Duration::from_millis(100), "text lane was blocked by media lane: {:?}", text_elapsed);
 
         // 等待媒体完成
         let media_result = media_handle.await.unwrap();

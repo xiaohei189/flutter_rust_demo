@@ -8,15 +8,9 @@ use crate::model::user::UserInfo;
 #[derive(Clone, Debug)]
 pub enum UserEvent {
     /// 用户资料更新
-    UserInfoUpdated {
-        user: UserInfo,
-    },
+    UserInfoUpdated { user: UserInfo },
     /// 在线状态变更
-    UserStatusChanged {
-        user_id: String,
-        status: i32,
-        platform_ids: Vec<i32>,
-    },
+    UserStatusChanged { user_id: String, status: i32, platform_ids: Vec<i32> },
 }
 
 impl UserEvent {

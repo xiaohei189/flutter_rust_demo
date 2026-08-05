@@ -6,10 +6,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_add_friend() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 添加好友测试 ===\n");
 
@@ -21,13 +18,17 @@ async fn test_add_friend() {
 
     println!("用户1: {}, 用户2: {}", cert1.user_id, cert2.user_id);
 
-    let sdk = create_sdk(&TestAccount {
-        user_id: cert1.user_id.clone(),
-        phone: phone1,
-        nickname: "AddFriendUser1".into(),
-        im_token: Some(cert1.im_token.clone()),
-        chat_token: None,
-    }, &cert1.im_token).await;
+    let sdk = create_sdk(
+        &TestAccount {
+            user_id: cert1.user_id.clone(),
+            phone: phone1,
+            nickname: "AddFriendUser1".into(),
+            im_token: Some(cert1.im_token.clone()),
+            chat_token: None,
+        },
+        &cert1.im_token,
+    )
+    .await;
 
     println!("添加好友...");
     let result = sdk.add_friend(&cert2.user_id, Some("Hello!")).await;
@@ -45,10 +46,7 @@ async fn test_add_friend() {
 
 #[tokio::test]
 async fn test_delete_friend() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 删除好友测试 ===\n");
 
@@ -60,13 +58,17 @@ async fn test_delete_friend() {
 
     println!("用户1: {}, 用户2: {}", cert1.user_id, cert2.user_id);
 
-    let sdk = create_sdk(&TestAccount {
-        user_id: cert1.user_id.clone(),
-        phone: phone1,
-        nickname: "DelFriendUser1".into(),
-        im_token: Some(cert1.im_token.clone()),
-        chat_token: None,
-    }, &cert1.im_token).await;
+    let sdk = create_sdk(
+        &TestAccount {
+            user_id: cert1.user_id.clone(),
+            phone: phone1,
+            nickname: "DelFriendUser1".into(),
+            im_token: Some(cert1.im_token.clone()),
+            chat_token: None,
+        },
+        &cert1.im_token,
+    )
+    .await;
 
     println!("添加好友...");
     let add_result = sdk.add_friend(&cert2.user_id, Some("Add me")).await;
@@ -89,10 +91,7 @@ async fn test_delete_friend() {
 
 #[tokio::test]
 async fn test_blacklist_management() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 黑名单管理测试 ===\n");
 
@@ -102,13 +101,17 @@ async fn test_blacklist_management() {
     let cert1 = register_user(&phone1, "BlackUser1").await.expect("注册失败");
     let cert2 = register_user(&phone2, "BlackUser2").await.expect("注册失败");
 
-    let sdk = create_sdk(&TestAccount {
-        user_id: cert1.user_id.clone(),
-        phone: phone1,
-        nickname: "BlackUser1".into(),
-        im_token: Some(cert1.im_token.clone()),
-        chat_token: None,
-    }, &cert1.im_token).await;
+    let sdk = create_sdk(
+        &TestAccount {
+            user_id: cert1.user_id.clone(),
+            phone: phone1,
+            nickname: "BlackUser1".into(),
+            im_token: Some(cert1.im_token.clone()),
+            chat_token: None,
+        },
+        &cert1.im_token,
+    )
+    .await;
 
     let initial = sdk.get_black_list().await;
     println!("初始黑名单: {}", initial.len());
@@ -139,10 +142,7 @@ async fn test_blacklist_management() {
 
 #[tokio::test]
 async fn test_friend_list_sync() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 好友列表同步测试 ===\n");
 
@@ -192,10 +192,7 @@ async fn test_friend_list_sync() {
 
 #[tokio::test]
 async fn test_user_state_friend_management() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     let phone1 = generate_virtual_phone("uf1");
     let phone2 = generate_virtual_phone("uf2");
@@ -209,10 +206,7 @@ async fn test_user_state_friend_management() {
     use rust_lib_flutter_rust_demo::client::config::ClientConfig;
     use rust_lib_flutter_rust_demo::client::OpenIMClient;
 
-    let data_dir = std::env::temp_dir()
-        .join(format!("openim_test_uf_{}", cert1.user_id))
-        .to_string_lossy()
-        .to_string();
+    let data_dir = std::env::temp_dir().join(format!("openim_test_uf_{}", cert1.user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);
 
     let config = ClientConfig::new(
@@ -237,15 +231,12 @@ async fn test_user_state_friend_management() {
 
 #[tokio::test]
 async fn test_friend_application_flow() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 好友申请/接受/拒绝完整流程测试 ===\n");
 
-    use rust_lib_flutter_rust_demo::client::OpenIMClient;
     use rust_lib_flutter_rust_demo::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::client::OpenIMClient;
 
     let phone1 = generate_virtual_phone("fapp1");
     let phone2 = generate_virtual_phone("fapp2");
@@ -259,16 +250,28 @@ async fn test_friend_application_flow() {
     let _ = std::fs::create_dir_all(&data_dir2);
 
     let sdk1 = OpenIMClient::new(ClientConfig::new(
-        cert1.user_id.clone(), cert1.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir1),
-    )).await.unwrap();
+        cert1.user_id.clone(),
+        cert1.im_token.clone(),
+        1,
+        Some(WS_URL.into()),
+        Some(API_BASE_URL.into()),
+        Some(data_dir1),
+    ))
+    .await
+    .unwrap();
     sdk1.login(&cert1.user_id, &cert1.im_token).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 
     let sdk2 = OpenIMClient::new(ClientConfig::new(
-        cert2.user_id.clone(), cert2.im_token.clone(), 1,
-        Some(WS_URL.into()), Some(API_BASE_URL.into()), Some(data_dir2),
-    )).await.unwrap();
+        cert2.user_id.clone(),
+        cert2.im_token.clone(),
+        1,
+        Some(WS_URL.into()),
+        Some(API_BASE_URL.into()),
+        Some(data_dir2),
+    ))
+    .await
+    .unwrap();
     sdk2.login(&cert2.user_id, &cert2.im_token).await.unwrap();
     tokio::time::sleep(Duration::from_secs(2)).await;
 

@@ -1,5 +1,5 @@
-use crate::model::local::LocalConversation;
 use crate::error::{Result, SdkError};
+use crate::model::local::LocalConversation;
 use sqlx::SqlitePool;
 
 pub struct ConversationDao {
@@ -84,111 +84,77 @@ impl ConversationDao {
     }
 
     pub async fn get_all(&self) -> Result<Vec<LocalConversation>> {
-        let rows = sqlx::query_as::<_, LocalConversation>(
-            "SELECT * FROM local_conversations ORDER BY is_pinned DESC, latest_msg_send_time DESC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query conversations: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalConversation>("SELECT * FROM local_conversations ORDER BY is_pinned DESC, latest_msg_send_time DESC")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query conversations: {}", e)))?;
         Ok(rows)
     }
 
     pub async fn get_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
-        let row = sqlx::query_as::<_, LocalConversation>(
-            "SELECT * FROM local_conversations WHERE conversation_id = ?",
-        )
-        .bind(conversation_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query conversation: {}", e)))?;
+        let row = sqlx::query_as::<_, LocalConversation>("SELECT * FROM local_conversations WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query conversation: {}", e)))?;
         Ok(row)
     }
 
     pub async fn update_max_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET max_seq = MAX(max_seq, ?) WHERE conversation_id = ?",
-        )
-        .bind(seq)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("update max seq: {}", e)))?;
+        sqlx::query("UPDATE local_conversations SET max_seq = MAX(max_seq, ?) WHERE conversation_id = ?")
+            .bind(seq)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update max seq: {}", e)))?;
         Ok(())
     }
 
-    pub async fn update_after_new_message(
-        &self,
-        conversation_id: &str,
-        latest_msg: &str,
-        latest_msg_send_time: i64,
-        seq: i64,
-    ) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ?, max_seq = MAX(max_seq, ?), unread_count = unread_count + 1 WHERE conversation_id = ?",
-        )
-        .bind(latest_msg)
-        .bind(latest_msg_send_time)
-        .bind(seq)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("update conversation: {}", e)))?;
+    pub async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, latest_msg_send_time: i64, seq: i64) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ?, max_seq = MAX(max_seq, ?), unread_count = unread_count + 1 WHERE conversation_id = ?")
+            .bind(latest_msg)
+            .bind(latest_msg_send_time)
+            .bind(seq)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update conversation: {}", e)))?;
         Ok(())
     }
 
     /// 仅更新 latest_msg（无论是否自己发的消息）
-    pub async fn update_latest_msg(
-        &self,
-        conversation_id: &str,
-        latest_msg: &str,
-        latest_msg_send_time: i64,
-    ) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ? WHERE conversation_id = ? AND latest_msg_send_time < ?",
-        )
-        .bind(latest_msg)
-        .bind(latest_msg_send_time)
-        .bind(conversation_id)
-        .bind(latest_msg_send_time)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("update latest_msg: {}", e)))?;
+    pub async fn update_latest_msg(&self, conversation_id: &str, latest_msg: &str, latest_msg_send_time: i64) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ? WHERE conversation_id = ? AND latest_msg_send_time < ?")
+            .bind(latest_msg)
+            .bind(latest_msg_send_time)
+            .bind(conversation_id)
+            .bind(latest_msg_send_time)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update latest_msg: {}", e)))?;
         Ok(())
     }
 
     /// 仅增加未读数和更新 max_seq
-    pub async fn increase_unread_count(
-        &self,
-        conversation_id: &str,
-        seq: i64,
-    ) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET unread_count = unread_count + 1, max_seq = MAX(max_seq, ?) WHERE conversation_id = ?",
-        )
-        .bind(seq)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("increase unread_count: {}", e)))?;
+    pub async fn increase_unread_count(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET unread_count = unread_count + 1, max_seq = MAX(max_seq, ?) WHERE conversation_id = ?")
+            .bind(seq)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("increase unread_count: {}", e)))?;
         Ok(())
     }
 
-    pub async fn update_after_sent_message(
-        &self,
-        conversation_id: &str,
-        latest_msg: &str,
-        latest_msg_send_time: i64,
-    ) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ? WHERE conversation_id = ? AND latest_msg_send_time < ?",
-        )
-        .bind(latest_msg)
-        .bind(latest_msg_send_time)
-        .bind(conversation_id)
-        .bind(latest_msg_send_time)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("update conversation after sent: {}", e)))?;
+    pub async fn update_after_sent_message(&self, conversation_id: &str, latest_msg: &str, latest_msg_send_time: i64) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET latest_msg = ?, latest_msg_send_time = ? WHERE conversation_id = ? AND latest_msg_send_time < ?")
+            .bind(latest_msg)
+            .bind(latest_msg_send_time)
+            .bind(conversation_id)
+            .bind(latest_msg_send_time)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update conversation after sent: {}", e)))?;
         Ok(())
     }
 
@@ -201,25 +167,18 @@ impl ConversationDao {
         Ok(())
     }
 
-
     /// 批量删除会话
     pub async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> {
         if conversation_ids.is_empty() {
             return Ok(());
         }
         let placeholders = conversation_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let sql = format!(
-            "DELETE FROM local_conversations WHERE conversation_id IN ({})",
-            placeholders
-        );
+        let sql = format!("DELETE FROM local_conversations WHERE conversation_id IN ({})", placeholders);
         let mut query = sqlx::query(&sql);
         for id in conversation_ids {
             query = query.bind(id);
         }
-        query
-            .execute(&self.pool)
-            .await
-            .map_err(|e| SdkError::database(format!("batch delete conversations: {}", e)))?;
+        query.execute(&self.pool).await.map_err(|e| SdkError::database(format!("batch delete conversations: {}", e)))?;
         Ok(())
     }
 
@@ -233,102 +192,85 @@ impl ConversationDao {
     }
 
     pub async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
-        let row: (Option<i64>,) =
-            sqlx::query_as("SELECT max_seq FROM local_conversations WHERE conversation_id = ?")
-                .bind(conversation_id)
-                .fetch_one(&self.pool)
-                .await
-                .map_err(|e| SdkError::database(format!("query max seq: {}", e)))?;
+        let row: (Option<i64>,) = sqlx::query_as("SELECT max_seq FROM local_conversations WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query max seq: {}", e)))?;
         Ok(row.0.unwrap_or(0))
     }
 
     pub async fn get_all_seq_pairs(&self) -> Result<Vec<(String, i64)>> {
-        let rows: Vec<(String, i64)> = sqlx::query_as(
-            "SELECT conversation_id, max_seq FROM local_conversations",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query seq pairs: {}", e)))?;
+        let rows: Vec<(String, i64)> = sqlx::query_as("SELECT conversation_id, max_seq FROM local_conversations")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query seq pairs: {}", e)))?;
         Ok(rows)
     }
 
     pub async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET is_pinned = ? WHERE conversation_id = ?",
-        )
-        .bind(is_pinned)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("set pinned: {}", e)))?;
+        sqlx::query("UPDATE local_conversations SET is_pinned = ? WHERE conversation_id = ?")
+            .bind(is_pinned)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("set pinned: {}", e)))?;
         Ok(())
     }
 
     pub async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET is_private_chat = ? WHERE conversation_id = ?",
-        )
-        .bind(is_private)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("set private chat: {}", e)))?;
+        sqlx::query("UPDATE local_conversations SET is_private_chat = ? WHERE conversation_id = ?")
+            .bind(is_private)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("set private chat: {}", e)))?;
         Ok(())
     }
 
     pub async fn update_unread_count(&self, conversation_id: &str, unread_count: i32) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET unread_count = ? WHERE conversation_id = ?",
-        )
-        .bind(unread_count)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("update unread count: {}", e)))?;
+        sqlx::query("UPDATE local_conversations SET unread_count = ? WHERE conversation_id = ?")
+            .bind(unread_count)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update unread count: {}", e)))?;
         Ok(())
     }
 
     pub async fn get_unread_count(&self, conversation_id: &str) -> Result<i32> {
-        let row: (Option<i32>,) = sqlx::query_as(
-            "SELECT unread_count FROM local_conversations WHERE conversation_id = ?",
-        )
-        .bind(conversation_id)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query unread count: {}", e)))?;
+        let row: (Option<i32>,) = sqlx::query_as("SELECT unread_count FROM local_conversations WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query unread count: {}", e)))?;
         Ok(row.0.unwrap_or(0))
     }
 
     pub async fn get_total_unread_count(&self) -> Result<i64> {
-        let row: (Option<i64>,) = sqlx::query_as(
-            "SELECT COALESCE(SUM(unread_count), 0) FROM local_conversations",
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query total unread count: {}", e)))?;
+        let row: (Option<i64>,) = sqlx::query_as("SELECT COALESCE(SUM(unread_count), 0) FROM local_conversations")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query total unread count: {}", e)))?;
         Ok(row.0.unwrap_or(0))
     }
 
     pub async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET draft_text = ?, draft_text_time = ? WHERE conversation_id = ?",
-        )
-        .bind(draft_text)
-        .bind(draft_time)
-        .bind(conversation_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("set draft: {}", e)))?;
+        sqlx::query("UPDATE local_conversations SET draft_text = ?, draft_text_time = ? WHERE conversation_id = ?")
+            .bind(draft_text)
+            .bind(draft_time)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("set draft: {}", e)))?;
         Ok(())
     }
 
     pub async fn get_pinned(&self) -> Result<Vec<LocalConversation>> {
-        let rows = sqlx::query_as::<_, LocalConversation>(
-            "SELECT * FROM local_conversations WHERE is_pinned = 1 ORDER BY latest_msg_send_time DESC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query pinned: {}", e)))?;
+        let rows = sqlx::query_as::<_, LocalConversation>("SELECT * FROM local_conversations WHERE is_pinned = 1 ORDER BY latest_msg_send_time DESC")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query pinned: {}", e)))?;
         Ok(rows)
     }
 
@@ -342,27 +284,23 @@ impl ConversationDao {
 
     /// 获取会话的 min_seq（对齐 Go SDK `getConversationMinSeq`）
     pub async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> {
-        let row: (Option<i64>,) = sqlx::query_as(
-            "SELECT min_seq FROM local_conversations WHERE conversation_id = ?",
-        )
-        .bind(conversation_id)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("query min_seq: {}", e)))?;
+        let row: (Option<i64>,) = sqlx::query_as("SELECT min_seq FROM local_conversations WHERE conversation_id = ?")
+            .bind(conversation_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query min_seq: {}", e)))?;
         Ok(row.0.unwrap_or(0))
     }
 
     /// 更新会话的 min_seq（对齐 Go SDK `setConversationMinSeq`）
     pub async fn update_min_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
-        sqlx::query(
-            "UPDATE local_conversations SET min_seq = ? WHERE conversation_id = ? AND min_seq < ?",
-        )
-        .bind(seq)
-        .bind(conversation_id)
-        .bind(seq)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| SdkError::database(format!("update min_seq: {}", e)))?;
+        sqlx::query("UPDATE local_conversations SET min_seq = ? WHERE conversation_id = ? AND min_seq < ?")
+            .bind(seq)
+            .bind(conversation_id)
+            .bind(seq)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update min_seq: {}", e)))?;
         Ok(())
     }
 
@@ -383,7 +321,7 @@ impl ConversationDao {
              WHERE latest_msg_send_time > 0 \
              ORDER BY CASE WHEN is_pinned = 1 THEN 0 ELSE 1 END, \
                       MAX(latest_msg_send_time, draft_text_time) DESC \
-             LIMIT ? OFFSET ?"
+             LIMIT ? OFFSET ?",
         )
         .bind(count)
         .bind(offset)
@@ -400,7 +338,9 @@ impl ConversationDao {
         }
         let mut query = String::from("SELECT * FROM local_conversations WHERE conversation_id IN (");
         for (i, id) in conversation_ids.iter().enumerate() {
-            if i > 0 { query.push(','); }
+            if i > 0 {
+                query.push(',');
+            }
             query.push_str(&format!("'{}'", id.replace('\'', "''")));
         }
         query.push(')');
@@ -419,7 +359,7 @@ impl ConversationDao {
         let rows = sqlx::query_as::<_, LocalConversation>(
             "SELECT * FROM local_conversations \
              WHERE show_name LIKE ? \
-             ORDER BY latest_msg_send_time DESC"
+             ORDER BY latest_msg_send_time DESC",
         )
         .bind(&pattern)
         .fetch_all(&self.pool)
@@ -437,7 +377,7 @@ impl ConversationDao {
             "UPDATE local_conversations \
              SET unread_count = 0, latest_msg = '', latest_msg_send_time = 0, \
                  draft_text = '', draft_text_time = 0 \
-             WHERE conversation_id = ?"
+             WHERE conversation_id = ?",
         )
         .bind(conversation_id)
         .execute(&self.pool)
@@ -514,9 +454,7 @@ mod tests {
         let dao = ConversationDao::new(pool);
 
         dao.upsert(&make_conv("conv_1")).await.unwrap();
-        dao.update_after_sent_message("conv_1", "{\"text\":\"hello\"}", 3000)
-            .await
-            .unwrap();
+        dao.update_after_sent_message("conv_1", "{\"text\":\"hello\"}", 3000).await.unwrap();
 
         let conv = dao.get_by_id("conv_1").await.unwrap().unwrap();
         assert_eq!(conv.latest_msg_send_time, 3000);
@@ -530,9 +468,7 @@ mod tests {
         let dao = ConversationDao::new(pool);
 
         dao.upsert(&make_conv("conv_1")).await.unwrap();
-        dao.update_after_new_message("conv_1", "{\"text\":\"hello\"}", 2000, 2)
-            .await
-            .unwrap();
+        dao.update_after_new_message("conv_1", "{\"text\":\"hello\"}", 2000, 2).await.unwrap();
 
         let conv = dao.get_by_id("conv_1").await.unwrap().unwrap();
         assert_eq!(conv.max_seq, 2);
@@ -586,12 +522,12 @@ mod tests {
 
         // 第二步：模拟服务端同步更新（latest_msg 为空）
         let mut conv2 = make_conv("conv_update");
-        conv2.latest_msg = String::new();       // 服务端不返回
-        conv2.latest_msg_send_time = 0;         // 服务端不返回
-        conv2.unread_count = 0;                 // 服务端不返回
-        conv2.draft_text = String::new();       // 服务端不返回
-        conv2.draft_text_time = 0;              // 服务端不返回
-        conv2.recv_msg_opt = 1;                 // 服务端可能更新此字段
+        conv2.latest_msg = String::new(); // 服务端不返回
+        conv2.latest_msg_send_time = 0; // 服务端不返回
+        conv2.unread_count = 0; // 服务端不返回
+        conv2.draft_text = String::new(); // 服务端不返回
+        conv2.draft_text_time = 0; // 服务端不返回
+        conv2.recv_msg_opt = 1; // 服务端可能更新此字段
         dao.upsert_preserving_local_fields(&conv2).await.unwrap();
 
         // 验证：本地维护字段应被保留
@@ -620,9 +556,7 @@ mod tests {
         assert!(saved1.latest_msg.is_empty(), "initial latest_msg should be empty");
 
         // 2. 模拟收到消息，更新 latest_msg（就像 MessageProcessor 做的）
-        dao.update_after_new_message("conv_e2e", r#"{"text":"hello world"}"#, 2000, 5)
-            .await
-            .unwrap();
+        dao.update_after_new_message("conv_e2e", r#"{"text":"hello world"}"#, 2000, 5).await.unwrap();
 
         let saved2 = dao.get_by_id("conv_e2e").await.unwrap().unwrap();
         assert_eq!(saved2.latest_msg, r#"{"text":"hello world"}"#, "latest_msg should be set after message");
@@ -649,39 +583,106 @@ use crate::db::conversation::ConversationRepository;
 
 #[async_trait::async_trait]
 impl ConversationRepository for ConversationDao {
-    async fn upsert(&self, conv: &LocalConversation) -> Result<()> { ConversationDao::upsert(self, conv).await }
-    async fn upsert_preserving_local_fields(&self, conv: &LocalConversation) -> Result<()> { self.upsert_preserving_local_fields(conv).await }
-    async fn get_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> { self.get_by_id(conversation_id).await }
-    async fn get_all(&self) -> Result<Vec<LocalConversation>> { self.get_all().await }
-    async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()> { self.update_unread_count(conversation_id, count).await }
-    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()> { self.update_after_new_message(conversation_id, latest_msg, send_time, seq).await }
-    async fn delete(&self, conversation_id: &str) -> Result<()> { self.delete(conversation_id).await }
-    async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> { ConversationDao::batch_delete(self, conversation_ids).await }
-    async fn get_all_ids(&self) -> Result<Vec<String>> { ConversationDao::get_all_ids(self).await }
-    async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { ConversationDao::set_draft(self, conversation_id, draft_text, draft_time).await }
-    async fn reset_unread_count(&self, conversation_id: &str) -> Result<()> { ConversationDao::update_unread_count(self, conversation_id, 0).await }
-    async fn toggle_pin(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { ConversationDao::set_pinned(self, conversation_id, is_pinned).await }
-    async fn get_total_unread_count(&self) -> Result<i32> { self.get_total_unread_count().await.map(|v| v as i32) }
-    async fn get_total_count(&self) -> Result<i32> { ConversationDao::count(self).await.map(|v| v as i32) }
-    async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> { self.set_pinned(conversation_id, is_pinned).await }
-    async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> { self.set_private_chat(conversation_id, is_private).await }
-    async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> { self.set_draft(conversation_id, draft_text, draft_time).await }
-    async fn get_pinned(&self) -> Result<Vec<LocalConversation>> { self.get_pinned().await }
-    async fn count(&self) -> Result<i32> { self.count().await.map(|v| v as i32) }
-    async fn clear_all(&self) -> Result<()> { self.clear_all().await }
-    async fn update_latest_msg(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()> { self.update_latest_msg(conversation_id, latest_msg, send_time).await }
-    async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> { self.get_max_seq(conversation_id).await }
-    async fn update_after_sent_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()> { self.update_after_sent_message(conversation_id, latest_msg, send_time).await }
-    async fn get_all_seq_pairs(&self) -> Result<Vec<(String, i64)>> { self.get_all_seq_pairs().await }
-    async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> { self.get_min_seq(conversation_id).await }
-    async fn update_min_seq(&self, conversation_id: &str, seq: i64) -> Result<()> { self.update_min_seq(conversation_id, seq).await }
-    async fn update_max_seq(&self, conversation_id: &str, seq: i64) -> Result<()> { self.update_max_seq(conversation_id, seq).await }
-    async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> { self.get_split(offset, count).await }
-    async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> { self.get_multiple(conversation_ids).await }
-    async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>> { self.search(keyword).await }
-    async fn reset(&self, conversation_id: &str) -> Result<()> { self.reset(conversation_id).await }
-    async fn increase_unread_count(&self, conversation_id: &str, seq: i64) -> Result<()> { self.increase_unread_count(conversation_id, seq).await }
-    async fn get_unread_count(&self, conversation_id: &str) -> Result<i32> { self.get_unread_count(conversation_id).await }
-    async fn get_by_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> { self.get_multiple(conversation_ids).await }
+    async fn upsert(&self, conv: &LocalConversation) -> Result<()> {
+        ConversationDao::upsert(self, conv).await
+    }
+    async fn upsert_preserving_local_fields(&self, conv: &LocalConversation) -> Result<()> {
+        self.upsert_preserving_local_fields(conv).await
+    }
+    async fn get_by_id(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
+        self.get_by_id(conversation_id).await
+    }
+    async fn get_all(&self) -> Result<Vec<LocalConversation>> {
+        self.get_all().await
+    }
+    async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()> {
+        self.update_unread_count(conversation_id, count).await
+    }
+    async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()> {
+        self.update_after_new_message(conversation_id, latest_msg, send_time, seq).await
+    }
+    async fn delete(&self, conversation_id: &str) -> Result<()> {
+        self.delete(conversation_id).await
+    }
+    async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> {
+        ConversationDao::batch_delete(self, conversation_ids).await
+    }
+    async fn get_all_ids(&self) -> Result<Vec<String>> {
+        ConversationDao::get_all_ids(self).await
+    }
+    async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> {
+        ConversationDao::set_draft(self, conversation_id, draft_text, draft_time).await
+    }
+    async fn reset_unread_count(&self, conversation_id: &str) -> Result<()> {
+        ConversationDao::update_unread_count(self, conversation_id, 0).await
+    }
+    async fn toggle_pin(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
+        ConversationDao::set_pinned(self, conversation_id, is_pinned).await
+    }
+    async fn get_total_unread_count(&self) -> Result<i32> {
+        self.get_total_unread_count().await.map(|v| v as i32)
+    }
+    async fn get_total_count(&self) -> Result<i32> {
+        ConversationDao::count(self).await.map(|v| v as i32)
+    }
+    async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
+        self.set_pinned(conversation_id, is_pinned).await
+    }
+    async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> {
+        self.set_private_chat(conversation_id, is_private).await
+    }
+    async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> {
+        self.set_draft(conversation_id, draft_text, draft_time).await
+    }
+    async fn get_pinned(&self) -> Result<Vec<LocalConversation>> {
+        self.get_pinned().await
+    }
+    async fn count(&self) -> Result<i32> {
+        self.count().await.map(|v| v as i32)
+    }
+    async fn clear_all(&self) -> Result<()> {
+        self.clear_all().await
+    }
+    async fn update_latest_msg(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()> {
+        self.update_latest_msg(conversation_id, latest_msg, send_time).await
+    }
+    async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
+        self.get_max_seq(conversation_id).await
+    }
+    async fn update_after_sent_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64) -> Result<()> {
+        self.update_after_sent_message(conversation_id, latest_msg, send_time).await
+    }
+    async fn get_all_seq_pairs(&self) -> Result<Vec<(String, i64)>> {
+        self.get_all_seq_pairs().await
+    }
+    async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> {
+        self.get_min_seq(conversation_id).await
+    }
+    async fn update_min_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        self.update_min_seq(conversation_id, seq).await
+    }
+    async fn update_max_seq(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        self.update_max_seq(conversation_id, seq).await
+    }
+    async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> {
+        self.get_split(offset, count).await
+    }
+    async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> {
+        self.get_multiple(conversation_ids).await
+    }
+    async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>> {
+        self.search(keyword).await
+    }
+    async fn reset(&self, conversation_id: &str) -> Result<()> {
+        self.reset(conversation_id).await
+    }
+    async fn increase_unread_count(&self, conversation_id: &str, seq: i64) -> Result<()> {
+        self.increase_unread_count(conversation_id, seq).await
+    }
+    async fn get_unread_count(&self, conversation_id: &str) -> Result<i32> {
+        self.get_unread_count(conversation_id).await
+    }
+    async fn get_by_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> {
+        self.get_multiple(conversation_ids).await
+    }
 }
-

@@ -41,7 +41,6 @@ pub trait FriendListener: Send + Sync {
     fn on_application_rejected(&self, _user_id: &str) {}
 }
 
-
 /// 事件 → 回调 的统一分发（Service 通过它把领域事件交给 Listener）
 pub trait FriendListenerExt: FriendListener {
     fn emit(&self, event: FriendEvent) {

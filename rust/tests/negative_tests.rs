@@ -1,4 +1,3 @@
-
 mod common;
 
 use common::*;
@@ -7,10 +6,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_register_with_existing_phone() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 重复注册测试 ===\n");
 
@@ -27,10 +23,7 @@ async fn test_register_with_existing_phone() {
 
 #[tokio::test]
 async fn test_login_invalid_token() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::config::ClientConfig;
     use rust_lib_flutter_rust_demo::client::OpenIMClient;
@@ -50,9 +43,7 @@ async fn test_login_invalid_token() {
 
     let sdk = OpenIMClient::new(config).await.expect("SDK 创建失败");
 
-    let result = sdk
-        .connect(WS_URL, "invalid_token_12345", &user.user_id)
-        .await;
+    let result = sdk.connect(WS_URL, "invalid_token_12345", &user.user_id).await;
     assert!(result.is_err(), "使用无效 token 连接应该失败");
     println!("  无效 token 连接被拒绝: {:?}", result.err());
 
@@ -61,10 +52,7 @@ async fn test_login_invalid_token() {
 
 #[tokio::test]
 async fn test_duplicate_add_friend() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 重复添加好友测试 ===\n");
 
@@ -88,10 +76,7 @@ async fn test_duplicate_add_friend() {
 
 #[tokio::test]
 async fn test_delete_non_existent_friend() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 删除不存在的好友测试 ===\n");
 
@@ -119,10 +104,7 @@ async fn test_delete_non_existent_friend() {
 
 #[tokio::test]
 async fn test_send_message_to_nonexistent_user() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 向不存在用户发消息测试 ===\n");
 
@@ -143,10 +125,7 @@ async fn test_send_message_to_nonexistent_user() {
 
 #[tokio::test]
 async fn test_kick_nonexistent_group_member() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::constant::enums::GroupType;
 
@@ -156,15 +135,10 @@ async fn test_kick_nonexistent_group_member() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let group = sdk
-        .create_group("KickTestGroup", GroupType::Normal, &[user1.user_id.clone()])
-        .await
-        .expect("创建群组失败");
+    let group = sdk.create_group("KickTestGroup", GroupType::Normal, &[user1.user_id.clone()]).await.expect("创建群组失败");
     println!("  群组创建成功: group_id={}", group.group_id);
 
-    let result = sdk
-        .kick_group_members(&group.group_id, &["nonexistent_member_999".to_string()], Some("踢不存在的人"))
-        .await;
+    let result = sdk.kick_group_members(&group.group_id, &["nonexistent_member_999".to_string()], Some("踢不存在的人")).await;
 
     assert!(result.is_err(), "踢不存在群成员应该失败");
     println!("  踢不存在成员被拒绝: {:?}", result.err());
@@ -174,10 +148,7 @@ async fn test_kick_nonexistent_group_member() {
 
 #[tokio::test]
 async fn test_join_nonexistent_group() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 加入不存在群组测试 ===\n");
 
@@ -194,10 +165,7 @@ async fn test_join_nonexistent_group() {
 
 #[tokio::test]
 async fn test_set_conversation_draft_empty() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     println!("=== 设置空草稿测试 ===\n");
 
