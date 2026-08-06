@@ -92,7 +92,7 @@ impl OpenIMClientBuilder {
         let send_queue = MessageSendQueue::new();
         let sender = Arc::new(MessageSender::new(context.clone(), connection.clone(), file_uploader.clone(), send_queue.clone(), user.clone()));
         debug!("OpenIM SDK init done (via Builder)");
-        Ok(OpenIMClient {
+        let client = OpenIMClient {
             context,
             connection,
             user,
@@ -107,6 +107,9 @@ impl OpenIMClientBuilder {
             message_service,
             listeners,
             sender,
-        })
+        };
+        // 推送处理器只启动一次，连接/重连复用同一通道
+        client.start_push_handler();
+        Ok(client)
     }
 }

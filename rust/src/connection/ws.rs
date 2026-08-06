@@ -32,6 +32,17 @@ where
     }
 }
 
+fn serialize_bytes_base64<S>(data: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    if data.is_empty() {
+        serializer.serialize_str("")
+    } else {
+        serializer.serialize_str(&BASE64.encode(data))
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OpenIMReq {
     #[serde(rename = "reqIdentifier")]
@@ -43,7 +54,7 @@ pub struct OpenIMReq {
     pub operation_id: String,
     #[serde(rename = "msgIncr")]
     pub msg_incr: String,
-    #[serde(default)]
+    #[serde(default, serialize_with = "serialize_bytes_base64", deserialize_with = "deserialize_base64_or_bytes")]
     pub data: Vec<u8>,
 }
 
@@ -164,6 +175,8 @@ mod tests {
         let req = OpenIMReq::new(1003, "test_token".into(), "user_123".into(), "op_001".into(), "msg_1".into(), vec![1, 2, 3]);
 
         let encoded = req.encode_to_vec().unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(json["data"], serde_json::Value::String("AQID".into()), "data 应序列化为 base64 字符串");
         let decoded = OpenIMReq::decode_from_bytes(&encoded).unwrap();
 
         assert_eq!(decoded.req_identifier, 1003);
@@ -171,6 +184,33 @@ mod tests {
         assert_eq!(decoded.send_id, "user_123");
         assert_eq!(decoded.msg_incr, "msg_1");
         assert_eq!(decoded.data, vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn test_openim_req_empty_data_serializes_as_empty_string() {
+        let req = OpenIMReq::new(1003, "test_token".into(), "user_123".into(), "op_001".into(), "msg_1".into(), Vec::new());
+
+        let encoded = req.encode_to_vec().unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(json["data"], serde_json::Value::String(String::new()));
+
+        let decoded = OpenIMReq::decode_from_bytes(&encoded).unwrap();
+        assert!(decoded.data.is_empty());
+    }
+
+    #[test]
+    fn test_openim_req_base64_roundtrip_with_response_style_payload() {
+        // 服务端返回的响应 data 也可能是 base64 字符串，请求侧应与其对称
+        let raw = serde_json::json!({
+            "reqIdentifier": 1003,
+            "token": "t",
+            "sendID": "u",
+            "operationID": "op",
+            "msgIncr": "m",
+            "data": "AQIDBA=="
+        });
+        let decoded: OpenIMReq = serde_json::from_value(raw).unwrap();
+        assert_eq!(decoded.data, vec![1, 2, 3, 4]);
     }
 
     #[test]

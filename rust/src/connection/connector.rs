@@ -11,6 +11,7 @@ use futures_util::StreamExt;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
+use tokio_util::sync::CancellationToken;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tracing::{error, info, warn};
@@ -18,7 +19,7 @@ use tracing::{error, info, warn};
 impl ConnectionManager {
     /// 执行 WebSocket 连接 + 服务端认证握手
     #[tracing::instrument(level = "info", skip(self))]
-    pub(crate) async fn do_connect(&self) -> Result<()> {
+    pub(crate) async fn do_connect(&self, conn_token: CancellationToken) -> Result<()> {
         const TOKEN_KICKED_ERR_CODE: i32 = 1506;
         const TOKEN_NOT_EXIST_ERR_CODE: i32 = 1507;
 
@@ -70,6 +71,10 @@ impl ConnectionManager {
 
         match auth_result {
             Ok(conn_resp) if conn_resp.err_code == 0 => {
+                if conn_token.is_cancelled() {
+                    warn!("do_connect: connection attempt cancelled during auth, discarding connection");
+                    return Err(SdkError::connection("connection attempt cancelled"));
+                }
                 info!("WebSocket auth confirmed by server");
                 *self.writer.write().await = Some(write);
                 self.set_state(crate::connection::manager::ConnectionState::Connected).await;
@@ -78,13 +83,16 @@ impl ConnectionManager {
                     hook();
                 }
                 self.reconnect_attempts.store(0, std::sync::atomic::Ordering::SeqCst);
-                self.spawn_read_loop(read);
-                self.spawn_heartbeat_internal();
+                self.spawn_read_loop(read, conn_token.clone());
+                self.spawn_heartbeat_internal(conn_token);
                 Ok(())
             }
             Ok(conn_resp) if conn_resp.err_code == TOKEN_KICKED_ERR_CODE => {
+                if conn_token.is_cancelled() {
+                    return Err(SdkError::connection("connection attempt cancelled"));
+                }
                 warn!("TokenKickedError ({}): kicked by other device, stopping reconnect", conn_resp.err_code);
-                self.cancel_token.cancel();
+                conn_token.cancel();
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = crate::connection::manager::ConnectionState::Kicked;
                 self.message_batcher.close().await;
@@ -92,8 +100,11 @@ impl ConnectionManager {
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) if conn_resp.err_code == TOKEN_NOT_EXIST_ERR_CODE => {
+                if conn_token.is_cancelled() {
+                    return Err(SdkError::connection("connection attempt cancelled"));
+                }
                 warn!("TokenNotExistError ({}): token invalid or expired, stopping reconnect", conn_resp.err_code);
-                self.cancel_token.cancel();
+                conn_token.cancel();
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = crate::connection::manager::ConnectionState::Kicked;
                 self.message_batcher.close().await;
@@ -101,12 +112,18 @@ impl ConnectionManager {
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) => {
+                if conn_token.is_cancelled() {
+                    return Err(SdkError::connection("connection attempt cancelled"));
+                }
                 warn!("WebSocket auth failed: errCode={}, errMsg={}", conn_resp.err_code, conn_resp.err_msg);
                 *self.state.write().await = crate::connection::manager::ConnectionState::Disconnected;
                 self.send(ConnectionEvent::Disconnected(conn_resp.err_msg.to_string()));
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Err(e) => {
+                if conn_token.is_cancelled() {
+                    return Err(SdkError::connection("connection attempt cancelled"));
+                }
                 error!("WebSocket auth parse error: {:?}", e);
                 *self.state.write().await = crate::connection::manager::ConnectionState::Disconnected;
                 self.send(ConnectionEvent::Disconnected(format!("auth parse error: {}", e)));

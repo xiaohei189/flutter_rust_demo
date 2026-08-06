@@ -55,7 +55,6 @@ use crate::client::config::ClientConfig;
 use crate::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use prost::Message as ProstMessage;
-use tokio_util::sync::CancellationToken;
 use tracing::{debug, info, warn, Instrument};
 
 /// 处理一批推送消息
@@ -116,14 +115,13 @@ impl ConnectionApi for OpenIMClient {
     #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id))]
     async fn connect(&self, ws_url: &str, token: &str, user_id: &str) -> Result<()> {
         self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
-        self.spawn_push_message_handler();
         Ok(())
     }
 
     /// 断开连接
     #[tracing::instrument(level = "info", skip(self))]
     async fn disconnect(&self) {
-        self.context.shutdown();
+        self.connection.disconnect().await;
         info!("SDK 已断开连接");
     }
 
@@ -143,7 +141,6 @@ impl ConnectionApi for OpenIMClient {
             info!("[SDK] 开始 WebSocket 连接，ws_url={}", ws_url);
             self.connection.connect(ws_url, token, user_id, self.context.config.platform_id).await?;
             debug!("[SDK] WebSocket 连接成功");
-            self.spawn_push_message_handler();
         } else {
             warn!("[SDK] ws_url 未配置，跳过 WebSocket 连接");
         }
@@ -240,8 +237,8 @@ impl ConnectionApi for OpenIMClient {
 }
 
 impl OpenIMClient {
-    /// 启动推送消息处理器 + 重连消息同步监听
-    fn spawn_push_message_handler(&self) {
+    /// 启动推送消息处理器 + 重连消息同步监听（仅由 Builder 启动一次）
+    pub(crate) fn start_push_handler(&self) {
         let message_processor = self.message_processor.clone();
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();

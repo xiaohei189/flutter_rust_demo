@@ -50,10 +50,7 @@ impl ConnectionManager {
         let (tx, rx) = tokio::sync::oneshot::channel();
         self.pending_requests.write().await.insert(
             msg_incr.clone(),
-            crate::connection::manager::PendingRequest {
-                tx,
-                timer: tokio::time::Instant::now(),
-            },
+            crate::connection::manager::PendingRequest { tx },
         );
 
         let compressed = self.compressor.compress(req_json.as_bytes()).map_err(|e| SdkError::unknown(format!("compress rpc request: {}", e)))?;
@@ -88,7 +85,11 @@ impl ConnectionManager {
                 }
             }
             Ok(Err(_)) => Err(SdkError::connection("rpc channel closed")),
-            Err(_) => Err(SdkError::timeout("rpc timeout")),
+            Err(_) => {
+                // 超时后清理 pending 条目，避免请求表无限增长
+                self.pending_requests.write().await.remove(&msg_incr);
+                Err(SdkError::timeout("rpc timeout"))
+            }
         }
     }
 }

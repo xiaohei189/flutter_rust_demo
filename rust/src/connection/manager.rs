@@ -38,7 +38,6 @@ pub use crate::constant::ConnectionState;
 
 pub(crate) struct PendingRequest {
     pub(crate) tx: oneshot::Sender<OpenIMResp>,
-    pub(crate) timer: tokio::time::Instant,
 }
 
 pub struct ConnectionManager {
@@ -46,6 +45,8 @@ pub struct ConnectionManager {
     pub(crate) state: Arc<RwLock<ConnectionState>>,
     pub(crate) pending_requests: Arc<RwLock<HashMap<String, PendingRequest>>>,
     pub(crate) cancel_token: CancellationToken,
+    /// 当前连接级取消令牌：disconnect/kick 只取消它，SDK 销毁才取消 cancel_token
+    pub(crate) connection_token: RwLock<Option<CancellationToken>>,
     pub(crate) msg_incr: AtomicU64,
     pub(crate) token: RwLock<String>,
     pub(crate) send_id: RwLock<String>,
@@ -83,6 +84,7 @@ impl ConnectionManager {
             state: Arc::new(RwLock::new(ConnectionState::Disconnected)),
             pending_requests: Arc::new(RwLock::new(HashMap::new())),
             cancel_token,
+            connection_token: RwLock::new(None),
             msg_incr: AtomicU64::new(0),
             token: RwLock::new(String::new()),
             send_id: RwLock::new(String::new()),
@@ -104,6 +106,10 @@ impl ConnectionManager {
 
     #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id, platform_id = platform_id))]
     pub async fn connect(&self, ws_url: &str, token: &str, user_id: &str, platform_id: i32) -> Result<()> {
+        // 无论当前状态如何，先终止上一次连接的所有循环（read/heartbeat/reconnect）
+        if let Some(prev) = self.connection_token.write().await.take() {
+            prev.cancel();
+        }
         {
             let current_state = self.state.read().await.clone();
             if current_state != ConnectionState::Disconnected {
@@ -123,13 +129,17 @@ impl ConnectionManager {
         *self.is_manual_disconnect.write().await = false;
         self.reconnect_attempts.store(0, Ordering::SeqCst);
 
-        self.do_connect().await?;
-        self.spawn_reconnect_loop();
+        // 每次连接使用独立的取消令牌：断线/重连/踢下线互不影响，SDK 实例可反复连接
+        let conn_token = CancellationToken::new();
+        *self.connection_token.write().await = Some(conn_token.clone());
+
+        self.do_connect(conn_token.clone()).await?;
+        self.spawn_reconnect_loop(conn_token);
         Ok(())
     }
 
-    fn spawn_reconnect_loop(&self) {
-        let cancel = self.cancel_token.clone();
+    fn spawn_reconnect_loop(&self, conn_token: CancellationToken) {
+        let cancel = conn_token.clone();
         let state = self.state.clone();
         let is_manual = self.is_manual_disconnect.clone();
         let self_clone = Arc::new(self.clone_shallow());
@@ -172,7 +182,7 @@ impl ConnectionManager {
                         if manual { break; }
 
                         *state.write().await = ConnectionState::Reconnecting;
-                        match self_clone.do_connect().await {
+                        match self_clone.do_connect(conn_token.clone()).await {
                             Ok(_) => {
                                 info!("reconnected successfully");
                                 self_clone.reconnect_attempts.store(0, Ordering::SeqCst);
@@ -207,6 +217,7 @@ impl ConnectionManager {
             state: self.state.clone(),
             pending_requests: self.pending_requests.clone(),
             cancel_token: self.cancel_token.clone(),
+            connection_token: RwLock::new(self.connection_token.try_read().map(|t| t.clone()).unwrap_or(None)),
             msg_incr: AtomicU64::new(self.msg_incr.load(Ordering::SeqCst)),
             token: RwLock::new(self.token.try_read().map(|t| t.clone()).unwrap_or_default()),
             send_id: RwLock::new(self.send_id.try_read().map(|s| s.clone()).unwrap_or_default()),
@@ -223,10 +234,10 @@ impl ConnectionManager {
     }
 
     /// 内部心跳循环（由 do_connect 在连接成功后调用）
-    pub(crate) fn spawn_heartbeat_internal(&self) {
+    pub(crate) fn spawn_heartbeat_internal(&self, conn_token: CancellationToken) {
         let writer = self.writer.clone();
         let state = self.state.clone();
-        let cancel = self.cancel_token.clone();
+        let cancel = conn_token;
 
         tokio::spawn(async move {
             let mut ticker = interval(HEARTBEAT_INTERVAL);
@@ -256,6 +267,9 @@ impl ConnectionManager {
 
     pub async fn disconnect(&self) {
         *self.is_manual_disconnect.write().await = true;
+        if let Some(conn_token) = self.connection_token.write().await.take() {
+            conn_token.cancel();
+        }
         *self.writer.write().await = None;
         *self.state.write().await = ConnectionState::Disconnected;
         self.message_batcher.close().await;
@@ -265,6 +279,9 @@ impl ConnectionManager {
 
     pub async fn handle_kicked(&self, reason: String) {
         *self.is_manual_disconnect.write().await = true;
+        if let Some(conn_token) = self.connection_token.write().await.take() {
+            conn_token.cancel();
+        }
         *self.writer.write().await = None;
         *self.state.write().await = ConnectionState::Kicked;
         self.message_batcher.close().await;
@@ -332,4 +349,6 @@ async fn test_clone_shallow_copies_all_fields() {
     assert!(cloned.writer.try_read().unwrap().is_none());
     assert!(Arc::ptr_eq(&original.push_tx, &cloned.push_tx));
     assert!(Arc::ptr_eq(&original.on_connected_hook, &cloned.on_connected_hook));
+    assert!(original.connection_token.try_read().unwrap().is_none());
+    assert!(cloned.connection_token.try_read().unwrap().is_none());
 }

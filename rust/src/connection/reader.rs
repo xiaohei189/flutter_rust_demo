@@ -16,13 +16,14 @@ use prost::Message;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, info_span, warn, Instrument};
 
 impl ConnectionManager {
     /// 启动消息读取循环
-    pub(crate) fn spawn_read_loop(&self, read: futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) {
+    pub(crate) fn spawn_read_loop(&self, read: futures_util::stream::SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>, conn_token: CancellationToken) {
         let pending = self.pending_requests.clone();
-        let cancel = self.cancel_token.clone();
+        let cancel = conn_token;
         let state = self.state.clone();
         let writer = self.writer.clone();
         let compressor = self.compressor.clone();
