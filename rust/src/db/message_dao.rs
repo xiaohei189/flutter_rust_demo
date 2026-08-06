@@ -73,7 +73,9 @@ impl MessageDao {
 
     pub async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
         debug!("[DB] get_by_client_msg_id: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
-        let row = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND client_msg_id = ?")
+        // conversation_id 为空时忽略会话过滤（不限定会话查询）
+        let row = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE (conversation_id = ? OR ? = '') AND client_msg_id = ? LIMIT 1")
+            .bind(conversation_id)
             .bind(conversation_id)
             .bind(client_msg_id)
             .fetch_optional(&self.pool)

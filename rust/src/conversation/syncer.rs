@@ -347,7 +347,11 @@ mod tests {
     use super::*;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::event::events::conversation::ConversationEvent;
+    use crate::event::hub::EventHub;
     use crate::http::client::HttpApiClient;
+    use crate::http::conversation::{GetFullConversationIDsResp, GetIncrementalConversationResp, MockConversationApi, ServerConversation};
+    use crate::message::MaxSeqRecorder;
     use crate::model::UserId;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -363,6 +367,35 @@ mod tests {
         })
     }
 
+    fn make_server_conv(id: &str, pinned: bool, recv_msg_opt: i32) -> ServerConversation {
+        ServerConversation {
+            owner_user_id: "test_user".to_string(),
+            conversation_id: id.to_string(),
+            conversation_type: 1,
+            recv_msg_opt,
+            user_id: "user_1".to_string(),
+            group_id: String::new(),
+            is_pinned: pinned,
+            is_private_chat: false,
+            group_at_type: 0,
+            ex: String::new(),
+            attached_info: String::new(),
+            burn_duration: 0,
+            min_seq: 0,
+            max_seq: 0,
+            msg_destruct_time: 0,
+            is_msg_destruct: false,
+        }
+    }
+
+    /// 构造带 EventHub listener 的 syncer
+    fn make_syncer_with_hub(api: Arc<dyn ConversationServerApi>, repositories: Arc<Repositories>) -> (ConversationSyncer, tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>) {
+        let hub = EventHub::new();
+        let rx = hub.take_conv_rx().unwrap();
+        let syncer = ConversationSyncer::new_with_api(api, repositories, UserId::new("test_user"), hub);
+        (syncer, rx)
+    }
+
     #[tokio::test]
     async fn test_conversation_syncer_creation() {
         let pool = create_pool_memory().await.unwrap();
@@ -372,5 +405,244 @@ mod tests {
 
         assert_eq!(syncer.get_sync_version().await, 0);
         assert_eq!(syncer.get_sync_version_id().await, "");
+    }
+
+    #[tokio::test]
+    async fn test_sync_incremental_insert_update_delete() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        // 预置本地会话：conv_update 将被 update，conv_delete 将被 delete
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_update".to_string(),
+                recv_msg_opt: 0,
+                is_pinned: false,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_delete".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        let inc = GetIncrementalConversationResp {
+            version: 42,
+            version_id: "ver_42".to_string(),
+            full: false,
+            delete: vec!["conv_delete".to_string()],
+            insert: vec![make_server_conv("conv_insert", false, 0)],
+            update: vec![make_server_conv("conv_update", true, 2)],
+        };
+        let api = Arc::new(MockConversationApi::new().with_incremental(inc));
+        let (syncer, mut rx) = make_syncer_with_hub(api, repositories.clone());
+
+        let inserted = syncer.sync_incremental().await.unwrap();
+        assert_eq!(inserted.len(), 1);
+        assert_eq!(inserted[0].conversation_id, "conv_insert");
+
+        // 版本已持久化
+        assert_eq!(syncer.get_sync_version().await, 42);
+        assert_eq!(syncer.get_sync_version_id().await, "ver_42");
+
+        // 数据库状态：update 生效、insert 入库、delete 移除
+        let updated = repositories.conversation_repo.get_by_id("conv_update").await.unwrap().unwrap();
+        assert!(updated.is_pinned);
+        assert_eq!(updated.recv_msg_opt, 2);
+        assert!(repositories.conversation_repo.get_by_id("conv_insert").await.unwrap().is_some());
+        assert!(repositories.conversation_repo.get_by_id("conv_delete").await.unwrap().is_none());
+
+        // 事件：先 Deleted 后 Changed（update+insert 合并）
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Deleted(ids) => assert_eq!(ids, vec!["conv_delete"]),
+            other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),
+        }
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => {
+                let ids: Vec<&str> = convs.iter().map(|c| c.conversation_id.as_str()).collect();
+                assert_eq!(ids, vec!["conv_update", "conv_insert"]);
+            }
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+        assert!(rx.try_recv().is_err(), "不应有额外事件");
+    }
+
+    #[tokio::test]
+    async fn test_sync_incremental_empty_no_events_and_version_persisted() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        let inc = GetIncrementalConversationResp {
+            version: 7,
+            version_id: "v7".to_string(),
+            full: false,
+            delete: vec![],
+            insert: vec![],
+            update: vec![],
+        };
+        let api = Arc::new(MockConversationApi::new().with_incremental(inc));
+        let (syncer, mut rx) = make_syncer_with_hub(api, repositories);
+
+        let result = syncer.sync_incremental().await.unwrap();
+        assert!(result.is_empty());
+        assert_eq!(syncer.get_sync_version().await, 7);
+        assert_eq!(syncer.get_sync_version_id().await, "v7");
+        assert!(rx.try_recv().is_err(), "空增量不应发布事件");
+    }
+
+    #[tokio::test]
+    async fn test_sync_incremental_full_fallback_to_sync_full() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        let inc = GetIncrementalConversationResp { full: true, ..Default::default() };
+        let api = Arc::new(
+            MockConversationApi::new()
+                .with_incremental(inc)
+                .with_all(vec![make_server_conv("conv_a", false, 0), make_server_conv("conv_b", true, 0)]),
+        );
+        let (syncer, mut rx) = make_syncer_with_hub(api, repositories.clone());
+
+        let result = syncer.sync_incremental().await.unwrap();
+        assert_eq!(result.len(), 2);
+
+        // 全量同步结果入库
+        assert!(repositories.conversation_repo.get_by_id("conv_a").await.unwrap().is_some());
+        assert!(repositories.conversation_repo.get_by_id("conv_b").await.unwrap().is_some());
+
+        // 全量同步发布 Changed 事件
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => assert_eq!(convs.len(), 2),
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_sync_incremental_preserves_local_fields() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        // 本地已有会话：latest_msg/unread_count/draft 为本地维护值
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_a".to_string(),
+                latest_msg: "本地最新消息".to_string(),
+                latest_msg_send_time: 5000,
+                unread_count: 3,
+                draft_text: "本地草稿".to_string(),
+                draft_text_time: 6000,
+                is_pinned: false,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 服务端返回的 update 不含本地字段（user_id 有值，is_pinned 变化）
+        let mut server_conv = make_server_conv("conv_a", true, 0);
+        server_conv.user_id = "服务端用户".to_string();
+        let inc = GetIncrementalConversationResp {
+            version: 9,
+            version_id: "v9".to_string(),
+            full: false,
+            delete: vec![],
+            insert: vec![],
+            update: vec![server_conv],
+        };
+        let api = Arc::new(MockConversationApi::new().with_incremental(inc));
+        let (syncer, _rx) = make_syncer_with_hub(api, repositories.clone());
+
+        syncer.sync_incremental().await.unwrap();
+
+        let conv = repositories.conversation_repo.get_by_id("conv_a").await.unwrap().unwrap();
+        // 服务端字段已更新
+        assert!(conv.is_pinned);
+        assert_eq!(conv.user_id, "服务端用户");
+        // 本地字段被保留
+        assert_eq!(conv.latest_msg, "本地最新消息");
+        assert_eq!(conv.latest_msg_send_time, 5000);
+        assert_eq!(conv.unread_count, 3);
+        assert_eq!(conv.draft_text, "本地草稿");
+    }
+
+    #[tokio::test]
+    async fn test_sync_full_insert_and_delete_absent() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        // 本地存在 conv_a（服务端也有）和 conv_b（服务端已删除）
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_a".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_b".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        let api = Arc::new(MockConversationApi::new().with_all(vec![make_server_conv("conv_a", false, 0), make_server_conv("conv_c", false, 0)]));
+        let (syncer, mut rx) = make_syncer_with_hub(api, repositories.clone());
+
+        let result = syncer.sync_full().await.unwrap();
+        assert_eq!(result.len(), 2);
+
+        // conv_c 已插入、conv_b 已删除、conv_a 保留
+        assert!(repositories.conversation_repo.get_by_id("conv_c").await.unwrap().is_some());
+        assert!(repositories.conversation_repo.get_by_id("conv_b").await.unwrap().is_none());
+        assert!(repositories.conversation_repo.get_by_id("conv_a").await.unwrap().is_some());
+
+        // Changed 事件携带全部同步结果
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => {
+                assert_eq!(convs.len(), 2);
+                assert_eq!(convs[0].conversation_id, "conv_a");
+                assert_eq!(convs[1].conversation_id, "conv_c");
+            }
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_sync_hash_read_seqs_skips_without_connection() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let api = Arc::new(MockConversationApi::new());
+        let (syncer, _rx) = make_syncer_with_hub(api, repositories);
+
+        // connection 未设置时直接跳过，不报错
+        let recorder = MaxSeqRecorder::new();
+        syncer.sync_conversation_hash_read_seqs(&recorder).await.unwrap();
+        assert_eq!(recorder.get("conv_any"), 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_all_conversation_ids() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let full_ids = GetFullConversationIDsResp {
+            version: 3,
+            version_id: "v3".to_string(),
+            equal: false,
+            conversation_ids: vec!["conv_1".to_string(), "conv_2".to_string()],
+        };
+        let api = Arc::new(MockConversationApi::new().with_full_ids(full_ids));
+        let (syncer, _rx) = make_syncer_with_hub(api, repositories);
+
+        let ids = syncer.get_all_conversation_ids().await.unwrap();
+        assert_eq!(ids, vec!["conv_1", "conv_2"]);
     }
 }

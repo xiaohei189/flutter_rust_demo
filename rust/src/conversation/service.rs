@@ -317,4 +317,275 @@ mod tests {
         let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
         assert_eq!(conv.draft_text, "");
     }
+
+    // ========================================================================
+    // set_conversation：服务端同步 + 本地回写
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_set_conversation_updates_existing_fields() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+
+        manager.set_conversation("conv_1", Some(2), Some(true), Some(true), Some(3), Some("ex_val")).await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned);
+        assert!(conv.is_private_chat);
+        assert_eq!(conv.group_at_type, 3);
+        assert_eq!(conv.ex, "ex_val");
+        // 未传入字段保持原值
+        assert_eq!(conv.show_name, "Conversation conv_1");
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_creates_new_when_missing() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+
+        manager.set_conversation("conv_new", Some(2), None, None, None, None).await.unwrap();
+
+        let conv = manager.get_conversation("conv_new").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(!conv.is_pinned);
+        assert_eq!(conv.conversation_type, 0);
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_none_fields_keep_existing() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager
+            .upsert_conversation(LocalConversation {
+                conversation_id: "conv_1".to_string(),
+                recv_msg_opt: 1,
+                is_pinned: true,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 只更新 recv_msg_opt，其余传 None 应保持
+        manager.set_conversation("conv_1", Some(2), None, None, None, None).await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned, "is_pinned 未被覆盖应保持 true");
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_syncs_to_server() {
+        let pool = create_pool_memory().await.unwrap();
+        let api = Arc::new(crate::http::conversation::MockConversationApi::new());
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener()).with_server_api(api.clone());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+
+        manager.set_conversation("conv_1", Some(2), Some(true), None, None, Some("ex")).await.unwrap();
+
+        // 服务端被调用且请求参数正确（仅传非 None 字段）
+        let calls = api.set_calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].conversation_id, "conv_1");
+        assert_eq!(calls[0].recv_msg_opt, Some(2));
+        assert_eq!(calls[0].is_pinned, Some(true));
+        assert_eq!(calls[0].is_private_chat, None);
+        assert_eq!(calls[0].group_at_type, None);
+        assert_eq!(calls[0].ex.as_deref(), Some("ex"));
+
+        // 本地已回写
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned);
+        assert_eq!(conv.ex, "ex");
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_server_failure_keeps_local_success() {
+        let pool = create_pool_memory().await.unwrap();
+        let api = Arc::new(crate::http::conversation::MockConversationApi::new().with_set_fail(true));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener()).with_server_api(api.clone());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+
+        // 服务端失败不应影响本地更新结果
+        manager.set_conversation("conv_1", Some(2), None, None, None, None).await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+    }
+
+    // ========================================================================
+    // 查询族：get_split / get_multiple / search / reset / 回填
+    // ========================================================================
+
+    fn create_conv_with_time(id: &str, latest_msg_send_time: i64, pinned: bool) -> LocalConversation {
+        LocalConversation {
+            conversation_id: id.to_string(),
+            conversation_type: 1,
+            user_id: "user_1".to_string(),
+            group_id: String::new(),
+            show_name: format!("Chat_{}", id),
+            face_url: String::new(),
+            latest_msg: format!("msg_{}", id),
+            latest_msg_send_time,
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: pinned,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_split_pinned_first_then_time_desc() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_conv_with_time("conv_old", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_new", 3000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_pinned", 2000, true)).await.unwrap();
+
+        let list = manager.get_split(0, 10).await.unwrap();
+        assert_eq!(list.len(), 3);
+        // 置顶优先，其余按时间倒序
+        assert_eq!(list[0].conversation_id, "conv_pinned");
+        assert_eq!(list[1].conversation_id, "conv_new");
+        assert_eq!(list[2].conversation_id, "conv_old");
+    }
+
+    #[tokio::test]
+    async fn test_get_split_filters_hidden_and_paginates() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        // latest_msg_send_time = 0 的会话被过滤（reset 后隐藏）
+        manager.upsert_conversation(create_conv_with_time("conv_hidden", 0, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_1", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_2", 2000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_3", 3000, false)).await.unwrap();
+
+        let list = manager.get_split(0, 2).await.unwrap();
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0].conversation_id, "conv_3");
+        assert_eq!(list[1].conversation_id, "conv_2");
+
+        let list = manager.get_split(2, 2).await.unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].conversation_id, "conv_1");
+    }
+
+    #[tokio::test]
+    async fn test_get_multiple() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+        manager.upsert_conversation(create_test_conversation("conv_2")).await.unwrap();
+        manager.upsert_conversation(create_test_conversation("conv_3")).await.unwrap();
+
+        let list = manager.get_multiple(&["conv_1".to_string(), "conv_3".to_string()]).await.unwrap();
+        let mut ids: Vec<String> = list.into_iter().map(|c| c.conversation_id).collect();
+        ids.sort();
+        assert_eq!(ids, vec!["conv_1", "conv_3"]);
+
+        // 空列表直接返回空
+        let empty = manager.get_multiple(&[]).await.unwrap();
+        assert!(empty.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_search_by_show_name() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_conv_with_time("conv_alice", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_bob", 2000, false)).await.unwrap();
+
+        let found = manager.search("alice").await.unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].conversation_id, "conv_alice");
+
+        let none = manager.search("nobody").await.unwrap();
+        assert!(none.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_reset_hides_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        let mut conv = create_conv_with_time("conv_1", 1000, false);
+        conv.unread_count = 5;
+        conv.draft_text = "draft".to_string();
+        manager.upsert_conversation(conv).await.unwrap();
+
+        manager.reset("conv_1").await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.unread_count, 0);
+        assert_eq!(conv.latest_msg, "");
+        assert_eq!(conv.latest_msg_send_time, 0);
+        assert_eq!(conv.draft_text, "");
+        // reset 后不再出现在分页列表中
+        let list = manager.get_split(0, 10).await.unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_reset_missing_conversation_returns_error() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        assert!(manager.reset("conv_missing").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_all_conversations_backfills_latest_msg() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let manager = ConversationService::new(repositories.clone(), crate::event::test_util::noop_conversation_listener());
+
+        // 会话 latest_msg 为空，但消息库有最新消息
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+        let message_repo = repositories.message_repo.clone();
+        let msg = crate::model::local::LocalChatLog {
+            conversation_id: "conv_1".to_string(),
+            client_msg_id: "m1".to_string(),
+            server_msg_id: String::new(),
+            send_id: "u1".to_string(),
+            recv_id: "u2".to_string(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: "最新内容".to_string(),
+            is_read: 0,
+            status: 2,
+            seq: 1,
+            send_time: 8888,
+            create_time: 8888,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+        message_repo.batch_insert(&[msg]).await.unwrap();
+
+        let list = manager.get_all_conversations().await.unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].latest_msg, "最新内容");
+        assert_eq!(list[0].latest_msg_send_time, 8888);
+
+        // 回填已持久化到会话表
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg, "最新内容");
+    }
 }

@@ -161,6 +161,97 @@ pub trait ConversationServerApi: Send + Sync {
     async fn set_conversation_on_server(&self, req: &SetConversationReq) -> Result<()>;
 }
 
+/// 测试用 Mock ConversationServerApi（供 conversation 模块各文件测试共享）
+#[cfg(test)]
+pub(crate) struct MockConversationApi {
+    pub(crate) all: Vec<ServerConversation>,
+    pub(crate) incremental: GetIncrementalConversationResp,
+    pub(crate) by_ids: Vec<ServerConversation>,
+    pub(crate) full_ids: GetFullConversationIDsResp,
+    pub(crate) set_fail: bool,
+    pub(crate) set_calls: std::sync::Arc<std::sync::Mutex<Vec<SetConversationReq>>>,
+    pub(crate) incremental_calls: std::sync::Arc<std::sync::Mutex<usize>>,
+}
+
+#[cfg(test)]
+impl MockConversationApi {
+    pub(crate) fn new() -> Self {
+        Self {
+            all: Vec::new(),
+            incremental: GetIncrementalConversationResp::default(),
+            by_ids: Vec::new(),
+            full_ids: GetFullConversationIDsResp::default(),
+            set_fail: false,
+            set_calls: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+            incremental_calls: std::sync::Arc::new(std::sync::Mutex::new(0)),
+        }
+    }
+
+    pub(crate) fn with_all(mut self, all: Vec<ServerConversation>) -> Self {
+        self.all = all;
+        self
+    }
+
+    pub(crate) fn with_incremental(mut self, incremental: GetIncrementalConversationResp) -> Self {
+        self.incremental = incremental;
+        self
+    }
+
+    pub(crate) fn with_by_ids(mut self, by_ids: Vec<ServerConversation>) -> Self {
+        self.by_ids = by_ids;
+        self
+    }
+
+    pub(crate) fn with_full_ids(mut self, full_ids: GetFullConversationIDsResp) -> Self {
+        self.full_ids = full_ids;
+        self
+    }
+
+    pub(crate) fn with_set_fail(mut self, set_fail: bool) -> Self {
+        self.set_fail = set_fail;
+        self
+    }
+
+    pub(crate) fn set_calls(&self) -> Vec<SetConversationReq> {
+        self.set_calls.lock().unwrap().clone()
+    }
+
+    pub(crate) fn incremental_call_count(&self) -> usize {
+        *self.incremental_calls.lock().unwrap()
+    }
+}
+
+#[cfg(test)]
+#[async_trait]
+impl ConversationServerApi for MockConversationApi {
+    async fn pull_all(&self, _user_id: String) -> Result<GetAllConversationsResp> {
+        Ok(GetAllConversationsResp {
+            conversations: Some(self.all.clone()),
+        })
+    }
+
+    async fn pull_incremental(&self, _user_id: String, _version: u64, _version_id: String) -> Result<GetIncrementalConversationResp> {
+        *self.incremental_calls.lock().unwrap() += 1;
+        Ok(self.incremental.clone())
+    }
+
+    async fn pull_conversations_by_ids(&self, _user_id: String, _conversation_ids: Vec<String>) -> Result<Vec<ServerConversation>> {
+        Ok(self.by_ids.clone())
+    }
+
+    async fn pull_full_conversation_ids(&self, _user_id: String) -> Result<GetFullConversationIDsResp> {
+        Ok(self.full_ids.clone())
+    }
+
+    async fn set_conversation_on_server(&self, req: &SetConversationReq) -> Result<()> {
+        if self.set_fail {
+            return Err(crate::error::SdkError::network("mock server failure".to_string()));
+        }
+        self.set_calls.lock().unwrap().push(req.clone());
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

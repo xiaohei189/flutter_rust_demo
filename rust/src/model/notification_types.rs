@@ -105,11 +105,11 @@ pub(crate) struct UserInfoJson {
     pub(crate) user_id: String,
     #[serde(default)]
     pub(crate) nickname: String,
-    #[serde(default)]
+    #[serde(default, rename = "faceURL")]
     pub(crate) face_url: String,
     #[serde(default)]
     pub(crate) ex: String,
-    #[serde(default)]
+    #[serde(default, rename = "globalRecvMsgOpt")]
     pub(crate) global_recv_msg_opt: i32,
 }
 

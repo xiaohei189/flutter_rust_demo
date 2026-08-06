@@ -461,4 +461,197 @@ mod tests {
 
         handler.handle_notifications(&[]).await;
     }
+
+    // ========================================================================
+    // 具体通知类型分发测试（通过 EventHub 断言事件路由）
+    // ========================================================================
+
+    /// 构造带 hub listener 的 handler（申请类/用户类通知不触发网络调用）
+    fn make_handler_with_hub(pool: sqlx::SqlitePool, hub: &Arc<EventHub>) -> NotificationHandler {
+        let repos = make_repositories(pool);
+        let http = make_http_client();
+        let user_id = UserId::new("test_user");
+
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
+
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::http::group_api::HttpGroupApi::new(http.clone()));
+        let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
+
+        let user_service = Arc::new(UserService::new(Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
+
+        let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
+
+        NotificationHandler::new(friend_service, group_service, user_service, syncer, processor, hub.clone(), hub.clone(), hub.clone(), user_id)
+    }
+
+    #[tokio::test]
+    async fn test_notification_user_info_updated_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut user_rx = hub.take_user_rx().unwrap();
+        let handler = make_handler_with_hub(pool, &hub);
+
+        let detail = serde_json::json!({
+            "userID": "user_1",
+            "nickname": "新昵称",
+            "faceURL": "http://avatar",
+            "ex": "remark",
+            "globalRecvMsgOpt": 1
+        });
+        let msg = MsgData {
+            content_type: notification_type::USER_INFO_UPDATED,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        match user_rx.try_recv().unwrap() {
+            UserEvent::UserInfoUpdated { user } => {
+                assert_eq!(user.user_id, "user_1");
+                assert_eq!(user.nickname, "新昵称");
+                assert_eq!(user.face_url, "http://avatar");
+                assert_eq!(user.remark, "remark");
+                assert_eq!(user.global_recv_msg_opt, 1);
+            }
+            other => panic!("期望 UserInfoUpdated，实际 {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_notification_friend_application_added_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut friend_rx = hub.take_friend_rx().unwrap();
+        let handler = make_handler_with_hub(pool, &hub);
+
+        let detail = serde_json::json!({
+            "request": {
+                "fromUserID": "user_a",
+                "fromNickname": "Alice",
+                "fromFaceURL": "http://face",
+                "handleResult": 0,
+                "reqMsg": "Hello!",
+                "createTime": 1000
+            }
+        });
+        let msg = MsgData {
+            content_type: notification_type::FRIEND_APPLICATION,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        match friend_rx.try_recv().unwrap() {
+            FriendEvent::ApplicationAdded(json) => {
+                let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+                assert_eq!(v["userId"], "user_a");
+                assert_eq!(v["nickname"], "Alice");
+                assert_eq!(v["faceUrl"], "http://face");
+                assert_eq!(v["reqMsg"], "Hello!");
+            }
+            other => panic!("期望 ApplicationAdded，实际 {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_notification_group_application_added_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut group_rx = hub.take_group_rx().unwrap();
+        let handler = make_handler_with_hub(pool, &hub);
+
+        let detail = serde_json::json!({
+            "request": {
+                "groupInfo": { "groupID": "group_1" },
+                "userInfo": { "userID": "user_a", "nickname": "Alice", "faceURL": "" },
+                "handleResult": 0,
+                "reqMsg": "Please add me"
+            }
+        });
+        let msg = MsgData {
+            content_type: notification_type::JOIN_GROUP_APPLICATION,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        match group_rx.try_recv().unwrap() {
+            GroupEvent::ApplicationAdded(json) => {
+                let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+                assert_eq!(v["groupId"], "group_1");
+                assert_eq!(v["userId"], "user_a");
+                assert_eq!(v["nickname"], "Alice");
+                assert_eq!(v["reason"], "Please add me");
+            }
+            other => panic!("期望 ApplicationAdded，实际 {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_notification_revoke_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let repos = make_repositories(pool.clone());
+        let hub = EventHub::new();
+        let handler = make_handler_with_hub(pool, &hub);
+        let message_repo = repos.message_repo.clone();
+
+        // 预置被撤回的消息
+        message_repo
+            .batch_insert(&[crate::model::local::LocalChatLog {
+                conversation_id: "conv_revoke".to_string(),
+                client_msg_id: "msg_target".to_string(),
+                server_msg_id: String::new(),
+                send_id: "user_1".to_string(),
+                recv_id: "user_2".to_string(),
+                sender_platform_id: 1,
+                sender_nick_name: "Bob".to_string(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 100,
+                content_type: 101,
+                content: "original".to_string(),
+                is_read: 0,
+                status: 2,
+                seq: 5,
+                send_time: 1000,
+                create_time: 1000,
+                attached_info: String::new(),
+                ex: String::new(),
+                local_ex: String::new(),
+                group_id: String::new(),
+            }])
+            .await
+            .unwrap();
+
+        let detail = serde_json::json!({
+            "revokerUserID": "user_1",
+            "clientMsgID": "msg_target",
+            "revokeTime": 9999,
+            "sesstionType": 1,
+            "seq": 5,
+            "conversationID": "conv_revoke",
+            "isAdminRevoke": false,
+            "revokerNickname": "Alice",
+            "revokerRole": 0
+        });
+        let msg = MsgData {
+            content_type: notification_type::REVOKE,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        // 消息内容已替换为撤回通知
+        let revoked = message_repo.get_by_conversation_and_seq("conv_revoke", 5).await.unwrap().unwrap();
+        assert_eq!(revoked.content_type, notification_type::REVOKE);
+        assert!(revoked.content.contains("revokerNickname"));
+    }
 }
