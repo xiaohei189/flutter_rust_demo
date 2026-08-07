@@ -76,6 +76,7 @@ async fn wait_for_new_messages(events: &mut TestEvents, count: usize, timeout_se
 ///   Phase 9: Typing 通知
 ///   Phase 10: 全量已读
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -757,6 +758,7 @@ async fn test_message_flow() {
 /// 使用全新随机账号，确保无历史数据干扰。
 /// 流程：A 先登录发消息（B 离线），B 登录后检查同步和未读数。
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_login_sync() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -816,6 +818,7 @@ async fn test_login_sync() {
 
 /// 场景：发送各种支持的消息类型给固定用户
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_send_all_message_types() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -984,6 +987,7 @@ async fn test_send_all_message_types() {
 ///   Phase 6: 按 seq 获取单条（取第 5 条的 seq）
 ///            → 验证返回消息的 seq 和 content 正确
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_history_query_reverse_and_by_seq() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1148,6 +1152,7 @@ async fn test_history_query_reverse_and_by_seq() {
 ///   Phase 5: 查找全部不存在的 ID → 验证返回空列表
 ///   Phase 6: 空列表查询 → 验证返回空列表
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_find_messages_by_ids() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1285,6 +1290,7 @@ async fn test_find_messages_by_ids() {
 ///   Phase 5: 等待 1 秒，验证未读数 == 2
 ///   Phase 6: 验证前 3 条 is_read == true，后 2 条 is_read == false
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_mark_specific_messages_as_read() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1425,6 +1431,7 @@ async fn test_mark_specific_messages_as_read() {
 ///   Phase 5: B 再次查询 → 验证第 2 条不在，第 1/3 条仍在
 ///   Phase 6: A 再发一条消息 → B 验证新消息可正常接收
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_delete_message_local_only() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1558,6 +1565,7 @@ async fn test_delete_message_local_only() {
 ///   Phase 5: B 查询会话 → 验证会话仍存在，unread_count == 0
 ///   Phase 6: A 再发一条消息 → B 重新同步验证新消息可接收
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_clear_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1691,6 +1699,7 @@ async fn test_clear_conversation_and_delete_all_msg() {
 ///   Phase 5: B 查询本地历史 → 验证消息为空
 ///   Phase 6: A 再发一条消息 → B 重新同步验证新会话被创建
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_delete_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1829,6 +1838,7 @@ async fn test_delete_conversation_and_delete_all_msg() {
 ///   Phase 5: B 查询历史消息 → 验证引用消息存在，content 包含引用文本
 ///   Phase 6: B 事件流验证 → 收到 NewMessage 包含引用消息
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_quote_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1949,6 +1959,7 @@ async fn test_quote_message_flow() {
 ///   Phase 7: B 标记与 C 的会话也已读
 ///   Phase 8: 验证 total == 0
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_total_unread_count() {
     // Setup
     let account_a = create_random_account("UnreadA").await;
@@ -2022,6 +2033,7 @@ async fn test_total_unread_count() {
 ///   Phase 6: A 更新第 1 条消息的 local_ex = "archived"
 ///   Phase 7: 再次查询 → 验证第 1 条 local_ex 已更新为 "archived"
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_message_local_ex() {
     use rust_lib_flutter_rust_demo::client::SearchMessagesReq;
     use rust_lib_flutter_rust_demo::model::local::LocalChatLog;
@@ -2124,6 +2136,7 @@ async fn test_message_local_ex() {
 ///   Phase 8: A、B、C 实时收发群消息验证
 ///            → B 发一条群消息 → A 和 C 的事件流收到
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_message_flow() {
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::constant::enums::GroupType;
@@ -2272,6 +2285,7 @@ async fn test_group_message_flow() {
 ///   Phase 7: B 重新登录，再次查询历史
 ///            → 验证 online_only 消息仍不在历史中（同步后也不会出现）
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_online_only_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -2432,6 +2446,7 @@ async fn test_online_only_message() {
 ///   Phase 5: 验证 B 会话变更事件
 ///   Phase 6: 发送多条消息，验证消息内容在历史中正确
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_msg_edit_notification() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -2605,6 +2620,7 @@ async fn test_msg_edit_notification() {
 ///   Phase 7: 混合类型并发：同时发送文本、自定义、位置消息
 ///   Phase 8: 最终状态验证
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_concurrent_send_stress() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -2869,6 +2885,7 @@ async fn test_concurrent_send_stress() {
 ///   Phase 4: B 查询历史消息，验证 content_type=104（语音）
 ///   Phase 5: 验证 B 实时接收新的语音消息
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_send_sound_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -2956,6 +2973,7 @@ async fn test_send_sound_message_flow() {
 ///   Phase 4: B 查询历史消息，验证 content_type=103（视频）
 ///   Phase 5: 验证 B 实时接收新的视频消息
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_send_video_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -3046,6 +3064,7 @@ async fn test_send_video_message_flow() {
 ///   Phase 4: 验证双方历史消息内容已更新
 ///   Phase 5: 编辑不存在的消息 → 应返回错误
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_edit_message_real() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -3161,6 +3180,7 @@ async fn test_edit_message_real() {
 /// 注意：cleanup_sending_messages 是在登录时自动调用的，
 ///       此测试验证手动调用不会导致异常。
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_cleanup_sending_messages() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -3213,6 +3233,7 @@ async fn test_cleanup_sending_messages() {
 ///   Phase 4: B 查询历史 → 验证消息已清空
 ///   Phase 5: A 再发一条消息 → B 重新登录验证新消息同步
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_delete_all_msg_local_and_svr() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -3325,6 +3346,7 @@ async fn test_delete_all_msg_local_and_svr() {
 ///   Phase 4: B 查询本地历史 → 验证测试消息不可见
 ///   Phase 5: A 再发一条消息 → B 验证新消息可接收
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_delete_all_msg_local_only() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 

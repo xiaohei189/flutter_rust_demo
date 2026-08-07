@@ -18,6 +18,7 @@ fn make_conversation_id(uid1: &str, uid2: &str) -> String {
 /// 场景：A 发消息给 B，B 查询会话列表
 /// 验证：B 的会话列表包含与 A 的会话，字段正确
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_list_sync() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -69,6 +70,7 @@ async fn test_conversation_list_sync() {
 /// 场景：B 获取单个会话信息
 /// 验证：get_conversation 返回正确会话
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_get_single_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -123,6 +125,7 @@ async fn test_get_single_conversation() {
 /// 场景：A 发 3 条消息给 B，B 验证未读数递增
 /// 验证：未读数与消息数一致
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_unread_count() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -179,6 +182,7 @@ async fn test_conversation_unread_count() {
 /// 1. 正常路径：消息在本地 → 标记已读 → 验证未读清零 + ConversationChanged 事件
 /// 2. Fallback 路径：重新登录，消息表为空 → 同步会话 → 标记已读 → 验证使用会话表 maxSeq
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_mark_read() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -303,6 +307,7 @@ async fn test_conversation_mark_read() {
 /// 场景：B 给与 A 的会话设置置顶，验证置顶列表
 /// 验证：get_pinned_conversations 包含该会话
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_pinned() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -360,6 +365,7 @@ async fn test_conversation_pinned() {
 /// 场景：B 设置会话免打扰
 /// 验证：set_conversation_private 成功
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_private() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -410,6 +416,7 @@ async fn test_conversation_private() {
 /// 场景：B 给会话设置草稿，验证草稿内容，然后清除
 /// 验证：草稿设置/清除操作成功
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_draft() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -480,6 +487,7 @@ async fn test_conversation_draft() {
 /// 场景：B 删除与 A 的会话，验证会话不再可见
 /// 验证：delete_conversation 成功后 get_conversation 返回 None
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_delete() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -534,6 +542,7 @@ async fn test_conversation_delete() {
 /// 场景：使用 set_conversation 通用 API 设置多种属性
 /// 验证：各属性均正确更新
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_set_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -604,6 +613,7 @@ async fn test_set_conversation() {
 /// 场景：验证 get_conversation_id_by_session_type 对不同会话类型的 ID 生成
 /// 验证：单聊 si_、群聊 g_、超级群聊 sg_、通知 sn_ 前缀
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_get_conversation_id_by_session_type() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -640,6 +650,7 @@ async fn test_get_conversation_id_by_session_type() {
 /// 场景：完整的会话生命周期 - A 发消息 → B 接收 → B 置顶 → B 设置草稿 → B 标记已读 → B 删除
 /// 验证：每个步骤都正确执行
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_lifecycle() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -718,6 +729,7 @@ async fn test_conversation_lifecycle() {
 /// 场景：设置未读数 → 登出 → 重新登录 → 验证未读数保持
 /// 验证：未读数在重新登录后持久化
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_unread_count_persistence() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -789,6 +801,7 @@ async fn test_unread_count_persistence() {
 /// 场景：A 发消息给 B，B 接收后标记已读，验证完整的消息流转
 /// 验证：未读数递增→清零的完整流程
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_unread_count_after_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -863,6 +876,7 @@ async fn test_unread_count_after_message() {
 /// 场景：手动设置未读数并验证
 /// 验证：update_conversation_unread_count 正确更新
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_update_conversation_unread_count() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -923,6 +937,7 @@ async fn test_update_conversation_unread_count() {
 ///   Phase 6: 验证排序 — 置顶优先，然后按时间降序
 ///   Phase 7: B 置顶第 3 个会话，重新查询 offset=0, count=3 → 验证置顶的排在前面
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_list_split() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1034,6 +1049,7 @@ async fn test_conversation_list_split() {
 ///            → 验证返回 2 条（不存在的被忽略）
 ///   Phase 4: 查询空列表 → 验证返回空
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_multiple_conversations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1116,6 +1132,7 @@ async fn test_multiple_conversations() {
 ///   Phase 4: B 用不存在的关键词搜索 → 验证返回空
 ///   Phase 5: 空关键词搜索 → 验证返回错误
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_search_conversations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1198,6 +1215,7 @@ async fn test_search_conversations() {
 ///   Phase 6: B 直接 get_conversation → 验证会话仍在 DB 中（只是被隐藏）
 ///   Phase 7: A 再发一条消息 → B 重新同步 → 验证会话重新出现
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_hide_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1304,6 +1322,7 @@ async fn test_hide_conversation() {
 ///   Phase 5: B 验证所有属性持久化
 ///   Phase 6: 恢复设置
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_conversation_full_persistence() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -1402,6 +1421,7 @@ async fn test_conversation_full_persistence() {
 ///   Phase 2: B 用多个 tokio::spawn 并发设置不同属性
 ///   Phase 3: 等待全部完成，验证所有属性正确
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_concurrent_conversation_ops() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 

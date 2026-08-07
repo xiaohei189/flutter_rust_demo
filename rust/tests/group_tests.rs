@@ -6,6 +6,7 @@ use rust_lib_flutter_rust_demo::constant::enums::GroupType;
 use std::time::Duration;
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_create_group() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -27,6 +28,7 @@ async fn test_create_group() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_join_and_quit_group() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -64,6 +66,7 @@ async fn test_join_and_quit_group() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_member_management() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -138,6 +141,7 @@ async fn test_group_member_management() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_info_update() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -167,6 +171,7 @@ async fn test_group_info_update() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_list_sync() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -182,6 +187,7 @@ async fn test_group_list_sync() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_user_state_group_management() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -205,6 +211,7 @@ async fn test_user_state_group_management() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_application_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -267,6 +274,7 @@ async fn test_group_application_flow() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_dismiss_and_transfer() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -330,6 +338,7 @@ async fn test_group_dismiss_and_transfer() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_group_mute_operations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 

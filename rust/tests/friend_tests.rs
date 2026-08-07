@@ -5,6 +5,7 @@ use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_add_friend() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -63,6 +64,7 @@ async fn test_add_friend() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_delete_friend() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -108,6 +110,7 @@ async fn test_delete_friend() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_blacklist_management() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -159,6 +162,7 @@ async fn test_blacklist_management() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_friend_list_sync() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -209,6 +213,7 @@ async fn test_friend_list_sync() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_user_state_friend_management() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
@@ -248,6 +253,7 @@ async fn test_user_state_friend_management() {
 }
 
 #[tokio::test]
+#[ignore = "requires docker OpenIM server"]
 async fn test_friend_application_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 

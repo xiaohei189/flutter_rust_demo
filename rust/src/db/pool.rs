@@ -1,5 +1,5 @@
 use crate::error::{Result, SdkError};
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool, SqlitePoolOptions, SqliteSynchronous};
 use sqlx::ConnectOptions;
 use std::str::FromStr;
 use std::time::Duration;
@@ -8,6 +8,9 @@ pub async fn create_pool(db_url: &str) -> Result<SqlitePool> {
     let options = SqliteConnectOptions::from_str(db_url)
         .map_err(|e| SdkError::database(format!("invalid db_url: {}", e)))?
         .create_if_missing(true)
+        .journal_mode(SqliteJournalMode::Wal)
+        .synchronous(SqliteSynchronous::Normal)
+        .busy_timeout(Duration::from_secs(5))
         .log_statements(tracing::log::LevelFilter::Info)
         .log_slow_statements(tracing::log::LevelFilter::Info, Duration::from_millis(100));
 
