@@ -6,9 +6,18 @@
 | --- | --- | --- | --- |
 | 单元测试 | `cargo test --lib` | 约 3s | 无 |
 | 离线集成（wiremock） | `cargo test --test hermetic_tests` | 约 1s | 无 |
+| 真实服务端契约冒烟 | `cargo test --test contract_tests -- --ignored --test-threads=1` | 约 30s | Docker OpenIM |
 | 真实服务端集成 | `cargo test --test <suite> -- --ignored --test-threads=1` | 分钟级 | Docker OpenIM |
 
 真实服务端套件默认被 `#[ignore]` 标记，普通 `cargo test` 只跑快速层，避免开发/CI 被慢测试拖住。
+
+> mock 层不承担契约证明：它只验证 SDK 拿到“已知响应”后的处理逻辑。mock fixture 是否正确，必须以真实服务端响应为准；契约一致性由下面的真实服务端层负责。
+
+保证 mock 准确的方式：
+
+1. 以真实服务端响应为唯一事实来源，`contract_tests` 负责持续校验。
+2. 建议把真实响应保存为 JSON fixtures，mock 层直接回放这些 fixtures，而不是手工拼响应。
+3. 服务端升级或协议变更后，先跑 `scripts/test-contract.ps1`，再根据真实响应更新 fixtures。
 
 ## 快速入口
 
@@ -26,6 +35,12 @@ powershell -ExecutionPolicy Bypass -File scripts/test-integration.ps1
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/test-integration.ps1 -Suite message_tests
+```
+
+只跑真实服务端契约冒烟（各域代表性 client API）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test-contract.ps1
 ```
 
 固定账号的套件必须串行，否则同账号并发会互相踢下线；`message_tests` 使用随机账号，但并行时离线同步偶发失败，因此脚本统一使用 `--test-threads=1`。
