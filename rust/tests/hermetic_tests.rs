@@ -171,3 +171,107 @@ async fn group_full_sync_works_without_live_server() {
     assert_eq!(stored.len(), 1);
     assert_eq!(stored[0].group_id, "g1");
 }
+
+#[tokio::test]
+async fn conversation_incremental_sync_stores_insert_and_version() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/conversation/get_incremental_conversations"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "errCode": 0,
+            "errMsg": "",
+            "data": {
+                "version": 1,
+                "versionID": "v1",
+                "full": false,
+                "delete": [],
+                "insert": [{
+                    "ownerUserID": "me",
+                    "conversationID": "si_inc",
+                    "conversationType": 1,
+                    "recvMsgOpt": 0,
+                    "userID": "user_b",
+                    "groupID": "",
+                    "isPinned": false,
+                    "isPrivateChat": false,
+                    "groupAtType": 0,
+                    "ex": "",
+                    "attachedInfo": "",
+                    "burnDuration": 0,
+                    "minSeq": 0,
+                    "maxSeq": 0,
+                    "msgDestructTime": 0,
+                    "isMsgDestruct": false
+                }],
+                "update": []
+            }
+        })))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let syncer = ConversationSyncer::new(http, repos.clone(), UserId::new("me"), EventHub::new());
+
+    let convs = syncer.sync_incremental().await.unwrap();
+    assert_eq!(convs.len(), 1);
+    assert_eq!(convs[0].conversation_id, "si_inc");
+
+    let stored = repos.conversation_repo.get_all().await.unwrap();
+    assert_eq!(stored.len(), 1);
+    assert_eq!(stored[0].conversation_id, "si_inc");
+
+    let version = repos.sync_version_repo.get_version_sync("local_conversations", "me").await.unwrap();
+    assert_eq!(version, Some(("v1".to_string(), 1)));
+}
+
+#[tokio::test]
+async fn group_incremental_sync_stores_insert_and_version() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/group/get_incremental_join_groups"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "errCode": 0,
+            "errMsg": "",
+            "data": {
+                "version": 1,
+                "versionID": "v1",
+                "full": false,
+                "delete": [],
+                "insert": [{
+                    "groupID": "g_inc",
+                    "groupName": "Incremental Group",
+                    "notification": "",
+                    "introduction": "",
+                    "faceURL": "",
+                    "ownerUserID": "me",
+                    "createTime": 1,
+                    "memberCount": 1,
+                    "status": 0,
+                    "creatorUserID": "me",
+                    "groupType": 2,
+                    "ex": ""
+                }],
+                "update": [],
+                "sortVersion": 0
+            }
+        })))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let api: Arc<dyn GroupServerApi> = Arc::new(HttpGroupApi::new(http));
+    let group_service = GroupService::new(api, repos.clone(), UserId::new("me"), EventHub::new());
+
+    group_service.sync_groups_incremental().await.unwrap();
+
+    let stored = repos.group_repo.get_all_groups().await.unwrap();
+    assert_eq!(stored.len(), 1);
+    assert_eq!(stored[0].group_id, "g_inc");
+
+    let version = repos.sync_version_repo.get_version_sync("local_groups", "me").await.unwrap();
+    assert_eq!(version, Some(("v1".to_string(), 1)));
+}
