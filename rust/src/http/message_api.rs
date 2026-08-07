@@ -77,11 +77,13 @@ mod tests {
     }
 
     fn ok_response() -> ResponseTemplate {
-        ResponseTemplate::new(200).set_body_json(serde_json::json!({"errCode": 0, "errMsg": "", "data": null}))
+        ResponseTemplate::new(200)
+            .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/api_ok.json")).unwrap())
     }
 
     fn err_response() -> ResponseTemplate {
-        ResponseTemplate::new(200).set_body_json(serde_json::json!({"errCode": 1001, "errMsg": "message not found", "data": null}))
+        ResponseTemplate::new(200)
+            .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/api_error.json")).unwrap())
     }
 
     #[tokio::test]
@@ -156,11 +158,10 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/msg/get_server_time"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "errCode": 0,
-                "errMsg": "",
-                "data": {"serverTime": 1234567890}
-            })))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/server_time.json")).unwrap()),
+            )
             .mount(&server)
             .await;
         let api = make_api(&server);
