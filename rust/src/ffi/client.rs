@@ -4,7 +4,9 @@ pub use crate::ffi::global::{get_login_user_id, get_sdk_version, network_status_
 
 use crate::client::config::ClientConfig;
 use crate::client::core::OpenIMClient;
-use crate::client::{ConnectionApi, SdkApi};
+use crate::client::{ConnectionApi, MessageApi, SdkApi, UserApi};
+use crate::event::events::message::MessageEvent;
+use crate::event::events::user::UserEvent;
 use crate::ffi::global::set_client;
 use crate::frb_generated::StreamSink;
 use anyhow::Result;
@@ -99,6 +101,28 @@ impl OpenIMBridgeClient {
     #[flutter_rust_bridge::frb]
     pub async fn group_stream(&self, sink: StreamSink<crate::event::events::group::GroupEvent>) -> Result<()> {
         let mut rx = self.inner.take_group_rx()?;
+        tokio::spawn(async move {
+            while let Some(e) = rx.recv().await {
+                let _ = sink.add(e);
+            }
+        });
+        Ok(())
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn message_stream(&self, sink: StreamSink<MessageEvent>) -> Result<()> {
+        let mut rx = MessageApi::take_message_rx(&*self.inner)?;
+        tokio::spawn(async move {
+            while let Some(e) = rx.recv().await {
+                let _ = sink.add(e);
+            }
+        });
+        Ok(())
+    }
+
+    #[flutter_rust_bridge::frb]
+    pub async fn user_stream(&self, sink: StreamSink<UserEvent>) -> Result<()> {
+        let mut rx = UserApi::take_user_rx(&*self.inner)?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
                 let _ = sink.add(e);

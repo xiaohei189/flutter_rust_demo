@@ -2,13 +2,15 @@ import 'dart:async';
 
 import 'package:path_provider/path_provider.dart';
 
-import '../src/rust/api/client.dart';
-import '../src/rust/api/ffi_init.dart';
+import '../src/rust/ffi/client.dart';
+import '../src/rust/ffi/ffi_init.dart';
 import '../src/rust/event/events/connection.dart';
 import '../src/rust/event/events/conversation.dart';
 import '../src/rust/event/events/friend.dart';
 import '../src/rust/event/events/group.dart';
-import '../src/rust/sdk/config.dart';
+import '../src/rust/event/events/message.dart';
+import '../src/rust/event/events/user.dart';
+import '../src/rust/client/config.dart';
 import '../utils/app_logger.dart';
 
 /// IM 客户端管理 - 负责 OpenImBridgeClient 的创建和管理
@@ -116,4 +118,6 @@ class ImClient {
   Stream<ConversationEvent> get conversationStream => _client!.conversationStream();
   Stream<FriendEvent> get friendStream => _client!.friendStream();
   Stream<GroupEvent> get groupStream => _client!.groupStream();
+  Stream<MessageEvent> get messageStream => _client!.messageStream();
+  Stream<UserEvent> get userStream => _client!.userStream();
 }

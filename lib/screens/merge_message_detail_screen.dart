@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../models/message_ext.dart';
-import '../src/rust/domain/model/message.dart' show MessageInfo;
+import '../src/rust/model/message.dart' show MessageInfo;
 import '../theme/app_theme.dart';
 
 /// 合并转发消息详情页
@@ -91,7 +91,7 @@ class MergeMessageDetailScreen extends StatelessWidget {
         children: [
           Text(
             '${sub.senderNickname}：',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppTheme.otherMessageTextColor,
@@ -100,7 +100,7 @@ class MergeMessageDetailScreen extends StatelessWidget {
           Expanded(
             child: Text(
               sub.content,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondaryColor,
               ),

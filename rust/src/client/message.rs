@@ -82,6 +82,7 @@ pub trait MessageApi: Send + Sync {
     async fn delete_all_msg_from_local_and_svr(&self) -> std::result::Result<(), SdkError>;
     async fn delete_all_msg_from_local(&self) -> std::result::Result<(), SdkError>;
     async fn get_total_unread_msg_count(&self) -> std::result::Result<i64, SdkError>;
+    async fn get_server_time(&self) -> std::result::Result<i64, SdkError>;
     async fn set_message_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> std::result::Result<(), SdkError>;
     async fn cleanup_sending_messages(&self);
     async fn send_advanced_quote_message(
@@ -98,6 +99,7 @@ pub trait MessageApi: Send + Sync {
     async fn get_message_by_client_msg_id(&self, client_msg_id: &str) -> std::result::Result<Option<LocalChatLog>, SdkError>;
     /// 插入群聊消息到本地存储
     async fn insert_group_message_to_local_storage(&self, group_id: &str, content: &str, content_type: i32, send_id: &str) -> std::result::Result<LocalChatLog, SdkError>;
+    async fn insert_single_message_to_local_storage(&self, recv_id: &str, content: &str, content_type: i32, send_id: &str) -> std::result::Result<LocalChatLog, SdkError>;
     /// 上传文件，返回 URL
     async fn upload_file(&self, file_path: &str, file_name: &str) -> std::result::Result<String, SdkError>;
     /// 上传文件并回调进度，返回 URL
@@ -301,7 +303,7 @@ impl MessageApi for OpenIMClient {
 
     #[tracing::instrument(skip_all, fields(conversation_id = %req.conversation_id, keyword = %req.keyword))]
     async fn search_local_messages(&self, req: SearchMessagesReq) -> std::result::Result<Vec<LocalChatLog>, SdkError> {
-        self.message_service.search_local_messages(req.conversation_id, req.keyword, 100).await
+        self.message_service.search_local_messages(req).await
     }
 
     /// 发送正在输入通知（对齐 Go SDK `TypingStatusUpdate` / `ChangeInputStates`）
@@ -374,6 +376,10 @@ impl MessageApi for OpenIMClient {
         self.message_service.get_total_unread_msg_count().await
     }
 
+    async fn get_server_time(&self) -> std::result::Result<i64, SdkError> {
+        self.message_service.get_server_time().await
+    }
+
     /// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
     async fn set_message_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> std::result::Result<(), SdkError> {
         self.message_service.set_message_local_ex(conversation_id, client_msg_id, local_ex).await
@@ -421,6 +427,10 @@ impl MessageApi for OpenIMClient {
 
     async fn insert_group_message_to_local_storage(&self, group_id: &str, content: &str, content_type: i32, send_id: &str) -> std::result::Result<LocalChatLog, SdkError> {
         self.message_service.insert_group_message_to_local_storage(group_id, content, content_type, send_id).await
+    }
+
+    async fn insert_single_message_to_local_storage(&self, recv_id: &str, content: &str, content_type: i32, send_id: &str) -> std::result::Result<LocalChatLog, SdkError> {
+        self.message_service.insert_single_message_to_local_storage(recv_id, content, content_type, send_id).await
     }
 
     async fn upload_file(&self, file_path: &str, file_name: &str) -> std::result::Result<String, SdkError> {

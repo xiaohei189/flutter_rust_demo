@@ -72,13 +72,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Center(
+        child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.chat_bubble_outline, size: 80, color: AppTheme.primaryColor),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16),
+              Text(
                 'Flutter 聊天',
                 style: TextStyle(
                   fontSize: 22,
@@ -86,8 +86,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   color: AppTheme.textPrimaryColor,
                 ),
               ),
-              const SizedBox(height: 32),
-              const CircularProgressIndicator(color: AppTheme.primaryColor),
+              SizedBox(height: 32),
+              CircularProgressIndicator(color: AppTheme.primaryColor),
             ],
           ),
         ),

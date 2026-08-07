@@ -146,10 +146,11 @@ final result = await client.getAdvancedHistoryMessageList(req);
 
 ## 待完善功能
 
-1. **消息连续性检查**：Go SDK 有 `validateAndFillInternalGaps` 等检查，Rust 版本暂时未实现（可选）
-2. **消息元素解析**：`local_chat_log_to_msg_struct` 中的元素解析需要根据 `content_type` 完整实现
+1. **消息连续性检查**：✅ 已实现（`message/receive/checker.rs`，含内部/跨块/末尾连续性）
+2. **消息元素解析**：✅ 已实现（`MsgStruct::populate_elem_by_content_type` 覆盖 14 类元素）
 3. **ViewType 处理**：Go SDK 使用 ViewType 管理不同的消息视图，Rust 版本暂时只传递参数
-
+4. **服务端时间**：✅ 已改为请求 `/msg/get_server_time`
+5. **消息编辑接收端**：官方 Go SDK 为空实现，待服务端推送协议确认后实现
 
 
 

@@ -539,6 +539,9 @@ impl GroupService {
     ///
     /// 在本地缓存中按 user_id 或 nickname 模糊搜索指定群组的成员。
     pub async fn search_group_members(&self, group_id: &str, keyword: &str) -> Vec<GroupMember> {
+        if !self.has_members(group_id).await {
+            let _ = self.sync_group_members(group_id).await;
+        }
         let kw = keyword.to_lowercase();
         self.members
             .read()
@@ -553,10 +556,17 @@ impl GroupService {
     ///
     /// 返回传入 user_ids 中存在于该群组的用户 ID 列表。
     pub async fn get_users_in_group(&self, group_id: &str, user_ids: Vec<String>) -> Vec<String> {
+        if !self.has_members(group_id).await {
+            let _ = self.sync_group_members(group_id).await;
+        }
         let members = self.members.read().await;
         let member_set: std::collections::HashSet<String> = members.iter().filter(|m| m.group_id == group_id).map(|m| m.user_id.clone()).collect();
 
         user_ids.into_iter().filter(|uid| member_set.contains(uid)).collect()
+    }
+
+    async fn has_members(&self, group_id: &str) -> bool {
+        self.members.read().await.iter().any(|m| m.group_id == group_id)
     }
 
     /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）

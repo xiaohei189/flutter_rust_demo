@@ -33,7 +33,7 @@ class MessageStatusIndicator extends StatelessWidget {
       case MessageSendStatus.sendFailed:
         return GestureDetector(
           onTap: onRetry,
-          child: Icon(
+          child: const Icon(
             Icons.error_outline,
             size: 18,
             color: Colors.red,

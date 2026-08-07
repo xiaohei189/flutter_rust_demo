@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/providers.dart';
 import '../services/friend_service.dart';
-import '../src/rust/domain/constant/enums.dart' show SessionType;
+import '../src/rust/constant/enums.dart' show SessionType;
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 
@@ -60,7 +60,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
 
       if (conv != null) {
         _isMuted = conv.recvMsgOpt == 1;
-        _isPinned = conv.isPinned == 1;
+    _isPinned = conv.isPinned;
       }
 
       // 检查黑名单

@@ -6,10 +6,10 @@ import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../services/services.dart';
-import '../src/rust/api/client.dart' as fb;
-import '../src/rust/api/message_advanced.dart' show clearConversationAndDeleteAllMsg;
-import '../src/rust/domain/model/group.dart' show GroupMember;
-import '../src/rust/domain/model/local.dart' show LocalConversation;
+import '../src/rust/ffi/client.dart' as fb;
+import '../src/rust/ffi/message_advanced.dart' show clearConversationAndDeleteAllMsg;
+import '../src/rust/model/group.dart' show GroupMember;
+import '../src/rust/model/local.dart' show LocalConversation;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 
@@ -90,7 +90,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final conversation = _conversation;
     if (conversation != null) {
       _muteNotification = conversation.recvMsgOpt == 1;
-      _pinChat = conversation.isPinned == 1;
+    _pinChat = conversation.isPinned;
     } else {
       _muteNotification = false;
       _pinChat = false;
@@ -296,10 +296,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                   ClipboardData(text: conversation.conversationId),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('已复制会话 ID'),
+                  const SnackBar(
+                    content: Text('已复制会话 ID'),
                     behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 1),
+                    duration: Duration(seconds: 1),
                   ),
                 );
               },
@@ -606,7 +606,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: AppTheme.primaryColor,
           ),
         ],
       ),

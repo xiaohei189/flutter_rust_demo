@@ -37,6 +37,17 @@ pub trait MessageRepository: Send + Sync {
     async fn mark_as_read_by_client_msg_ids(&self, conversation_id: &str, client_msg_ids: &[String], user_id: &str) -> Result<()>;
     async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64, user_id: &str) -> Result<()>;
     async fn search_by_keyword(&self, conversation_id: &str, keyword: &str, max_count: i64) -> Result<Vec<LocalChatLog>>;
+    async fn search_messages(
+        &self,
+        conversation_id: &str,
+        keyword: &str,
+        sender_user_ids: &[String],
+        message_types: &[i32],
+        start_time: i64,
+        end_time: i64,
+        offset: i64,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>>;
     async fn get_by_conversation_asc(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>>;
     async fn mark_as_deleted(&self, conversation_id: &str, client_msg_id: &str) -> Result<()>;
     async fn delete_all(&self) -> Result<()>;

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../models/user.dart';
 import '../providers/providers.dart';
-import '../src/rust/domain/model/friend.dart';
+import '../src/rust/model/friend.dart';
 import '../widgets/user_avatar.dart';
 
 /// 好友列表页面

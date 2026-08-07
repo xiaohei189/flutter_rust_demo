@@ -182,7 +182,7 @@ class GroupFilterPanel extends StatelessWidget {
                   ),
                 ),
               if (isActive)
-                Icon(
+                const Icon(
                   Icons.check,
                   size: 20,
                   color: AppTheme.primaryColor,

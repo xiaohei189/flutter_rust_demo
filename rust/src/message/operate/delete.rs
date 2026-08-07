@@ -105,6 +105,9 @@ mod tests {
         async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> Result<()> {
             Ok(())
         }
+        async fn get_server_time(&self) -> Result<i64> {
+            Ok(0)
+        }
     }
 
     fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {

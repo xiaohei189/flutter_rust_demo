@@ -24,26 +24,20 @@ pub(crate) fn set_client(client: Arc<dyn SdkApi>) {
 #[flutter_rust_bridge::frb]
 pub async fn set_app_background_status(is_background: bool) -> Result<()> {
     let client = client_holder()?;
-    if is_background {
-        tracing::info!("[Bridge] App 进入后台");
-    } else {
-        tracing::info!("[Bridge] App 进入前台，触发增量同步");
-        if let Err(e) = client.incr_sync_conversations().await {
-            tracing::warn!("[Bridge] 前台会话增量同步失败: {}", e);
-        }
-        if let Err(e) = client.sync_all_conversation_hash_read_seqs().await {
-            tracing::warn!("[Bridge] 前台 Hash Read Seq 同步失败: {}", e);
-        }
-    }
-    Ok(())
+    client
+        .set_app_background_status(is_background)
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 网络状态变化通知（对齐 Go SDK NetworkStatusChanged）
 #[flutter_rust_bridge::frb]
 pub async fn network_status_changed() -> Result<()> {
     let client = client_holder()?;
-    tracing::info!("[Bridge] 网络状态变化，检查连接状态");
-    Ok(())
+    client
+        .network_status_changed()
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 获取当前登录用户 ID（对齐 Go SDK GetLoginUserID）

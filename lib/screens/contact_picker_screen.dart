@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/providers.dart';
-import '../src/rust/domain/model/friend.dart' show FriendInfo;
-import '../src/rust/domain/model/group.dart' show GroupInfo;
+import '../src/rust/model/friend.dart' show FriendInfo;
+import '../src/rust/model/group.dart' show GroupInfo;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';

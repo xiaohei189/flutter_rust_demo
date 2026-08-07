@@ -88,7 +88,6 @@ impl NotificationHandler {
                 self.handle_friend_application_added(&msg.content).await?;
             }
             notification_type::FRIEND_ADDED
-            | notification_type::FRIEND_DELETED
             | notification_type::FRIEND_REMARK_SET
             | notification_type::FRIEND_INFO_UPDATED
             | notification_type::FRIENDS_INFO_UPDATE => {
@@ -96,12 +95,35 @@ impl NotificationHandler {
                     warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
                 }
             }
+            notification_type::FRIEND_DELETED => {
+                let user_id = unmarshal_notification_elem::<UserIdOnlyJson>(&msg.content)
+                    .map(|t| t.user_id)
+                    .unwrap_or_default();
+                if !user_id.is_empty() {
+                    self.friend_listener.emit(FriendEvent::Deleted(user_id));
+                }
+                if let Err(e) = self.friend_manager.sync_friends_incremental().await {
+                    warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
+                }
+            }
             notification_type::BLACK_ADDED => {
+                let user_id = unmarshal_notification_elem::<UserIdOnlyJson>(&msg.content)
+                    .map(|t| t.user_id)
+                    .unwrap_or_default();
+                if !user_id.is_empty() {
+                    self.friend_listener.emit(FriendEvent::BlackAdded(user_id));
+                }
                 if let Err(e) = self.friend_manager.sync_blacks().await {
                     warn!("[NOTIFY] 同步黑名单失败: {}", e);
                 }
             }
             notification_type::BLACK_DELETED => {
+                let user_id = unmarshal_notification_elem::<UserIdOnlyJson>(&msg.content)
+                    .map(|t| t.user_id)
+                    .unwrap_or_default();
+                if !user_id.is_empty() {
+                    self.friend_listener.emit(FriendEvent::BlackDeleted(user_id));
+                }
                 if let Err(e) = self.friend_manager.sync_blacks().await {
                     warn!("[NOTIFY] 同步黑名单失败: {}", e);
                 }
@@ -115,12 +137,7 @@ impl NotificationHandler {
             // ========== 群组通知 (1500-1599) ==========
             notification_type::GROUP_CREATED
             | notification_type::GROUP_INFO_SET
-            | notification_type::MEMBER_QUIT
             | notification_type::GROUP_OWNER_TRANSFERRED
-            | notification_type::MEMBER_KICKED
-            | notification_type::MEMBER_INVITED
-            | notification_type::MEMBER_ENTER
-            | notification_type::GROUP_DISMISSED
             | notification_type::GROUP_MEMBER_MUTED
             | notification_type::GROUP_MEMBER_CANCEL_MUTED
             | notification_type::GROUP_MUTED
@@ -130,9 +147,16 @@ impl NotificationHandler {
             | notification_type::GROUP_MEMBER_SET_TO_ORDINARY_USER
             | notification_type::GROUP_INFO_SET_ANNOUNCEMENT
             | notification_type::GROUP_INFO_SET_NAME => {
-                if let Err(e) = self.group_manager.sync_groups_incremental().await {
-                    warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
-                }
+                self.handle_group_info_changed(msg).await;
+            }
+            notification_type::MEMBER_QUIT | notification_type::MEMBER_KICKED => {
+                self.handle_group_member_deleted(msg).await;
+            }
+            notification_type::MEMBER_INVITED | notification_type::MEMBER_ENTER => {
+                self.handle_group_member_added(msg).await;
+            }
+            notification_type::GROUP_DISMISSED => {
+                self.handle_group_dismissed(msg).await;
             }
             notification_type::JOIN_GROUP_APPLICATION => {
                 self.handle_group_application_added(&msg.content).await?;
@@ -357,6 +381,60 @@ impl NotificationHandler {
 
         Ok(())
     }
+
+    async fn handle_group_info_changed(&self, msg: &MsgData) {
+        let group_id = self.parse_group_id(&msg.content);
+        if let Err(e) = self.group_manager.sync_groups_incremental().await {
+            warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
+        }
+        if !group_id.is_empty() {
+            if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
+                if let Some(group) = groups.into_iter().next() {
+                    self.group_listener.emit(GroupEvent::GroupInfoChanged(group));
+                }
+            }
+        }
+    }
+
+    async fn handle_group_member_added(&self, msg: &MsgData) {
+        let group_id = self.parse_group_id(&msg.content);
+        if let Err(e) = self.group_manager.sync_groups_incremental().await {
+            warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
+        }
+        if !group_id.is_empty() {
+            self.group_listener.emit(GroupEvent::MemberAdded(group_id));
+        }
+    }
+
+    async fn handle_group_member_deleted(&self, msg: &MsgData) {
+        let group_id = self.parse_group_id(&msg.content);
+        if let Err(e) = self.group_manager.sync_groups_incremental().await {
+            warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
+        }
+        if !group_id.is_empty() {
+            self.group_listener.emit(GroupEvent::MemberDeleted(group_id));
+        }
+    }
+
+    async fn handle_group_dismissed(&self, msg: &MsgData) {
+        let group_id = self.parse_group_id(&msg.content);
+        if let Err(e) = self.group_manager.sync_groups_incremental().await {
+            warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
+        }
+        if !group_id.is_empty() {
+            if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
+                if let Some(group) = groups.into_iter().next() {
+                    self.group_listener.emit(GroupEvent::JoinedGroupDeleted(group));
+                }
+            }
+        }
+    }
+
+    fn parse_group_id(&self, content: &[u8]) -> String {
+        unmarshal_notification_elem::<GroupChangeInfoJson>(content)
+            .map(|t| t.effective_group_id())
+            .unwrap_or_default()
+    }
 }
 
 #[cfg(test)]
@@ -460,6 +538,48 @@ mod tests {
         let handler = NotificationHandler::new(friend_service, group_service, user_service, syncer, processor, hub.clone(), hub.clone(), hub.clone(), user_id);
 
         handler.handle_notifications(&[]).await;
+    }
+
+    #[tokio::test]
+    async fn test_notification_friend_deleted_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut rx = hub.take_friend_rx().unwrap();
+        let handler = make_handler_with_hub(pool, &hub);
+
+        let msg = MsgData {
+            content_type: crate::constant::notification_type::FRIEND_DELETED,
+            content: br#"{"detail":"{\"userID\":\"user_2\"}"}"#.to_vec(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        let event = rx.try_recv().expect("应发布好友删除事件");
+        match event {
+            FriendEvent::Deleted(user_id) => assert_eq!(user_id, "user_2"),
+            other => panic!("期望 Deleted，实际 {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_notification_group_member_added_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut rx = hub.take_group_rx().unwrap();
+        let handler = make_handler_with_hub(pool, &hub);
+
+        let msg = MsgData {
+            content_type: crate::constant::notification_type::MEMBER_INVITED,
+            content: br#"{"detail":"{\"groupID\":\"group_1\"}"}"#.to_vec(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        let event = rx.try_recv().expect("应发布群成员加入事件");
+        match event {
+            GroupEvent::MemberAdded(group_id) => assert_eq!(group_id, "group_1"),
+            other => panic!("期望 MemberAdded，实际 {:?}", other),
+        }
     }
 
     // ========================================================================

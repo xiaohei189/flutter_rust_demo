@@ -56,14 +56,34 @@ class GetHistoryMessagesResult {
 class SearchMessagesReq {
   final String conversationId;
   final String keyword;
+  final List<String> senderUserIds;
+  final Int32List messageTypes;
+  final PlatformInt64 startTime;
+  final PlatformInt64 endTime;
+  final PlatformInt64 offset;
+  final PlatformInt64 count;
 
   const SearchMessagesReq({
     required this.conversationId,
     required this.keyword,
+    required this.senderUserIds,
+    required this.messageTypes,
+    required this.startTime,
+    required this.endTime,
+    required this.offset,
+    required this.count,
   });
 
   @override
-  int get hashCode => conversationId.hashCode ^ keyword.hashCode;
+  int get hashCode =>
+      conversationId.hashCode ^
+      keyword.hashCode ^
+      senderUserIds.hashCode ^
+      messageTypes.hashCode ^
+      startTime.hashCode ^
+      endTime.hashCode ^
+      offset.hashCode ^
+      count.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -71,5 +91,11 @@ class SearchMessagesReq {
       other is SearchMessagesReq &&
           runtimeType == other.runtimeType &&
           conversationId == other.conversationId &&
-          keyword == other.keyword;
+          keyword == other.keyword &&
+          senderUserIds == other.senderUserIds &&
+          messageTypes == other.messageTypes &&
+          startTime == other.startTime &&
+          endTime == other.endTime &&
+          offset == other.offset &&
+          count == other.count;
 }

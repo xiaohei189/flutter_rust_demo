@@ -1,7 +1,7 @@
 # OpenIM Rust SDK — 统一技术文档与进度追踪
 
 > 权威参考：Go SDK (`openim-sdk-core`)  |  协议来源：`openim-protocol` crate
-> 最后更新：2026-06-04（消息接口补齐 10 个）
+> 最后更新：2026-08-07（桥接/事件流/在线状态/搜索/CI 补齐）
 
 ---
 
@@ -39,7 +39,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 ┌───────────────────────────────────────────────────────┐
 │  Flutter/Dart UI (Riverpod + GoRouter)                │
 ├───────────────────────────────────────────────────────┤
-│  FFI Bridge (api/)                                    │
+│  FFI Bridge (ffi/)                                    │
 │  OpenIMBridgeClient — 统一 FFI 入口，116 个 #[frb] 方法 │
 ├───────────────────────────────────────────────────────┤
 │  SDK Facade (sdk/client/)                             │
@@ -212,7 +212,7 @@ OpenIM Rust SDK 是**客户端 IM 核心引擎**，通过 `flutter_rust_bridge` 
 | 用户信息缓存 | `full_sync.go` | `manager.rs` | ✅ |
 | 用户通知处理 | `notification.go` | `notification/handler.rs` | ✅ |
 | 全局消息接收设置 | `api.go` | `manager.rs` + FFI | ✅ |
-| **用户状态订阅/取消** | `api.go` | Manager 有，FFI 未暴露 | ⚠️ |
+| **用户状态订阅/取消** | `api.go` | Core + FFI + WS 实时推送 | ✅ |
 
 ### 4.8 在线状态 `core/online/` — 95%
 
@@ -417,8 +417,8 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 |------|------|--------|--------|
 | Go SDK 公开 API | 114 | ~100 | **88%** |
 | Core Manager 方法 | 64 | ~58 | **91%** |
-| FFI Bridge 函数 | ~108 | 108 | **100%** |
-| 事件发布 | 40+ 种定义 | ~35 种实际发布 | **88%** |
+| FFI Bridge 函数 | ~112 | 112 | **100%** |
+| 事件发布 | 40+ 种定义 | ~40 种实际发布 | **95%** |
 | 测试覆盖 | 30 个文件有 `#[cfg(test)]` | 覆盖 Core/Domain/Infra 各层 | — |
 
 ---
@@ -495,7 +495,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 | 问题 | 位置 | 说明 |
 |------|------|------|
 | syncer 方法重复 | `core/message/syncer.rs` | `batch_pull_messages` / `pull_and_handle_messages` / `sync_incremental_messages` 各有 reinstall 变体，应合并 |
-| builder.rs 空文件 | `sdk/builder.rs` | 未实现 Builder 模式 |
+| 消息编辑接收端 | `message/receive/` | 官方 Go SDK 为空实现，待服务端推送协议确认后实现 |
 | infra/file/uploader.rs 空文件 | `infra/file/uploader.rs` | 实际上传在 core/file/ |
 
 ### 8.2 缺失的数据库表
@@ -590,7 +590,7 @@ doMsgNew → 去重(clientMsgID) → 入库 → 更新会话 → 未读计数 �
 
 <div align="center">
 
-**文档版本：v1.0 | 合并自 22 个分散文档 | 2026-06-04**
+**文档版本：v1.1 | 合并自 22 个分散文档 | 2026-08-07**
 
 </div>
 

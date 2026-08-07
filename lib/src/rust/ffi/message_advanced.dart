@@ -203,6 +203,44 @@ Future<LocalChatLog> insertGroupMessageToLocalStorage({
       sendId: sendId,
     );
 
+/// 插入单聊消息到本地存储（对齐 Go SDK `InsertSingleMessageToLocalStorage`）
+Future<LocalChatLog> insertSingleMessageToLocalStorage({
+  required String recvId,
+  required String content,
+  required int contentType,
+  required String sendId,
+}) => RustLib.instance.api
+    .crateFfiMessageAdvancedInsertSingleMessageToLocalStorage(
+      recvId: recvId,
+      content: content,
+      contentType: contentType,
+      sendId: sendId,
+    );
+
+/// 发送仅在线消息（对齐 Go SDK `SendMessage` isOnlineOnly=true）
+Future<MsgStruct> sendMessageOnlineOnly({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendMessageOnlineOnly(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
+
+/// 通用消息发送（对齐 Go SDK `SendMessage`，支持离线推送参数）
+Future<MsgStruct> sendMessage({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+  OfflinePushInfo? offlinePushInfo,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendMessage(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+  offlinePushInfo: offlinePushInfo,
+);
+
 /// Typing 响应结果
 class SendTypingResp {
   final String serverMsgId;

@@ -67,6 +67,13 @@ pub struct MarkAllConversationAsReadReq {
     pub has_read_seqs: Vec<i64>,
 }
 
+/// 服务端时间响应（对齐 `/msg/get_server_time`）
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct GetServerTimeResp {
+    #[serde(rename = "serverTime")]
+    pub server_time: i64,
+}
+
 /// 消息服务端 API 接口
 ///
 /// 定义 MessageService 需要的所有远程操作。
@@ -84,6 +91,7 @@ pub trait MessageServerApi: Send + Sync {
 
     /// 通知服务端按 seq 列表标记消息已读
     async fn mark_messages_as_read_on_server(&self, req: &MarkMessagesAsReadReq) -> Result<()>;
+    async fn get_server_time(&self) -> Result<i64>;
 }
 #[cfg(test)]
 mod tests {

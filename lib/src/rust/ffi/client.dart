@@ -11,6 +11,7 @@ import '../event/events/conversation.dart';
 import '../event/events/friend.dart';
 import '../event/events/group.dart';
 import '../event/events/message.dart';
+import '../event/events/user.dart';
 import '../frb_generated.dart';
 import '../http/friend.dart';
 import '../http/group.dart';
@@ -183,6 +184,8 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required bool filterBlack,
   });
 
+  Future<List<OnlineStatus>> getSubscribeUsersStatus();
+
   Future<List<OnlineStatus>> getUserStatus({required List<String> userIds});
 
   /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
@@ -226,6 +229,8 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
   });
 
   Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req});
+
+  Stream<MessageEvent> messageStream();
 
   Future<void> muteGroup({required String groupId, required bool isMute});
 
@@ -418,6 +423,10 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     String? ex,
   });
 
+  Future<List<OnlineStatus>> subscribeUsersStatus({
+    required List<String> userIds,
+  });
+
   Future<void> syncFriends();
 
   /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
@@ -430,6 +439,8 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required String groupId,
     required String newOwnerUserId,
   });
+
+  Future<void> unsubscribeUsersStatus({required List<String> userIds});
 
   Future<void> updateConversationUnreadCount({
     required String conversationId,
@@ -452,4 +463,6 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     String? faceUrl,
     String? ex,
   });
+
+  Stream<UserEvent> userStream();
 }

@@ -7,8 +7,8 @@ import '../models/message.dart';
 import '../models/message_ext.dart';
 import '../models/user.dart';
 import '../router/app_router.dart';
-import '../src/rust/domain/model/message.dart' show MessageInfo;
-import '../src/rust/domain/model/user.dart' show UserInfo;
+import '../src/rust/model/message.dart' show MessageInfo;
+import '../src/rust/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
 
@@ -81,7 +81,7 @@ class MessageBubble extends StatelessWidget {
         child: Center(
           child: Text(
             message.displayText,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textSecondaryColor,
               fontSize: 12,
             ),
@@ -743,7 +743,7 @@ class MessageBubble extends StatelessWidget {
       ),
       child: Text(
         message.displayText,
-        style: TextStyle(
+        style: const TextStyle(
           color: AppTheme.textSecondaryColor,
           fontSize: 12,
         ),

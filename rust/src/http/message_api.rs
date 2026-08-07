@@ -4,8 +4,8 @@
 
 use crate::error::Result;
 use crate::http::client::HttpApiClient;
-use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
-use crate::http::routes::{DELETE_MSGS, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
+use crate::http::message::{GetServerTimeResp, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+use crate::http::routes::{DELETE_MSGS, GET_SERVER_TIME, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};
 use async_trait::async_trait;
 use serde::Serialize;
 use std::sync::Arc;
@@ -56,6 +56,11 @@ impl MessageServerApi for HttpMessageApi {
     async fn mark_messages_as_read_on_server(&self, req: &MarkMessagesAsReadReq) -> Result<()> {
         let _: serde_json::Value = self.http_client.post(MARK_MSGS_AS_READ, req).await?;
         Ok(())
+    }
+
+    async fn get_server_time(&self) -> Result<i64> {
+        let resp: GetServerTimeResp = self.http_client.post(GET_SERVER_TIME, &()).await?;
+        Ok(resp.server_time)
     }
 }
 
@@ -144,5 +149,21 @@ mod tests {
             seqs: vec![5, 6],
         };
         assert!(api.mark_messages_as_read_on_server(&req).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_server_time_success() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/msg/get_server_time"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "errCode": 0,
+                "errMsg": "",
+                "data": {"serverTime": 1234567890}
+            })))
+            .mount(&server)
+            .await;
+        let api = make_api(&server);
+        assert_eq!(api.get_server_time().await.unwrap(), 1234567890);
     }
 }

@@ -35,7 +35,9 @@ class AppLogger {
     try {
       final dir = await getTemporaryDirectory();
       _logFile = File('${dir.path}/app.log');
-      await _logFile?.delete(recursive: false).catchError((_) {});
+      try {
+        await _logFile?.delete(recursive: false);
+      } catch (_) {}
       _logSink = _logFile?.openWrite(mode: FileMode.append);
     } catch (_) {}
   }

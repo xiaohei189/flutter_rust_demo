@@ -6,15 +6,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// 生成消息 ID（对齐 Go SDK utils.GetMsgID）
 /// Go: MD5(nanoTime + sendID + random)
 pub fn get_msg_id(send_id: &str) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-    let mut hasher = DefaultHasher::new();
-    now.hash(&mut hasher);
-    send_id.hash(&mut hasher);
-    let hash = hasher.finish();
-    format!("{:x}{:x}", now, hash)
+    let random = crate::util::generate_random_id(8);
+    let input = format!("{}{}{}", now, send_id, random);
+    crate::file::md5::compute_md5_hex(input.as_bytes())
 }
 
 /// 文本消息元素（对齐 Go SDK TextElem）
@@ -646,8 +641,19 @@ impl From<&MsgStruct> for MsgData {
             status: msg.status,
             is_read: msg.is_read,
             options: std::collections::HashMap::new(),
-            offline_push_info: None,
-            at_user_id_list: vec![],
+            offline_push_info: msg.offline_push.as_ref().map(|p| openim_protocol::sdkws::OfflinePushInfo {
+                title: p.title.clone(),
+                desc: p.desc.clone(),
+                ex: p.ex.clone(),
+                i_os_push_sound: p.ios_push_sound.clone(),
+                i_os_badge_count: p.ios_badge_count,
+                signal_info: p.signal_info.clone(),
+            }),
+            at_user_id_list: msg
+                .at_text_elem
+                .as_ref()
+                .map(|e| e.at_user_list.clone())
+                .unwrap_or_default(),
             attached_info: msg.attached_info.clone(),
             ex: msg.ex.clone(),
         }
@@ -677,6 +683,14 @@ impl From<&MsgData> for MsgStruct {
             is_read: data.is_read,
             attached_info: data.attached_info.clone(),
             ex: data.ex.clone(),
+            offline_push: data.offline_push_info.as_ref().map(|p| OfflinePushInfo {
+                title: p.title.clone(),
+                desc: p.desc.clone(),
+                ex: p.ex.clone(),
+                ios_push_sound: p.i_os_push_sound.clone(),
+                ios_badge_count: p.i_os_badge_count,
+                signal_info: p.signal_info.clone(),
+            }),
             ..Default::default()
         };
         msg.populate_elem_by_content_type();
@@ -687,6 +701,36 @@ impl From<&MsgData> for MsgStruct {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_msg_id_is_md5_hex() {
+        let id = get_msg_id("user_1");
+        assert_eq!(id.len(), 32);
+        assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_to_msg_data_maps_at_users_and_offline_push() {
+        let mut msg = MsgStruct::create_at_text_message("hi", vec!["u1".to_string()], vec![], None);
+        msg.offline_push = Some(OfflinePushInfo {
+            title: "title".into(),
+            desc: "desc".into(),
+            ex: "ex".into(),
+            ios_push_sound: "sound".into(),
+            ios_badge_count: true,
+            signal_info: "signal".into(),
+        });
+        let data = MsgData::from(&msg);
+        assert_eq!(data.at_user_id_list, vec!["u1"]);
+        let push = data.offline_push_info.clone().expect("offline push should map");
+        assert_eq!(push.title, "title");
+        assert!(push.i_os_badge_count);
+
+        let restored = MsgStruct::from(&data);
+        let restored_push = restored.offline_push.expect("offline push should roundtrip");
+        assert_eq!(restored_push.title, "title");
+        assert_eq!(restored_push.signal_info, "signal");
+    }
 
     #[test]
     fn test_create_advanced_quote_message_basic() {

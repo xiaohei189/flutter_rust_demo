@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../src/rust/domain/model/user.dart' show UserInfo;
+import '../src/rust/model/user.dart' show UserInfo;
 import '../utils/app_logger.dart';
 import 'message_service_provider.dart';
 
@@ -116,7 +116,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 
             // 重要：如果已经有本地路径了，保留它！
             // 只有本地路径为空，并且服务器 URL 有效时才使用服务器 URL
-            String? localAvatarPath = state.localAvatarPath;
+            final String? localAvatarPath = state.localAvatarPath;
             appLog.i('[UserProfile] 监听器: 保留 localAvatarPath=$localAvatarPath');
 
             state = state.copyWith(

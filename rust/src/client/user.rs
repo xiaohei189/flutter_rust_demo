@@ -15,6 +15,7 @@ pub trait UserApi: Send + Sync {
     async fn get_user_status(&self, user_ids: &[String]) -> Result<Vec<OnlineStatus>>;
     async fn subscribe_users_status(&self, user_ids: Vec<String>) -> Result<Vec<OnlineStatus>>;
     async fn unsubscribe_users_status(&self, user_ids: Vec<String>) -> Result<()>;
+    async fn get_subscribe_users_status(&self) -> Result<Vec<OnlineStatus>>;
     async fn get_users_info(&self, user_ids: &[String]) -> Result<Vec<UserInfo>>;
     async fn get_self_user_info(&self) -> Result<UserInfo>;
     async fn update_user_profile(&self, nickname: Option<&str>, face_url: Option<&str>, ex: Option<&str>) -> Result<()>;
@@ -61,6 +62,10 @@ impl UserApi for OpenIMClient {
 
     async fn unsubscribe_users_status(&self, user_ids: Vec<String>) -> Result<()> {
         self.online_status.unsubscribe_users_status(user_ids).await
+    }
+
+    async fn get_subscribe_users_status(&self) -> Result<Vec<OnlineStatus>> {
+        self.online_status.get_subscribe_users_status().await
     }
 
     /// 获取用户事件接收器（只能调用一次，重复调用返回错误）

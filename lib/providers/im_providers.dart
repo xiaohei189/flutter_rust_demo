@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/services.dart';
-import '../src/rust/domain/model/user.dart' show UserInfo;
 import 'message_service_provider.dart';
 
 // ==================== ImClient Provider ====================

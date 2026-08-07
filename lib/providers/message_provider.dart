@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../src/rust/domain/model/message.dart' show MessageInfo;
+import '../src/rust/model/message.dart' show MessageInfo;
 import '../services/message_service_notifier.dart';
-import '../src/rust/domain/constant/enums.dart';
-import '../src/rust/domain/model/msg_struct.dart' show MsgStruct;
+import '../src/rust/constant/enums.dart';
+import '../src/rust/model/msg_struct.dart' show MsgStruct;
 import 'message_service_provider.dart';
 
 /// 消息列表状态

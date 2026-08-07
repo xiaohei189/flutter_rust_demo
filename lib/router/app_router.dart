@@ -19,7 +19,7 @@ import '../screens/add_contact_screen.dart';
 import '../screens/contact_picker_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
-import '../src/rust/domain/model/local.dart' show LocalConversation;
+import '../src/rust/model/local.dart' show LocalConversation;
 
 /// 应用路由配置
 class AppRouter {

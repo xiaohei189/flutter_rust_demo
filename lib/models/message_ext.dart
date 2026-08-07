@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../src/rust/domain/model/message.dart' show MessageInfo, ReceivedMessage;
+import '../src/rust/model/message.dart' show MessageInfo;
 import 'message.dart' show MessageType, MessageSendStatus, messageTypeFromContentType;
 
 /// 给 Rust 生成的 MessageInfo 添加 UI 便利方法
@@ -27,7 +27,7 @@ extension MessageInfoExt on MessageInfo {
       MessageType.markdown => json['content'] as String? ?? '',
       MessageType.quote => json['text'] as String? ?? '',
       MessageType.at => json['text'] as String? ?? '',
-      MessageType.merge => '[聊天记录] ${mergeMessageCount}条消息',
+      MessageType.merge => '[聊天记录] $mergeMessageCount条消息',
       MessageType.system => _systemDisplayText(json),
       _ => content,
     };

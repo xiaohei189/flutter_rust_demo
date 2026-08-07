@@ -6,9 +6,9 @@ import 'package:intl/intl.dart';
 
 import '../models/user.dart';
 import '../router/app_router.dart';
-import '../src/rust/domain/model/user.dart' show UserInfo;
+import '../src/rust/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
-import '../src/rust/domain/model/local.dart' show LocalConversation;
+import '../src/rust/model/local.dart' show LocalConversation;
 import 'user_avatar.dart';
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
@@ -306,7 +306,7 @@ class ChatListItem extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     final user = _getUser();
     final unread = conversation.unreadCount;
-    final isPinned = conversation.isPinned == 1;
+    final isPinned = conversation.isPinned;
 
     return Material(
       color: isPinned
@@ -375,7 +375,7 @@ class ChatListItem extends StatelessWidget {
                               ),
                             ),
                             if (_isGroup)
-                              _TagLabel(text: '群聊', color: const Color(0xFF4CAF50)),
+                              const _TagLabel(text: '群聊', color: Color(0xFF4CAF50)),
                             if (_isMuted)
                               Padding(
                                 padding: const EdgeInsets.only(left: 4),
@@ -424,9 +424,9 @@ class ChatListItem extends StatelessWidget {
               ),
             ),
             // 底部分割线（缩进到头像之后）
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: const Color(0xFFF0F0F0)),
+            const Padding(
+              padding: EdgeInsets.only(left: 68),
+              child: Divider(height: 1, color: Color(0xFFF0F0F0)),
             ),
           ],
         ),
@@ -443,7 +443,7 @@ class ChatListItem extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.push_pin_outlined),
-              title: Text(conversation.isPinned == 1 ? '取消置顶' : '置顶'),
+        title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
               onTap: () {
                 AppRouter.goBack(ctx);
                 onPinToggle?.call();

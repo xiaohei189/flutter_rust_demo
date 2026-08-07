@@ -350,6 +350,12 @@ async fn test_message_flow() {
         .search_local_messages(SearchMessagesReq {
             conversation_id: conv_id.clone(),
             keyword: "UNIQUE_FLOW_42".to_string(),
+            sender_user_ids: vec![],
+            message_types: vec![],
+            start_time: 0,
+            end_time: 0,
+            offset: 0,
+            count: 100,
         })
         .await;
     assert!(search_result.is_ok(), "搜索失败: {:?}", search_result.err());
@@ -2048,6 +2054,12 @@ async fn test_message_local_ex() {
         .search_local_messages(SearchMessagesReq {
             conversation_id: conv_id.clone(),
             keyword: String::new(),
+            sender_user_ids: vec![],
+            message_types: vec![],
+            start_time: 0,
+            end_time: 0,
+            offset: 0,
+            count: 100,
         })
         .await
         .unwrap();
@@ -2073,6 +2085,12 @@ async fn test_message_local_ex() {
         .search_local_messages(SearchMessagesReq {
             conversation_id: conv_id.clone(),
             keyword: String::new(),
+            sender_user_ids: vec![],
+            message_types: vec![],
+            start_time: 0,
+            end_time: 0,
+            offset: 0,
+            count: 100,
         })
         .await
         .unwrap();
@@ -2466,6 +2484,12 @@ async fn test_msg_edit_notification() {
         .search_local_messages(SearchMessagesReq {
             conversation_id: conv_id.clone(),
             keyword: "原始消息内容_v1".to_string(),
+            sender_user_ids: vec![],
+            message_types: vec![],
+            start_time: 0,
+            end_time: 0,
+            offset: 0,
+            count: 100,
         })
         .await
         .unwrap();

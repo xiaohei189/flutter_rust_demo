@@ -77,6 +77,11 @@ impl EventHub {
     pub fn take_message_rx(&self) -> Option<UnboundedReceiver<MessageEvent>> {
         self.message_rx.lock().ok()?.take()
     }
+
+    /// 获取用户事件发送端，供 WS 推送等非 Listener 路径写入。
+    pub(crate) fn user_tx(&self) -> UnboundedSender<UserEvent> {
+        self.user_tx.clone()
+    }
 }
 
 impl ConnectionListener for EventHub {

@@ -52,8 +52,10 @@ pub struct OpenIMClient {
 }
 
 use crate::client::config::ClientConfig;
+use crate::constant::ws_push_identifier;
 use crate::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
+use openim_protocol::sdkws::{SetAppBackgroundStatusReq, SetAppBackgroundStatusResp};
 use prost::Message as ProstMessage;
 use tracing::{debug, info, warn, Instrument};
 
@@ -233,6 +235,45 @@ impl ConnectionApi for OpenIMClient {
 
     async fn is_connected(&self) -> bool {
         self.connection.is_connected().await
+    }
+
+    async fn set_app_background_status(&self, is_background: bool) -> Result<()> {
+        let req = SetAppBackgroundStatusReq {
+            user_id: self.context.get_user_id(),
+            is_background,
+        };
+        let _: SetAppBackgroundStatusResp = self
+            .connection
+            .send_rpc(ws_push_identifier::SET_BACKGROUND_STATUS, &req)
+            .await?;
+
+        if !is_background {
+            info!("[SDK] App 回到前台，触发会话/消息同步");
+            if let Err(e) = self.conversation_syncer.sync_incremental().await {
+                warn!("[SDK] 前台会话增量同步失败: {}", e);
+            }
+            if let Err(e) = self.message_syncer.sync_after_reconnect().await {
+                warn!("[SDK] 前台消息同步失败: {}", e);
+            }
+            self.message_processor.publish_total_unread_count_changed().await;
+        }
+        Ok(())
+    }
+
+    async fn network_status_changed(&self) -> Result<()> {
+        if self.connection.is_connected().await {
+            info!("[SDK] 网络状态变化，触发增量同步");
+            if let Err(e) = self.conversation_syncer.sync_incremental().await {
+                warn!("[SDK] 网络变化会话同步失败: {}", e);
+            }
+            if let Err(e) = self.message_syncer.sync_after_reconnect().await {
+                warn!("[SDK] 网络变化消息同步失败: {}", e);
+            }
+            self.message_processor.publish_total_unread_count_changed().await;
+        } else {
+            info!("[SDK] 网络状态变化，当前未连接，等待重连循环处理");
+        }
+        Ok(())
     }
 }
 

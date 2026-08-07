@@ -12,6 +12,7 @@ use crate::connection::ws::GzipCompressor;
 use crate::connection::ws::OpenIMResp;
 use crate::error::{Result, SdkError};
 use crate::event::events::connection::{ConnectionEvent, ConnectionListener, ConnectionListenerExt};
+use crate::event::events::user::UserEvent;
 use futures_util::stream::SplitSink;
 use futures_util::SinkExt;
 use openim_protocol::sdkws::PushMessages;
@@ -57,6 +58,7 @@ pub struct ConnectionManager {
     pub(crate) compressor: GzipCompressor,
     pub(crate) message_batcher: MessageBatcher,
     pub(crate) push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>>>>,
+    pub(crate) user_push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<UserEvent>>>>,
     pub(crate) listener: Arc<dyn ConnectionListener>,
     pub(crate) on_connected_hook: Arc<std::sync::Mutex<Option<Box<dyn Fn() + Send + Sync>>>>,
 }
@@ -95,6 +97,7 @@ impl ConnectionManager {
             compressor,
             message_batcher,
             push_tx,
+            user_push_tx: Arc::new(std::sync::Mutex::new(None)),
             listener,
             on_connected_hook: Arc::new(std::sync::Mutex::new(None)),
         }
@@ -102,6 +105,10 @@ impl ConnectionManager {
 
     pub fn set_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>) {
         *self.push_tx.lock().expect("push_tx mutex poisoned") = Some(tx);
+    }
+
+    pub fn set_user_push_sender(&self, tx: tokio::sync::mpsc::UnboundedSender<UserEvent>) {
+        *self.user_push_tx.lock().expect("user_push_tx mutex poisoned") = Some(tx);
     }
 
     #[tracing::instrument(level = "info", skip(self), fields(user_id = %user_id, platform_id = platform_id))]
@@ -226,8 +233,9 @@ impl ConnectionManager {
             reconnect_attempts: self.reconnect_attempts.clone(),
             is_manual_disconnect: self.is_manual_disconnect.clone(),
             compressor: GzipCompressor::new(),
-            message_batcher: MessageBatcher::new(|_, _| {}),
+            message_batcher: self.message_batcher.clone(),
             push_tx: self.push_tx.clone(),
+            user_push_tx: self.user_push_tx.clone(),
             listener: self.listener.clone(),
             on_connected_hook: self.on_connected_hook.clone(),
         }
@@ -351,4 +359,45 @@ async fn test_clone_shallow_copies_all_fields() {
     assert!(Arc::ptr_eq(&original.on_connected_hook, &cloned.on_connected_hook));
     assert!(original.connection_token.try_read().unwrap().is_none());
     assert!(cloned.connection_token.try_read().unwrap().is_none());
+}
+
+#[tokio::test]
+async fn test_clone_shallow_preserves_message_batcher_handler() {
+    let cancel_token = CancellationToken::new();
+    let mut original = ConnectionManager::new(cancel_token, crate::event::test_util::noop_connection_listener());
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<usize>(1);
+    original.message_batcher = MessageBatcher::new(move |_operation_ids, batch| {
+        let count = batch.msgs.values().map(|pulls| pulls.msgs.len()).sum::<usize>();
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            let _ = tx.send(count).await;
+        });
+    });
+
+    let cloned = original.clone_shallow();
+
+    let mut msgs = std::collections::HashMap::new();
+    msgs.insert(
+        "conv_1".to_string(),
+        openim_protocol::sdkws::PullMsgs {
+            msgs: vec![openim_protocol::sdkws::MsgData::default()],
+            ..Default::default()
+        },
+    );
+    cloned
+        .message_batcher
+        .enqueue(
+            "op_1".to_string(),
+            openim_protocol::sdkws::PushMessages {
+                msgs,
+                notification_msgs: std::collections::HashMap::new(),
+            },
+        )
+        .await;
+
+    let received = tokio::time::timeout(std::time::Duration::from_secs(1), rx.recv())
+        .await
+        .expect("message batcher handler should run after clone_shallow")
+        .expect("handler channel should not close");
+    assert_eq!(received, 1);
 }

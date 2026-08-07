@@ -43,6 +43,7 @@ impl OpenIMClientBuilder {
         let listeners = EventHub::new();
         let context = Arc::new(RuntimeContext::new(self.config.clone(), listeners.clone(), cancel_token.clone()).await?);
         let connection = Arc::new(ConnectionManager::new(cancel_token.clone(), listeners.clone()));
+        connection.set_user_push_sender(listeners.user_tx());
         let user = Arc::new(UserService::new(Arc::new(HttpUserApi::new(context.infra.http_client.clone())), listeners.clone()));
         let friend = Arc::new(FriendService::new(
             Arc::new(HttpFriendApi::new(context.infra.http_client.clone())),

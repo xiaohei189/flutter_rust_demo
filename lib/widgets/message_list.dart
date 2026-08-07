@@ -4,8 +4,8 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import '../models/message_ext.dart';
 import '../models/user.dart';
-import '../src/rust/domain/model/message.dart' show MessageInfo;
-import '../src/rust/domain/model/user.dart' show UserInfo;
+import '../src/rust/model/message.dart' show MessageInfo;
+import '../src/rust/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
 import 'message_bubble.dart';
 import 'message_skeleton.dart';

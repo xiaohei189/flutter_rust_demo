@@ -45,6 +45,7 @@ mod tests {
     use super::*;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::client::SearchMessagesReq;
     use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
     use crate::model::UserId;
@@ -79,6 +80,9 @@ mod tests {
         async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::error::Result<()> {
             Ok(())
         }
+        async fn get_server_time(&self) -> crate::error::Result<i64> {
+            Ok(0)
+        }
     }
 
     pub(crate) struct FailMockApi;
@@ -95,6 +99,9 @@ mod tests {
             Err(crate::error::SdkError::api(1001, "server error"))
         }
         async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::error::Result<()> {
+            Err(crate::error::SdkError::api(1001, "server error"))
+        }
+        async fn get_server_time(&self) -> crate::error::Result<i64> {
             Err(crate::error::SdkError::api(1001, "server error"))
         }
     }
@@ -185,8 +192,53 @@ mod tests {
             .batch_insert(&[make_local_msg("conv_s", "msg_1", 1, "user_2"), make_local_msg("conv_s", "msg_2", 2, "user_2")])
             .await
             .unwrap();
-        let results = service.search_local_messages("conv_s".to_string(), "hello".to_string(), 10).await.unwrap();
+        let results = service
+            .search_local_messages(SearchMessagesReq {
+                conversation_id: "conv_s".to_string(),
+                keyword: "hello".to_string(),
+                sender_user_ids: vec![],
+                message_types: vec![],
+                start_time: 0,
+                end_time: 0,
+                offset: 0,
+                count: 10,
+            })
+            .await
+            .unwrap();
         assert_eq!(results.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_search_local_messages_with_filters() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
+
+        let mut msg1 = make_local_msg("conv_filter", "msg_1", 1, "user_2");
+        msg1.send_time = 1000;
+        msg1.content_type = crate::constant::content_type::TEXT;
+        let mut msg2 = make_local_msg("conv_filter", "msg_2", 2, "user_3");
+        msg2.send_time = 2000;
+        msg2.content_type = crate::constant::content_type::PICTURE;
+        message_dao.batch_insert(&[msg1, msg2]).await.unwrap();
+
+        let results = service
+            .search_local_messages(SearchMessagesReq {
+                conversation_id: "conv_filter".to_string(),
+                keyword: "hello".to_string(),
+                sender_user_ids: vec!["user_3".to_string()],
+                message_types: vec![crate::constant::content_type::PICTURE],
+                start_time: 1500,
+                end_time: 3000,
+                offset: 0,
+                count: 10,
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].client_msg_id, "msg_2");
     }
 
     #[tokio::test]

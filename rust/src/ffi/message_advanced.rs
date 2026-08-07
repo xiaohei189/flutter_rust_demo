@@ -8,7 +8,7 @@ use crate::constant::SessionType;
 use crate::ffi::global::client_holder;
 use crate::http::message::DeleteMessagesReq;
 use crate::model::local::LocalChatLog;
-use crate::model::msg_struct::MsgStruct;
+use crate::model::msg_struct::{MsgStruct, OfflinePushInfo};
 use anyhow::{anyhow, Result};
 
 // ============================================================================
@@ -145,10 +145,8 @@ pub async fn delete_conversation_and_delete_all_msg(conversation_id: String) -> 
 /// 获取服务端时间（对齐 Go SDK `GetServerTime`）
 #[flutter_rust_bridge::frb]
 pub async fn get_server_time() -> Result<i64> {
-    // 简化实现：返回本地当前时间戳（ms）
-    // 完整实现应通过 RPC 获取服务端时间
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
-    Ok(now)
+    let client = client_holder()?;
+    client.get_server_time().await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 获取全局未读消息数（对齐 Go SDK `GetTotalUnreadMsgCount`）
@@ -250,4 +248,45 @@ pub async fn insert_group_message_to_local_storage(group_id: String, content: St
     let client = client_holder()?;
     let local_log = client.insert_group_message_to_local_storage(&group_id, &content, content_type, &send_id).await?;
     Ok(local_log)
+}
+
+/// 插入单聊消息到本地存储（对齐 Go SDK `InsertSingleMessageToLocalStorage`）
+#[flutter_rust_bridge::frb]
+pub async fn insert_single_message_to_local_storage(recv_id: String, content: String, content_type: i32, send_id: String) -> Result<LocalChatLog> {
+    let client = client_holder()?;
+    let local_log = client.insert_single_message_to_local_storage(&recv_id, &content, content_type, &send_id).await?;
+    Ok(local_log)
+}
+
+/// 发送仅在线消息（对齐 Go SDK `SendMessage` isOnlineOnly=true）
+#[flutter_rust_bridge::frb]
+pub async fn send_message_online_only(msg_struct: MsgStruct, source_id: String, session_type: crate::constant::SessionType) -> Result<MsgStruct> {
+    let client = client_holder()?;
+    let mut msg = msg_struct;
+    msg.session_type = session_type.into();
+    let result = client.send_msg_online_only(msg, &source_id).await?;
+    Ok(result)
+}
+
+/// 通用消息发送（对齐 Go SDK `SendMessage`，支持离线推送参数）
+#[flutter_rust_bridge::frb]
+pub async fn send_message(
+    msg_struct: MsgStruct,
+    source_id: String,
+    session_type: crate::constant::SessionType,
+    offline_push_info: Option<OfflinePushInfo>,
+) -> Result<MsgStruct> {
+    let client = client_holder()?;
+    let mut msg = msg_struct;
+    msg.session_type = session_type.into();
+    let push = offline_push_info.map(|p| openim_protocol::sdkws::OfflinePushInfo {
+        title: p.title,
+        desc: p.desc,
+        ex: p.ex,
+        i_os_push_sound: p.ios_push_sound,
+        i_os_badge_count: p.ios_badge_count,
+        signal_info: p.signal_info,
+    });
+    let result = client.send_msg(msg, &source_id, push).await?;
+    Ok(result)
 }

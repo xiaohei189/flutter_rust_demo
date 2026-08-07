@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../screens/friend_setup_screen.dart';
-import '../services/navigation_service.dart';
 import '../services/services.dart';
-import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
-import '../src/rust/domain/model/user.dart' show UserInfo;
 import '../utils/app_logger.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
@@ -311,33 +307,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               ],
             ),
     );
-  }
-
-  String _formatCreateTime(PlatformInt64 createTime) {
-    try {
-      final timestamp = createTime.toInt() ~/ 1000;
-      final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-      return '${date.year}-${_padZero(date.month)}-${_padZero(date.day)} ${_padZero(date.hour)}:${_padZero(date.minute)}';
-    } catch (e) {
-      return '未知';
-    }
-  }
-
-  String _padZero(int value) {
-    return value.toString().padLeft(2, '0');
-  }
-
-  String _formatAppManagerLevel(int level) {
-    switch (level) {
-      case 0:
-        return '普通用户';
-      case 1:
-        return '管理员';
-      case 2:
-        return '超级管理员';
-      default:
-        return '级别 $level';
-    }
   }
 
   String _formatRecvMsgOpt(int opt) {

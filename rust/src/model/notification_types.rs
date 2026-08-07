@@ -146,6 +146,38 @@ pub(crate) struct GroupRequestJson {
     pub(crate) req_msg: String,
 }
 
+/// 仅携带用户 ID 的通知（好友删除/黑名单等）
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct UserIdOnlyJson {
+    #[serde(default, rename = "userID")]
+    pub(crate) user_id: String,
+}
+
+/// 群组变更通知中用于提取 groupID 的宽泛结构
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GroupChangeInfoJson {
+    #[serde(default, rename = "groupID")]
+    pub(crate) group_id: String,
+    #[serde(default)]
+    pub(crate) group: GroupInfoJson,
+    #[serde(default, rename = "groupInfo")]
+    pub(crate) group_info: GroupInfoJson,
+}
+
+impl GroupChangeInfoJson {
+    pub(crate) fn effective_group_id(&self) -> String {
+        if !self.group_id.is_empty() {
+            self.group_id.clone()
+        } else if !self.group.group_id.is_empty() {
+            self.group.group_id.clone()
+        } else {
+            self.group_info.group_id.clone()
+        }
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct JoinGroupApplicationTipsJson {

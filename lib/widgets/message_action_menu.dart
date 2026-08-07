@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rust_demo/models/message_ext.dart';
-import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
 import 'package:flutter_rust_demo/theme/app_theme.dart';
 
 /// 消息操作回调

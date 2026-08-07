@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/models/message.dart';
 import 'package:flutter_rust_demo/models/message_ext.dart';
-import 'package:flutter_rust_demo/src/rust/domain/model/message.dart'
+import 'package:flutter_rust_demo/src/rust/model/message.dart'
     show MessageInfo;
 
 void main() {
@@ -26,8 +26,8 @@ void main() {
     test('106 → location', () {
       expect(messageTypeFromContentType(106), MessageType.location);
     });
-    test('107 → card', () {
-      expect(messageTypeFromContentType(107), MessageType.card);
+    test('107 → merge', () {
+      expect(messageTypeFromContentType(107), MessageType.merge);
     });
     test('108 → card', () {
       expect(messageTypeFromContentType(108), MessageType.card);
@@ -65,7 +65,7 @@ void main() {
   });
 
   group('MessageInfoExt.parsedContent', () {
-    MessageInfo _msg(String content) => MessageInfo(
+    MessageInfo msg0(String content) => MessageInfo(
           clientMsgId: 'id1',
           serverMsgId: 'sid1',
           sendId: 'user1',
@@ -88,22 +88,22 @@ void main() {
         );
 
     test('空 content 返回空 Map', () {
-      expect(_msg('').parsedContent, isEmpty);
+      expect(msg0('').parsedContent, isEmpty);
     });
 
     test('非 JSON content 返回空 Map', () {
-      expect(_msg('plain text').parsedContent, isEmpty);
+      expect(msg0('plain text').parsedContent, isEmpty);
     });
 
     test('有效 JSON 解析', () {
-      final m = _msg(jsonEncode({'content': 'hello', 'msgTips': 'yes'}));
+      final m = msg0(jsonEncode({'content': 'hello', 'msgTips': 'yes'}));
       expect(m.parsedContent['content'], 'hello');
       expect(m.parsedContent['msgTips'], 'yes');
     });
   });
 
   group('MessageInfoExt.displayText', () {
-    MessageInfo _msg(int contentType, String content) => MessageInfo(
+    MessageInfo msg0(int contentType, String content) => MessageInfo(
           clientMsgId: 'id1',
           serverMsgId: 'sid1',
           sendId: 'user1',
@@ -126,39 +126,41 @@ void main() {
         );
 
     test('文本消息取 content.content', () {
-      final m = _msg(101, jsonEncode({'content': '你好'}));
+      final m = msg0(101, jsonEncode({'content': '你好'}));
       expect(m.displayText, '你好');
     });
 
     test('文本消息无 content key 回退到原始 content', () {
-      final m = _msg(101, jsonEncode({'msgTips': 'yes'}));
+      final m = msg0(101, jsonEncode({'msgTips': 'yes'}));
       expect(m.displayText, contains('msgTips'));
     });
 
     test('Markdown 消息取 content.content', () {
-      final m = _msg(118, jsonEncode({'content': '# 标题'}));
+      final m = msg0(118, jsonEncode({'content': '# 标题'}));
       expect(m.displayText, '# 标题');
     });
 
     test('引用消息取 text', () {
-      final m = _msg(114, jsonEncode({'text': '引用内容'}));
+      final m = msg0(114, jsonEncode({'text': '引用内容'}));
       expect(m.displayText, '引用内容');
     });
 
     test('合并转发消息', () {
-      final m = _msg(111, jsonEncode({'messageCount': 5}));
+      final m = msg0(107, jsonEncode({
+        'multiMessage': List.generate(5, (i) => {'text': 'm$i'}),
+      }));
       expect(m.displayText, contains('5条消息'));
     });
 
     test('系统消息返回原始 content', () {
-      final m = _msg(10000, '系统提示');
+      final m = msg0(10000, '系统提示');
       expect(m.displayText, '系统提示');
     });
   });
 
   group('MessageInfoExt.sendDateTime', () {
     test('sendTime 为毫秒时间戳', () {
-      final m = MessageInfo(
+      final m = const MessageInfo(
         clientMsgId: 'id1',
         serverMsgId: 'sid1',
         sendId: 'user1',
@@ -185,7 +187,7 @@ void main() {
     });
 
     test('sendTime 为 0 时使用 createTime', () {
-      final m = MessageInfo(
+      final m = const MessageInfo(
         clientMsgId: 'id1',
         serverMsgId: 'sid1',
         sendId: 'user1',

@@ -8,18 +8,16 @@ import 'package:image_picker/image_picker.dart';
 import '../models/message_ext.dart';
 import '../models/message.dart' show MessageType;
 import '../providers/providers.dart';
-import '../providers/message_service_provider.dart';
 import '../services/message_service_notifier.dart';
-import '../src/rust/api/client.dart' as fb;
-import '../src/rust/api/message_advanced.dart' show sendTyping;
-import '../src/rust/domain/model/message.dart' show MessageInfo;
+import '../src/rust/ffi/message_advanced.dart' show sendTyping;
+import '../src/rust/model/message.dart' show MessageInfo;
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../extensions/conversation_extensions.dart';
 import '../models/user.dart';
-import '../src/rust/domain/constant/enums.dart' show SessionType;
-import '../src/rust/domain/model/local.dart' show LocalConversation;
+import '../src/rust/constant/enums.dart' show SessionType;
+import '../src/rust/model/local.dart' show LocalConversation;
 import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
 import '../widgets/message_list.dart';
 import '../widgets/message_action_menu.dart';
@@ -50,7 +48,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   bool _bodyReady = false;
   DateTime? _lastTypingSent;
   MessageInfo? _quotedMessage;
-  fb.OpenImBridgeClient? _client;
   MessageServiceNotifier? _messageService; // 缓存引用，避免 dispose 时访问 ref
   DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
 
@@ -59,7 +56,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _messageService = ref.read(messageServiceProvider.notifier);
-    _client = _messageService?.client;
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
     // 设置当前选中的会话
@@ -81,7 +77,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     }
 
     // 从缓存的 service 状态中获取会话，避免使用 ref
-    final conv = service.state.conversations
+    final conv = service.currentState.conversations
         .where((c) => c.conversationId == widget.conversationId)
         .firstOrNull;
 
@@ -850,9 +846,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                                     sourceId: sourceId,
                                     sessionType: st,
                                   );
-                                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('已转发给 ${target.name}')),
                                   );
+                                  }
                                 } catch (e) {
                                   appLog.e('转发失败: $e');
                                 }
@@ -890,7 +888,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.reply, size: 16, color: AppTheme.primaryColor),
+                        const Icon(Icons.reply, size: 16, color: AppTheme.primaryColor),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -899,7 +897,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                             children: [
                               Text(
                                 '引用 ${_quotedMessage!.senderNickname}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: AppTheme.primaryColor,

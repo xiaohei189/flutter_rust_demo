@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/providers.dart';
-import '../src/rust/domain/model/group.dart' show GroupInfo;
+import '../src/rust/model/group.dart' show GroupInfo;
 
 /// 我的群组页面
 class GroupListScreen extends ConsumerStatefulWidget {

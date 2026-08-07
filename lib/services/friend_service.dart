@@ -1,9 +1,9 @@
-import 'package:flutter_rust_demo/src/rust/api/client.dart' as fb;
-import 'package:flutter_rust_demo/src/rust/domain/ports/friend.dart'
+import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
+import 'package:flutter_rust_demo/src/rust/http/friend.dart'
     show SearchFriendItem, CheckFriendResult;
-import 'package:flutter_rust_demo/src/rust/domain/model/friend.dart'
+import 'package:flutter_rust_demo/src/rust/model/friend.dart'
     show FriendInfo;
-import 'package:flutter_rust_demo/src/rust/domain/ports/friend.dart'
+import 'package:flutter_rust_demo/src/rust/http/friend.dart'
     show FriendApplyInfo;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/message_service_notifier.dart';
-import '../src/rust/domain/model/local.dart' show LocalConversation;
+import '../src/rust/model/local.dart' show LocalConversation;
 import 'message_service_provider.dart';
 
 /// 会话列表状态
@@ -38,12 +38,12 @@ class ConversationListState {
 
   /// 获取置顶会话列表
   List<LocalConversation> get pinnedConversations {
-    return conversations.where((c) => c.isPinned == 1).toList();
+  return conversations.where((c) => c.isPinned).toList();
   }
 
   /// 获取未置顶会话列表
   List<LocalConversation> get unpinnedConversations {
-    return conversations.where((c) => c.isPinned == 0).toList();
+  return conversations.where((c) => !c.isPinned).toList();
   }
 
   /// 获取未读消息总数

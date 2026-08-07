@@ -16,4 +16,6 @@ pub trait ConnectionApi: Send + Sync {
     fn login_user_id(&self) -> String;
     async fn get_connection_state(&self) -> crate::connection::manager::ConnectionState;
     async fn is_connected(&self) -> bool;
+    async fn set_app_background_status(&self, is_background: bool) -> Result<()>;
+    async fn network_status_changed(&self) -> Result<()>;
 }

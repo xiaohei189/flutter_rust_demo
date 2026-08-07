@@ -9,7 +9,7 @@ use crate::constant::MessageSendStatus;
 use crate::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::model::local::LocalChatLog;
+use crate::model::local::{LocalChatLog, LocalConversation};
 use crate::model::message::MessageInfo;
 use crate::model::msg_struct::{get_msg_id, MsgStruct};
 use openim_protocol::sdkws::MsgData;
@@ -210,6 +210,11 @@ impl MessageService {
         }
     }
 
+    /// 获取服务端时间
+    pub async fn get_server_time(&self) -> Result<i64> {
+        self.api.get_server_time().await
+    }
+
     /// 插入群聊消息到本地存储（对齐 Go SDK `InsertGroupMessageToLocalStorage`）
     pub async fn insert_group_message_to_local_storage(&self, group_id: &str, content: &str, content_type: i32, send_id: &str) -> Result<LocalChatLog> {
         let conversation_id = format!("g_{}", group_id);
@@ -239,6 +244,83 @@ impl MessageService {
             group_id: String::new(),
         };
         self.repositories.message_repo.batch_insert(&[local_log.clone()]).await?;
+
+        // 对齐 Go SDK：更新/创建会话 latest_msg 并发布会话变更
+        if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
+            self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &local_log.content, now).await?;
+        } else {
+            let conv = LocalConversation {
+                conversation_id: conversation_id.clone(),
+                conversation_type: 2,
+                user_id: send_id.to_string(),
+                group_id: group_id.to_string(),
+                show_name: format!("Group_{}", group_id),
+                latest_msg: local_log.content.clone(),
+                latest_msg_send_time: now,
+                ..Default::default()
+            };
+            self.repositories.conversation_repo.upsert(&conv).await?;
+        }
+        if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&conversation_id).await {
+            self.listener.emit(ConversationEvent::Changed(vec![conv]));
+        }
+        Ok(local_log)
+    }
+
+    /// 插入单聊消息到本地存储（对齐 Go SDK `InsertSingleMessageToLocalStorage`）
+    ///
+    /// 会话 ID 使用 `si_{排序后的双用户ID}`，插入本地消息并同步会话 latest_msg。
+    pub async fn insert_single_message_to_local_storage(&self, recv_id: &str, content: &str, content_type: i32, send_id: &str) -> Result<LocalChatLog> {
+        let login_user_id = self.user_id.get().await;
+        // 对方 ID：send_id != loginUserID 时对方是 send_id（插入他人消息），否则是 recv_id
+        let other_id = if send_id != login_user_id { send_id.to_string() } else { recv_id.to_string() };
+        let mut ids = vec![login_user_id, other_id.clone()];
+        ids.sort();
+        let conversation_id = format!("si_{}_{}", ids[0], ids[1]);
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
+        let client_msg_id = get_msg_id(send_id);
+        let local_log = LocalChatLog {
+            conversation_id: conversation_id.clone(),
+            client_msg_id: client_msg_id.clone(),
+            server_msg_id: String::new(),
+            send_id: send_id.to_string(),
+            recv_id: recv_id.to_string(),
+            sender_platform_id: 0,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type,
+            content: content.to_string(),
+            is_read: 1,
+            status: 2,
+            seq: 0,
+            send_time: now,
+            create_time: now,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+        self.repositories.message_repo.batch_insert(&[local_log.clone()]).await?;
+
+        // 对齐 Go SDK：更新/创建会话 latest_msg 并发布会话变更
+        if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
+            self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &local_log.content, now).await?;
+        } else {
+            let conv = LocalConversation {
+                conversation_id: conversation_id.clone(),
+                conversation_type: 1,
+                user_id: other_id,
+                latest_msg: local_log.content.clone(),
+                latest_msg_send_time: now,
+                ..Default::default()
+            };
+            self.repositories.conversation_repo.upsert(&conv).await?;
+        }
+        if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&conversation_id).await {
+            self.listener.emit(ConversationEvent::Changed(vec![conv]));
+        }
         Ok(local_log)
     }
 }
@@ -270,6 +352,9 @@ mod tests {
         }
         async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> Result<()> {
             Ok(())
+        }
+        async fn get_server_time(&self) -> Result<i64> {
+            Ok(1234567890)
         }
     }
 

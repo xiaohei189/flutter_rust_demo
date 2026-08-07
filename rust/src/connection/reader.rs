@@ -5,11 +5,12 @@
 use crate::connection::manager::ConnectionManager;
 use crate::connection::ws::OpenIMResp;
 use crate::constant::{req_identifier_name, ws_push_identifier, ws_req_identifier};
+use crate::event::events::user::UserEvent;
 use crate::event::events::connection::ConnectionListenerExt;
 use crate::logger::decode_operation_id;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
-use openim_protocol::sdkws::PushMessages;
+use openim_protocol::sdkws::{PushMessages, SubUserOnlineStatusTips};
 use opentelemetry::trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, TraceId, TraceState};
 use opentelemetry::Context;
 use prost::Message;
@@ -28,6 +29,7 @@ impl ConnectionManager {
         let writer = self.writer.clone();
         let compressor = self.compressor.clone();
         let message_batcher = self.message_batcher.clone();
+        let user_push_tx = self.user_push_tx.clone();
         let is_manual_disconnect = self.is_manual_disconnect.clone();
         let listener = self.listener.clone();
 
@@ -125,7 +127,17 @@ impl ConnectionManager {
                                                     }
                                                 }
                                                 ws_push_identifier::WS_SUB_USER_ONLINE_STATUS => {
-                                                    warn!("WsSubUserOnlineStatus handler not yet implemented");
+                                                    match parse_online_status_push(&resp.data) {
+                                                        Ok(events) => {
+                                                            let tx = user_push_tx.lock().expect("user_push_tx mutex poisoned");
+                                                            if let Some(tx) = tx.as_ref() {
+                                                                for event in events {
+                                                                    let _ = tx.send(event);
+                                                                }
+                                                            }
+                                                        }
+                                                        Err(e) => error!("decode SubUserOnlineStatusTips failed: {}", e),
+                                                    }
                                                 }
                                                 _ => {
                                                     error!("binary message type not support: req_identifier={}({})",
@@ -175,5 +187,68 @@ impl ConnectionManager {
                 }
             }
         });
+    }
+}
+
+fn parse_online_status_push(data: &[u8]) -> std::result::Result<Vec<UserEvent>, prost::DecodeError> {
+    let tips = SubUserOnlineStatusTips::decode(data)?;
+    Ok(tips
+        .subscribers
+        .into_iter()
+        .map(|elem| {
+            let status = if elem.online_platform_i_ds.is_empty() { 0 } else { 1 };
+            UserEvent::UserStatusChanged {
+                user_id: elem.user_id,
+                status,
+                platform_ids: elem.online_platform_i_ds,
+            }
+        })
+        .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::event::events::user::UserEvent;
+    use openim_protocol::sdkws::{SubUserOnlineStatusElem, SubUserOnlineStatusTips};
+
+    #[test]
+    fn test_parse_online_status_push_empty() {
+        let data = SubUserOnlineStatusTips { subscribers: vec![] }.encode_to_vec();
+        assert!(parse_online_status_push(&data).unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_parse_online_status_push_online_and_offline() {
+        let tips = SubUserOnlineStatusTips {
+            subscribers: vec![
+                SubUserOnlineStatusElem {
+                    user_id: "u1".into(),
+                    online_platform_i_ds: vec![1, 2],
+                },
+                SubUserOnlineStatusElem {
+                    user_id: "u2".into(),
+                    online_platform_i_ds: vec![],
+                },
+            ],
+        };
+        let events = parse_online_status_push(&tips.encode_to_vec()).unwrap();
+        assert_eq!(events.len(), 2);
+        match &events[0] {
+            UserEvent::UserStatusChanged { user_id, status, platform_ids } => {
+                assert_eq!(user_id, "u1");
+                assert_eq!(*status, 1);
+                assert_eq!(platform_ids, &vec![1, 2]);
+            }
+            _ => panic!("expected user status changed"),
+        }
+        match &events[1] {
+            UserEvent::UserStatusChanged { user_id, status, platform_ids } => {
+                assert_eq!(user_id, "u2");
+                assert_eq!(*status, 0);
+                assert!(platform_ids.is_empty());
+            }
+            _ => panic!("expected user status changed"),
+        }
     }
 }

@@ -99,7 +99,7 @@ connection / conversation / friend / group / user / message 通道
   │
   ├─→ api/client.rs：StreamSink → Dart 4 个 stream
   │      connectionStream / conversationStream / friendStream / groupStream
-  │      （message / user 事件暂未开放 Dart stream，为后续预留）
+  │      messageStream / userStream 已开放（2026-08-07 起）
   └─→ 外部 SDK：实现 Listener trait 后经 builder 注入（见第 6 节）
 ```
 
@@ -204,14 +204,16 @@ connection / conversation / friend / group / user / message 通道
 | 回调 | 触发模块 | 触发时机 |
 |------|---------|---------|
 | `on_application_added/approved/rejected` | NotificationHandler | 入群申请通知（1503/1505/1506） |
-| 其余 6 个 | — | 已定义未发布（预留） |
+| `on_joined_group_added/deleted` | NotificationHandler / GroupService | 群创建、退群/解散通知 |
+| `on_group_info_changed` | NotificationHandler | 群信息/群主/禁言等通知同步后 |
+| `on_member_added/deleted` | NotificationHandler | 成员邀请/进入/退出/踢出通知 |
 
 ### 4.5 用户（UserListener）
 
 | 回调 | 触发模块 | 触发时机 |
 |------|---------|---------|
 | `on_user_info_updated` | UserService / NotificationHandler | `update_self_user_info()`、1303 用户信息更新通知 |
-| `on_user_status_changed` | OnlineStatusService | 订阅用户在线状态 |
+| `on_user_status_changed` | OnlineStatusService / ConnectionManager | 订阅用户在线状态、WS 2005 在线状态推送 |
 
 ### 4.6 消息（MessageListener）
 
@@ -232,7 +234,7 @@ connection / conversation / friend / group / user / message 通道
 | 连接 ConnectionListener | 8 | 1（connect_failed） | 0 |
 | 会话 ConversationListener | 9 | 1（new） | 0 |
 | 好友 FriendListener | 7 | 1（info_changed） | 1（application_deleted） |
-| 群组 GroupListener | 3 | 6 | 3（application_deleted/dismissed/member_info_changed） |
+| 群组 GroupListener | 8 | 0 | 1（application_deleted） |
 | 用户 UserListener | 2 | 0 | 0 |
 | 消息 MessageListener | 5 | 1（upload_progress） | 1（online_only） |
 | 其他 | — | — | KV/信令/自定义业务/上传回调 |

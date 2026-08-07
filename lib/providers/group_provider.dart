@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/group_service.dart';
-import '../src/rust/api/client.dart' as fb;
-import '../src/rust/domain/model/group.dart' show GroupInfo, GroupMember;
-import '../src/rust/domain/ports/group.dart' show GroupApplyInfo;
+import '../src/rust/ffi/client.dart' as fb;
+import '../src/rust/model/group.dart' show GroupInfo, GroupMember;
+import '../src/rust/http/group.dart' show GroupApplyInfo;
 import '../utils/app_logger.dart';
 import 'message_service_provider.dart';
 

@@ -1,5 +1,6 @@
 /// 统一导出所有 Providers
 /// 使用方式: import 'package:flutter_rust_demo/providers/providers.dart';
+library;
 
 export 'connection_provider.dart';
 export 'conversation_provider.dart';

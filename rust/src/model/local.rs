@@ -64,8 +64,8 @@ impl LocalChatLog {
             seq: msg.seq,
             send_time: msg.send_time,
             create_time: msg.create_time,
-            attached_info: String::new(),
-            ex: String::new(),
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
             local_ex: String::new(),
             group_id: msg.group_id.clone(),
         }
@@ -249,5 +249,15 @@ mod tests {
         assert_eq!(log.status, msg_status::HAS_DELETED);
         let log = LocalChatLog::from_msg_data("conv", &make_msg(session_type::SINGLE_CHAT, 0));
         assert_eq!(log.status, msg_status::SEND_SUCCESS);
+    }
+
+    #[test]
+    fn from_msg_data_preserves_attached_info_and_ex() {
+        let mut msg = make_msg(session_type::SINGLE_CHAT, 0);
+        msg.attached_info = "attached".into();
+        msg.ex = "ex_value".into();
+        let log = LocalChatLog::from_msg_data("conv", &msg);
+        assert_eq!(log.attached_info, "attached");
+        assert_eq!(log.ex, "ex_value");
     }
 }

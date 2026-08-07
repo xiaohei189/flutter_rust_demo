@@ -1,26 +1,25 @@
 import 'dart:async';
 
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
-import 'package:flutter_rust_demo/models/message_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/api/client.dart' as fb;
-import 'package:flutter_rust_demo/src/rust/api/message.dart' show sendLocationMessage, sendFaceMessage, sendCardMessage, sendQuoteMessage;
-import 'package:flutter_rust_demo/src/rust/api/message_advanced.dart' show forwardMessageByClientId, deleteMessage, markAllConversationMessageAsRead;
-import 'package:flutter_rust_demo/src/rust/domain/ports/message.dart' show RevokeMessageReq;
-import 'package:flutter_rust_demo/src/rust/domain/model/msg_struct.dart' show MsgStruct;
-import 'package:flutter_rust_demo/src/rust/sdk/config.dart';
-import 'package:flutter_rust_demo/src/rust/domain/constant/enums.dart';
-import 'package:flutter_rust_demo/src/rust/domain/sdk_api.dart';
-import 'package:flutter_rust_demo/src/rust/domain/model/user.dart' show UserInfo;
-import 'package:flutter_rust_demo/src/rust/domain/model/local.dart' show LocalConversation;
-import 'package:flutter_rust_demo/src/rust/api/ffi_init.dart' show initLogger;
-import 'package:flutter_rust_demo/src/rust/domain/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
+import 'package:flutter_rust_demo/src/rust/ffi/message_advanced.dart' show forwardMessageByClientId, markAllConversationMessageAsRead;
+import 'package:flutter_rust_demo/src/rust/http/message.dart' show RevokeMessageReq;
+import 'package:flutter_rust_demo/src/rust/model/msg_struct.dart' show MsgStruct;
+import 'package:flutter_rust_demo/src/rust/client/config.dart';
+import 'package:flutter_rust_demo/src/rust/constant/enums.dart';
+import 'package:flutter_rust_demo/src/rust/client.dart';
+import 'package:flutter_rust_demo/src/rust/model/user.dart' show UserInfo;
+import 'package:flutter_rust_demo/src/rust/model/local.dart' show LocalConversation;
+import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart' show initLogger;
+import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
 import 'package:flutter_rust_demo/src/rust/event/events/connection.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/conversation.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/friend.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/group.dart';
+import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
+import 'package:flutter_rust_demo/src/rust/event/events/user.dart';
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
 import 'package:flutter_rust_demo/services/navigation_service.dart';
@@ -80,16 +79,18 @@ class MessageServiceState {
 
 /// MessageService 的 StateNotifier
 class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
-  final Ref _ref;
   fb.OpenImBridgeClient? _client;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
   final Set<String> _seenClientMsgIds = {};
 
-  MessageServiceNotifier(this._ref) : super(const MessageServiceState());
+  MessageServiceNotifier() : super(const MessageServiceState());
 
   /// 获取客户端实例
   fb.OpenImBridgeClient? get client => _client;
+
+  /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
+  MessageServiceState get currentState => state;
 
   /// 将 sendTime 规范化为毫秒（自动检测秒/毫秒）
   static int _normalizeSendTime(int t) {
@@ -101,12 +102,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 获取指定会话的消息列表
   List<MessageInfo> getMessages(String conversationId) {
-    return List.unmodifiable(this.state.messages[conversationId] ?? []);
+    return List.unmodifiable(state.messages[conversationId] ?? []);
   }
 
   /// 将发送结果写入全局消息状态（替代已移除的 messageSent 事件）
   void upsertSentMessage(String conversationId, MsgStruct result) {
-    final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     final idx = list.indexWhere((m) => m.clientMsgId == result.clientMsgId);
     final msgInfo = MessageInfo(
@@ -137,22 +138,22 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       list.add(msgInfo);
     }
     newMessages[conversationId] = List<MessageInfo>.from(list);
-    this.state = this.state.copyWith(messages: newMessages);
+    state = state.copyWith(messages: newMessages);
   }
 
   /// 获取指定用户资料（命中缓存时）
-  UserInfo? getUserProfile(String userId) => this.state.userProfiles[userId];
+  UserInfo? getUserProfile(String userId) => state.userProfiles[userId];
 
   /// 拉取当前登录用户资料（通过批量接口 getUsersInfo，走缓存）并更新内存缓存
   Future<UserInfo?> refreshLoginUserProfile() async {
-    if (_client == null || this.state.currentUserId.isEmpty) return null;
+    if (_client == null || state.currentUserId.isEmpty) return null;
     try {
-      final list = await _client!.getUsersInfo(userIds: [this.state.currentUserId]);
+      final list = await _client!.getUsersInfo(userIds: [state.currentUserId]);
       final profile = list.isNotEmpty ? list.first : null;
       if (profile != null) {
-        final newUserProfiles = Map<String, UserInfo>.from(this.state.userProfiles);
+        final newUserProfiles = Map<String, UserInfo>.from(state.userProfiles);
         newUserProfiles[profile.userId] = profile;
-        this.state = this.state.copyWith(
+        state = state.copyWith(
           loginUserProfile: profile,
           userProfiles: newUserProfiles,
         );
@@ -171,11 +172,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (uniq.isEmpty) return;
     try {
       final list = await _client!.getUsersInfo(userIds: uniq);
-      final newUserProfiles = Map<String, UserInfo>.from(this.state.userProfiles);
+      final newUserProfiles = Map<String, UserInfo>.from(state.userProfiles);
       for (final p in list) {
         newUserProfiles[p.userId] = p;
       }
-      this.state = this.state.copyWith(userProfiles: newUserProfiles);
+      state = state.copyWith(userProfiles: newUserProfiles);
     } catch (e) {
       appLog.w('[MessageService] 批量拉取用户资料失败: $e');
     }
@@ -243,7 +244,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         return false;
       }
 
-      final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+      final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
       final currentMessages = newMessages.putIfAbsent(conversationId, () => []);
 
       // result.messages 已经是 List<MessageInfo>，直接使用
@@ -254,36 +255,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           .where((msg) => seenIds.add(msg.clientMsgId))
           .toList();
 
-      this.state = this.state.copyWith(messages: newMessages);
+      state = state.copyWith(messages: newMessages);
 
       return !result.isEnd;
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
       return false;
-    }
-  }
-
-  /// 标记已读后刷新消息列表（从数据库重新加载，确保 isRead 状态同步）
-  /// 对齐 Go SDK：Go 侧 MarkConversationMessageAsReadDB 更新 DB 后，
-  /// Flutter 侧需重新加载消息以获取最新 is_read 状态
-  Future<void> _refreshMessagesAfterRead(String conversationId) async {
-    if (_client == null) return;
-    try {
-      final result = await _client!.getHistoryMessages(
-        req: GetHistoryMessagesReq(
-          conversationId: conversationId,
-          startClientMsgId: '',
-          count: 20,
-        ),
-      );
-      if (result.messages.isNotEmpty) {
-        final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
-        newMessages[conversationId] = result.messages;
-        this.state = this.state.copyWith(messages: newMessages);
-        appLog.i('[READ] _refreshMessagesAfterRead: conv=$conversationId msgs=${result.messages.length}');
-      }
-    } catch (e) {
-      appLog.e('[READ] _refreshMessagesAfterRead FAILED: $e');
     }
   }
 
@@ -513,17 +490,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     String? userId,
     String? imToken,
   }) async {
-    if (_client != null && this.state.isConnected) {
+    if (_client != null && state.isConnected) {
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
 
-    if (this.state.isInitializing) {
+    if (state.isInitializing) {
       appLog.w('⚠️ 初始化正在进行中，跳过重复调用');
       return;
     }
 
-    this.state = this.state.copyWith(isInitializing: true);
+    state = state.copyWith(isInitializing: true);
     appLog.i('[MessageService] initialize 开始');
     try {
       // 关闭已有客户端（热重启或重复登录场景），避免两个实例同时存在导致被踢
@@ -555,7 +532,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         throw StateError('缺少 userId 或 imToken，请先登录');
       }
 
-      this.state = this.state.copyWith(currentUserId: resolvedUserId);
+      state = state.copyWith(currentUserId: resolvedUserId);
 
       final docDir = await getApplicationDocumentsDirectory();
       final dataDir = '${docDir.path}/openim_data';
@@ -575,9 +552,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       _subscriptions.add(_client!.conversationStream().listen(_onConversationEvent));
       _subscriptions.add(_client!.friendStream().listen(_onFriendEvent));
       _subscriptions.add(_client!.groupStream().listen(_onGroupEvent));
-      appLog.i('[MessageService] 4 模块事件流已注册');
+      _subscriptions.add(_client!.messageStream().listen(_onMessageEvent));
+      _subscriptions.add(_client!.userStream().listen(_onUserEvent));
+      appLog.i('[MessageService] 6 模块事件流已注册');
 
-      this.state = this.state.copyWith(isConnected: true);
+      state = state.copyWith(isConnected: true);
       appLog.i('✅ 客户端连接成功');
 
       // 用户资料后台加载，不阻塞进入主页
@@ -587,71 +566,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       _loadConversations();
     } catch (e) {
       appLog.e('❌ 初始化失败: $e');
-      this.state = this.state.copyWith(isConnected: false);
+      state = state.copyWith(isConnected: false);
       rethrow;
     } finally {
-      this.state = this.state.copyWith(isInitializing: false);
+      state = state.copyWith(isInitializing: false);
     }
-  }
-
-  void _updateConversation(LocalConversation conv) {
-    final newConversations = List<LocalConversation>.from(this.state.conversations);
-    final index = newConversations.indexWhere(
-      (c) => c.conversationId == conv.conversationId,
-    );
-
-    final isUpdate = index >= 0;
-    if (isUpdate) {
-      final existing = newConversations[index];
-      // 保留本地维护的字段（草稿、最新消息），避免 DB 查询与消息更新间的竞态导致被旧值覆盖
-      final draftText = existing.draftText.isNotEmpty ? existing.draftText : conv.draftText;
-      final draftTextTime = draftText.isNotEmpty
-          ? (existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime)
-          : conv.draftTextTime;
-      // 保留较新的 latestMsg（内存中的可能比 DB 查询到的更新）
-      final existingTime = existing.latestMsgSendTime.toInt();
-      final convTime = conv.latestMsgSendTime.toInt();
-      final useExisting = existing.latestMsg.isNotEmpty && existingTime >= convTime;
-      newConversations[index] = LocalConversation(
-        conversationId: conv.conversationId,
-        conversationType: conv.conversationType,
-        userId: conv.userId,
-        groupId: conv.groupId,
-        showName: conv.showName,
-        faceUrl: conv.faceUrl,
-        latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
-        latestMsgSendTime: useExisting ? existing.latestMsgSendTime : conv.latestMsgSendTime,
-        unreadCount: conv.unreadCount,
-        recvMsgOpt: conv.recvMsgOpt,
-        isPinned: conv.isPinned,
-        isPrivateChat: conv.isPrivateChat,
-        burnDuration: conv.burnDuration,
-        groupAtType: conv.groupAtType,
-        isNotInGroup: conv.isNotInGroup,
-        updateUnreadCountTime: conv.updateUnreadCountTime,
-        attachedInfo: conv.attachedInfo,
-        ex: conv.ex,
-        draftText: draftText,
-        draftTextTime: draftTextTime,
-        maxSeq: conv.maxSeq,
-        minSeq: conv.minSeq,
-        isMsgDestruct: conv.isMsgDestruct,
-        msgDestructTime: conv.msgDestructTime,
-      );
-    } else {
-      newConversations.add(conv);
-    }
-
-    newConversations.sort((a, b) {
-      if (a.isPinned != b.isPinned) {
-        return a.isPinned == 1 ? -1 : 1;
-      }
-      final aTime = a.latestMsgSendTime.toInt();
-      final bTime = b.latestMsgSendTime.toInt();
-      return bTime.compareTo(aTime);
-    });
-
-    this.state = this.state.copyWith(conversations: newConversations);
   }
 
   void _onConnectionEvent(ConnectionEvent event) {
@@ -659,12 +578,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     event.maybeWhen(
       connected: () {
         appLog.i('[MsgSvc] connected!');
-        this.state = this.state.copyWith(isConnected: true);
+        state = state.copyWith(isConnected: true);
         _loadConversations();
       },
-      kickedOffline: (_) => this.state = this.state.copyWith(isConnected: false),
+      kickedOffline: (_) => state = state.copyWith(isConnected: false),
       tokenExpired: () {
-        this.state = this.state.copyWith(isConnected: false);
+        state = state.copyWith(isConnected: false);
         LoginStorage.clearCredentials().catchError((_) {});
         NavigationService.instance.goToLogin();
       },
@@ -674,12 +593,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   void _onConversationEvent(ConversationEvent event) {
     event.maybeWhen(
-      syncStarted: () => this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: 0),
-      syncFinished: () { this.state = this.state.copyWith(isSyncingConversations: false, syncProgress: 100); _loadConversations(); },
-      syncProgress: (p, _) => this.state = this.state.copyWith(isSyncingConversations: true, syncProgress: p),
+      syncStarted: () => state = state.copyWith(isSyncingConversations: true, syncProgress: 0),
+      syncFinished: () { state = state.copyWith(isSyncingConversations: false, syncProgress: 100); _loadConversations(); },
+      syncProgress: (p, _) => state = state.copyWith(isSyncingConversations: true, syncProgress: p),
       totalUnreadCountChanged: (c) {
         appLog.i('[MsgSvc] totalUnreadCountChanged: $c');
-        this.state = this.state.copyWith(totalUnreadCount: c);
+        state = state.copyWith(totalUnreadCount: c);
       },
       changed: (_) { appLog.i('[MsgSvc] conversationChanged'); _loadConversations(); },
       new_: (_) { appLog.i('[MsgSvc] newConversation'); _loadConversations(); },
@@ -692,6 +611,25 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   void _onFriendEvent(FriendEvent event) {}
   void _onGroupEvent(GroupEvent event) {}
+
+  void _onMessageEvent(MessageEvent event) {
+    appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
+    _loadConversations();
+  }
+
+  void _onUserEvent(UserEvent event) {
+    event.when(
+      userInfoUpdated: (user) {
+        appLog.i('[MsgSvc] userInfoUpdated: ${user.userId}');
+        if (user.userId == state.currentUserId) {
+          unawaited(refreshLoginUserProfile());
+        }
+      },
+      userStatusChanged: (userId, status, platformIds) {
+        appLog.i('[MsgSvc] userStatusChanged: userId=$userId status=$status platformIds=$platformIds');
+      },
+    );
+  }
 
 
   bool _loadingConversations = false;
@@ -707,7 +645,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
     try {
       final conversations = await _client!.getConversations();
-      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final newConversations = List<LocalConversation>.from(state.conversations);
       final dbIds = conversations.map((c) => c.conversationId).toSet();
       newConversations.removeWhere((c) => !dbIds.contains(c.conversationId));
       // 去重：移除 DB 中重复的同 ID 行（兜底 DB 无 UNIQUE 约束的情况）
@@ -751,12 +689,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         }
       }
       newConversations.sort((a, b) {
-        if (a.isPinned != b.isPinned) return a.isPinned == 1 ? -1 : 1;
+      if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
         final aTime = a.latestMsgSendTime.toInt();
         final bTime = b.latestMsgSendTime.toInt();
         return bTime.compareTo(aTime);
       });
-      this.state = this.state.copyWith(conversations: newConversations);
+      state = state.copyWith(conversations: newConversations);
       final userIds = conversations
           .where((c) => c.userId.isNotEmpty)
           .map((c) => c.userId)
@@ -775,11 +713,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   void removeConversation(String conversationId) {
-    final newConversations = List<LocalConversation>.from(this.state.conversations);
+    final newConversations = List<LocalConversation>.from(state.conversations);
     newConversations.removeWhere((c) => c.conversationId == conversationId);
-    final newMessages = Map<String, List<MessageInfo>>.from(this.state.messages);
+    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
     newMessages.remove(conversationId);
-    this.state = this.state.copyWith(
+    state = state.copyWith(
       conversations: newConversations,
       messages: newMessages,
     );
@@ -790,7 +728,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     _subscriptions.clear();
     await _client?.disconnect();
     _client = null;
-    this.state = const MessageServiceState();
+    state = const MessageServiceState();
   }
 
   /// 标记会话为已读
@@ -798,12 +736,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 从本地状态查找会话类型
-      final conv = this.state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
+      final conv = state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
       final sessionType = conv?.sessionType ?? SessionType.singleChat;
       appLog.i('[READ] Service 标记已读: sessionType=$sessionType');
       await _client!.markConversationMessageAsRead(conversationId: conversationId, sessionType: sessionType);
       // 更新本地会话未读数
-      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final newConversations = List<LocalConversation>.from(state.conversations);
       final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
       if (idx >= 0) {
         final conv = newConversations[idx];
@@ -834,7 +772,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           msgDestructTime: conv.msgDestructTime,
         );
       }
-      this.state = this.state.copyWith(conversations: newConversations);
+      state = state.copyWith(conversations: newConversations);
 
       // 注意：不再调用 _refreshMessagesAfterRead
       // 标记已读后，消息的 isRead 状态会在下次加载消息时从数据库同步
@@ -849,7 +787,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 先同步更新内存状态，确保会话列表立即显示草稿
-      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final newConversations = List<LocalConversation>.from(state.conversations);
       final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
       if (idx >= 0) {
         final conv = newConversations[idx];
@@ -880,7 +818,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           isMsgDestruct: conv.isMsgDestruct,
           msgDestructTime: conv.msgDestructTime,
         );
-        this.state = this.state.copyWith(conversations: newConversations);
+        state = state.copyWith(conversations: newConversations);
       }
       
       // 异步保存到数据库
@@ -895,7 +833,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 先同步更新内存状态
-      final newConversations = List<LocalConversation>.from(this.state.conversations);
+      final newConversations = List<LocalConversation>.from(state.conversations);
       final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
       if (idx >= 0) {
         final conv = newConversations[idx];
@@ -925,7 +863,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           isMsgDestruct: conv.isMsgDestruct,
           msgDestructTime: conv.msgDestructTime,
         );
-        this.state = this.state.copyWith(conversations: newConversations);
+        state = state.copyWith(conversations: newConversations);
       }
       
       // 异步清除数据库中的草稿

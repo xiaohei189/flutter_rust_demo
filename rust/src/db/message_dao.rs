@@ -304,6 +304,62 @@ impl MessageDao {
         Ok(rows)
     }
 
+    /// 组合条件搜索本地消息
+    pub async fn search_messages(
+        &self,
+        conversation_id: &str,
+        keyword: &str,
+        sender_user_ids: &[String],
+        message_types: &[i32],
+        start_time: i64,
+        end_time: i64,
+        offset: i64,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        let mut qb = sqlx::QueryBuilder::<sqlx::Sqlite>::new("SELECT * FROM local_chat_logs WHERE 1=1");
+        qb.push(" AND conversation_id = ").push_bind(conversation_id);
+        if !keyword.is_empty() {
+            qb.push(" AND content LIKE ").push_bind(format!("%{}%", keyword));
+        }
+        if !sender_user_ids.is_empty() {
+            qb.push(" AND send_id IN (");
+            let mut first = true;
+            for user_id in sender_user_ids {
+                if !first {
+                    qb.push(", ");
+                }
+                first = false;
+                qb.push_bind(user_id);
+            }
+            qb.push(")");
+        }
+        if !message_types.is_empty() {
+            qb.push(" AND content_type IN (");
+            let mut first = true;
+            for content_type in message_types {
+                if !first {
+                    qb.push(", ");
+                }
+                first = false;
+                qb.push_bind(content_type);
+            }
+            qb.push(")");
+        }
+        if start_time > 0 {
+            qb.push(" AND send_time >= ").push_bind(start_time);
+        }
+        if end_time > 0 {
+            qb.push(" AND send_time <= ").push_bind(end_time);
+        }
+        qb.push(" ORDER BY send_time DESC LIMIT ").push_bind(count).push(" OFFSET ").push_bind(offset);
+        let rows = qb
+            .build_query_as::<LocalChatLog>()
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("search messages: {}", e)))?;
+        Ok(rows)
+    }
+
     /// 按内容类型搜索消息（用于撤回时查找引用消息）
     pub async fn search_by_content_type(&self, conversation_id: &str, content_type: i32) -> Result<Vec<LocalChatLog>> {
         debug!("[DB] search_by_content_type: conversation_id={}, content_type={}", conversation_id, content_type);
@@ -724,6 +780,20 @@ impl MessageRepository for MessageDao {
     }
     async fn search_by_keyword(&self, conversation_id: &str, keyword: &str, max_count: i64) -> Result<Vec<LocalChatLog>> {
         self.search_by_keyword(conversation_id, keyword, max_count).await
+    }
+    async fn search_messages(
+        &self,
+        conversation_id: &str,
+        keyword: &str,
+        sender_user_ids: &[String],
+        message_types: &[i32],
+        start_time: i64,
+        end_time: i64,
+        offset: i64,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        self.search_messages(conversation_id, keyword, sender_user_ids, message_types, start_time, end_time, offset, count)
+            .await
     }
     async fn get_by_conversation_asc(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
         self.get_by_conversation_asc(conversation_id, start_time, count).await

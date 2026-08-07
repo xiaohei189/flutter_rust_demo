@@ -6,6 +6,9 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<MessageEvent>>
+abstract class MessageEvent implements RustOpaqueInterface {}
+
 /// 群聊已读回执（对齐 Go SDK OnRecvGroupReadReceipt）
 class GroupReadReceipt {
   final String groupId;

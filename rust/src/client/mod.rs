@@ -53,4 +53,10 @@ pub struct GetHistoryMessagesResult {
 pub struct SearchMessagesReq {
     pub conversation_id: String,
     pub keyword: String,
+    pub sender_user_ids: Vec<String>,
+    pub message_types: Vec<i32>,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub offset: i64,
+    pub count: i64,
 }

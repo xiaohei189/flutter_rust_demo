@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../src/rust/event/events/conversation.dart';
-import '../src/rust/domain/model/local.dart' show LocalConversation;
+import '../src/rust/model/local.dart' show LocalConversation;
 import '../utils/app_logger.dart';
 import 'im_client.dart';
 
@@ -194,7 +194,7 @@ class ConversationService {
     _conversations.sort((a, b) {
       // 置顶的排在前面
       if (a.isPinned != b.isPinned) {
-        return a.isPinned == 1 ? -1 : 1;
+      return a.isPinned ? -1 : 1;
       }
       // 按最后消息时间倒序
       final aTime = a.latestMsgSendTime.toInt();
