@@ -45,7 +45,7 @@ mod tests {
     use super::*;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::client::SearchMessagesReq;
+    use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
     use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
     use crate::model::UserId;
@@ -240,6 +240,41 @@ mod tests {
 
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].client_msg_id, "msg_2");
+    }
+
+    #[tokio::test]
+    async fn test_deleted_message_excluded_from_history_and_search() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
+        message_dao.batch_insert(&[make_local_msg("conv_del", "msg_del", 1, "user_2")]).await.unwrap();
+        message_dao.mark_as_deleted("conv_del", "msg_del").await.unwrap();
+
+        let history = service
+            .get_history_messages(&GetHistoryMessagesReq {
+                conversation_id: "conv_del".to_string(),
+                start_client_msg_id: String::new(),
+                count: 10,
+            })
+            .await
+            .unwrap();
+        assert!(history.messages.is_empty());
+
+        let search = service
+            .search_local_messages(SearchMessagesReq {
+                conversation_id: "conv_del".to_string(),
+                keyword: "hello".to_string(),
+                sender_user_ids: vec![],
+                message_types: vec![],
+                start_time: 0,
+                end_time: 0,
+                offset: 0,
+                count: 10,
+            })
+            .await
+            .unwrap();
+        assert!(search.is_empty());
     }
 
     #[tokio::test]
