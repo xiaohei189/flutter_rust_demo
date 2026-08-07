@@ -16,7 +16,7 @@
 保证 mock 准确的方式：
 
 1. 以真实服务端响应为唯一事实来源，`contract_tests` 负责持续校验。
-2. 建议把真实响应保存为 JSON fixtures，mock 层直接回放这些 fixtures，而不是手工拼响应。
+2. 把真实响应保存为 JSON fixtures，mock 层直接回放；`tests/fixtures/` 已有好友列表、会话全量等样例。
 3. 服务端升级或协议变更后，先跑 `scripts/test-contract.ps1`，再根据真实响应更新 fixtures。
 
 ## 快速入口
