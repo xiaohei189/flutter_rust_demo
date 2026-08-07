@@ -50,6 +50,7 @@ mod tests {
     use crate::model::local::{LocalChatLog, LocalConversation};
     use crate::model::UserId;
     use std::sync::Arc;
+    use std::time::Duration;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
         Arc::new(Repositories {
@@ -277,6 +278,40 @@ mod tests {
             .unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_r", "msg_r1").await.unwrap().unwrap();
         assert_eq!(msg.content_type, crate::constant::notification_type::REVOKE);
+    }
+
+    #[tokio::test]
+    async fn test_revoke_waits_for_seq_sync() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
+
+        let dao = message_dao.clone();
+        let task = tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            dao.batch_insert(&[make_local_msg("conv_w", "msg_w", 5, "user_1")]).await.unwrap();
+        });
+
+        let seq = service
+            .wait_for_message_sync_seq_inner("conv_w", "msg_w", 5, Duration::from_millis(10))
+            .await
+            .unwrap();
+        assert_eq!(seq, 5);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_revoke_seq_missing_after_max_attempts() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let service = make_service(repositories);
+
+        let result = service
+            .wait_for_message_sync_seq_inner("conv_missing", "msg_x", 3, Duration::from_millis(1))
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("seq 未同步"));
     }
 
     #[tokio::test]

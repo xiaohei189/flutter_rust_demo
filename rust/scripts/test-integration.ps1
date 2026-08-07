@@ -1,5 +1,7 @@
 param(
-    [string]$Suite = ""
+    [string]$Suite = "",
+    [ValidateSet("Smoke", "Full")]
+    [string]$Mode = "Full"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +19,8 @@ $suites = @(
 
 if ($Suite -ne "") {
     $suites = @($Suite)
+} elseif ($Mode -eq "Smoke") {
+    $suites = @("contract_tests")
 }
 
 foreach ($s in $suites) {

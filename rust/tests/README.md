@@ -31,13 +31,19 @@ powershell -ExecutionPolicy Bypass -File scripts/test-fast.ps1
 powershell -ExecutionPolicy Bypass -File scripts/test-integration.ps1
 ```
 
+只跑快速契约冒烟（约 30s）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/test-integration.ps1 -Mode Smoke
+```
+
 ## 推荐工作流
 
 测试按三层串成流水线，前一层是后一层的数据来源：
 
 1. 契约确认：跑 `scripts/test-contract.ps1`，用真实服务端确认 client API 的请求字段和响应结构；必要时把真实响应保存为 fixtures。
 2. mock 逻辑测试：mock 层基于已确认的 fixtures 验证 SDK 内部业务逻辑，跑 `scripts/test-fast.ps1`。
-3. 完整集成：跑 `scripts/test-integration.ps1`，对 SDK 做真实服务端端到端功能验证。
+3. 完整集成：跑 `scripts/test-integration.ps1`，对 SDK 做真实服务端端到端功能验证；日常只需 `-Mode Smoke`。
 
 契约层只在服务端版本或协议变更时重跑，mock 逻辑测试和完整集成各自按需执行。
 

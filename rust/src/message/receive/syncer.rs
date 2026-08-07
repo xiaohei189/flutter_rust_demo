@@ -17,6 +17,7 @@ use crate::model::UserId;
 use async_trait::async_trait;
 use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
 use std::collections::HashMap;
+use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock, Semaphore};
 use tracing::{debug, error, info, warn};
@@ -29,33 +30,14 @@ use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsRes
 impl SyncServerApi for ConnectionManager {
     async fn fetch_server_max_seqs(&self, user_id: &str) -> Result<HashMap<String, i64>> {
         use openim_protocol::sdkws::{GetMaxSeqReq, GetMaxSeqResp};
-
-        let max_retries = 3u32;
-        let mut retry_interval = std::time::Duration::from_secs(2);
-
-        for retry in 0..max_retries {
-            if retry > 0 {
-                warn!("[MsgSync] getServerMaxSeq 第 {} 次重试，等待 {:?}", retry + 1, retry_interval);
-                tokio::time::sleep(retry_interval).await;
-                retry_interval *= 2;
-            }
-
-            let req = GetMaxSeqReq { user_id: user_id.to_string() };
+        let req = GetMaxSeqReq { user_id: user_id.to_string() };
+        fetch_server_max_seqs_with_retry(3, std::time::Duration::from_secs(2), || async {
             info!("[MsgSync] getServerMaxSeq 请求: user_id={}", req.user_id);
-            match self.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(ws_req_identifier::GET_NEWEST_SEQ, &req).await {
-                Ok(resp) => {
-                    info!("[MsgSync] getServerMaxSeq 成功 (retry={}, count={})", retry, resp.max_seqs.len());
-                    return Ok(resp.max_seqs);
-                }
-                Err(e) => {
-                    warn!("[MsgSync] getServerMaxSeq 失败 (retry={}): {:?}", retry + 1, e);
-                    if retry == max_retries - 1 {
-                        return Err(SdkError::network(format!("getServerMaxSeq {} 次重试均失败: {}", max_retries, e)));
-                    }
-                }
-            }
-        }
-        unreachable!()
+            self.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(ws_req_identifier::GET_NEWEST_SEQ, &req)
+                .await
+                .map(|resp| resp.max_seqs)
+        })
+        .await
     }
 
     async fn pull_messages_by_seqs(&self, req: &PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
@@ -77,6 +59,31 @@ impl SyncServerApi for ConnectionManager {
 /// 这类会话的消息不需要拉取和存储，只需跟踪其 seq 以避免重复同步。
 pub fn is_notification(conversation_id: &str) -> bool {
     conversation_id.starts_with("n_")
+}
+
+async fn fetch_server_max_seqs_with_retry<F, Fut>(max_retries: u32, initial_interval: std::time::Duration, mut fetch: F) -> Result<HashMap<String, i64>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<HashMap<String, i64>>>,
+{
+    let mut retry_interval = initial_interval;
+    for retry in 0..max_retries {
+        if retry > 0 {
+            warn!("[MsgSync] getServerMaxSeq 第 {} 次重试，等待 {:?}", retry + 1, retry_interval);
+            tokio::time::sleep(retry_interval).await;
+            retry_interval *= 2;
+        }
+        match fetch().await {
+            Ok(seqs) => return Ok(seqs),
+            Err(e) => {
+                warn!("[MsgSync] getServerMaxSeq 失败 (retry={}): {:?}", retry + 1, e);
+                if retry == max_retries - 1 {
+                    return Err(SdkError::network(format!("getServerMaxSeq {} 次重试均失败: {}", max_retries, e)));
+                }
+            }
+        }
+    }
+    unreachable!()
 }
 
 /// 同步器配置参数
@@ -869,5 +876,44 @@ mod tests {
         let remote2 = Arc::new(MockSyncerApi::new().with_kicked(true));
         let syncer2 = make_syncer(remote2, repositories, handler);
         assert!(syncer2.is_connection_kicked().await);
+    }
+
+    #[tokio::test]
+    async fn test_fetch_server_max_seqs_retries_then_succeeds() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let calls_clone = calls.clone();
+        let result = fetch_server_max_seqs_with_retry(3, std::time::Duration::from_millis(5), move || {
+            let calls = calls_clone.clone();
+            async move {
+                if calls.fetch_add(1, Ordering::SeqCst) < 2 {
+                    Err(SdkError::network("temporary failure"))
+                } else {
+                    let mut seqs = HashMap::new();
+                    seqs.insert("conv_a".to_string(), 7);
+                    Ok(seqs)
+                }
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert_eq!(result.get("conv_a"), Some(&7));
+    }
+
+    #[tokio::test]
+    async fn test_fetch_server_max_seqs_gives_up_after_max_retries() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let calls_clone = calls.clone();
+        let err = fetch_server_max_seqs_with_retry(3, std::time::Duration::from_millis(1), move || {
+            let calls = calls_clone.clone();
+            async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Err(SdkError::network("always failing"))
+            }
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert!(err.to_string().contains("3 次重试均失败"));
     }
 }

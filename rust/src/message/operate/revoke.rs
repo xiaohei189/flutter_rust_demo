@@ -44,15 +44,27 @@ impl MessageService {
     /// 消息发送后 seq 可能尚未同步到本地，需要等待 sync 完成。
     /// 最多重试 5 次，每次等待 2 秒。
     async fn wait_for_message_sync_seq(&self, conversation_id: &str, client_msg_id: &str) -> Result<i64> {
-        for attempt in 0..5 {
+        self.wait_for_message_sync_seq_inner(conversation_id, client_msg_id, 5, std::time::Duration::from_secs(2))
+            .await
+    }
+
+    /// 可配置重试参数的 seq 等待实现，便于离线测试快速验证重试行为。
+    pub(crate) async fn wait_for_message_sync_seq_inner(
+        &self,
+        conversation_id: &str,
+        client_msg_id: &str,
+        max_attempts: usize,
+        delay: std::time::Duration,
+    ) -> Result<i64> {
+        for attempt in 0..max_attempts {
             if let Ok(Some(msg)) = self.repositories.message_repo.get_by_client_msg_id(conversation_id, client_msg_id).await {
                 if msg.seq > 0 {
                     return Ok(msg.seq);
                 }
             }
-            if attempt < 4 {
+            if attempt + 1 < max_attempts {
                 warn!("消息 seq 尚未同步 (attempt={}), 等待重试: client_msg_id={}", attempt + 1, client_msg_id);
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                tokio::time::sleep(delay).await;
             }
         }
         Err(SdkError::invalid_argument(format!("消息 seq 未同步，无法撤回: client_msg_id={}", client_msg_id)))
