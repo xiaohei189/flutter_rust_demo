@@ -63,7 +63,11 @@ impl OpenIMClientBuilder {
                 .with_server_api(conversation_api)
                 .with_user_id(context.user_id.clone()),
         );
-        let online_status = Arc::new(OnlineStatusService::new(Arc::new(HttpOnlineStatusApi::new(context.infra.http_client.clone())), listeners.clone()));
+        let online_status = Arc::new(OnlineStatusService::new(
+            Arc::new(HttpOnlineStatusApi::new(context.infra.http_client.clone())),
+            context.user_id.clone(),
+            listeners.clone(),
+        ));
         let file_uploader = Arc::new(FileUploader::new(context.infra.http_client.clone()));
         let message_processor = Arc::new(MessageProcessor::new(context.repositories.clone(), context.user_id.clone(), listeners.clone(), listeners.clone()));
         let message_syncer = Arc::new(MessageSyncer::new(

@@ -322,12 +322,18 @@ impl NotificationHandler {
     async fn handle_group_application_added(&self, content: &[u8]) -> anyhow::Result<()> {
         let tips: JoinGroupApplicationTipsJson = unmarshal_notification_elem(content)?;
         let request = &tips.request;
+        let group_id = tips
+            .group
+            .as_ref()
+            .map(|g| g.group_id.clone())
+            .or_else(|| request.group_info.as_ref().map(|g| g.group_id.clone()))
+            .unwrap_or_default();
 
         let application_json = serde_json::json!({
-            "groupId": request.group_info.group_id,
-            "userId": request.user_info.user_id,
-            "nickname": request.user_info.nickname,
-            "faceUrl": request.user_info.face_url,
+            "groupId": group_id,
+            "userId": request.user_info.as_ref().map(|u| u.user_id.clone()).unwrap_or_default(),
+            "nickname": request.user_info.as_ref().map(|u| u.nickname.clone()).unwrap_or_default(),
+            "faceUrl": request.user_info.as_ref().map(|u| u.face_url.clone()).unwrap_or_default(),
             "handleResult": request.handle_result,
             "reason": request.req_msg,
         })
@@ -342,16 +348,22 @@ impl NotificationHandler {
     async fn handle_group_application_accepted(&self, content: &[u8]) -> anyhow::Result<()> {
         let tips: GroupApplicationAcceptedTipsJson = unmarshal_notification_elem(content)?;
         let request = &tips.request;
+        let group_id = tips
+            .group
+            .as_ref()
+            .map(|g| g.group_id.clone())
+            .or_else(|| request.group_info.as_ref().map(|g| g.group_id.clone()))
+            .unwrap_or_default();
 
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 接受群组申请后增量同步群组列表失败: {}", e);
         }
 
         let application_json = serde_json::json!({
-            "groupId": request.group_info.group_id,
-            "userId": request.user_info.user_id,
-            "nickname": request.user_info.nickname,
-            "faceUrl": request.user_info.face_url,
+            "groupId": group_id,
+            "userId": request.user_info.as_ref().map(|u| u.user_id.clone()).unwrap_or_default(),
+            "nickname": request.user_info.as_ref().map(|u| u.nickname.clone()).unwrap_or_default(),
+            "faceUrl": request.user_info.as_ref().map(|u| u.face_url.clone()).unwrap_or_default(),
             "handleResult": request.handle_result,
             "handleMsg": tips.handle_msg,
         })
@@ -366,12 +378,18 @@ impl NotificationHandler {
     async fn handle_group_application_rejected(&self, content: &[u8]) -> anyhow::Result<()> {
         let tips: GroupApplicationRejectedTipsJson = unmarshal_notification_elem(content)?;
         let request = &tips.request;
+        let group_id = tips
+            .group
+            .as_ref()
+            .map(|g| g.group_id.clone())
+            .or_else(|| request.group_info.as_ref().map(|g| g.group_id.clone()))
+            .unwrap_or_default();
 
         let application_json = serde_json::json!({
-            "groupId": request.group_info.group_id,
-            "userId": request.user_info.user_id,
-            "nickname": request.user_info.nickname,
-            "faceUrl": request.user_info.face_url,
+            "groupId": group_id,
+            "userId": request.user_info.as_ref().map(|u| u.user_id.clone()).unwrap_or_default(),
+            "nickname": request.user_info.as_ref().map(|u| u.nickname.clone()).unwrap_or_default(),
+            "faceUrl": request.user_info.as_ref().map(|u| u.face_url.clone()).unwrap_or_default(),
             "handleResult": request.handle_result,
             "handleMsg": tips.handle_msg,
         })

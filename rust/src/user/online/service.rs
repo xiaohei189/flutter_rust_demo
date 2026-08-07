@@ -3,6 +3,7 @@ use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::http::OnlineStatusServerApi;
 
 use crate::http::online::*;
+use crate::model::UserId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -12,19 +13,23 @@ use tracing::info;
 pub mod status {
     pub const OFFLINE: i32 = 0;
     pub const ONLINE: i32 = 1;
+    pub const SUBSCRIBE: i32 = 1;
+    pub const UNSUBSCRIBE: i32 = 2;
 }
 
 pub struct OnlineStatusService {
     api: Arc<dyn OnlineStatusServerApi>,
+    user_id: UserId,
     listener: Arc<dyn UserListener>,
     subscribed_users: Arc<RwLock<HashSet<String>>>,
     status_cache: Arc<RwLock<Vec<OnlineStatus>>>,
 }
 
 impl OnlineStatusService {
-    pub fn new(api: Arc<dyn OnlineStatusServerApi>, listener: Arc<dyn UserListener>) -> Self {
+    pub fn new(api: Arc<dyn OnlineStatusServerApi>, user_id: UserId, listener: Arc<dyn UserListener>) -> Self {
         Self {
             api,
+            user_id,
             listener,
             subscribed_users: Arc::new(RwLock::new(HashSet::new())),
             status_cache: Arc::new(RwLock::new(Vec::new())),
@@ -42,6 +47,7 @@ impl OnlineStatusService {
 
         let statuses: Vec<OnlineStatus> = resp
             .users_status
+            .unwrap_or_default()
             .into_iter()
             .map(|s| OnlineStatus {
                 user_id: s.user_id,
@@ -58,12 +64,17 @@ impl OnlineStatusService {
             return Ok(vec![]);
         }
 
-        let req = SubscribeUsersStatusReq { user_ids: user_ids.clone() };
+        let req = SubscribeUsersStatusReq {
+            user_id: self.user_id.get().await,
+            user_ids: user_ids.clone(),
+            genre: status::SUBSCRIBE,
+        };
 
         let resp = self.api.subscribe_users_status(&req).await?;
 
         let statuses: Vec<OnlineStatus> = resp
             .users_status
+            .unwrap_or_default()
             .into_iter()
             .map(|s| OnlineStatus {
                 user_id: s.user_id,
@@ -98,7 +109,11 @@ impl OnlineStatusService {
             return Ok(());
         }
 
-        let req = UnsubscribeUsersStatusReq { user_ids: user_ids.clone() };
+        let req = UnsubscribeUsersStatusReq {
+            user_id: self.user_id.get().await,
+            user_ids: user_ids.clone(),
+            genre: status::UNSUBSCRIBE,
+        };
 
         self.api.unsubscribe_users_status(&req).await?;
 
@@ -116,10 +131,14 @@ impl OnlineStatusService {
     }
 
     pub async fn get_subscribe_users_status(&self) -> Result<Vec<OnlineStatus>> {
-        let resp = self.api.get_subscribe_users_status().await?;
+        let req = GetSubscribeUsersStatusReq {
+            user_id: self.user_id.get().await,
+        };
+        let resp = self.api.get_subscribe_users_status(&req).await?;
 
         let statuses: Vec<OnlineStatus> = resp
             .users_status
+            .unwrap_or_default()
             .into_iter()
             .map(|s| OnlineStatus {
                 user_id: s.user_id,
@@ -189,10 +208,16 @@ mod tests {
 
     #[test]
     fn test_subscribe_users_status_req_serialization() {
-        let req = SubscribeUsersStatusReq { user_ids: vec!["user_3".to_string()] };
+        let req = SubscribeUsersStatusReq {
+            user_id: "me".to_string(),
+            user_ids: vec!["user_3".to_string()],
+            genre: status::SUBSCRIBE,
+        };
 
         let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userID"));
         assert!(json.contains("userIDs"));
+        assert!(json.contains("\"genre\":1"));
     }
 
     #[test]

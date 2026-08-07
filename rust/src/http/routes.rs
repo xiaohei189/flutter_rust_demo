@@ -6,7 +6,7 @@ pub const GET_USERS_INFO_WITH_TOKEN: &str = "/user/get_users_info_with_token";
 pub const UPDATE_USER_INFO: &str = "/user/update_user_info";
 pub const GET_USER_STATUS: &str = "/user/get_users_status";
 pub const SUBSCRIBE_USERS_STATUS: &str = "/user/subscribe_users_status";
-pub const UNSUBSCRIBE_USERS_STATUS: &str = "/user/unsubscribe_users_status";
+pub const UNSUBSCRIBE_USERS_STATUS: &str = "/user/subscribe_users_status";
 pub const GET_SUBSCRIBE_USERS_STATUS: &str = "/user/get_subscribe_users_status";
 pub const SET_GLOBAL_MSG_RECV_OPT: &str = "/user/set_global_msg_recv_opt";
 

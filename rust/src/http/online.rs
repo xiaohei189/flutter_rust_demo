@@ -26,31 +26,45 @@ pub struct UserStatusItem {
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetUserStatusResp {
     #[serde(rename = "statusList", default)]
-    pub users_status: Vec<UserStatusItem>,
+    pub users_status: Option<Vec<UserStatusItem>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SubscribeUsersStatusReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
     #[serde(rename = "userIDs")]
     pub user_ids: Vec<String>,
+    #[serde(rename = "genre")]
+    pub genre: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SubscribeUsersStatusResp {
     #[serde(rename = "statusList", default)]
-    pub users_status: Vec<UserStatusItem>,
+    pub users_status: Option<Vec<UserStatusItem>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UnsubscribeUsersStatusReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
     #[serde(rename = "userIDs")]
     pub user_ids: Vec<String>,
+    #[serde(rename = "genre")]
+    pub genre: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetSubscribeUsersStatusReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetSubscribeUsersStatusResp {
     #[serde(rename = "statusList", default)]
-    pub users_status: Vec<UserStatusItem>,
+    pub users_status: Option<Vec<UserStatusItem>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -66,7 +80,7 @@ pub trait OnlineStatusServerApi: Send + Sync {
     async fn get_user_status(&self, req: &GetUserStatusReq) -> Result<GetUserStatusResp>;
     async fn subscribe_users_status(&self, req: &SubscribeUsersStatusReq) -> Result<SubscribeUsersStatusResp>;
     async fn unsubscribe_users_status(&self, req: &UnsubscribeUsersStatusReq) -> Result<()>;
-    async fn get_subscribe_users_status(&self) -> Result<GetSubscribeUsersStatusResp>;
+    async fn get_subscribe_users_status(&self, req: &GetSubscribeUsersStatusReq) -> Result<GetSubscribeUsersStatusResp>;
 }
 #[cfg(test)]
 mod tests {
@@ -84,9 +98,15 @@ mod tests {
 
     #[test]
     fn test_subscribe_users_status_req_serialization() {
-        let req = SubscribeUsersStatusReq { user_ids: vec!["user_1".to_string()] };
+        let req = SubscribeUsersStatusReq {
+            user_id: "me".to_string(),
+            user_ids: vec!["user_1".to_string()],
+            genre: 1,
+        };
         let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userID"));
         assert!(json.contains("userIDs"));
+        assert!(json.contains("\"genre\":1"));
     }
 
     #[test]
@@ -111,16 +131,25 @@ mod tests {
 
     #[test]
     fn test_unsubscribe_users_status_req_serialization() {
-        let req = UnsubscribeUsersStatusReq { user_ids: vec!["user_1".to_string()] };
+        let req = UnsubscribeUsersStatusReq {
+            user_id: "me".to_string(),
+            user_ids: vec!["user_1".to_string()],
+            genre: 2,
+        };
         let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("userID"));
         assert!(json.contains("userIDs"));
+        assert!(json.contains("\"genre\":2"));
     }
 
     #[test]
     fn test_get_user_status_resp_deserialization() {
         let json = r#"{"statusList":[{"userID":"user_1","status":1,"platformIDs":[1]}]}"#;
         let resp: GetUserStatusResp = serde_json::from_str(json).unwrap();
-        assert_eq!(resp.users_status.len(), 1);
-        assert_eq!(resp.users_status[0].status, 1);
+        assert_eq!(resp.users_status.as_ref().unwrap().len(), 1);
+        assert_eq!(resp.users_status.as_ref().unwrap()[0].status, 1);
+
+        let null_resp: GetUserStatusResp = serde_json::from_str(r#"{"statusList":null}"#).unwrap();
+        assert!(null_resp.users_status.is_none());
     }
 }

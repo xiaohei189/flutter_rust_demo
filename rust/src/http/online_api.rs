@@ -4,7 +4,9 @@
 
 use crate::error::Result;
 use crate::http::client::HttpApiClient;
-use crate::http::online::{GetSubscribeUsersStatusResp, GetUserStatusReq, GetUserStatusResp, OnlineStatusServerApi, SubscribeUsersStatusReq, SubscribeUsersStatusResp, UnsubscribeUsersStatusReq};
+use crate::http::online::{
+    GetSubscribeUsersStatusReq, GetSubscribeUsersStatusResp, GetUserStatusReq, GetUserStatusResp, OnlineStatusServerApi, SubscribeUsersStatusReq, SubscribeUsersStatusResp, UnsubscribeUsersStatusReq,
+};
 use crate::http::routes::{GET_SUBSCRIBE_USERS_STATUS, GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS};
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -35,7 +37,7 @@ impl OnlineStatusServerApi for HttpOnlineStatusApi {
         Ok(())
     }
 
-    async fn get_subscribe_users_status(&self) -> Result<GetSubscribeUsersStatusResp> {
-        Ok(self.http_client.post(GET_SUBSCRIBE_USERS_STATUS, &()).await?)
+    async fn get_subscribe_users_status(&self, req: &GetSubscribeUsersStatusReq) -> Result<GetSubscribeUsersStatusResp> {
+        Ok(self.http_client.post(GET_SUBSCRIBE_USERS_STATUS, req).await?)
     }
 }

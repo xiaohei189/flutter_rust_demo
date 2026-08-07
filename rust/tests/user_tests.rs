@@ -174,3 +174,32 @@ async fn test_update_user_profile() {
 
     println!("✅ 更新用户资料测试完成");
 }
+
+#[tokio::test]
+async fn test_subscribe_unsubscribe_user_status() {
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
+
+    println!("=== 在线状态订阅/退订测试 ===\n");
+
+    let user1 = get_or_create_user1().await;
+    let user2 = get_or_create_user2().await;
+    let (im_token1, _) = login_account(&user1).await.expect("登录失败");
+    let (im_token2, _) = login_account(&user2).await.expect("登录失败");
+    let sdk1 = create_sdk(&user1, &im_token1).await;
+    let sdk2 = create_sdk(&user2, &im_token2).await;
+
+    let subscribe = sdk1.subscribe_users_status(vec![user2.user_id.clone()]).await;
+    assert!(subscribe.is_ok(), "订阅在线状态失败: {:?}", subscribe.err());
+    println!("  ✅ 订阅成功");
+
+    let subscribed = sdk1.get_subscribe_users_status().await;
+    assert!(subscribed.is_ok(), "获取订阅列表失败: {:?}", subscribed.err());
+    println!("  ✅ 获取订阅列表成功");
+
+    let unsubscribe = sdk1.unsubscribe_users_status(vec![user2.user_id.clone()]).await;
+    assert!(unsubscribe.is_ok(), "退订在线状态失败: {:?}", unsubscribe.err());
+    println!("  ✅ 退订成功");
+
+    let _ = sdk2.get_user_status(&vec![user2.user_id.clone()]).await;
+    println!("✅ 在线状态订阅/退订测试完成");
+}

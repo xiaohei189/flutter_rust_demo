@@ -137,9 +137,9 @@ pub(crate) struct PublicUserInfoJson {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct GroupRequestJson {
     #[serde(default)]
-    pub(crate) group_info: GroupInfoJson,
+    pub(crate) group_info: Option<GroupInfoJson>,
     #[serde(default)]
-    pub(crate) user_info: PublicUserInfoJson,
+    pub(crate) user_info: Option<PublicUserInfoJson>,
     #[serde(default)]
     pub(crate) handle_result: i32,
     #[serde(default)]
@@ -161,20 +161,22 @@ pub(crate) struct GroupChangeInfoJson {
     #[serde(default, rename = "groupID")]
     pub(crate) group_id: String,
     #[serde(default)]
-    pub(crate) group: GroupInfoJson,
+    pub(crate) group: Option<GroupInfoJson>,
     #[serde(default, rename = "groupInfo")]
-    pub(crate) group_info: GroupInfoJson,
+    pub(crate) group_info: Option<GroupInfoJson>,
 }
 
 impl GroupChangeInfoJson {
     pub(crate) fn effective_group_id(&self) -> String {
         if !self.group_id.is_empty() {
-            self.group_id.clone()
-        } else if !self.group.group_id.is_empty() {
-            self.group.group_id.clone()
-        } else {
-            self.group_info.group_id.clone()
+            return self.group_id.clone();
         }
+        if let Some(group) = &self.group {
+            if !group.group_id.is_empty() {
+                return group.group_id.clone();
+            }
+        }
+        self.group_info.as_ref().map(|g| g.group_id.clone()).unwrap_or_default()
     }
 }
 
@@ -182,12 +184,16 @@ impl GroupChangeInfoJson {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct JoinGroupApplicationTipsJson {
     #[serde(default)]
+    pub(crate) group: Option<GroupInfoJson>,
+    #[serde(default)]
     pub(crate) request: GroupRequestJson,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct GroupApplicationAcceptedTipsJson {
+    #[serde(default)]
+    pub(crate) group: Option<GroupInfoJson>,
     #[serde(default)]
     pub(crate) handle_msg: String,
     #[serde(default)]
@@ -197,6 +203,8 @@ pub(crate) struct GroupApplicationAcceptedTipsJson {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct GroupApplicationRejectedTipsJson {
+    #[serde(default)]
+    pub(crate) group: Option<GroupInfoJson>,
     #[serde(default)]
     pub(crate) handle_msg: String,
     #[serde(default)]
@@ -269,17 +277,18 @@ mod tests {
     fn test_unmarshal_group_application_added() {
         let content = r#"{"detail":"{\"request\":{\"groupInfo\":{\"groupID\":\"group_1\"},\"userInfo\":{\"userID\":\"user_a\",\"nickname\":\"Alice\",\"faceURL\":\"\"},\"handleResult\":0,\"reqMsg\":\"Please add me\"}}"}"#;
         let tips: JoinGroupApplicationTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
-        assert_eq!(tips.request.group_info.group_id, "group_1");
-        assert_eq!(tips.request.user_info.user_id, "user_a");
+        assert_eq!(tips.request.group_info.as_ref().unwrap().group_id, "group_1");
+        assert_eq!(tips.request.user_info.as_ref().unwrap().user_id, "user_a");
         assert_eq!(tips.request.req_msg, "Please add me");
     }
 
     #[test]
     fn test_unmarshal_group_application_accepted() {
-        let content = r#"{"detail":"{\"handleMsg\":\"Approved\",\"request\":{\"groupInfo\":{\"groupID\":\"group_1\"},\"userInfo\":{\"userID\":\"user_a\"},\"handleResult\":1}}"}"#;
+        let content = r#"{"detail":"{\"handleMsg\":\"Approved\",\"group\":{\"groupID\":\"group_1\"},\"request\":{\"groupInfo\":{\"groupID\":\"group_1\"},\"userInfo\":{\"userID\":\"user_a\"},\"handleResult\":1}}"}"#;
         let tips: GroupApplicationAcceptedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
         assert_eq!(tips.handle_msg, "Approved");
-        assert_eq!(tips.request.group_info.group_id, "group_1");
+        assert_eq!(tips.request.group_info.as_ref().unwrap().group_id, "group_1");
+        assert_eq!(tips.group.as_ref().unwrap().group_id, "group_1");
     }
 
     #[test]
@@ -288,6 +297,16 @@ mod tests {
         let tips: GroupApplicationRejectedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
         assert_eq!(tips.handle_msg, "Rejected");
         assert_eq!(tips.request.handle_result, -1);
+    }
+
+    #[test]
+    fn test_unmarshal_group_application_accepted_with_null_group_info() {
+        let content = r#"{"detail":"{\"handleMsg\":\"Approved\",\"group\":{\"groupID\":\"group_1\"},\"request\":{\"groupInfo\":null,\"userInfo\":null,\"handleResult\":1}}"}"#;
+        let tips: GroupApplicationAcceptedTipsJson = unmarshal_notification_elem(content.as_bytes()).unwrap();
+        assert_eq!(tips.handle_msg, "Approved");
+        assert!(tips.request.group_info.is_none());
+        assert!(tips.request.user_info.is_none());
+        assert_eq!(tips.group.as_ref().unwrap().group_id, "group_1");
     }
 
     // ========== 异常路径测试 ==========
