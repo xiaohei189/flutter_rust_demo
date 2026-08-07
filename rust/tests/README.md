@@ -41,6 +41,8 @@ powershell -ExecutionPolicy Bypass -File scripts/test-integration.ps1
 
 契约层只在服务端版本或协议变更时重跑，mock 逻辑测试和完整集成各自按需执行。
 
+自动重试、重连、超时、退避这类时序和状态机逻辑，放在 mock/离线层测试，通过注入网络失败、超时、被踢等故障验证重试次数、退避和最终状态；真实服务端层只做一次成功的端到端冒烟，不在真实网络上断言重试时序。
+
 只跑某个套件：
 
 ```powershell
@@ -68,6 +70,7 @@ powershell -ExecutionPolicy Bypass -File scripts/test-contract.ps1
 | 搜索、未读数、已读回执 | `src/message/operate.rs`, `src/message/receive/receipt.rs` |
 | 通知分发、撤回通知、群申请通知 | `src/message/notification.rs`, `src/message/receive/revoke.rs` |
 | 消息去重、gap 校验、增量/重连同步 | `src/message/receive/processor.rs`, `src/message/receive/syncer.rs`, `src/message/receive/checker.rs` |
+| 自动重试/指数退避/错误分类 | `src/connection/reconnect.rs`, `src/error/types.rs`, `src/message/send/sender.rs` |
 | HTTP 契约（revoke/delete/read） | `src/http/message_api.rs` |
 
 真实服务端套件负责验证与服务端/网关的契约，包括消息收发、媒体上传、群消息、离线同步、会话未读等端到端路径。
