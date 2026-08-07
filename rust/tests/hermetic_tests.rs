@@ -1,12 +1,18 @@
 //! 不依赖外部 OpenIM 服务的离线集成测试。
 
 use rust_lib_flutter_rust_demo::client::context::Repositories;
+use rust_lib_flutter_rust_demo::conversation::syncer::ConversationSyncer;
 use rust_lib_flutter_rust_demo::db::pool::create_pool_memory;
 use rust_lib_flutter_rust_demo::db::*;
 use rust_lib_flutter_rust_demo::event::hub::EventHub;
 use rust_lib_flutter_rust_demo::friend::service::FriendService;
+use rust_lib_flutter_rust_demo::group::service::GroupService;
 use rust_lib_flutter_rust_demo::http::client::HttpApiClient;
+use rust_lib_flutter_rust_demo::http::conversation::ConversationServerApi;
+use rust_lib_flutter_rust_demo::http::conversation_api::HttpConversationApi;
 use rust_lib_flutter_rust_demo::http::friend_api::HttpFriendApi;
+use rust_lib_flutter_rust_demo::http::group::GroupServerApi;
+use rust_lib_flutter_rust_demo::http::group_api::HttpGroupApi;
 use rust_lib_flutter_rust_demo::model::UserId;
 use std::sync::Arc;
 use wiremock::matchers::{method, path};
@@ -75,4 +81,93 @@ async fn friend_full_sync_works_without_live_server() {
     let stored = repos.friend_repo.get_all("me").await.unwrap();
     assert_eq!(stored.len(), 1);
     assert_eq!(stored[0].friend_user_id, "user_2");
+}
+
+#[tokio::test]
+async fn conversation_full_sync_works_without_live_server() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/conversation/get_all_conversations"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "errCode": 0,
+            "errMsg": "",
+            "data": {
+                "conversations": [{
+                    "ownerUserID": "me",
+                    "conversationID": "si_a_b",
+                    "conversationType": 1,
+                    "recvMsgOpt": 0,
+                    "userID": "user_b",
+                    "groupID": "",
+                    "isPinned": false,
+                    "isPrivateChat": false,
+                    "groupAtType": 0,
+                    "ex": "",
+                    "attachedInfo": "",
+                    "burnDuration": 0,
+                    "minSeq": 0,
+                    "maxSeq": 0,
+                    "msgDestructTime": 0,
+                    "isMsgDestruct": false
+                }]
+            }
+        })))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let hub = EventHub::new();
+    let syncer = ConversationSyncer::new(http, repos.clone(), UserId::new("me"), hub);
+
+    let convs = syncer.sync_full().await.unwrap();
+    assert_eq!(convs.len(), 1);
+    assert_eq!(convs[0].conversation_id, "si_a_b");
+
+    let stored = repos.conversation_repo.get_all().await.unwrap();
+    assert_eq!(stored.len(), 1);
+    assert_eq!(stored[0].conversation_id, "si_a_b");
+}
+
+#[tokio::test]
+async fn group_full_sync_works_without_live_server() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/group/get_joined_group_list"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "errCode": 0,
+            "errMsg": "",
+            "data": {
+                "groups": [{
+                    "groupID": "g1",
+                    "groupName": "Group 1",
+                    "notification": "",
+                    "introduction": "",
+                    "faceURL": "",
+                    "ownerUserID": "me",
+                    "createTime": 1,
+                    "memberCount": 1,
+                    "status": 0,
+                    "creatorUserID": "me",
+                    "groupType": 2,
+                    "ex": ""
+                }],
+                "total": 1
+            }
+        })))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let api: Arc<dyn GroupServerApi> = Arc::new(HttpGroupApi::new(http));
+    let group_service = GroupService::new(api, repos.clone(), UserId::new("me"), EventHub::new());
+
+    group_service.sync_groups().await.unwrap();
+
+    let stored = repos.group_repo.get_all_groups().await.unwrap();
+    assert_eq!(stored.len(), 1);
+    assert_eq!(stored[0].group_id, "g1");
 }
