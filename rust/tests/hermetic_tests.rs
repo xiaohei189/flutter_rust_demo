@@ -96,27 +96,9 @@ async fn group_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/group/get_joined_group_list"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "errCode": 0,
-            "errMsg": "",
-            "data": {
-                "groups": [{
-                    "groupID": "g1",
-                    "groupName": "Group 1",
-                    "notification": "",
-                    "introduction": "",
-                    "faceURL": "",
-                    "ownerUserID": "me",
-                    "createTime": 1,
-                    "memberCount": 1,
-                    "status": 0,
-                    "creatorUserID": "me",
-                    "groupType": 2,
-                    "ex": ""
-                }],
-                "total": 1
-            }
-        })))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_list.json")).unwrap()),
+        )
         .mount(&server)
         .await;
 
@@ -138,35 +120,10 @@ async fn conversation_incremental_sync_stores_insert_and_version() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/conversation/get_incremental_conversations"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "errCode": 0,
-            "errMsg": "",
-            "data": {
-                "version": 1,
-                "versionID": "v1",
-                "full": false,
-                "delete": [],
-                "insert": [{
-                    "ownerUserID": "me",
-                    "conversationID": "si_inc",
-                    "conversationType": 1,
-                    "recvMsgOpt": 0,
-                    "userID": "user_b",
-                    "groupID": "",
-                    "isPinned": false,
-                    "isPrivateChat": false,
-                    "groupAtType": 0,
-                    "ex": "",
-                    "attachedInfo": "",
-                    "burnDuration": 0,
-                    "minSeq": 0,
-                    "maxSeq": 0,
-                    "msgDestructTime": 0,
-                    "isMsgDestruct": false
-                }],
-                "update": []
-            }
-        })))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/conversation_incremental.json")).unwrap()),
+        )
         .mount(&server)
         .await;
 
@@ -192,32 +149,9 @@ async fn group_incremental_sync_stores_insert_and_version() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/group/get_incremental_join_groups"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "errCode": 0,
-            "errMsg": "",
-            "data": {
-                "version": 1,
-                "versionID": "v1",
-                "full": false,
-                "delete": [],
-                "insert": [{
-                    "groupID": "g_inc",
-                    "groupName": "Incremental Group",
-                    "notification": "",
-                    "introduction": "",
-                    "faceURL": "",
-                    "ownerUserID": "me",
-                    "createTime": 1,
-                    "memberCount": 1,
-                    "status": 0,
-                    "creatorUserID": "me",
-                    "groupType": 2,
-                    "ex": ""
-                }],
-                "update": [],
-                "sortVersion": 0
-            }
-        })))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_incremental.json")).unwrap()),
+        )
         .mount(&server)
         .await;
 

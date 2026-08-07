@@ -1,0 +1,28 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "version": 1,
+    "versionID": "v1",
+    "full": false,
+    "delete": [],
+    "insert": [
+      {
+        "groupID": "g_inc",
+        "groupName": "Incremental Group",
+        "notification": "",
+        "introduction": "",
+        "faceURL": "",
+        "ownerUserID": "me",
+        "createTime": 1,
+        "memberCount": 1,
+        "status": 0,
+        "creatorUserID": "me",
+        "groupType": 2,
+        "ex": ""
+      }
+    ],
+    "update": [],
+    "sortVersion": 0
+  }
+}

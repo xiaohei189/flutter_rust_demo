@@ -1,0 +1,31 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "version": 1,
+    "versionID": "v1",
+    "full": false,
+    "delete": [],
+    "insert": [
+      {
+        "ownerUserID": "me",
+        "conversationID": "si_inc",
+        "conversationType": 1,
+        "recvMsgOpt": 0,
+        "userID": "user_b",
+        "groupID": "",
+        "isPinned": false,
+        "isPrivateChat": false,
+        "groupAtType": 0,
+        "ex": "",
+        "attachedInfo": "",
+        "burnDuration": 0,
+        "minSeq": 0,
+        "maxSeq": 0,
+        "msgDestructTime": 0,
+        "isMsgDestruct": false
+      }
+    ],
+    "update": []
+  }
+}

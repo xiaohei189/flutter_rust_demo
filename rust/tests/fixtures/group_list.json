@@ -1,0 +1,23 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "groups": [
+      {
+        "groupID": "g1",
+        "groupName": "Group 1",
+        "notification": "",
+        "introduction": "",
+        "faceURL": "",
+        "ownerUserID": "me",
+        "createTime": 1,
+        "memberCount": 1,
+        "status": 0,
+        "creatorUserID": "me",
+        "groupType": 2,
+        "ex": ""
+      }
+    ],
+    "total": 1
+  }
+}
