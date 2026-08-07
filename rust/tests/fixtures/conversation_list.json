@@ -1,0 +1,26 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "conversations": [
+      {
+        "ownerUserID": "me",
+        "conversationID": "si_a_b",
+        "conversationType": 1,
+        "recvMsgOpt": 0,
+        "userID": "user_b",
+        "groupID": "",
+        "isPinned": false,
+        "isPrivateChat": false,
+        "groupAtType": 0,
+        "ex": "",
+        "attachedInfo": "",
+        "burnDuration": 0,
+        "minSeq": 0,
+        "maxSeq": 0,
+        "msgDestructTime": 0,
+        "isMsgDestruct": false
+      }
+    ]
+  }
+}

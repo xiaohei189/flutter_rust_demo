@@ -36,29 +36,10 @@ async fn friend_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/friend/get_friend_list"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "errCode": 0,
-            "errMsg": "",
-            "data": {
-                "friendsInfo": [{
-                    "ownerUserID": "me",
-                    "remark": "friend",
-                    "createTime": 1,
-                    "friendUser": {
-                        "userID": "user_2",
-                        "nickname": "Alice",
-                        "faceURL": "",
-                        "ex": "",
-                        "createTime": 1
-                    },
-                    "addSource": 1,
-                    "operatorUserID": "me",
-                    "ex": "",
-                    "isPinned": false
-                }],
-                "total": 1
-            }
-        })))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/friend_list.json")).unwrap()),
+        )
         .mount(&server)
         .await;
 
@@ -88,30 +69,10 @@ async fn conversation_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/conversation/get_all_conversations"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "errCode": 0,
-            "errMsg": "",
-            "data": {
-                "conversations": [{
-                    "ownerUserID": "me",
-                    "conversationID": "si_a_b",
-                    "conversationType": 1,
-                    "recvMsgOpt": 0,
-                    "userID": "user_b",
-                    "groupID": "",
-                    "isPinned": false,
-                    "isPrivateChat": false,
-                    "groupAtType": 0,
-                    "ex": "",
-                    "attachedInfo": "",
-                    "burnDuration": 0,
-                    "minSeq": 0,
-                    "maxSeq": 0,
-                    "msgDestructTime": 0,
-                    "isMsgDestruct": false
-                }]
-            }
-        })))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/conversation_list.json")).unwrap()),
+        )
         .mount(&server)
         .await;
 

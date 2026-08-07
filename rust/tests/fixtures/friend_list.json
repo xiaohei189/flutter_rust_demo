@@ -1,0 +1,25 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "friendsInfo": [
+      {
+        "ownerUserID": "me",
+        "remark": "friend",
+        "createTime": 1,
+        "friendUser": {
+          "userID": "user_2",
+          "nickname": "Alice",
+          "faceURL": "",
+          "ex": "",
+          "createTime": 1
+        },
+        "addSource": 1,
+        "operatorUserID": "me",
+        "ex": "",
+        "isPinned": false
+      }
+    ],
+    "total": 1
+  }
+}
