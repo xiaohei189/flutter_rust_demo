@@ -404,4 +404,51 @@ mod tests {
         let logs = message_dao.get_by_conversation("conv_mr", 0, 100).await.unwrap();
         assert!(logs.iter().all(|m| m.is_read == 1));
     }
+
+    #[tokio::test]
+    async fn test_mark_messages_as_read_server_failure_keeps_unread() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let api: Arc<dyn MessageServerApi> = Arc::new(FailMockApi);
+        let service = make_service_with_api(repositories, api);
+        message_dao
+            .batch_insert(&[make_local_msg("conv_mrf", "m1", 1, "user_2"), make_local_msg("conv_mrf", "m2", 2, "user_2")])
+            .await
+            .unwrap();
+
+        let result = service
+            .mark_messages_as_read(MarkMessagesAsReadReq {
+                conversation_id: "conv_mrf".into(),
+                user_id: "user_1".into(),
+                session_type: 1,
+                has_read_seq: 2,
+                seqs: vec![1, 2],
+            })
+            .await;
+        assert!(result.is_err());
+
+        let logs = message_dao.get_by_conversation("conv_mrf", 0, 100).await.unwrap();
+        assert!(logs.iter().all(|m| m.is_read == 0));
+    }
+
+    #[tokio::test]
+    async fn test_mark_conversation_as_read_server_failure_still_clears_local() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let api: Arc<dyn MessageServerApi> = Arc::new(FailMockApi);
+        let service = make_service_with_api(repositories, api);
+        message_dao
+            .batch_insert(&[make_local_msg("conv_crf", "m1", 1, "user_2"), make_local_msg("conv_crf", "m2", 2, "user_2")])
+            .await
+            .unwrap();
+        conversation_dao.upsert(&make_conv("conv_crf", 2)).await.unwrap();
+
+        // 对齐 Go SDK：会话已读属于尽力而为，服务端失败不阻断本地清未读。
+        service.mark_conversation_message_as_read("conv_crf".to_string(), 1).await.unwrap();
+        let conv = conversation_dao.get_by_id("conv_crf").await.unwrap().unwrap();
+        assert_eq!(conv.unread_count, 0);
+    }
 }
