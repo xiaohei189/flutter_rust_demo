@@ -544,9 +544,9 @@ impl MessageSyncer {
 
         self.handle_pulled_messages(&resp.msgs).await?;
 
-        let total_convs = seq_map.len() as u8;
+        let total_convs = seq_map.len().max(1);
         for (idx, (conv_id, (_, end_seq))) in seq_map.iter().enumerate() {
-            let progress = 10 + ((idx as u8 + 1) * 90 / total_convs.max(1));
+            let progress = 10 + ((idx + 1) * 90 / total_convs);
             let msg = if reinstall {
                 format!("重装同步完成 {}: seq={}", conv_id, end_seq)
             } else {

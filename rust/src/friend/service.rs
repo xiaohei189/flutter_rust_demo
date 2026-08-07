@@ -373,6 +373,7 @@ impl FriendService {
             from_user_id,
             to_user_id: user_id.clone(),
             req_msg,
+            ex: None,
         };
 
         self.api.add_friend(&req).await?;
@@ -382,7 +383,11 @@ impl FriendService {
     }
 
     pub async fn delete_friend(&self, user_id: String) -> Result<()> {
-        let req = DeleteFriendReq { to_user_id: user_id.clone() };
+        let owner_user_id = self.user_id.get().await;
+        let req = DeleteFriendReq {
+            owner_user_id,
+            friend_user_id: user_id.clone(),
+        };
 
         self.api.delete_friend(&req).await?;
 
@@ -423,7 +428,12 @@ impl FriendService {
     }
 
     pub async fn add_black(&self, user_id: String) -> Result<()> {
-        let req = AddBlackReq { to_user_id: user_id.clone() };
+        let owner_user_id = self.user_id.get().await;
+        let req = AddBlackReq {
+            owner_user_id,
+            black_user_id: user_id.clone(),
+            ex: None,
+        };
 
         self.api.add_black(&req).await?;
 
@@ -436,7 +446,11 @@ impl FriendService {
     }
 
     pub async fn remove_black(&self, user_id: String) -> Result<()> {
-        let req = RemoveBlackReq { to_user_id: user_id.clone() };
+        let owner_user_id = self.user_id.get().await;
+        let req = RemoveBlackReq {
+            owner_user_id,
+            black_user_id: user_id.clone(),
+        };
 
         self.api.remove_black(&req).await?;
 
@@ -455,7 +469,7 @@ impl FriendService {
     pub async fn get_friend_apply_list(&self) -> Result<GetFriendApplyListResp> {
         let user_id = self.user_id.get().await;
         let req = GetFriendApplyListReq {
-            from_user_id: user_id,
+            user_id,
             pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_friend_apply_list(&req).await?;
@@ -466,7 +480,7 @@ impl FriendService {
     pub async fn get_friend_apply_list_as_applicant(&self) -> Result<GetFriendApplyListResp> {
         let user_id = self.user_id.get().await;
         let req = GetFriendApplyListReq {
-            from_user_id: user_id,
+            user_id,
             pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_self_friend_apply_list(&req).await?;
@@ -480,8 +494,11 @@ impl FriendService {
     }
 
     pub async fn accept_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        let to_user_id = self.user_id.get().await;
         let req = AcceptFriendApplicationReq {
-            to_user_id: user_id.clone(),
+            from_user_id: user_id.clone(),
+            to_user_id,
+            handle_result: 1,
             handle_msg,
         };
         self.api.accept_friend_application(&req).await?;
@@ -496,8 +513,11 @@ impl FriendService {
     }
 
     pub async fn refuse_friend_application(&self, user_id: String, handle_msg: Option<String>) -> Result<()> {
+        let to_user_id = self.user_id.get().await;
         let req = RefuseFriendApplicationReq {
-            to_user_id: user_id.clone(),
+            from_user_id: user_id.clone(),
+            to_user_id,
+            handle_result: -1,
             handle_msg,
         };
         self.api.refuse_friend_application(&req).await?;
@@ -601,6 +621,7 @@ mod tests {
             from_user_id: "user_123".to_string(),
             to_user_id: "user_456".to_string(),
             req_msg: Some("Hello!".to_string()),
+            ex: None,
         };
 
         let json = serde_json::to_string(&req).unwrap();
@@ -611,10 +632,15 @@ mod tests {
 
     #[test]
     fn test_add_black_req_serialization() {
-        let req = AddBlackReq { to_user_id: "user_789".to_string() };
+        let req = AddBlackReq {
+            owner_user_id: "user_123".to_string(),
+            black_user_id: "user_789".to_string(),
+            ex: None,
+        };
 
         let json = serde_json::to_string(&req).unwrap();
-        assert!(json.contains("toUserID"));
+        assert!(json.contains("ownerUserID"));
+        assert!(json.contains("blackUserID"));
         assert!(json.contains("user_789"));
     }
 }

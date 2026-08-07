@@ -228,6 +228,34 @@ impl ConversationDao {
         Ok(())
     }
 
+    /// 部分更新会话字段，避免并发 set_conversation 互相覆盖。
+    pub async fn update_partial(
+        &self,
+        conversation_id: &str,
+        recv_msg_opt: Option<i32>,
+        is_pinned: Option<bool>,
+        is_private_chat: Option<bool>,
+        group_at_type: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()> {
+        sqlx::query(
+            "UPDATE local_conversations SET recv_msg_opt = COALESCE(?, recv_msg_opt), \
+             is_pinned = COALESCE(?, is_pinned), is_private_chat = COALESCE(?, is_private_chat), \
+             group_at_type = COALESCE(?, group_at_type), ex = COALESCE(?, ex) \
+             WHERE conversation_id = ?",
+        )
+        .bind(recv_msg_opt)
+        .bind(is_pinned)
+        .bind(is_private_chat)
+        .bind(group_at_type)
+        .bind(ex)
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("update partial conversation: {}", e)))?;
+        Ok(())
+    }
+
     pub async fn update_unread_count(&self, conversation_id: &str, unread_count: i32) -> Result<()> {
         sqlx::query("UPDATE local_conversations SET unread_count = ? WHERE conversation_id = ?")
             .bind(unread_count)
@@ -630,6 +658,18 @@ impl ConversationRepository for ConversationDao {
     }
     async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> {
         self.set_private_chat(conversation_id, is_private).await
+    }
+    async fn update_partial(
+        &self,
+        conversation_id: &str,
+        recv_msg_opt: Option<i32>,
+        is_pinned: Option<bool>,
+        is_private_chat: Option<bool>,
+        group_at_type: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()> {
+        self.update_partial(conversation_id, recv_msg_opt, is_pinned, is_private_chat, group_at_type, ex)
+            .await
     }
     async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()> {
         self.set_draft(conversation_id, draft_text, draft_time).await

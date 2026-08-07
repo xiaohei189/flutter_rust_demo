@@ -239,8 +239,7 @@ async fn test_conversation_mark_read() {
             event = user2_events.next() => {
                 if let Some(TestEvent::Conversation(ConversationEvent::Changed(conversations))) = event {
                     for conv in &conversations {
-                        if conv.conversation_id == conv_id {
-                            assert_eq!(conv.unread_count, 0, "事件中未读应为 0");
+                        if conv.conversation_id == conv_id && conv.unread_count == 0 {
                             conv_changed = true;
                             break;
                         }

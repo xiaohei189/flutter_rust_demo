@@ -208,6 +208,15 @@ impl GroupService {
         admin_user_ids: Vec<String>,
         owner_user_id: String,
     ) -> Result<GroupInfo> {
+        // 服务端会自动把 ownerUserID 追加为成员，成员/管理员列表里不能重复包含群主。
+        let member_user_ids = member_user_ids
+            .into_iter()
+            .filter(|id| id != &owner_user_id)
+            .collect::<Vec<_>>();
+        let admin_user_ids = admin_user_ids
+            .into_iter()
+            .filter(|id| id != &owner_user_id)
+            .collect::<Vec<_>>();
         let req = CreateGroupReq {
             group_info: CreateGroupInfo {
                 group_name,
@@ -216,6 +225,7 @@ impl GroupService {
                 notification,
                 group_type: 2, // 2 = 普通群（与 Go SDK 一致）
                 ex: None,
+                creator_user_id: owner_user_id.clone(),
             },
             member_user_ids,
             admin_user_ids,
@@ -232,10 +242,12 @@ impl GroupService {
     }
 
     pub async fn join_group(&self, group_id: String, req_msg: Option<String>) -> Result<()> {
+        let user_id = self.user_id.get().await;
         let req = JoinGroupReq {
             group_id: group_id.clone(),
             req_msg,
             join_source: 1,
+            inviter_user_id: user_id,
             ex: None,
         };
 
@@ -246,7 +258,11 @@ impl GroupService {
     }
 
     pub async fn quit_group(&self, group_id: String) -> Result<()> {
-        let req = QuitGroupReq { group_id: group_id.clone() };
+        let user_id = self.user_id.get().await;
+        let req = QuitGroupReq {
+            group_id: group_id.clone(),
+            user_id,
+        };
 
         self.api.quit_group(&req).await?;
 
@@ -258,7 +274,10 @@ impl GroupService {
     }
 
     pub async fn dismiss_group(&self, group_id: String) -> Result<()> {
-        let req = DismissGroupReq { group_id: group_id.clone() };
+        let req = DismissGroupReq {
+            group_id: group_id.clone(),
+            delete_member: true,
+        };
 
         self.api.dismiss_group(&req).await?;
 
@@ -398,8 +417,8 @@ impl GroupService {
     /// 获取自己发出的群组申请列表（对齐 Go SDK GetGroupApplicationListAsApplicant）
     pub async fn get_group_application_list_as_applicant(&self) -> Result<GetGroupApplicationListResp> {
         let user_id = self.user_id.get().await;
-        let req = GetGroupApplicationListReq {
-            from_user_id: user_id,
+        let req = GetUserReqApplicationListReq {
+            user_id,
             pagination: Pagination { page_number: 1, show_number: 1000 },
         };
         let resp = self.api.get_send_group_application_list(&req).await?;
@@ -417,6 +436,7 @@ impl GroupService {
             group_id: group_id.clone(),
             from_user_id: user_id.clone(),
             handle_msg,
+            handle_result: 1,
         };
         self.api.accept_group_application(&req).await?;
 
@@ -434,6 +454,7 @@ impl GroupService {
             group_id: group_id.clone(),
             from_user_id: user_id.clone(),
             handle_msg,
+            handle_result: -1,
         };
         self.api.refuse_group_application(&req).await?;
         info!("群组申请已拒绝: group={}, user={}", group_id, user_id);
@@ -736,6 +757,7 @@ mod tests {
                 notification: None,
                 group_type: 0,
                 ex: None,
+                creator_user_id: "owner_1".to_string(),
             },
             member_user_ids: vec!["user_1".to_string()],
             admin_user_ids: vec![],

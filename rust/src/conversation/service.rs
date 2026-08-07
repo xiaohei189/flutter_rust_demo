@@ -5,6 +5,7 @@ use crate::error::Result;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::http::conversation::{ConversationServerApi, SetConversationReq};
 use crate::model::local::LocalConversation;
+use crate::model::UserId;
 
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -14,6 +15,8 @@ pub struct ConversationService {
     repositories: Arc<Repositories>,
     /// 服务端 API（用于同步设置到服务器）
     server_api: Option<Arc<dyn ConversationServerApi>>,
+    /// 当前登录用户 ID（同步会话设置到服务器时使用）
+    user_id: Option<UserId>,
     /// 事件出口（Listener trait）
     pub(crate) listener: Arc<dyn ConversationListener>,
 }
@@ -23,6 +26,7 @@ impl ConversationService {
         Self {
             repositories,
             server_api: None,
+            user_id: None,
             listener,
         }
     }
@@ -30,6 +34,12 @@ impl ConversationService {
     /// 设置服务端 API（builder 调用）
     pub fn with_server_api(mut self, api: Arc<dyn ConversationServerApi>) -> Self {
         self.server_api = Some(api);
+        self
+    }
+
+    /// 设置当前登录用户 ID
+    pub fn with_user_id(mut self, user_id: UserId) -> Self {
+        self.user_id = Some(user_id);
         self
     }
 
@@ -81,12 +91,64 @@ impl ConversationService {
 
     pub async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
         self.repositories.conversation_repo.set_pinned(conversation_id, is_pinned).await?;
+        if let Some(api) = &self.server_api {
+            let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
+            let mut req = SetConversationReq {
+                user_ids: Vec::new(),
+                conversation_id: conversation_id.to_string(),
+                conversation_type: None,
+                user_id: None,
+                group_id: None,
+                recv_msg_opt: None,
+                is_pinned: Some(is_pinned),
+                is_private_chat: None,
+                group_at_type: None,
+                ex: None,
+            };
+            if let Some(conv) = &existing {
+                req.conversation_type = Some(conv.conversation_type);
+                req.user_id = Some(conv.user_id.clone());
+                req.group_id = Some(conv.group_id.clone());
+            }
+            if let Some(uid) = &self.user_id {
+                req.user_ids.push(uid.get().await);
+            }
+            if let Err(e) = api.set_conversation_on_server(&req).await {
+                warn!("同步会话置顶状态到服务器失败: {}", e);
+            }
+        }
         info!("会话 {} 置顶状态设置为: {}", conversation_id, is_pinned);
         Ok(())
     }
 
     pub async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> {
         self.repositories.conversation_repo.set_private_chat(conversation_id, is_private).await?;
+        if let Some(api) = &self.server_api {
+            let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
+            let mut req = SetConversationReq {
+                user_ids: Vec::new(),
+                conversation_id: conversation_id.to_string(),
+                conversation_type: None,
+                user_id: None,
+                group_id: None,
+                recv_msg_opt: None,
+                is_pinned: None,
+                is_private_chat: Some(is_private),
+                group_at_type: None,
+                ex: None,
+            };
+            if let Some(conv) = &existing {
+                req.conversation_type = Some(conv.conversation_type);
+                req.user_id = Some(conv.user_id.clone());
+                req.group_id = Some(conv.group_id.clone());
+            }
+            if let Some(uid) = &self.user_id {
+                req.user_ids.push(uid.get().await);
+            }
+            if let Err(e) = api.set_conversation_on_server(&req).await {
+                warn!("同步会话私聊状态到服务器失败: {}", e);
+            }
+        }
         info!("会话 {} 免打扰状态设置为: {}", conversation_id, is_private);
         Ok(())
     }
@@ -153,7 +215,7 @@ impl ConversationService {
         ex: Option<&str>,
     ) -> Result<()> {
         let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
-        let mut conv = existing.unwrap_or_else(|| LocalConversation {
+        let mut conv = existing.clone().unwrap_or_else(|| LocalConversation {
             conversation_id: conversation_id.to_string(),
             ..Default::default()
         });
@@ -172,18 +234,32 @@ impl ConversationService {
         if let Some(ex_val) = ex {
             conv.ex = ex_val.to_string();
         }
-        self.repositories.conversation_repo.upsert(&conv).await?;
+        if existing.is_some() {
+            self.repositories
+                .conversation_repo
+                .update_partial(conversation_id, recv_msg_opt, is_pinned, is_private_chat, group_at_type, ex)
+                .await?;
+        } else {
+            self.repositories.conversation_repo.upsert(&conv).await?;
+        }
 
         // 同步到服务器
         if let Some(api) = &self.server_api {
-            let req = SetConversationReq {
+            let mut req = SetConversationReq {
+                user_ids: Vec::new(),
                 conversation_id: conversation_id.to_string(),
+                conversation_type: Some(conv.conversation_type),
+                user_id: Some(conv.user_id.clone()),
+                group_id: Some(conv.group_id.clone()),
                 recv_msg_opt,
                 is_pinned,
                 is_private_chat,
                 group_at_type,
                 ex: ex.map(|s| s.to_string()),
             };
+            if let Some(uid) = &self.user_id {
+                req.user_ids.push(uid.get().await);
+            }
             if let Err(e) = api.set_conversation_on_server(&req).await {
                 warn!("同步会话设置到服务器失败: {}", e);
             }
@@ -351,6 +427,24 @@ mod tests {
         assert_eq!(conv.recv_msg_opt, 2);
         assert!(!conv.is_pinned);
         assert_eq!(conv.conversation_type, 0);
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_partial_updates_do_not_overwrite() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_test_conversation("conv_partial")).await.unwrap();
+
+        tokio::join!(
+            manager.set_conversation("conv_partial", Some(2), None, None, None, None),
+            manager.set_conversation("conv_partial", None, Some(true), None, None, None),
+            manager.set_conversation("conv_partial", None, None, Some(true), None, None),
+        );
+
+        let conv = manager.get_conversation("conv_partial").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned);
+        assert!(conv.is_private_chat);
     }
 
     #[tokio::test]

@@ -104,7 +104,7 @@ async fn test_group_member_management() {
 
     // 按入群时间过滤群成员
     println!("按入群时间过滤群成员...");
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
     let filtered = sdk.get_group_member_list_by_join_time_filter(&group.group_id, 0, 10, 0, now, vec![]).await;
     match &filtered {
         Ok(members) => {

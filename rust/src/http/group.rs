@@ -87,6 +87,8 @@ pub struct CreateGroupInfo {
     #[serde(rename = "groupType")]
     pub group_type: i32,
     pub ex: Option<String>,
+    #[serde(rename = "creatorUserID", default)]
+    pub creator_user_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -99,10 +101,12 @@ pub struct CreateGroupResp {
 pub struct JoinGroupReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
-    #[serde(rename = "reqMsg")]
+    #[serde(rename = "reqMessage", skip_serializing_if = "Option::is_none")]
     pub req_msg: Option<String>,
     #[serde(rename = "joinSource")]
     pub join_source: i32,
+    #[serde(rename = "inviterUserID", default, skip_serializing_if = "String::is_empty")]
+    pub inviter_user_id: String,
     pub ex: Option<String>,
 }
 
@@ -110,24 +114,31 @@ pub struct JoinGroupReq {
 pub struct QuitGroupReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
+    #[serde(rename = "userID")]
+    pub user_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DismissGroupReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
+    #[serde(rename = "deleteMember")]
+    pub delete_member: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SetGroupInfoReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
-    #[serde(rename = "groupName")]
+    #[serde(rename = "groupName", skip_serializing_if = "Option::is_none")]
     pub group_name: Option<String>,
-    #[serde(rename = "faceURL")]
+    #[serde(rename = "faceURL", skip_serializing_if = "Option::is_none")]
     pub face_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub introduction: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub notification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ex: Option<String>,
 }
 
@@ -227,6 +238,14 @@ pub struct GetGroupApplicationListReq {
     pub pagination: Pagination,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetUserReqApplicationListReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+    #[serde(rename = "pagination")]
+    pub pagination: Pagination,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetGroupApplicationListResp {
     #[serde(rename = "groupRequests", default)]
@@ -235,7 +254,7 @@ pub struct GetGroupApplicationListResp {
     pub total: u32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Default)]
 pub struct GroupApplyInfo {
     #[serde(rename = "groupID")]
     pub group_id: String,
@@ -251,14 +270,66 @@ pub struct GroupApplyInfo {
     pub ex: Option<String>,
 }
 
+impl<'de> Deserialize<'de> for GroupApplyInfo {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize, Default)]
+        struct GroupApplyUserInfo {
+            #[serde(rename = "userID", default)]
+            user_id: String,
+            #[serde(default)]
+            nickname: String,
+            #[serde(rename = "faceURL", default)]
+            face_url: String,
+        }
+
+        #[derive(Deserialize, Default)]
+        struct GroupApplyGroupInfo {
+            #[serde(rename = "groupID", default)]
+            group_id: String,
+            #[serde(rename = "groupName", default)]
+            group_name: String,
+        }
+
+        #[derive(Deserialize)]
+        struct Raw {
+            #[serde(rename = "userInfo", default)]
+            user_info: GroupApplyUserInfo,
+            #[serde(rename = "groupInfo", default)]
+            group_info: GroupApplyGroupInfo,
+            #[serde(rename = "handleResult", default)]
+            handle_result: i32,
+            #[serde(rename = "reqMsg", default)]
+            reason: String,
+            #[serde(default)]
+            ex: Option<String>,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(GroupApplyInfo {
+            group_id: raw.group_info.group_id,
+            user_id: raw.user_info.user_id,
+            nickname: raw.user_info.nickname,
+            face_url: raw.user_info.face_url,
+            reason: raw.reason,
+            handle_result: raw.handle_result,
+            ex: raw.ex,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AcceptGroupApplicationReq {
     #[serde(rename = "groupID")]
     pub group_id: String,
     #[serde(rename = "fromUserID")]
     pub from_user_id: String,
-    #[serde(rename = "handleMsg")]
+    #[serde(rename = "handledMsg", skip_serializing_if = "Option::is_none")]
     pub handle_msg: Option<String>,
+    #[serde(rename = "handleResult")]
+    pub handle_result: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -267,8 +338,10 @@ pub struct RefuseGroupApplicationReq {
     pub group_id: String,
     #[serde(rename = "fromUserID")]
     pub from_user_id: String,
-    #[serde(rename = "handleMsg")]
+    #[serde(rename = "handledMsg", skip_serializing_if = "Option::is_none")]
     pub handle_msg: Option<String>,
+    #[serde(rename = "handleResult")]
+    pub handle_result: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -286,11 +359,11 @@ pub struct GetIncrementalJoinGroupResp {
     #[serde(rename = "versionID")]
     pub version_id: String,
     pub full: bool,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
     pub delete: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
     pub insert: Vec<ServerGroupInfo>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
     pub update: Vec<ServerGroupInfo>,
     #[serde(rename = "sortVersion", default)]
     pub sort_version: u64,
@@ -342,7 +415,7 @@ pub trait GroupServerApi: Send + Sync {
     async fn set_group_member_info(&self, req: &SetGroupMemberInfoReq) -> Result<()>;
     async fn get_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp>;
     async fn get_recv_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp>;
-    async fn get_send_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp>;
+    async fn get_send_group_application_list(&self, req: &GetUserReqApplicationListReq) -> Result<GetGroupApplicationListResp>;
     async fn get_group_application_unhandled_count(&self, user_id: &str) -> Result<i32>;
     async fn accept_group_application(&self, req: &AcceptGroupApplicationReq) -> Result<()>;
     async fn refuse_group_application(&self, req: &RefuseGroupApplicationReq) -> Result<()>;
@@ -360,6 +433,7 @@ mod tests {
             group_id: "group_123".to_string(),
             req_msg: Some("Please add me".to_string()),
             join_source: 1,
+            inviter_user_id: String::new(),
             ex: None,
         };
         let json = serde_json::to_string(&req).unwrap();
@@ -368,23 +442,37 @@ mod tests {
     }
 
     #[test]
+    fn test_incremental_join_group_resp_null_arrays() {
+        let json = r#"{"version":1,"versionID":"v1","full":true,"delete":null,"insert":null,"update":null,"sortVersion":0}"#;
+        let resp: GetIncrementalJoinGroupResp = serde_json::from_str(json).unwrap();
+        assert!(resp.delete.is_empty());
+        assert!(resp.insert.is_empty());
+        assert!(resp.update.is_empty());
+    }
+
+    #[test]
     fn test_accept_group_application_req_serialization() {
         let req = AcceptGroupApplicationReq {
             group_id: "group_123".to_string(),
             from_user_id: "user_a".to_string(),
             handle_msg: Some("Welcome".to_string()),
+            handle_result: 1,
         };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("groupID"));
         assert!(json.contains("fromUserID"));
+        assert!(json.contains("handleResult"));
+        assert!(json.contains("handledMsg"));
     }
 
     #[test]
     fn test_group_apply_info_deserialization() {
-        let json = r#"{"userID":"user_1","nickname":"Test","faceURL":"","gender":1,"createTime":1000,"addSource":1,"ex":"","reqMsg":"Join","handleResult":0,"handleMsg":null,"groupID":"group_123","groupName":"Test Group"}"#;
+        let json = r#"{"userInfo":{"userID":"user_1","nickname":"Test","faceURL":""},"groupInfo":{"groupID":"group_123","groupName":"Test Group"},"handleResult":0,"reqMsg":"Join","handleMsg":"","reqTime":1000,"ex":""}"#;
         let info: GroupApplyInfo = serde_json::from_str(json).unwrap();
         assert_eq!(info.user_id, "user_1");
         assert_eq!(info.group_id, "group_123");
+        assert_eq!(info.nickname, "Test");
+        assert_eq!(info.reason, "Join");
     }
 
     #[test]

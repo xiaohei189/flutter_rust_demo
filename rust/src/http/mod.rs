@@ -17,6 +17,16 @@ pub mod types;
 pub mod user;
 
 pub use types::Pagination;
+use serde::{Deserialize, Deserializer};
+
+/// 服务端会把空数组序列化为 null，这里统一按空数组处理。
+pub(crate) fn de_vec_or_default<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Ok(Option::<Vec<T>>::deserialize(deserializer)?.unwrap_or_default())
+}
 // 重新导出 port trait（供 core/ 层使用）
 pub use conversation::ConversationServerApi;
 pub use friend::FriendServerApi;

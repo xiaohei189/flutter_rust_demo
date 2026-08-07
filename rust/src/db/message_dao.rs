@@ -49,7 +49,9 @@ impl MessageDao {
 
     pub async fn get_by_conversation(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
         debug!("[DB] get_by_conversation: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
-        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND (send_time < ? OR ? = 0) ORDER BY send_time DESC LIMIT ?")
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time < ? OR ? = 0) ORDER BY send_time DESC LIMIT ?",
+        )
             .bind(conversation_id)
             .bind(start_time)
             .bind(start_time)
@@ -123,7 +125,7 @@ impl MessageDao {
 
     pub async fn get_latest(&self, conversation_id: &str, limit: i64) -> Result<Vec<LocalChatLog>> {
         debug!("[DB] get_latest: conversation_id={}, limit={}", conversation_id, limit);
-        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? ORDER BY send_time DESC LIMIT ?")
+        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 ORDER BY send_time DESC LIMIT ?")
             .bind(conversation_id)
             .bind(limit)
             .fetch_all(&self.pool)
@@ -161,7 +163,7 @@ impl MessageDao {
     /// 按内容关键字搜索消息
     pub async fn search_by_content(&self, conversation_id: &str, keyword: &str) -> Result<Vec<LocalChatLog>> {
         let pattern = format!("%{}%", keyword);
-        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND content LIKE ? ORDER BY send_time DESC")
+        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND content LIKE ? ORDER BY send_time DESC")
             .bind(conversation_id)
             .bind(&pattern)
             .fetch_all(&self.pool)
@@ -316,7 +318,7 @@ impl MessageDao {
         offset: i64,
         count: i64,
     ) -> Result<Vec<LocalChatLog>> {
-        let mut qb = sqlx::QueryBuilder::<sqlx::Sqlite>::new("SELECT * FROM local_chat_logs WHERE 1=1");
+        let mut qb = sqlx::QueryBuilder::<sqlx::Sqlite>::new("SELECT * FROM local_chat_logs WHERE 1=1 AND status < 4");
         qb.push(" AND conversation_id = ").push_bind(conversation_id);
         if !keyword.is_empty() {
             qb.push(" AND content LIKE ").push_bind(format!("%{}%", keyword));
@@ -470,7 +472,9 @@ impl MessageDao {
     /// 按会话 ASC 排序获取消息（用于倒序翻页，对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
     pub async fn get_by_conversation_asc(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
         debug!("[DB] get_by_conversation_asc: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
-        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND (send_time > ? OR ? = 0) ORDER BY send_time ASC LIMIT ?")
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time > ? OR ? = 0) ORDER BY send_time ASC LIMIT ?",
+        )
             .bind(conversation_id)
             .bind(start_time)
             .bind(start_time)
@@ -561,7 +565,9 @@ impl MessageDao {
             "[DB] get_by_seq_range: conversation_id={}, start_seq={}, end_seq={}, count={}",
             conversation_id, start_seq, end_seq, count
         );
-        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq >= ? AND seq <= ? AND seq > 0 ORDER BY seq ASC LIMIT ?")
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND seq >= ? AND seq <= ? AND seq > 0 ORDER BY seq ASC LIMIT ?",
+        )
             .bind(conversation_id)
             .bind(start_seq)
             .bind(end_seq)

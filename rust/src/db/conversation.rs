@@ -22,6 +22,15 @@ pub trait ConversationRepository: Send + Sync {
     // --- 以下为 manager 中使用的额外方法 ---
     async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()>;
     async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()>;
+    async fn update_partial(
+        &self,
+        conversation_id: &str,
+        recv_msg_opt: Option<i32>,
+        is_pinned: Option<bool>,
+        is_private_chat: Option<bool>,
+        group_at_type: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()>;
     async fn set_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()>;
     async fn get_pinned(&self) -> Result<Vec<LocalConversation>>;
     async fn count(&self) -> Result<i32>;

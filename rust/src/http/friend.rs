@@ -63,12 +63,16 @@ pub struct AddFriendReq {
     pub to_user_id: String,
     #[serde(rename = "reqMsg")]
     pub req_msg: Option<String>,
+    #[serde(rename = "ex", skip_serializing_if = "Option::is_none")]
+    pub ex: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeleteFriendReq {
-    #[serde(rename = "toUserID")]
-    pub to_user_id: String,
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "friendUserID")]
+    pub friend_user_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -79,14 +83,20 @@ pub struct GetFriendIdListResp {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AddBlackReq {
-    #[serde(rename = "toUserID")]
-    pub to_user_id: String,
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "blackUserID")]
+    pub black_user_id: String,
+    #[serde(rename = "ex", skip_serializing_if = "Option::is_none")]
+    pub ex: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RemoveBlackReq {
-    #[serde(rename = "toUserID")]
-    pub to_user_id: String,
+    #[serde(rename = "ownerUserID")]
+    pub owner_user_id: String,
+    #[serde(rename = "blackUserID")]
+    pub black_user_id: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -110,7 +120,7 @@ pub struct BlackServerInfo {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetFriendApplyListReq {
     #[serde(rename = "userID")]
-    pub from_user_id: String,
+    pub user_id: String,
     #[serde(rename = "pagination")]
     pub pagination: Pagination,
 }
@@ -121,6 +131,68 @@ pub struct GetFriendApplyListResp {
     pub apply_infos: Option<Vec<FriendApplyInfo>>,
     #[serde(rename = "total", default)]
     pub total: i32,
+}
+
+/// 服务端原始好友申请对象（对齐 sdkws.FriendRequest）
+#[derive(Clone, Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerFriendRequest {
+    #[serde(rename = "fromUserID", default)]
+    pub from_user_id: String,
+    #[serde(rename = "fromNickname", default)]
+    pub from_nickname: String,
+    #[serde(rename = "fromFaceURL", default)]
+    pub from_face_url: String,
+    #[serde(rename = "toUserID", default)]
+    pub to_user_id: String,
+    #[serde(rename = "toNickname", default)]
+    pub to_nickname: String,
+    #[serde(rename = "toFaceURL", default)]
+    pub to_face_url: String,
+    #[serde(rename = "handleResult", default)]
+    pub handle_result: i32,
+    #[serde(rename = "reqMsg", default)]
+    pub req_msg: String,
+    #[serde(rename = "createTime", default)]
+    pub create_time: i64,
+    #[serde(rename = "handlerUserID", default)]
+    pub handler_user_id: String,
+    #[serde(default)]
+    pub ex: String,
+}
+
+/// 服务端好友申请列表响应（字段名为 friendRequests）
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct GetFriendApplyListServerResp {
+    #[serde(rename = "FriendRequests", default)]
+    pub friend_requests: Vec<ServerFriendRequest>,
+    #[serde(default)]
+    pub total: i32,
+}
+
+impl From<GetFriendApplyListServerResp> for GetFriendApplyListResp {
+    fn from(resp: GetFriendApplyListServerResp) -> Self {
+        Self {
+            apply_infos: Some(
+                resp.friend_requests
+                    .into_iter()
+                    .map(|r| FriendApplyInfo {
+                        user_id: r.from_user_id,
+                        nickname: r.from_nickname,
+                        face_url: r.from_face_url,
+                        gender: 0,
+                        create_time: r.create_time,
+                        add_source: 0,
+                        ex: r.ex,
+                        req_msg: Some(r.req_msg),
+                        handle_result: r.handle_result,
+                        handle_msg: None,
+                    })
+                    .collect(),
+            ),
+            total: resp.total,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -143,16 +215,24 @@ pub struct FriendApplyInfo {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AcceptFriendApplicationReq {
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
     #[serde(rename = "toUserID")]
     pub to_user_id: String,
+    #[serde(rename = "handleResult")]
+    pub handle_result: i32,
     #[serde(rename = "handleMsg")]
     pub handle_msg: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RefuseFriendApplicationReq {
+    #[serde(rename = "fromUserID")]
+    pub from_user_id: String,
     #[serde(rename = "toUserID")]
     pub to_user_id: String,
+    #[serde(rename = "handleResult")]
+    pub handle_result: i32,
     #[serde(rename = "handleMsg")]
     pub handle_msg: Option<String>,
 }
@@ -180,11 +260,11 @@ pub struct GetIncrementalFriendsResp {
     #[serde(rename = "versionID")]
     pub version_id: String,
     pub full: bool,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
     pub delete: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
     pub insert: Vec<FriendServerInfo>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
     pub update: Vec<FriendServerInfo>,
     #[serde(rename = "sortVersion", default)]
     pub sort_version: u64,
@@ -293,6 +373,7 @@ mod tests {
             from_user_id: "user_a".to_string(),
             to_user_id: "user_b".to_string(),
             req_msg: Some("Hello!".to_string()),
+            ex: None,
         };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("fromUserID"));
@@ -311,18 +392,22 @@ mod tests {
     #[test]
     fn test_accept_friend_application_req_serialization() {
         let req = AcceptFriendApplicationReq {
+            from_user_id: "user_a".to_string(),
             to_user_id: "user_b".to_string(),
+            handle_result: 1,
             handle_msg: Some("Accepted".to_string()),
         };
         let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("fromUserID"));
         assert!(json.contains("toUserID"));
+        assert!(json.contains("handleResult"));
         assert!(json.contains("Accepted"));
     }
 
     #[test]
     fn test_get_friend_apply_list_req_serialization() {
         let req = GetFriendApplyListReq {
-            from_user_id: "user_a".to_string(),
+            user_id: "user_a".to_string(),
             pagination: Pagination { page_number: 1, show_number: 50 },
         };
         let json = serde_json::to_string(&req).unwrap();
@@ -348,6 +433,15 @@ mod tests {
         assert!(json.contains("userID"));
         assert!(json.contains("versionID"));
         assert!(json.contains("version"));
+    }
+
+    #[test]
+    fn test_incremental_friends_resp_null_arrays() {
+        let json = r#"{"version":1,"versionID":"v1","full":true,"delete":null,"insert":null,"update":null,"sortVersion":0}"#;
+        let resp: GetIncrementalFriendsResp = serde_json::from_str(json).unwrap();
+        assert!(resp.delete.is_empty());
+        assert!(resp.insert.is_empty());
+        assert!(resp.update.is_empty());
     }
 
     #[test]

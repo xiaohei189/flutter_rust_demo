@@ -218,7 +218,6 @@ impl ConnectionApi for OpenIMClient {
         self.user.clear().await;
         self.friend.clear().await;
         self.group.clear().await;
-        self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
         self.connection.send(ConnectionEvent::Logout);
         info!("用户登出成功");

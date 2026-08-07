@@ -6,8 +6,8 @@ use crate::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::friend::{
     AcceptFriendApplicationReq, AddBlackReq, AddFriendReq, CheckFriendResult, DeleteFriendReq, FriendServerApi, GetBlackListResp, GetDesignatedFriendsReq, GetDesignatedFriendsResp,
-    GetFriendApplyListReq, GetFriendApplyListResp, GetFriendListReq, GetFriendListResp, GetIncrementalFriendsReq, GetIncrementalFriendsResp, RefuseFriendApplicationReq, RemoveBlackReq,
-    UpdateFriendsReq,
+    GetFriendApplyListReq, GetFriendApplyListResp, GetFriendApplyListServerResp, GetFriendListReq, GetFriendListResp, GetIncrementalFriendsReq, GetIncrementalFriendsResp,
+    RefuseFriendApplicationReq, RemoveBlackReq, UpdateFriendsReq,
 };
 use crate::http::routes::{
     ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND, GET_BLACK_LIST, GET_DESIGNATED_FRIENDS, GET_FRIEND_APPLY_LIST, GET_FRIEND_LIST, GET_INCREMENTAL_FRIENDS,
@@ -88,11 +88,15 @@ impl FriendServerApi for HttpFriendApi {
     }
 
     async fn get_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp> {
-        Ok(self.http_client.post(GET_FRIEND_APPLY_LIST, req).await?)
+        let raw: serde_json::Value = self.http_client.post(GET_FRIEND_APPLY_LIST, req).await?;
+        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(&format!("解析好友申请列表失败: {}", e)))?;
+        Ok(server.into())
     }
 
     async fn get_self_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp> {
-        Ok(self.http_client.post(GET_SELF_FRIEND_APPLY_LIST, req).await?)
+        let raw: serde_json::Value = self.http_client.post(GET_SELF_FRIEND_APPLY_LIST, req).await?;
+        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(&format!("解析好友申请列表失败: {}", e)))?;
+        Ok(server.into())
     }
 
     async fn get_self_unhandled_apply_count(&self, user_id: &str) -> Result<i32> {

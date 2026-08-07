@@ -7,7 +7,7 @@ use crate::http::client::HttpApiClient;
 use crate::http::group::{
     AcceptGroupApplicationReq, CreateGroupReq, CreateGroupResp, DismissGroupReq, GetGroupApplicationListReq, GetGroupApplicationListResp, GetGroupMemberListReq, GetGroupMemberListResp,
     GetGroupMembersInfoReq, GetGroupMembersInfoResp, GetGroupsInfoReq, GetGroupsInfoResp, GetIncrementalJoinGroupReq, GetIncrementalJoinGroupResp, GetJoinedGroupListReq, GetJoinedGroupListResp,
-    GroupServerApi, InviteUserToGroupReq, JoinGroupReq, KickGroupMemberReq, QuitGroupReq, RefuseGroupApplicationReq, SetGroupInfoReq, SetGroupMemberInfoReq,
+    GetUserReqApplicationListReq, GroupServerApi, InviteUserToGroupReq, JoinGroupReq, KickGroupMemberReq, QuitGroupReq, RefuseGroupApplicationReq, SetGroupInfoReq, SetGroupMemberInfoReq,
 };
 use crate::http::routes::{
     ACCEPT_GROUP_APPLICATION, CANCEL_MUTE_GROUP, CANCEL_MUTE_GROUP_MEMBER, CREATE_GROUP, DISMISS_GROUP, GET_GROUPS_INFO, GET_GROUP_APPLICATION_LIST, GET_GROUP_APPLICATION_UNHANDLED_COUNT,
@@ -98,13 +98,14 @@ impl GroupServerApi for HttpGroupApi {
         Ok(self.http_client.post(GET_RECV_GROUP_APPLICATION_LIST, req).await?)
     }
 
-    async fn get_send_group_application_list(&self, req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp> {
+    async fn get_send_group_application_list(&self, req: &GetUserReqApplicationListReq) -> Result<GetGroupApplicationListResp> {
         Ok(self.http_client.post(GET_SEND_GROUP_APPLICATION_LIST, req).await?)
     }
 
     async fn get_group_application_unhandled_count(&self, user_id: &str) -> Result<i32> {
         #[derive(Serialize)]
         struct UnhandledCountReq {
+            #[serde(rename = "userID")]
             user_id: String,
         }
         #[derive(Deserialize, Default)]

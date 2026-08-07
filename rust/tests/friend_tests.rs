@@ -38,6 +38,24 @@ async fn test_add_friend() {
     }
     assert!(result.is_ok());
 
+    let sdk2 = create_sdk(
+        &TestAccount {
+            user_id: cert2.user_id.clone(),
+            phone: phone2,
+            nickname: "AddFriendUser2".into(),
+            im_token: Some(cert2.im_token.clone()),
+            chat_token: None,
+        },
+        &cert2.im_token,
+    )
+    .await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    let apply = sdk2.get_friend_apply_list().await.unwrap();
+    assert!(!apply.is_empty(), "用户2应收到好友申请");
+    sdk2.accept_friend_application(&cert1.user_id, None).await.unwrap();
+    tokio::time::sleep(Duration::from_secs(2)).await;
+    sdk.sync_friends().await.unwrap();
+
     let is_friend = sdk.is_friend(&cert2.user_id).await;
     println!("是否好友: {}", is_friend);
     assert!(is_friend);

@@ -87,11 +87,19 @@ pub struct GetFullConversationIDsResp {
     pub conversation_ids: Vec<String>,
 }
 
-/// 设置会话的请求体（对齐 Go SDK `SetConversationReq` / HTTP 路由 `/conversation/set_conversation`）
+/// 设置会话的请求体（对齐 Go SDK `SetConversationsReq` / HTTP 路由 `/conversation/set_conversations`）
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SetConversationReq {
+    #[serde(rename = "userIDs", skip_serializing_if = "Vec::is_empty")]
+    pub user_ids: Vec<String>,
     #[serde(rename = "conversationID")]
     pub conversation_id: String,
+    #[serde(rename = "conversationType", skip_serializing_if = "Option::is_none")]
+    pub conversation_type: Option<i32>,
+    #[serde(rename = "userID", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    #[serde(rename = "groupID", skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
     #[serde(rename = "recvMsgOpt", skip_serializing_if = "Option::is_none")]
     pub recv_msg_opt: Option<i32>,
     #[serde(rename = "isPinned", skip_serializing_if = "Option::is_none")]
@@ -259,7 +267,11 @@ mod tests {
     #[test]
     fn test_set_conversation_req_serialization() {
         let req = SetConversationReq {
+            user_ids: vec!["user_a".to_string()],
             conversation_id: "si_user_a_user_b".to_string(),
+            conversation_type: Some(1),
+            user_id: Some("user_a".to_string()),
+            group_id: None,
             recv_msg_opt: Some(2),
             is_pinned: Some(true),
             is_private_chat: None,
@@ -270,5 +282,6 @@ mod tests {
         assert!(json.contains("recvMsgOpt"));
         assert!(json.contains("isPinned"));
         assert!(json.contains("true"));
+        assert!(json.contains("userIDs"));
     }
 }

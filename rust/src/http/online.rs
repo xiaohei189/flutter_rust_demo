@@ -25,7 +25,7 @@ pub struct UserStatusItem {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetUserStatusResp {
-    #[serde(rename = "usersStatus", default)]
+    #[serde(rename = "statusList", default)]
     pub users_status: Vec<UserStatusItem>,
 }
 
@@ -37,7 +37,7 @@ pub struct SubscribeUsersStatusReq {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SubscribeUsersStatusResp {
-    #[serde(rename = "usersStatus", default)]
+    #[serde(rename = "statusList", default)]
     pub users_status: Vec<UserStatusItem>,
 }
 
@@ -49,7 +49,7 @@ pub struct UnsubscribeUsersStatusReq {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetSubscribeUsersStatusResp {
-    #[serde(rename = "usersStatus", default)]
+    #[serde(rename = "statusList", default)]
     pub users_status: Vec<UserStatusItem>,
 }
 
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_get_user_status_resp_deserialization() {
-        let json = r#"{"usersStatus":[{"userID":"user_1","status":1,"platformIDs":[1]}]}"#;
+        let json = r#"{"statusList":[{"userID":"user_1","status":1,"platformIDs":[1]}]}"#;
         let resp: GetUserStatusResp = serde_json::from_str(json).unwrap();
         assert_eq!(resp.users_status.len(), 1);
         assert_eq!(resp.users_status[0].status, 1);
