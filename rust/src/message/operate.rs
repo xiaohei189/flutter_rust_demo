@@ -315,6 +315,53 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_revoke_with_zero_seq_resolves_from_local() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let service = make_service(repositories);
+        message_dao.batch_insert(&[make_local_msg("conv_z", "msg_z", 9, "user_1")]).await.unwrap();
+
+        service
+            .revoke_message(RevokeMessageReq {
+                conversation_id: "conv_z".into(),
+                seq: 0,
+                user_id: "user_1".into(),
+                client_msg_id: "msg_z".into(),
+                session_type: 1,
+            })
+            .await
+            .unwrap();
+
+        let msg = message_dao.get_by_client_msg_id("conv_z", "msg_z").await.unwrap().unwrap();
+        assert_eq!(msg.content_type, crate::constant::notification_type::REVOKE);
+    }
+
+    #[tokio::test]
+    async fn test_revoke_server_failure_keeps_local_unchanged() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let api: Arc<dyn MessageServerApi> = Arc::new(FailMockApi);
+        let service = make_service_with_api(repositories, api);
+        message_dao.batch_insert(&[make_local_msg("conv_f", "msg_f", 3, "user_1")]).await.unwrap();
+
+        let result = service
+            .revoke_message(RevokeMessageReq {
+                conversation_id: "conv_f".into(),
+                seq: 3,
+                user_id: "user_1".into(),
+                client_msg_id: "msg_f".into(),
+                session_type: 1,
+            })
+            .await;
+        assert!(result.is_err());
+
+        let msg = message_dao.get_by_client_msg_id("conv_f", "msg_f").await.unwrap().unwrap();
+        assert_eq!(msg.content_type, 101);
+    }
+
+    #[tokio::test]
     async fn test_delete_messages_success_removes_local() {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
