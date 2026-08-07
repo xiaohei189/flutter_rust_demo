@@ -1025,6 +1025,27 @@ mod tests {
         assert_eq!(result, msg.content, "文件无 sourcePath 应原样返回");
     }
 
+    #[tokio::test]
+    async fn test_process_media_upload_failure_propagates() {
+        let server = wiremock::MockServer::start().await;
+        wiremock::Mock::given(wiremock::matchers::method("POST"))
+            .respond_with(wiremock::ResponseTemplate::new(500).set_body_json(serde_json::json!({"errCode": 500, "errMsg": "upload failed"})))
+            .mount(&server)
+            .await;
+        let uploader = FileUploader::new(Arc::new(HttpApiClient::new(server.uri(), "token".to_string(), "op".to_string())));
+
+        let path = std::env::temp_dir().join(format!("sdk_upload_fail_{}.txt", uuid::Uuid::new_v4()));
+        std::fs::write(&path, b"x").unwrap();
+
+        let mut msg = MsgStruct::default();
+        msg.content_type = 102;
+        msg.content = serde_json::json!({"sourcePath": path.to_string_lossy()}).to_string();
+
+        let result = process_media_content_impl(&uploader, &msg).await;
+        assert!(result.is_err());
+        let _ = std::fs::remove_file(&path);
+    }
+
     // ========================================================================
     // conversation_id_for_msg 测试
     // ========================================================================
