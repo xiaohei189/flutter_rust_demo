@@ -5,7 +5,7 @@
 | 层级 | 命令 | 耗时 | 依赖 |
 | --- | --- | --- | --- |
 | 单元测试 | `cargo test --lib` | 约 3s | 无 |
-| 离线集成（wiremock） | `cargo test --test hermetic_tests` | 约 1s | 无 |
+| 离线集成（wiremock） | `cargo test --test hermetic_tests` | 约 1s | 无（好友/会话/群组全量同步） |
 | 真实服务端契约冒烟 | `cargo test --test contract_tests -- --ignored --test-threads=1` | 约 30s | Docker OpenIM |
 | 真实服务端集成 | `cargo test --test <suite> -- --ignored --test-threads=1` | 分钟级 | Docker OpenIM |
 
