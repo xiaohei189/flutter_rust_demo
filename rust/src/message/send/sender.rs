@@ -1046,6 +1046,109 @@ mod tests {
         let _ = std::fs::remove_file(&path);
     }
 
+    /// 媒体消息上传失败时不应污染本地 DB，也不应触达发送 RPC；上传恢复后重试可完整发送。
+    #[tokio::test]
+    async fn test_media_upload_failure_no_db_pollution_and_retry_succeeds() {
+        let fail_server = wiremock::MockServer::start().await;
+        wiremock::Mock::given(wiremock::matchers::method("POST"))
+            .respond_with(wiremock::ResponseTemplate::new(500).set_body_json(serde_json::json!({"errCode": 500, "errMsg": "upload failed"})))
+            .mount(&fail_server)
+            .await;
+        let fail_uploader = Arc::new(FileUploader::new(Arc::new(HttpApiClient::new(fail_server.uri(), "token".to_string(), "op".to_string()))));
+
+        let context = make_test_context().await;
+        let fail_transport = Arc::new(MockTransport::fail("上传失败时不应触达发送 RPC"));
+        let path = std::env::temp_dir().join(format!("sdk_media_retry_{}.png", uuid::Uuid::new_v4()));
+        std::fs::write(&path, b"fake-png").unwrap();
+
+        let mut msg = make_test_msg("client_msg_media_retry");
+        msg.content_type = 102;
+        msg.content = serde_json::json!({"sourcePath": path.to_string_lossy()}).to_string();
+
+        let first = do_send_message_impl(context.clone(), fail_transport.clone(), fail_uploader, msg.clone(), None, false).await;
+        assert!(first.is_err(), "上传失败应阻止发送");
+        assert_eq!(fail_transport.call_count.load(std::sync::atomic::Ordering::SeqCst), 0, "上传失败不应触达发送 RPC");
+        assert!(
+            context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry").await.unwrap().is_none(),
+            "上传失败不应写入本地消息"
+        );
+        assert!(
+            context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry").await.unwrap().is_none(),
+            "上传失败不应留下 sending 记录"
+        );
+
+        // 上传服务恢复后，同一消息重试应完整走通并回写成功状态
+        let ok_server = wiremock::MockServer::start().await;
+        wiremock::Mock::given(wiremock::matchers::method("POST"))
+            .and(wiremock::matchers::path("/object/part_limit"))
+            .respond_with(wiremock::ResponseTemplate::new(500))
+            .mount(&ok_server)
+            .await;
+        wiremock::Mock::given(wiremock::matchers::method("POST"))
+            .and(wiremock::matchers::path("/object/initiate_form_data"))
+            .respond_with(
+                wiremock::ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0,
+                    "errMsg": "",
+                    "data": {
+                        "id": "upload_1",
+                        "url": format!("{}/upload_target", ok_server.uri()),
+                        "file": "file",
+                        "header": null,
+                        "formData": {},
+                        "expires": 3600,
+                        "successCodes": [200]
+                    }
+                })),
+            )
+            .mount(&ok_server)
+            .await;
+        wiremock::Mock::given(wiremock::matchers::method("POST"))
+            .and(wiremock::matchers::path("/upload_target"))
+            .respond_with(wiremock::ResponseTemplate::new(200))
+            .mount(&ok_server)
+            .await;
+        wiremock::Mock::given(wiremock::matchers::method("POST"))
+            .and(wiremock::matchers::path("/object/complete_form_data"))
+            .respond_with(
+                wiremock::ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "errCode": 0,
+                    "errMsg": "",
+                    "data": {"url": "https://cdn.example/uploaded.png"}
+                })),
+            )
+            .mount(&ok_server)
+            .await;
+
+        let ok_uploader = Arc::new(FileUploader::new(Arc::new(HttpApiClient::new(ok_server.uri(), "token".to_string(), "op".to_string()))));
+        let ok_transport = Arc::new(MockTransport::success("server_media_ok"));
+
+        let second = do_send_message_impl(context.clone(), ok_transport.clone(), ok_uploader, msg, None, false).await;
+        assert!(second.is_ok(), "上传恢复后重试应成功: {:?}", second.err());
+        assert_eq!(ok_transport.call_count.load(std::sync::atomic::Ordering::SeqCst), 1);
+
+        let db_msg = context
+            .repositories
+            .message_repo
+            .get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry")
+            .await
+            .unwrap()
+            .expect("重试成功后本地消息应存在");
+        assert_eq!(db_msg.status, MessageSendStatus::SendSuccess as i32);
+        assert_eq!(db_msg.server_msg_id, "server_media_ok");
+
+        // 与 Go SDK 对齐：本地 chat log 不回写上传后的 content，但发送 RPC 报文必须携带上传结果
+        let sent_content = String::from_utf8(ok_transport.last_content().expect("发送 RPC 应携带上传后的 content")).unwrap();
+        assert!(sent_content.contains("https://cdn.example/uploaded.png"), "发送报文应包含上传 URL");
+        assert!(sent_content.contains("sourcePicture"), "图片消息报文应生成 sourcePicture");
+        assert!(
+            context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry").await.unwrap().is_none(),
+            "发送成功后 sending 记录应被清理"
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
+
     // ========================================================================
     // conversation_id_for_msg 测试
     // ========================================================================
@@ -1161,6 +1264,8 @@ mod tests {
         mode: MockMode,
         /// 记录调用次数
         call_count: AtomicUsize,
+        /// 记录最后一次发送的报文 content（用于断言媒体上传结果进入发送链路）
+        captured_content: Arc<std::sync::Mutex<Option<Vec<u8>>>>,
     }
 
     #[derive(Clone)]
@@ -1182,6 +1287,7 @@ mod tests {
                     send_time: 1000,
                 }),
                 call_count: AtomicUsize::new(0),
+                captured_content: Arc::new(std::sync::Mutex::new(None)),
             }
         }
 
@@ -1189,6 +1295,7 @@ mod tests {
             Self {
                 mode: MockMode::Fail(err_msg.to_string()),
                 call_count: AtomicUsize::new(0),
+                captured_content: Arc::new(std::sync::Mutex::new(None)),
             }
         }
 
@@ -1196,7 +1303,12 @@ mod tests {
             Self {
                 mode: MockMode::Timeout,
                 call_count: AtomicUsize::new(0),
+                captured_content: Arc::new(std::sync::Mutex::new(None)),
             }
+        }
+
+        fn last_content(&self) -> Option<Vec<u8>> {
+            self.captured_content.lock().unwrap().clone()
         }
     }
 
@@ -1204,6 +1316,7 @@ mod tests {
     impl MessageSendTransport for MockTransport {
         async fn send_msg_rpc(&self, msg_data: &MsgData) -> std::result::Result<UserSendMsgResp, SdkError> {
             self.call_count.fetch_add(1, Ordering::SeqCst);
+            *self.captured_content.lock().unwrap() = Some(msg_data.content.clone());
             match &self.mode {
                 MockMode::Success(resp) => Ok(UserSendMsgResp {
                     server_msg_id: resp.server_msg_id.clone(),

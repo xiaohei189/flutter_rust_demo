@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | 单元测试 | `cargo test --lib` | 约 3s | 无 |
 | 离线集成（wiremock） | `cargo test --test hermetic_tests` | 约 1s | 无（好友/会话/群组全量同步） |
-| 真实服务端契约冒烟 | `cargo test --test contract_tests -- --ignored --test-threads=1` | 约 30s | Docker OpenIM |
+| 真实服务端契约冒烟 | `cargo test --test contract_tests -- --ignored --test-threads=1` | 约 60s | Docker OpenIM |
 | 真实服务端集成 | `cargo test --test <suite> -- --ignored --test-threads=1` | 分钟级 | Docker OpenIM |
 
 真实服务端套件默认被 `#[ignore]` 标记，普通 `cargo test` 只跑快速层，避免开发/CI 被慢测试拖住。
@@ -15,9 +15,10 @@
 
 保证 mock 准确的方式：
 
-1. 以真实服务端响应为唯一事实来源，`contract_tests` 负责持续校验。
+1. 以真实服务端响应为唯一事实来源，`contract_tests` 负责持续校验；契约已按 user/online、friend、message/conversation、group 分域覆盖。
 2. 把真实响应保存为 JSON fixtures，mock 层直接回放；`tests/fixtures/` 已覆盖好友/会话/群组全量与增量、消息 HTTP 通用响应。
-3. 服务端升级或协议变更后，先跑 `scripts/test-contract.ps1`，再根据真实响应更新 fixtures。
+3. `contract_tests` 内含 fixture 结构对齐用例：逐字段校验 fixtures 中出现的键仍存在于真实响应中，服务端字段改名/删除会直接失败。
+4. 服务端升级或协议变更后，先跑 `scripts/test-contract.ps1`，再根据真实响应更新 fixtures。
 
 ## 快速入口
 
@@ -71,6 +72,7 @@ powershell -ExecutionPolicy Bypass -File scripts/test-contract.ps1
 | --- | --- |
 | 文本/媒体发送、发送队列高低 Lane | `src/message/send/sender.rs`, `src/message/send/queue.rs` |
 | 发送成功/失败/超时/在线-only | `src/message/send/sender.rs` |
+| 媒体上传失败不污染本地、上传恢复后重试成功 | `src/message/send/sender.rs` |
 | 本地插入、撤回、删除、软删除 | `src/message/operate.rs`, `src/message/operate/delete.rs`, `src/message/operate/query.rs` |
 | 历史消息正序/倒序/按 seq/按 ID | `src/message/operate/query.rs` |
 | 搜索、未读数、已读回执 | `src/message/operate.rs`, `src/message/receive/receipt.rs` |
