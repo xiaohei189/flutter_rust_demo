@@ -15,6 +15,7 @@ import 'package:flutter_rust_demo/src/rust/model/user.dart' show UserInfo;
 import 'package:flutter_rust_demo/src/rust/model/local.dart' show LocalChatLog, LocalConversation;
 import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/models/message_ext.dart' show sortMessagesByTime;
 import 'package:flutter_rust_demo/src/rust/event/events/connection.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/conversation.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/friend.dart';
@@ -108,7 +109,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 获取指定会话的消息列表
   List<MessageInfo> getMessages(String conversationId) {
-    return List.unmodifiable(state.messages[conversationId] ?? []);
+    return List.unmodifiable(
+      sortMessagesByTime(state.messages[conversationId] ?? const []),
+    );
   }
 
   /// 将发送结果写入全局消息状态（替代已移除的 messageSent 事件）

@@ -237,4 +237,42 @@ void main() {
       expect(msg.contentType, 101);
     });
   });
+
+  group('sortMessagesByTime', () {
+    MessageInfo msg(int seq, int sendTime) => MessageInfo(
+          clientMsgId: 'm$seq',
+          serverMsgId: '',
+          sendId: 'u',
+          recvId: 'v',
+          groupId: '',
+          senderPlatformId: 0,
+          senderNickname: '',
+          senderFaceUrl: '',
+          sessionType: 1,
+          msgFrom: 0,
+          contentType: 101,
+          content: '{"content":"x"}',
+          seq: seq,
+          sendTime: sendTime,
+          createTime: sendTime,
+          status: 2,
+          isRead: false,
+          attachedInfo: '',
+          ex: '',
+        );
+
+    test('按 sendTime 升序', () {
+      final sorted = sortMessagesByTime([msg(3, 3000), msg(1, 1000), msg(2, 2000)]);
+      expect(sorted.map((m) => m.seq).toList(), [1, 2, 3]);
+    });
+
+    test('sendTime 相同按 seq 升序', () {
+      final sorted = sortMessagesByTime([msg(2, 1000), msg(1, 1000)]);
+      expect(sorted.map((m) => m.seq).toList(), [1, 2]);
+    });
+
+    test('空列表返回空', () {
+      expect(sortMessagesByTime([]), isEmpty);
+    });
+  });
 }
