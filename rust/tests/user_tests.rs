@@ -4,6 +4,7 @@ use common::*;
 use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
+/// 验证新用户注册成功并返回 user_id、im_token、chat_token。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_user_registration() {
@@ -23,6 +24,7 @@ async fn test_user_registration() {
     println!("  im_token: {}...", &cert.im_token[..20.min(cert.im_token.len())]);
 }
 
+/// 验证已注册用户可通过验证码登录并返回登录证书。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_user_login() {
@@ -44,6 +46,7 @@ async fn test_user_login() {
     println!("  user_id: {}", cert.user_id);
 }
 
+/// 验证注册后 SDK 创建、登录与基础用户能力可用。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_full_registration_and_functionality() {
@@ -71,6 +74,7 @@ async fn test_full_registration_and_functionality() {
     println!("✅ 完整注册+登录流程测试通过");
 }
 
+/// 验证通过 SDK 查询用户信息与在线状态。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_user_state_via_sdk() {
@@ -136,6 +140,7 @@ async fn test_user_state_via_sdk() {
     println!("✅ SDK 功能测试完成");
 }
 
+/// 验证查询指定用户的在线状态。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_get_user_online_status() {
@@ -151,6 +156,7 @@ async fn test_get_user_online_status() {
     println!("✅ 获取用户在线状态测试通过");
 }
 
+/// 验证更新用户资料（昵称/头像等）后本地与服务端数据正确。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_update_user_profile() {
@@ -181,6 +187,7 @@ async fn test_update_user_profile() {
     println!("✅ 更新用户资料测试完成");
 }
 
+/// 验证订阅与退订用户在线状态的通知流程。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_subscribe_unsubscribe_user_status() {

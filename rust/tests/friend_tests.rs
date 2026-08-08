@@ -4,6 +4,7 @@ use common::*;
 use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
+/// 验证用户 A 向用户 B 发送好友申请并建立好友关系。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_add_friend() {
@@ -63,6 +64,7 @@ async fn test_add_friend() {
     println!("✅ 添加好友测试完成");
 }
 
+/// 验证删除好友后双方好友关系解除。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_delete_friend() {
@@ -109,6 +111,7 @@ async fn test_delete_friend() {
     println!("✅ 删除好友测试完成");
 }
 
+/// 验证拉黑、取消拉黑与黑名单列表查询。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_blacklist_management() {
@@ -161,6 +164,7 @@ async fn test_blacklist_management() {
     println!("✅ 黑名单管理测试完成");
 }
 
+/// 验证好友列表全量同步后本地好友数据正确。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_friend_list_sync() {
@@ -212,6 +216,7 @@ async fn test_friend_list_sync() {
     println!("✅ 好友列表同步测试完成");
 }
 
+/// 验证用户状态接口与好友管理的组合场景。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_user_state_friend_management() {
@@ -252,6 +257,7 @@ async fn test_user_state_friend_management() {
     println!("✅ 好友管理测试完成");
 }
 
+/// 验证好友申请接受/拒绝的完整流程。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_friend_application_flow() {

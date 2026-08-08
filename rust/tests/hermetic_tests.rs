@@ -18,6 +18,7 @@ use std::sync::Arc;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
+/// 构造内存数据库对应的完整仓储集合，供离线测试共享。
 fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
     Arc::new(Repositories {
         message_repo: Arc::new(MessageDao::new(pool.clone())),
@@ -31,6 +32,7 @@ fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
     })
 }
 
+/// 验证 wiremock 好友全量同步响应能被正确解析并写入本地。
 #[tokio::test]
 async fn friend_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
@@ -64,6 +66,7 @@ async fn friend_full_sync_works_without_live_server() {
     assert_eq!(stored[0].friend_user_id, "user_2");
 }
 
+/// 验证 wiremock 会话全量同步响应能被正确解析并写入本地。
 #[tokio::test]
 async fn conversation_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
@@ -91,6 +94,7 @@ async fn conversation_full_sync_works_without_live_server() {
     assert_eq!(stored[0].conversation_id, "si_a_b");
 }
 
+/// 验证 wiremock 群组全量同步响应能被正确解析并写入本地。
 #[tokio::test]
 async fn group_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
@@ -115,6 +119,7 @@ async fn group_full_sync_works_without_live_server() {
     assert_eq!(stored[0].group_id, "g1");
 }
 
+/// 验证会话增量同步会插入新会话并持久化版本号。
 #[tokio::test]
 async fn conversation_incremental_sync_stores_insert_and_version() {
     let server = MockServer::start().await;
@@ -144,6 +149,7 @@ async fn conversation_incremental_sync_stores_insert_and_version() {
     assert_eq!(version, Some(("v1".to_string(), 1)));
 }
 
+/// 验证群组增量同步会插入新群组并持久化版本号。
 #[tokio::test]
 async fn group_incremental_sync_stores_insert_and_version() {
     let server = MockServer::start().await;

@@ -4,6 +4,7 @@ use common::*;
 use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
+/// 验证重复使用同一手机号注册会被服务端拒绝。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_register_with_existing_phone() {
@@ -22,6 +23,7 @@ async fn test_register_with_existing_phone() {
     println!("✅ 重复注册测试完成");
 }
 
+/// 验证使用无效 token 登录失败并返回错误。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_login_invalid_token() {
@@ -52,6 +54,7 @@ async fn test_login_invalid_token() {
     println!("✅ 无效 token 登录测试完成");
 }
 
+/// 验证重复添加同一好友时服务端返回错误或幂等处理。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_duplicate_add_friend() {
@@ -77,6 +80,7 @@ async fn test_duplicate_add_friend() {
     println!("✅ 重复添加好友测试完成");
 }
 
+/// 验证删除不存在的好友时返回错误。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_delete_non_existent_friend() {
@@ -106,6 +110,7 @@ async fn test_delete_non_existent_friend() {
     println!("✅ 删除不存在的好友测试完成");
 }
 
+/// 验证向不存在的用户发送消息时返回错误。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_send_message_to_nonexistent_user() {
@@ -128,6 +133,7 @@ async fn test_send_message_to_nonexistent_user() {
     println!("✅ 向不存在用户发消息测试完成");
 }
 
+/// 验证踢出不存在的群成员时返回错误。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_kick_nonexistent_group_member() {
@@ -152,6 +158,7 @@ async fn test_kick_nonexistent_group_member() {
     println!("✅ 踢不存在群成员测试完成");
 }
 
+/// 验证加入不存在的群组时返回错误。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_join_nonexistent_group() {
@@ -170,6 +177,7 @@ async fn test_join_nonexistent_group() {
     println!("✅ 加入不存在群组测试完成");
 }
 
+/// 验证设置空草稿的边界行为。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_set_conversation_draft_empty() {

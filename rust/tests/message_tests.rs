@@ -8,6 +8,7 @@ use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 use std::sync::Arc;
 use std::time::Duration;
 
+/// 按字典序生成单聊会话 ID：`si_{小user_id}_{大user_id}`。
 fn make_conversation_id(uid1: &str, uid2: &str) -> String {
     let mut ids = vec![uid1.to_string(), uid2.to_string()];
     ids.sort();

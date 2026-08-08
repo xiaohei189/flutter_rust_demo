@@ -4,6 +4,7 @@ use common::*;
 use rust_lib_flutter_rust_demo::client::*;
 use std::time::Duration;
 
+/// 验证 WebSocket 断线后自动重连并恢复连接状态。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_websocket_reconnection() {
@@ -70,6 +71,7 @@ async fn test_websocket_reconnection() {
     println!("✅ 断线重连测试完成");
 }
 
+/// 验证 SDK 重连机制：主动断开后能重新建立连接并继续可用。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_reconnection() {
@@ -93,6 +95,7 @@ async fn test_reconnection() {
     println!("✅ 重连测试完成");
 }
 
+/// 验证连接管理器在连接/断开/重连过程中的状态转换。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_connection_state_transitions() {

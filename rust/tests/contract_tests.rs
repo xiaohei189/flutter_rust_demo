@@ -13,6 +13,7 @@ use rust_lib_flutter_rust_demo::constant::enums::GroupType;
 use serde_json::Value;
 use std::time::Duration;
 
+/// 按字典序生成单聊会话 ID：`si_{小user_id}_{大user_id}`。
 fn make_conversation_id(uid1: &str, uid2: &str) -> String {
     let mut ids = vec![uid1.to_string(), uid2.to_string()];
     ids.sort();
@@ -97,6 +98,7 @@ fn assert_fixture_keys_covered(fixture: &Value, live: &Value, path: &str) {
     }
 }
 
+/// 验证真实服务端 user/online 域代表性 API 契约。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server; run via scripts/test-contract.ps1"]
 async fn user_online_contract() {
@@ -117,6 +119,7 @@ async fn user_online_contract() {
     println!("✅ user/online 契约通过");
 }
 
+/// 验证真实服务端好友域契约（加好友、好友列表、好友关系检查）。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server; run via scripts/test-contract.ps1"]
 async fn friend_contract() {
@@ -135,6 +138,7 @@ async fn friend_contract() {
     println!("✅ friend 契约通过");
 }
 
+/// 验证真实服务端消息发送、历史查询与会话契约。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server; run via scripts/test-contract.ps1"]
 async fn message_conversation_contract() {
@@ -154,6 +158,7 @@ async fn message_conversation_contract() {
     println!("✅ message/conversation 契约通过");
 }
 
+/// 验证真实服务端群组创建、查询与解散契约。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server; run via scripts/test-contract.ps1"]
 async fn group_contract() {

@@ -5,6 +5,7 @@ use rust_lib_flutter_rust_demo::client::*;
 use rust_lib_flutter_rust_demo::constant::enums::GroupType;
 use std::time::Duration;
 
+/// 验证创建群组成功并返回群组信息。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_create_group() {
@@ -27,6 +28,7 @@ async fn test_create_group() {
     println!("✅ 创建群组测试完成");
 }
 
+/// 验证用户加入群组与退出群组的完整流程。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_join_and_quit_group() {
@@ -65,6 +67,7 @@ async fn test_join_and_quit_group() {
     println!("✅ 加入/退出群组测试完成");
 }
 
+/// 验证群成员添加、移除与角色信息管理。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_member_management() {
@@ -140,6 +143,7 @@ async fn test_group_member_management() {
     println!("✅ 群成员管理测试完成");
 }
 
+/// 验证更新群名称、简介、通知等群资料。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_info_update() {
@@ -170,6 +174,7 @@ async fn test_group_info_update() {
     println!("✅ 群信息更新测试完成");
 }
 
+/// 验证加入群组列表全量同步后本地群数据正确。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_list_sync() {
@@ -186,6 +191,7 @@ async fn test_group_list_sync() {
     println!("✅ 群列表同步测试完成");
 }
 
+/// 验证用户状态接口与群组管理的组合场景。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_user_state_group_management() {
@@ -210,6 +216,7 @@ async fn test_user_state_group_management() {
     println!("✅ 群组管理测试完成");
 }
 
+/// 验证入群申请与审批的完整流程。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_application_flow() {
@@ -273,6 +280,7 @@ async fn test_group_application_flow() {
     println!("✅ 群组申请流程测试完成");
 }
 
+/// 验证群组解散与群主转让流程。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_dismiss_and_transfer() {
@@ -337,6 +345,7 @@ async fn test_group_dismiss_and_transfer() {
     println!("✅ 群组解散与转让测试完成");
 }
 
+/// 验证全员禁言与成员禁言、解除禁言操作。
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_mute_operations() {
