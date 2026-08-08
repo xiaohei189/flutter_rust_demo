@@ -235,20 +235,32 @@ impl MessageChecker {
             return Ok(None);
         }
 
+        // 本地已软删（status>=4）的 seq 视为已存在，跳过补拉，避免服务端把已删消息复活
+        let local_logs = self.message_repo.get_by_seqs(conversation_id, seq_list).await.unwrap_or_default();
+        let deleted_seqs: HashSet<i64> = local_logs
+            .iter()
+            .filter(|log| log.status >= msg_status::HAS_DELETED as i32)
+            .map(|log| log.seq)
+            .collect();
+        let pending_seqs: Vec<i64> = seq_list.iter().copied().filter(|seq| !deleted_seqs.contains(seq)).collect();
+        if pending_seqs.is_empty() {
+            return Ok(None);
+        }
+
         let order = if is_reverse { PullOrder::Desc as i32 } else { PullOrder::Asc as i32 };
 
         let req = GetSeqMessageReq {
             user_id: self.user_id.clone(),
             conversations: vec![ConversationSeqs {
                 conversation_id: conversation_id.to_string(),
-                seqs: seq_list.to_vec(),
+                seqs: pending_seqs.clone(),
             }],
             order,
         };
 
         info!(
             "[MsgCheck] fetch_missing_messages 请求: user_id={}, conv={}, seqs={:?}, order={}",
-            req.user_id, conversation_id, seq_list, order
+            req.user_id, conversation_id, pending_seqs, order
         );
 
         let resp: GetSeqMessageResp = self
@@ -260,7 +272,7 @@ impl MessageChecker {
         info!(
             "[MsgCheck] fetch_missing_messages: conv={}, seqs_requested={}, msgs_fetched={}",
             conversation_id,
-            seq_list.len(),
+            pending_seqs.len(),
             resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>()
         );
 
@@ -268,29 +280,9 @@ impl MessageChecker {
         let mut fetched_logs: Vec<LocalChatLog> = Vec::new();
         for (conv_id, pull_msgs) in &resp.msgs {
             for msg_data in &pull_msgs.msgs {
-                let local_log = LocalChatLog {
-                    conversation_id: conv_id.clone(),
-                    client_msg_id: msg_data.client_msg_id.clone(),
-                    server_msg_id: msg_data.server_msg_id.clone(),
-                    send_id: msg_data.send_id.clone(),
-                    recv_id: msg_data.recv_id.clone(),
-                    sender_platform_id: msg_data.sender_platform_id,
-                    sender_nick_name: msg_data.sender_nickname.clone(),
-                    sender_face_url: msg_data.sender_face_url.clone(),
-                    session_type: msg_data.session_type,
-                    msg_from: msg_data.msg_from,
-                    content_type: msg_data.content_type,
-                    content: String::from_utf8_lossy(&msg_data.content).to_string(),
-                    is_read: 0,
-                    status: msg_status::SEND_SUCCESS as i32,
-                    seq: msg_data.seq,
-                    send_time: msg_data.send_time,
-                    create_time: msg_data.create_time,
-                    attached_info: String::new(),
-                    ex: String::new(),
-                    local_ex: String::new(),
-                    group_id: msg_data.group_id.clone(),
-                };
+                // 对齐 Go `MsgDataToLocalChatLog`：服务端已删除（status>=4）时保留删除状态，
+                // 避免删除后 gap 补拉把已删消息复活。
+                let local_log = LocalChatLog::from_msg_data(conv_id, msg_data);
                 fetched_logs.push(local_log);
             }
 
@@ -664,6 +656,151 @@ mod tests {
         let b = vec![make_log("b1", 2, 2000)];
         let merged = merge_sorted_arrays(&a, &b, 0, true);
         assert!(merged.is_empty(), "limit=0 should return empty");
+    }
+
+    #[tokio::test]
+    async fn test_fetch_missing_preserves_deleted_status() {
+        use crate::connection::sync_server::SyncServerApi;
+        use crate::db::pool::create_pool_memory;
+        use crate::db::{ConversationDao, MessageDao};
+        use async_trait::async_trait;
+        use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+        use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs};
+        use std::collections::HashMap;
+
+        struct DeletedMsgMock {
+            msgs: HashMap<String, PullMsgs>,
+        }
+
+        #[async_trait]
+        impl SyncServerApi for DeletedMsgMock {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+                Ok(HashMap::new())
+            }
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+                Ok(PullMessageBySeqsResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+                Ok(GetSeqMessageResp {
+                    msgs: self.msgs.clone(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn is_kicked(&self) -> bool {
+                false
+            }
+        }
+
+        let pool = create_pool_memory().await.unwrap();
+        let message_dao = Arc::new(MessageDao::new(pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        let msgs = HashMap::from([(
+            "conv_1".to_string(),
+            PullMsgs {
+                msgs: vec![MsgData {
+                    client_msg_id: "m1".into(),
+                    send_id: "user_a".into(),
+                    recv_id: "user_b".into(),
+                    seq: 2,
+                    send_time: 2000,
+                    create_time: 2000,
+                    content_type: 101,
+                    content: r#"{"content":"deleted"}"#.as_bytes().to_vec(),
+                    status: msg_status::HAS_DELETED as i32,
+                    ..Default::default()
+                }],
+                is_end: false,
+                end_seq: 0,
+            },
+        )]);
+        let checker = MessageChecker::new(
+            Arc::new(DeletedMsgMock { msgs }),
+            message_dao.clone(),
+            conversation_dao.clone(),
+            "test_user".to_string(),
+        );
+
+        let fetched = checker
+            .fetch_and_merge_missing_messages("conv_1", &[2], false)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(fetched.len(), 1);
+        assert_eq!(fetched[0].status, msg_status::HAS_DELETED as i32, "服务端已删除消息补拉后应保留删除状态");
+        assert_eq!(fetched[0].client_msg_id, "m1");
+
+        let from_db = message_dao.get_by_client_msg_id("conv_1", "m1").await.unwrap().unwrap();
+        assert_eq!(from_db.status, msg_status::HAS_DELETED as i32, "入库后仍应保留删除状态");
+    }
+
+    #[tokio::test]
+    async fn test_fetch_missing_skips_locally_deleted_seq() {
+        use crate::connection::sync_server::SyncServerApi;
+        use crate::db::pool::create_pool_memory;
+        use crate::db::{ConversationDao, MessageDao};
+        use async_trait::async_trait;
+        use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+        use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};
+        use std::collections::HashMap;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        struct EmptyMock {
+            calls: AtomicUsize,
+        }
+
+        #[async_trait]
+        impl SyncServerApi for EmptyMock {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+                Ok(HashMap::new())
+            }
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+                Ok(PullMessageBySeqsResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                Ok(GetSeqMessageResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn is_kicked(&self) -> bool {
+                false
+            }
+        }
+
+        let pool = create_pool_memory().await.unwrap();
+        let message_dao = Arc::new(MessageDao::new(pool.clone()));
+        let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
+        // seq=2 已本地软删
+        message_dao
+            .batch_insert(&[make_log("m2", 2, 2000)])
+            .await
+            .unwrap();
+        message_dao.mark_as_deleted("conv_1", "m2").await.unwrap();
+
+        let mock = Arc::new(EmptyMock { calls: AtomicUsize::new(0) });
+        let checker = MessageChecker::new(
+            mock.clone(),
+            message_dao.clone(),
+            conversation_dao.clone(),
+            "test_user".to_string(),
+        );
+
+        let fetched = checker
+            .fetch_and_merge_missing_messages("conv_1", &[2], false)
+            .await
+            .unwrap();
+        assert!(fetched.is_none(), "本地已软删的 seq 不应触发服务端补拉");
+        assert_eq!(mock.calls.load(Ordering::SeqCst), 0, "不应发起补拉请求");
+
+        let local = message_dao.get_by_client_msg_id("conv_1", "m2").await.unwrap().unwrap();
+        assert_eq!(local.status, msg_status::HAS_DELETED as i32);
     }
 
     #[test]

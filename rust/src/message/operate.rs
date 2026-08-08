@@ -409,7 +409,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_messages_success_removes_local() {
+    async fn test_delete_messages_success_soft_deletes_local() {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
@@ -425,7 +425,8 @@ mod tests {
             })
             .await
             .unwrap();
-        assert!(message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().is_none());
+        let msg = message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().unwrap();
+        assert_eq!(msg.status, crate::constant::msg_status::HAS_DELETED as i32, "本地删除应保留记录并标记为已删除");
     }
 
     #[tokio::test]

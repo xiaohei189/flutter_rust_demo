@@ -36,7 +36,8 @@ impl MessageService {
     /// 本地删除逻辑（服务端已确认成功后调用）
     pub(crate) async fn apply_local_delete(&self, conversation_id: &str, client_msg_ids: &[String]) -> Result<()> {
         for client_msg_id in client_msg_ids {
-            self.repositories.message_repo.delete_by_client_msg_id(conversation_id, client_msg_id).await?;
+            // 对齐 Go SDK：软删（status=4），保留记录避免 seq 空洞被 gap 补拉复活
+            self.repositories.message_repo.mark_as_deleted(conversation_id, client_msg_id).await?;
         }
 
         self.message_listener.emit(MessageEvent::Deleted {
@@ -52,6 +53,7 @@ impl MessageService {
 mod tests {
     use super::*;
     use crate::client::context::Repositories;
+    use crate::constant::msg_status;
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
     use crate::error::SdkError;
@@ -183,10 +185,13 @@ mod tests {
 
         // 服务端调用一次
         assert_eq!(api.delete_count(), 1);
-        // 本地已删除（m2 保留）
-        assert!(dao.get_by_client_msg_id("conv_1", "m1").await.unwrap().is_none());
-        assert!(dao.get_by_client_msg_id("conv_1", "m3").await.unwrap().is_none());
-        assert!(dao.get_by_client_msg_id("conv_1", "m2").await.unwrap().is_some());
+        // 本地软删（status=4，记录保留），m2 保持正常
+        let m1 = dao.get_by_client_msg_id("conv_1", "m1").await.unwrap().unwrap();
+        let m3 = dao.get_by_client_msg_id("conv_1", "m3").await.unwrap().unwrap();
+        let m2 = dao.get_by_client_msg_id("conv_1", "m2").await.unwrap().unwrap();
+        assert_eq!(m1.status, msg_status::HAS_DELETED as i32);
+        assert_eq!(m3.status, msg_status::HAS_DELETED as i32);
+        assert_eq!(m2.status, msg_status::SEND_SUCCESS as i32);
         // Deleted 事件发布
         match msg_rx.try_recv().unwrap() {
             MessageEvent::Deleted { conversation_id, client_msg_ids } => {
@@ -213,8 +218,9 @@ mod tests {
         service.delete_messages(req).await.unwrap();
 
         assert_eq!(api.delete_count(), 1, "即使 seqs 为空也会调用服务端");
-        // 本地仍删除
-        assert!(dao.get_by_client_msg_id("conv_1", "m_local").await.unwrap().is_none());
+        // 本地仍软删
+        let m = dao.get_by_client_msg_id("conv_1", "m_local").await.unwrap().unwrap();
+        assert_eq!(m.status, msg_status::HAS_DELETED as i32);
     }
 
     #[tokio::test]
