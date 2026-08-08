@@ -3,8 +3,9 @@
 //! `MessageEvent` 承载消息域事件，经 `MessageListener` 分发（对齐 Go SDK `MsgListener`），
 //! EventHub 将其转发到消息通道，供 Dart 流 / 外部 SDK / 集成测试消费。
 
-use openim_protocol::sdkws::MsgData;
 use serde::{Deserialize, Serialize};
+
+use crate::model::message::MessageInfo;
 
 /// C2C 已读回执（对齐 Go SDK sdkws.MessageReceipt）
 #[derive(Clone, Debug, PartialEq)]
@@ -29,8 +30,11 @@ pub struct GroupReadReceipt {
 /// 消息域事件
 #[derive(Clone, Debug)]
 pub enum MessageEvent {
-    /// 新消息（服务端推送/同步）
-    NewMessage { message: MsgData },
+    /// 新消息（服务端推送/同步，对齐 Go SDK `OnRecvNewMessage`）
+    NewMessage {
+        conversation_id: String,
+        message: MessageInfo,
+    },
     /// 消息被撤回
     Revoked {
         conversation_id: String,
@@ -63,7 +67,7 @@ pub enum MessageEvent {
 
 /// 消息监听 trait（对齐 Go SDK `MsgListener`）
 pub trait MessageListener: Send + Sync {
-    fn on_new_message(&self, _message: &MsgData) {}
+    fn on_new_message(&self, _conversation_id: &str, _message: &MessageInfo) {}
     fn on_message_revoked(&self, _event: &MessageEvent) {}
     fn on_c2c_read_receipt(&self, _receipts: &[MessageReceipt]) {}
     fn on_message_deleted(&self, _conversation_id: &str, _client_msg_ids: &[String]) {}
@@ -75,7 +79,10 @@ pub trait MessageListener: Send + Sync {
 pub trait MessageListenerExt: MessageListener {
     fn emit(&self, event: MessageEvent) {
         match event {
-            MessageEvent::NewMessage { message } => self.on_new_message(&message),
+            MessageEvent::NewMessage {
+                conversation_id,
+                message,
+            } => self.on_new_message(&conversation_id, &message),
             MessageEvent::Revoked { .. } => self.on_message_revoked(&event),
             MessageEvent::C2CReadReceipt { receipts } => self.on_c2c_read_receipt(&receipts),
             MessageEvent::Deleted { conversation_id, client_msg_ids } => self.on_message_deleted(&conversation_id, &client_msg_ids),

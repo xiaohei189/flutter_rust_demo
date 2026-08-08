@@ -14,6 +14,7 @@ use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListener, MessageListenerExt};
 use crate::model::local::{LocalChatLog, LocalConversation};
+use crate::model::message::MessageInfo;
 use crate::model::msg_struct::TypingElem;
 use crate::model::UserId;
 use openim_protocol::sdkws::MsgData;
@@ -334,7 +335,10 @@ impl MessageProcessor {
 
         // 发布 NewMessage 事件（对齐 Go SDK OnRecvNewMessages）
         for msg in &to_notify {
-            self.message_listener.emit(MessageEvent::NewMessage { message: msg.clone() });
+            self.message_listener.emit(MessageEvent::NewMessage {
+                conversation_id: conv_id.to_string(),
+                message: MessageInfo::from(msg.clone()),
+            });
         }
 
         // 离线新消息通知

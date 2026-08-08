@@ -943,14 +943,6 @@ abstract class RustLibApi extends BaseApi {
   });
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_MessageEvent;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_MessageEvent;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_MessageEventPtr;
-
-  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_OpenImBridgeClient;
 
   RustArcDecrementStrongCountFnType
@@ -3448,10 +3440,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
               that,
               serializer,
             );
-            sse_encode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent_Sse(
-              sink,
-              serializer,
-            );
+            sse_encode_StreamSink_message_event_Sse(sink, serializer);
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
@@ -7037,14 +7026,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   RustArcIncrementStrongCountFnType
-  get rust_arc_increment_strong_count_MessageEvent => wire
-      .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent;
-
-  RustArcDecrementStrongCountFnType
-  get rust_arc_decrement_strong_count_MessageEvent => wire
-      .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent;
-
-  RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_OpenImBridgeClient => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient;
 
@@ -7056,15 +7037,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   AnyhowException dco_decode_AnyhowException(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return AnyhowException(raw as String);
-  }
-
-  @protected
-  MessageEvent
-  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return MessageEventImpl.frbInternalDcoDecode(raw as List<dynamic>);
   }
 
   @protected
@@ -7086,30 +7058,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  MessageEvent
-  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return MessageEventImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
   OpenImBridgeClient
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return OpenImBridgeClientImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  RustStreamSink<MessageEvent>
-  dco_decode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent_Sse(
-    dynamic raw,
-  ) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    throw UnimplementedError();
   }
 
   @protected
@@ -7145,6 +7099,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   RustStreamSink<int> dco_decode_StreamSink_i_32_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  RustStreamSink<MessageEvent> dco_decode_StreamSink_message_event_Sse(
+    dynamic raw,
+  ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     throw UnimplementedError();
   }
@@ -7315,6 +7277,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MergeElem dco_decode_box_autoadd_merge_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_merge_elem(raw);
+  }
+
+  @protected
+  MessageInfo dco_decode_box_autoadd_message_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_message_info(raw);
   }
 
   @protected
@@ -7848,6 +7816,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<MessageReceipt> dco_decode_list_message_receipt(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_message_receipt).toList();
+  }
+
+  @protected
   List<MsgStruct> dco_decode_list_msg_struct(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_msg_struct).toList();
@@ -8039,6 +8013,56 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MessageEvent dco_decode_message_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return MessageEvent_NewMessage(
+          conversationId: dco_decode_String(raw[1]),
+          message: dco_decode_box_autoadd_message_info(raw[2]),
+        );
+      case 1:
+        return MessageEvent_Revoked(
+          conversationId: dco_decode_String(raw[1]),
+          seq: dco_decode_i_64(raw[2]),
+          clientMsgId: dco_decode_String(raw[3]),
+          revokerId: dco_decode_String(raw[4]),
+          revokerRole: dco_decode_i_32(raw[5]),
+          revokerNickname: dco_decode_String(raw[6]),
+          revokeTime: dco_decode_i_64(raw[7]),
+          sourceMessageSendTime: dco_decode_i_64(raw[8]),
+          sourceMessageSendId: dco_decode_String(raw[9]),
+          sourceMessageSenderNickname: dco_decode_String(raw[10]),
+          sessionType: dco_decode_i_32(raw[11]),
+          isAdminRevoke: dco_decode_bool(raw[12]),
+        );
+      case 2:
+        return MessageEvent_C2CReadReceipt(
+          receipts: dco_decode_list_message_receipt(raw[1]),
+        );
+      case 3:
+        return MessageEvent_Deleted(
+          conversationId: dco_decode_String(raw[1]),
+          clientMsgIds: dco_decode_list_String(raw[2]),
+        );
+      case 4:
+        return MessageEvent_SendFailed(
+          clientMsgId: dco_decode_String(raw[1]),
+          error: dco_decode_String(raw[2]),
+        );
+      case 5:
+        return MessageEvent_UploadProgress(
+          clientMsgId: dco_decode_String(raw[1]),
+          progress: dco_decode_u_8(raw[2]),
+          totalSize: dco_decode_u_64(raw[3]),
+          uploadedSize: dco_decode_u_64(raw[4]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
   MessageInfo dco_decode_message_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -8064,6 +8088,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isRead: dco_decode_bool(arr[16]),
       attachedInfo: dco_decode_String(arr[17]),
       ex: dco_decode_String(arr[18]),
+    );
+  }
+
+  @protected
+  MessageReceipt dco_decode_message_receipt(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return MessageReceipt(
+      userId: dco_decode_String(arr[0]),
+      msgIds: dco_decode_list_String(arr[1]),
+      readTime: dco_decode_i_64(arr[2]),
+      sessionType: dco_decode_i_32(arr[3]),
     );
   }
 
@@ -8407,6 +8445,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BigInt dco_decode_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeU64(raw);
+  }
+
+  @protected
   int dco_decode_u_8(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -8492,18 +8536,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  MessageEvent
-  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return MessageEventImpl.frbInternalSseDecode(
-      sse_decode_usize(deserializer),
-      sse_decode_i_32(deserializer),
-    );
-  }
-
-  @protected
   OpenImBridgeClient
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
@@ -8528,18 +8560,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  MessageEvent
-  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return MessageEventImpl.frbInternalSseDecode(
-      sse_decode_usize(deserializer),
-      sse_decode_i_32(deserializer),
-    );
-  }
-
-  @protected
   OpenImBridgeClient
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     SseDeserializer deserializer,
@@ -8549,15 +8569,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       sse_decode_usize(deserializer),
       sse_decode_i_32(deserializer),
     );
-  }
-
-  @protected
-  RustStreamSink<MessageEvent>
-  sse_decode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent_Sse(
-    SseDeserializer deserializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    throw UnimplementedError('Unreachable ()');
   }
 
   @protected
@@ -8593,6 +8604,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   RustStreamSink<int> sse_decode_StreamSink_i_32_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  RustStreamSink<MessageEvent> sse_decode_StreamSink_message_event_Sse(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -8776,6 +8795,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MergeElem sse_decode_box_autoadd_merge_elem(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_merge_elem(deserializer));
+  }
+
+  @protected
+  MessageInfo sse_decode_box_autoadd_message_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_message_info(deserializer));
   }
 
   @protected
@@ -9472,6 +9499,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<MessageReceipt> sse_decode_list_message_receipt(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <MessageReceipt>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_message_receipt(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<MsgStruct> sse_decode_list_msg_struct(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -9745,6 +9786,79 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MessageEvent sse_decode_message_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_message = sse_decode_box_autoadd_message_info(deserializer);
+        return MessageEvent_NewMessage(
+          conversationId: var_conversationId,
+          message: var_message,
+        );
+      case 1:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_seq = sse_decode_i_64(deserializer);
+        var var_clientMsgId = sse_decode_String(deserializer);
+        var var_revokerId = sse_decode_String(deserializer);
+        var var_revokerRole = sse_decode_i_32(deserializer);
+        var var_revokerNickname = sse_decode_String(deserializer);
+        var var_revokeTime = sse_decode_i_64(deserializer);
+        var var_sourceMessageSendTime = sse_decode_i_64(deserializer);
+        var var_sourceMessageSendId = sse_decode_String(deserializer);
+        var var_sourceMessageSenderNickname = sse_decode_String(deserializer);
+        var var_sessionType = sse_decode_i_32(deserializer);
+        var var_isAdminRevoke = sse_decode_bool(deserializer);
+        return MessageEvent_Revoked(
+          conversationId: var_conversationId,
+          seq: var_seq,
+          clientMsgId: var_clientMsgId,
+          revokerId: var_revokerId,
+          revokerRole: var_revokerRole,
+          revokerNickname: var_revokerNickname,
+          revokeTime: var_revokeTime,
+          sourceMessageSendTime: var_sourceMessageSendTime,
+          sourceMessageSendId: var_sourceMessageSendId,
+          sourceMessageSenderNickname: var_sourceMessageSenderNickname,
+          sessionType: var_sessionType,
+          isAdminRevoke: var_isAdminRevoke,
+        );
+      case 2:
+        var var_receipts = sse_decode_list_message_receipt(deserializer);
+        return MessageEvent_C2CReadReceipt(receipts: var_receipts);
+      case 3:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_clientMsgIds = sse_decode_list_String(deserializer);
+        return MessageEvent_Deleted(
+          conversationId: var_conversationId,
+          clientMsgIds: var_clientMsgIds,
+        );
+      case 4:
+        var var_clientMsgId = sse_decode_String(deserializer);
+        var var_error = sse_decode_String(deserializer);
+        return MessageEvent_SendFailed(
+          clientMsgId: var_clientMsgId,
+          error: var_error,
+        );
+      case 5:
+        var var_clientMsgId = sse_decode_String(deserializer);
+        var var_progress = sse_decode_u_8(deserializer);
+        var var_totalSize = sse_decode_u_64(deserializer);
+        var var_uploadedSize = sse_decode_u_64(deserializer);
+        return MessageEvent_UploadProgress(
+          clientMsgId: var_clientMsgId,
+          progress: var_progress,
+          totalSize: var_totalSize,
+          uploadedSize: var_uploadedSize,
+        );
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
   MessageInfo sse_decode_message_info(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_clientMsgId = sse_decode_String(deserializer);
@@ -9786,6 +9900,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isRead: var_isRead,
       attachedInfo: var_attachedInfo,
       ex: var_ex,
+    );
+  }
+
+  @protected
+  MessageReceipt sse_decode_message_receipt(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_userId = sse_decode_String(deserializer);
+    var var_msgIds = sse_decode_list_String(deserializer);
+    var var_readTime = sse_decode_i_64(deserializer);
+    var var_sessionType = sse_decode_i_32(deserializer);
+    return MessageReceipt(
+      userId: var_userId,
+      msgIds: var_msgIds,
+      readTime: var_readTime,
+      sessionType: var_sessionType,
     );
   }
 
@@ -10313,6 +10442,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getBigUint64();
+  }
+
+  @protected
   int sse_decode_u_8(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8();
@@ -10419,19 +10554,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent(
-    MessageEvent self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-      (self as MessageEventImpl).frbInternalSseEncode(move: true),
-      serializer,
-    );
-  }
-
-  @protected
-  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
     SseSerializer serializer,
@@ -10458,19 +10580,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void
-  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent(
-    MessageEvent self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-      (self as MessageEventImpl).frbInternalSseEncode(move: null),
-      serializer,
-    );
-  }
-
-  @protected
-  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
     SseSerializer serializer,
@@ -10478,25 +10587,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(
       (self as OpenImBridgeClientImpl).frbInternalSseEncode(move: null),
-      serializer,
-    );
-  }
-
-  @protected
-  void
-  sse_encode_StreamSink_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent_Sse(
-    RustStreamSink<MessageEvent> self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(
-      self.setupAndSerialize(
-        codec: SseCodec(
-          decodeSuccessData:
-              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerMessageEvent,
-          decodeErrorData: sse_decode_AnyhowException,
-        ),
-      ),
       serializer,
     );
   }
@@ -10579,6 +10669,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       self.setupAndSerialize(
         codec: SseCodec(
           decodeSuccessData: sse_decode_i_32,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
+  void sse_encode_StreamSink_message_event_Sse(
+    RustStreamSink<MessageEvent> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_event,
           decodeErrorData: sse_decode_AnyhowException,
         ),
       ),
@@ -10795,6 +10902,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_merge_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_message_info(
+    MessageInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_message_info(self, serializer);
   }
 
   @protected
@@ -11397,6 +11513,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_message_receipt(
+    List<MessageReceipt> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_message_receipt(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_msg_struct(
     List<MsgStruct> self,
     SseSerializer serializer,
@@ -11595,6 +11723,75 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_message_event(MessageEvent self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case MessageEvent_NewMessage(
+        conversationId: final conversationId,
+        message: final message,
+      ):
+        sse_encode_i_32(0, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_box_autoadd_message_info(message, serializer);
+      case MessageEvent_Revoked(
+        conversationId: final conversationId,
+        seq: final seq,
+        clientMsgId: final clientMsgId,
+        revokerId: final revokerId,
+        revokerRole: final revokerRole,
+        revokerNickname: final revokerNickname,
+        revokeTime: final revokeTime,
+        sourceMessageSendTime: final sourceMessageSendTime,
+        sourceMessageSendId: final sourceMessageSendId,
+        sourceMessageSenderNickname: final sourceMessageSenderNickname,
+        sessionType: final sessionType,
+        isAdminRevoke: final isAdminRevoke,
+      ):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_i_64(seq, serializer);
+        sse_encode_String(clientMsgId, serializer);
+        sse_encode_String(revokerId, serializer);
+        sse_encode_i_32(revokerRole, serializer);
+        sse_encode_String(revokerNickname, serializer);
+        sse_encode_i_64(revokeTime, serializer);
+        sse_encode_i_64(sourceMessageSendTime, serializer);
+        sse_encode_String(sourceMessageSendId, serializer);
+        sse_encode_String(sourceMessageSenderNickname, serializer);
+        sse_encode_i_32(sessionType, serializer);
+        sse_encode_bool(isAdminRevoke, serializer);
+      case MessageEvent_C2CReadReceipt(receipts: final receipts):
+        sse_encode_i_32(2, serializer);
+        sse_encode_list_message_receipt(receipts, serializer);
+      case MessageEvent_Deleted(
+        conversationId: final conversationId,
+        clientMsgIds: final clientMsgIds,
+      ):
+        sse_encode_i_32(3, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_list_String(clientMsgIds, serializer);
+      case MessageEvent_SendFailed(
+        clientMsgId: final clientMsgId,
+        error: final error,
+      ):
+        sse_encode_i_32(4, serializer);
+        sse_encode_String(clientMsgId, serializer);
+        sse_encode_String(error, serializer);
+      case MessageEvent_UploadProgress(
+        clientMsgId: final clientMsgId,
+        progress: final progress,
+        totalSize: final totalSize,
+        uploadedSize: final uploadedSize,
+      ):
+        sse_encode_i_32(5, serializer);
+        sse_encode_String(clientMsgId, serializer);
+        sse_encode_u_8(progress, serializer);
+        sse_encode_u_64(totalSize, serializer);
+        sse_encode_u_64(uploadedSize, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_message_info(MessageInfo self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.clientMsgId, serializer);
@@ -11616,6 +11813,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.isRead, serializer);
     sse_encode_String(self.attachedInfo, serializer);
     sse_encode_String(self.ex, serializer);
+  }
+
+  @protected
+  void sse_encode_message_receipt(
+    MessageReceipt self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.userId, serializer);
+    sse_encode_list_String(self.msgIds, serializer);
+    sse_encode_i_64(self.readTime, serializer);
+    sse_encode_i_32(self.sessionType, serializer);
   }
 
   @protected
@@ -12053,6 +12262,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putBigUint64(self);
+  }
+
+  @protected
   void sse_encode_u_8(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self);
@@ -12118,26 +12333,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.snapshotHeight, serializer);
     sse_encode_String(self.snapshotType, serializer);
   }
-}
-
-@sealed
-class MessageEventImpl extends RustOpaque implements MessageEvent {
-  // Not to be used by end users
-  MessageEventImpl.frbInternalDcoDecode(List<dynamic> wire)
-    : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  MessageEventImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-    : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_MessageEvent,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_MessageEvent,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_MessageEventPtr,
-  );
 }
 
 @sealed

@@ -446,7 +446,7 @@ async fn test_message_flow() {
     assert!(r.is_ok(), "A 发送实时文本失败: {:?}", r.err());
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("实时文本")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("实时文本")),
         10,
     )
     .await;
@@ -458,7 +458,7 @@ async fn test_message_flow() {
     assert!(r.is_ok(), "A 发送实时自定义失败: {:?}", r.err());
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.content_type == 110),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content_type == 110),
         10,
     )
     .await;
@@ -470,7 +470,7 @@ async fn test_message_flow() {
     assert!(r.is_ok(), "A 发送实时位置失败: {:?}", r.err());
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.content_type == 109),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content_type == 109),
         10,
     )
     .await;
@@ -491,11 +491,11 @@ async fn test_message_flow() {
     for _ in 0..5 {
         let ev = wait_for_event(
             &mut b_events,
-            |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("连续消息")),
+            |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("连续消息")),
             10,
         )
         .await;
-        if let Some(TestEvent::Message(MessageEvent::NewMessage { message })) = ev {
+        if let Some(TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })) = ev {
             received_seqs.push(message.seq);
         }
     }
@@ -528,7 +528,7 @@ async fn test_message_flow() {
     // B 确认收到
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.client_msg_id == revoke_client_id),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.client_msg_id == revoke_client_id),
         10,
     )
     .await;
@@ -581,7 +581,7 @@ async fn test_message_flow() {
     // B 确认收到
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.client_msg_id == del_client_id),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.client_msg_id == del_client_id),
         10,
     )
     .await;
@@ -637,7 +637,7 @@ async fn test_message_flow() {
 
     let ev = wait_for_event(
         &mut a_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("B 回复")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("B 回复")),
         10,
     )
     .await;
@@ -656,7 +656,7 @@ async fn test_message_flow() {
 
     let ev = wait_for_event(
         &mut a_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("转发原始消息A")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("转发原始消息A")),
         10,
     )
     .await;
@@ -678,7 +678,7 @@ async fn test_message_flow() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.content_type == 107),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content_type == 107),
         10,
     )
     .await;
@@ -1547,7 +1547,7 @@ async fn test_delete_message_local_only() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("LOCAL_DEL_NEW")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("LOCAL_DEL_NEW")),
         10,
     )
     .await;
@@ -1681,7 +1681,7 @@ async fn test_clear_conversation_and_delete_all_msg() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("CLEAR_DEL_NEW")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("CLEAR_DEL_NEW")),
         10,
     )
     .await;
@@ -1936,7 +1936,7 @@ async fn test_quote_message_flow() {
     let ev = wait_for_event(
         &mut b_events,
         |ev| {
-            matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message })
+            matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })
             if message.client_msg_id == quote_msg_data.client_msg_id)
         },
         10,
@@ -2245,7 +2245,7 @@ async fn test_group_message_flow() {
     let ev_a = wait_for_event(
         &mut a_events,
         |ev| {
-            matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message })
+            matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })
             if message.client_msg_id == b_msg.client_msg_id)
         },
         10,
@@ -2257,7 +2257,7 @@ async fn test_group_message_flow() {
     let ev_c = wait_for_event(
         &mut c_events,
         |ev| {
-            matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message })
+            matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })
             if message.client_msg_id == b_msg.client_msg_id)
         },
         10,
@@ -2360,8 +2360,8 @@ async fn test_online_only_message() {
         tokio::select! {
             _ = &mut timeout => break,
             event = b_events.next() => {
-                if let Some(TestEvent::Message(MessageEvent::NewMessage { message })) = event {
-                    if String::from_utf8_lossy(&message.content).contains("ONLINE_ONLY_MSG_") {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })) = event {
+                    if message.content.contains("ONLINE_ONLY_MSG_") {
                         received_online_only.push(message.client_msg_id.clone());
                         println!("  B 收到 online_only 消息: content={:?}", message.content);
                     }
@@ -2413,7 +2413,7 @@ async fn test_online_only_message() {
     // 等待 B 收到普通消息
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("普通混合消息")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("普通混合消息")),
         10,
     )
     .await;
@@ -2492,7 +2492,7 @@ async fn test_msg_edit_notification() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.client_msg_id == msg_data.client_msg_id),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.client_msg_id == msg_data.client_msg_id),
         10,
     )
     .await;
@@ -2683,8 +2683,8 @@ async fn test_concurrent_send_stress() {
                 break;
             }
             event = b_events.next() => {
-                if let Some(TestEvent::Message(MessageEvent::NewMessage { message })) = event {
-                    if String::from_utf8_lossy(&message.content).contains("STRESS_SEQ_") {
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })) = event {
+                    if message.content.contains("STRESS_SEQ_") {
                         received_seqs.push(message.seq);
                         received_count += 1;
                         if received_count % 5 == 0 || received_count == 20 {
@@ -2825,9 +2825,9 @@ async fn test_concurrent_send_stress() {
         tokio::select! {
             _ = &mut timeout => break,
             event = b_events.next() => {
-                if let Some(TestEvent::Message(MessageEvent::NewMessage { message })) = event {
-                    if String::from_utf8_lossy(&message.content).contains("并发文本消息")
-                        || String::from_utf8_lossy(&message.content).contains("并发自定义")
+                if let Some(TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })) = event {
+                    if message.content.contains("并发文本消息")
+                        || message.content.contains("并发自定义")
                         || message.content_type == 109
                     {
                         mixed_received += 1;
@@ -2956,7 +2956,7 @@ async fn test_send_sound_message_flow() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.content_type == 103),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content_type == 103),
         10,
     )
     .await;
@@ -3047,7 +3047,7 @@ async fn test_send_video_message_flow() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.content_type == 104),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content_type == 104),
         10,
     )
     .await;
@@ -3106,7 +3106,7 @@ async fn test_edit_message_real() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if message.client_msg_id == client_msg_id),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.client_msg_id == client_msg_id),
         10,
     )
     .await;
@@ -3434,7 +3434,7 @@ async fn test_delete_all_msg_local_only() {
 
     let ev = wait_for_event(
         &mut b_events,
-        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message }) if String::from_utf8_lossy(&message.content).contains("DELLOCAL_NEW")),
+        |ev| matches!(ev, TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ }) if message.content.contains("DELLOCAL_NEW")),
         10,
     )
     .await;

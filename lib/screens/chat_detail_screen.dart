@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
@@ -54,6 +55,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   bool _selectMode = false;
   final List<MessageInfo> _selectedMessages = [];
   MessageServiceNotifier? _messageService; // 缓存引用，避免 dispose 时访问 ref
+  StreamSubscription<MessageListState>? _messageListSubscription;
+  String _lastMessageListTailId = '';
   DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
   bool? _onlineStatus;
 
@@ -64,6 +67,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     _messageService = ref.read(messageServiceProvider.notifier);
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
+    _messageListSubscription = ref
+        .read(messageListProvider(widget.conversationId).notifier)
+        .stream
+        .listen((_) => _onMessageListChanged());
+    _onMessageListChanged();
     // 设置当前选中的会话
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(selectedConversationIdProvider.notifier).state = widget.conversationId;
@@ -175,12 +183,35 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _messageListSubscription?.cancel();
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
     _loadingNotifier.dispose();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// 新消息到达后消息列表发生变化时调用：追加到列表并滚动到底部
+  void _onMessageListChanged() {
+    final messageState = ref.read(messageListProvider(widget.conversationId));
+    final messages = messageState.messages;
+    if (messages.isEmpty) {
+      _lastMessageListTailId = '';
+      return;
+    }
+    final last = messages.last;
+    final lastId = last.clientMsgId;
+    if (lastId == _lastMessageListTailId) {
+      return;
+    }
+    _lastMessageListTailId = lastId;
+    final isOwnMessage = _messageService?.currentState.currentUserId == last.sendId;
+    if (!isOwnMessage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom();
+      });
+    }
   }
 
   /// 用户主动返回时调用：保存草稿并标记已读

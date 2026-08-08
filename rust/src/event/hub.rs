@@ -13,8 +13,8 @@ use crate::event::events::user::{UserEvent, UserListener};
 use crate::model::friend::FriendInfo;
 use crate::model::group::GroupInfo;
 use crate::model::local::LocalConversation;
+use crate::model::message::MessageInfo;
 use crate::model::user::UserInfo;
-use openim_protocol::sdkws::MsgData;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
@@ -214,8 +214,11 @@ impl GroupListener for EventHub {
 }
 
 impl MessageListener for EventHub {
-    fn on_new_message(&self, message: &MsgData) {
-        let _ = self.message_tx.send(MessageEvent::NewMessage { message: message.clone() });
+    fn on_new_message(&self, conversation_id: &str, message: &crate::model::message::MessageInfo) {
+        let _ = self.message_tx.send(MessageEvent::NewMessage {
+            conversation_id: conversation_id.to_string(),
+            message: message.clone(),
+        });
     }
     fn on_message_revoked(&self, event: &MessageEvent) {
         let _ = self.message_tx.send(event.clone());
@@ -337,7 +340,27 @@ mod tests {
             status: 0,
         });
         user.on_user_status_changed("u1", 1, &[]);
-        msg.on_new_message(&MsgData::default());
+        msg.on_new_message("conv_1", &crate::model::message::MessageInfo {
+            client_msg_id: "m1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_a".into(),
+            recv_id: "user_b".into(),
+            group_id: String::new(),
+            sender_platform_id: 1,
+            sender_nickname: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 0,
+            content_type: 101,
+            content: String::new(),
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            status: 2,
+            is_read: false,
+            attached_info: String::new(),
+            ex: String::new(),
+        });
 
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data' show Int32List;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -675,6 +676,34 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   void _onMessageEvent(MessageEvent event) {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
     _loadConversations();
+    event.when(
+      newMessage: (conversationId, message) {
+        _appendIncomingMessage(conversationId, message);
+      },
+      revoked: (conversationId, seq, clientMsgId, revokerId, revokerRole,
+          revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId,
+          sourceMessageSenderNickname, sessionType, isAdminRevoke) {},
+      c2CReadReceipt: (_) {},
+      deleted: (_, _) {},
+      sendFailed: (_, _) {},
+      uploadProgress: (_, _, _, _) {},
+    );
+  }
+
+  /// 测试入口：等价于 SDK 消息事件流回调
+  @visibleForTesting
+  void onMessageEventForTest(MessageEvent event) => _onMessageEvent(event);
+
+  /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
+  void _appendIncomingMessage(String conversationId, MessageInfo message) {
+    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    final list = newMessages.putIfAbsent(conversationId, () => []);
+    final exists = list.any((m) => m.clientMsgId == message.clientMsgId);
+    if (!exists) {
+      list.add(message);
+    }
+    newMessages[conversationId] = List<MessageInfo>.from(list);
+    state = state.copyWith(messages: newMessages);
   }
 
   void _onUserEvent(UserEvent event) {

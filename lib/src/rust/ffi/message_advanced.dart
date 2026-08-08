@@ -55,9 +55,10 @@ Future<List<LocalChatLog>> getAdvancedHistoryMessageListBySeq({
       count: count,
     );
 
-/// 倒序获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
+/// 反向获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
 ///
-/// 与 `get_history_messages` 相同参数，但按 send_time ASC 返回（向上翻页获取更早消息）
+/// 与 `get_history_messages` 相同参数，但返回 start 之后（更新）的消息，
+/// 按 send_time/seq 升序；start 为空时从最早消息开始。
 Future<GetHistoryMessagesResult> getHistoryMessagesReverse({
   required String conversationId,
   required String startClientMsgId,
