@@ -12,6 +12,7 @@ use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::{MessageListener, MessageListenerExt};
 use crate::http::message::MessageServerApi;
+use crate::message::receive::checker::MessageChecker;
 use crate::model::UserId;
 use std::sync::Arc;
 
@@ -22,6 +23,7 @@ pub struct MessageService {
     pub(crate) user_id: UserId,
     pub(crate) listener: Arc<dyn ConversationListener>,
     pub(crate) message_listener: Arc<dyn MessageListener>,
+    pub(crate) checker: Option<Arc<MessageChecker>>,
 }
 
 impl MessageService {
@@ -32,7 +34,14 @@ impl MessageService {
             user_id,
             listener,
             message_listener,
+            checker: None,
         }
+    }
+
+    /// 注入消息连续性检查器，历史查询时补拉服务端缺失 seq（对齐 Go 三层 Gap 检查）
+    pub fn with_checker(mut self, checker: Arc<MessageChecker>) -> Self {
+        self.checker = Some(checker);
+        self
     }
 
     pub(crate) fn send(&self, e: ConversationEvent) {

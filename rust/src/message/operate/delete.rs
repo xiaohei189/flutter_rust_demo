@@ -159,6 +159,7 @@ mod tests {
             user_id: UserId::new("test_user"),
             listener: crate::event::test_util::noop_conversation_listener(),
             message_listener: hub.clone(),
+            checker: None,
         };
         (service, msg_rx)
     }

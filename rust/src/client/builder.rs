@@ -21,6 +21,7 @@ use crate::message::notification::NotificationHandler;
 use crate::message::send::MessageSendQueue;
 use crate::message::send::MessageSender;
 use crate::message::MessageProcessor;
+use crate::message::receive::checker::MessageChecker;
 use crate::message::MessageService;
 use crate::message::MessageSyncer;
 use crate::user::online::service::OnlineStatusService;
@@ -77,6 +78,12 @@ impl OpenIMClientBuilder {
             context.user_id.clone(),
             listeners.clone(),
         ));
+        let message_checker = Arc::new(MessageChecker::new(
+            connection.clone(),
+            context.repositories.message_repo.clone(),
+            context.repositories.conversation_repo.clone(),
+            context.user_id.get_blocking(),
+        ));
         let mut conversation_syncer = ConversationSyncer::new(context.infra.http_client.clone(), context.repositories.clone(), context.user_id.clone(), listeners.clone());
         conversation_syncer.set_connection(connection.clone());
         let conversation_syncer = Arc::new(conversation_syncer);
@@ -86,7 +93,7 @@ impl OpenIMClientBuilder {
             listeners.clone(),
             listeners.clone(),
             context.user_id.clone(),
-        ));
+        ).with_checker(message_checker));
         let notification_handler = Arc::new(NotificationHandler::new(
             friend.clone(),
             group.clone(),

@@ -28,7 +28,7 @@ impl MessageService {
             info!("通过 client_msg_id 查询到 send_time={}, seq={}", m.send_time, m.seq);
         }
 
-        let messages = if let Some(start) = &start_msg {
+        let mut messages = if let Some(start) = &start_msg {
             self.repositories
                 .message_repo
                 .get_by_conversation_before(&req.conversation_id, start.send_time, start.seq, &req.start_client_msg_id, req.count)
@@ -37,11 +37,19 @@ impl MessageService {
             self.repositories.message_repo.get_by_conversation(&req.conversation_id, 0, req.count).await?
         };
 
-        let is_end = messages.len() < req.count as usize;
+        let is_end = if let Some(checker) = &self.checker {
+            // 对齐 Go fetchMessagesWithGapCheck：三层连续性检查 + 服务端缺失补拉
+            checker.validate_and_fill_internal_gaps(&mut messages, false).await?;
+            checker.validate_and_fill_inter_block_gaps(&req.conversation_id, &mut messages, 0, false).await?;
+            checker.validate_and_fill_end_block_continuity(&req.conversation_id, &mut messages, req.count, false).await?
+        } else {
+            messages.len() < req.count as usize
+        };
 
+        // 对齐 Go：最终统一按 send_time/seq 升序返回
+        messages.sort_by(|a, b| (a.send_time, a.seq).cmp(&(b.send_time, b.seq)));
         let msg_info_list: Vec<MessageInfo> = messages
             .into_iter()
-            .rev()
             .map(|m| {
                 let msg_struct = MsgStruct::from(&m);
                 MessageInfo::from(MsgData::from(&msg_struct))
@@ -62,23 +70,32 @@ impl MessageService {
             self.repositories.message_repo.get_by_client_msg_id(conversation_id, start_client_msg_id).await?
         };
 
-        // 取 start 之后（更新）的消息，按 send_time/seq 升序；多取一条用于判断是否到底
-        let messages = if let Some(start) = &start_msg {
+        let has_checker = self.checker.is_some();
+        let fetch_count = if has_checker { count } else { count + 1 };
+
+        // 取 start 之后（更新）的消息；无 checker 时多取一条用于本地判断是否到底
+        let mut messages = if let Some(start) = &start_msg {
             self.repositories
                 .message_repo
-                .get_by_conversation_after(conversation_id, start.send_time, start.seq, start_client_msg_id, count + 1)
+                .get_by_conversation_after(conversation_id, start.send_time, start.seq, start_client_msg_id, fetch_count)
                 .await?
         } else {
-            self.repositories.message_repo.get_by_conversation_asc(conversation_id, 0, count + 1).await?
+            self.repositories.message_repo.get_by_conversation_asc(conversation_id, 0, fetch_count).await?
         };
 
-        let is_end = messages.len() <= count as usize;
-        let messages: Vec<LocalChatLog> = if messages.len() > count as usize {
-            messages.into_iter().take(count as usize).collect()
+        let is_end = if let Some(checker) = &self.checker {
+            checker.validate_and_fill_internal_gaps(&mut messages, true).await?;
+            checker.validate_and_fill_inter_block_gaps(conversation_id, &mut messages, 0, true).await?;
+            checker.validate_and_fill_end_block_continuity(conversation_id, &mut messages, count, true).await?
         } else {
-            messages
+            let is_end = messages.len() <= count as usize;
+            if messages.len() > count as usize {
+                messages.truncate(count as usize);
+            }
+            is_end
         };
 
+        messages.sort_by(|a, b| (a.send_time, a.seq).cmp(&(b.send_time, b.seq)));
         let msg_info_list: Vec<MessageInfo> = messages
             .into_iter()
             .map(|m| {
@@ -394,6 +411,7 @@ mod tests {
             user_id: UserId::new("test_user"),
             listener: noop_conversation_listener(),
             message_listener: noop_message_listener(),
+            checker: None,
         }
     }
 
@@ -524,6 +542,105 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_get_history_messages_fills_seq_gap_from_server() {
+        use crate::connection::sync_server::SyncServerApi;
+        use async_trait::async_trait;
+        use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+        use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs};
+        use std::collections::HashMap;
+
+        struct GapMock {
+            missing: HashMap<String, PullMsgs>,
+        }
+
+        #[async_trait]
+        impl SyncServerApi for GapMock {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+                Ok(HashMap::new())
+            }
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+                Ok(PullMessageBySeqsResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+                Ok(GetSeqMessageResp {
+                    msgs: self.missing.clone(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn is_kicked(&self) -> bool {
+                false
+            }
+        }
+
+        let pool = create_pool_memory().await.unwrap();
+        let repos = make_repositories(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_1", "m3", 3, 3000, "user_a"),
+        ])
+        .await
+        .unwrap();
+        repos
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_1".to_string(),
+                min_seq: 1,
+                max_seq: 3,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        let missing = HashMap::from([(
+            "conv_1".to_string(),
+            PullMsgs {
+                msgs: vec![MsgData {
+                    send_id: "user_a".to_string(),
+                    recv_id: "user_b".to_string(),
+                    client_msg_id: "m2".to_string(),
+                    seq: 2,
+                    send_time: 2000,
+                    create_time: 2000,
+                    content_type: 101,
+                    content: r#"{"content":"gap"}"#.as_bytes().to_vec(),
+                    ..Default::default()
+                }],
+                is_end: false,
+                end_seq: 0,
+            },
+        )]);
+        let checker = Arc::new(crate::message::receive::checker::MessageChecker::new(
+            Arc::new(GapMock { missing }),
+            repos.message_repo.clone(),
+            repos.conversation_repo.clone(),
+            "test_user".to_string(),
+        ));
+        let service = super::MessageService {
+            repositories: repos,
+            api: Arc::new(MockMessageApi),
+            user_id: UserId::new("test_user"),
+            listener: noop_conversation_listener(),
+            message_listener: noop_message_listener(),
+            checker: Some(checker),
+        };
+
+        let result = service
+            .get_history_messages(&GetHistoryMessagesReq {
+                conversation_id: "conv_1".to_string(),
+                start_client_msg_id: String::new(),
+                count: 2,
+            })
+            .await
+            .unwrap();
+        let seqs: Vec<i64> = result.messages.iter().map(|m| m.seq).collect();
+        assert_eq!(seqs, vec![1, 2, 3], "本地缺 seq 时历史查询应补拉并合并");
+    }
+
+    #[tokio::test]
     async fn test_get_history_message_by_seq_found() {
         let pool = create_pool_memory().await.unwrap();
         let service = make_service(pool.clone());
@@ -630,6 +747,7 @@ mod tests {
             user_id: UserId::new("test_user"),
             listener: hub.clone(),
             message_listener: hub.clone(),
+            checker: None,
         };
         (service, conv_rx, msg_rx)
     }
