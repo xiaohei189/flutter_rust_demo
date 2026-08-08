@@ -53,19 +53,13 @@ pub async fn get_advanced_history_message_list_by_seq(conversation_id: String, s
     Ok(msgs)
 }
 
-/// 倒序获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
+/// 反向获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
 ///
-/// 与 `get_history_messages` 相同参数，但按 send_time ASC 返回（向上翻页获取更早消息）
+/// 与 `get_history_messages` 相同参数，但返回 start 之后（更新）的消息，
+/// 按 send_time/seq 升序；start 为空时从最早消息开始。
 #[flutter_rust_bridge::frb]
 pub async fn get_history_messages_reverse(conversation_id: String, start_client_msg_id: String, count: i64) -> Result<crate::client::GetHistoryMessagesResult> {
     let client = client_holder()?;
-
-    let start_time = if start_client_msg_id.is_empty() {
-        0
-    } else {
-        let msg = client.get_message_by_client_msg_id(&start_client_msg_id).await?;
-        msg.as_ref().map(|m| m.send_time).unwrap_or(0)
-    };
 
     Ok(client.get_history_messages_reverse(&conversation_id, &start_client_msg_id, count).await?)
 }

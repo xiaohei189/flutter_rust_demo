@@ -51,25 +51,25 @@ impl MessageService {
         Ok(GetHistoryMessagesResult { messages: msg_info_list, is_end })
     }
 
-    /// 倒序获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
+    /// 反向获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
     ///
-    /// 从 start_client_msg_id 之前的消息开始倒序获取（向上翻页取更早消息）；为空时从最新消息开始。
+    /// 返回 start_client_msg_id 之后（更新的）消息，按 send_time/seq 升序；
+    /// start 为空时从最早消息开始。
     pub async fn get_history_messages_reverse(&self, conversation_id: &str, start_client_msg_id: &str, count: i64) -> Result<GetHistoryMessagesResult> {
         let start_msg = if start_client_msg_id.is_empty() {
             None
         } else {
             self.repositories.message_repo.get_by_client_msg_id(conversation_id, start_client_msg_id).await?
         };
-        let start_time = start_msg.as_ref().map(|m| m.send_time).unwrap_or(0);
 
-        // 取 start_time 之前（更早）的消息，已按 send_time 倒序；多取一条用于判断是否到底
+        // 取 start 之后（更新）的消息，按 send_time/seq 升序；多取一条用于判断是否到底
         let messages = if let Some(start) = &start_msg {
             self.repositories
                 .message_repo
-                .get_by_conversation_before(conversation_id, start.send_time, start.seq, start_client_msg_id, count + 1)
+                .get_by_conversation_after(conversation_id, start.send_time, start.seq, start_client_msg_id, count + 1)
                 .await?
         } else {
-            self.repositories.message_repo.get_by_conversation(conversation_id, 0, count + 1).await?
+            self.repositories.message_repo.get_by_conversation_asc(conversation_id, 0, count + 1).await?
         };
 
         let is_end = messages.len() <= count as usize;
@@ -801,7 +801,7 @@ mod tests {
     // ========================================================================
 
     #[tokio::test]
-    async fn test_get_history_messages_reverse_from_latest() {
+    async fn test_get_history_messages_reverse_empty_start_returns_earliest() {
         let pool = create_pool_memory().await.unwrap();
         let service = make_service(pool.clone());
         let dao = MessageDao::new(pool);
@@ -815,11 +815,11 @@ mod tests {
         .await
         .unwrap();
 
-        // 空 start：从最新开始倒序，取 2 条，未到底
+        // 空 start：与 Go 一致，从最早开始升序取 2 条，未到底
         let result = service.get_history_messages_reverse("conv_1", "", 2).await.unwrap();
         assert_eq!(result.messages.len(), 2);
-        assert_eq!(result.messages[0].send_time, 5000);
-        assert_eq!(result.messages[1].send_time, 4000);
+        assert_eq!(result.messages[0].send_time, 1000);
+        assert_eq!(result.messages[1].send_time, 2000);
         assert!(!result.is_end);
     }
 
@@ -837,11 +837,10 @@ mod tests {
         .await
         .unwrap();
 
-        // start="m3"(3000)：取 m3 之前（更早）的消息倒序，已到底
+        // start="m3"(3000)：取 m3 之后（更新）的消息升序，只有 m4，已到底
         let result = service.get_history_messages_reverse("conv_1", "m3", 2).await.unwrap();
-        assert_eq!(result.messages.len(), 2);
-        assert_eq!(result.messages[0].send_time, 2000);
-        assert_eq!(result.messages[1].send_time, 1000);
+        assert_eq!(result.messages.len(), 1);
+        assert_eq!(result.messages[0].send_time, 4000);
         assert!(result.is_end);
     }
 

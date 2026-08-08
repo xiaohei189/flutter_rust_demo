@@ -95,6 +95,38 @@ impl MessageDao {
         Ok(rows)
     }
 
+    /// 分页获取起始消息之后的历史消息（对齐 Go GetMessageList 反向分支）
+    pub async fn get_by_conversation_after(
+        &self,
+        conversation_id: &str,
+        start_time: i64,
+        start_seq: i64,
+        start_client_msg_id: &str,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        debug!(
+            "[DB] get_by_conversation_after: conversation_id={}, start_time={}, start_seq={}, count={}",
+            conversation_id, start_time, start_seq, count
+        );
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (
+                send_time > ?
+                OR (send_time = ? AND (seq > ? OR (seq = 0 AND client_msg_id != ?)))
+            ) ORDER BY send_time ASC, seq ASC LIMIT ?",
+        )
+            .bind(conversation_id)
+            .bind(start_time)
+            .bind(start_time)
+            .bind(start_seq)
+            .bind(start_client_msg_id)
+            .bind(count)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query messages after: {}", e)))?;
+
+        Ok(rows)
+    }
+
     pub async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
         debug!("[DB] get_max_seq: conversation_id={}", conversation_id);
         let row: (Option<i64>,) = sqlx::query_as("SELECT MAX(seq) FROM local_chat_logs WHERE conversation_id = ?")
@@ -748,6 +780,18 @@ impl MessageRepository for MessageDao {
         count: i64,
     ) -> Result<Vec<LocalChatLog>> {
         self.get_by_conversation_before(conversation_id, start_time, start_seq, start_client_msg_id, count)
+            .await
+    }
+
+    async fn get_by_conversation_after(
+        &self,
+        conversation_id: &str,
+        start_time: i64,
+        start_seq: i64,
+        start_client_msg_id: &str,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        self.get_by_conversation_after(conversation_id, start_time, start_seq, start_client_msg_id, count)
             .await
     }
     async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {

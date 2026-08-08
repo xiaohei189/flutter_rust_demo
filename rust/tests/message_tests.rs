@@ -1052,30 +1052,35 @@ async fn test_history_query_reverse_and_by_seq() {
     println!("  seq 列表 (升序): {:?}", seq_list);
     assert_eq!(seq_list.len(), 10, "应有 10 条唯一 seq");
 
-    // Phase 4: B 倒序查询（start_client_msg_id=中间一条消息，取它之前 5 条更早消息）
-    println!("\n========== Phase 4: B 倒序查询（向上翻页） ==========");
+    // Phase 4: B 反向查询（对齐 Go GetAdvancedHistoryMessageListReverse）
+    // start_client_msg_id=中间一条消息，取它之后（更新）的消息，按 seq 升序
+    println!("\n========== Phase 4: B 反向查询（取 start 之后的消息） ==========");
 
-    // 以第 6 条消息为起点，向上翻 5 条更早的消息
+    // 以第 6 条消息为起点，向后取 5 条更新的消息
     let start_msg = test_msgs.iter().find(|m| m.seq == seq_list[5]).unwrap();
     println!("  起点消息: seq={}, client_msg_id={}", start_msg.seq, start_msg.client_msg_id);
 
     let page = receiver_sdk.get_history_messages_reverse(&conv_id, &start_msg.client_msg_id, 5).await;
-    assert!(page.is_ok(), "倒序查询失败: {:?}", page.err());
+    assert!(page.is_ok(), "反向查询失败: {:?}", page.err());
     let page = page.unwrap();
-    assert!(page.messages.len() >= 3, "倒序分页应返回至少 3 条，实际 {}", page.messages.len());
+    assert!(page.messages.len() >= 3, "反向分页应返回至少 3 条，实际 {}", page.messages.len());
 
-    // 验证返回的消息 seq 递减（newest-first）
+    // 验证返回的消息 seq 递增，且都晚于起点
     for i in 1..page.messages.len() {
         assert!(
-            page.messages[i - 1].seq > page.messages[i].seq,
-            "消息应按 seq 降序排列: msg[{}].seq={} <= msg[{}].seq={}",
+            page.messages[i - 1].seq < page.messages[i].seq,
+            "消息应按 seq 升序排列: msg[{}].seq={} >= msg[{}].seq={}",
             i - 1,
             page.messages[i - 1].seq,
             i,
             page.messages[i].seq
         );
     }
-    println!("Phase 4 通过: 返回 {} 条，seq 降序排列", page.messages.len());
+    assert!(
+        page.messages.iter().all(|m| m.seq > start_msg.seq),
+        "反向查询应返回起点之后的消息"
+    );
+    println!("Phase 4 通过: 返回 {} 条，seq 升序排列", page.messages.len());
 
     // Phase 5: 按 seq 范围查询（取第 3 条到第 7 条之间的消息）
     println!("\n========== Phase 5: 按 seq 范围查询 ==========");
