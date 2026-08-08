@@ -50,7 +50,7 @@ impl MessageDao {
     pub async fn get_by_conversation(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
         debug!("[DB] get_by_conversation: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
         let rows = sqlx::query_as::<_, LocalChatLog>(
-            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time < ? OR ? = 0) ORDER BY send_time DESC LIMIT ?",
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time < ? OR ? = 0) ORDER BY send_time DESC, seq DESC LIMIT ?",
         )
             .bind(conversation_id)
             .bind(start_time)
@@ -59,6 +59,38 @@ impl MessageDao {
             .fetch_all(&self.pool)
             .await
             .map_err(|e| SdkError::database(format!("query messages: {}", e)))?;
+
+        Ok(rows)
+    }
+
+    /// 分页获取起始消息之前的历史消息（对齐 Go GetMessageList 非反向分支）
+    pub async fn get_by_conversation_before(
+        &self,
+        conversation_id: &str,
+        start_time: i64,
+        start_seq: i64,
+        start_client_msg_id: &str,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        debug!(
+            "[DB] get_by_conversation_before: conversation_id={}, start_time={}, start_seq={}, count={}",
+            conversation_id, start_time, start_seq, count
+        );
+        let rows = sqlx::query_as::<_, LocalChatLog>(
+            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (
+                send_time < ?
+                OR (send_time = ? AND (seq < ? OR (seq = 0 AND client_msg_id != ?)))
+            ) ORDER BY send_time DESC, seq DESC LIMIT ?",
+        )
+            .bind(conversation_id)
+            .bind(start_time)
+            .bind(start_time)
+            .bind(start_seq)
+            .bind(start_client_msg_id)
+            .bind(count)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("query messages before: {}", e)))?;
 
         Ok(rows)
     }
@@ -705,6 +737,18 @@ impl MessageRepository for MessageDao {
     }
     async fn get_by_conversation(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
         self.get_by_conversation(conversation_id, start_time, count).await
+    }
+
+    async fn get_by_conversation_before(
+        &self,
+        conversation_id: &str,
+        start_time: i64,
+        start_seq: i64,
+        start_client_msg_id: &str,
+        count: i64,
+    ) -> Result<Vec<LocalChatLog>> {
+        self.get_by_conversation_before(conversation_id, start_time, start_seq, start_client_msg_id, count)
+            .await
     }
     async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
         self.get_max_seq(conversation_id).await

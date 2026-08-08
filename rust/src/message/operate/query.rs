@@ -18,16 +18,24 @@ use tracing::{debug, info, warn};
 impl MessageService {
     /// 历史消息分页查询（对齐 Go SDK `GetHistoryMessageList`）
     pub async fn get_history_messages(&self, req: &GetHistoryMessagesReq) -> Result<GetHistoryMessagesResult> {
-        let start_time = if req.start_client_msg_id.is_empty() {
-            0
+        let start_msg = if req.start_client_msg_id.is_empty() {
+            None
         } else {
-            let msg = self.repositories.message_repo.get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id).await?;
-            let st = msg.as_ref().map(|m| m.send_time).unwrap_or(0);
-            info!("通过 client_msg_id 查询到 send_time={}", st);
-            st
+            self.repositories.message_repo.get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id).await?
         };
+        let start_time = start_msg.as_ref().map(|m| m.send_time).unwrap_or(0);
+        if let Some(m) = &start_msg {
+            info!("通过 client_msg_id 查询到 send_time={}, seq={}", m.send_time, m.seq);
+        }
 
-        let messages = self.repositories.message_repo.get_by_conversation(&req.conversation_id, start_time, req.count).await?;
+        let messages = if let Some(start) = &start_msg {
+            self.repositories
+                .message_repo
+                .get_by_conversation_before(&req.conversation_id, start.send_time, start.seq, &req.start_client_msg_id, req.count)
+                .await?
+        } else {
+            self.repositories.message_repo.get_by_conversation(&req.conversation_id, 0, req.count).await?
+        };
 
         let is_end = messages.len() < req.count as usize;
 
@@ -47,15 +55,22 @@ impl MessageService {
     ///
     /// 从 start_client_msg_id 之前的消息开始倒序获取（向上翻页取更早消息）；为空时从最新消息开始。
     pub async fn get_history_messages_reverse(&self, conversation_id: &str, start_client_msg_id: &str, count: i64) -> Result<GetHistoryMessagesResult> {
-        let start_time = if start_client_msg_id.is_empty() {
-            0
+        let start_msg = if start_client_msg_id.is_empty() {
+            None
         } else {
-            let msg = self.repositories.message_repo.get_by_client_msg_id(conversation_id, start_client_msg_id).await?;
-            msg.as_ref().map(|m| m.send_time).unwrap_or(0)
+            self.repositories.message_repo.get_by_client_msg_id(conversation_id, start_client_msg_id).await?
         };
+        let start_time = start_msg.as_ref().map(|m| m.send_time).unwrap_or(0);
 
         // 取 start_time 之前（更早）的消息，已按 send_time 倒序；多取一条用于判断是否到底
-        let messages = self.repositories.message_repo.get_by_conversation(conversation_id, start_time, count + 1).await?;
+        let messages = if let Some(start) = &start_msg {
+            self.repositories
+                .message_repo
+                .get_by_conversation_before(conversation_id, start.send_time, start.seq, start_client_msg_id, count + 1)
+                .await?
+        } else {
+            self.repositories.message_repo.get_by_conversation(conversation_id, 0, count + 1).await?
+        };
 
         let is_end = messages.len() <= count as usize;
         let messages: Vec<LocalChatLog> = if messages.len() > count as usize {
@@ -468,6 +483,44 @@ mod tests {
         let result = service.get_history_messages(&req).await.unwrap();
         assert_eq!(result.messages.len(), 2);
         assert!(!result.is_end);
+    }
+
+    #[tokio::test]
+    async fn test_get_history_messages_pagination_same_send_time() {
+        let pool = create_pool_memory().await.unwrap();
+        let service = make_service(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_1", "m2", 2, 1000, "user_a"),
+            make_msg("conv_1", "m3", 3, 2000, "user_a"),
+        ])
+        .await
+        .unwrap();
+
+        let req = GetHistoryMessagesReq {
+            conversation_id: "conv_1".to_string(),
+            start_client_msg_id: String::new(),
+            count: 2,
+        };
+        let result = service.get_history_messages(&req).await.unwrap();
+        assert_eq!(result.messages.len(), 2);
+        // send_time 相同、seq 更大的 m2 应排在 m1 前
+        assert_eq!(result.messages[0].client_msg_id, "m2");
+        assert_eq!(result.messages[1].client_msg_id, "m3");
+
+        let page2 = service
+            .get_history_messages(&GetHistoryMessagesReq {
+                conversation_id: "conv_1".to_string(),
+                start_client_msg_id: result.messages[0].client_msg_id.clone(),
+                count: 2,
+            })
+            .await
+            .unwrap();
+        // 同 send_time 时按 seq 边界继续取更早消息，不丢不重
+        assert_eq!(page2.messages.len(), 1);
+        assert_eq!(page2.messages[0].client_msg_id, "m1");
+        assert!(page2.is_end);
     }
 
     #[tokio::test]
