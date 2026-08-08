@@ -345,10 +345,12 @@ impl MessageProcessor {
         };
         if !offline_msgs.is_empty() {}
 
-        // 对齐 Go SDK：所有消息处理完成后统一发布会话变更
-        for conv_id in &seen_convs {
-            if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&conv_id).await {
-                self.send(ConversationEvent::Changed(vec![conv.clone()]));
+        // 对齐 Go SDK：所有消息处理完成后统一发布会话变更。
+        // 不只在“新插入消息”时发：自己发的消息、seq 回填等场景消息已存在，
+        // 也需刷新会话列表，否则 UI 拿不到最新 latestMsg。
+        if !normal_messages.is_empty() {
+            if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(conv_id).await {
+                self.send(ConversationEvent::Changed(vec![conv]));
             }
         }
 
@@ -586,6 +588,48 @@ mod tests {
 
         let chat_logs = message_dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
         assert_eq!(chat_logs.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_existing_message_still_emits_conversation_changed() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let hub = crate::event::hub::EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("user_a"),
+            hub.clone(),
+            crate::event::test_util::noop_message_listener(),
+        );
+
+        conversation_dao.upsert(&make_conv("conv_1")).await.unwrap();
+        let msg = make_msg("msg_1", "conv_1", 1);
+        message_dao
+            .batch_insert(&[LocalChatLog::from_msg_data("conv_1", &msg)])
+            .await
+            .unwrap();
+
+        // 消息已存在（例如自己发送后的回推/seq 回填），也应刷新会话列表
+        handler.handle_messages("conv_1", vec![msg]).await.unwrap();
+
+        let mut got_changed = false;
+        let timeout = tokio::time::sleep(std::time::Duration::from_secs(1));
+        tokio::pin!(timeout);
+        loop {
+            tokio::select! {
+                _ = &mut timeout => break,
+                ev = conv_rx.recv() => {
+                    if let Some(ConversationEvent::Changed(_)) = ev {
+                        got_changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        assert!(got_changed, "已存在的消息也应发布会话变更事件");
     }
 
     #[tokio::test]

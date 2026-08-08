@@ -693,14 +693,18 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
 
   bool _loadingConversations = false;
+  bool _reloadConversationsPending = false;
 
   Future<void> _loadConversations() async {
     if (_client == null) {
       appLog.w('[MessageService] _loadConversations 跳过：client 为空');
       return;
     }
-    // 防止并发调用导致状态乱序
-    if (_loadingConversations) return;
+    // 防止并发调用导致状态乱序：正在加载时记一次待重载，完成后补一次
+    if (_loadingConversations) {
+      _reloadConversationsPending = true;
+      return;
+    }
     _loadingConversations = true;
 
     try {
@@ -765,6 +769,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       appLog.e('dart MessageService ❌ 加载会话列表失败: $e');
     } finally {
       _loadingConversations = false;
+      if (_reloadConversationsPending) {
+        _reloadConversationsPending = false;
+        unawaited(_loadConversations());
+      }
     }
   }
 
