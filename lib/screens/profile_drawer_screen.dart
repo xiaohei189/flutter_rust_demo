@@ -41,6 +41,47 @@ class ProfileDrawerScreen extends ConsumerWidget {
     return '输入你的个性签名...';
   }
 
+  void _comingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('功能开发中，敬请期待'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showAbout(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('帮助与客服'),
+        content: const Text('OpenIM Flutter Rust 示例应用\n版本 1.0.0\n\n遇到问题请提供操作步骤与日志。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDevices(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('登录设备'),
+        content: const Text('当前登录设备：1 台（本机）'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final panelWidth = MediaQuery.of(context).size.width * 0.82;
@@ -183,24 +224,34 @@ class ProfileDrawerScreen extends ConsumerWidget {
                           _MenuItem(
                             icon: Icons.person_outline,
                             label: '我的个人名片',
-                            onTap: () {},
+                            onTap: () {
+                              if (onOpenMyProfile != null) {
+                                onOpenMyProfile!();
+                                return;
+                              }
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const MyProfileScreen(),
+                                ),
+                              );
+                            },
                           ),
                           _MenuItem(
                             icon: Icons.account_balance_wallet_outlined,
                             label: '钱包',
                             iconColor: const Color(0xFFFF9500),
-                            onTap: () {},
+                            onTap: () => _comingSoon(context),
                           ),
                           _MenuItem(
                             icon: Icons.star_outline,
                             label: '收藏',
                             iconColor: const Color(0xFFFFCC00),
-                            onTap: () {},
+                            onTap: () => _comingSoon(context),
                           ),
                           _MenuItem(
                             icon: Icons.people_outline,
                             label: '登录更多账号',
-                            onTap: () {},
+                            onTap: () => _comingSoon(context),
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -209,18 +260,18 @@ class ProfileDrawerScreen extends ConsumerWidget {
                           _MenuItem(
                             icon: Icons.headset_mic_outlined,
                             label: '帮助与客服',
-                            onTap: () {},
+                            onTap: () => _showAbout(context),
                           ),
                           _MenuItem(
                             icon: Icons.devices_outlined,
                             label: '登录设备',
                             trailing: '1',
-                            onTap: () {},
+                            onTap: () => _showDevices(context),
                           ),
                           _MenuItem(
                             icon: Icons.settings_outlined,
                             label: '设置',
-                            onTap: () {},
+                            onTap: () => AppRouter.goToAccountSettings(context),
                           ),
                         ],
                       ),

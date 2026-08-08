@@ -185,7 +185,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 搜索会话内容 ----
           const SizedBox(height: 8),
           _buildCard(children: [
-            _buildNavRow('搜索会话内容', onTap: () {}),
+            _buildNavRow('搜索会话内容', onTap: _showComingSoon),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
@@ -203,16 +203,16 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 添加标签页 ----
           const SizedBox(height: 8),
           _buildCard(children: [
-            _buildNavRow('添加标签页', onTap: () {}),
+            _buildNavRow('添加标签页', onTap: _showComingSoon),
           ]),
 
           // ---- 群机器人 + 群昵称（仅群聊） ----
           if (_isGroup) ...[
             const SizedBox(height: 8),
             _buildCard(children: [
-              _buildNavRow('群机器人', onTap: () {}),
+              _buildNavRow('群机器人', onTap: _showComingSoon),
               const Divider(height: 1, indent: 16, endIndent: 16),
-              _buildNavRow('群昵称', onTap: () {}),
+              _buildNavRow('群昵称', onTap: _editGroupNickname),
             ]),
           ],
 
@@ -264,7 +264,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               }),
             ],
             const Divider(height: 1, indent: 16, endIndent: 16),
-            _buildNavRow('标签', onTap: () {}),
+            _buildNavRow('标签', onTap: _showComingSoon),
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildSwitchRow('添加到标记', _addToMark, (v) {
               setState(() => _addToMark = v);
@@ -274,7 +274,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 翻译助手 ----
           const SizedBox(height: 8),
           _buildCard(children: [
-            _buildNavRow('翻译助手', onTap: () {}),
+            _buildNavRow('翻译助手', onTap: _showComingSoon),
           ]),
 
           // ---- 清空聊天记录 ----
@@ -346,7 +346,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           const SizedBox(height: 12),
           Center(
             child: TextButton.icon(
-              onPressed: () {},
+              onPressed: _showComingSoon,
               icon: Icon(
                 Icons.warning_amber_outlined,
                 size: 16,
@@ -734,6 +734,71 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('清空聊天记录失败: $e')),
+        );
+      }
+    }
+  }
+
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('功能开发中，敬请期待'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// 修改自己在群里的昵称
+  Future<void> _editGroupNickname() async {
+    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
+    if (currentUserId.isEmpty) return;
+    final controller = TextEditingController();
+    final nickname = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('修改群昵称'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '请输入群昵称',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (nickname == null || nickname.isEmpty) return;
+    final client = _client;
+    if (client == null) return;
+    try {
+      await GroupService.instance.setGroupMemberInfo(
+        client,
+        groupId: widget.conversationId,
+        userId: currentUserId,
+        nickname: nickname,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('群昵称已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新失败: $e')),
         );
       }
     }
