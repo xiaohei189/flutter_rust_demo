@@ -45,6 +45,45 @@ pub struct SeqPullContext {
     pub reverse_end_seq_map: HashMap<String, i64>,
 }
 
+impl SeqPullContext {
+    /// 更新结束 seq 缓存（对齐 Go `StoreWithFunc` 的 min/max 语义）。
+    ///
+    /// 正向翻页：只保留更小的 end_seq；反向翻页：只保留更大的 end_seq。
+    pub fn update_end_seq(&mut self, conversation_id: &str, this_end_seq: i64, is_reverse: bool) -> i64 {
+        let map = if is_reverse { &mut self.reverse_end_seq_map } else { &mut self.forward_end_seq_map };
+        let last_end_seq = map.get(conversation_id).copied().unwrap_or(0);
+        let should_store = if is_reverse {
+            this_end_seq > last_end_seq || last_end_seq == 0
+        } else {
+            this_end_seq < last_end_seq || last_end_seq == 0
+        };
+        if should_store && this_end_seq != 0 {
+            map.insert(conversation_id.to_string(), this_end_seq);
+            this_end_seq
+        } else {
+            last_end_seq
+        }
+    }
+
+    /// 计算本批消息的边界 seq（对齐 Go `shouldFetchMoreMessagesNum` 中的 thisEndSeq）。
+    ///
+    /// 正向翻页取最小 seq（最旧边界），反向翻页取最大 seq（最新边界）。
+    pub fn batch_end_seq(messages: &[LocalChatLog], is_reverse: bool) -> i64 {
+        let mut end_seq = 0i64;
+        for msg in messages {
+            if msg.seq == 0 {
+                continue;
+            }
+            if end_seq == 0 {
+                end_seq = msg.seq;
+            } else if (is_reverse && msg.seq > end_seq) || (!is_reverse && msg.seq < end_seq) {
+                end_seq = msg.seq;
+            }
+        }
+        end_seq
+    }
+}
+
 impl MessageChecker {
     pub fn new(remote: Arc<dyn SyncServerApi>, message_repo: Arc<dyn MessageRepository>, conversation_repo: Arc<dyn ConversationRepository>, user_id: String) -> Self {
         Self {
@@ -117,8 +156,15 @@ impl MessageChecker {
     /// 第 3 层：末尾连续性检查（对齐 Go SDK alidateAndFillEndBlockContinuity）
     ///
     /// 当拉取到的消息数量少于请求数量时，判断是否已到底。如果未到底则补拉缺失消息。
-    pub async fn validate_and_fill_end_block_continuity(&self, conversation_id: &str, messages: &mut Vec<LocalChatLog>, request_count: i64, is_reverse: bool) -> Result<bool> {
-        let (is_end, lost_seqs) = self.check_end_block(conversation_id, messages, request_count, is_reverse).await?;
+    pub async fn validate_and_fill_end_block_continuity(
+        &self,
+        conversation_id: &str,
+        messages: &mut Vec<LocalChatLog>,
+        request_count: i64,
+        last_end_seq: i64,
+        is_reverse: bool,
+    ) -> Result<bool> {
+        let (is_end, lost_seqs) = self.check_end_block(conversation_id, messages, request_count, last_end_seq, is_reverse).await?;
 
         if is_end {
             return Ok(true);
@@ -131,7 +177,7 @@ impl MessageChecker {
             }
 
             // 再次检查是否到底
-            let (is_end_after, _) = self.check_end_block(conversation_id, messages, request_count, is_reverse).await?;
+            let (is_end_after, _) = self.check_end_block(conversation_id, messages, request_count, last_end_seq, is_reverse).await?;
             return Ok(is_end_after);
         }
 
@@ -139,7 +185,14 @@ impl MessageChecker {
     }
 
     /// alidate_and_fill_end_block_continuity 的核心逻辑（对齐 Go SDK checkEndBlock）
-    async fn check_end_block(&self, conversation_id: &str, messages: &[LocalChatLog], request_count: i64, is_reverse: bool) -> Result<(bool, Vec<i64>)> {
+    async fn check_end_block(
+        &self,
+        conversation_id: &str,
+        messages: &[LocalChatLog],
+        request_count: i64,
+        last_end_seq: i64,
+        is_reverse: bool,
+    ) -> Result<(bool, Vec<i64>)> {
         if messages.len() as i64 >= request_count {
             // 拉满说明可能还有更多，不算到底
             return Ok((false, Vec::new()));
@@ -150,7 +203,7 @@ impl MessageChecker {
         if is_reverse {
             // 反向拉取：比较 maxSeq 与会话的 maxSeq（currentMaxSeq）
             let current_max_seq = self.get_conversation_max_seq(conversation_id).await;
-            if max_seq >= current_max_seq || max_seq == 0 && self.get_last_end_seq(conversation_id, true) >= current_max_seq {
+            if max_seq >= current_max_seq || max_seq == 0 && last_end_seq >= current_max_seq {
                 return Ok((true, Vec::new()));
             }
             // 需要拉取 [maxSeq+1, currentMaxSeq] 范围内的缺失消息
@@ -162,7 +215,7 @@ impl MessageChecker {
         } else {
             // 正向拉取：比较 minSeq 与会话的 minSeq（userCanPullMinSeq）
             let user_can_pull_min_seq = self.get_conversation_min_seq(conversation_id).await;
-            if min_seq <= user_can_pull_min_seq || min_seq == 0 && self.get_last_end_seq(conversation_id, false) <= user_can_pull_min_seq {
+            if min_seq <= user_can_pull_min_seq || min_seq == 0 && last_end_seq <= user_can_pull_min_seq {
                 return Ok((true, Vec::new()));
             }
             // 需要拉取 [userCanPullMinSeq, minSeq-1] 范围内的缺失消息
@@ -296,11 +349,6 @@ impl MessageChecker {
         self.conversation_repo.get_min_seq(conversation_id).await.unwrap_or(0).max(1)
     }
 
-    /// 获取上次拉取的结束 seq（从 SeqPullContext 中获取）
-    fn get_last_end_seq(&self, _conversation_id: &str, _is_reverse: bool) -> i64 {
-        // 当前返回 0，由调用方通过 SeqPullContext 传入
-        0
-    }
 }
 
 // ============================================================================

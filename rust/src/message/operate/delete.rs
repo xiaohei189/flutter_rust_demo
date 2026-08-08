@@ -160,6 +160,7 @@ mod tests {
             listener: crate::event::test_util::noop_conversation_listener(),
             message_listener: hub.clone(),
             checker: None,
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
         };
         (service, msg_rx)
     }

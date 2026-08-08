@@ -12,7 +12,7 @@ use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::{MessageListener, MessageListenerExt};
 use crate::http::message::MessageServerApi;
-use crate::message::receive::checker::MessageChecker;
+use crate::message::receive::checker::{MessageChecker, SeqPullContext};
 use crate::model::UserId;
 use std::sync::Arc;
 
@@ -24,6 +24,8 @@ pub struct MessageService {
     pub(crate) listener: Arc<dyn ConversationListener>,
     pub(crate) message_listener: Arc<dyn MessageListener>,
     pub(crate) checker: Option<Arc<MessageChecker>>,
+    /// 翻页拉取结束 seq 缓存（对齐 Go conversation_seq_cache.go）
+    pub(crate) seq_pull_context: Arc<tokio::sync::Mutex<SeqPullContext>>,
 }
 
 impl MessageService {
@@ -35,6 +37,7 @@ impl MessageService {
             listener,
             message_listener,
             checker: None,
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(SeqPullContext::default())),
         }
     }
 

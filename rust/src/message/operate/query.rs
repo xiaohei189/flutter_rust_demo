@@ -9,6 +9,7 @@ use crate::constant::MessageSendStatus;
 use crate::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
+use crate::message::receive::checker::SeqPullContext;
 use crate::model::local::{LocalChatLog, LocalConversation};
 use crate::model::message::MessageInfo;
 use crate::model::msg_struct::{get_msg_id, MsgStruct};
@@ -38,13 +39,40 @@ impl MessageService {
         };
 
         let is_end = if let Some(checker) = &self.checker {
+            if req.start_client_msg_id.is_empty() {
+                // 首次进入会话：清空翻页缓存（对齐 Go getAdvancedHistoryMessageList）
+                let mut ctx = self.seq_pull_context.lock().await;
+                ctx.forward_end_seq_map.remove(&req.conversation_id);
+                ctx.reverse_end_seq_map.remove(&req.conversation_id);
+            } else if let Some(start) = &start_msg {
+                // 翻页起点消息的 seq 作为上一块结束边界（对齐 Go handleEndSeq）
+                let mut ctx = self.seq_pull_context.lock().await;
+                ctx.forward_end_seq_map
+                    .entry(req.conversation_id.clone())
+                    .or_insert(start.seq);
+            }
             // 对齐 Go fetchMessagesWithGapCheck：三层连续性检查 + 服务端缺失补拉
-            checker.validate_and_fill_internal_gaps(&mut messages, false).await?;
-            checker.validate_and_fill_inter_block_gaps(&req.conversation_id, &mut messages, 0, false).await?;
-            checker.validate_and_fill_end_block_continuity(&req.conversation_id, &mut messages, req.count, false).await?
+            let mut ctx = self.seq_pull_context.lock().await;
+            let last_end_seq = ctx.forward_end_seq_map.get(&req.conversation_id).copied().unwrap_or(0);
+            drop(ctx);
+            let boundary = checker.validate_and_fill_internal_gaps(&mut messages, false).await?;
+            let this_end_seq = SeqPullContext::batch_end_seq(&messages, false);
+            let mut ctx = self.seq_pull_context.lock().await;
+            let last_end_seq = ctx.update_end_seq(&req.conversation_id, this_end_seq, false);
+            drop(ctx);
+            checker.validate_and_fill_inter_block_gaps(&req.conversation_id, &mut messages, last_end_seq, false).await?;
+            checker
+                .validate_and_fill_end_block_continuity(&req.conversation_id, &mut messages, req.count, last_end_seq, false)
+                .await?
         } else {
             messages.len() < req.count as usize
         };
+
+        if messages.len() > req.count as usize {
+            // 对齐 Go：补齐后只返回请求数量
+            messages.sort_by(|a, b| (b.send_time, b.seq).cmp(&(a.send_time, a.seq)));
+            messages.truncate(req.count as usize);
+        }
 
         // 对齐 Go：最终统一按 send_time/seq 升序返回
         messages.sort_by(|a, b| (a.send_time, a.seq).cmp(&(b.send_time, b.seq)));
@@ -84,9 +112,30 @@ impl MessageService {
         };
 
         let is_end = if let Some(checker) = &self.checker {
-            checker.validate_and_fill_internal_gaps(&mut messages, true).await?;
-            checker.validate_and_fill_inter_block_gaps(conversation_id, &mut messages, 0, true).await?;
-            checker.validate_and_fill_end_block_continuity(conversation_id, &mut messages, count, true).await?
+            if start_client_msg_id.is_empty() {
+                // 首次进入会话：清空翻页缓存（对齐 Go getAdvancedHistoryMessageList）
+                let mut ctx = self.seq_pull_context.lock().await;
+                ctx.forward_end_seq_map.remove(conversation_id);
+                ctx.reverse_end_seq_map.remove(conversation_id);
+            } else if let Some(start) = &start_msg {
+                // 翻页起点消息的 seq 作为上一块结束边界（对齐 Go handleEndSeq）
+                let mut ctx = self.seq_pull_context.lock().await;
+                ctx.reverse_end_seq_map
+                    .entry(conversation_id.to_string())
+                    .or_insert(start.seq);
+            }
+            let mut ctx = self.seq_pull_context.lock().await;
+            let last_end_seq = ctx.reverse_end_seq_map.get(conversation_id).copied().unwrap_or(0);
+            drop(ctx);
+            let boundary = checker.validate_and_fill_internal_gaps(&mut messages, true).await?;
+            let this_end_seq = SeqPullContext::batch_end_seq(&messages, true);
+            let mut ctx = self.seq_pull_context.lock().await;
+            let last_end_seq = ctx.update_end_seq(conversation_id, this_end_seq, true);
+            drop(ctx);
+            checker.validate_and_fill_inter_block_gaps(conversation_id, &mut messages, last_end_seq, true).await?;
+            checker
+                .validate_and_fill_end_block_continuity(conversation_id, &mut messages, count, last_end_seq, true)
+                .await?
         } else {
             let is_end = messages.len() <= count as usize;
             if messages.len() > count as usize {
@@ -94,6 +143,12 @@ impl MessageService {
             }
             is_end
         };
+
+        if messages.len() > count as usize {
+            // 对齐 Go：补齐后只返回请求数量
+            messages.sort_by(|a, b| (b.send_time, b.seq).cmp(&(a.send_time, a.seq)));
+            messages.truncate(count as usize);
+        }
 
         messages.sort_by(|a, b| (a.send_time, a.seq).cmp(&(b.send_time, b.seq)));
         let msg_info_list: Vec<MessageInfo> = messages
@@ -412,6 +467,7 @@ mod tests {
             listener: noop_conversation_listener(),
             message_listener: noop_message_listener(),
             checker: None,
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
         }
     }
 
@@ -626,6 +682,7 @@ mod tests {
             listener: noop_conversation_listener(),
             message_listener: noop_message_listener(),
             checker: Some(checker),
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
         };
 
         let result = service
@@ -637,7 +694,209 @@ mod tests {
             .await
             .unwrap();
         let seqs: Vec<i64> = result.messages.iter().map(|m| m.seq).collect();
-        assert_eq!(seqs, vec![1, 2, 3], "本地缺 seq 时历史查询应补拉并合并");
+        assert_eq!(seqs, vec![2, 3], "本地缺 seq 时历史查询应补拉并合并，且只返回请求数量");
+        assert!(!result.is_end, "拉满 count 条后应判定还有更多");
+    }
+
+    #[tokio::test]
+    async fn test_get_history_messages_keeps_forward_end_seq_cache() {
+        use crate::connection::sync_server::SyncServerApi;
+        use async_trait::async_trait;
+        use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+        use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};
+        use std::collections::HashMap;
+
+        struct NoMissingMock;
+
+        #[async_trait]
+        impl SyncServerApi for NoMissingMock {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+                Ok(HashMap::new())
+            }
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+                Ok(PullMessageBySeqsResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+                Ok(GetSeqMessageResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn is_kicked(&self) -> bool {
+                false
+            }
+        }
+
+        let pool = create_pool_memory().await.unwrap();
+        let repos = make_repositories(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_1", "m2", 2, 2000, "user_a"),
+            make_msg("conv_1", "m3", 3, 3000, "user_a"),
+            make_msg("conv_1", "m4", 4, 4000, "user_a"),
+            make_msg("conv_1", "m5", 5, 5000, "user_a"),
+        ])
+        .await
+        .unwrap();
+        repos
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_1".to_string(),
+                min_seq: 1,
+                max_seq: 5,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        let checker = Arc::new(crate::message::receive::checker::MessageChecker::new(
+            Arc::new(NoMissingMock),
+            repos.message_repo.clone(),
+            repos.conversation_repo.clone(),
+            "test_user".to_string(),
+        ));
+        let service = super::MessageService {
+            repositories: repos,
+            api: Arc::new(MockMessageApi),
+            user_id: UserId::new("test_user"),
+            listener: noop_conversation_listener(),
+            message_listener: noop_message_listener(),
+            checker: Some(checker),
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
+        };
+        let page1 = service
+            .get_history_messages(&GetHistoryMessagesReq {
+                conversation_id: "conv_1".to_string(),
+                start_client_msg_id: String::new(),
+                count: 2,
+            })
+            .await
+            .unwrap();
+        assert_eq!(page1.messages.len(), 2);
+        assert_eq!(page1.messages[0].client_msg_id, "m4");
+        assert_eq!(page1.messages[1].client_msg_id, "m5");
+
+        {
+            let ctx = service.seq_pull_context.lock().await;
+            assert_eq!(ctx.forward_end_seq_map.get("conv_1"), Some(&4), "正向翻页应缓存本批最旧 seq");
+        }
+
+        let page2 = service
+            .get_history_messages(&GetHistoryMessagesReq {
+                conversation_id: "conv_1".to_string(),
+                start_client_msg_id: page1.messages[0].client_msg_id.clone(),
+                count: 2,
+            })
+            .await
+            .unwrap();
+        assert_eq!(page2.messages.len(), 2);
+        assert_eq!(page2.messages[0].client_msg_id, "m2");
+        assert_eq!(page2.messages[1].client_msg_id, "m3");
+
+        {
+            let ctx = service.seq_pull_context.lock().await;
+            assert_eq!(ctx.forward_end_seq_map.get("conv_1"), Some(&2), "正向翻页缓存应收敛到已加载的最旧边界 2");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_history_messages_reverse_keeps_reverse_end_seq_cache() {
+        use crate::connection::sync_server::SyncServerApi;
+        use async_trait::async_trait;
+        use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+        use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};
+        use std::collections::HashMap;
+
+        struct NoMissingMock;
+
+        #[async_trait]
+        impl SyncServerApi for NoMissingMock {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+                Ok(HashMap::new())
+            }
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+                Ok(PullMessageBySeqsResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+                Ok(GetSeqMessageResp {
+                    msgs: HashMap::new(),
+                    notification_msgs: HashMap::new(),
+                })
+            }
+            async fn is_kicked(&self) -> bool {
+                false
+            }
+        }
+
+        let pool = create_pool_memory().await.unwrap();
+        let repos = make_repositories(pool.clone());
+        let dao = MessageDao::new(pool);
+        dao.batch_insert(&[
+            make_msg("conv_1", "m1", 1, 1000, "user_a"),
+            make_msg("conv_1", "m2", 2, 2000, "user_a"),
+            make_msg("conv_1", "m3", 3, 3000, "user_a"),
+            make_msg("conv_1", "m4", 4, 4000, "user_a"),
+            make_msg("conv_1", "m5", 5, 5000, "user_a"),
+        ])
+        .await
+        .unwrap();
+        repos
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_1".to_string(),
+                min_seq: 1,
+                max_seq: 5,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        let checker = Arc::new(crate::message::receive::checker::MessageChecker::new(
+            Arc::new(NoMissingMock),
+            repos.message_repo.clone(),
+            repos.conversation_repo.clone(),
+            "test_user".to_string(),
+        ));
+        let service = super::MessageService {
+            repositories: repos,
+            api: Arc::new(MockMessageApi),
+            user_id: UserId::new("test_user"),
+            listener: noop_conversation_listener(),
+            message_listener: noop_message_listener(),
+            checker: Some(checker),
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
+        };
+
+        let page1 = service
+            .get_history_messages_reverse("conv_1", "", 2)
+            .await
+            .unwrap();
+        assert_eq!(page1.messages.len(), 2);
+        assert_eq!(page1.messages[0].client_msg_id, "m1");
+        assert_eq!(page1.messages[1].client_msg_id, "m2");
+        {
+            let ctx = service.seq_pull_context.lock().await;
+            assert_eq!(ctx.reverse_end_seq_map.get("conv_1"), Some(&2), "反向翻页应缓存本批最新 seq");
+        }
+
+        let page2 = service
+            .get_history_messages_reverse("conv_1", &page1.messages[1].client_msg_id, 2)
+            .await
+            .unwrap();
+        assert_eq!(page2.messages.len(), 2);
+        assert_eq!(page2.messages[0].client_msg_id, "m3");
+        assert_eq!(page2.messages[1].client_msg_id, "m4");
+        {
+            let ctx = service.seq_pull_context.lock().await;
+            assert_eq!(ctx.reverse_end_seq_map.get("conv_1"), Some(&4), "反向翻页缓存应保持已加载的最新边界 4");
+        }
     }
 
     #[tokio::test]
@@ -748,6 +1007,7 @@ mod tests {
             listener: hub.clone(),
             message_listener: hub.clone(),
             checker: None,
+            seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
         };
         (service, conv_rx, msg_rx)
     }
