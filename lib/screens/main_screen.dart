@@ -169,7 +169,7 @@ class _MineScreen extends ConsumerWidget {
               _MenuItem(
                 icon: Icons.info_outline,
                 label: '关于我们',
-                onTap: () {},
+                onTap: () => _showAboutDialog(context),
               ),
             ],
           ),
@@ -185,6 +185,24 @@ class _MineScreen extends ConsumerWidget {
                 onTap: () => _showLogoutDialog(context, ref),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('关于我们'),
+        content: const Text(
+          'OpenIM Flutter Rust 示例应用\n版本 1.0.0\n\n基于 Rust SDK + flutter_rust_bridge 构建',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('知道了'),
           ),
         ],
       ),

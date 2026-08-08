@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../models/user.dart';
 import '../providers/providers.dart';
+import '../router/app_router.dart';
 import '../src/rust/model/friend.dart';
 import '../widgets/user_avatar.dart';
 
@@ -126,7 +127,11 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
               title: const Text('发消息'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: 跳转到与该好友的聊天页面
+                final currentUserId =
+                    ref.read(userProfileProvider).profile?.userId ?? '';
+                final ids = [currentUserId, friend.userId]..sort();
+                final conversationId = 'si_${ids[0]}_${ids[1]}';
+                AppRouter.goToChatDetailById(context, conversationId);
               },
             ),
             ListTile(

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../providers/providers.dart';
 import '../router/app_router.dart';
-import '../services/navigation_service.dart';
 import '../services/services.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
 import '../src/rust/model/group.dart' show GroupMember;
@@ -144,15 +143,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                     ),
                   ],
                 ),
-                onTap: () {
-                  // TODO: 选择/更换群头像
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('更换群头像功能开发中'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onTap: _changeGroupAvatar,
               ),
               const ListDivider(),
               TwoLineListRow(
@@ -607,6 +598,62 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           const SnackBar(content: Text('群组已解散'), behavior: SnackBarBehavior.floating),
         );
         AppRouter.goBack(context);
+      }
+    }
+  }
+
+  /// 更换群头像（输入图片 URL）
+  Future<void> _changeGroupAvatar() async {
+    final controller = TextEditingController(
+      text: _conversation?.faceUrl ?? '',
+    );
+    final url = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('更换群头像'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '请输入图片 URL',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (url == null || url.isEmpty) return;
+    final client = ref.read(messageServiceProvider.notifier).client;
+    if (client == null) return;
+    try {
+      await GroupService.instance.setGroupInfo(
+        client,
+        groupId: _groupId,
+        faceUrl: url,
+      );
+      await ref.read(conversationListProvider.notifier).refreshConversations();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('群头像已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新失败: $e')),
+        );
       }
     }
   }
