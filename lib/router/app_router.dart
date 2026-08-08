@@ -17,6 +17,7 @@ import '../screens/group_list_screen.dart';
 import '../screens/create_group_screen.dart';
 import '../screens/add_contact_screen.dart';
 import '../screens/contact_picker_screen.dart';
+import '../screens/blacklist_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
@@ -181,6 +182,11 @@ class AppRouter {
             return ContactPickerScreen(multiSelect: multiSelect, title: multiSelect ? '选择群成员' : '选择联系人');
           },
         ),
+        // 黑名单页
+        GoRoute(
+          path: '/blacklist',
+          builder: (context, state) => const BlacklistScreen(),
+        ),
         // 个人资料字段编辑页
         GoRoute(
           path: profileEditField,
@@ -285,6 +291,11 @@ class AppRouter {
   /// 导航到搜索页
   static void goToSearch(BuildContext context) {
     context.push(search);
+  }
+
+  /// 导航到黑名单页
+  static void goToBlacklist(BuildContext context) {
+    context.push('/blacklist');
   }
 
   /// 返回上一页

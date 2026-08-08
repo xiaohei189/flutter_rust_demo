@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data' show Int32List;
 
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
@@ -11,7 +12,7 @@ import 'package:flutter_rust_demo/src/rust/client/config.dart';
 import 'package:flutter_rust_demo/src/rust/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/client.dart';
 import 'package:flutter_rust_demo/src/rust/model/user.dart' show UserInfo;
-import 'package:flutter_rust_demo/src/rust/model/local.dart' show LocalConversation;
+import 'package:flutter_rust_demo/src/rust/model/local.dart' show LocalChatLog, LocalConversation;
 import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
 import 'package:flutter_rust_demo/src/rust/event/events/connection.dart';
@@ -36,6 +37,8 @@ class MessageServiceState {
   final UserInfo? loginUserProfile;
   final bool isInitializing;
   final int totalUnreadCount;
+  /// 各会话当前正在输入的用户（conversationId -> userId）
+  final Map<String, String> typingUsers;
 
   const MessageServiceState({
     this.isConnected = false,
@@ -48,6 +51,7 @@ class MessageServiceState {
     this.loginUserProfile,
     this.isInitializing = false,
     this.totalUnreadCount = 0,
+    this.typingUsers = const {},
   });
 
   MessageServiceState copyWith({
@@ -61,6 +65,7 @@ class MessageServiceState {
     UserInfo? loginUserProfile,
     bool? isInitializing,
     int? totalUnreadCount,
+    Map<String, String>? typingUsers,
   }) {
     return MessageServiceState(
       isConnected: isConnected ?? this.isConnected,
@@ -73,6 +78,7 @@ class MessageServiceState {
       loginUserProfile: loginUserProfile ?? this.loginUserProfile,
       isInitializing: isInitializing ?? this.isInitializing,
       totalUnreadCount: totalUnreadCount ?? this.totalUnreadCount,
+      typingUsers: typingUsers ?? this.typingUsers,
     );
   }
 }
@@ -298,6 +304,48 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
+    );
+  }
+
+  /// 发送 @ 提及消息
+  Future<MsgStruct> sendAtTextMessage({
+    required String text,
+    required List<String> atUserIds,
+    required String recvId,
+    required SessionType sessionType,
+    required String conversationId,
+    String groupId = '',
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    final sourceId = groupId.isNotEmpty ? groupId : recvId;
+    return _client!.sendAtTextMessage(
+      text: text,
+      atUserIds: atUserIds,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 搜索当前会话的本地消息
+  Future<List<LocalChatLog>> searchLocalMessages({
+    required String conversationId,
+    required String keyword,
+    int offset = 0,
+    int count = 50,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    if (keyword.trim().isEmpty) return const [];
+    return _client!.searchLocalMessages(
+      req: SearchMessagesReq(
+        conversationId: conversationId,
+        keyword: keyword.trim(),
+        senderUserIds: const [],
+        messageTypes: Int32List(0),
+        startTime: 0,
+        endTime: 0,
+        offset: offset,
+        count: count,
+      ),
     );
   }
 
@@ -603,7 +651,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       changed: (_) { appLog.i('[MsgSvc] conversationChanged'); _loadConversations(); },
       new_: (_) { appLog.i('[MsgSvc] newConversation'); _loadConversations(); },
       deleted: (_) => appLog.i('[MsgSvc] conversationDeleted'),
-      userInputStatusChanged: (cid, uid, _) => appLog.i('[MsgSvc] typing: conv=$cid user=$uid'),
+      userInputStatusChanged: (cid, uid, platformIds) {
+        appLog.i('[MsgSvc] typing: conv=$cid user=$uid platforms=${platformIds.length}');
+        final typingUsers = Map<String, String>.from(state.typingUsers);
+        if (platformIds.isNotEmpty) {
+          typingUsers[cid] = uid;
+        } else {
+          typingUsers.remove(cid);
+        }
+        state = state.copyWith(typingUsers: typingUsers);
+      },
       syncFailed: (e) => appLog.i('[MsgSvc] syncFailed: $e'),
       orElse: () {},
     );

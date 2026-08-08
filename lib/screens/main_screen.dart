@@ -164,7 +164,7 @@ class _MineScreen extends ConsumerWidget {
               _MenuItem(
                 icon: Icons.block_outlined,
                 label: '黑名单',
-                onTap: () {},
+                onTap: () => AppRouter.goToBlacklist(context),
               ),
               _MenuItem(
                 icon: Icons.info_outline,

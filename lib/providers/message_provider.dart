@@ -152,6 +152,31 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     }
   }
 
+  /// 发送 @ 提及消息
+  Future<bool> sendAtTextMessage({
+    required String recvId,
+    required String text,
+    required List<String> atUserIds,
+    required SessionType sessionType,
+    String? groupId,
+  }) async {
+    try {
+      final result = await _messageService.sendAtTextMessage(
+        recvId: recvId,
+        text: text,
+        atUserIds: atUserIds,
+        sessionType: sessionType,
+        conversationId: _conversationId,
+        groupId: groupId ?? '',
+      );
+      _addSentMessage(result);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送 @ 消息失败: $e');
+      return false;
+    }
+  }
+
   /// 用发送结果构建 MessageInfo 并添加到列表中（对齐 Go SDK sendMessage 返回值）
   void _addSentMessage(MsgStruct result) {
     // 同步写入全局状态，确保 _syncState() 不会覆盖掉这条消息

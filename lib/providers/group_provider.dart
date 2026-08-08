@@ -181,6 +181,83 @@ class GroupMemberNotifier extends StateNotifier<GroupMemberState> {
       return false;
     }
   }
+
+  /// 禁言单个群成员
+  Future<bool> muteMember(String userId, int mutedSeconds) async {
+    final client = _client;
+    if (client == null) return false;
+    try {
+      await GroupService.instance.muteGroupMember(
+        client,
+        groupId: _groupId,
+        userId: userId,
+        mutedSeconds: mutedSeconds,
+      );
+      await loadMembers();
+      return true;
+    } catch (e) {
+      appLog.e('[GroupMemberProvider] 禁言成员失败: $e');
+      state = state.copyWith(error: '禁言成员失败: $e');
+      return false;
+    }
+  }
+
+  /// 取消群成员禁言
+  Future<bool> unmuteMember(String userId) async {
+    return muteMember(userId, 0);
+  }
+
+  /// 转让群主
+  Future<bool> transferOwner(String newOwnerUserId) async {
+    final client = _client;
+    if (client == null) return false;
+    try {
+      await GroupService.instance.transferGroupOwner(
+        client,
+        groupId: _groupId,
+        newOwnerUserId: newOwnerUserId,
+      );
+      await loadMembers();
+      return true;
+    } catch (e) {
+      appLog.e('[GroupMemberProvider] 转让群主失败: $e');
+      state = state.copyWith(error: '转让群主失败: $e');
+      return false;
+    }
+  }
+
+  /// 解散群组
+  Future<bool> dismissGroup() async {
+    final client = _client;
+    if (client == null) return false;
+    try {
+      await GroupService.instance.dismissGroup(client, groupId: _groupId);
+      return true;
+    } catch (e) {
+      appLog.e('[GroupMemberProvider] 解散群组失败: $e');
+      state = state.copyWith(error: '解散群组失败: $e');
+      return false;
+    }
+  }
+
+  /// 全员禁言/解除禁言
+  Future<bool> muteAll(bool isMute) async {
+    final client = _client;
+    if (client == null) return false;
+    try {
+      await GroupService.instance.muteGroup(
+        client,
+        groupId: _groupId,
+        isMute: isMute,
+      );
+      await loadMembers();
+      return true;
+    } catch (e) {
+      appLog.e('[GroupMemberProvider] 全员禁言失败: $e');
+      state = state.copyWith(error: '全员禁言失败: $e');
+      return false;
+    }
+  }
 }
 
 /// 群成员 Provider（Family，按群组 ID）

@@ -7,6 +7,7 @@ import '../router/app_router.dart';
 import '../services/navigation_service.dart';
 import '../services/services.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
+import '../src/rust/model/group.dart' show GroupMember;
 import '../theme/app_theme.dart';
 import '../widgets/card_layout.dart';
 import '../widgets/list_row.dart';
@@ -79,6 +80,11 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       _groupName = '群聊';
     }
     _groupDescription = '暂无描述';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(groupMemberProvider(_groupId).notifier).loadMembers();
+      }
+    });
   }
 
   @override
@@ -100,6 +106,13 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         ),
       );
     }
+
+    final currentUserId = ref.watch(userProfileProvider).profile?.userId ?? '';
+    final memberState = ref.watch(groupMemberProvider(_groupId));
+    final currentMember = memberState.members
+        .where((m) => m.userId == currentUserId)
+        .firstOrNull;
+    final isOwner = currentMember?.roleLevel == 3;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -165,6 +178,91 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          // 群成员
+          CardLayout(
+            children: [
+              ListRow(
+                label: '群成员',
+                trailing: Text(
+                  memberState.isLoading ? '加载中...' : '${memberState.members.length}人',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+              ),
+              const ListDivider(),
+              if (memberState.isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (memberState.members.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: Text('暂无成员')),
+                )
+              else
+                ...memberState.members.map(
+                  (m) => ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    leading: UserAvatar(
+                      user: User(
+                        id: m.userId,
+                        name: m.nickname,
+                        avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
+                      ),
+                      radius: 18,
+                    ),
+                    title: Text(
+                      m.nickname.isNotEmpty ? m.nickname : m.userId,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      _roleName(m.roleLevel),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                    onTap: () => _showMemberActions(m),
+                  ),
+                ),
+            ],
+          ),
+          if (isOwner) ...[
+            const SizedBox(height: 12),
+            CardLayout(
+              children: [
+                ListRow(
+                  label: '全员禁言',
+                  trailing: const Icon(
+                    Icons.volume_off_outlined,
+                    size: 20,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                  onTap: () => _showGroupManageSheet(),
+                ),
+                const ListDivider(),
+                ListRow(
+                  label: '转让群主',
+                  trailing: const Icon(
+                    Icons.swap_horiz,
+                    size: 20,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                  onTap: _transferOwner,
+                ),
+                const ListDivider(),
+                DangerActionRow(title: '解散群组', onTap: _dismissGroup),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
           // 群二维码（只读）
           CardLayout(
             children: [
@@ -202,6 +300,312 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         ],
       ),
     );
+  }
+
+  String _roleName(int roleLevel) {
+    return switch (roleLevel) {
+      3 => '群主',
+      2 => '管理员',
+      _ => '成员',
+    };
+  }
+
+  Future<void> _showMemberActions(GroupMember member) async {
+    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
+    final members = ref.read(groupMemberProvider(_groupId)).members;
+    final currentMember =
+        members.where((m) => m.userId == currentUserId).firstOrNull;
+    final canManage = currentMember != null && currentMember.roleLevel >= 2;
+    final isOwner = currentMember?.roleLevel == 3;
+
+    if (!canManage || member.userId == currentUserId) {
+      return;
+    }
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(
+                member.nickname.isNotEmpty ? member.nickname : member.userId,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.person_remove_outlined),
+              title: const Text('踢出群聊'),
+              onTap: () => Navigator.of(ctx).pop('kick'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.volume_off_outlined),
+              title: const Text('禁言'),
+              onTap: () => Navigator.of(ctx).pop('mute'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.volume_up_outlined),
+              title: const Text('取消禁言'),
+              onTap: () => Navigator.of(ctx).pop('unmute'),
+            ),
+            if (isOwner)
+              ListTile(
+                leading: const Icon(Icons.swap_horiz),
+                title: const Text('转让群主'),
+                onTap: () => Navigator.of(ctx).pop('transfer'),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    switch (action) {
+      case 'kick':
+        await _kickMember(member);
+      case 'mute':
+        await _muteMemberDialog(member);
+      case 'unmute':
+        await _unmuteMember(member);
+      case 'transfer':
+        await _transferOwner(target: member);
+    }
+  }
+
+  Future<void> _kickMember(GroupMember member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('踢出群聊'),
+        content: Text('确定将 ${member.nickname.isNotEmpty ? member.nickname : member.userId} 移出群聊吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('踢出', style: TextStyle(color: AppTheme.unreadRed)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .kickMembers([member.userId]);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已踢出'), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _muteMemberDialog(GroupMember member) async {
+    const durations = <String, int>{
+      '1 分钟': 60,
+      '10 分钟': 600,
+      '1 小时': 3600,
+      '24 小时': 86400,
+    };
+    final duration = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('选择禁言时长', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            ...durations.entries.map(
+              (e) => ListTile(
+                title: Text(e.key),
+                onTap: () => Navigator.of(ctx).pop(e.value),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (duration == null) return;
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .muteMember(member.userId, duration);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已禁言'), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _unmuteMember(GroupMember member) async {
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .unmuteMember(member.userId);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已取消禁言'), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _showGroupManageSheet() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('群管理', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.volume_off_outlined),
+              title: const Text('全员禁言'),
+              onTap: () => Navigator.of(ctx).pop('muteAll'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.volume_up_outlined),
+              title: const Text('解除全员禁言'),
+              onTap: () => Navigator.of(ctx).pop('unmuteAll'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('转让群主'),
+              onTap: () => Navigator.of(ctx).pop('transfer'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: AppTheme.unreadRed),
+              title: const Text('解散群组', style: TextStyle(color: AppTheme.unreadRed)),
+              onTap: () => Navigator.of(ctx).pop('dismiss'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    switch (action) {
+      case 'muteAll':
+        await _setMuteAll(true);
+      case 'unmuteAll':
+        await _setMuteAll(false);
+      case 'transfer':
+        await _transferOwner();
+      case 'dismiss':
+        await _dismissGroup();
+    }
+  }
+
+  Future<void> _setMuteAll(bool isMute) async {
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .muteAll(isMute);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isMute ? '已全员禁言' : '已解除全员禁言'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _transferOwner({GroupMember? target}) async {
+    final members = ref.read(groupMemberProvider(_groupId)).members;
+    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
+    final candidates =
+        members.where((m) => m.userId != currentUserId).toList();
+    if (candidates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂无可转让成员'), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+
+    GroupMember? selected = target;
+    selected ??= await showModalBottomSheet<GroupMember>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('选择新群主', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            const Divider(height: 1),
+            ...candidates.map(
+              (m) => ListTile(
+                title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
+                onTap: () => Navigator.of(ctx).pop(m),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null) return;
+
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .transferOwner(selected.userId);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('群主已转让'), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
+
+  Future<void> _dismissGroup() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('解散群组'),
+        content: const Text('解散后所有成员都将退出，且无法恢复，确定继续吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('解散', style: TextStyle(color: AppTheme.unreadRed)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await ref.read(groupMemberProvider(_groupId).notifier).dismissGroup();
+    if (ok && mounted) {
+      await ref.read(groupListProvider.notifier).loadGroups();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('群组已解散'), behavior: SnackBarBehavior.floating),
+        );
+        AppRouter.goBack(context);
+      }
+    }
   }
 
   void _editField({

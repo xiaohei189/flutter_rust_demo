@@ -30,6 +30,7 @@ class ChatInput extends StatefulWidget {
   final VoidCallback? onVideoPick;
   final Function(int duration, String filePath)? onVoiceRecord;
   final Function(String userId, String nickname, String faceUrl)? onCardSend;
+  final VoidCallback? onAtMention;
   final bool isGroupChat;
 
   const ChatInput({
@@ -43,6 +44,7 @@ class ChatInput extends StatefulWidget {
     this.onVideoPick,
     this.onVoiceRecord,
     this.onCardSend,
+    this.onAtMention,
     this.isGroupChat = false,
   });
 
@@ -440,10 +442,7 @@ class _ChatInputState extends State<ChatInput> {
             _buildToolbarIcon(
               icon: Icons.alternate_email,
               tooltip: '@ 提及',
-              onTap: () {
-                // TODO: 弹出群成员选择器
-                _focusNode.requestFocus();
-              },
+              onTap: () => widget.onAtMention?.call(),
             ),
           // 🎤 语音（长按录音）
           _buildToolbarIcon(

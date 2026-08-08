@@ -11,13 +11,14 @@ import '../providers/providers.dart';
 import '../services/message_service_notifier.dart';
 import '../src/rust/ffi/message_advanced.dart' show sendTyping;
 import '../src/rust/model/message.dart' show MessageInfo;
+import '../src/rust/model/group.dart' show GroupMember;
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
 import '../extensions/conversation_extensions.dart';
 import '../models/user.dart';
 import '../src/rust/constant/enums.dart' show SessionType;
-import '../src/rust/model/local.dart' show LocalConversation;
+import '../src/rust/model/local.dart' show LocalChatLog, LocalConversation;
 import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
 import '../widgets/message_list.dart';
 import '../widgets/message_action_menu.dart';
@@ -48,6 +49,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   bool _bodyReady = false;
   DateTime? _lastTypingSent;
   MessageInfo? _quotedMessage;
+  final List<String> _atUserIds = [];
   MessageServiceNotifier? _messageService; // 缓存引用，避免 dispose 时访问 ref
   DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
 
@@ -383,7 +385,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
       // 如果有引用消息，发送引用消息
       final quotedMsg = _quotedMessage;
-      if (quotedMsg != null) {
+      if (_atUserIds.isNotEmpty) {
+        final atUserIds = List<String>.from(_atUserIds);
+        _atUserIds.clear();
+        await ref
+            .read(messageListProvider(conversation.conversationId).notifier)
+            .sendAtTextMessage(
+              recvId: recvId,
+              text: text,
+              atUserIds: atUserIds,
+              sessionType: sessionType,
+              groupId: groupId,
+            );
+      } else if (quotedMsg != null) {
         setState(() => _quotedMessage = null);
         final svc = ref.read(messageServiceProvider.notifier);
         await svc.sendQuoteMessage(
@@ -456,6 +470,97 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     if (sourceId.isEmpty) return;
     final sessionType = conversation.sessionType;
     sendTyping(sourceId: sourceId, sessionType: sessionType, focus: focus);
+  }
+
+  /// 弹出群成员选择器并插入 @ 提及
+  Future<void> _showAtMentionPicker() async {
+    final target = _getSendTarget();
+    if (target == null || target.groupId.isEmpty) return;
+
+    final memberState = ref.read(groupMemberProvider(target.groupId));
+    if (memberState.members.isEmpty) {
+      await ref.read(groupMemberProvider(target.groupId).notifier).loadMembers();
+      if (!mounted) return;
+    }
+    final members = ref.read(groupMemberProvider(target.groupId)).members;
+    if (members.isEmpty) {
+      _showError('暂无可选群成员');
+      return;
+    }
+
+    final selected = await showModalBottomSheet<GroupMember>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 14),
+              child: Text(
+                '@ 选择群成员',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: members.length,
+                itemBuilder: (_, i) {
+                  final m = members[i];
+                  return ListTile(
+                    leading: UserAvatar(
+                      user: User(
+                        id: m.userId,
+                        name: m.nickname,
+                        avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
+                      ),
+                      radius: 18,
+                    ),
+                    title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
+                    onTap: () => Navigator.of(ctx).pop(m),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+    final text = _textController.text;
+    final suffix = text.isEmpty || text.endsWith(' ') ? '' : ' ';
+    final displayName = selected.nickname.isNotEmpty ? selected.nickname : selected.userId;
+    final inserted = '$text$suffix@$displayName ';
+    _textController.value = TextEditingValue(
+      text: inserted,
+      selection: TextSelection.collapsed(offset: inserted.length),
+    );
+    if (!_atUserIds.contains(selected.userId)) {
+      _atUserIds.add(selected.userId);
+    }
+  }
+
+  /// 打开当前会话的消息搜索
+  void _showMessageSearch() {
+    final conversation = _conversation;
+    if (conversation == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _MessageSearchSheet(
+        conversationId: conversation.conversationId,
+      ),
+    );
   }
 
   // ---- 图片/文件/位置发送 ----
@@ -671,6 +776,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     final user = _getUser(userProfileState);
     final conversation = _conversation;
     final currentUserId = userProfileState.profile?.userId ?? '';
+    final typingUserId = ref.watch(
+      messageServiceProvider.select((s) => s.typingUsers[widget.conversationId]),
+    );
+    final isTyping = typingUserId != null &&
+        typingUserId.isNotEmpty &&
+        typingUserId != currentUserId;
 
     if (conversation == null) {
       return Scaffold(
@@ -756,7 +867,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                             color: AppTheme.textPrimaryColor,
                           ),
                         ),
-                        if (_isGroup)
+                        if (isTyping)
+                          Text(
+                            '对方正在输入...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryColor.withValues(alpha: 0.9),
+                            ),
+                          )
+                        else if (_isGroup)
                           Text(
                             '群聊',
                             style: TextStyle(
@@ -785,6 +904,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
           },
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: '搜索聊天记录',
+            onPressed: _showMessageSearch,
+          ),
           IconButton(
             icon: const Icon(Icons.more_horiz),
             onPressed: () {
@@ -936,6 +1060,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                   onFilePick: _pickFile,
                   onVideoPick: _pickVideo,
                   onCardSend: _sendCardMessage,
+                  onAtMention: _showAtMentionPicker,
                   isGroupChat: _isGroup,
                 ),
               ],
@@ -944,6 +1069,163 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
               color: AppTheme.backgroundColor,
               child: SizedBox.expand(),
             ),
+    );
+  }
+}
+
+/// 会话内消息搜索底部面板
+class _MessageSearchSheet extends ConsumerStatefulWidget {
+  const _MessageSearchSheet({required this.conversationId});
+
+  final String conversationId;
+
+  @override
+  ConsumerState<_MessageSearchSheet> createState() =>
+      _MessageSearchSheetState();
+}
+
+class _MessageSearchSheetState extends ConsumerState<_MessageSearchSheet> {
+  final TextEditingController _controller = TextEditingController();
+  List<LocalChatLog> _results = const [];
+  bool _searching = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String keyword) async {
+    if (keyword.trim().isEmpty) {
+      setState(() {
+        _results = const [];
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _searching = true;
+      _error = null;
+    });
+    try {
+      final svc = ref.read(messageServiceProvider.notifier);
+      final results = await svc.searchLocalMessages(
+        conversationId: widget.conversationId,
+        keyword: keyword,
+      );
+      if (!mounted) return;
+      setState(() => _results = results);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = '搜索失败: $e');
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+              child: TextField(
+                controller: _controller,
+                autofocus: true,
+                onChanged: _search,
+                decoration: InputDecoration(
+                  hintText: '搜索聊天记录',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _controller.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            _controller.clear();
+                            _search('');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: AppTheme.backgroundColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(child: _buildResults()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResults() {
+    if (_searching) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(_error!, style: const TextStyle(color: AppTheme.unreadRed)),
+        ),
+      );
+    }
+    if (_results.isEmpty) {
+      return const Center(child: Text('没有找到相关消息'));
+    }
+    return ListView.separated(
+      itemCount: _results.length,
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 16),
+      itemBuilder: (_, i) {
+        final log = _results[i];
+        final rawTime = log.sendTime.toInt();
+        final time = DateTime.fromMillisecondsSinceEpoch(
+          rawTime > 0 && rawTime < 946684800000 ? rawTime * 1000 : rawTime,
+        ).toLocal();
+        return ListTile(
+          leading: UserAvatar(
+            user: User(
+              id: log.sendId,
+              name: log.senderNickName,
+              avatar: log.senderFaceUrl.isNotEmpty ? log.senderFaceUrl : null,
+            ),
+            radius: 18,
+          ),
+          title: Text(
+            log.content,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            '${log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId}  '
+            '${time.toString().substring(0, 16)}',
+            style: const TextStyle(fontSize: 12),
+          ),
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId),
+              content: SelectableText(log.content),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('关闭'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
