@@ -6,6 +6,7 @@ import '../providers/user_profile_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/list_row.dart';
 import '../widgets/user_avatar.dart';
+import '../screens/qr_code_screen.dart';
 
 /// 个人中心页面
 class ProfileScreen extends ConsumerWidget {
@@ -74,7 +75,17 @@ class ProfileScreen extends ConsumerWidget {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(10),
                     onTap: () {
-                      // TODO: 打开我的二维码页面
+                      if (userId.isNotEmpty) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => QrCodeScreen(
+                              title: '我的二维码',
+                              data: userId,
+                              subtitle: userName,
+                            ),
+                          ),
+                        );
+                      }
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(10),

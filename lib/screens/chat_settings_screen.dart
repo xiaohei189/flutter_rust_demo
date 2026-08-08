@@ -26,6 +26,7 @@ class ChatSettingsScreen extends ConsumerStatefulWidget {
 class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   late bool _muteNotification;
   late bool _pinChat;
+  late bool _privateChat;
   bool _addToMark = false;
 
   /// 获取会话信息
@@ -91,9 +92,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     if (conversation != null) {
       _muteNotification = conversation.recvMsgOpt == 1;
     _pinChat = conversation.isPinned;
+      _privateChat = conversation.isPrivateChat;
     } else {
       _muteNotification = false;
       _pinChat = false;
+      _privateChat = false;
     }
     // 群聊时加载真实群成员
     if (_isGroup) {
@@ -245,6 +248,21 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 } catch (_) {}
               }
             }),
+            if (!_isGroup) ...[
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildSwitchRow('私聊（阅后即焚）', _privateChat, (v) async {
+                setState(() => _privateChat = v);
+                final client = _client;
+                if (client != null) {
+                  try {
+                    await client.setConversationPrivate(
+                      conversationId: widget.conversationId,
+                      isPrivate: v,
+                    );
+                  } catch (_) {}
+                }
+              }),
+            ],
             const Divider(height: 1, indent: 16, endIndent: 16),
             _buildNavRow('标签', onTap: () {}),
             const Divider(height: 1, indent: 16, endIndent: 16),

@@ -371,13 +371,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        // TODO: 注册
+                        AppRouter.goToRegister(
+                          context,
+                          wsUrl: widget.wsUrl,
+                          apiBaseUrl: widget.apiBaseUrl,
+                        );
                       },
                       child: const Text('注册账号'),
                     ),
                     TextButton(
                       onPressed: () {
-                        // TODO: 忘记密码
+                        setState(() {
+                          _isVerifyCodeLogin = true;
+                          _errorText = null;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('当前为验证码登录，获取验证码后即可登录'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       },
                       child: const Text('忘记密码'),
                     ),

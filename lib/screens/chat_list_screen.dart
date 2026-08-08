@@ -211,6 +211,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           onMarkRead: () async {
                             await ref.read(messageServiceProvider.notifier).markConversationMessageAsRead(conversation.conversationId);
                           },
+                          onHide: () async {
+                            await ref.read(messageServiceProvider.notifier).hideConversation(conversation.conversationId);
+                          },
                         );
                       },
                     ),

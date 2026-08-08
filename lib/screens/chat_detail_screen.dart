@@ -10,6 +10,7 @@ import '../models/message.dart' show MessageType;
 import '../providers/providers.dart';
 import '../services/message_service_notifier.dart';
 import '../src/rust/ffi/message_advanced.dart' show sendTyping;
+import '../src/rust/ffi/message.dart' show sendMergerMessage;
 import '../src/rust/model/message.dart' show MessageInfo;
 import '../src/rust/model/group.dart' show GroupMember;
 import '../router/app_router.dart';
@@ -50,8 +51,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   DateTime? _lastTypingSent;
   MessageInfo? _quotedMessage;
   final List<String> _atUserIds = [];
+  bool _selectMode = false;
+  final List<MessageInfo> _selectedMessages = [];
   MessageServiceNotifier? _messageService; // 缓存引用，避免 dispose 时访问 ref
   DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
+  bool? _onlineStatus;
 
   @override
   void initState() {
@@ -67,7 +71,26 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       if (mounted) setState(() => _bodyReady = true);
       _markConversationMessageAsRead();
       _restoreDraft();
+      _loadOnlineStatus();
     });
+  }
+
+  /// 单聊时查询对方在线状态
+  Future<void> _loadOnlineStatus() async {
+    final conversation = _conversation;
+    if (conversation == null || conversation.conversationType != 1) return;
+    final userId = conversation.userId.isNotEmpty ? conversation.userId : null;
+    if (userId == null) return;
+    final client = ref.read(messageServiceProvider.notifier).client;
+    if (client == null) return;
+    try {
+      final statuses = await client.getUserStatus(userIds: [userId]);
+      if (!mounted || statuses.isEmpty) return;
+      final online = statuses.first.status == 1;
+      setState(() => _onlineStatus = online);
+    } catch (_) {
+      // 查询失败时保持默认在线展示，不阻塞聊天页
+    }
   }
 
   Future<void> _markConversationMessageAsRead() async {
@@ -761,6 +784,90 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     }
   }
 
+  void _enterSelectMode() {
+    setState(() {
+      _selectMode = true;
+      _selectedMessages.clear();
+    });
+  }
+
+  void _exitSelectMode() {
+    setState(() {
+      _selectMode = false;
+      _selectedMessages.clear();
+    });
+  }
+
+  void _handleMessageTap(MessageInfo msg) {
+    if (_selectMode) {
+      setState(() {
+        if (_selectedMessages.any((m) => m.clientMsgId == msg.clientMsgId)) {
+          _selectedMessages.removeWhere((m) => m.clientMsgId == msg.clientMsgId);
+        } else {
+          _selectedMessages.add(msg);
+        }
+      });
+      return;
+    }
+    if (msg.messageType == MessageType.merge) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MergeMessageDetailScreen(message: msg),
+        ),
+      );
+    }
+  }
+
+  /// 逐条转发或合并转发选中的消息
+  Future<void> _forwardSelected({required bool merge}) async {
+    if (_selectedMessages.isEmpty) return;
+    final result = await Navigator.push<List<ContactPickItem>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ContactPickerScreen(
+          multiSelect: false,
+          title: '选择转发目标',
+        ),
+      ),
+    );
+    if (result == null || result.isEmpty || !mounted) return;
+    final target = result.first;
+    final st = target.isGroup
+        ? SessionType.writeGroupChat
+        : SessionType.singleChat;
+    try {
+      if (merge) {
+        await sendMergerMessage(
+          title: '聊天记录',
+          summaryList: _selectedMessages.map((m) => m.displayText).toList(),
+          sourceId: target.id,
+          sessionType: st,
+        );
+      } else {
+        final svc = ref.read(messageServiceProvider.notifier);
+        for (final m in _selectedMessages) {
+          await svc.forwardMessage(
+            clientMsgId: m.clientMsgId,
+            sourceId: target.id,
+            sessionType: st,
+          );
+        }
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('已转发 ${_selectedMessages.length} 条消息给 ${target.name}'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _exitSelectMode();
+    } catch (e) {
+      appLog.e('转发失败: $e');
+      _showError('转发失败: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProfileState = ref.watch(userProfileProvider);
@@ -887,7 +994,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                           )
                         else
                           Text(
-                            '在线',
+                            _onlineStatus == false ? '离线' : '在线',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondaryColor.withValues(
@@ -938,6 +1045,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                         currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
                         scrollController: _scrollController,
                         isLoading: isLoading,
+                        selectMode: _selectMode,
+                        selectedClientMsgIds: _selectedMessages
+                            .map((m) => m.clientMsgId)
+                            .toSet(),
                         cachedCurrentUserProfile: ref.watch(userProfileProvider).profile,
                         onMessageVisible: (msg) {
                           // 逐条标记已读（对齐 Go SDK VisibilityDetector 模式）
@@ -983,24 +1094,48 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                             onQuote: (msg) {
                               setState(() => _quotedMessage = msg);
                             },
+                            onMultiSelect: _enterSelectMode,
                           ),
                         ),
-                        onMessageTap: (msg) {
-                          if (msg.messageType == MessageType.merge) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => MergeMessageDetailScreen(message: msg),
-                              ),
-                            );
-                          }
-                        },
+                        onMessageTap: _handleMessageTap,
                       );
                     },
                   ),
                 ),
               ),
               // 引用消息提示栏
+              if (_selectMode)
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '已选 ${_selectedMessages.length} 条',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textPrimaryColor,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _forwardSelected(merge: false),
+                        child: const Text('逐条转发'),
+                      ),
+                      TextButton(
+                        onPressed: () => _forwardSelected(merge: true),
+                        child: const Text('合并转发'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: _exitSelectMode,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
                 if (_quotedMessage != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

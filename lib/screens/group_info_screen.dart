@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../widgets/card_layout.dart';
 import '../widgets/list_row.dart';
 import '../widgets/user_avatar.dart';
+import '../screens/qr_code_screen.dart';
 
 /// 群信息页面：群头像（可编辑）、群名称（可编辑）、群描述（可编辑）、群二维码（只读）
 class GroupInfoScreen extends ConsumerStatefulWidget {
@@ -285,11 +286,13 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                   ],
                 ),
                 onTap: () {
-                  // TODO: 展示群二维码大图
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('群二维码功能开发中'),
-                      behavior: SnackBarBehavior.floating,
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => QrCodeScreen(
+                        title: '群二维码',
+                        data: _groupId,
+                        subtitle: _groupName,
+                      ),
                     ),
                   );
                 },

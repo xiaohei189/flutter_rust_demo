@@ -159,7 +159,7 @@ class _MineScreen extends ConsumerWidget {
               _MenuItem(
                 icon: Icons.settings_outlined,
                 label: '账号设置',
-                onTap: () {},
+                onTap: () => AppRouter.goToAccountSettings(context),
               ),
               _MenuItem(
                 icon: Icons.block_outlined,

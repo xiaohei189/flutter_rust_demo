@@ -1,11 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/user.dart';
 import '../providers/message_service_provider.dart';
 import '../router/app_router.dart';
+import '../services/friend_service.dart';
+import '../services/group_service.dart';
 import '../theme/app_theme.dart';
-import '../src/rust/model/local.dart' show LocalConversation;
-import '../widgets/chat_list_item.dart';
+import '../src/rust/http/friend.dart' show SearchFriendItem;
+import '../src/rust/model/group.dart' show GroupInfo;
+import '../src/rust/model/local.dart' show LocalChatLog;
+import '../widgets/user_avatar.dart';
 
 /// 搜索分类
 enum _SearchCategory { message, contacts, groups }
@@ -26,12 +33,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final FocusNode _focusNode = FocusNode();
   String _query = '';
   _SearchCategory _activeCategory = _SearchCategory.message;
+  bool _searching = false;
+  String? _error;
+  List<LocalChatLog> _messageResults = const [];
+  List<SearchFriendItem> _friendResults = const [];
+  List<GroupInfo> _groupResults = const [];
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(() {
-      setState(() => _query = _controller.text.trim());
+      final q = _controller.text.trim();
+      setState(() => _query = q);
+      unawaited(_search(q));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -45,37 +59,62 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
-  List<LocalConversation> get _searchResults {
-    if (_query.isEmpty) return [];
-    final q = _query.toLowerCase();
-    final conversations = ref.read(messageServiceProvider).conversations;
-
-    switch (_activeCategory) {
-      case _SearchCategory.message:
-        return conversations.where((c) {
-          final name = c.showName.isNotEmpty ? c.showName : c.conversationId;
-          return name.toLowerCase().contains(q) ||
-              c.latestMsg.toLowerCase().contains(q);
-        }).toList();
-      case _SearchCategory.contacts:
-        return conversations.where((c) {
-          if (c.conversationType != 1) return false;
-          final name = c.showName.isNotEmpty ? c.showName : c.conversationId;
-          return name.toLowerCase().contains(q);
-        }).toList();
-      case _SearchCategory.groups:
-        return conversations.where((c) {
-          if (c.conversationType != 2 && c.conversationType != 3) return false;
-          final name = c.showName.isNotEmpty ? c.showName : c.conversationId;
-          return name.toLowerCase().contains(q);
-        }).toList();
+  Future<void> _search(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _searching = false;
+        _error = null;
+        _messageResults = const [];
+        _friendResults = const [];
+        _groupResults = const [];
+      });
+      return;
+    }
+    setState(() {
+      _searching = true;
+      _error = null;
+    });
+    final client = ref.read(messageServiceProvider.notifier).client;
+    try {
+      switch (_activeCategory) {
+        case _SearchCategory.message:
+          final svc = ref.read(messageServiceProvider.notifier);
+          final conversations = ref.read(messageServiceProvider).conversations;
+          final all = <LocalChatLog>[];
+          for (final c in conversations.take(50)) {
+            try {
+              all.addAll(await svc.searchLocalMessages(
+                conversationId: c.conversationId,
+                keyword: query,
+                count: 5,
+              ));
+            } catch (_) {}
+          }
+          _messageResults = all;
+        case _SearchCategory.contacts:
+          if (client != null) {
+            _friendResults = await FriendService.instance.searchFriends(
+              client,
+              keyword: query,
+            );
+          }
+        case _SearchCategory.groups:
+          if (client != null) {
+            _groupResults = await GroupService.instance.searchGroups(
+              client,
+              keyword: query,
+            );
+          }
+      }
+    } catch (e) {
+      _error = '搜索失败: $e';
+    } finally {
+      if (mounted) setState(() => _searching = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final results = _searchResults;
-
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -169,28 +208,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Expanded(
               child: _query.isEmpty
                   ? _buildEmptyHint()
-                  : results.isEmpty
-                      ? _buildNoResults()
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: results.length,
-                          itemBuilder: (context, index) {
-                            final conversation = results[index];
-                            return ChatListItem(
-                              key: ValueKey<String>(
-                                  conversation.conversationId),
-                              conversation: conversation,
-                              itemIndex: index,
-                              currentUserId:
-                                  ref.read(messageServiceProvider).currentUserId.isNotEmpty
-                                      ? ref.read(messageServiceProvider).currentUserId
-                                      : null,
-                              onTap: () {
-                                AppRouter.goToChatDetail(context, conversation);
-                              },
-                            );
-                          },
-                        ),
+                  : _buildResults(),
             ),
           ],
         ),
@@ -241,6 +259,119 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildResults() {
+    if (_searching) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            _error!,
+            style: const TextStyle(color: AppTheme.unreadRed),
+          ),
+        ),
+      );
+    }
+
+    switch (_activeCategory) {
+      case _SearchCategory.message:
+        if (_messageResults.isEmpty) return _buildNoResults();
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: _messageResults.length,
+          separatorBuilder: (_, __) => const Divider(height: 1, indent: 64),
+          itemBuilder: (_, i) => _buildMessageItem(_messageResults[i]),
+        );
+      case _SearchCategory.contacts:
+        if (_friendResults.isEmpty) return _buildNoResults();
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: _friendResults.length,
+          separatorBuilder: (_, __) => const Divider(height: 1, indent: 64),
+          itemBuilder: (_, i) => _buildFriendItem(_friendResults[i]),
+        );
+      case _SearchCategory.groups:
+        if (_groupResults.isEmpty) return _buildNoResults();
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: _groupResults.length,
+          separatorBuilder: (_, __) => const Divider(height: 1, indent: 64),
+          itemBuilder: (_, i) => _buildGroupItem(_groupResults[i]),
+        );
+    }
+  }
+
+  Widget _buildMessageItem(LocalChatLog log) {
+    return ListTile(
+      leading: UserAvatar(
+        user: User(
+          id: log.sendId,
+          name: log.senderNickName,
+          avatar: log.senderFaceUrl.isNotEmpty ? log.senderFaceUrl : null,
+        ),
+        radius: 20,
+      ),
+      title: Text(
+        log.content,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId,
+        style: const TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildFriendItem(SearchFriendItem item) {
+    final name = item.nickname.isNotEmpty ? item.nickname : item.friendUserId;
+    return ListTile(
+      leading: UserAvatar(
+        user: User(
+          id: item.friendUserId,
+          name: name,
+          avatar: item.faceUrl.isNotEmpty ? item.faceUrl : null,
+        ),
+        radius: 20,
+      ),
+      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        item.remark.isNotEmpty ? item.remark : 'ID: ${item.friendUserId}',
+        style: const TextStyle(fontSize: 12),
+      ),
+      onTap: () => AppRouter.goToUserProfile(
+        context,
+        userId: item.friendUserId,
+        user: User(
+          id: item.friendUserId,
+          name: name,
+          avatar: item.faceUrl.isNotEmpty ? item.faceUrl : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupItem(GroupInfo group) {
+    return ListTile(
+      leading: UserAvatar(
+        user: User(
+          id: group.groupId,
+          name: group.groupName,
+          avatar: group.faceUrl.isNotEmpty ? group.faceUrl : null,
+        ),
+        radius: 20,
+      ),
+      title: Text(group.groupName, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        '${group.memberCount}人',
+        style: const TextStyle(fontSize: 12),
+      ),
+      onTap: () => AppRouter.goToGroupInfoById(context, group.groupId),
     );
   }
 }

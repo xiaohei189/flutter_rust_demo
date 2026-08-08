@@ -18,6 +18,9 @@ import '../screens/create_group_screen.dart';
 import '../screens/add_contact_screen.dart';
 import '../screens/contact_picker_screen.dart';
 import '../screens/blacklist_screen.dart';
+import '../screens/register_screen.dart';
+import '../screens/group_applications_screen.dart';
+import '../screens/account_settings_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
@@ -65,6 +68,17 @@ class AppRouter {
             wsUrl: wsUrl,
             apiBaseUrl: apiBaseUrl,
           ),
+        ),
+        // 注册页
+        GoRoute(
+          path: '/register',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, String>? ?? const {};
+            return RegisterScreen(
+              wsUrl: extra['wsUrl'] ?? wsUrl,
+              apiBaseUrl: extra['apiBaseUrl'] ?? apiBaseUrl,
+            );
+          },
         ),
         // 主页面（底部导航）
         GoRoute(
@@ -187,6 +201,16 @@ class AppRouter {
           path: '/blacklist',
           builder: (context, state) => const BlacklistScreen(),
         ),
+        // 群申请页
+        GoRoute(
+          path: '/group-applications',
+          builder: (context, state) => const GroupApplicationsScreen(),
+        ),
+        // 账号设置页
+        GoRoute(
+          path: '/account-settings',
+          builder: (context, state) => const AccountSettingsScreen(),
+        ),
         // 个人资料字段编辑页
         GoRoute(
           path: profileEditField,
@@ -211,6 +235,18 @@ class AppRouter {
   /// 导航到登录页
   static void goToLogin(BuildContext context) {
     context.go(login);
+  }
+
+  /// 导航到注册页
+  static void goToRegister(
+    BuildContext context, {
+    required String wsUrl,
+    required String apiBaseUrl,
+  }) {
+    context.push('/register', extra: {
+      'wsUrl': wsUrl,
+      'apiBaseUrl': apiBaseUrl,
+    });
   }
 
   /// 导航到主页面
@@ -296,6 +332,16 @@ class AppRouter {
   /// 导航到黑名单页
   static void goToBlacklist(BuildContext context) {
     context.push('/blacklist');
+  }
+
+  /// 导航到群申请页
+  static void goToGroupApplications(BuildContext context) {
+    context.push('/group-applications');
+  }
+
+  /// 导航到账号设置页
+  static void goToAccountSettings(BuildContext context) {
+    context.push('/account-settings');
   }
 
   /// 返回上一页

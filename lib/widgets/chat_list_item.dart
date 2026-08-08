@@ -131,6 +131,7 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onPinToggle;
   final VoidCallback? onMarkRead;
+  final VoidCallback? onHide;
   final UserInfo? cachedUserProfile;
   /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
   final String? currentUserLocalAvatarPath;
@@ -146,6 +147,7 @@ class ChatListItem extends StatelessWidget {
     this.onDelete,
     this.onPinToggle,
     this.onMarkRead,
+    this.onHide,
     this.cachedUserProfile,
     this.currentUserLocalAvatarPath,
     this.itemIndex,
@@ -457,6 +459,15 @@ class ChatListItem extends StatelessWidget {
                 onMarkRead?.call();
               },
             ),
+            if (onHide != null)
+              ListTile(
+                leading: const Icon(Icons.visibility_off_outlined),
+                title: const Text('不显示该聊天'),
+                onTap: () {
+                  AppRouter.goBack(ctx);
+                  onHide!();
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: AppTheme.unreadRed),
               title: const Text('删除', style: TextStyle(color: AppTheme.unreadRed)),

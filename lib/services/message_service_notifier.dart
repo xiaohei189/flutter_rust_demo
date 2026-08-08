@@ -952,6 +952,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     }
   }
 
+  /// 隐藏会话
+  Future<void> hideConversation(String conversationId) async {
+    if (_client == null) return;
+    try {
+      await _client!.hideConversation(conversationId: conversationId);
+      _loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 隐藏会话失败: $e');
+    }
+  }
+
   /// 标记所有会话为已读
   Future<void> markAllConversationsAsRead() async {
     if (_client == null) return;

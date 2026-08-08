@@ -25,6 +25,8 @@ class MessageList extends StatelessWidget {
     this.onMessageLongPress,
     this.onMessageVisible,
     this.onMessageTap,
+    this.selectMode = false,
+    this.selectedClientMsgIds = const {},
   });
 
   final List<MessageInfo> messages;
@@ -37,6 +39,8 @@ class MessageList extends StatelessWidget {
   final void Function(MessageInfo message)? onMessageLongPress;
   final void Function(MessageInfo message)? onMessageVisible;
   final void Function(MessageInfo message)? onMessageTap;
+  final bool selectMode;
+  final Set<String> selectedClientMsgIds;
 
   @override
   Widget build(BuildContext context) {
@@ -97,20 +101,40 @@ class MessageList extends StatelessWidget {
         final message = messages[messageIndex];
         final showDateSeparator = _shouldShowDateSeparator(messages, messageIndex);
 
+        final selected = selectMode && selectedClientMsgIds.contains(message.clientMsgId);
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (showDateSeparator)
               _buildDateSeparator(message.sendDateTime),
-            _VisibleMessageBubble(
-              message: message,
-              otherUser: otherUser,
-              currentUserId: currentUserId,
-              cachedSenderProfile: cachedSenderProfiles?[message.sendId],
-              cachedCurrentUserProfile: cachedCurrentUserProfile,
-              onLongPress: onMessageLongPress,
-              onVisible: onMessageVisible,
-              onTap: onMessageTap,
+            Stack(
+              children: [
+                _VisibleMessageBubble(
+                  message: message,
+                  otherUser: otherUser,
+                  currentUserId: currentUserId,
+                  cachedSenderProfile: cachedSenderProfiles?[message.sendId],
+                  cachedCurrentUserProfile: cachedCurrentUserProfile,
+                  onLongPress: onMessageLongPress,
+                  onVisible: onMessageVisible,
+                  onTap: onMessageTap,
+                ),
+                if (selectMode)
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: Icon(
+                      selected
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: selected
+                          ? AppTheme.primaryColor
+                          : AppTheme.textSecondaryColor,
+                    ),
+                  ),
+              ],
             ),
           ],
         );

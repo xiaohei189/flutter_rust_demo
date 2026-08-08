@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
 import '../screens/my_profile_screen.dart';
+import '../screens/qr_code_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';
@@ -133,7 +134,17 @@ class ProfileDrawerScreen extends ConsumerWidget {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(8),
                                 onTap: () {
-                                  // TODO: 打开我的二维码页面
+                                  if (currentUser.id.isNotEmpty) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => QrCodeScreen(
+                                          title: '我的二维码',
+                                          data: currentUser.id,
+                                          subtitle: currentUser.name,
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 },
                                 child: const Padding(
                                   padding: EdgeInsets.all(8),

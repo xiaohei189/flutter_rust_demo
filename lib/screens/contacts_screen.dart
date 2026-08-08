@@ -20,6 +20,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
       ref.read(friendListProvider.notifier).loadFriends();
       ref.read(groupListProvider.notifier).loadGroups();
       ref.read(friendApplyProvider.notifier).loadApplications();
+      ref.read(groupApplicationProvider.notifier).loadApplications();
     });
   }
 
@@ -28,6 +29,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
     final friendState = ref.watch(friendListProvider);
     final applyState = ref.watch(friendApplyProvider);
     final groupState = ref.watch(groupListProvider);
+    final groupApplyState = ref.watch(groupApplicationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -70,6 +72,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
                   title: '我的群组',
                   trailingText: '${groupState.groups.length}',
                   onTap: () => context.push('/group-list'),
+                ),
+                const Divider(height: 1, indent: 56),
+                _ContactItem(
+                  icon: Icons.group_add_outlined,
+                  iconColor: const Color(0xFF34C759),
+                  title: '群申请',
+                  badgeCount: groupApplyState.unhandledCount,
+                  onTap: () => context.push('/group-applications'),
                 ),
               ],
             ),

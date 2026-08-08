@@ -11,6 +11,7 @@ class MessageActions {
   final void Function(MessageInfo message) onDelete;
   final void Function(MessageInfo message) onForward;
   final void Function(MessageInfo message) onQuote;
+  final VoidCallback? onMultiSelect;
 
   const MessageActions({
     required this.onCopy,
@@ -18,6 +19,7 @@ class MessageActions {
     required this.onDelete,
     required this.onForward,
     required this.onQuote,
+    this.onMultiSelect,
   });
 }
 
@@ -103,6 +105,17 @@ class _MessageActionSheet extends StatelessWidget {
       _ActionItem(icon: Icons.reply_rounded, label: '引用', onTap: () => _doAction(context, actions.onQuote)),
       _ActionItem(icon: Icons.forward_rounded, label: '转发', onTap: () => _doAction(context, actions.onForward)),
     ];
+
+    if (actions.onMultiSelect != null) {
+      items.add(_ActionItem(
+        icon: Icons.library_add_check_outlined,
+        label: '多选',
+        onTap: () {
+          Navigator.of(context).pop();
+          actions.onMultiSelect!();
+        },
+      ));
+    }
 
     if (canRevoke) {
       items.add(_ActionItem(

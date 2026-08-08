@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/user.dart';
 import '../providers/user_profile_provider.dart';
 import '../router/app_router.dart';
+import '../screens/qr_code_screen.dart';
 import '../src/rust/ffi/message_media.dart' show uploadFile;
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
@@ -202,7 +203,19 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         size: 22,
                         color: AppTheme.textPrimaryColor,
                       ),
-                      onTap: () {},
+                      onTap: () {
+                        final userId = state.profile?.userId ?? '';
+                        if (userId.isEmpty) return;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => QrCodeScreen(
+                              title: '我的二维码',
+                              data: userId,
+                              subtitle: state.nickname,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const ListDivider(),
                     // 个性签名
