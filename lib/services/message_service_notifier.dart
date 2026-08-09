@@ -652,8 +652,14 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.i('[MsgSvc] totalUnreadCountChanged: $c');
         state = state.copyWith(totalUnreadCount: c);
       },
-      changed: (_) { appLog.i('[MsgSvc] conversationChanged'); _loadConversations(); },
-      new_: (_) { appLog.i('[MsgSvc] newConversation'); _loadConversations(); },
+      changed: (conversations) {
+        appLog.i('[MsgSvc] conversationChanged: count=${conversations.length}');
+        _applyConversationEvent(conversations);
+      },
+      new_: (conversations) {
+        appLog.i('[MsgSvc] newConversation: count=${conversations.length}');
+        _applyConversationEvent(conversations);
+      },
       deleted: (_) => appLog.i('[MsgSvc] conversationDeleted'),
       userInputStatusChanged: (cid, uid, platformIds) {
         appLog.i('[MsgSvc] typing: conv=$cid user=$uid platforms=${platformIds.length}');
@@ -675,7 +681,6 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   void _onMessageEvent(MessageEvent event) {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
-    _loadConversations();
     event.when(
       newMessage: (conversationId, message) {
         _appendIncomingMessage(conversationId, message);
@@ -688,6 +693,54 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       sendFailed: (_, _) {},
       uploadProgress: (_, _, _, _) {},
     );
+  }
+
+  /// 事件驱动更新会话列表（对齐官方 Demo：直接用 ConversationChanged 携带的数据更新，不重载 DB）
+  void _applyConversationEvent(List<LocalConversation> incoming) {
+    if (incoming.isEmpty) return;
+    final newConversations = List<LocalConversation>.from(state.conversations);
+    for (final conv in incoming) {
+      final index = newConversations.indexWhere((c) => c.conversationId == conv.conversationId);
+      if (index >= 0) {
+        final existing = newConversations[index];
+        final existingTime = existing.latestMsgSendTime.toInt();
+        final convTime = conv.latestMsgSendTime.toInt();
+        final useExisting = existing.latestMsg.isNotEmpty && existingTime >= convTime;
+        newConversations[index] = LocalConversation(
+          conversationId: conv.conversationId,
+          conversationType: conv.conversationType,
+          userId: conv.userId,
+          groupId: conv.groupId,
+          showName: conv.showName.isNotEmpty ? conv.showName : existing.showName,
+          faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : existing.faceUrl,
+          latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
+          latestMsgSendTime: useExisting ? existing.latestMsgSendTime : conv.latestMsgSendTime,
+          unreadCount: conv.unreadCount,
+          recvMsgOpt: conv.recvMsgOpt,
+          isPinned: conv.isPinned,
+          isPrivateChat: conv.isPrivateChat,
+          burnDuration: conv.burnDuration,
+          groupAtType: conv.groupAtType,
+          isNotInGroup: conv.isNotInGroup,
+          updateUnreadCountTime: conv.updateUnreadCountTime,
+          attachedInfo: conv.attachedInfo,
+          ex: conv.ex,
+          draftText: existing.draftText.isNotEmpty ? existing.draftText : conv.draftText,
+          draftTextTime: existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime,
+          maxSeq: conv.maxSeq,
+          minSeq: conv.minSeq,
+          isMsgDestruct: conv.isMsgDestruct,
+          msgDestructTime: conv.msgDestructTime,
+        );
+      } else {
+        newConversations.add(conv);
+      }
+    }
+    newConversations.sort((a, b) {
+      if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+      return b.latestMsgSendTime.toInt().compareTo(a.latestMsgSendTime.toInt());
+    });
+    state = state.copyWith(conversations: newConversations);
   }
 
   /// 测试入口：等价于 SDK 消息事件流回调
