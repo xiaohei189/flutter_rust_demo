@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/models/friend_search_result.dart';
 import '../providers/providers.dart';
-import '../services/friend_service.dart';
-import '../src/rust/http/friend.dart' show SearchFriendItem;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';
-import '../utils/app_logger.dart';
 
 /// 添加好友 / 搜索用户页面
 ///
@@ -50,10 +48,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
     final state = ref.watch(friendSearchProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('添加好友'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('添加好友'), elevation: 0),
       body: Column(
         children: [
           // 搜索栏
@@ -117,13 +112,13 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : state.results.isEmpty
-                    ? _buildEmptyHint()
-                    : ListView.builder(
-                        itemCount: state.results.length,
-                        itemBuilder: (context, index) {
-                          return _buildSearchResultItem(state.results[index]);
-                        },
-                      ),
+                ? _buildEmptyHint()
+                : ListView.builder(
+                    itemCount: state.results.length,
+                    itemBuilder: (context, index) {
+                      return _buildSearchResultItem(state.results[index]);
+                    },
+                  ),
           ),
         ],
       ),
@@ -131,7 +126,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   }
 
   /// 构建搜索结果项
-  Widget _buildSearchResultItem(SearchFriendItem item) {
+  Widget _buildSearchResultItem(FriendSearchResult item) {
     final isSelf = item.relationship == 1;
 
     return Container(
@@ -142,7 +137,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
           // 头像
           UserAvatar(
             user: User(
-              id: item.friendUserId,
+              id: item.userId,
               name: item.nickname,
               avatar: item.faceUrl,
             ),
@@ -184,10 +179,12 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
           TextButton(
             onPressed: isSelf ? null : () => _showAddFriendDialog(item),
             style: TextButton.styleFrom(
-              backgroundColor:
-                  isSelf ? Colors.grey.shade200 : AppTheme.primaryColor,
-              foregroundColor:
-                  isSelf ? AppTheme.textSecondaryColor : Colors.white,
+              backgroundColor: isSelf
+                  ? Colors.grey.shade200
+                  : AppTheme.primaryColor,
+              foregroundColor: isSelf
+                  ? AppTheme.textSecondaryColor
+                  : Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               minimumSize: Size.zero,
               shape: RoundedRectangleBorder(
@@ -218,10 +215,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
           const SizedBox(height: 16),
           const Text(
             '输入用户 ID 搜索好友',
-            style: TextStyle(
-              fontSize: 15,
-              color: AppTheme.textSecondaryColor,
-            ),
+            style: TextStyle(fontSize: 15, color: AppTheme.textSecondaryColor),
           ),
         ],
       ),
@@ -229,7 +223,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
   }
 
   /// 显示添加好友对话框
-  void _showAddFriendDialog(SearchFriendItem item) {
+  void _showAddFriendDialog(FriendSearchResult item) {
     final reqMsgController = TextEditingController();
 
     showDialog(
@@ -279,7 +273,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               Navigator.of(context).pop();
               final reqMsg = reqMsgController.text.trim();
               reqMsgController.dispose();
-              await _sendFriendRequest(item.friendUserId, reqMsg);
+              await _sendFriendRequest(item.userId, reqMsg);
             },
             child: const Text('发送'),
           ),
@@ -290,42 +284,15 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
 
   /// 发送好友请求
   Future<void> _sendFriendRequest(String userId, String reqMsg) async {
-    final client =
-        ref.read(messageServiceProvider.notifier).client;
-    if (client == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('客户端未初始化'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    try {
-      await FriendService.instance.addFriend(
-        client,
-        userId: userId,
-        reqMsg: reqMsg,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('好友申请已发送'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      appLog.e('[AddContactScreen] 发送好友申请失败: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('发送失败: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+    final ok = await ref
+        .read(friendSearchProvider.notifier)
+        .sendFriendRequest(userId, reqMsg);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '好友申请已发送' : '发送失败'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }

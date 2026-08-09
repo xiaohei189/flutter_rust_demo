@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/models/friend_search_result.dart';
 import '../models/user.dart';
-import '../providers/message_service_provider.dart';
+import '../providers/providers.dart';
 import '../router/app_router.dart';
-import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../theme/app_theme.dart';
-import '../src/rust/http/friend.dart' show SearchFriendItem;
 import '../src/rust/model/group.dart' show GroupInfo;
 import '../src/rust/model/local.dart' show LocalChatLog;
 import '../widgets/user_avatar.dart';
@@ -36,7 +35,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   bool _searching = false;
   String? _error;
   List<LocalChatLog> _messageResults = const [];
-  List<SearchFriendItem> _friendResults = const [];
+  List<FriendSearchResult> _friendResults = const [];
   List<GroupInfo> _groupResults = const [];
 
   @override
@@ -83,20 +82,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           final all = <LocalChatLog>[];
           for (final c in conversations.take(50)) {
             try {
-              all.addAll(await svc.searchLocalMessages(
-                conversationId: c.conversationId,
-                keyword: query,
-                count: 5,
-              ));
+              all.addAll(
+                await svc.searchLocalMessages(
+                  conversationId: c.conversationId,
+                  keyword: query,
+                  count: 5,
+                ),
+              );
             } catch (_) {}
           }
           _messageResults = all;
         case _SearchCategory.contacts:
           if (client != null) {
-            _friendResults = await FriendService.instance.searchFriends(
-              client,
-              keyword: query,
-            );
+            _friendResults = await ref
+                .read(friendSearchRepositoryProvider)
+                .search(query);
           }
         case _SearchCategory.groups:
           if (client != null) {
@@ -139,8 +139,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         prefixIcon: Icon(
                           Icons.search,
                           size: 22,
-                          color: AppTheme.textSecondaryColor
-                              .withValues(alpha: 0.8),
+                          color: AppTheme.textSecondaryColor.withValues(
+                            alpha: 0.8,
+                          ),
                         ),
                         suffixIcon: _query.isNotEmpty
                             ? IconButton(
@@ -184,21 +185,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     label: '消息',
                     isSelected: _activeCategory == _SearchCategory.message,
                     onTap: () => setState(
-                        () => _activeCategory = _SearchCategory.message),
+                      () => _activeCategory = _SearchCategory.message,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   _CategoryChip(
                     label: '联系人',
                     isSelected: _activeCategory == _SearchCategory.contacts,
                     onTap: () => setState(
-                        () => _activeCategory = _SearchCategory.contacts),
+                      () => _activeCategory = _SearchCategory.contacts,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   _CategoryChip(
                     label: '群组',
                     isSelected: _activeCategory == _SearchCategory.groups,
                     onTap: () => setState(
-                        () => _activeCategory = _SearchCategory.groups),
+                      () => _activeCategory = _SearchCategory.groups,
+                    ),
                   ),
                 ],
               ),
@@ -206,9 +210,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
             // 内容区
             Expanded(
-              child: _query.isEmpty
-                  ? _buildEmptyHint()
-                  : _buildResults(),
+              child: _query.isEmpty ? _buildEmptyHint() : _buildResults(),
             ),
           ],
         ),
@@ -229,10 +231,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const SizedBox(height: 16),
           const Text(
             '输入关键词进行查询',
-            style: TextStyle(
-              fontSize: 15,
-              color: AppTheme.textSecondaryColor,
-            ),
+            style: TextStyle(fontSize: 15, color: AppTheme.textSecondaryColor),
           ),
         ],
       ),
@@ -316,11 +315,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
         radius: 20,
       ),
-      title: Text(
-        log.content,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text(log.content, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
         log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId,
         style: const TextStyle(fontSize: 12),
@@ -328,12 +323,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildFriendItem(SearchFriendItem item) {
-    final name = item.nickname.isNotEmpty ? item.nickname : item.friendUserId;
+  Widget _buildFriendItem(FriendSearchResult item) {
+    final name = item.nickname.isNotEmpty ? item.nickname : item.userId;
     return ListTile(
       leading: UserAvatar(
         user: User(
-          id: item.friendUserId,
+          id: item.userId,
           name: name,
           avatar: item.faceUrl.isNotEmpty ? item.faceUrl : null,
         ),
@@ -341,14 +336,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        item.remark.isNotEmpty ? item.remark : 'ID: ${item.friendUserId}',
+        item.remark.isNotEmpty ? item.remark : 'ID: ${item.userId}',
         style: const TextStyle(fontSize: 12),
       ),
       onTap: () => AppRouter.goToUserProfile(
         context,
-        userId: item.friendUserId,
+        userId: item.userId,
         user: User(
-          id: item.friendUserId,
+          id: item.userId,
           name: name,
           avatar: item.faceUrl.isNotEmpty ? item.faceUrl : null,
         ),
@@ -366,7 +361,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
         radius: 20,
       ),
-      title: Text(group.groupName, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(
+        group.groupName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       subtitle: Text(
         '${group.memberCount}人',
         style: const TextStyle(fontSize: 12),
@@ -398,7 +397,9 @@ class _CategoryChip extends StatelessWidget {
           color: isSelected ? Colors.white : const Color(0xFFF0F0F0),
           borderRadius: BorderRadius.circular(18),
           border: isSelected
-              ? Border.all(color: AppTheme.textSecondaryColor.withValues(alpha: 0.3))
+              ? Border.all(
+                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.3),
+                )
               : null,
         ),
         child: Text(

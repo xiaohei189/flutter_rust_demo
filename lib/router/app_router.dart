@@ -18,7 +18,7 @@ import '../screens/group_list_screen.dart';
 import '../screens/create_group_screen.dart';
 import '../screens/add_contact_screen.dart';
 import '../screens/contact_picker_screen.dart';
-import '../screens/blacklist_screen.dart';
+import '../ui/features/contacts/views/blacklist_screen.dart';
 import '../screens/register_screen.dart';
 import '../screens/group_applications_screen.dart';
 import '../screens/account_settings_screen.dart';

@@ -1,14 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
-import 'package:flutter_rust_demo/src/rust/http/friend.dart'
-    show SearchFriendItem;
-import 'package:flutter_rust_demo/utils/app_logger.dart';
 
+import '../data/repositories/blacklist_repository.dart';
 import '../data/repositories/friend_application_repository.dart';
 import '../data/repositories/friend_repository.dart';
+import '../data/repositories/friend_search_repository.dart';
 import '../services/friend_service.dart';
+import '../ui/features/contacts/view_models/black_list_view_model.dart';
 import '../ui/features/contacts/view_models/friend_apply_view_model.dart';
 import '../ui/features/contacts/view_models/friend_list_view_model.dart';
+import '../ui/features/contacts/view_models/friend_search_view_model.dart';
 import 'im_providers.dart';
 import 'message_service_provider.dart';
 
@@ -63,177 +63,43 @@ final friendApplyProvider =
 
 // ==================== 好友搜索 ====================
 
-/// 好友搜索状态
-class FriendSearchState {
-  final List<SearchFriendItem> results;
-  final bool isLoading;
-  final String? error;
+/// 好友搜索 Repository Provider
+final friendSearchRepositoryProvider = Provider<FriendSearchRepository>((ref) {
+  return FriendSearchRepositoryImpl(
+    friendService: FriendService.instance,
+    imClient: ref.watch(imClientProvider),
+  );
+});
 
-  const FriendSearchState({
-    this.results = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  FriendSearchState copyWith({
-    List<SearchFriendItem>? results,
-    bool? isLoading,
-    String? error,
-  }) {
-    return FriendSearchState(
-      results: results ?? this.results,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-}
-
-/// 好友搜索 Notifier
-class FriendSearchNotifier extends StateNotifier<FriendSearchState> {
-  FriendSearchNotifier(this._ref) : super(const FriendSearchState());
-
-  final Ref _ref;
-
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 搜索好友
-  Future<void> search(String keyword) async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    if (keyword.trim().isEmpty) {
-      state = const FriendSearchState();
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final results = await client.searchFriends(keyword: keyword);
-      state = state.copyWith(results: results, isLoading: false);
-      appLog.i('[FriendProvider] 搜索好友完成: ${results.length} 条');
-    } catch (e) {
-      appLog.e('[FriendProvider] 搜索好友失败: $e');
-      state = state.copyWith(isLoading: false, error: '搜索好友失败: $e');
-    }
-  }
-
-  /// 清空搜索结果
-  void clear() {
-    state = const FriendSearchState();
-  }
-}
-
-/// 好友搜索 Provider
+/// 好友搜索 ViewModel Provider
 final friendSearchProvider =
-    StateNotifierProvider<FriendSearchNotifier, FriendSearchState>((ref) {
-      return FriendSearchNotifier(ref);
+    StateNotifierProvider<FriendSearchViewModel, FriendSearchState>((ref) {
+      return FriendSearchViewModel(
+        repository: ref.watch(friendSearchRepositoryProvider),
+      );
     });
 
 // ==================== 黑名单 ====================
 
-/// 黑名单状态
-class BlackListState {
-  final List<String> userIds;
-  final bool isLoading;
-  final String? error;
+/// 黑名单 Repository Provider
+final blackListRepositoryProvider = Provider<BlacklistRepository>((ref) {
+  return BlacklistRepositoryImpl(
+    friendService: FriendService.instance,
+    userService: ref.watch(userServiceProvider),
+    imClient: ref.watch(imClientProvider),
+  );
+});
 
-  const BlackListState({
-    this.userIds = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  BlackListState copyWith({
-    List<String>? userIds,
-    bool? isLoading,
-    String? error,
-  }) {
-    return BlackListState(
-      userIds: userIds ?? this.userIds,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-
-  /// 黑名单人数
-  int get count => userIds.length;
-}
-
-/// 黑名单 Notifier
-class BlackListNotifier extends StateNotifier<BlackListState> {
-  BlackListNotifier(this._ref) : super(const BlackListState()) {
-    _init();
-  }
-
-  final Ref _ref;
-
-  void _init() {
-    _ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.friendRevision != next.friendRevision) {
-        load();
-      }
-    });
-  }
-
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 加载黑名单
-  Future<void> load() async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final userIds = await client.getBlackList();
-      state = state.copyWith(userIds: userIds, isLoading: false);
-      appLog.i('[FriendProvider] 黑名单加载完成: ${userIds.length} 人');
-    } catch (e) {
-      appLog.e('[FriendProvider] 加载黑名单失败: $e');
-      state = state.copyWith(isLoading: false, error: '加载黑名单失败: $e');
-    }
-  }
-
-  /// 加入黑名单
-  Future<void> addBlack(String userId) async {
-    final client = _client;
-    if (client == null) return;
-
-    try {
-      await client.addBlack(userId: userId);
-      appLog.i('[FriendProvider] 已加入黑名单: userId=$userId');
-      await load();
-    } catch (e) {
-      appLog.e('[FriendProvider] 加入黑名单失败: $e');
-      state = state.copyWith(error: '加入黑名单失败: $e');
-    }
-  }
-
-  /// 移出黑名单
-  Future<void> removeBlack(String userId) async {
-    final client = _client;
-    if (client == null) return;
-
-    try {
-      await client.removeBlack(userId: userId);
-      appLog.i('[FriendProvider] 已移出黑名单: userId=$userId');
-      await load();
-    } catch (e) {
-      appLog.e('[FriendProvider] 移出黑名单失败: $e');
-      state = state.copyWith(error: '移出黑名单失败: $e');
-    }
-  }
-}
-
-/// 黑名单 Provider
+/// 黑名单 ViewModel Provider
 final blackListProvider =
-    StateNotifierProvider<BlackListNotifier, BlackListState>((ref) {
-      return BlackListNotifier(ref);
+    StateNotifierProvider<BlackListViewModel, BlackListState>((ref) {
+      final viewModel = BlackListViewModel(
+        repository: ref.watch(blackListRepositoryProvider),
+      );
+      ref.listen(messageServiceProvider, (prev, next) {
+        if (prev?.friendRevision != next.friendRevision) {
+          viewModel.load();
+        }
+      });
+      return viewModel;
     });
