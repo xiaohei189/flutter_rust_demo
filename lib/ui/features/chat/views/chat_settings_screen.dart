@@ -6,9 +6,6 @@ import '../../../../domain/models/group_member.dart';
 import '../../../../models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
-import '../../../../src/rust/ffi/client.dart' as fb;
-import '../../../../src/rust/ffi/message_advanced.dart'
-    show clearConversationAndDeleteAllMsg;
 import '../../../../src/rust/model/local.dart' show LocalConversation;
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/user_avatar.dart';
@@ -81,10 +78,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       avatar: conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null,
     );
   }
-
-  /// 获取客户端实例
-  fb.OpenImBridgeClient? get _client =>
-      ref.read(messageServiceProvider.notifier).client;
 
   @override
   void initState() {
@@ -189,42 +182,35 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             children: [
               _buildSwitchRow('消息免打扰', _muteNotification, (v) async {
                 setState(() => _muteNotification = v);
-                final client = _client;
-                if (client != null) {
-                  try {
-                    await client.setConversation(
-                      conversationId: widget.conversationId,
-                      recvMsgOpt: v ? 1 : 0,
-                    );
-                  } catch (_) {}
-                }
+                try {
+                  await ref.read(messageRepositoryProvider).setConversation(
+                    conversationId: widget.conversationId,
+                    recvMsgOpt: v ? 1 : 0,
+                  );
+                } catch (_) {}
               }),
               const Divider(height: 1, indent: 16, endIndent: 16),
               _buildSwitchRow('置顶会话', _pinChat, (v) async {
                 setState(() => _pinChat = v);
-                final client = _client;
-                if (client != null) {
-                  try {
-                    await client.setConversationPinned(
-                      conversationId: widget.conversationId,
-                      isPinned: v,
-                    );
-                  } catch (_) {}
-                }
+                try {
+                  await ref.read(messageRepositoryProvider).setConversationPinned(
+                    conversationId: widget.conversationId,
+                    isPinned: v,
+                  );
+                } catch (_) {}
               }),
               if (!_isGroup) ...[
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 _buildSwitchRow('私聊（阅后即焚）', _privateChat, (v) async {
                   setState(() => _privateChat = v);
-                  final client = _client;
-                  if (client != null) {
-                    try {
-                      await client.setConversationPrivate(
-                        conversationId: widget.conversationId,
-                        isPrivate: v,
-                      );
-                    } catch (_) {}
-                  }
+                  try {
+                    await ref
+                        .read(messageRepositoryProvider)
+                        .setConversationPrivate(
+                          conversationId: widget.conversationId,
+                          isPrivate: v,
+                        );
+                  } catch (_) {}
                 }),
               ],
             ],
@@ -660,19 +646,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
     if (confirmed != true) return;
 
-    final client = _client;
-    if (client == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('客户端未初始化')));
-      }
-      return;
-    }
-
     try {
-      await clearConversationAndDeleteAllMsg(
-        conversationId: widget.conversationId,
+      await ref
+          .read(messageRepositoryProvider)
+          .clearConversationAndDeleteAllMsg(
+            widget.conversationId,
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

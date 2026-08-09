@@ -146,6 +146,16 @@ abstract class MessageRepository {
 
   Future<void> clearConversationDraft({required String conversationId});
 
+  Future<void> setConversation({
+    required String conversationId,
+    required int recvMsgOpt,
+  });
+
+  Future<void> setConversationPrivate({
+    required String conversationId,
+    required bool isPrivate,
+  });
+
   Future<void> setConversationPinned({
     required String conversationId,
     required bool isPinned,
@@ -154,6 +164,8 @@ abstract class MessageRepository {
   Future<void> deleteConversation({required String conversationId});
 
   Future<void> hideConversation({required String conversationId});
+
+  Future<void> clearConversationAndDeleteAllMsg(String conversationId);
 
   Future<void> markAllConversationsAsRead();
 }
@@ -472,6 +484,28 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
+  Future<void> setConversation({
+    required String conversationId,
+    required int recvMsgOpt,
+  }) {
+    return _client.setConversation(
+      conversationId: conversationId,
+      recvMsgOpt: recvMsgOpt,
+    );
+  }
+
+  @override
+  Future<void> setConversationPrivate({
+    required String conversationId,
+    required bool isPrivate,
+  }) {
+    return _client.setConversationPrivate(
+      conversationId: conversationId,
+      isPrivate: isPrivate,
+    );
+  }
+
+  @override
   Future<void> setConversationPinned({
     required String conversationId,
     required bool isPinned,
@@ -490,6 +524,13 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<void> hideConversation({required String conversationId}) {
     return _client.hideConversation(conversationId: conversationId);
+  }
+
+  @override
+  Future<void> clearConversationAndDeleteAllMsg(String conversationId) {
+    return ffi_message_advanced.clearConversationAndDeleteAllMsg(
+      conversationId: conversationId,
+    );
   }
 
   @override
