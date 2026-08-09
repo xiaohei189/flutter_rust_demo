@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 
 import '../theme/app_theme.dart';
 
@@ -99,4 +100,40 @@ class SegmentedToggle extends StatelessWidget {
       ),
     );
   }
+}
+
+@Preview(name: '两段 - 选中第一项', group: 'SegmentedToggle')
+Widget segmentedToggleTwoFirstPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: SegmentedToggle(
+      segments: const ['聊天', '群组'],
+      selectedIndex: 0,
+      onChanged: (_) {},
+    ),
+  );
+}
+
+@Preview(name: '两段 - 选中第二项', group: 'SegmentedToggle')
+Widget segmentedToggleTwoSecondPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: SegmentedToggle(
+      segments: const ['聊天', '群组'],
+      selectedIndex: 1,
+      onChanged: (_) {},
+    ),
+  );
+}
+
+@Preview(name: '三段 - 选中中间', group: 'SegmentedToggle')
+Widget segmentedToggleThreePreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: SegmentedToggle(
+      segments: const ['全部', '未读', '群组'],
+      selectedIndex: 1,
+      onChanged: (_) {},
+    ),
+  );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 
 import '../theme/app_theme.dart';
 
@@ -78,4 +79,33 @@ class CardLayoutWithTitle extends StatelessWidget {
       ],
     );
   }
+}
+
+@Preview(name: '基础卡片', group: 'CardLayout')
+Widget cardLayoutPreview() {
+  return const CardLayout(
+    padding: EdgeInsets.all(12),
+    children: [
+      Text('第一行内容'),
+      SizedBox(height: 8),
+      Text('第二行内容'),
+    ],
+  );
+}
+
+@Preview(name: '带标题卡片', group: 'CardLayout')
+Widget cardLayoutWithTitlePreview() {
+  return const CardLayoutWithTitle(
+    title: '账号信息',
+    children: [
+      ListTile(
+        leading: Icon(Icons.person_outline),
+        title: Text('用户名'),
+      ),
+      ListTile(
+        leading: Icon(Icons.phone_outlined),
+        title: Text('手机号'),
+      ),
+    ],
+  );
 }

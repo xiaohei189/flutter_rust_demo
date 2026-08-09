@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 
 import '../theme/app_theme.dart';
 
@@ -39,4 +40,28 @@ class UnreadCountView extends StatelessWidget {
       ),
     );
   }
+}
+
+@Preview(name: '未读数 5', group: 'UnreadCountView')
+Widget unreadCountViewNumberPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: UnreadCountView(count: 5),
+  );
+}
+
+@Preview(name: '未读数 99+', group: 'UnreadCountView')
+Widget unreadCountViewMaxPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: UnreadCountView(count: 128),
+  );
+}
+
+@Preview(name: '未读数 0（隐藏）', group: 'UnreadCountView')
+Widget unreadCountViewZeroPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: UnreadCountView(count: 0),
+  );
 }
