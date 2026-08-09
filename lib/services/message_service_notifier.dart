@@ -91,6 +91,10 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
   final Set<String> _seenClientMsgIds = {};
+  /// 当前正在查看的会话（聊天详情页设置），新消息到达时立即标记已读
+  String _activeConversationId = '';
+  /// 消息事件中需要立即标记已读的会话（当前正在查看）
+  String? _pendingReadConversation;
 
   MessageServiceNotifier() : super(const MessageServiceState());
 
@@ -99,6 +103,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
   MessageServiceState get currentState => state;
+
+  /// 设置当前正在查看的会话（进入/退出聊天详情页时调用）
+  void setActiveConversation(String conversationId) {
+    _activeConversationId = conversationId;
+  }
 
   /// 将 sendTime 规范化为毫秒（自动检测秒/毫秒）
   static int _normalizeSendTime(int t) {
@@ -673,12 +682,15 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   void _onFriendEvent(FriendEvent event) {}
   void _onGroupEvent(GroupEvent event) {}
 
-  void _onMessageEvent(MessageEvent event) {
+  Future<void> _onMessageEvent(MessageEvent event) async {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
-    _loadConversations();
     event.when(
       newMessage: (conversationId, message) {
         _appendIncomingMessage(conversationId, message);
+        if (_activeConversationId == conversationId) {
+          // 当前会话正在查看：立即标记已读，避免未读数先加后减的闪烁
+          _pendingReadConversation = conversationId;
+        }
       },
       revoked: (conversationId, seq, clientMsgId, revokerId, revokerRole,
           revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId,
@@ -688,11 +700,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       sendFailed: (_, _) {},
       uploadProgress: (_, _, _, _) {},
     );
+    if (_pendingReadConversation != null) {
+      final conversationId = _pendingReadConversation!;
+      _pendingReadConversation = null;
+      await markConversationMessageAsRead(conversationId);
+    }
+    _loadConversations();
   }
 
   /// 测试入口：等价于 SDK 消息事件流回调
   @visibleForTesting
-  void onMessageEventForTest(MessageEvent event) => _onMessageEvent(event);
+  Future<void> onMessageEventForTest(MessageEvent event) => _onMessageEvent(event);
 
   /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
   void _appendIncomingMessage(String conversationId, MessageInfo message) {
