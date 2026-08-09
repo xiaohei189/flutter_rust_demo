@@ -227,6 +227,10 @@ pub mod msg_sync_status {
 pub mod pull_msg_num {
     pub const SPLIT_PULL_MSG_NUM: i32 = 100;
     pub const PULL_MSG_NUM_FOR_READ_DIFFUSION: i32 = 50;
+    /// 连接成功后单会话单次拉取数量
+    pub const CONNECT_PULL_NUMS: i64 = 1;
+    /// 唤醒/手动触发时单会话单次拉取数量
+    pub const DEFAULT_PULL_NUMS: i64 = 10;
 }
 
 /// 会话变更类型
@@ -341,4 +345,14 @@ pub mod sync_flag {
     pub const SYNC_START: i32 = 1;
     /// 同步完成
     pub const SYNC_END: i32 = 2;
+    /// 重装多阶段同步：好友
+    pub const SYNC_STAGE_FRIENDS: i32 = 3;
+    /// 重装多阶段同步：群组
+    pub const SYNC_STAGE_GROUPS: i32 = 4;
+    /// 重装多阶段同步：会话
+    pub const SYNC_STAGE_CONVERSATIONS: i32 = 5;
+    /// 重装多阶段同步：消息
+    pub const SYNC_STAGE_MESSAGES: i32 = 6;
+    /// 重装多阶段同步：完成
+    pub const SYNC_STAGE_DONE: i32 = 7;
 }

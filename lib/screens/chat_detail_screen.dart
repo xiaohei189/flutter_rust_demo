@@ -15,6 +15,8 @@ import '../models/message_ext.dart';
 import '../models/message.dart' show MessageType;
 import '../providers/providers.dart';
 import '../services/message_service_notifier.dart';
+import '../services/online_status_service.dart';
+import '../services/file_open_service.dart';
 import '../src/rust/ffi/message_advanced.dart' show sendTyping;
 import '../src/rust/ffi/message.dart' show sendMergerMessage;
 import '../src/rust/model/message.dart' show MessageInfo;
@@ -66,7 +68,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   StreamSubscription<MessageListState>? _messageListSubscription;
   String _lastMessageListTailId = '';
   DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
-  bool? _onlineStatus;
+  String? _onlineStatusUserId;
 
   @override
   void initState() {
@@ -88,26 +90,26 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       if (mounted) setState(() => _bodyReady = true);
       _markConversationMessageAsRead();
       _restoreDraft();
-      _loadOnlineStatus();
+      _subscribeOnlineStatus();
     });
   }
 
-  /// 单聊时查询对方在线状态
-  Future<void> _loadOnlineStatus() async {
+  /// 单聊时订阅对方在线状态
+  void _subscribeOnlineStatus() {
     final conversation = _conversation;
     if (conversation == null || conversation.conversationType != 1) return;
     final userId = conversation.userId.isNotEmpty ? conversation.userId : null;
     if (userId == null) return;
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null) return;
-    try {
-      final statuses = await client.getUserStatus(userIds: [userId]);
-      if (!mounted || statuses.isEmpty) return;
-      final online = statuses.first.status == 1;
-      setState(() => _onlineStatus = online);
-    } catch (_) {
-      // 查询失败时保持默认在线展示，不阻塞聊天页
-    }
+    _onlineStatusUserId = userId;
+    OnlineStatusService.instance.subscribe([userId]);
+  }
+
+  /// 离开单聊时退订对方在线状态
+  void _unsubscribeOnlineStatus() {
+    final userId = _onlineStatusUserId;
+    _onlineStatusUserId = null;
+    if (userId == null) return;
+    OnlineStatusService.instance.unsubscribe([userId]);
   }
 
   Future<void> _markConversationMessageAsRead() async {
@@ -195,6 +197,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _unsubscribeOnlineStatus();
     _messageListSubscription?.cancel();
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
@@ -1147,11 +1150,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         openVideoPreview(context, source: msg.videoSource);
         break;
       case MessageType.file:
-        final source = msg.fileSource;
-        final name = msg.fileName.isNotEmpty
-            ? msg.fileName
-            : 'file_${DateTime.now().millisecondsSinceEpoch}';
-        saveMessageMedia(context, source: source, suggestedName: name);
+        _showFileActions(msg);
         break;
       case MessageType.card:
         if (msg.cardUserId.isNotEmpty) {
@@ -1208,6 +1207,59 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (!ok) {
       final err = ref.read(messageListProvider(widget.conversationId)).error;
       _showError(err ?? '消息重发失败');
+    }
+  }
+
+  Future<void> _showFileActions(MessageInfo msg) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: const Text('打开文件'),
+              onTap: () => Navigator.of(sheetContext).pop('open'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: const Text('保存/另存为'),
+              onTap: () => Navigator.of(sheetContext).pop('save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !mounted) return;
+
+    final source = msg.fileSource;
+    final name = msg.fileName.isNotEmpty
+        ? msg.fileName
+        : 'file_${DateTime.now().millisecondsSinceEpoch}';
+    if (action == 'save') {
+      await saveMessageMedia(context, source: source, suggestedName: name);
+      return;
+    }
+
+    if (source.isEmpty) {
+      _showError('文件地址为空，无法打开');
+      return;
+    }
+    try {
+      final ok = await FileOpenService.instance.open(
+        source: source,
+        fileName: name,
+      );
+      if (!ok && mounted) {
+        _showError('没有可打开该文件的应用，可尝试保存后打开');
+      }
+    } catch (e) {
+      _showError('打开文件失败: $e');
     }
   }
 
@@ -1303,6 +1355,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
     final user = _getUser(userProfileState);
     final conversation = _conversation;
+    final otherUserId = conversation?.conversationType == 1
+        ? conversation!.userId
+        : '';
+    final online = otherUserId.isNotEmpty
+        ? ref.watch(userOnlineStatusProvider(otherUserId))
+        : null;
     final currentUserId = userProfileState.profile?.userId ?? '';
     final typingUserId = ref.watch(
       messageServiceProvider.select(
@@ -1420,7 +1478,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           )
                         else
                           Text(
-                            _onlineStatus == false ? '离线' : '在线',
+                            online == false ? '离线' : '在线',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondaryColor.withValues(

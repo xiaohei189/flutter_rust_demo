@@ -19,6 +19,8 @@ export 'app_lifecycle_service.dart';
 export 'app_lock_service.dart';
 export 'local_notification_service.dart';
 export 'locale_service.dart';
+export 'online_status_service.dart';
+export 'file_open_service.dart';
 export 'logger_service.dart';
 export 'network_service.dart';
 export 'group_service.dart';

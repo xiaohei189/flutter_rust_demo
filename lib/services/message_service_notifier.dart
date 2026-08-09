@@ -37,6 +37,7 @@ import 'package:flutter_rust_demo/utils/login_storage.dart';
 import 'package:flutter_rust_demo/services/navigation_service.dart';
 import 'package:flutter_rust_demo/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/services/local_notification_service.dart';
+import 'package:flutter_rust_demo/services/online_status_service.dart';
 
 /// MessageService 的状态类
 class MessageServiceState {
@@ -621,6 +622,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           appLog.w('[MessageService] 关闭旧客户端失败: $e');
         }
         _client = null;
+        OnlineStatusService.instance.setClient(null);
       }
 
       appLog.i('[MessageService] 初始化日志和 SDK 客户端...');
@@ -653,6 +655,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           dataDir: dataDir,
         ),
       );
+      OnlineStatusService.instance.setClient(_client);
       unawaited(_loadConversations());
 
       _subscriptions.add(
@@ -1065,6 +1068,11 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         appLog.i(
           '[MsgSvc] userStatusChanged: userId=$userId status=$status platformIds=$platformIds',
         );
+        OnlineStatusService.instance.applyUserStatusChanged(
+          userId: userId,
+          status: status,
+          platformIds: platformIds,
+        );
       },
     );
   }
@@ -1188,6 +1196,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     _subscriptions.clear();
     await _client?.disconnect();
     _client = null;
+    OnlineStatusService.instance.setClient(null);
     state = const MessageServiceState();
   }
 

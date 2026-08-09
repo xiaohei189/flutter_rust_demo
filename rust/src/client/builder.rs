@@ -105,6 +105,7 @@ impl OpenIMClientBuilder {
             listeners.clone(),
             context.user_id.clone(),
         ));
+        message_syncer.set_notification_handler(notification_handler.clone());
         let send_queue = MessageSendQueue::new();
         let sender = Arc::new(MessageSender::new(context.clone(), connection.clone(), file_uploader.clone(), send_queue.clone(), user.clone()));
         debug!("OpenIM SDK init done (via Builder)");

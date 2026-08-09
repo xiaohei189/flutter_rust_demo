@@ -54,6 +54,7 @@ pub struct OpenIMClient {
 use crate::client::config::ClientConfig;
 use crate::constant::ws_push_identifier;
 use crate::logger::span_from_operation_id;
+use crate::constant::sync_flag;
 use openim_protocol::sdkws::PushMessages;
 use openim_protocol::sdkws::{SetAppBackgroundStatusReq, SetAppBackgroundStatusResp};
 use prost::Message as ProstMessage;
@@ -149,24 +150,103 @@ impl ConnectionApi for OpenIMClient {
 
         let friend = self.friend.clone();
         let group = self.group.clone();
+        let conversation_syncer = self.conversation_syncer.clone();
+        let message_syncer = self.message_syncer.clone();
+        let repositories = self.context.repositories.clone();
         tokio::spawn(async move {
-            debug!("[SDK] 后台开始好友同步");
-            if let Err(e) = friend.sync_friends_incremental().await {
-                warn!("[SDK] 登录后好友增量同步失败，回退全量同步: {}", e);
-                if let Err(e2) = friend.sync_friends().await {
-                    warn!("[SDK] 登录后好友全量同步失败: {}", e2);
+            let reinstalled = repositories
+                .sync_version_repo
+                .is_reinstalled()
+                .await
+                .unwrap_or(false);
+            if reinstalled {
+                let stage = repositories
+                    .sync_version_repo
+                    .get_sync_flag()
+                    .await
+                    .unwrap_or(0);
+
+                if stage < sync_flag::SYNC_STAGE_GROUPS {
+                    let _ = repositories
+                        .sync_version_repo
+                        .set_sync_flag(sync_flag::SYNC_STAGE_FRIENDS)
+                        .await;
+                    debug!("[SDK] 重装阶段：好友全量同步");
+                    if let Err(e) = friend.sync_friends().await {
+                        warn!("[SDK] 重装好友全量同步失败: {}", e);
+                    }
+                    let _ = repositories
+                        .sync_version_repo
+                        .set_sync_flag(sync_flag::SYNC_STAGE_GROUPS)
+                        .await;
+                }
+
+                let stage = repositories
+                    .sync_version_repo
+                    .get_sync_flag()
+                    .await
+                    .unwrap_or(0);
+                if stage < sync_flag::SYNC_STAGE_CONVERSATIONS {
+                    let _ = repositories
+                        .sync_version_repo
+                        .set_sync_flag(sync_flag::SYNC_STAGE_GROUPS)
+                        .await;
+                    debug!("[SDK] 重装阶段：群组全量同步");
+                    if let Err(e) = group.sync_groups().await {
+                        warn!("[SDK] 重装群组全量同步失败: {}", e);
+                    }
+                    let _ = repositories
+                        .sync_version_repo
+                        .set_sync_flag(sync_flag::SYNC_STAGE_CONVERSATIONS)
+                        .await;
+                }
+
+                let stage = repositories
+                    .sync_version_repo
+                    .get_sync_flag()
+                    .await
+                    .unwrap_or(0);
+                if stage < sync_flag::SYNC_STAGE_MESSAGES {
+                    debug!("[SDK] 重装阶段：会话全量同步");
+                    if let Err(e) = conversation_syncer.sync_full().await {
+                        warn!("[SDK] 重装会话全量同步失败: {}", e);
+                    }
+                    let _ = repositories
+                        .sync_version_repo
+                        .set_sync_flag(sync_flag::SYNC_STAGE_MESSAGES)
+                        .await;
+                }
+
+                let stage = repositories
+                    .sync_version_repo
+                    .get_sync_flag()
+                    .await
+                    .unwrap_or(0);
+                if stage < sync_flag::SYNC_STAGE_DONE {
+                    debug!("[SDK] 重装阶段：消息全量同步");
+                    let _ = message_syncer.sync_all_conversations(true).await;
+                    let _ = repositories
+                        .sync_version_repo
+                        .set_sync_flag(sync_flag::SYNC_STAGE_DONE)
+                        .await;
                 }
             } else {
-                debug!("[SDK] 好友同步完成");
-            }
-            debug!("[SDK] 后台开始群组同步");
-            if let Err(e) = group.sync_groups_incremental().await {
-                warn!("[SDK] 登录后群组增量同步失败，回退全量同步: {}", e);
-                if let Err(e2) = group.sync_groups().await {
-                    warn!("[SDK] 登录后群组全量同步失败: {}", e2);
+                debug!("[SDK] 普通登录：后台开始好友同步");
+                if let Err(e) = friend.sync_friends_incremental().await {
+                    warn!("[SDK] 登录后好友增量同步失败，回退全量同步: {}", e);
+                    if let Err(e2) = friend.sync_friends().await {
+                        warn!("[SDK] 登录后好友全量同步失败: {}", e2);
+                    }
                 }
-            } else {
-                debug!("[SDK] 群组同步完成");
+                debug!("[SDK] 普通登录：后台开始群组同步");
+                if let Err(e) = group.sync_groups_incremental().await {
+                    warn!("[SDK] 登录后群组增量同步失败，回退全量同步: {}", e);
+                    if let Err(e2) = group.sync_groups().await {
+                        warn!("[SDK] 登录后群组全量同步失败: {}", e2);
+                    }
+                }
+                debug!("[SDK] 普通登录：后台开始会话增量同步");
+                let _ = conversation_syncer.sync_incremental().await;
             }
         });
 
@@ -283,6 +363,7 @@ impl OpenIMClient {
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();
         let conversation_syncer = self.conversation_syncer.clone();
+        let repositories = self.context.repositories.clone();
         let cancel_token = self.context.cancel_token.clone();
 
         let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<(PushMessages, String)>();
@@ -292,11 +373,13 @@ impl OpenIMClient {
             let mh = message_processor.clone();
             let ms = message_syncer.clone();
             let cs = conversation_syncer.clone();
+            let repos = repositories.clone();
             let ct = cancel_token.clone();
             move || {
                 let mh = mh.clone();
                 let ms = ms.clone();
                 let cs = cs.clone();
+                let repos = repos.clone();
                 let ct = ct.clone();
                 tokio::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
@@ -305,6 +388,15 @@ impl OpenIMClient {
                     }
                     if ms.is_connection_kicked().await {
                         info!("push_message_handler: connection was kicked, skipping sync");
+                        return;
+                    }
+                    if repos
+                        .sync_version_repo
+                        .is_reinstalled()
+                        .await
+                        .unwrap_or(false)
+                    {
+                        info!("push_message_handler: reinstall sync in progress, skipping");
                         return;
                     }
                     info!("push_message_handler: connection established, syncing conversations then messages");

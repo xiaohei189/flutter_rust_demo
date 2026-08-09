@@ -10,3 +10,4 @@ export 'message_service_provider.dart';
 export 'user_profile_provider.dart';
 export 'group_provider.dart';
 export 'friend_provider.dart';
+export 'online_status_provider.dart';
