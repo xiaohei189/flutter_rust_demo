@@ -16,7 +16,7 @@ use crate::message::receive::checker::MessageChecker;
 use crate::model::local::LocalNotificationSeq;
 use crate::model::UserId;
 use async_trait::async_trait;
-use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
+use openim_protocol::msg::{GetLastMessageReq, GetLastMessageResp, GetSeqMessageReq, GetSeqMessageResp};
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
@@ -25,9 +25,7 @@ use tokio::sync::{Mutex, RwLock, Semaphore};
 use tracing::{debug, error, info, warn};
 
 // 直接使用 openim-protocol crate 中的 pb 生成类型
-use openim_protocol::sdkws::{
-    GetLastMessageReq, GetLastMessageResp, MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs, PullOrder, SeqRange,
-};
+use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs, PullOrder, SeqRange};
 
 /// ConnectionManager 的 SyncServerApi 实现
 #[async_trait]
@@ -37,9 +35,7 @@ impl SyncServerApi for ConnectionManager {
         let req = GetMaxSeqReq { user_id: user_id.to_string() };
         fetch_server_max_seqs_with_retry(3, std::time::Duration::from_secs(2), || async {
             info!("[MsgSync] getServerMaxSeq 请求: user_id={}", req.user_id);
-            self.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(ws_req_identifier::GET_NEWEST_SEQ, &req)
-                .await
-                .map(|resp| resp.max_seqs)
+            self.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(ws_req_identifier::GET_NEWEST_SEQ, &req).await.map(|resp| resp.max_seqs)
         })
         .await
     }
@@ -57,9 +53,7 @@ impl SyncServerApi for ConnectionManager {
             user_id: user_id.to_string(),
             conversation_i_ds: conversation_ids,
         };
-        let resp: GetLastMessageResp = self
-            .send_rpc(ws_req_identifier::PULL_CONV_LAST_MESSAGE, &req)
-            .await?;
+        let resp: GetLastMessageResp = self.send_rpc(ws_req_identifier::PULL_CONV_LAST_MESSAGE, &req).await?;
         Ok(resp.msgs)
     }
 
@@ -105,15 +99,11 @@ where
 #[derive(Clone, Debug)]
 pub struct SyncConfig {
     pub max_concurrent_pulls: usize,
-    pub pull_msg_num: i64,
 }
 
 impl Default for SyncConfig {
     fn default() -> Self {
-        Self {
-            max_concurrent_pulls: 5,
-            pull_msg_num: 50,
-        }
+        Self { max_concurrent_pulls: 5 }
     }
 }
 
@@ -242,10 +232,7 @@ impl MessageSyncer {
             }
         }
 
-        match self
-            .sync_incremental_messages(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS)
-            .await
-        {
+        match self.sync_incremental_messages(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await {
             Ok(()) => {
                 self.send(ConversationEvent::SyncProgress {
                     progress: 100,
@@ -295,8 +282,7 @@ impl MessageSyncer {
                 warn!("update_max_seq 失败 conv={}: {}", conv_id, e);
             }
         }
-        self.sync_incremental_messages(&server_max_seqs, pull_msg_num::DEFAULT_PULL_NUMS)
-            .await?;
+        self.sync_incremental_messages(&server_max_seqs, pull_msg_num::DEFAULT_PULL_NUMS).await?;
         self.send(ConversationEvent::SyncFinished(self.reinstalled_flag().await));
         info!("后台唤醒增量同步完成");
         Ok(())
@@ -373,7 +359,7 @@ impl MessageSyncer {
         if begin <= max_seq {
             let mut seq_map = HashMap::new();
             seq_map.insert(conv_id.to_string(), (begin, max_seq));
-            self.batch_pull_messages(&seq_map, false).await?;
+            self.batch_pull_messages(&seq_map, false, pull_msg_num::DEFAULT_PULL_NUMS).await?;
         }
 
         self.synced_max_seqs.write().await.insert(conv_id.to_string(), max_seq);
@@ -435,20 +421,20 @@ impl MessageSyncer {
         self.load_synced_max_seqs().await?;
 
         if reinstalled {
-            self.sync_all_messages_reinstall(&server_max_seqs).await?;
+            self.sync_all_messages_reinstall(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await?;
             self.repositories.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
             if let Err(e) = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await {
                 warn!("设置 SYNC_END 标志失败: {}", e);
             }
         } else {
-            self.sync_incremental_messages(&server_max_seqs).await?;
+            self.sync_incremental_messages(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await?;
         }
 
         info!("全部会话消息同步完成");
         Ok(())
     }
 
-    async fn sync_incremental_messages(&self, max_seq_to_sync: &HashMap<String, i64>) -> Result<()> {
+    async fn sync_incremental_messages(&self, max_seq_to_sync: &HashMap<String, i64>, pull_num: i64) -> Result<()> {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
         for (conversation_id, server_max_seq) in max_seq_to_sync {
@@ -470,11 +456,11 @@ impl MessageSyncer {
         }
 
         info!("需要同步 {} 个会话的消息", need_sync_seq_map.len());
-        self.batch_pull_messages(&need_sync_seq_map, false).await
+        self.batch_pull_messages(&need_sync_seq_map, false, pull_num).await
     }
 
     /// 重装模式同步：跳过通知会话，只同步普通消息
-    async fn sync_all_messages_reinstall(&self, max_seq_to_sync: &HashMap<String, i64>) -> Result<()> {
+    async fn sync_all_messages_reinstall(&self, max_seq_to_sync: &HashMap<String, i64>, pull_num: i64) -> Result<()> {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
         let mut notification_seq_records: Vec<LocalNotificationSeq> = Vec::new();
 
@@ -517,14 +503,14 @@ impl MessageSyncer {
         let total = need_sync_seq_map.values().map(|(_, end)| end).sum::<i64>();
         info!("重装模式，同步全部 {} 条消息", total);
 
-        self.batch_pull_messages(&need_sync_seq_map, true).await
+        self.batch_pull_messages(&need_sync_seq_map, true, pull_num).await
     }
 
-    async fn batch_pull_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool) -> Result<()> {
+    async fn batch_pull_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool, pull_num: i64) -> Result<()> {
         let semaphore = Arc::new(Semaphore::new(self.config.max_concurrent_pulls));
         let mut tasks = Vec::new();
 
-        let batch_size = 50;
+        let batch_size = pull_msg_num::SPLIT_PULL_MSG_NUM as i64;
         let mut batches: Vec<HashMap<String, (i64, i64)>> = Vec::new();
         let mut current_batch = HashMap::new();
         let mut msg_count = 0i64;
@@ -549,7 +535,7 @@ impl MessageSyncer {
             let syncer_clone = self.clone_for_task();
             tasks.push(tokio::spawn(async move {
                 let _permit = permit;
-                syncer_clone.pull_and_handle_messages(&batch, reinstall).await
+                syncer_clone.pull_and_handle_messages(&batch, reinstall, pull_num).await
             }));
         }
 
@@ -560,7 +546,7 @@ impl MessageSyncer {
         Ok(())
     }
 
-    async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool) -> Result<()> {
+    async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool, pull_num: i64) -> Result<()> {
         let req = PullMessageBySeqsReq {
             user_id: self.user_id.get().await,
             seq_ranges: seq_map
@@ -569,7 +555,7 @@ impl MessageSyncer {
                     conversation_id: conv_id.clone(),
                     begin: *begin,
                     end: *end,
-                    num: self.config.pull_msg_num,
+                    num: pull_num,
                 })
                 .collect(),
             order: 0,
@@ -654,17 +640,10 @@ impl MessageSyncer {
     }
 
     /// 重装模式下，如果某会话拉取到的消息全部已删除，则用会话最新有效消息替换。
-    async fn check_messages_and_get_last_message(
-        &self,
-        msgs: &mut HashMap<String, PullMsgs>,
-    ) -> Result<()> {
+    async fn check_messages_and_get_last_message(&self, msgs: &mut HashMap<String, PullMsgs>) -> Result<()> {
         let mut conversation_ids = Vec::new();
         for (conv_id, pull_msgs) in msgs.iter() {
-            let all_deleted = !pull_msgs.msgs.is_empty()
-                && pull_msgs
-                    .msgs
-                    .iter()
-                    .all(|m| m.status >= msg_status::HAS_DELETED as i32);
+            let all_deleted = !pull_msgs.msgs.is_empty() && pull_msgs.msgs.iter().all(|m| m.status >= msg_status::HAS_DELETED as i32);
             if all_deleted {
                 conversation_ids.push(conv_id.clone());
             }
@@ -674,10 +653,7 @@ impl MessageSyncer {
         }
 
         info!("重装模式：{} 个会话拉取结果全部已删除，尝试拉取最新有效消息", conversation_ids.len());
-        let last_messages = self
-            .remote
-            .pull_conv_last_message(&self.user_id.get().await, conversation_ids)
-            .await?;
+        let last_messages = self.remote.pull_conv_last_message(&self.user_id.get().await, conversation_ids).await?;
         for (conv_id, message) in last_messages {
             msgs.entry(conv_id).or_default().msgs = vec![message];
         }
@@ -717,7 +693,7 @@ impl MessageSyncer {
             synced_max_seqs: self.synced_max_seqs.clone(),
             sync_lock: self.sync_lock.clone(),
             per_conv_sync_locks: self.per_conv_sync_locks.clone(),
-            notification_handler: self.notification_handler,
+            notification_handler: self.notification_handler.clone(),
         })
     }
 }
@@ -735,6 +711,7 @@ mod tests {
     struct MockSyncerApi {
         max_seqs: HashMap<String, i64>,
         pull_msgs: HashMap<String, PullMsgs>,
+        pull_nums: Arc<tokio::sync::Mutex<Vec<i64>>>,
         kicked: bool,
         pull_count: AtomicUsize,
     }
@@ -744,6 +721,7 @@ mod tests {
             Self {
                 max_seqs: HashMap::new(),
                 pull_msgs: HashMap::new(),
+                pull_nums: Arc::new(tokio::sync::Mutex::new(Vec::new())),
                 kicked: false,
                 pull_count: AtomicUsize::new(0),
             }
@@ -769,6 +747,7 @@ mod tests {
         }
         async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
             self.pull_count.fetch_add(1, Ordering::SeqCst);
+            self.pull_nums.lock().await.extend(_req.seq_ranges.iter().map(|r| r.num));
             Ok(PullMessageBySeqsResp {
                 msgs: self.pull_msgs.clone(),
                 ..Default::default()
@@ -916,10 +895,22 @@ mod tests {
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_a".to_string(), 5i64);
         server_seqs.insert("conv_b".to_string(), 5i64);
-        syncer.sync_incremental_messages(&server_seqs).await.unwrap();
+        syncer.sync_incremental_messages(&server_seqs, pull_msg_num::CONNECT_PULL_NUMS).await.unwrap();
         let msg4 = message_dao.get_by_client_msg_id("conv_a", "msg_conv_a_4").await.unwrap();
         assert!(msg4.is_some());
         assert_eq!(remote.pull_count.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn test_wakeup_sync_uses_default_pull_nums() {
+        let (repositories, handler) = setup_db().await;
+        let mut server_seqs = HashMap::new();
+        server_seqs.insert("conv_wakeup".to_string(), 3i64);
+        let remote = Arc::new(MockSyncerApi::new().with_max_seqs(server_seqs.clone()));
+        let syncer = make_syncer(remote.clone(), repositories, handler);
+        syncer.sync_incremental_messages(&server_seqs, pull_msg_num::DEFAULT_PULL_NUMS).await.unwrap();
+        let nums = remote.pull_nums.lock().await;
+        assert_eq!(nums.as_slice(), &[10]);
     }
 
     #[tokio::test]

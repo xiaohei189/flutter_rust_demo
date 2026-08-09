@@ -52,9 +52,9 @@ pub struct OpenIMClient {
 }
 
 use crate::client::config::ClientConfig;
+use crate::constant::sync_flag;
 use crate::constant::ws_push_identifier;
 use crate::logger::span_from_operation_id;
-use crate::constant::sync_flag;
 use openim_protocol::sdkws::PushMessages;
 use openim_protocol::sdkws::{SetAppBackgroundStatusReq, SetAppBackgroundStatusResp};
 use prost::Message as ProstMessage;
@@ -154,81 +154,43 @@ impl ConnectionApi for OpenIMClient {
         let message_syncer = self.message_syncer.clone();
         let repositories = self.context.repositories.clone();
         tokio::spawn(async move {
-            let reinstalled = repositories
-                .sync_version_repo
-                .is_reinstalled()
-                .await
-                .unwrap_or(false);
+            let reinstalled = repositories.sync_version_repo.is_reinstalled().await.unwrap_or(false);
             if reinstalled {
-                let stage = repositories
-                    .sync_version_repo
-                    .get_sync_flag()
-                    .await
-                    .unwrap_or(0);
+                let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
 
                 if stage < sync_flag::SYNC_STAGE_GROUPS {
-                    let _ = repositories
-                        .sync_version_repo
-                        .set_sync_flag(sync_flag::SYNC_STAGE_FRIENDS)
-                        .await;
+                    let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_FRIENDS).await;
                     debug!("[SDK] 重装阶段：好友全量同步");
                     if let Err(e) = friend.sync_friends().await {
                         warn!("[SDK] 重装好友全量同步失败: {}", e);
                     }
-                    let _ = repositories
-                        .sync_version_repo
-                        .set_sync_flag(sync_flag::SYNC_STAGE_GROUPS)
-                        .await;
+                    let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_GROUPS).await;
                 }
 
-                let stage = repositories
-                    .sync_version_repo
-                    .get_sync_flag()
-                    .await
-                    .unwrap_or(0);
+                let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
                 if stage < sync_flag::SYNC_STAGE_CONVERSATIONS {
-                    let _ = repositories
-                        .sync_version_repo
-                        .set_sync_flag(sync_flag::SYNC_STAGE_GROUPS)
-                        .await;
+                    let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_GROUPS).await;
                     debug!("[SDK] 重装阶段：群组全量同步");
                     if let Err(e) = group.sync_groups().await {
                         warn!("[SDK] 重装群组全量同步失败: {}", e);
                     }
-                    let _ = repositories
-                        .sync_version_repo
-                        .set_sync_flag(sync_flag::SYNC_STAGE_CONVERSATIONS)
-                        .await;
+                    let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_CONVERSATIONS).await;
                 }
 
-                let stage = repositories
-                    .sync_version_repo
-                    .get_sync_flag()
-                    .await
-                    .unwrap_or(0);
+                let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
                 if stage < sync_flag::SYNC_STAGE_MESSAGES {
                     debug!("[SDK] 重装阶段：会话全量同步");
                     if let Err(e) = conversation_syncer.sync_full().await {
                         warn!("[SDK] 重装会话全量同步失败: {}", e);
                     }
-                    let _ = repositories
-                        .sync_version_repo
-                        .set_sync_flag(sync_flag::SYNC_STAGE_MESSAGES)
-                        .await;
+                    let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_MESSAGES).await;
                 }
 
-                let stage = repositories
-                    .sync_version_repo
-                    .get_sync_flag()
-                    .await
-                    .unwrap_or(0);
+                let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
                 if stage < sync_flag::SYNC_STAGE_DONE {
                     debug!("[SDK] 重装阶段：消息全量同步");
                     let _ = message_syncer.sync_all_conversations(true).await;
-                    let _ = repositories
-                        .sync_version_repo
-                        .set_sync_flag(sync_flag::SYNC_STAGE_DONE)
-                        .await;
+                    let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_DONE).await;
                 }
             } else {
                 debug!("[SDK] 普通登录：后台开始好友同步");
@@ -321,17 +283,14 @@ impl ConnectionApi for OpenIMClient {
             user_id: self.context.get_user_id(),
             is_background,
         };
-        let _: SetAppBackgroundStatusResp = self
-            .connection
-            .send_rpc(ws_push_identifier::SET_BACKGROUND_STATUS, &req)
-            .await?;
+        let _: SetAppBackgroundStatusResp = self.connection.send_rpc(ws_push_identifier::SET_BACKGROUND_STATUS, &req).await?;
 
         if !is_background {
             info!("[SDK] App 回到前台，触发会话/消息同步");
             if let Err(e) = self.conversation_syncer.sync_incremental().await {
                 warn!("[SDK] 前台会话增量同步失败: {}", e);
             }
-            if let Err(e) = self.message_syncer.sync_after_reconnect().await {
+            if let Err(e) = self.message_syncer.sync_on_wakeup().await {
                 warn!("[SDK] 前台消息同步失败: {}", e);
             }
             self.message_processor.publish_total_unread_count_changed().await;
@@ -390,12 +349,7 @@ impl OpenIMClient {
                         info!("push_message_handler: connection was kicked, skipping sync");
                         return;
                     }
-                    if repos
-                        .sync_version_repo
-                        .is_reinstalled()
-                        .await
-                        .unwrap_or(false)
-                    {
+                    if repos.sync_version_repo.is_reinstalled().await.unwrap_or(false) {
                         info!("push_message_handler: reinstall sync in progress, skipping");
                         return;
                     }

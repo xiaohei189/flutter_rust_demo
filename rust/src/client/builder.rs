@@ -18,10 +18,10 @@ use crate::http::message_api::HttpMessageApi;
 use crate::http::online_api::HttpOnlineStatusApi;
 use crate::http::user_api::HttpUserApi;
 use crate::message::notification::NotificationHandler;
+use crate::message::receive::checker::MessageChecker;
 use crate::message::send::MessageSendQueue;
 use crate::message::send::MessageSender;
 use crate::message::MessageProcessor;
-use crate::message::receive::checker::MessageChecker;
 use crate::message::MessageService;
 use crate::message::MessageSyncer;
 use crate::user::online::service::OnlineStatusService;
@@ -87,13 +87,16 @@ impl OpenIMClientBuilder {
         let mut conversation_syncer = ConversationSyncer::new(context.infra.http_client.clone(), context.repositories.clone(), context.user_id.clone(), listeners.clone());
         conversation_syncer.set_connection(connection.clone());
         let conversation_syncer = Arc::new(conversation_syncer);
-        let message_service = Arc::new(MessageService::new(
-            context.repositories.clone(),
-            Arc::new(HttpMessageApi::new(context.infra.http_client.clone())),
-            listeners.clone(),
-            listeners.clone(),
-            context.user_id.clone(),
-        ).with_checker(message_checker));
+        let message_service = Arc::new(
+            MessageService::new(
+                context.repositories.clone(),
+                Arc::new(HttpMessageApi::new(context.infra.http_client.clone())),
+                listeners.clone(),
+                listeners.clone(),
+                context.user_id.clone(),
+            )
+            .with_checker(message_checker),
+        );
         let notification_handler = Arc::new(NotificationHandler::new(
             friend.clone(),
             group.clone(),

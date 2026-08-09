@@ -3,8 +3,8 @@
 use crate::error::Result;
 use async_trait::async_trait;
 use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
-use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};
 use openim_protocol::sdkws::MsgData;
+use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};
 use std::collections::HashMap;
 
 /// 消息同步器的远程数据源抽象
@@ -26,11 +26,7 @@ pub trait SyncServerApi: Send + Sync {
     async fn is_kicked(&self) -> bool;
 
     /// 拉取指定会话的最新有效消息（重装模式下用于替换全被删除的会话）
-    async fn pull_conv_last_message(
-        &self,
-        _user_id: &str,
-        _conversation_ids: Vec<String>,
-    ) -> Result<HashMap<String, MsgData>> {
+    async fn pull_conv_last_message(&self, _user_id: &str, _conversation_ids: Vec<String>) -> Result<HashMap<String, MsgData>> {
         Ok(HashMap::new())
     }
 }

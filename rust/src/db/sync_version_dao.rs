@@ -1,6 +1,6 @@
+use crate::constant::sync_flag;
 use crate::error::Result;
 use crate::error::SdkError;
-use crate::constant::sync_flag;
 use sqlx::{Pool, Sqlite};
 use tracing::{info, warn};
 
@@ -36,9 +36,7 @@ impl SyncVersionDao {
     pub async fn is_reinstalled(&self) -> Result<bool> {
         // 检查 sync_flag：如果为 SYNC_START（1），说明上次同步被中断，视为重新安装
         let current_flag = self.get_sync_flag().await.unwrap_or(0);
-        let is_incomplete_stage = current_flag == sync_flag::SYNC_START
-            || (current_flag >= sync_flag::SYNC_STAGE_FRIENDS
-                && current_flag < sync_flag::SYNC_STAGE_DONE);
+        let is_incomplete_stage = current_flag == sync_flag::SYNC_START || (current_flag >= sync_flag::SYNC_STAGE_FRIENDS && current_flag < sync_flag::SYNC_STAGE_DONE);
         if is_incomplete_stage {
             info!("sync_flag={}，上次同步被中断，视为重新安装", current_flag);
             return Ok(true);
