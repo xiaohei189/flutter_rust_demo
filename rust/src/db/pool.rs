@@ -11,7 +11,8 @@ pub async fn create_pool(db_url: &str) -> Result<SqlitePool> {
         .journal_mode(SqliteJournalMode::Wal)
         .synchronous(SqliteSynchronous::Normal)
         .busy_timeout(Duration::from_secs(5))
-        .log_statements(tracing::log::LevelFilter::Info)
+        // 默认不输出每条 SQL，避免发送/同步时刷屏；慢 SQL 仍按 Info 告警
+        .log_statements(tracing::log::LevelFilter::Trace)
         .log_slow_statements(tracing::log::LevelFilter::Info, Duration::from_millis(100));
 
     let pool = SqlitePoolOptions::new()

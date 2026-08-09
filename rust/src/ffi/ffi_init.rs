@@ -165,9 +165,15 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let config = LOG_CONFIG.get().cloned().unwrap_or_else(|| {
-        let mut c = LogConfig::default();
-        c.log_level = match log_level.to_lowercase().as_str() {
+    let mut config = LOG_CONFIG.get().cloned().unwrap_or_default();
+    let trimmed = log_level.trim();
+    if trimmed.contains(',') || trimmed.contains('=') {
+        // EnvFilter 风格表达式（如 "info,rust_lib_flutter_rust_demo=debug"）：
+        // 由 init_otel_subscriber 合并进 EnvFilter，基础级别取 info
+        logger::set_env_filter_override(trimmed);
+        config.log_level = 2;
+    } else {
+        config.log_level = match trimmed.to_lowercase().as_str() {
             "trace" => 0,
             "debug" => 1,
             "info" => 2,
@@ -175,8 +181,7 @@ pub async fn init_logger(log_level: String) -> anyhow::Result<()> {
             "error" => 4,
             _ => 2,
         };
-        c
-    });
+    }
 
     logger::init_otel_subscriber(&config)?;
     *initialized = true;

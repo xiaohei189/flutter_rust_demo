@@ -15,6 +15,6 @@ mod otel;
 
 pub use config::LogConfig;
 pub use otel::{
-    build_w3c_traceparent, context_from_traceparent, decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id, init_otel_subscriber, set_span_events_enabled,
-    span_from_operation_id, span_from_remote_trace_id,
+    build_w3c_traceparent, context_from_traceparent, decode_operation_id, encode_operation_id, extract_span_id, extract_trace_id, init_otel_subscriber, set_env_filter_override,
+    set_span_events_enabled, span_from_operation_id, span_from_remote_trace_id,
 };

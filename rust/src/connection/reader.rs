@@ -18,7 +18,7 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, info_span, warn, Instrument};
+use tracing::{error, info, info_span, trace, warn, Instrument};
 
 impl ConnectionManager {
     /// 启动消息读取循环
@@ -79,7 +79,7 @@ impl ConnectionManager {
                                             info_span!("ws_binary_resp")
                                         };
                                         let handle_resp = async {
-                                            debug!("WebSocket received message: req_identifier={}({}), msg_incr={}, operation_id={}, err_code={}, err_msg={}, data_len={}",
+                                            trace!("WebSocket received message: req_identifier={}({}), msg_incr={}, operation_id={}, err_code={}, err_msg={}, data_len={}",
                                                 resp.req_identifier, req_identifier_name(resp.req_identifier),
                                                 resp.msg_incr, resp.operation_id, resp.err_code, resp.err_msg, resp.data.len());
                                             let mut should_break = false;

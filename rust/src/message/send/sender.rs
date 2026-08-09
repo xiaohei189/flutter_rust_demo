@@ -900,7 +900,7 @@ impl MessageSender {
 
         // 输入：完整构造的发送消息
         if let Ok(json) = serde_json::to_string(&msg) {
-            tracing::info!("[SEND] 发送消息: {}", json);
+            tracing::trace!("[SEND] 发送消息: {}", json);
         }
 
         // 输出：服务端返回
@@ -915,7 +915,7 @@ impl MessageSender {
             "session_type": msg.session_type,
             "content_type": msg.content_type,
         });
-        tracing::info!("[SEND] 发送结果: {}", resp_json);
+        tracing::trace!("[SEND] 发送结果: {}", resp_json);
 
         Ok(msg)
     }

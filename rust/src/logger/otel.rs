@@ -405,21 +405,32 @@ where
                     }
                 });
 
-                if self.with_ansi {
-                    write!(writer, " {}span={}", GREY, name)?;
-                    if !fields_str.is_empty() {
-                        write!(writer, " {}", fields_str.replace('=', "=").replace(' ', " "))?;
+                // INFO 及以上只保留 trace_id/span_id，避免每行尾部 span 上下文过长；
+                // DEBUG/TRACE 才输出完整 span 名称与字段，便于链路排查。
+                let show_full_span = *level <= tracing::Level::DEBUG;
+                if show_full_span {
+                    if self.with_ansi {
+                        write!(writer, " {}span={}", GREY, name)?;
+                        if !fields_str.is_empty() {
+                            write!(writer, " {}", fields_str.replace('=', "=").replace(' ', " "))?;
+                        }
+                        if let Some((ref tid, ref sid)) = otel_info {
+                            write!(writer, " trace_id={} span_id={}", tid, sid)?;
+                        }
+                        write!(writer, "{}", RESET)?;
+                    } else {
+                        write!(writer, " span={}", name)?;
+                        if !fields_str.is_empty() {
+                            write!(writer, " {}", fields_str)?;
+                        }
+                        if let Some((ref tid, ref sid)) = otel_info {
+                            write!(writer, " trace_id={} span_id={}", tid, sid)?;
+                        }
                     }
-                    if let Some((ref tid, ref sid)) = otel_info {
-                        write!(writer, " trace_id={} span_id={}", tid, sid)?;
-                    }
-                    write!(writer, "{}", RESET)?;
-                } else {
-                    write!(writer, " span={}", name)?;
-                    if !fields_str.is_empty() {
-                        write!(writer, " {}", fields_str)?;
-                    }
-                    if let Some((ref tid, ref sid)) = otel_info {
+                } else if let Some((ref tid, ref sid)) = otel_info {
+                    if self.with_ansi {
+                        write!(writer, " {}trace_id={} span_id={}{}", GREY, tid, sid, RESET)?;
+                    } else {
                         write!(writer, " trace_id={} span_id={}", tid, sid)?;
                     }
                 }
@@ -590,6 +601,16 @@ pub fn context_from_traceparent(traceparent: &str) -> Context {
 /// 运行时开关：控制 span enter/close 日志是否输出
 static SPAN_EVENTS_ENABLED: AtomicBool = AtomicBool::new(true);
 
+/// EnvFilter 风格日志级别覆盖（如 "info,rust_lib_flutter_rust_demo=debug"）
+static ENV_FILTER_OVERRIDE: Mutex<Option<String>> = Mutex::new(None);
+
+/// 设置 EnvFilter 风格过滤指令（init_otel_subscriber 前调用）
+pub fn set_env_filter_override(filter: &str) {
+    if let Ok(mut guard) = ENV_FILTER_OVERRIDE.lock() {
+        *guard = Some(filter.to_string());
+    }
+}
+
 /// 设置 span enter/close 日志开关
 pub fn set_span_events_enabled(enabled: bool) {
     SPAN_EVENTS_ENABLED.store(enabled, Ordering::Relaxed);
@@ -598,12 +619,24 @@ pub fn set_span_events_enabled(enabled: bool) {
 /// 初始化 OTel subscriber（文件 + OTel + 可选控制台）
 pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     // --- EnvFilter ---
-    // 默认 info，自己的 crate 开启 trace
+    // 默认 info；自己的 crate 级别由 LogConfig.log_level 控制
     let mut env_filter = tracing_subscriber::EnvFilter::builder()
         .with_default_directive(tracing_subscriber::filter::LevelFilter::INFO.into())
         .from_env_lossy();
+    let override_filter = ENV_FILTER_OVERRIDE.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let has_crate_override = override_filter.as_deref().is_some_and(|f| f.split(',').any(|p| p.trim_start().starts_with("rust_lib_flutter_rust_demo=")));
+    if !has_crate_override {
+        let crate_level = format!("{:?}", config.level_filter()).to_lowercase();
+        env_filter = env_filter.add_directive(format!("rust_lib_flutter_rust_demo={}", crate_level).parse().unwrap());
+    }
+    if let Some(filter) = override_filter {
+        for directive in filter.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            if let Ok(d) = directive.parse() {
+                env_filter = env_filter.add_directive(d);
+            }
+        }
+    }
     env_filter = env_filter
-        .add_directive("rust_lib_flutter_rust_demo=trace".parse().unwrap())
         .add_directive("hyper=warn".parse().unwrap())
         .add_directive("reqwest=warn".parse().unwrap())
         .add_directive("tower=warn".parse().unwrap())
@@ -697,5 +730,12 @@ mod tests {
         let span = span_from_remote_trace_id("test", "invalid", None);
         let _guard = span.enter();
         tracing::info!("test message");
+    }
+
+    #[test]
+    fn test_env_filter_expression_parses() {
+        let filter = tracing_subscriber::EnvFilter::try_new("info,rust_lib_flutter_rust_demo=debug").unwrap();
+        let directives = filter.to_string();
+        assert!(directives.contains("rust_lib_flutter_rust_demo=debug"), "{}", directives);
     }
 }
