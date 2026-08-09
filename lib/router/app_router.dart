@@ -14,7 +14,7 @@ import '../screens/user_profile_screen.dart';
 import '../ui/features/contacts/views/friend_list_screen.dart';
 import '../ui/features/contacts/views/friend_requests_screen.dart';
 import '../screens/friend_setup_screen.dart';
-import '../screens/group_list_screen.dart';
+import '../ui/features/groups/views/group_list_screen.dart';
 import '../screens/create_group_screen.dart';
 import '../screens/add_contact_screen.dart';
 import '../screens/contact_picker_screen.dart';

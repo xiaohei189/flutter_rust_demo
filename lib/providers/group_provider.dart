@@ -1,132 +1,37 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/group_repository.dart';
 import '../services/group_service.dart';
 import '../src/rust/ffi/client.dart' as fb;
 import '../src/rust/model/group.dart' show GroupInfo, GroupMember;
 import '../src/rust/http/group.dart' show GroupApplyInfo;
+import '../ui/features/groups/view_models/group_list_view_model.dart';
 import '../utils/app_logger.dart';
+import 'im_providers.dart';
 import 'message_service_provider.dart';
 
 // ==================== 群组列表 Provider ====================
 
-/// 群组列表状态
-class GroupListState {
-  final List<GroupInfo> groups;
-  final bool isLoading;
-  final bool isLoadingMore;
-  final bool hasMore;
-  final String? error;
+/// 群组 Repository Provider
+final groupRepositoryProvider = Provider<GroupRepository>((ref) {
+  return GroupRepositoryImpl(
+    groupService: GroupService.instance,
+    imClient: ref.watch(imClientProvider),
+  );
+});
 
-  const GroupListState({
-    this.groups = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
-    this.hasMore = true,
-    this.error,
-  });
-
-  GroupListState copyWith({
-    List<GroupInfo>? groups,
-    bool? isLoading,
-    bool? isLoadingMore,
-    bool? hasMore,
-    String? error,
-  }) {
-    return GroupListState(
-      groups: groups ?? this.groups,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
-      error: error,
-    );
-  }
-}
-
-/// 群组列表 Notifier
-class GroupListNotifier extends StateNotifier<GroupListState> {
-  GroupListNotifier(this._ref) : super(const GroupListState()) {
-    _init();
-  }
-
-  final Ref _ref;
-  int _offset = 0;
-
-  void _init() {
-    _ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision) {
-        loadGroups();
-      }
-    });
-  }
-
-  /// 获取客户端实例
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 加载群组列表
-  Future<void> loadGroups() async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, isLoadingMore: false, error: null);
-    try {
-      final groups = await GroupService.instance.getJoinedGroupListPage(
-        client,
-        offset: 0,
-        count: 50,
-      );
-      _offset = groups.length;
-      state = state.copyWith(
-        groups: groups,
-        isLoading: false,
-        hasMore: groups.length >= 50,
-      );
-    } catch (e) {
-      appLog.e('[GroupListProvider] 加载群组列表失败: $e');
-      state = state.copyWith(isLoading: false, error: '加载群组列表失败: $e');
-    }
-  }
-
-  /// 刷新群组列表
-  Future<void> refreshGroups() async {
-    await loadGroups();
-  }
-
-  Future<void> loadMoreGroups() async {
-    final client = _client;
-    if (client == null ||
-        state.isLoading ||
-        state.isLoadingMore ||
-        !state.hasMore) {
-      return;
-    }
-    state = state.copyWith(isLoadingMore: true);
-    try {
-      final more = await GroupService.instance.getJoinedGroupListPage(
-        client,
-        offset: _offset,
-        count: 50,
-      );
-      final merged = [...state.groups, ...more];
-      _offset = merged.length;
-      state = state.copyWith(
-        groups: merged,
-        isLoadingMore: false,
-        hasMore: more.length >= 50,
-      );
-    } catch (e) {
-      state = state.copyWith(isLoadingMore: false, error: '加载更多群组失败: $e');
-    }
-  }
-}
-
-/// 群组列表 Provider
+/// 群组列表 ViewModel Provider
 final groupListProvider =
-    StateNotifierProvider<GroupListNotifier, GroupListState>((ref) {
-      return GroupListNotifier(ref);
+    StateNotifierProvider<GroupListViewModel, GroupListState>((ref) {
+      final viewModel = GroupListViewModel(
+        repository: ref.watch(groupRepositoryProvider),
+      );
+      ref.listen(messageServiceProvider, (prev, next) {
+        if (prev?.groupRevision != next.groupRevision) {
+          viewModel.loadGroups();
+        }
+      });
+      return viewModel;
     });
 
 // ==================== 群成员 Provider ====================

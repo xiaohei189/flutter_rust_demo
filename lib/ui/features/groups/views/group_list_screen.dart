@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../providers/providers.dart';
-import '../src/rust/model/group.dart' show GroupInfo;
+import '../../../../domain/models/group.dart';
+import '../../../../providers/providers.dart';
 
 /// 我的群组页面
 class GroupListScreen extends ConsumerStatefulWidget {
@@ -96,7 +96,7 @@ class _GroupListScreenState extends ConsumerState<GroupListScreen>
 
 /// 群组 Tab 内容
 class _GroupTab extends StatelessWidget {
-  final List<GroupInfo> groups;
+  final List<Group> groups;
   final ScrollController? controller;
   final bool isLoadingMore;
 

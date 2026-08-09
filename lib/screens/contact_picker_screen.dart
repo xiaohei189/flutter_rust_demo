@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models/friend.dart';
+import '../domain/models/group.dart';
 import '../providers/providers.dart';
-import '../src/rust/model/group.dart' show GroupInfo;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
 import '../models/user.dart';
@@ -86,7 +86,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   }
 
   /// 获取过滤后的群组列表
-  List<GroupInfo> _getFilteredGroups(List<GroupInfo> groups) {
+  List<Group> _getFilteredGroups(List<Group> groups) {
     final excludeSet = widget.excludeIds?.toSet() ?? {};
     return groups.where((g) {
       if (excludeSet.contains(g.groupId)) return false;
@@ -129,23 +129,27 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
 
     for (final f in friendState.friends) {
       if (_selectedIds.contains(f.userId)) {
-        items.add(ContactPickItem(
-          id: f.userId,
-          name: f.remark.isNotEmpty ? f.remark : f.nickname,
-          avatarUrl: f.faceUrl,
-          isGroup: false,
-        ));
+        items.add(
+          ContactPickItem(
+            id: f.userId,
+            name: f.remark.isNotEmpty ? f.remark : f.nickname,
+            avatarUrl: f.faceUrl,
+            isGroup: false,
+          ),
+        );
       }
     }
 
     for (final g in groupState.groups) {
       if (_selectedIds.contains(g.groupId)) {
-        items.add(ContactPickItem(
-          id: g.groupId,
-          name: g.groupName,
-          avatarUrl: g.faceUrl,
-          isGroup: true,
-        ));
+        items.add(
+          ContactPickItem(
+            id: g.groupId,
+            name: g.groupName,
+            avatarUrl: g.faceUrl,
+            isGroup: true,
+          ),
+        );
       }
     }
 
@@ -196,10 +200,9 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
         ],
       ),
       // 多选模式下的底部栏
-      bottomNavigationBar:
-          widget.multiSelect && _selectedIds.isNotEmpty
-              ? _buildBottomBar()
-              : null,
+      bottomNavigationBar: widget.multiSelect && _selectedIds.isNotEmpty
+          ? _buildBottomBar()
+          : null,
     );
   }
 
@@ -213,7 +216,11 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
         onChanged: (v) => setState(() => _keyword = v),
         decoration: InputDecoration(
           hintText: '搜索联系人/群组',
-          prefixIcon: const Icon(Icons.search, size: 20, color: AppTheme.textSecondaryColor),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 20,
+            color: AppTheme.textSecondaryColor,
+          ),
           suffixIcon: _keyword.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.close, size: 18),
@@ -229,8 +236,14 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
           ),
           filled: true,
           fillColor: AppTheme.backgroundColor,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintStyle: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+          hintStyle: const TextStyle(
+            color: AppTheme.textSecondaryColor,
+            fontSize: 14,
+          ),
         ),
         style: const TextStyle(fontSize: 14),
       ),
@@ -238,7 +251,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   }
 
   /// 联系人列表
-  Widget _buildContactList(List<Friend> friends, List<GroupInfo> groups) {
+  Widget _buildContactList(List<Friend> friends, List<Group> groups) {
     final hasFriends = friends.isNotEmpty;
     final hasGroups = groups.isNotEmpty;
 
@@ -246,7 +259,10 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
       return Center(
         child: Text(
           _keyword.isEmpty ? '暂无联系人' : '未找到匹配结果',
-          style: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 15),
+          style: const TextStyle(
+            color: AppTheme.textSecondaryColor,
+            fontSize: 15,
+          ),
         ),
       );
     }
@@ -299,16 +315,20 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   /// 好友列表项
   Widget _buildFriendItem(Friend friend) {
     final id = friend.userId;
-    final displayName = friend.remark.isNotEmpty ? friend.remark : friend.nickname;
+    final displayName = friend.remark.isNotEmpty
+        ? friend.remark
+        : friend.nickname;
     final isSelected = _selectedIds.contains(id);
 
     return InkWell(
-      onTap: () => _toggleSelection(ContactPickItem(
-        id: id,
-        name: displayName,
-        avatarUrl: friend.faceUrl,
-        isGroup: false,
-      )),
+      onTap: () => _toggleSelection(
+        ContactPickItem(
+          id: id,
+          name: displayName,
+          avatarUrl: friend.faceUrl,
+          isGroup: false,
+        ),
+      ),
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -352,12 +372,14 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
             if (widget.multiSelect)
               Checkbox(
                 value: isSelected,
-                onChanged: (_) => _toggleSelection(ContactPickItem(
-                  id: id,
-                  name: displayName,
-                  avatarUrl: friend.faceUrl,
-                  isGroup: false,
-                )),
+                onChanged: (_) => _toggleSelection(
+                  ContactPickItem(
+                    id: id,
+                    name: displayName,
+                    avatarUrl: friend.faceUrl,
+                    isGroup: false,
+                  ),
+                ),
                 activeColor: AppTheme.primaryColor,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -368,17 +390,19 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   }
 
   /// 群组列表项
-  Widget _buildGroupItem(GroupInfo group) {
+  Widget _buildGroupItem(Group group) {
     final id = group.groupId;
     final isSelected = _selectedIds.contains(id);
 
     return InkWell(
-      onTap: () => _toggleSelection(ContactPickItem(
-        id: id,
-        name: group.groupName,
-        avatarUrl: group.faceUrl,
-        isGroup: true,
-      )),
+      onTap: () => _toggleSelection(
+        ContactPickItem(
+          id: id,
+          name: group.groupName,
+          avatarUrl: group.faceUrl,
+          isGroup: true,
+        ),
+      ),
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -419,12 +443,14 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
             if (widget.multiSelect)
               Checkbox(
                 value: isSelected,
-                onChanged: (_) => _toggleSelection(ContactPickItem(
-                  id: id,
-                  name: group.groupName,
-                  avatarUrl: group.faceUrl,
-                  isGroup: true,
-                )),
+                onChanged: (_) => _toggleSelection(
+                  ContactPickItem(
+                    id: id,
+                    name: group.groupName,
+                    avatarUrl: group.faceUrl,
+                    isGroup: true,
+                  ),
+                ),
                 activeColor: AppTheme.primaryColor,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -466,7 +492,9 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+              disabledBackgroundColor: AppTheme.primaryColor.withValues(
+                alpha: 0.5,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
