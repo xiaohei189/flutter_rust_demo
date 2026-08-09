@@ -65,7 +65,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _messageService = ref.read(messageServiceProvider.notifier);
-    _messageService?.setActiveConversation(widget.conversationId);
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
     _messageListSubscription = ref
@@ -185,7 +184,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _messageListSubscription?.cancel();
-    _messageService?.setActiveConversation('');
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
     _loadingNotifier.dispose();

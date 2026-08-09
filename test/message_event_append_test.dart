@@ -27,11 +27,11 @@ MessageInfo _makeMessage(String clientMsgId, int seq, int sendTime) => MessageIn
 
 void main() {
   group('MessageServiceNotifier 新消息事件', () {
-    test('收到 newMessage 事件后消息列表自动追加', () async {
+    test('收到 newMessage 事件后消息列表自动追加', () {
       final notifier = MessageServiceNotifier();
       final message = _makeMessage('m1', 1, 1000);
 
-      await notifier.onMessageEventForTest(
+      notifier.onMessageEventForTest(
         MessageEvent.newMessage(
           conversationId: 'si_user_a_user_b',
           message: message,
@@ -44,29 +44,29 @@ void main() {
       expect(list.first.content, contains('hello'));
     });
 
-    test('重复新消息事件不会重复追加', () async {
+    test('重复新消息事件不会重复追加', () {
       final notifier = MessageServiceNotifier();
       final event = MessageEvent.newMessage(
         conversationId: 'si_user_a_user_b',
         message: _makeMessage('m1', 1, 1000),
       );
 
-      await notifier.onMessageEventForTest(event);
-      await notifier.onMessageEventForTest(event);
+      notifier.onMessageEventForTest(event);
+      notifier.onMessageEventForTest(event);
 
       expect(notifier.getMessages('si_user_a_user_b').length, 1);
     });
 
-    test('不同会话的新消息写入各自列表', () async {
+    test('不同会话的新消息写入各自列表', () {
       final notifier = MessageServiceNotifier();
 
-      await notifier.onMessageEventForTest(
+      notifier.onMessageEventForTest(
         MessageEvent.newMessage(
           conversationId: 'si_a_b',
           message: _makeMessage('m1', 1, 1000),
         ),
       );
-      await notifier.onMessageEventForTest(
+      notifier.onMessageEventForTest(
         MessageEvent.newMessage(
           conversationId: 'g_group1',
           message: _makeMessage('m2', 2, 2000),
