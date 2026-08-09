@@ -56,9 +56,7 @@ impl HttpApiClient {
     pub async fn post<T: Serialize, R: for<'de> Deserialize<'de> + Default>(&self, route: &str, body: &T) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
-        // 请求体仅在 trace 级别输出，避免默认日志刷屏
         let body_json = serde_json::to_string(body).unwrap_or_default();
-        tracing::trace!("[HTTP] POST {} Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
         let response = self
@@ -75,9 +73,9 @@ impl HttpApiClient {
         let status = response.status().as_u16();
 
         if !response.status().is_success() {
-            let body = response.text().await.unwrap_or_default();
-            tracing::error!("[HTTP] POST {} 失败 - 状态码: {}, Body: {}, 耗时: {:?}", route, status, body, duration);
-            return Err(SdkError::http(status, format!("HTTP 错误: {}", body)));
+            let resp_body = response.text().await.unwrap_or_default();
+            tracing::error!("[HTTP] POST {} 失败 - 状态码: {}, 耗时: {:?}, 请求: {}, 响应: {}", route, status, duration, body_json, resp_body);
+            return Err(SdkError::http(status, format!("HTTP 错误: {}", resp_body)));
         }
 
         // 先读取原始响应，再解析
@@ -85,15 +83,15 @@ impl HttpApiClient {
         let raw_str = String::from_utf8_lossy(&raw_bytes);
 
         let api_resp: ApiResponse<R> = serde_json::from_slice(&raw_bytes).map_err(|e| {
-            tracing::error!("[HTTP] POST {} 解析失败: {} - Raw: {}, 耗时: {:?}", route, e, raw_str, duration);
+            tracing::error!("[HTTP] POST {} 解析失败: {} - 耗时: {:?}, 请求: {}, 响应: {}", route, e, duration, body_json, raw_str);
             SdkError::unknown(&format!("响应解析错误: {}", e))
         })?;
 
         // 业务错误用 error，成功用 info
         if api_resp.err_code != 0 {
-            tracing::error!("[HTTP] POST {} 业务错误: errCode={} errMsg={}, 耗时: {:?}", route, api_resp.err_code, api_resp.err_msg, duration);
+            tracing::error!("[HTTP] POST {} 业务错误: errCode={} errMsg={}, 耗时: {:?}, 请求: {}", route, api_resp.err_code, api_resp.err_msg, duration, body_json);
         } else {
-            tracing::info!("[HTTP] POST {} 成功 - 状态码: {}, 耗时: {:?}", route, status, duration);
+            tracing::info!("[HTTP] POST {} 成功 - 状态码: {}, 耗时: {:?}, 请求: {}", route, status, duration, body_json);
         }
         api_resp.into_result()
     }
@@ -101,9 +99,7 @@ impl HttpApiClient {
     pub async fn post_no_auth<T: Serialize, R: for<'de> Deserialize<'de> + Default>(&self, route: &str, body: &T) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
-        // 请求体仅在 trace 级别输出，避免默认日志刷屏
         let body_json = serde_json::to_string(body).unwrap_or_default();
-        tracing::trace!("[HTTP] POST {} (no_auth) Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
         let response = self.client.post(&url).timeout(self.timeout).json(body).send().await?;
@@ -112,16 +108,16 @@ impl HttpApiClient {
         let status = response.status().as_u16();
 
         if !response.status().is_success() {
-            let body = response.text().await.unwrap_or_default();
-            tracing::error!("[HTTP] POST {} 失败 - 状态码: {}, Body: {}, 耗时: {:?}", route, status, body, duration);
-            return Err(SdkError::http(status, format!("HTTP 错误: {}", body)));
+            let resp_body = response.text().await.unwrap_or_default();
+            tracing::error!("[HTTP] POST {} (no_auth) 失败 - 状态码: {}, 耗时: {:?}, 请求: {}, 响应: {}", route, status, duration, body_json, resp_body);
+            return Err(SdkError::http(status, format!("HTTP 错误: {}", resp_body)));
         }
 
         let api_resp: ApiResponse<R> = response.json().await?;
         if api_resp.err_code != 0 {
-            tracing::error!("[HTTP] POST {} 业务错误: errCode={} errMsg={}, 耗时: {:?}", route, api_resp.err_code, api_resp.err_msg, duration);
+            tracing::error!("[HTTP] POST {} (no_auth) 业务错误: errCode={} errMsg={}, 耗时: {:?}, 请求: {}", route, api_resp.err_code, api_resp.err_msg, duration, body_json);
         } else {
-            tracing::info!("[HTTP] POST {} 成功 - 状态码: {}, 耗时: {:?}", route, status, duration);
+            tracing::info!("[HTTP] POST {} (no_auth) 成功 - 状态码: {}, 耗时: {:?}, 请求: {}", route, status, duration, body_json);
         }
         api_resp.into_result()
     }
