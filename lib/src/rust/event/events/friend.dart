@@ -22,6 +22,8 @@ sealed class FriendEvent with _$FriendEvent {
       FriendEvent_BlackDeleted;
   const factory FriendEvent.applicationAdded(String field0) =
       FriendEvent_ApplicationAdded;
+  const factory FriendEvent.applicationDeleted(String field0) =
+      FriendEvent_ApplicationDeleted;
   const factory FriendEvent.applicationAccepted(String field0) =
       FriendEvent_ApplicationAccepted;
   const factory FriendEvent.applicationRejected(String field0) =

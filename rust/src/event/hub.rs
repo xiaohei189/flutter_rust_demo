@@ -211,6 +211,10 @@ impl FriendListener for EventHub {
         info!("[EventHub] friend 回调: application_added, payload_len={}", user_id.len());
         let _ = self.friend_tx.send(FriendEvent::ApplicationAdded(user_id.to_string()));
     }
+    fn on_application_deleted(&self, user_id: &str) {
+        info!("[EventHub] friend 回调: application_deleted, payload_len={}", user_id.len());
+        let _ = self.friend_tx.send(FriendEvent::ApplicationDeleted(user_id.to_string()));
+    }
     fn on_application_accepted(&self, user_id: &str) {
         info!("[EventHub] friend 回调: application_accepted, payload_len={}", user_id.len());
         let _ = self.friend_tx.send(FriendEvent::ApplicationAccepted(user_id.to_string()));
@@ -234,13 +238,17 @@ impl GroupListener for EventHub {
         info!("[EventHub] group 回调: group_info_changed, group_id={}", group.group_id);
         let _ = self.group_tx.send(GroupEvent::GroupInfoChanged(group.clone()));
     }
-    fn on_member_added(&self, group_id: &str) {
-        info!("[EventHub] group 回调: member_added, group_id={}", group_id);
-        let _ = self.group_tx.send(GroupEvent::MemberAdded(group_id.to_string()));
+    fn on_member_added(&self, member: &crate::model::group::GroupMember) {
+        info!("[EventHub] group 回调: member_added, group_id={}, user_id={}", member.group_id, member.user_id);
+        let _ = self.group_tx.send(GroupEvent::MemberAdded(member.clone()));
     }
-    fn on_member_deleted(&self, group_id: &str) {
-        info!("[EventHub] group 回调: member_deleted, group_id={}", group_id);
-        let _ = self.group_tx.send(GroupEvent::MemberDeleted(group_id.to_string()));
+    fn on_member_deleted(&self, member: &crate::model::group::GroupMember) {
+        info!("[EventHub] group 回调: member_deleted, group_id={}, user_id={}", member.group_id, member.user_id);
+        let _ = self.group_tx.send(GroupEvent::MemberDeleted(member.clone()));
+    }
+    fn on_member_info_changed(&self, member: &crate::model::group::GroupMember) {
+        info!("[EventHub] group 回调: member_info_changed, group_id={}, user_id={}", member.group_id, member.user_id);
+        let _ = self.group_tx.send(GroupEvent::MemberInfoChanged(member.clone()));
     }
     fn on_group_read_receipt(&self, receipts: &[GroupReadReceipt]) {
         info!("[EventHub] group 回调: group_read_receipt, count={}", receipts.len());
@@ -250,6 +258,10 @@ impl GroupListener for EventHub {
         info!("[EventHub] group 回调: application_added, payload_len={}", group_id.len());
         let _ = self.group_tx.send(GroupEvent::ApplicationAdded(group_id.to_string()));
     }
+    fn on_application_deleted(&self, group_id: &str) {
+        info!("[EventHub] group 回调: application_deleted, payload_len={}", group_id.len());
+        let _ = self.group_tx.send(GroupEvent::ApplicationDeleted(group_id.to_string()));
+    }
     fn on_application_approved(&self, group_id: &str) {
         info!("[EventHub] group 回调: application_approved, payload_len={}", group_id.len());
         let _ = self.group_tx.send(GroupEvent::ApplicationApproved(group_id.to_string()));
@@ -257,6 +269,10 @@ impl GroupListener for EventHub {
     fn on_application_rejected(&self, group_id: &str) {
         info!("[EventHub] group 回调: application_rejected, payload_len={}", group_id.len());
         let _ = self.group_tx.send(GroupEvent::ApplicationRejected(group_id.to_string()));
+    }
+    fn on_dismissed(&self, group: &GroupInfo) {
+        info!("[EventHub] group 回调: dismissed, group_id={}", group.group_id);
+        let _ = self.group_tx.send(GroupEvent::Dismissed(group.clone()));
     }
 }
 
@@ -410,6 +426,27 @@ mod tests {
         conv.on_changed(&[]);
         friend.on_added(&[]);
         group.on_joined_group_added(&GroupInfo {
+            group_id: "g1".to_string(),
+            group_name: "Test".to_string(),
+            face_url: String::new(),
+            introduction: String::new(),
+            notification: String::new(),
+            owner_user_id: String::new(),
+            create_time: 0,
+            member_count: 0,
+            status: 0,
+        });
+        group.on_application_deleted("application_json");
+        group.on_member_info_changed(&crate::model::group::GroupMember {
+            group_id: "g1".into(),
+            user_id: "u1".into(),
+            nickname: "Test".into(),
+            face_url: String::new(),
+            role_level: 1,
+            join_time: 1000,
+            join_source: "1".into(),
+        });
+        group.on_dismissed(&GroupInfo {
             group_id: "g1".to_string(),
             group_name: "Test".to_string(),
             face_url: String::new(),

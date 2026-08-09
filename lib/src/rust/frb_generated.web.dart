@@ -149,6 +149,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GroupInfo dco_decode_box_autoadd_group_info(dynamic raw);
 
   @protected
+  GroupMember dco_decode_box_autoadd_group_member(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_i_32(dynamic raw);
 
   @protected
@@ -605,6 +608,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   GroupInfo sse_decode_box_autoadd_group_info(SseDeserializer deserializer);
+
+  @protected
+  GroupMember sse_decode_box_autoadd_group_member(SseDeserializer deserializer);
 
   @protected
   int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
@@ -1168,6 +1174,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_group_info(
     GroupInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_group_member(
+    GroupMember self,
     SseSerializer serializer,
   );
 

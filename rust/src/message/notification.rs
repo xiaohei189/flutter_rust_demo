@@ -142,12 +142,14 @@ impl NotificationHandler {
             | notification_type::GROUP_MEMBER_CANCEL_MUTED
             | notification_type::GROUP_MUTED
             | notification_type::GROUP_CANCEL_MUTED
-            | notification_type::GROUP_MEMBER_INFO_SET
             | notification_type::GROUP_MEMBER_SET_TO_ADMIN
             | notification_type::GROUP_MEMBER_SET_TO_ORDINARY_USER
             | notification_type::GROUP_INFO_SET_ANNOUNCEMENT
             | notification_type::GROUP_INFO_SET_NAME => {
                 self.handle_group_info_changed(msg).await;
+            }
+            notification_type::GROUP_MEMBER_INFO_SET => {
+                self.handle_group_member_info_changed(msg).await;
             }
             notification_type::MEMBER_QUIT | notification_type::MEMBER_KICKED => {
                 self.handle_group_member_deleted(msg).await;
@@ -415,22 +417,70 @@ impl NotificationHandler {
     }
 
     async fn handle_group_member_added(&self, msg: &MsgData) {
-        let group_id = self.parse_group_id(&msg.content);
+        let detail: GroupMemberJoinedTipsJson = unmarshal_notification_elem(&msg.content).unwrap_or_default();
+        let group_id = detail
+            .group
+            .as_ref()
+            .map(|g| g.group_id.clone())
+            .unwrap_or_default();
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
         if !group_id.is_empty() {
-            self.group_listener.emit(GroupEvent::MemberAdded(group_id));
+            let user = detail
+                .invited_user_list
+                .first()
+                .or(detail.entrant_user.as_ref());
+            if let Some(user) = user {
+                self.group_listener.emit(GroupEvent::MemberAdded(self.group_member(group_id, user)));
+            }
         }
     }
 
     async fn handle_group_member_deleted(&self, msg: &MsgData) {
-        let group_id = self.parse_group_id(&msg.content);
+        let detail: GroupMemberRemovedTipsJson = unmarshal_notification_elem(&msg.content).unwrap_or_default();
+        let group_id = detail
+            .group
+            .as_ref()
+            .map(|g| g.group_id.clone())
+            .unwrap_or_default();
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
         if !group_id.is_empty() {
-            self.group_listener.emit(GroupEvent::MemberDeleted(group_id));
+            let user = detail.quit_user.as_ref().or_else(|| detail.kicked_user_list.first());
+            if let Some(user) = user {
+                self.group_listener.emit(GroupEvent::MemberDeleted(self.group_member(group_id, user)));
+            }
+        }
+    }
+
+    async fn handle_group_member_info_changed(&self, msg: &MsgData) {
+        let detail: GroupMemberInfoSetTipsJson = unmarshal_notification_elem(&msg.content).unwrap_or_default();
+        let group_id = detail
+            .group
+            .as_ref()
+            .map(|g| g.group_id.clone())
+            .unwrap_or_default();
+        if let Err(e) = self.group_manager.sync_groups_incremental().await {
+            warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
+        }
+        if !group_id.is_empty() {
+            if let Some(user) = &detail.changed_user {
+                self.group_listener.emit(GroupEvent::MemberInfoChanged(self.group_member(group_id, user)));
+            }
+        }
+    }
+
+    fn group_member(&self, group_id: String, user: &PublicUserInfoJson) -> crate::model::group::GroupMember {
+        crate::model::group::GroupMember {
+            group_id,
+            user_id: user.user_id.clone(),
+            nickname: user.nickname.clone(),
+            face_url: user.face_url.clone(),
+            role_level: 0,
+            join_time: 0,
+            join_source: String::new(),
         }
     }
 
@@ -442,7 +492,7 @@ impl NotificationHandler {
         if !group_id.is_empty() {
             if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
                 if let Some(group) = groups.into_iter().next() {
-                    self.group_listener.emit(GroupEvent::JoinedGroupDeleted(group));
+                    self.group_listener.emit(GroupEvent::Dismissed(group));
                 }
             }
         }
@@ -588,15 +638,43 @@ mod tests {
 
         let msg = MsgData {
             content_type: crate::constant::notification_type::MEMBER_INVITED,
-            content: br#"{"detail":"{\"groupID\":\"group_1\"}"}"#.to_vec(),
+            content: br#"{"detail":"{\"group\":{\"groupID\":\"group_1\"},\"invitedUserList\":[{\"userID\":\"user_9\"}]}"}"#.to_vec(),
             ..Default::default()
         };
         handler.handle_single_notification(&msg).await.unwrap();
 
         let event = rx.try_recv().expect("应发布群成员加入事件");
         match event {
-            GroupEvent::MemberAdded(group_id) => assert_eq!(group_id, "group_1"),
+            GroupEvent::MemberAdded(member) => {
+                assert_eq!(member.group_id, "group_1");
+                assert_eq!(member.user_id, "user_9");
+            }
             other => panic!("期望 MemberAdded，实际 {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_notification_group_member_info_changed_dispatch() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut rx = hub.take_group_rx().unwrap();
+        let handler = make_handler_with_hub(pool, &hub);
+
+        let msg = MsgData {
+            content_type: crate::constant::notification_type::GROUP_MEMBER_INFO_SET,
+            content: br#"{"detail":"{\"group\":{\"groupID\":\"group_1\"},\"changedUser\":{\"userID\":\"user_9\",\"nickname\":\"NewName\"}}"}"#.to_vec(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        let event = rx.try_recv().expect("应发布群成员信息变更事件");
+        match event {
+            GroupEvent::MemberInfoChanged(member) => {
+                assert_eq!(member.group_id, "group_1");
+                assert_eq!(member.user_id, "user_9");
+                assert_eq!(member.nickname, "NewName");
+            }
+            other => panic!("期望 MemberInfoChanged，实际 {:?}", other),
         }
     }
 

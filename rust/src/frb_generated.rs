@@ -6109,9 +6109,13 @@ impl SseDecode for crate::event::events::friend::FriendEvent {
             }
             6 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::event::events::friend::FriendEvent::ApplicationAccepted(var_field0);
+                return crate::event::events::friend::FriendEvent::ApplicationDeleted(var_field0);
             }
             7 => {
+                let mut var_field0 = <String>::sse_decode(deserializer);
+                return crate::event::events::friend::FriendEvent::ApplicationAccepted(var_field0);
+            }
+            8 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
                 return crate::event::events::friend::FriendEvent::ApplicationRejected(var_field0);
             }
@@ -6212,28 +6216,40 @@ impl SseDecode for crate::event::events::group::GroupEvent {
                 return crate::event::events::group::GroupEvent::GroupInfoChanged(var_field0);
             }
             3 => {
-                let mut var_field0 = <String>::sse_decode(deserializer);
+                let mut var_field0 = <crate::model::group::GroupMember>::sse_decode(deserializer);
                 return crate::event::events::group::GroupEvent::MemberAdded(var_field0);
             }
             4 => {
-                let mut var_field0 = <String>::sse_decode(deserializer);
+                let mut var_field0 = <crate::model::group::GroupMember>::sse_decode(deserializer);
                 return crate::event::events::group::GroupEvent::MemberDeleted(var_field0);
             }
             5 => {
+                let mut var_field0 = <crate::model::group::GroupMember>::sse_decode(deserializer);
+                return crate::event::events::group::GroupEvent::MemberInfoChanged(var_field0);
+            }
+            6 => {
                 let mut var_field0 = <Vec<crate::event::events::message::GroupReadReceipt>>::sse_decode(deserializer);
                 return crate::event::events::group::GroupEvent::GroupReadReceipt(var_field0);
             }
-            6 => {
+            7 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
                 return crate::event::events::group::GroupEvent::ApplicationAdded(var_field0);
             }
-            7 => {
+            8 => {
+                let mut var_field0 = <String>::sse_decode(deserializer);
+                return crate::event::events::group::GroupEvent::ApplicationDeleted(var_field0);
+            }
+            9 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
                 return crate::event::events::group::GroupEvent::ApplicationApproved(var_field0);
             }
-            8 => {
+            10 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
                 return crate::event::events::group::GroupEvent::ApplicationRejected(var_field0);
+            }
+            11 => {
+                let mut var_field0 = <crate::model::group::GroupInfo>::sse_decode(deserializer);
+                return crate::event::events::group::GroupEvent::Dismissed(var_field0);
             }
             _ => {
                 unimplemented!("");
@@ -8026,8 +8042,9 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::friend::FriendEvent
             crate::event::events::friend::FriendEvent::BlackAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::friend::FriendEvent::BlackDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::friend::FriendEvent::ApplicationAdded(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::friend::FriendEvent::ApplicationAccepted(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::friend::FriendEvent::ApplicationRejected(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::friend::FriendEvent::ApplicationDeleted(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::friend::FriendEvent::ApplicationAccepted(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::friend::FriendEvent::ApplicationRejected(field0) => [8.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -8121,10 +8138,13 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::group::GroupEvent {
             crate::event::events::group::GroupEvent::GroupInfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::group::GroupEvent::MemberAdded(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::group::GroupEvent::MemberDeleted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::group::GroupEvent::GroupReadReceipt(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::group::GroupEvent::ApplicationAdded(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::group::GroupEvent::ApplicationApproved(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::group::GroupEvent::ApplicationRejected(field0) => [8.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::MemberInfoChanged(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::GroupReadReceipt(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::ApplicationAdded(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::ApplicationDeleted(field0) => [8.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::ApplicationApproved(field0) => [9.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::ApplicationRejected(field0) => [10.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::group::GroupEvent::Dismissed(field0) => [11.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -9218,12 +9238,16 @@ impl SseEncode for crate::event::events::friend::FriendEvent {
                 <i32>::sse_encode(5, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::event::events::friend::FriendEvent::ApplicationAccepted(field0) => {
+            crate::event::events::friend::FriendEvent::ApplicationDeleted(field0) => {
                 <i32>::sse_encode(6, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::event::events::friend::FriendEvent::ApplicationRejected(field0) => {
+            crate::event::events::friend::FriendEvent::ApplicationAccepted(field0) => {
                 <i32>::sse_encode(7, serializer);
+                <String>::sse_encode(field0, serializer);
+            }
+            crate::event::events::friend::FriendEvent::ApplicationRejected(field0) => {
+                <i32>::sse_encode(8, serializer);
                 <String>::sse_encode(field0, serializer);
             }
             _ => {
@@ -9295,27 +9319,39 @@ impl SseEncode for crate::event::events::group::GroupEvent {
             }
             crate::event::events::group::GroupEvent::MemberAdded(field0) => {
                 <i32>::sse_encode(3, serializer);
-                <String>::sse_encode(field0, serializer);
+                <crate::model::group::GroupMember>::sse_encode(field0, serializer);
             }
             crate::event::events::group::GroupEvent::MemberDeleted(field0) => {
                 <i32>::sse_encode(4, serializer);
-                <String>::sse_encode(field0, serializer);
+                <crate::model::group::GroupMember>::sse_encode(field0, serializer);
+            }
+            crate::event::events::group::GroupEvent::MemberInfoChanged(field0) => {
+                <i32>::sse_encode(5, serializer);
+                <crate::model::group::GroupMember>::sse_encode(field0, serializer);
             }
             crate::event::events::group::GroupEvent::GroupReadReceipt(field0) => {
-                <i32>::sse_encode(5, serializer);
+                <i32>::sse_encode(6, serializer);
                 <Vec<crate::event::events::message::GroupReadReceipt>>::sse_encode(field0, serializer);
             }
             crate::event::events::group::GroupEvent::ApplicationAdded(field0) => {
-                <i32>::sse_encode(6, serializer);
-                <String>::sse_encode(field0, serializer);
-            }
-            crate::event::events::group::GroupEvent::ApplicationApproved(field0) => {
                 <i32>::sse_encode(7, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::event::events::group::GroupEvent::ApplicationRejected(field0) => {
+            crate::event::events::group::GroupEvent::ApplicationDeleted(field0) => {
                 <i32>::sse_encode(8, serializer);
                 <String>::sse_encode(field0, serializer);
+            }
+            crate::event::events::group::GroupEvent::ApplicationApproved(field0) => {
+                <i32>::sse_encode(9, serializer);
+                <String>::sse_encode(field0, serializer);
+            }
+            crate::event::events::group::GroupEvent::ApplicationRejected(field0) => {
+                <i32>::sse_encode(10, serializer);
+                <String>::sse_encode(field0, serializer);
+            }
+            crate::event::events::group::GroupEvent::Dismissed(field0) => {
+                <i32>::sse_encode(11, serializer);
+                <crate::model::group::GroupInfo>::sse_encode(field0, serializer);
             }
             _ => {
                 unimplemented!("");

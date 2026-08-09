@@ -9,6 +9,7 @@ pub enum FriendEvent {
     BlackAdded(String),
     BlackDeleted(String),
     ApplicationAdded(String),
+    ApplicationDeleted(String),
     ApplicationAccepted(String),
     ApplicationRejected(String),
 }
@@ -23,6 +24,7 @@ impl FriendEvent {
             FriendEvent::BlackAdded(_) => "black_added",
             FriendEvent::BlackDeleted(_) => "black_deleted",
             FriendEvent::ApplicationAdded(_) => "application_added",
+            FriendEvent::ApplicationDeleted(_) => "application_deleted",
             FriendEvent::ApplicationAccepted(_) => "application_accepted",
             FriendEvent::ApplicationRejected(_) => "application_rejected",
         }
@@ -37,6 +39,7 @@ pub trait FriendListener: Send + Sync {
     fn on_black_added(&self, _user_id: &str) {}
     fn on_black_deleted(&self, _user_id: &str) {}
     fn on_application_added(&self, _user_id: &str) {}
+    fn on_application_deleted(&self, _user_id: &str) {}
     fn on_application_accepted(&self, _user_id: &str) {}
     fn on_application_rejected(&self, _user_id: &str) {}
 }
@@ -51,6 +54,7 @@ pub trait FriendListenerExt: FriendListener {
             FriendEvent::BlackAdded(user_id) => self.on_black_added(&user_id),
             FriendEvent::BlackDeleted(user_id) => self.on_black_deleted(&user_id),
             FriendEvent::ApplicationAdded(user_id) => self.on_application_added(&user_id),
+            FriendEvent::ApplicationDeleted(user_id) => self.on_application_deleted(&user_id),
             FriendEvent::ApplicationAccepted(user_id) => self.on_application_accepted(&user_id),
             FriendEvent::ApplicationRejected(user_id) => self.on_application_rejected(&user_id),
         }

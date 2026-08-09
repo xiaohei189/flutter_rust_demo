@@ -20,15 +20,21 @@ sealed class GroupEvent with _$GroupEvent {
       GroupEvent_JoinedGroupDeleted;
   const factory GroupEvent.groupInfoChanged(GroupInfo field0) =
       GroupEvent_GroupInfoChanged;
-  const factory GroupEvent.memberAdded(String field0) = GroupEvent_MemberAdded;
-  const factory GroupEvent.memberDeleted(String field0) =
+  const factory GroupEvent.memberAdded(GroupMember field0) =
+      GroupEvent_MemberAdded;
+  const factory GroupEvent.memberDeleted(GroupMember field0) =
       GroupEvent_MemberDeleted;
+  const factory GroupEvent.memberInfoChanged(GroupMember field0) =
+      GroupEvent_MemberInfoChanged;
   const factory GroupEvent.groupReadReceipt(List<GroupReadReceipt> field0) =
       GroupEvent_GroupReadReceipt;
   const factory GroupEvent.applicationAdded(String field0) =
       GroupEvent_ApplicationAdded;
+  const factory GroupEvent.applicationDeleted(String field0) =
+      GroupEvent_ApplicationDeleted;
   const factory GroupEvent.applicationApproved(String field0) =
       GroupEvent_ApplicationApproved;
   const factory GroupEvent.applicationRejected(String field0) =
       GroupEvent_ApplicationRejected;
+  const factory GroupEvent.dismissed(GroupInfo field0) = GroupEvent_Dismissed;
 }

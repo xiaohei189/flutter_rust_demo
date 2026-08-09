@@ -19,9 +19,10 @@
 | `on_connecting()` | 开始连接 |
 | `on_connected()` | 连接成功 |
 | `on_disconnected(reason: &str)` | 连接断开 |
-| `on_connect_failed(error: &str)` | 连接失败（预留） |
+| `on_connect_failed(err_code: i32, error: &str)` | 连接失败（含服务端错误码） |
 | `on_kicked_offline(reason: &str)` | 被踢下线 |
-| `on_token_expired()` | Token 过期/无效 |
+| `on_token_expired()` | Token 过期 |
+| `on_token_invalid(error: &str)` | Token 无效（非过期类错误） |
 | `on_reconnecting(attempt: u32, max_attempts: u32)` | 开始重连 |
 | `on_login_success(user_id: &str)` | 登录成功 |
 | `on_logout()` | 登出 |
@@ -34,8 +35,8 @@
 | `on_deleted(ids: &[String])` | 会话删除 |
 | `on_new(conversations: &[LocalConversation])` | 新会话（预留） |
 | `on_total_unread_count_changed(count: i64)` | 总未读数变化 |
-| `on_sync_started()` / `on_sync_finished()` | 同步开始/完成 |
-| `on_sync_failed(error: &str)` | 同步失败 |
+| `on_sync_started(reinstalled: bool)` / `on_sync_finished(reinstalled: bool)` | 同步开始/完成（含重装标志） |
+| `on_sync_failed(reinstalled: bool, error: &str)` | 同步失败（含重装标志） |
 | `on_sync_progress(progress: i32, message: &str)` | 同步进度 |
 | `on_user_input_status_changed(conversation_id, user_id, platform_ids: &[i32])` | 输入状态（typing） |
 | `on_update_latest_message_read_state(conversation_id: &str)` | 最新消息已读状态 |
@@ -48,7 +49,7 @@
 | `on_deleted(user_id: &str)` | 好友删除 |
 | `on_info_changed(friends: &[FriendInfo])` | 好友信息变更（预留） |
 | `on_black_added(user_id: &str)` / `on_black_deleted(user_id: &str)` | 黑名单增删 |
-| `on_application_added(user_id: &str)` | 收到好友申请 |
+| `on_application_added(user_id: &str)` / `on_application_deleted(user_id: &str)` | 好友申请新增/删除 |
 | `on_application_accepted(user_id: &str)` / `on_application_rejected(user_id: &str)` | 申请被接受/拒绝 |
 
 ### 1.4 GroupListener — 群组（group.rs，9 个）
@@ -58,10 +59,12 @@
 | `on_joined_group_added(group: &GroupInfo)` | 加入新群（预留） |
 | `on_joined_group_deleted(group: &GroupInfo)` | 退群/被踢（预留） |
 | `on_group_info_changed(group: &GroupInfo)` | 群信息变更（预留） |
-| `on_member_added(group_id: &str)` / `on_member_deleted(group_id: &str)` | 成员增删（预留） |
+| `on_member_added(member: &GroupMember)` / `on_member_deleted(member: &GroupMember)` | 成员增删 |
+| `on_member_info_changed(member: &GroupMember)` | 成员信息变更 |
 | `on_group_read_receipt(receipts: &[GroupReadReceipt])` | 群已读回执（预留） |
-| `on_application_added(group_id: &str)` | 收到入群申请 |
+| `on_application_added(group_id: &str)` / `on_application_deleted(group_id: &str)` | 入群申请新增/删除 |
 | `on_application_approved(group_id: &str)` / `on_application_rejected(group_id: &str)` | 申请被接受/拒绝 |
+| `on_dismissed(group: &GroupInfo)` | 群组解散 |
 
 ### 1.5 UserListener — 用户/在线状态（user.rs，2 个）
 
@@ -74,7 +77,9 @@
 
 | 回调 | 说明 |
 |------|------|
-| `on_new_message(message: &MsgData)` | 收到新消息（实时/离线/同步） |
+| `on_new_message(conversation_id, message: &MessageInfo)` | 收到新消息（实时/同步） |
+| `on_offline_new_message(conversation_id, message: &MessageInfo)` | 收到离线新消息 |
+| `on_online_only_message(conversation_id, message: &MessageInfo)` | 收到 online-only 消息 |
 | `on_message_revoked(event: &MessageEvent)` | 消息被撤回 |
 | `on_c2c_read_receipt(receipts: &[MessageReceipt])` | C2C 已读回执 |
 | `on_message_deleted(conversation_id: &str, client_msg_ids: &[String])` | 消息被删除 |
@@ -117,37 +122,37 @@ connection / conversation / friend / group / user / message 通道
 |-------------|-----------|-------------------|------|
 | **OnConnListener** | `OnConnecting()` | `on_connecting()` | ✅ |
 | | `OnConnectSuccess()` | `on_connected()` | ✅ |
-| | `OnConnectFailed(errCode, errMsg)` | `on_connect_failed()` | 预留 |
+| | `OnConnectFailed(errCode, errMsg)` | `on_connect_failed(err_code, error)` | ✅ |
 | | `OnKickedOffline()` | `on_kicked_offline()` | ✅ |
 | | `OnUserTokenExpired()` | `on_token_expired()` | ✅ |
-| | `OnUserTokenInvalid(errMsg)` | `on_token_expired()`（合并） | ✅ |
+| | `OnUserTokenInvalid(errMsg)` | `on_token_invalid(error)` | ✅ |
 | **OnAdvancedMsgListener** | `OnRecvNewMessage(message)` | `on_new_message()` | ✅ |
 | | `OnRecvC2CReadReceipt(list)` | `on_c2c_read_receipt()` | ✅ |
 | | `OnNewRecvMessageRevoked(info)` | `on_message_revoked()` | ✅ |
-| | `OnRecvOfflineNewMessage(msg)` | `on_new_message()`（合并） | ✅ |
+| | `OnRecvOfflineNewMessage(msg)` | `on_offline_new_message()` | ✅ |
 | | `OnMsgDeleted(message)` | `on_message_deleted()` | ✅ |
-| | `OnRecvOnlineOnlyMessage(msg)` | — | ❌ 未实现 |
-| **OnConversationListener** | `OnSyncServerStart(reinstalled)` | `on_sync_started()` | ✅ |
-| | `OnSyncServerFinish(reinstalled)` | `on_sync_finished()` | ✅ |
+| | `OnRecvOnlineOnlyMessage(msg)` | `on_online_only_message()` | ✅ |
+| **OnConversationListener** | `OnSyncServerStart(reinstalled)` | `on_sync_started(reinstalled)` | ✅ |
+| | `OnSyncServerFinish(reinstalled)` | `on_sync_finished(reinstalled)` | ✅ |
 | | `OnSyncServerProgress(progress)` | `on_sync_progress()` | ✅ |
-| | `OnSyncServerFailed(reinstalled)` | `on_sync_failed()` | ✅ |
+| | `OnSyncServerFailed(reinstalled)` | `on_sync_failed(reinstalled, error)` | ✅ |
 | | `OnNewConversation(list)` | `on_new()` | 预留 |
 | | `OnConversationChanged(list)` | `on_changed()` | ✅ |
 | | `OnTotalUnreadMessageCountChanged(count)` | `on_total_unread_count_changed()` | ✅ |
 | | `OnConversationUserInputStatusChanged(change)` | `on_user_input_status_changed()` | ✅ |
 | **OnGroupListener** | `OnJoinedGroupAdded(info)` | `on_joined_group_added()` | 预留 |
 | | `OnJoinedGroupDeleted(info)` | `on_joined_group_deleted()` | 预留 |
-| | `OnGroupMemberAdded(info)` | `on_member_added()` | 预留 |
-| | `OnGroupMemberDeleted(info)` | `on_member_deleted()` | 预留 |
+| | `OnGroupMemberAdded(info)` | `on_member_added(member)` | ✅ |
+| | `OnGroupMemberDeleted(info)` | `on_member_deleted(member)` | ✅ |
 | | `OnGroupApplicationAdded(app)` | `on_application_added()` | ✅ |
-| | `OnGroupApplicationDeleted(app)` | — | ❌ 未实现 |
+| | `OnGroupApplicationDeleted(app)` | `on_application_deleted()` | ✅ |
 | | `OnGroupInfoChanged(info)` | `on_group_info_changed()` | 预留 |
-| | `OnGroupDismissed(info)` | — | ❌ 未实现 |
-| | `OnGroupMemberInfoChanged(info)` | — | ❌ 未实现 |
+| | `OnGroupDismissed(info)` | `on_dismissed()` | ✅ |
+| | `OnGroupMemberInfoChanged(info)` | `on_member_info_changed()` | ✅ |
 | | `OnGroupApplicationAccepted(app)` | `on_application_approved()` | ✅ |
 | | `OnGroupApplicationRejected(app)` | `on_application_rejected()` | ✅ |
 | **OnFriendshipListener** | `OnFriendApplicationAdded(app)` | `on_application_added()` | ✅ |
-| | `OnFriendApplicationDeleted(app)` | — | ❌ 未实现 |
+| | `OnFriendApplicationDeleted(app)` | `on_application_deleted()` | ✅ |
 | | `OnFriendApplicationAccepted(app)` | `on_application_accepted()` | ✅ |
 | | `OnFriendApplicationRejected(app)` | `on_application_rejected()` | ✅ |
 | | `OnFriendAdded(info)` | `on_added()` | ✅ |
@@ -231,12 +236,12 @@ connection / conversation / friend / group / user / message 通道
 
 | 领域 | 已发布 | 已定义未发布（预留） | 未实现 |
 |------|--------|-------------------|--------|
-| 连接 ConnectionListener | 8 | 1（connect_failed） | 0 |
+| 连接 ConnectionListener | 10 | 0 | 0 |
 | 会话 ConversationListener | 9 | 1（new） | 0 |
-| 好友 FriendListener | 7 | 1（info_changed） | 1（application_deleted） |
-| 群组 GroupListener | 8 | 0 | 1（application_deleted） |
+| 好友 FriendListener | 8 | 1（info_changed） | 0 |
+| 群组 GroupListener | 11 | 0 | 0 |
 | 用户 UserListener | 2 | 0 | 0 |
-| 消息 MessageListener | 5 | 1（upload_progress） | 1（online_only） |
+| 消息 MessageListener | 7 | 1（upload_progress） | 0 |
 | 其他 | — | — | KV/信令/自定义业务/上传回调 |
 
 ---
@@ -247,7 +252,7 @@ connection / conversation / friend / group / user / message 通道
 
 ```rust
 use rust_lib_flutter_rust_demo::event::events::message::MessageListener;
-use openim_protocol::sdkws::MsgData;
+use rust_lib_flutter_rust_demo::model::message::MessageInfo;
 use std::sync::Arc;
 
 struct ExternalSdkSink {
@@ -255,7 +260,7 @@ struct ExternalSdkSink {
 }
 
 impl MessageListener for ExternalSdkSink {
-    fn on_new_message(&self, message: &MsgData) {
+    fn on_new_message(&self, _conversation_id: &str, message: &MessageInfo) {
         // 转发到外部 SDK
     }
     fn on_send_failed(&self, client_msg_id: &str, error: &str) {

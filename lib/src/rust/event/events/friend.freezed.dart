@@ -26,6 +26,7 @@ mixin _$FriendEvent {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) => throw _privateConstructorUsedError;
@@ -37,6 +38,7 @@ mixin _$FriendEvent {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) => throw _privateConstructorUsedError;
@@ -48,6 +50,7 @@ mixin _$FriendEvent {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -61,6 +64,8 @@ mixin _$FriendEvent {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -74,6 +79,7 @@ mixin _$FriendEvent {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -87,6 +93,7 @@ mixin _$FriendEvent {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -204,6 +211,7 @@ class _$FriendEvent_AddedImpl extends FriendEvent_Added {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -219,6 +227,7 @@ class _$FriendEvent_AddedImpl extends FriendEvent_Added {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -234,6 +243,7 @@ class _$FriendEvent_AddedImpl extends FriendEvent_Added {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -254,6 +264,8 @@ class _$FriendEvent_AddedImpl extends FriendEvent_Added {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -271,6 +283,7 @@ class _$FriendEvent_AddedImpl extends FriendEvent_Added {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -288,6 +301,7 @@ class _$FriendEvent_AddedImpl extends FriendEvent_Added {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -395,6 +409,7 @@ class _$FriendEvent_DeletedImpl extends FriendEvent_Deleted {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -410,6 +425,7 @@ class _$FriendEvent_DeletedImpl extends FriendEvent_Deleted {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -425,6 +441,7 @@ class _$FriendEvent_DeletedImpl extends FriendEvent_Deleted {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -445,6 +462,8 @@ class _$FriendEvent_DeletedImpl extends FriendEvent_Deleted {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -462,6 +481,7 @@ class _$FriendEvent_DeletedImpl extends FriendEvent_Deleted {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -479,6 +499,7 @@ class _$FriendEvent_DeletedImpl extends FriendEvent_Deleted {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -594,6 +615,7 @@ class _$FriendEvent_InfoChangedImpl extends FriendEvent_InfoChanged {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -609,6 +631,7 @@ class _$FriendEvent_InfoChangedImpl extends FriendEvent_InfoChanged {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -624,6 +647,7 @@ class _$FriendEvent_InfoChangedImpl extends FriendEvent_InfoChanged {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -644,6 +668,8 @@ class _$FriendEvent_InfoChangedImpl extends FriendEvent_InfoChanged {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -661,6 +687,7 @@ class _$FriendEvent_InfoChangedImpl extends FriendEvent_InfoChanged {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -678,6 +705,7 @@ class _$FriendEvent_InfoChangedImpl extends FriendEvent_InfoChanged {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -786,6 +814,7 @@ class _$FriendEvent_BlackAddedImpl extends FriendEvent_BlackAdded {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -801,6 +830,7 @@ class _$FriendEvent_BlackAddedImpl extends FriendEvent_BlackAdded {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -816,6 +846,7 @@ class _$FriendEvent_BlackAddedImpl extends FriendEvent_BlackAdded {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -836,6 +867,8 @@ class _$FriendEvent_BlackAddedImpl extends FriendEvent_BlackAdded {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -853,6 +886,7 @@ class _$FriendEvent_BlackAddedImpl extends FriendEvent_BlackAdded {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -870,6 +904,7 @@ class _$FriendEvent_BlackAddedImpl extends FriendEvent_BlackAdded {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -977,6 +1012,7 @@ class _$FriendEvent_BlackDeletedImpl extends FriendEvent_BlackDeleted {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -992,6 +1028,7 @@ class _$FriendEvent_BlackDeletedImpl extends FriendEvent_BlackDeleted {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -1007,6 +1044,7 @@ class _$FriendEvent_BlackDeletedImpl extends FriendEvent_BlackDeleted {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -1027,6 +1065,8 @@ class _$FriendEvent_BlackDeletedImpl extends FriendEvent_BlackDeleted {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -1044,6 +1084,7 @@ class _$FriendEvent_BlackDeletedImpl extends FriendEvent_BlackDeleted {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -1061,6 +1102,7 @@ class _$FriendEvent_BlackDeletedImpl extends FriendEvent_BlackDeleted {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -1170,6 +1212,7 @@ class _$FriendEvent_ApplicationAddedImpl extends FriendEvent_ApplicationAdded {
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -1185,6 +1228,7 @@ class _$FriendEvent_ApplicationAddedImpl extends FriendEvent_ApplicationAdded {
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -1200,6 +1244,7 @@ class _$FriendEvent_ApplicationAddedImpl extends FriendEvent_ApplicationAdded {
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -1220,6 +1265,8 @@ class _$FriendEvent_ApplicationAddedImpl extends FriendEvent_ApplicationAdded {
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -1237,6 +1284,7 @@ class _$FriendEvent_ApplicationAddedImpl extends FriendEvent_ApplicationAdded {
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -1254,6 +1302,7 @@ class _$FriendEvent_ApplicationAddedImpl extends FriendEvent_ApplicationAdded {
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -1280,6 +1329,210 @@ abstract class FriendEvent_ApplicationAdded extends FriendEvent {
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$FriendEvent_ApplicationAddedImplCopyWith<
     _$FriendEvent_ApplicationAddedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$FriendEvent_ApplicationDeletedImplCopyWith<$Res> {
+  factory _$$FriendEvent_ApplicationDeletedImplCopyWith(
+    _$FriendEvent_ApplicationDeletedImpl value,
+    $Res Function(_$FriendEvent_ApplicationDeletedImpl) then,
+  ) = __$$FriendEvent_ApplicationDeletedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String field0});
+}
+
+/// @nodoc
+class __$$FriendEvent_ApplicationDeletedImplCopyWithImpl<$Res>
+    extends
+        _$FriendEventCopyWithImpl<$Res, _$FriendEvent_ApplicationDeletedImpl>
+    implements _$$FriendEvent_ApplicationDeletedImplCopyWith<$Res> {
+  __$$FriendEvent_ApplicationDeletedImplCopyWithImpl(
+    _$FriendEvent_ApplicationDeletedImpl _value,
+    $Res Function(_$FriendEvent_ApplicationDeletedImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of FriendEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$FriendEvent_ApplicationDeletedImpl(
+        null == field0
+            ? _value.field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$FriendEvent_ApplicationDeletedImpl
+    extends FriendEvent_ApplicationDeleted {
+  const _$FriendEvent_ApplicationDeletedImpl(this.field0) : super._();
+
+  @override
+  final String field0;
+
+  @override
+  String toString() {
+    return 'FriendEvent.applicationDeleted(field0: $field0)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$FriendEvent_ApplicationDeletedImpl &&
+            (identical(other.field0, field0) || other.field0 == field0));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  /// Create a copy of FriendEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$FriendEvent_ApplicationDeletedImplCopyWith<
+    _$FriendEvent_ApplicationDeletedImpl
+  >
+  get copyWith =>
+      __$$FriendEvent_ApplicationDeletedImplCopyWithImpl<
+        _$FriendEvent_ApplicationDeletedImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(List<FriendInfo> field0) added,
+    required TResult Function(String field0) deleted,
+    required TResult Function(List<FriendInfo> field0) infoChanged,
+    required TResult Function(String field0) blackAdded,
+    required TResult Function(String field0) blackDeleted,
+    required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
+    required TResult Function(String field0) applicationAccepted,
+    required TResult Function(String field0) applicationRejected,
+  }) {
+    return applicationDeleted(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(List<FriendInfo> field0)? added,
+    TResult? Function(String field0)? deleted,
+    TResult? Function(List<FriendInfo> field0)? infoChanged,
+    TResult? Function(String field0)? blackAdded,
+    TResult? Function(String field0)? blackDeleted,
+    TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
+    TResult? Function(String field0)? applicationAccepted,
+    TResult? Function(String field0)? applicationRejected,
+  }) {
+    return applicationDeleted?.call(field0);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(List<FriendInfo> field0)? added,
+    TResult Function(String field0)? deleted,
+    TResult Function(List<FriendInfo> field0)? infoChanged,
+    TResult Function(String field0)? blackAdded,
+    TResult Function(String field0)? blackDeleted,
+    TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
+    TResult Function(String field0)? applicationAccepted,
+    TResult Function(String field0)? applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationDeleted != null) {
+      return applicationDeleted(field0);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(FriendEvent_Added value) added,
+    required TResult Function(FriendEvent_Deleted value) deleted,
+    required TResult Function(FriendEvent_InfoChanged value) infoChanged,
+    required TResult Function(FriendEvent_BlackAdded value) blackAdded,
+    required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
+    required TResult Function(FriendEvent_ApplicationAdded value)
+    applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
+    required TResult Function(FriendEvent_ApplicationAccepted value)
+    applicationAccepted,
+    required TResult Function(FriendEvent_ApplicationRejected value)
+    applicationRejected,
+  }) {
+    return applicationDeleted(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(FriendEvent_Added value)? added,
+    TResult? Function(FriendEvent_Deleted value)? deleted,
+    TResult? Function(FriendEvent_InfoChanged value)? infoChanged,
+    TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
+    TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
+    TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
+    TResult? Function(FriendEvent_ApplicationAccepted value)?
+    applicationAccepted,
+    TResult? Function(FriendEvent_ApplicationRejected value)?
+    applicationRejected,
+  }) {
+    return applicationDeleted?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(FriendEvent_Added value)? added,
+    TResult Function(FriendEvent_Deleted value)? deleted,
+    TResult Function(FriendEvent_InfoChanged value)? infoChanged,
+    TResult Function(FriendEvent_BlackAdded value)? blackAdded,
+    TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
+    TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
+    TResult Function(FriendEvent_ApplicationAccepted value)?
+    applicationAccepted,
+    TResult Function(FriendEvent_ApplicationRejected value)?
+    applicationRejected,
+    required TResult orElse(),
+  }) {
+    if (applicationDeleted != null) {
+      return applicationDeleted(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class FriendEvent_ApplicationDeleted extends FriendEvent {
+  const factory FriendEvent_ApplicationDeleted(final String field0) =
+      _$FriendEvent_ApplicationDeletedImpl;
+  const FriendEvent_ApplicationDeleted._() : super._();
+
+  @override
+  String get field0;
+
+  /// Create a copy of FriendEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$FriendEvent_ApplicationDeletedImplCopyWith<
+    _$FriendEvent_ApplicationDeletedImpl
   >
   get copyWith => throw _privateConstructorUsedError;
 }
@@ -1367,6 +1620,7 @@ class _$FriendEvent_ApplicationAcceptedImpl
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -1382,6 +1636,7 @@ class _$FriendEvent_ApplicationAcceptedImpl
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -1397,6 +1652,7 @@ class _$FriendEvent_ApplicationAcceptedImpl
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -1417,6 +1673,8 @@ class _$FriendEvent_ApplicationAcceptedImpl
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -1434,6 +1692,7 @@ class _$FriendEvent_ApplicationAcceptedImpl
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -1451,6 +1710,7 @@ class _$FriendEvent_ApplicationAcceptedImpl
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?
@@ -1564,6 +1824,7 @@ class _$FriendEvent_ApplicationRejectedImpl
     required TResult Function(String field0) blackAdded,
     required TResult Function(String field0) blackDeleted,
     required TResult Function(String field0) applicationAdded,
+    required TResult Function(String field0) applicationDeleted,
     required TResult Function(String field0) applicationAccepted,
     required TResult Function(String field0) applicationRejected,
   }) {
@@ -1579,6 +1840,7 @@ class _$FriendEvent_ApplicationRejectedImpl
     TResult? Function(String field0)? blackAdded,
     TResult? Function(String field0)? blackDeleted,
     TResult? Function(String field0)? applicationAdded,
+    TResult? Function(String field0)? applicationDeleted,
     TResult? Function(String field0)? applicationAccepted,
     TResult? Function(String field0)? applicationRejected,
   }) {
@@ -1594,6 +1856,7 @@ class _$FriendEvent_ApplicationRejectedImpl
     TResult Function(String field0)? blackAdded,
     TResult Function(String field0)? blackDeleted,
     TResult Function(String field0)? applicationAdded,
+    TResult Function(String field0)? applicationDeleted,
     TResult Function(String field0)? applicationAccepted,
     TResult Function(String field0)? applicationRejected,
     required TResult orElse(),
@@ -1614,6 +1877,8 @@ class _$FriendEvent_ApplicationRejectedImpl
     required TResult Function(FriendEvent_BlackDeleted value) blackDeleted,
     required TResult Function(FriendEvent_ApplicationAdded value)
     applicationAdded,
+    required TResult Function(FriendEvent_ApplicationDeleted value)
+    applicationDeleted,
     required TResult Function(FriendEvent_ApplicationAccepted value)
     applicationAccepted,
     required TResult Function(FriendEvent_ApplicationRejected value)
@@ -1631,6 +1896,7 @@ class _$FriendEvent_ApplicationRejectedImpl
     TResult? Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult? Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult? Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult? Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult? Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult? Function(FriendEvent_ApplicationRejected value)?
@@ -1648,6 +1914,7 @@ class _$FriendEvent_ApplicationRejectedImpl
     TResult Function(FriendEvent_BlackAdded value)? blackAdded,
     TResult Function(FriendEvent_BlackDeleted value)? blackDeleted,
     TResult Function(FriendEvent_ApplicationAdded value)? applicationAdded,
+    TResult Function(FriendEvent_ApplicationDeleted value)? applicationDeleted,
     TResult Function(FriendEvent_ApplicationAccepted value)?
     applicationAccepted,
     TResult Function(FriendEvent_ApplicationRejected value)?

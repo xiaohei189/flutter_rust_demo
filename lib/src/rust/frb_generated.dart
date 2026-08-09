@@ -7236,6 +7236,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupMember dco_decode_box_autoadd_group_member(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_group_member(raw);
+  }
+
+  @protected
   int dco_decode_box_autoadd_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -7578,8 +7584,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case 5:
         return FriendEvent_ApplicationAdded(dco_decode_String(raw[1]));
       case 6:
-        return FriendEvent_ApplicationAccepted(dco_decode_String(raw[1]));
+        return FriendEvent_ApplicationDeleted(dco_decode_String(raw[1]));
       case 7:
+        return FriendEvent_ApplicationAccepted(dco_decode_String(raw[1]));
+      case 8:
         return FriendEvent_ApplicationRejected(dco_decode_String(raw[1]));
       default:
         throw Exception("unreachable");
@@ -7663,19 +7671,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           dco_decode_box_autoadd_group_info(raw[1]),
         );
       case 3:
-        return GroupEvent_MemberAdded(dco_decode_String(raw[1]));
+        return GroupEvent_MemberAdded(
+          dco_decode_box_autoadd_group_member(raw[1]),
+        );
       case 4:
-        return GroupEvent_MemberDeleted(dco_decode_String(raw[1]));
+        return GroupEvent_MemberDeleted(
+          dco_decode_box_autoadd_group_member(raw[1]),
+        );
       case 5:
+        return GroupEvent_MemberInfoChanged(
+          dco_decode_box_autoadd_group_member(raw[1]),
+        );
+      case 6:
         return GroupEvent_GroupReadReceipt(
           dco_decode_list_group_read_receipt(raw[1]),
         );
-      case 6:
-        return GroupEvent_ApplicationAdded(dco_decode_String(raw[1]));
       case 7:
-        return GroupEvent_ApplicationApproved(dco_decode_String(raw[1]));
+        return GroupEvent_ApplicationAdded(dco_decode_String(raw[1]));
       case 8:
+        return GroupEvent_ApplicationDeleted(dco_decode_String(raw[1]));
+      case 9:
+        return GroupEvent_ApplicationApproved(dco_decode_String(raw[1]));
+      case 10:
         return GroupEvent_ApplicationRejected(dco_decode_String(raw[1]));
+      case 11:
+        return GroupEvent_Dismissed(dco_decode_box_autoadd_group_info(raw[1]));
       default:
         throw Exception("unreachable");
     }
@@ -8766,6 +8786,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupMember sse_decode_box_autoadd_group_member(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_group_member(deserializer));
+  }
+
+  @protected
   int sse_decode_box_autoadd_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_i_32(deserializer));
@@ -9166,8 +9194,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         return FriendEvent_ApplicationAdded(var_field0);
       case 6:
         var var_field0 = sse_decode_String(deserializer);
-        return FriendEvent_ApplicationAccepted(var_field0);
+        return FriendEvent_ApplicationDeleted(var_field0);
       case 7:
+        var var_field0 = sse_decode_String(deserializer);
+        return FriendEvent_ApplicationAccepted(var_field0);
+      case 8:
         var var_field0 = sse_decode_String(deserializer);
         return FriendEvent_ApplicationRejected(var_field0);
       default:
@@ -9260,23 +9291,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_field0 = sse_decode_box_autoadd_group_info(deserializer);
         return GroupEvent_GroupInfoChanged(var_field0);
       case 3:
-        var var_field0 = sse_decode_String(deserializer);
+        var var_field0 = sse_decode_box_autoadd_group_member(deserializer);
         return GroupEvent_MemberAdded(var_field0);
       case 4:
-        var var_field0 = sse_decode_String(deserializer);
+        var var_field0 = sse_decode_box_autoadd_group_member(deserializer);
         return GroupEvent_MemberDeleted(var_field0);
       case 5:
+        var var_field0 = sse_decode_box_autoadd_group_member(deserializer);
+        return GroupEvent_MemberInfoChanged(var_field0);
+      case 6:
         var var_field0 = sse_decode_list_group_read_receipt(deserializer);
         return GroupEvent_GroupReadReceipt(var_field0);
-      case 6:
-        var var_field0 = sse_decode_String(deserializer);
-        return GroupEvent_ApplicationAdded(var_field0);
       case 7:
         var var_field0 = sse_decode_String(deserializer);
-        return GroupEvent_ApplicationApproved(var_field0);
+        return GroupEvent_ApplicationAdded(var_field0);
       case 8:
         var var_field0 = sse_decode_String(deserializer);
+        return GroupEvent_ApplicationDeleted(var_field0);
+      case 9:
+        var var_field0 = sse_decode_String(deserializer);
+        return GroupEvent_ApplicationApproved(var_field0);
+      case 10:
+        var var_field0 = sse_decode_String(deserializer);
         return GroupEvent_ApplicationRejected(var_field0);
+      case 11:
+        var var_field0 = sse_decode_box_autoadd_group_info(deserializer);
+        return GroupEvent_Dismissed(var_field0);
       default:
         throw UnimplementedError('');
     }
@@ -10890,6 +10930,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_group_member(
+    GroupMember self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_group_member(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self, serializer);
@@ -11276,11 +11325,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case FriendEvent_ApplicationAdded(field0: final field0):
         sse_encode_i_32(5, serializer);
         sse_encode_String(field0, serializer);
-      case FriendEvent_ApplicationAccepted(field0: final field0):
+      case FriendEvent_ApplicationDeleted(field0: final field0):
         sse_encode_i_32(6, serializer);
         sse_encode_String(field0, serializer);
-      case FriendEvent_ApplicationRejected(field0: final field0):
+      case FriendEvent_ApplicationAccepted(field0: final field0):
         sse_encode_i_32(7, serializer);
+        sse_encode_String(field0, serializer);
+      case FriendEvent_ApplicationRejected(field0: final field0):
+        sse_encode_i_32(8, serializer);
         sse_encode_String(field0, serializer);
     }
   }
@@ -11349,22 +11401,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_box_autoadd_group_info(field0, serializer);
       case GroupEvent_MemberAdded(field0: final field0):
         sse_encode_i_32(3, serializer);
-        sse_encode_String(field0, serializer);
+        sse_encode_box_autoadd_group_member(field0, serializer);
       case GroupEvent_MemberDeleted(field0: final field0):
         sse_encode_i_32(4, serializer);
-        sse_encode_String(field0, serializer);
-      case GroupEvent_GroupReadReceipt(field0: final field0):
+        sse_encode_box_autoadd_group_member(field0, serializer);
+      case GroupEvent_MemberInfoChanged(field0: final field0):
         sse_encode_i_32(5, serializer);
+        sse_encode_box_autoadd_group_member(field0, serializer);
+      case GroupEvent_GroupReadReceipt(field0: final field0):
+        sse_encode_i_32(6, serializer);
         sse_encode_list_group_read_receipt(field0, serializer);
       case GroupEvent_ApplicationAdded(field0: final field0):
-        sse_encode_i_32(6, serializer);
-        sse_encode_String(field0, serializer);
-      case GroupEvent_ApplicationApproved(field0: final field0):
         sse_encode_i_32(7, serializer);
         sse_encode_String(field0, serializer);
-      case GroupEvent_ApplicationRejected(field0: final field0):
+      case GroupEvent_ApplicationDeleted(field0: final field0):
         sse_encode_i_32(8, serializer);
         sse_encode_String(field0, serializer);
+      case GroupEvent_ApplicationApproved(field0: final field0):
+        sse_encode_i_32(9, serializer);
+        sse_encode_String(field0, serializer);
+      case GroupEvent_ApplicationRejected(field0: final field0):
+        sse_encode_i_32(10, serializer);
+        sse_encode_String(field0, serializer);
+      case GroupEvent_Dismissed(field0: final field0):
+        sse_encode_i_32(11, serializer);
+        sse_encode_box_autoadd_group_info(field0, serializer);
     }
   }
 

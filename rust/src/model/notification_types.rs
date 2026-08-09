@@ -166,6 +166,40 @@ pub(crate) struct GroupChangeInfoJson {
     pub(crate) group_info: Option<GroupInfoJson>,
 }
 
+/// 群成员加入通知（1509 邀请/1510 进入）
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GroupMemberJoinedTipsJson {
+    #[serde(default)]
+    pub(crate) group: Option<GroupInfoJson>,
+    #[serde(default, rename = "invitedUserList")]
+    pub(crate) invited_user_list: Vec<PublicUserInfoJson>,
+    #[serde(default, rename = "entrantUser")]
+    pub(crate) entrant_user: Option<PublicUserInfoJson>,
+}
+
+/// 群成员退出/被踢通知（1504 退出/1508 被踢）
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GroupMemberRemovedTipsJson {
+    #[serde(default)]
+    pub(crate) group: Option<GroupInfoJson>,
+    #[serde(default, rename = "quitUser")]
+    pub(crate) quit_user: Option<PublicUserInfoJson>,
+    #[serde(default, rename = "kickedUserList")]
+    pub(crate) kicked_user_list: Vec<PublicUserInfoJson>,
+}
+
+/// 群成员信息变更通知（1516）
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GroupMemberInfoSetTipsJson {
+    #[serde(default)]
+    pub(crate) group: Option<GroupInfoJson>,
+    #[serde(default, rename = "changedUser")]
+    pub(crate) changed_user: Option<PublicUserInfoJson>,
+}
+
 impl GroupChangeInfoJson {
     pub(crate) fn effective_group_id(&self) -> String {
         if !self.group_id.is_empty() {
